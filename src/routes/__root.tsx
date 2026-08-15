@@ -1,14 +1,40 @@
 /// <reference types="vite-plus/client" />
-import { ColorSchemeScript, Container, Loader, MantineProvider, Text, Title, mantineHtmlProps } from "@mantine/core";
+import { ConvexBetterAuthProvider, type AuthClient } from "@convex-dev/better-auth/react";
+import type { ConvexQueryClient } from "@convex-dev/react-query";
+import {
+  ColorSchemeScript,
+  Container,
+  MantineProvider,
+  Text,
+  Title,
+  mantineHtmlProps,
+} from "@mantine/core";
+import { DatesProvider } from "@mantine/dates";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ErrorComponentProps } from "@tanstack/react-router";
-import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
+import {
+  HeadContent,
+  Outlet,
+  Scripts,
+  createRootRouteWithContext,
+  useRouteContext,
+} from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
+import "dayjs/locale/ja";
 import { Suspense, lazy, type ReactNode } from "react";
 
-import { theme } from "~/lib/theme";
+import { PendingComponent } from "~/components/pending-component";
+import { authClient } from "~/lib/auth-client";
+import { getToken } from "~/lib/auth-server";
+import { cssVariablesResolver, theme } from "~/lib/theme";
+
 import appCss from "~/styles.css?url";
 
-const DEFAULT_COLOR_SCHEME = "dark";
+const DEFAULT_COLOR_SCHEME = "light";
+
+const getAuth = createServerFn({ method: "GET" }).handler(async () => {
+  return await getToken();
+});
 
 const TanStackRouterDevtools = import.meta.env.DEV
   ? lazy(async () => {
@@ -18,16 +44,32 @@ const TanStackRouterDevtools = import.meta.env.DEV
   : null;
 
 export const Route = createRootRouteWithContext<{
+  convexQueryClient: ConvexQueryClient;
   queryClient: QueryClient;
 }>()({
+  beforeLoad: async (ctx) => {
+    const token = await getAuth();
+    if (token) {
+      ctx.context.convexQueryClient.serverHttpClient?.setAuth(token);
+    }
+    return { isAuthenticated: Boolean(token), token };
+  },
   component: RootComponent,
   errorComponent: RootErrorComponent,
   head: () => ({
-    links: [{ href: appCss, rel: "stylesheet" }],
+    links: [
+      { href: "https://fonts.googleapis.com", rel: "preconnect" },
+      { crossOrigin: "anonymous", href: "https://fonts.gstatic.com", rel: "preconnect" },
+      {
+        href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap",
+        rel: "stylesheet",
+      },
+      { href: appCss, rel: "stylesheet" },
+    ],
     meta: [
       { charSet: "utf-8" },
       { content: "width=device-width, initial-scale=1", name: "viewport" },
-      { title: "Cairn" },
+      { title: "学習ログ" },
     ],
   }),
   notFoundComponent: RootNotFoundComponent,
@@ -38,12 +80,17 @@ function RootDocument({ children }: Record<"children", ReactNode>) {
   return (
     <html lang="ja" {...mantineHtmlProps}>
       <head>
-        <ColorSchemeScript defaultColorScheme={DEFAULT_COLOR_SCHEME} />
+        <ColorSchemeScript defaultColorScheme={DEFAULT_COLOR_SCHEME} forceColorScheme="light" />
         <HeadContent />
       </head>
       <body>
-        <MantineProvider defaultColorScheme={DEFAULT_COLOR_SCHEME} theme={theme}>
-          {children}
+        <MantineProvider
+          cssVariablesResolver={cssVariablesResolver}
+          defaultColorScheme={DEFAULT_COLOR_SCHEME}
+          forceColorScheme="light"
+          theme={theme}
+        >
+          <DatesProvider settings={{ locale: "ja" }}>{children}</DatesProvider>
           {TanStackRouterDevtools ? (
             <Suspense fallback={null}>
               <TanStackRouterDevtools position="bottom-right" />
@@ -57,10 +104,18 @@ function RootDocument({ children }: Record<"children", ReactNode>) {
 }
 
 function RootComponent() {
+  const context = useRouteContext({ from: Route.id });
   return (
-    <RootDocument>
-      <Outlet />
-    </RootDocument>
+    <ConvexBetterAuthProvider
+      //? Better Auth の client ジェネリクスと Provider の AuthClient が食い違う。
+      authClient={authClient as unknown as AuthClient}
+      client={context.convexQueryClient.convexClient}
+      initialToken={context.token}
+    >
+      <RootDocument>
+        <Outlet />
+      </RootDocument>
+    </ConvexBetterAuthProvider>
   );
 }
 
@@ -104,14 +159,6 @@ function ErrorComponent({ error }: ErrorComponentProps) {
         エラー
       </Title>
       <Text mt="sm">{error.message}</Text>
-    </Container>
-  );
-}
-
-function PendingComponent() {
-  return (
-    <Container py="xl">
-      <Loader aria-label="読み込み中" />
     </Container>
   );
 }

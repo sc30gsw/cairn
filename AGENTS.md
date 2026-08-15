@@ -62,3 +62,14 @@ The five canonical triage roles are used verbatim as label strings. See `docs/ag
 ### Domain docs
 
 Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+
+## Cursor Cloud specific instructions
+
+This is a TanStack Start (SSR) + Convex app. The web UI (`src/routes/index.tsx`) renders `OwnerGate` and `DayPage` (Convex `days.open` / `days.get`). `src/router.tsx` **throws if `VITE_CONVEX_URL` is unset** — so the Convex backend must be running before/alongside the web dev server.
+
+- **Node / PATH:** The base image ships `/exec-daemon/node` (v22) earlier in `PATH`, but this repo requires Node `>=24.17.0`. `~/.bashrc` prepends the nvm-installed Node 24.17.0 and `/workspace/node_modules/.bin` (so `vp` is on `PATH`). Interactive/login shells get Node 24 and `vp` automatically; a bare non-interactive `bash -c` may still see the v22 shim.
+- **Convex backend (headless):** No Convex login is available in cloud VMs. Run the backend in anonymous local mode: `CONVEX_AGENT_MODE=anonymous vp exec convex -- dev` (keep it running, e.g. in tmux). First run prompts "Set up Convex AI files?" — answer `n` (don't modify the repo). It provisions a local backend at `http://127.0.0.1:3210` and writes `.env.local` (`VITE_CONVEX_URL`, `CONVEX_DEPLOYMENT`, `VITE_CONVEX_SITE_URL`); `.env.local` is git-ignored.
+- **Seed data:** First owner `days.open` calls `ensureCatalog` (items, weekday presets, exam goal). There is no `tasks` table or `sampleData.jsonl`. Verify with `convex run days:get '{"dateJst":"2026-08-17","todayJst":"2026-08-17"}'` after signing in, or via `vp test`.
+- **Web dev server:** `vp dev` serves at `http://localhost:3000/`.
+- **What works:** `vp test` (passes) and `vp build` (Rolldown, passes).
+- **Pre-existing breakage — not a regression:** This branch already overrides `react-doctor/no-nested-component-definition`. Running `tsc` directly (TS 7) rejects `tsconfig.json`'s `baseUrl`; type-checking is intended to run via `vp`, and Vite resolves the `~/*` alias at runtime. Do not "fix" these as part of unrelated work.
