@@ -22,8 +22,8 @@ import {
 import { createServerFn } from "@tanstack/react-start";
 import "dayjs/locale/ja";
 import { Suspense, lazy, type ReactNode } from "react";
-import { PendingComponent } from "~/components/pending-component";
 
+import { PendingComponent } from "~/components/pending-component";
 import { authClient } from "~/lib/auth-client";
 import { getToken } from "~/lib/auth-server";
 import { theme } from "~/lib/theme";
@@ -149,5 +149,3 @@ function ErrorComponent({ error }: ErrorComponentProps) {
     </Container>
   );
 }
-
-
