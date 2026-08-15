@@ -70,6 +70,7 @@ async function assertWeekdayFree(
     .withIndex("by_owner_and_weekday", (q) => q.eq("ownerId", ownerId).eq("weekday", weekday))
     .collect();
   const taken: number[] = [];
+
   for (const preset of existing) {
     if (preset._id !== ignoreId) {
       taken.push(preset.weekday);
