@@ -10,13 +10,7 @@ const EXCLUDE = new Set([
   "scripts/type-ssot-check.mjs",
 ]);
 
-const SKIP_DIRS = new Set([
-  ".git",
-  ".pnpm-store",
-  ".tanstack",
-  "dist",
-  "node_modules",
-]);
+const SKIP_DIRS = new Set([".git", ".pnpm-store", ".tanstack", "dist", "node_modules"]);
 
 const pattern =
   /("スキップ"\s*\|\s*"未着手"\s*\|\s*"確定"|"確定"\s*\|\s*"未着手"\s*\|\s*"スキップ"|type\s+\w*Status\w*\s*=\s*")/;
