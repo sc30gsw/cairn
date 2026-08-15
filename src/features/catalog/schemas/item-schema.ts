@@ -6,7 +6,7 @@ export const ItemNameSchema = v.object({
   name: itemName,
 });
 
-export const ItemSchema = v.object({
+const ItemSchema = v.object({
   categoryId: v.pipe(v.string(), v.minLength(1, "カテゴリーは必須です")),
   name: itemName,
 });

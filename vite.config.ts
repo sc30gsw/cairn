@@ -1,3 +1,7 @@
+// Vitest edge-runtime project (convex integration tests) and TS 7 libReplacement.
+import "@edge-runtime/vm";
+import "better-typescript-lib";
+
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";

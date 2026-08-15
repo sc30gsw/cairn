@@ -1,4 +1,4 @@
-import { addDaysJst, calendarDatesInMonth } from "~domain/jst";
+import { addDaysJst } from "~domain/jst";
 
 import type { HeatmapDay } from "~/features/history/types/history";
 
@@ -38,14 +38,6 @@ export const HEATMAP_MONTH_LABELS = [
 ] as const;
 
 export const HEATMAP_WEEKDAY_LABELS = ["", "月", "", "水", "", "金", ""] as const;
-
-export function monthHeatmapRange(yearMonth: string): { endDate: string; startDate: string } {
-  const dates = calendarDatesInMonth(yearMonth);
-  return {
-    endDate: dates.at(-1) ?? `${yearMonth}-01`,
-    startDate: dates[0] ?? `${yearMonth}-01`,
-  };
-}
 
 export function yearHeatmapRange(todayJst: string): { endDate: string; startDate: string } {
   return {
