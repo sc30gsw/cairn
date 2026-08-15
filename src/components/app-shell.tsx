@@ -162,7 +162,6 @@ export function AppShell({ children, onSignOut, user }: AppShellProps) {
               </Avatar>
             </Menu.Target>
             <Menu.Dropdown>
-              <Menu.Label>{userLabel(user)}</Menu.Label>
               <Menu.Item
                 color="red"
                 onClick={onSignOut}
