@@ -1,23 +1,34 @@
+import { convexQuery } from "@convex-dev/react-query";
+import { Badge, Container, Group, List, Stack, Text, Title } from "@mantine/core";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { cn } from "cnfast";
-import { useState } from "react";
+
+import { api } from "~/../convex/_generated/api";
 
 export const Route = createFileRoute("/")({
   component: Home,
 });
 
 function Home() {
-  const [isBlue, setIsBlue] = useState(false);
+  const { data } = useSuspenseQuery(convexQuery(api.tasks.get, {}));
+
   return (
-    <main className="grid min-h-screen place-items-center">
-      <div className="space-y-4">
-        <h1 className={cn("text-5xl font-bold text-red-500", isBlue && "text-blue-500")}>
-          Hello World!
-        </h1>
-        <button type="button" onClick={() => setIsBlue((prev) => !prev)}>
-          Toggle
-        </button>
-      </div>
-    </main>
+    <Container py="xl" size="sm">
+      <Stack gap="md">
+        <Title order={1}>Tasks</Title>
+        <List listStyleType="none" spacing="sm">
+          {data.map((task) => (
+            <List.Item key={task._id}>
+              <Group justify="space-between">
+                <Text td={task.isCompleted ? "line-through" : undefined}>{task.text}</Text>
+                <Badge color={task.isCompleted ? "green" : "gray"}>
+                  {task.isCompleted ? "完了" : "未完了"}
+                </Badge>
+              </Group>
+            </List.Item>
+          ))}
+        </List>
+      </Stack>
+    </Container>
   );
 }

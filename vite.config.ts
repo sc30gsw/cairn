@@ -13,7 +13,7 @@ const reactDoctorRules = {
 
 export default defineConfig({
   fmt: {
-    ignorePatterns: ["**/routeTree.gen.ts"],
+    ignorePatterns: ["**/routeTree.gen.ts", "convex/_generated/**"],
     sortImports: {
       partitionByComment: true,
     },
@@ -32,7 +32,7 @@ export default defineConfig({
       browser: true,
       node: true,
     },
-    ignorePatterns: ["**/routeTree.gen.ts"],
+    ignorePatterns: ["**/routeTree.gen.ts", "convex/_generated/**"],
     jsPlugins: [{ name: "react-doctor", specifier: "oxlint-plugin-react-doctor" }],
     options: {
       denyWarnings: true,
@@ -41,9 +41,10 @@ export default defineConfig({
     },
     overrides: [
       {
-        files: ["src/router.tsx", "*.config.ts"],
+        files: ["src/router.tsx", "*.config.ts", "convex/schema.ts"],
         rules: {
           "no-default-export": "off",
+          "react-doctor/only-export-components": "off",
         },
       },
       {
@@ -62,6 +63,9 @@ export default defineConfig({
   },
   staged: {
     "*.{js,jsx,ts,tsx,json,css}": "vp check --fix",
+  },
+  resolve: {
+    tsconfigPaths: true,
   },
   plugins: [
     tailwindcss(),

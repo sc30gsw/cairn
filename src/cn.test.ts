@@ -1,4 +1,4 @@
-import { cn } from "cnfast";
+import { cn } from "~/lib/utils";
 import { describe, expect, it } from "vite-plus/test";
 
 describe("cn", () => {

@@ -35,10 +35,10 @@ Human-readable source of truth: [CODING_GUIDELINES.md](./CODING_GUIDELINES.md). 
 
 Installed packages are the source of truth (`package.json`). Do not write code against libraries that are not installed.
 
-- **Installed:** TanStack Start + React 19, ElysiaJS, Eden Treaty, `@elysia/openapi`, Mantine 9 (with `@mantine/dates` + `dayjs`) and `tailwind-preset-mantine` on Tailwind 4, Valibot, `@valibot/to-json-schema`, Formisch, better-result, Drizzle, `pg`, `cnfast`.
-- **Tooling:** `tsx` runs TS scripts outside Vite (the seed needs the `~` alias); `jsdom` + Testing Library back the frontend integration tests.
-- **Auth:** signed-cookie dummy login — not Better Auth ([ADR 0015](./docs/adr/0015-signed-cookie-dummy-login.md)).
-- **Rejected:** Better Auth, Jotai, ky, MSW, TanStack Query, TanStack Form, generated API clients (`src/lib/api/generated/`), `clsx` / `tailwind-merge` (`cnfast` covers this).
+- **Installed:** TanStack Start + React 19, Convex (`convex` + `@convex-dev/react-query`), TanStack Query (Convex SSR adapter only, via `@tanstack/react-query` + `@tanstack/react-router-ssr-query`), Mantine 9 (with `@mantine/dates` + `dayjs`) and `tailwind-preset-mantine` on Tailwind 4, Valibot, Formisch, better-result, `cnfast`.
+- **Tooling:** Vite+ (`vp`). Convex CLI via `vp run convex:dev` / `vp exec convex …`.
+- **Auth:** not wired yet. Do not add Better Auth, Clerk, or WorkOS in this bootstrap.
+- **Rejected:** Better Auth, Jotai, ky, MSW, TanStack Form, generated API clients (`src/lib/api/generated/`), `clsx` / `tailwind-merge` (`cnfast` covers this), Elysia / Drizzle / `pg`. TanStack Query is only for `convexQuery(...)` — do not use it as a generic REST client.
 
 UI defaults to Mantine components; Tailwind handles layout on the wrappers around them. See [CODING_GUIDELINES.md](./CODING_GUIDELINES.md) §UI and `.claude/rules/typescript/mantine-tailwind.md`. `src/styles.css` imports `tailwind-preset-mantine`, which pulls in Tailwind and `@mantine/core/styles.layer.css` in the right layer order — do not add a bare `@import "tailwindcss"`. Rationale in `docs/adr/0003-mantine-with-tailwind-preset.md`.
 
