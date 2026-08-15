@@ -4,12 +4,13 @@ import type { Condition } from "~domain/conditions";
 import { CONDITIONS } from "~domain/conditions";
 
 import { MemoSchema } from "~/features/today/schemas/memo-schema";
+import type { SetConditionInput, SetMemoInput } from "~/features/today/types/mutations";
 
 type DayMetaPanelProps = {
   condition: Condition | null;
   memo: null | string;
-  onSaveCondition: (condition: Condition) => void;
-  onSaveMemo: (memo: string) => void;
+  onSaveCondition: (condition: SetConditionInput) => void;
+  onSaveMemo: (memo: SetMemoInput) => void;
 };
 
 export function DayMetaPanel({ condition, memo, onSaveCondition, onSaveMemo }: DayMetaPanelProps) {

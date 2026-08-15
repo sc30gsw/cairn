@@ -1,13 +1,8 @@
 import { Card, Progress, Stack, Text } from "@mantine/core";
 
-import { computeWeeklyProgress } from "~/lib/weekly-progress";
+import { computeWeeklyProgress, type WeeklyProgressInput } from "~/lib/weekly-progress";
 
-type WeeklyProgressCardProps = {
-  todayJst: string;
-  volumeMinutes: number;
-  weekEndJst: string;
-  weeklyGoalMinutes: null | number;
-};
+type WeeklyProgressCardProps = WeeklyProgressInput;
 
 export function WeeklyProgressCard({
   todayJst,

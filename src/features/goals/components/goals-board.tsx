@@ -7,16 +7,23 @@ import { ExamSchema } from "~/features/goals/schemas/exam-schema";
 import { ObstacleSchema } from "~/features/goals/schemas/obstacle-schema";
 import { WeeklySchema } from "~/features/goals/schemas/weekly-schema";
 import type { ExamGoal, Obstacle } from "~/features/goals/types/goal";
+import type {
+  CreateObstacleInput,
+  RemoveObstacleInput,
+  SaveExamInput,
+  SaveWeeklyInput,
+  UpdateObstacleInput,
+} from "~/features/goals/types/mutations";
 import { BODY_FONT, DISPLAY_FONT } from "~/lib/theme";
 
 type GoalsBoardProps = {
   exam: ExamGoal;
   obstacles: Obstacle[];
-  onCreateObstacle: (input: { ifText: string; thenText: string }) => void;
-  onRemoveObstacle: (planId: Obstacle["_id"]) => void;
-  onSaveExam: (input: { examDate: string; maxScore: number; minScore: number }) => void;
-  onSaveWeekly: (minutes: number) => void;
-  onUpdateObstacle: (input: { ifText: string; planId: Obstacle["_id"]; thenText: string }) => void;
+  onCreateObstacle: (input: CreateObstacleInput) => void;
+  onRemoveObstacle: (planId: RemoveObstacleInput["planId"]) => void;
+  onSaveExam: (input: SaveExamInput) => void;
+  onSaveWeekly: (minutes: SaveWeeklyInput) => void;
+  onUpdateObstacle: (input: UpdateObstacleInput) => void;
   todayJst: string;
   volumeMinutes: number;
   weekEndJst: string;

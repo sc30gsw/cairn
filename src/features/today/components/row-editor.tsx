@@ -17,13 +17,18 @@ import { useEffect, type ChangeEvent } from "react";
 
 import { RowEditorSchema } from "~/features/today/schemas/row-editor-schema";
 import type { DayRow } from "~/features/today/types/day";
+import type {
+  ConfirmRowInput,
+  RemoveRowInput,
+  SkipRowInput,
+} from "~/features/today/types/mutations";
 import { RECORD_STATUS_UI, statusTooltip } from "~/lib/record-status-ui";
 
 type RowEditorProps = {
   disabled?: boolean;
-  onConfirm: (input: { content: string; minutes: number; rowId: DayRow["_id"] }) => void;
-  onRemove: (rowId: DayRow["_id"]) => void;
-  onSkip: (rowId: DayRow["_id"]) => void;
+  onConfirm: (input: ConfirmRowInput) => void;
+  onRemove: (rowId: RemoveRowInput["rowId"]) => void;
+  onSkip: (rowId: SkipRowInput["rowId"]) => void;
   row: DayRow;
 };
 
@@ -82,7 +87,7 @@ function RowStatusSwitch({
   );
 }
 
-function requestSkip(rowId: DayRow["_id"], onSkip: (rowId: DayRow["_id"]) => void) {
+function requestSkip(rowId: SkipRowInput["rowId"], onSkip: (rowId: SkipRowInput["rowId"]) => void) {
   modals.openConfirmModal({
     children: "学習量からは外れます。",
     confirmProps: { color: "yellow" },

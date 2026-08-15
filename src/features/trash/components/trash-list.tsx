@@ -1,14 +1,20 @@
 import { Button, Card, Grid, Group, Modal, Stack, Text, Title } from "@mantine/core";
 import { useState } from "react";
 
+import type {
+  PurgeDayInput,
+  PurgeRowInput,
+  RestoreDayInput,
+  RestoreRowInput,
+} from "~/features/trash/types/mutations";
 import type { TrashDay, TrashPage, TrashRow } from "~/features/trash/types/trash";
 import { trashStatusLabel } from "~/lib/record-status-ui";
 
 type TrashListProps = {
-  onPurgeDay: (dayId: TrashDay["_id"]) => void;
-  onPurgeRow: (rowId: TrashRow["_id"]) => void;
-  onRestoreDay: (dayId: TrashDay["_id"]) => void;
-  onRestoreRow: (rowId: TrashRow["_id"]) => void;
+  onPurgeDay: (dayId: PurgeDayInput["dayId"]) => void;
+  onPurgeRow: (rowId: PurgeRowInput["rowId"]) => void;
+  onRestoreDay: (dayId: RestoreDayInput["dayId"]) => void;
+  onRestoreRow: (rowId: RestoreRowInput["rowId"]) => void;
   trash: TrashPage;
 };
 

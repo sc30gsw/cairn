@@ -12,14 +12,13 @@ import { useEnsureCatalog } from "~/features/catalog/hooks/use-ensure-catalog";
 import { HistoryAnalysisPanel } from "~/features/history/components/analysis/history-analysis-panel";
 import { HistoryMonthView } from "~/features/history/components/history-month-view";
 import { WeekAgenda } from "~/features/history/components/week-agenda";
+import type { AnalysisScope } from "~/features/history/schemas/analysis-scope-schema";
 
 import tabBarClasses from "~/features/history/components/history-tab-bar.module.css";
 
 export const Route = createFileRoute("/history")({
   component: HistoryRoute,
 });
-
-type AnalysisScope = "day" | "month" | "week";
 
 function HistoryRoute() {
   return (

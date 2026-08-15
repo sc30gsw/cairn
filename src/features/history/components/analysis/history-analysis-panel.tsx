@@ -15,6 +15,7 @@ import {
   PACE_CHART_SERIES,
   type PaceChartPoint,
 } from "~/features/history/lib/chart-data";
+import type { AnalysisScope } from "~/features/history/schemas/analysis-scope-schema";
 import type {
   DayBreakdown,
   HeatmapDay,
@@ -23,8 +24,6 @@ import type {
 } from "~/features/history/types/history";
 
 import tabBarClasses from "~/features/history/components/history-tab-bar.module.css";
-
-type AnalysisScope = "day" | "month" | "week";
 
 type HistoryAnalysisPanelProps = {
   day: DayBreakdown;

@@ -22,24 +22,26 @@ import { CategorySchema } from "~/features/catalog/schemas/category-schema";
 import { ItemNameSchema } from "~/features/catalog/schemas/item-schema";
 import type { CategoryDto, ItemDto } from "~/features/catalog/types/item";
 import { parseCategoryId } from "~/features/catalog/types/item";
+import type {
+  CreateCategoryInput,
+  CreateItemInput,
+  RemoveCategoryInput,
+  RemoveItemInput,
+  RenameCategoryInput,
+  RenameItemInput,
+  ReorderItemsInput,
+} from "~/features/catalog/types/mutations";
 
 type ItemListProps = {
   categories: CategoryDto[];
   items: ItemDto[];
-  onCreateCategory: (input: { name: string }) => void;
-  onCreateItem: (input: { categoryId: CategoryDto["_id"]; name: string }) => void;
-  onRemoveCategory: (categoryId: CategoryDto["_id"]) => void;
-  onRemoveItem: (itemId: ItemDto["_id"]) => void;
-  onRenameCategory: (input: { categoryId: CategoryDto["_id"]; name: string }) => void;
-  onRenameItem: (input: {
-    categoryId: CategoryDto["_id"];
-    itemId: ItemDto["_id"];
-    name: string;
-  }) => void | Promise<void>;
-  onReorderItems: (input: {
-    categoryId: CategoryDto["_id"];
-    orderedItemIds: ItemDto["_id"][];
-  }) => void | Promise<void>;
+  onCreateCategory: (input: CreateCategoryInput) => void;
+  onCreateItem: (input: CreateItemInput) => void;
+  onRemoveCategory: (categoryId: RemoveCategoryInput["categoryId"]) => void;
+  onRemoveItem: (itemId: RemoveItemInput["itemId"]) => void;
+  onRenameCategory: (input: RenameCategoryInput) => void;
+  onRenameItem: (input: RenameItemInput) => void | Promise<void>;
+  onReorderItems: (input: ReorderItemsInput) => void | Promise<void>;
 };
 
 export function ItemList({

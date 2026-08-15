@@ -12,8 +12,31 @@ const EXCLUDE = new Set([
 
 const SKIP_DIRS = new Set([".git", ".pnpm-store", ".tanstack", "dist", "node_modules"]);
 
-const pattern =
-  /("スキップ"\s*\|\s*"未着手"\s*\|\s*"確定"|"確定"\s*\|\s*"未着手"\s*\|\s*"スキップ"|type\s+\w*Status\w*\s*=\s*")/;
+const patterns = [
+  {
+    name: "手書き status union",
+    regex:
+      /("スキップ"\s*\|\s*"未着手"\s*\|\s*"確定"|"確定"\s*\|\s*"未着手"\s*\|\s*"スキップ"|type\s+\w*Status\w*\s*=\s*")/,
+    hint: "status union は convex/lib/domain.ts の STATUSES から導出してください。",
+  },
+  {
+    name: "重複 AppShellUser 定義",
+    regex: /type\s+AppShellUser\s*=\s*\{/,
+    onlyOutside: "src/features/auth/types/session.ts",
+    hint: "AppShellUser は src/features/auth/types/session.ts から import してください。",
+  },
+  {
+    name: "重複 AnalysisScope 定義",
+    regex: /type\s+AnalysisScope\s*=\s*"/,
+    onlyOutside: "src/features/history/schemas/analysis-scope-schema.ts",
+    hint: "AnalysisScope は analysis-scope-schema.ts から import してください。",
+  },
+  {
+    name: "手書き condition union",
+    regex: /"好調"\s*\|\s*"普通"\s*\|\s*"崩れた"/,
+    hint: "condition union は ~domain/conditions の Condition を使ってください。",
+  },
+];
 
 async function* walk(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
@@ -39,18 +62,21 @@ for await (const filePath of walk(ROOT)) {
 
   const content = await readFile(filePath, "utf8");
   for (const [index, line] of content.split("\n").entries()) {
-    if (pattern.test(line)) {
-      violations.push(`${rel}:${index + 1}:${line.trim()}`);
+    for (const { name, regex, onlyOutside, hint } of patterns) {
+      if (onlyOutside !== undefined && rel === onlyOutside) continue;
+      if (regex.test(line)) {
+        violations.push({ file: rel, hint, line: index + 1, name, text: line.trim() });
+      }
     }
   }
 }
 
 if (violations.length > 0) {
-  console.error("手書き status union が見つかりました:\n");
-  console.error(violations.join("\n"));
-  console.error(
-    "\n型 SSoT 違反: status union は convex/lib/domain.ts の STATUSES から導出してください。",
-  );
+  console.error("型 SSoT 違反が見つかりました:\n");
+  for (const violation of violations) {
+    console.error(`${violation.file}:${violation.line} [${violation.name}] ${violation.text}`);
+    console.error(`  → ${violation.hint}\n`);
+  }
   process.exit(1);
 }
 
