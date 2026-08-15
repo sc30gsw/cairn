@@ -21,11 +21,7 @@ test("プリセット適用はすべて未着手", () => {
 
 test("切替は未着手だけ差し替え、確定とスキップは残る", () => {
   expect(
-    keptRowsAfterSwitch([
-      { status: "確定" },
-      { status: "スキップ" },
-      { status: "未着手" },
-    ]),
+    keptRowsAfterSwitch([{ status: "確定" }, { status: "スキップ" }, { status: "未着手" }]),
   ).toEqual([{ status: "確定" }, { status: "スキップ" }]);
 });
 

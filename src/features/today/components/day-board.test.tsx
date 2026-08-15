@@ -60,7 +60,7 @@ test("ログイン済みなら今日の未着手行が見える", () => {
   expect(getByText("未着手")).toBeDefined();
 });
 
-test("確定とスキップが画面上で呼べる", () => {
+test("確定とスキップが画面上で呼べる", async () => {
   const onConfirm = vi.fn();
   const onSkip = vi.fn();
   const { getByRole } = renderWithMantine(
@@ -83,10 +83,12 @@ test("確定とスキップが画面上で呼べる", () => {
     />,
   );
   getByRole("button", { name: "確定" }).click();
-  expect(onConfirm).toHaveBeenCalledWith({
-    content: "",
-    minutes: 30,
-    rowId: row._id,
+  await vi.waitFor(() => {
+    expect(onConfirm).toHaveBeenCalledWith({
+      content: "",
+      minutes: 30,
+      rowId: row._id,
+    });
   });
   expect((getByRole("button", { name: "確定" }) as HTMLButtonElement).type).toBe("submit");
   getByRole("button", { name: "スキップ" }).focus();

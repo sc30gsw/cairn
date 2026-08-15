@@ -331,4 +331,3 @@ test("プリセット雛形だけの項目は消せない", async () => {
   }
   await expect(t.mutation(api.items.remove, { itemId: distinction._id })).rejects.toThrow();
 });
-

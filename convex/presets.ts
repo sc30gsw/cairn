@@ -69,7 +69,12 @@ async function assertWeekdayFree(
     .query("presets")
     .withIndex("by_owner_and_weekday", (q) => q.eq("ownerId", ownerId).eq("weekday", weekday))
     .collect();
-  const taken = existing.filter((preset) => preset._id !== ignoreId).map((preset) => preset.weekday);
+  const taken = [];
+  for (const preset of existing) {
+    if (preset._id !== ignoreId) {
+      taken.push(preset.weekday);
+    }
+  }
   if (weekdayAlreadyTaken(weekday, taken)) {
     throwDomain(new ConflictError({ message: "各曜日はプリセット1つだけです" }));
   }

@@ -1,6 +1,5 @@
 import { AgendaView } from "@mantine/schedule";
 import type { FunctionReturnType } from "convex/server";
-
 import { addDaysJst } from "~domain/jst";
 
 import type { api } from "~/../convex/_generated/api";
