@@ -56,6 +56,7 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
                 {...field.props}
                 error={field.errors?.[0]}
                 label="内容"
+                placeholder="学習内容を入力"
                 value={field.input}
               />
             )}

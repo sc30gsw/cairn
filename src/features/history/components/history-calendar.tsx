@@ -36,7 +36,9 @@ export function HistoryCalendar({ days, month, onMonthChange, onOpenDate }: Hist
     <Card>
       <Stack align="center" gap="sm">
         <Text c="dimmed" maw={360} size="sm" ta="center">
-          各日の学習時間と、7日間の1日平均（均）。記録がない日は0分として数えます。
+          各日の学習時間と、7日間の1日平均（均）。
+          <br />
+          記録がない日は0分として数えます。
         </Text>
         <Calendar
           date={month}

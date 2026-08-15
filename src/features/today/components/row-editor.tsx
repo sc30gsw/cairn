@@ -121,7 +121,7 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
                 disabled={disabled}
                 error={field.errors?.[0]}
                 label={contentLabel}
-                placeholder="Unit 1"
+                placeholder="学習内容を入力"
                 value={field.input}
               />
             )}
