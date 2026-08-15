@@ -2,6 +2,7 @@ import { Field, Form, reset, useForm } from "@formisch/react";
 import { Button, Card, Grid, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 
+import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
 import { ExamSchema } from "~/features/goals/schemas/exam-schema";
 import { ObstacleSchema } from "~/features/goals/schemas/obstacle-schema";
 import { WeeklySchema } from "~/features/goals/schemas/weekly-schema";
@@ -16,7 +17,9 @@ type GoalsBoardProps = {
   onSaveExam: (input: { examDate: string; maxScore: number; minScore: number }) => void;
   onSaveWeekly: (minutes: number) => void;
   onUpdateObstacle: (input: { ifText: string; planId: Obstacle["_id"]; thenText: string }) => void;
+  todayJst: string;
   volumeMinutes: number;
+  weekEndJst: string;
   weeklyGoalMinutes: null | number;
 };
 
@@ -28,7 +31,9 @@ export function GoalsBoard({
   onSaveExam,
   onSaveWeekly,
   onUpdateObstacle,
+  todayJst,
   volumeMinutes,
+  weekEndJst,
   weeklyGoalMinutes,
 }: GoalsBoardProps) {
   const examForm = useForm({
@@ -124,9 +129,12 @@ export function GoalsBoard({
         <Card h="100%">
           <Stack gap="md">
             <Title order={2}>週間ゴール</Title>
-            <Text>
-              今週の学習量 {volumeMinutes}分 / ゴール {weeklyGoalMinutes ?? "未設定"}分
-            </Text>
+            <WeeklyProgressCard
+              todayJst={todayJst}
+              volumeMinutes={volumeMinutes}
+              weekEndJst={weekEndJst}
+              weeklyGoalMinutes={weeklyGoalMinutes}
+            />
             <Form
               of={weeklyForm}
               onSubmit={(output) => {

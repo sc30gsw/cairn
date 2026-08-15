@@ -9,17 +9,21 @@ test("カテゴリーの下に学習内容が並び、カテゴリーも編集�
   const { getByRole, getByLabelText } = renderWithMantine(
     <>
       <ItemList
-        categories={[{ _id: "c1" as never, name: "多聴", sortOrder: 1 }]}
-        items={[{ _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000" }]}
+        categories={[
+          { _id: "c1" as never, name: "多聴", sortOrder: 1 },
+          { _id: "c2" as never, name: "英会話", sortOrder: 2 },
+        ]}
+        items={[{ _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 }]}
         onCreateCategory={vi.fn()}
         onCreateItem={vi.fn()}
         onRemoveCategory={vi.fn()}
         onRemoveItem={vi.fn()}
         onRenameCategory={vi.fn()}
         onRenameItem={vi.fn()}
+        onReorderItems={vi.fn()}
       />
       <PresetList
-        items={[{ _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000" }]}
+        items={[{ _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 }]}
         onCreate={vi.fn()}
         onRemove={vi.fn()}
         onUpdate={vi.fn()}
@@ -38,12 +42,11 @@ test("カテゴリーの下に学習内容が並び、カテゴリーも編集�
     </>,
   );
   expect(getByRole("button", { name: "カテゴリーを追加" })).toBeDefined();
-  expect(getByRole("button", { name: "学習内容を追加" })).toBeDefined();
-  expect(getByRole("button", { name: "多聴を更新" })).toBeDefined();
+  expect(getByRole("button", { name: "多聴を保存" })).toBeDefined();
   expect(getByRole("button", { name: "多聴を削除" })).toBeDefined();
-  expect(getByRole("button", { name: "Distinction 2000を更新" })).toBeDefined();
+  expect(getByRole("button", { name: "Distinction 2000を保存" })).toBeDefined();
   expect(getByRole("button", { name: "Distinction 2000を削除" })).toBeDefined();
-  expect(getByRole("combobox", { name: "Distinction 2000のカテゴリー" })).toBeDefined();
+  expect(getByRole("button", { name: "Distinction 2000を別のカテゴリーへ移動" })).toBeDefined();
   expect(getByRole("button", { name: "プリセットを追加" })).toBeDefined();
   expect(getByRole("combobox", { name: "曜日" })).toBeDefined();
   expect(getByRole("button", { name: "月曜日を保存" })).toBeDefined();
@@ -56,7 +59,7 @@ test("カテゴリーの下に学習内容が並び、カテゴリーも編集�
 test("プリセット追加は未登録の曜日だけ選べ、1つだけならそれが初期値", () => {
   const { getByRole } = renderWithMantine(
     <PresetList
-      items={[{ _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000" }]}
+      items={[{ _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 }]}
       onCreate={vi.fn()}
       onRemove={vi.fn()}
       onUpdate={vi.fn()}
@@ -108,7 +111,7 @@ test("プリセット追加は未登録の曜日だけ選べ、1つだけなら�
 test("プリセット追加は未登録曜日が2つ以上なら初期値は空", () => {
   const { getByRole } = renderWithMantine(
     <PresetList
-      items={[{ _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000" }]}
+      items={[{ _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 }]}
       onCreate={vi.fn()}
       onRemove={vi.fn()}
       onUpdate={vi.fn()}
@@ -132,8 +135,8 @@ test("プリセット雛形を足すと未使用の項目が選ばれる", () =>
   const { getByRole } = renderWithMantine(
     <PresetList
       items={[
-        { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000" },
-        { _id: "i2" as never, categoryId: "c1" as never, name: "英会話" },
+        { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
+        { _id: "i2" as never, categoryId: "c1" as never, name: "英会話", sortOrder: 1 },
       ]}
       onCreate={vi.fn()}
       onRemove={vi.fn()}
@@ -161,8 +164,8 @@ test("プリセット雛形ですべての項目を使うと雛形を足すは�
   const { getByRole } = renderWithMantine(
     <PresetList
       items={[
-        { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000" },
-        { _id: "i2" as never, categoryId: "c1" as never, name: "英会話" },
+        { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
+        { _id: "i2" as never, categoryId: "c1" as never, name: "英会話", sortOrder: 1 },
       ]}
       onCreate={vi.fn()}
       onRemove={vi.fn()}

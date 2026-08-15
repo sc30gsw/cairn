@@ -27,7 +27,7 @@ type RowEditorProps = {
 const STATUS_BADGE = {
   スキップ: { color: "yellow", label: "見送り" },
   未着手: { color: "gray", label: "未着手" },
-  確定: { color: "cyan", label: "完了" },
+  確定: { color: "blue", label: "完了" },
 } as const satisfies Record<DayRow["status"], { color: string; label: string }>;
 
 function statusTooltip(status: DayRow["status"]) {
@@ -84,7 +84,7 @@ function RowStatusSwitch({
       <Switch
         aria-label="記録を確定"
         checked={checked}
-        color="cyan"
+        color="blue"
         disabled={disabled}
         offLabel={<XIcon />}
         onChange={onChange}

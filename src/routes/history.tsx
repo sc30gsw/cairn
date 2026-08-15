@@ -1,19 +1,23 @@
 import { convexQuery } from "@convex-dev/react-query";
-import { Grid, Title } from "@mantine/core";
+import { Card, ScrollArea, Tabs, Title } from "@mantine/core";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense, useState } from "react";
-import { todayJst } from "~domain/jst";
+import { mondayOfWeek, todayJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
 import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
-import { HistoryCalendar } from "~/features/history/components/history-calendar";
+import { useEnsureCatalog } from "~/features/catalog/hooks/use-ensure-catalog";
+import { HistoryAnalysisPanel } from "~/features/history/components/analysis/history-analysis-panel";
+import { HistoryMonthView } from "~/features/history/components/history-month-view";
 import { WeekAgenda } from "~/features/history/components/week-agenda";
 
 export const Route = createFileRoute("/history")({
   component: HistoryRoute,
 });
+
+type AnalysisScope = "day" | "month" | "week";
 
 function HistoryRoute() {
   return (
@@ -26,33 +30,79 @@ function HistoryRoute() {
 }
 
 function HistoryReady() {
-  const navigate = useNavigate();
+  useEnsureCatalog();
   const today = todayJst();
   const [month, setMonth] = useState(() => new Date(`${today}T12:00:00+09:00`));
+  const [selectedDateJst, setSelectedDateJst] = useState(today);
+  const [activeTab, setActiveTab] = useState<string | null>("month");
+  const [analysisScope, setAnalysisScope] = useState<AnalysisScope>("day");
   const yearMonth = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`;
+  const weekAnchor = mondayOfWeek(selectedDateJst);
+
   const { data: monthData } = useSuspenseQuery(
     convexQuery(api.history.month, { todayJst: today, yearMonth }),
   );
-  const { data: week } = useSuspenseQuery(convexQuery(api.history.week, { dateJst: today }));
+  const { data: monthBreakdown } = useSuspenseQuery(
+    convexQuery(api.history.monthBreakdown, { todayJst: today, yearMonth }),
+  );
+  const { data: week } = useSuspenseQuery(convexQuery(api.history.week, { dateJst: weekAnchor }));
+  const { data: weekBreakdown } = useSuspenseQuery(
+    convexQuery(api.history.weekBreakdown, { dateJst: weekAnchor }),
+  );
+  const { data: dayBreakdown } = useSuspenseQuery(
+    convexQuery(api.history.dayBreakdown, { dateJst: selectedDateJst }),
+  );
 
   return (
-    <Grid gap="md">
-      <Grid.Col span={12}>
-        <Title order={1}>履歴</Title>
-      </Grid.Col>
-      <Grid.Col span={{ base: 12, lg: 5 }}>
-        <HistoryCalendar
-          days={monthData.days}
-          month={month}
-          onMonthChange={setMonth}
-          onOpenDate={(dateJst) => {
-            void navigate({ params: { dateJst }, to: "/days/$dateJst" });
-          }}
-        />
-      </Grid.Col>
-      <Grid.Col span={{ base: 12, lg: 7 }}>
-        <WeekAgenda week={week} />
-      </Grid.Col>
-    </Grid>
+    <>
+      <Title mb="md" order={1}>
+        履歴
+      </Title>
+      <Tabs onChange={setActiveTab} value={activeTab}>
+        <Tabs.List>
+          <Tabs.Tab value="month">月</Tabs.Tab>
+          <Tabs.Tab value="week">週</Tabs.Tab>
+          <Tabs.Tab value="analysis">分析</Tabs.Tab>
+        </Tabs.List>
+
+        <Tabs.Panel pt="md" value="month">
+          <HistoryMonthView
+            days={monthData.days}
+            month={month}
+            onDayClick={(dateJst) => {
+              setSelectedDateJst(dateJst);
+              setAnalysisScope("day");
+              setActiveTab("analysis");
+            }}
+            onMonthChange={setMonth}
+          />
+        </Tabs.Panel>
+
+        <Tabs.Panel pt="md" value="week">
+          <ScrollArea.Autosize mah={640} offsetScrollbars type="auto">
+            <WeekAgenda todayJst={today} week={week} />
+          </ScrollArea.Autosize>
+        </Tabs.Panel>
+
+        <Tabs.Panel pt="md" value="analysis">
+          <Card>
+            <HistoryAnalysisPanel
+              day={dayBreakdown}
+              month={monthBreakdown}
+              onScopeChange={setAnalysisScope}
+              scope={analysisScope}
+              selectedDateJst={selectedDateJst}
+              todayJst={today}
+              week={weekBreakdown}
+            />
+          </Card>
+          <Card mt="md" padding="md">
+            <Link params={{ dateJst: selectedDateJst }} to="/days/$dateJst">
+              選択中の日 ({selectedDateJst}) を編集
+            </Link>
+          </Card>
+        </Tabs.Panel>
+      </Tabs>
+    </>
   );
 }

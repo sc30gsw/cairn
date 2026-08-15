@@ -33,6 +33,11 @@ export function OwnerGate({ children }: Record<"children", ReactNode>) {
           },
         });
       }}
+      user={{
+        email: session.data.user.email,
+        image: session.data.user.image,
+        name: session.data.user.name,
+      }}
     >
       {children}
     </AppShell>

@@ -9,6 +9,7 @@ import {
 } from "./lib/catalog";
 import { SEED_CATEGORIES } from "./lib/categories";
 import { NotFoundError, ValidationFailedError } from "./lib/errors";
+import { compareItemsBySortOrder } from "./lib/itemSort";
 import { isFutureDateJst } from "./lib/jst";
 import { throwDomain } from "./ownerFunctions";
 
@@ -65,6 +66,33 @@ async function backfillItemCategories(
   );
 }
 
+export async function backfillItemSortOrders(ctx: MutationCtx, ownerId: string): Promise<void> {
+  const items = await ctx.db
+    .query("items")
+    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+    .collect();
+  const byCategory = new Map<Id<"categories">, typeof items>();
+  for (const item of items) {
+    if (item.categoryId === undefined) {
+      continue;
+    }
+    const bucket = byCategory.get(item.categoryId) ?? [];
+    bucket.push(item);
+    byCategory.set(item.categoryId, bucket);
+  }
+  await Promise.all(
+    [...byCategory.entries()].flatMap(([, categoryItems]) => {
+      const ordered = categoryItems.toSorted(compareItemsBySortOrder);
+      return ordered.map((item, sortOrder) => {
+        if (item.sortOrder === sortOrder) {
+          return Promise.resolve();
+        }
+        return ctx.db.patch(item._id, { sortOrder });
+      });
+    }),
+  );
+}
+
 export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<void> {
   const [nameToId, existingItems] = await Promise.all([
     categoriesByName(ctx, ownerId),
@@ -74,22 +102,28 @@ export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<
       .collect(),
   ]);
   if (existingItems.length === 0) {
+    const sortOrderByCategory = new Map<Id<"categories">, number>();
     await Promise.all(
       SEED_ITEMS.map((item) => {
         const categoryId = nameToId.get(item.category);
         if (categoryId === undefined) {
           return Promise.resolve();
         }
+        const sortOrder = sortOrderByCategory.get(categoryId) ?? 0;
+        sortOrderByCategory.set(categoryId, sortOrder + 1);
         return ctx.db.insert("items", {
           categoryId,
           name: item.name,
           ownerId,
+          sortOrder,
         });
       }),
     );
   } else {
     await backfillItemCategories(ctx, ownerId, nameToId);
   }
+
+  await backfillItemSortOrders(ctx, ownerId);
 
   const items = await ctx.db
     .query("items")

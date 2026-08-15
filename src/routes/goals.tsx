@@ -56,6 +56,8 @@ function GoalsReady() {
         void updateObstacle.mutateAsync(input);
       }}
       volumeMinutes={week.volumeMinutes}
+      weekEndJst={week.weekEnd}
+      todayJst={today}
       weeklyGoalMinutes={week.weeklyGoalMinutes}
     />
   );

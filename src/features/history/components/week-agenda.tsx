@@ -2,6 +2,8 @@ import { Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
 import type { FunctionReturnType } from "convex/server";
 import { addDaysJst } from "~domain/jst";
 
+import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
+
 import type { api } from "~/../convex/_generated/api";
 
 type WeekPage = FunctionReturnType<typeof api.history.week>;
@@ -10,7 +12,7 @@ type WeekEvent = WeekPage["events"][number];
 const STATUS_BADGE = {
   スキップ: { color: "yellow", label: "見送り" },
   未着手: { color: "gray", label: "未着手" },
-  確定: { color: "cyan", label: "完了" },
+  確定: { color: "blue", label: "完了" },
 } as const satisfies Record<WeekEvent["status"], { color: string; label: string }>;
 
 const DATE_HEADER_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
@@ -74,7 +76,13 @@ function WeekEventRow({ event }: { event: WeekEvent }) {
   );
 }
 
-export function WeekAgenda({ week }: Record<"week", WeekPage>) {
+export function WeekAgenda({
+  todayJst,
+  week,
+}: {
+  todayJst: string;
+  week: WeekPage;
+}) {
   const eventsByDate = new Map<string, WeekEvent[]>();
   for (const event of week.events) {
     const bucket = eventsByDate.get(event.dateJst) ?? [];
@@ -89,20 +97,12 @@ export function WeekAgenda({ week }: Record<"week", WeekPage>) {
         <Text c="dimmed" mt={4} size="sm">
           今日を含む週（{formatWeekRange(week.weekStart, week.weekEnd)}）
         </Text>
-        <Group gap="md" mt="sm">
-          <Text size="sm">
-            週間ゴール{" "}
-            <Text component="span" fw={600}>
-              {week.weeklyGoalMinutes ?? "未設定"}分
-            </Text>
-          </Text>
-          <Text size="sm">
-            実績{" "}
-            <Text component="span" fw={600}>
-              {week.volumeMinutes}分
-            </Text>
-          </Text>
-        </Group>
+        <WeeklyProgressCard
+          todayJst={todayJst}
+          volumeMinutes={week.volumeMinutes}
+          weekEndJst={week.weekEnd}
+          weeklyGoalMinutes={week.weeklyGoalMinutes}
+        />
         <Stack gap="lg" mt="lg">
           {weekDates(week.weekStart).map((dateJst) => {
             const dayEvents = eventsByDate.get(dateJst) ?? [];

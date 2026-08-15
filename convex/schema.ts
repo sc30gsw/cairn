@@ -42,10 +42,12 @@ export default defineSchema({
     categoryId: v.optional(v.id("categories")),
     name: v.string(),
     ownerId: v.string(),
+    sortOrder: v.optional(v.number()),
   })
     .index("by_owner", ["ownerId"])
     .index("by_owner_and_name", ["ownerId", "name"])
-    .index("by_category", ["categoryId"]),
+    .index("by_category", ["categoryId"])
+    .index("by_category_and_sortOrder", ["categoryId", "sortOrder"]),
 
   obstaclePlans: defineTable({
     ifText: v.string(),

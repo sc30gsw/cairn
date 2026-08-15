@@ -49,6 +49,7 @@ export const itemDtoValidator = v.object({
   _id: v.id("items"),
   categoryId: v.id("categories"),
   name: v.string(),
+  sortOrder: v.number(),
 });
 
 export const categoryDtoValidator = v.object({

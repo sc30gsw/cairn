@@ -1,19 +1,19 @@
 import { expect, test, vi } from "vite-plus/test";
 
-import { HistoryCalendar } from "~/features/history/components/history-calendar";
+import { HistoryMonthView } from "~/features/history/components/history-month-view";
 import { WeekAgenda } from "~/features/history/components/week-agenda";
 import { renderWithMantine } from "~/test-utils/render";
 
 test("空マスが休養に見える", () => {
   const { getByText } = renderWithMantine(
-    <HistoryCalendar
+    <HistoryMonthView
       days={[
         { dateJst: "2026-08-15", isRest: true, minutes: 0, movingAverage: 0 },
         { dateJst: "2026-08-17", isRest: false, minutes: 30, movingAverage: 10 },
       ]}
       month={new Date("2026-08-15T12:00:00+09:00")}
+      onDayClick={vi.fn()}
       onMonthChange={vi.fn()}
-      onOpenDate={vi.fn()}
     />,
   );
   expect(getByText(/休養/)).toBeDefined();
@@ -23,9 +23,11 @@ test("空マスが休養に見える", () => {
 test("週の行がタイトルとステータスで見える", () => {
   const { getAllByText, getByText } = renderWithMantine(
     <WeekAgenda
+      todayJst="2026-08-17"
       week={{
         events: [
           {
+            category: "多聴",
             dateJst: "2026-08-17",
             minutes: 30,
             rowId: "r1" as never,
