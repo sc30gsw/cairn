@@ -4,7 +4,6 @@ import type { ConvexQueryClient } from "@convex-dev/react-query";
 import {
   ColorSchemeScript,
   Container,
-  Loader,
   MantineProvider,
   Text,
   Title,
@@ -23,6 +22,7 @@ import {
 import { createServerFn } from "@tanstack/react-start";
 import "dayjs/locale/ja";
 import { Suspense, lazy, type ReactNode } from "react";
+import { PendingComponent } from "~/components/pending-component";
 
 import { authClient } from "~/lib/auth-client";
 import { getToken } from "~/lib/auth-server";
@@ -150,10 +150,4 @@ function ErrorComponent({ error }: ErrorComponentProps) {
   );
 }
 
-function PendingComponent() {
-  return (
-    <Container py="xl">
-      <Loader aria-label="読み込み中" />
-    </Container>
-  );
-}
+

@@ -1,9 +1,9 @@
 import { convexQuery } from "@convex-dev/react-query";
-import { Loader } from "@mantine/core";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 
 import { api } from "~/../convex/_generated/api";
+import { PendingComponent } from "~/components/pending-component";
 import { DayBoard } from "~/features/today/components/day-board";
 import { useOpenAndLoadDay } from "~/features/today/hooks/use-open-and-load-day";
 import { todayJst } from "~/lib/date-jst";
@@ -11,7 +11,7 @@ import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export function DayPage({ dateJst }: Record<"dateJst", string>) {
   return (
-    <Suspense fallback={<Loader aria-label="読み込み中" />}>
+    <Suspense fallback={<PendingComponent />}>
       <DayPageReady dateJst={dateJst} />
     </Suspense>
   );

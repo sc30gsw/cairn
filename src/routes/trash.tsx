@@ -1,10 +1,10 @@
 import { convexQuery } from "@convex-dev/react-query";
-import { Loader } from "@mantine/core";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 
 import { api } from "~/../convex/_generated/api";
+import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { TrashList } from "~/features/trash/components/trash-list";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/trash")({
 function TrashRoute() {
   return (
     <OwnerGate>
-      <Suspense fallback={<Loader aria-label="読み込み中" />}>
+      <Suspense fallback={<PendingComponent />}>
         <TrashReady />
       </Suspense>
     </OwnerGate>

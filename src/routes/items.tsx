@@ -1,10 +1,11 @@
 import { convexQuery } from "@convex-dev/react-query";
-import { Loader, Stack, Title } from "@mantine/core";
+import { Stack, Title } from "@mantine/core";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 
 import { api } from "~/../convex/_generated/api";
+import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { ItemList } from "~/features/catalog/components/item-list";
 import { PresetList } from "~/features/catalog/components/preset-list";
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/items")({
 function ItemsRoute() {
   return (
     <OwnerGate>
-      <Suspense fallback={<Loader aria-label="読み込み中" />}>
+      <Suspense fallback={<PendingComponent />}>
         <ItemsReady />
       </Suspense>
     </OwnerGate>

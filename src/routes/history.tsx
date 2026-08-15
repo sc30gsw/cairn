@@ -1,10 +1,11 @@
 import { convexQuery } from "@convex-dev/react-query";
-import { Loader, Stack, Title } from "@mantine/core";
+import { Stack, Title } from "@mantine/core";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Suspense, useState } from "react";
 
 import { api } from "~/../convex/_generated/api";
+import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { HistoryCalendar } from "~/features/history/components/history-calendar";
 import { WeekAgenda } from "~/features/history/components/week-agenda";
@@ -17,7 +18,7 @@ export const Route = createFileRoute("/history")({
 function HistoryRoute() {
   return (
     <OwnerGate>
-      <Suspense fallback={<Loader aria-label="読み込み中" />}>
+      <Suspense fallback={<PendingComponent />}>
         <HistoryReady />
       </Suspense>
     </OwnerGate>

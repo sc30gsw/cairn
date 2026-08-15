@@ -1,5 +1,4 @@
 import { convexQuery } from "@convex-dev/react-query";
-import { Loader } from "@mantine/core";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
@@ -10,6 +9,7 @@ import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { GoalsBoard } from "~/features/goals/components/goals-board";
 import { todayJst } from "~/lib/date-jst";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
+import { PendingComponent } from "~/components/pending-component";
 
 export const Route = createFileRoute("/goals")({
   component: GoalsRoute,
@@ -18,7 +18,7 @@ export const Route = createFileRoute("/goals")({
 function GoalsRoute() {
   return (
     <OwnerGate>
-      <Suspense fallback={<Loader aria-label="読み込み中" />}>
+      <Suspense fallback={<PendingComponent />}>
         <GoalsReady />
       </Suspense>
     </OwnerGate>
