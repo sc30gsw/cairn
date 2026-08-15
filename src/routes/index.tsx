@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { todayJst } from "~domain/jst";
 
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { DayPage } from "~/features/today/components/day-page";
-import { todayJst } from "~domain/jst";
 
 export const Route = createFileRoute("/")({
   component: HomeRoute,

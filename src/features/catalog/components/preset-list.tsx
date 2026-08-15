@@ -14,6 +14,13 @@ type PresetLineDraft = {
   minutes: number;
 };
 
+type PresetLineDto = {
+  content: string;
+  itemId: ItemDto["_id"];
+  itemName: string;
+  minutes: number;
+};
+
 type PresetListProps = {
   items: ItemDto[];
   onCreate: (input: {
@@ -151,7 +158,7 @@ function PresetEditor({
   preset: PresetDto;
 }) {
   const [lines, setLines] = useState<PresetLineDraft[]>(() =>
-    preset.lines.map((line) => ({
+    preset.lines.map((line: PresetLineDto) => ({
       content: line.content,
       itemId: line.itemId,
       minutes: line.minutes,
@@ -159,7 +166,7 @@ function PresetEditor({
   );
   const form = useForm({
     initialInput: {
-      lines: preset.lines.map((line) => ({
+      lines: preset.lines.map((line: PresetLineDto) => ({
         content: line.content,
         itemId: line.itemId,
         minutes: line.minutes,
@@ -186,7 +193,8 @@ function PresetEditor({
       <Stack gap="xs">
         <Group align="flex-end" justify="space-between" wrap="wrap">
           <Text>
-            {preset.name}: {preset.lines.map((line) => line.itemName).join("、") || "行なし"}
+            {preset.name}:{" "}
+            {preset.lines.map((line: PresetLineDto) => line.itemName).join("、") || "行なし"}
           </Text>
           <Field of={form} path={["name"]}>
             {(field) => (
@@ -275,10 +283,7 @@ function PresetEditor({
             if (next === undefined) {
               return;
             }
-            setLines((current) => [
-              ...current,
-              { content: "", itemId: next._id, minutes: 20 },
-            ]);
+            setLines((current) => [...current, { content: "", itemId: next._id, minutes: 20 }]);
           }}
           type="button"
           variant="light"

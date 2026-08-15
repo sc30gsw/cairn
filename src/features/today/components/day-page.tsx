@@ -1,12 +1,12 @@
 import { convexQuery } from "@convex-dev/react-query";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
+import { todayJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
 import { PendingComponent } from "~/components/pending-component";
 import { DayBoard } from "~/features/today/components/day-board";
 import { useOpenAndLoadDay } from "~/features/today/hooks/use-open-and-load-day";
-import { todayJst } from "~domain/jst";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export function DayPage({ dateJst }: Record<"dateJst", string>) {

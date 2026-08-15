@@ -33,7 +33,6 @@ export function OwnerGate({ children }: Record<"children", ReactNode>) {
           },
         });
       }}
-      
     >
       {children}
     </AppShell>

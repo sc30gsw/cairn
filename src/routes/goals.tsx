@@ -5,10 +5,10 @@ import { Suspense } from "react";
 import { mondayOfWeek, todayJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
+import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { GoalsBoard } from "~/features/goals/components/goals-board";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
-import { PendingComponent } from "~/components/pending-component";
 
 export const Route = createFileRoute("/goals")({
   component: GoalsRoute,
