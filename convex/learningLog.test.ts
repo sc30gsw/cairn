@@ -264,6 +264,25 @@ test("行と日のゴミ箱。30日後に完全削除。未認証は throw", asy
   await expect(raw().query(api.trash.list, {})).rejects.toThrow();
 });
 
+test("空のメモだけでは日を作らない。土日でも今日のプリセット切替は日を作る", async () => {
+  const t = owner();
+  await t.mutation(api.days.open, { dateJst: SATURDAY, todayJst: SATURDAY });
+  await t.mutation(api.days.setMemo, { dateJst: SATURDAY, memo: "", todayJst: SATURDAY });
+  expect((await t.query(api.days.get, { dateJst: SATURDAY, todayJst: SATURDAY })).day).toBeNull();
+  const presets = await t.query(api.presets.list, {});
+  const monday = presets.find((preset) => preset.weekday === 1);
+  if (monday === undefined) {
+    throw new Error("月曜日のプリセットがない");
+  }
+  await t.mutation(api.rows.switchPreset, {
+    dateJst: SATURDAY,
+    presetId: monday._id,
+    todayJst: SATURDAY,
+  });
+  const switched = await t.query(api.days.get, { dateJst: SATURDAY, todayJst: SATURDAY });
+  expect(switched.rows.map((row) => row.itemName)[0]).toBe("Distinction 2000");
+});
+
 test("ゴミ箱の日には行を足さず、open も日を増やさない", async () => {
   const t = owner();
   await t.mutation(api.days.open, { dateJst: MONDAY, todayJst: MONDAY });

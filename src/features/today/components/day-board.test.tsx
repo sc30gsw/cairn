@@ -174,6 +174,57 @@ test("共有文のコピー操作が見える", () => {
   expect(getByRole("button", { name: "共有文をコピー" })).toBeDefined();
 });
 
+test("今日のプリセット切替が見える。未設定のコンディションは普通にしない", () => {
+  const onSaveCondition = vi.fn();
+  const { getByLabelText } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={day}
+      isToday
+      items={items}
+      onAddRow={vi.fn()}
+      onConfirm={vi.fn()}
+      onRemoveDay={vi.fn()}
+      onRemoveRow={vi.fn()}
+      onSaveBed={vi.fn()}
+      onSaveCondition={onSaveCondition}
+      onSaveMemo={vi.fn()}
+      onSaveWake={vi.fn()}
+      onSkip={vi.fn()}
+      onSwitchPreset={vi.fn()}
+      presets={[{ _id: "p1" as never, lines: [], name: "月曜日", weekday: 1 }]}
+    />,
+  );
+  expect(getByLabelText("今日のプリセット切替")).toBeDefined();
+  expect(getByLabelText("コンディション").textContent).toContain("未設定");
+  expect(onSaveCondition).not.toHaveBeenCalled();
+});
+
+test("未来の日は行を足せず今夜も出さない", () => {
+  const future = { ...day, isFuture: true } satisfies DayPage;
+  const { queryByRole, queryByLabelText } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-20"
+      day={future}
+      isToday={false}
+      items={items}
+      onAddRow={vi.fn()}
+      onConfirm={vi.fn()}
+      onRemoveDay={vi.fn()}
+      onRemoveRow={vi.fn()}
+      onSaveBed={vi.fn()}
+      onSaveCondition={vi.fn()}
+      onSaveMemo={vi.fn()}
+      onSaveWake={vi.fn()}
+      onSkip={vi.fn()}
+      onSwitchPreset={vi.fn()}
+      presets={[]}
+    />,
+  );
+  expect(queryByRole("button", { name: "行を足す" })).toBeNull();
+  expect(queryByLabelText(/今夜の就寝/)).toBeNull();
+});
+
 test("その日に行を足せる", () => {
   const { getByRole, getByLabelText } = renderWithMantine(
     <DayBoard

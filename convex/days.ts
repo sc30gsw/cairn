@@ -173,7 +173,14 @@ export const setMemo = ownerMutation({
         new NotFoundError({ message: "ゴミ箱の日です。先に戻してください", resource: "日" }),
       );
     }
-    const day = await requireLiveDay(ctx, ctx.ownerId, args.dateJst);
+    if (args.memo.trim() === "") {
+      if (existing === null) {
+        return null;
+      }
+      await ctx.db.patch(existing._id, { memo: "" });
+      return null;
+    }
+    const day = existing ?? (await requireLiveDay(ctx, ctx.ownerId, args.dateJst));
     await ctx.db.patch(day._id, { memo: args.memo });
     return null;
   },

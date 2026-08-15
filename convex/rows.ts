@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 
-import { getDayByDate, getLiveDay, liveRowsForDay, requireLiveDay } from "./ensureCatalog";
+import { getDayByDate, liveRowsForDay, requireLiveDay } from "./ensureCatalog";
 import { ConflictError, NotFoundError, ValidationFailedError } from "./lib/errors";
 import { isFutureDateJst } from "./lib/jst";
 import { ownerMutation, throwDomain } from "./ownerFunctions";
@@ -129,15 +129,23 @@ export const switchPreset = ownerMutation({
     if (args.dateJst !== args.todayJst) {
       throwDomain(new ValidationFailedError({ message: "今日だけ別プリセットに切り替えられます" }));
     }
-    const day = await getLiveDay(ctx, ctx.ownerId, args.dateJst);
-    if (day === null) {
-      throwDomain(new NotFoundError({ message: "今日の日がありません", resource: "日" }));
-    }
     const preset = await ctx.db.get(args.presetId);
     if (preset === null || preset.ownerId !== ctx.ownerId) {
       throwDomain(
         new NotFoundError({ message: "プリセットが見つかりません", resource: "プリセット" }),
       );
+    }
+    const existing = await getDayByDate(ctx, ctx.ownerId, args.dateJst);
+    if (existing !== null && existing.deletedAt !== undefined) {
+      throwDomain(
+        new NotFoundError({ message: "ゴミ箱の日です。先に戻してください", resource: "日" }),
+      );
+    }
+    const day =
+      existing ??
+      (preset.lines.length === 0 ? null : await requireLiveDay(ctx, ctx.ownerId, args.dateJst));
+    if (day === null) {
+      throwDomain(new NotFoundError({ message: "今日の日がありません", resource: "日" }));
     }
     const rows = await liveRowsForDay(ctx, day._id);
     const kept = rows.filter((row) => row.status !== "未着手");

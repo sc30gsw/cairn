@@ -47,6 +47,8 @@ export function DayBoard({
   onSwitchPreset,
   presets,
 }: DayBoardProps) {
+  const canEdit = !day.isFuture;
+
   return (
     <Stack gap="lg">
       <Title order={1}>{dateJst}</Title>
@@ -54,6 +56,7 @@ export function DayBoard({
       {day.rows.map((row) => (
         <RowEditor
           key={row._id}
+          disabled={!canEdit}
           onConfirm={onConfirm}
           onRemove={onRemoveRow}
           onSkip={onSkip}
@@ -61,7 +64,7 @@ export function DayBoard({
         />
       ))}
       {day.rows.length === 0 ? <Text c="dimmed">この日の行はありません。</Text> : null}
-      <AdhocRowForm items={items} onAdd={onAddRow} />
+      {canEdit ? <AdhocRowForm items={items} onAdd={onAddRow} /> : null}
       {isToday ? (
         <NativeSelect
           aria-label="今日のプリセット切替"
@@ -77,24 +80,30 @@ export function DayBoard({
           }}
         />
       ) : null}
-      <TonightPanel
-        onSaveBed={onSaveBed}
-        onSaveWake={onSaveWake}
-        sleepHours={day.day?.sleepHours ?? null}
-        sleepWarning={day.day?.sleepWarning ?? false}
-        tonightBedHm={day.tonightBedHm}
-        wakeHm={day.day?.wakeHm ?? null}
-      />
-      <DayMetaPanel
-        condition={day.day?.condition ?? null}
-        memo={day.day?.memo ?? null}
-        onSaveCondition={onSaveCondition}
-        onSaveMemo={onSaveMemo}
-      />
+      {isToday ? (
+        <TonightPanel
+          onSaveBed={onSaveBed}
+          onSaveWake={onSaveWake}
+          sleepHours={day.day?.sleepHours ?? null}
+          sleepWarning={day.day?.sleepWarning ?? false}
+          tonightBedHm={day.tonightBedHm}
+          wakeHm={day.day?.wakeHm ?? null}
+        />
+      ) : null}
+      {canEdit ? (
+        <DayMetaPanel
+          condition={day.day?.condition ?? null}
+          memo={day.day?.memo ?? null}
+          onSaveCondition={onSaveCondition}
+          onSaveMemo={onSaveMemo}
+        />
+      ) : null}
       <ShareCopy markdown={day.shareMarkdown} />
-      <Button color="red" onClick={onRemoveDay} variant="light">
-        この日をゴミ箱へ
-      </Button>
+      {canEdit && day.day !== null ? (
+        <Button color="red" onClick={onRemoveDay} variant="light">
+          この日をゴミ箱へ
+        </Button>
+      ) : null}
     </Stack>
   );
 }

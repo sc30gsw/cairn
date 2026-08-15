@@ -1,40 +1,44 @@
 import { Button, Group, SegmentedControl, Textarea } from "@mantine/core";
+import { useState } from "react";
+
+type Condition = "好調" | "普通" | "崩れた";
 
 type DayMetaPanelProps = {
-  condition: "好調" | "普通" | "崩れた" | null;
+  condition: Condition | null;
   memo: null | string;
-  onSaveCondition: (condition: "好調" | "普通" | "崩れた") => void;
+  onSaveCondition: (condition: Condition) => void;
   onSaveMemo: (memo: string) => void;
 };
 
 export function DayMetaPanel({ condition, memo, onSaveCondition, onSaveMemo }: DayMetaPanelProps) {
+  const [text, setText] = useState(memo ?? "");
+
   return (
     <section aria-label="コンディションとメモ">
       <SegmentedControl
         aria-label="コンディション"
-        data={["好調", "普通", "崩れた"]}
+        data={[
+          { label: "未設定", value: "unset" },
+          { label: "好調", value: "好調" },
+          { label: "普通", value: "普通" },
+          { label: "崩れた", value: "崩れた" },
+        ]}
         onChange={(value) => {
           if (value === "好調" || value === "普通" || value === "崩れた") {
             onSaveCondition(value);
           }
         }}
-        value={condition ?? "普通"}
+        value={condition ?? "unset"}
       />
       <Textarea
-        defaultValue={memo ?? ""}
         label="メモ"
         mt="sm"
-        onBlur={(event) => onSaveMemo(event.currentTarget.value)}
+        onBlur={() => onSaveMemo(text)}
+        onChange={(event) => setText(event.currentTarget.value)}
+        value={text}
       />
       <Group mt="xs">
-        <Button
-          onClick={(event) => {
-            const form = event.currentTarget.closest("section");
-            const textarea = form?.querySelector("textarea");
-            onSaveMemo(textarea?.value ?? "");
-          }}
-          variant="light"
-        >
+        <Button onClick={() => onSaveMemo(text)} variant="light">
           メモを保存
         </Button>
       </Group>
