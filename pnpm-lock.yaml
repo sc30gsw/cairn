@@ -38,6 +38,9 @@ importers:
       '@mantine/hooks':
         specifier: ^9.5.1
         version: 9.5.1(react@19.2.7)
+      '@mantine/modals':
+        specifier: ^9.5.1
+        version: 9.5.1(@mantine/core@9.5.1(@mantine/hooks@9.5.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/hooks@9.5.1(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@mantine/schedule':
         specifier: ^9.5.1
         version: 9.5.1(@mantine/core@9.5.1(@mantine/hooks@9.5.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/dates@9.5.1(@mantine/core@9.5.1(@mantine/hooks@9.5.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/hooks@9.5.1(react@19.2.7))(dayjs@1.11.21)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/hooks@9.5.1(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -996,6 +999,14 @@ packages:
     resolution: {integrity: sha512-2sK9OdWvrzKBOuWxLfQA5qcAJzxpzqNlKumaP7Uq0i7LDBQeY/sYgNiBWLwtW+iZw6fFXwPf0nI7q5VVpvqnNQ==}
     peerDependencies:
       react: ^19.2.0
+
+  '@mantine/modals@9.5.1':
+    resolution: {integrity: sha512-hvfNqwgiIxe/3sWPX5pIHzYnwV28U5w9UrA0Y+Dh3HDkmIu2PZ3nwcUhqS+Za6gFZCx53XuNLZs2OMW2hrvdzg==}
+    peerDependencies:
+      '@mantine/core': 9.5.1
+      '@mantine/hooks': 9.5.1
+      react: ^19.2.0
+      react-dom: ^19.2.0
 
   '@mantine/schedule@9.5.1':
     resolution: {integrity: sha512-TTSbD5kwiIe1uYI2YEO7mBe+KL1Gda/9QouRAXP3IWcJn7a2Wr8am3ggTc5lfg4ODhulpIJ+HeuzqBjNrtATGQ==}
@@ -5025,6 +5036,13 @@ snapshots:
   '@mantine/hooks@9.5.1(react@19.2.7)':
     dependencies:
       react: 19.2.7
+
+  '@mantine/modals@9.5.1(@mantine/core@9.5.1(@mantine/hooks@9.5.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/hooks@9.5.1(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+    dependencies:
+      '@mantine/core': 9.5.1(@mantine/hooks@9.5.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@mantine/hooks': 9.5.1(react@19.2.7)
+      react: 19.2.7
+      react-dom: 19.2.7(react@19.2.7)
 
   '@mantine/schedule@9.5.1(@mantine/core@9.5.1(@mantine/hooks@9.5.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/dates@9.5.1(@mantine/core@9.5.1(@mantine/hooks@9.5.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/hooks@9.5.1(react@19.2.7))(dayjs@1.11.21)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@mantine/hooks@9.5.1(react@19.2.7))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:

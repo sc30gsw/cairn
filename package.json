@@ -25,6 +25,7 @@
     "@mantine/core": "^9.5.1",
     "@mantine/dates": "^9.5.1",
     "@mantine/hooks": "^9.5.1",
+    "@mantine/modals": "^9.5.1",
     "@mantine/schedule": "^9.5.1",
     "@tabler/icons-react": "^3.34.1",
     "@tanstack/react-query": "^5.101.4",

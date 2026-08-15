@@ -1,4 +1,4 @@
-import { Field, Form, useForm } from "@formisch/react";
+import { Field, Form, reset, useForm, validate } from "@formisch/react";
 import {
   ActionIcon,
   Badge,
@@ -10,8 +10,10 @@ import {
   TextInput,
   Tooltip,
 } from "@mantine/core";
+import { useFocusWithin } from "@mantine/hooks";
+import { modals } from "@mantine/modals";
 import { IconTrash } from "@tabler/icons-react";
-import type { ChangeEvent } from "react";
+import { useCallback, useEffect, type ChangeEvent } from "react";
 
 import { RowEditorSchema } from "~/features/today/schemas/row-editor-schema";
 import type { DayRow } from "~/features/today/types/day";
@@ -95,6 +97,16 @@ function RowStatusSwitch({
   );
 }
 
+function requestSkip(rowId: DayRow["_id"], onSkip: (rowId: DayRow["_id"]) => void) {
+  modals.openConfirmModal({
+    children: "学習量からは外れます。",
+    confirmProps: { color: "yellow" },
+    labels: { cancel: "キャンセル", confirm: "見送りにする" },
+    onConfirm: () => onSkip(rowId),
+    title: "見送りにしますか？",
+  });
+}
+
 export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }: RowEditorProps) {
   const form = useForm({
     initialInput: { content: row.content, minutes: row.minutes },
@@ -104,6 +116,31 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
   const badge = STATUS_BADGE[row.status];
   const contentLabel = `${row.itemName} 内容`;
 
+  const saveIfConfirmedDirty = useCallback(async () => {
+    if (row.status !== "確定" || !form.isDirty) {
+      return;
+    }
+    const result = await validate(form);
+    if (!result.success) {
+      return;
+    }
+    onConfirm({ content: result.output.content, minutes: result.output.minutes, rowId: row._id });
+    reset(form, { initialInput: result.output, keepInput: true });
+  }, [form, onConfirm, row._id, row.status]);
+
+  const { ref: rowRef } = useFocusWithin({
+    onBlur: () => {
+      void saveIfConfirmedDirty();
+    },
+  });
+
+  useEffect(() => {
+    if (form.isDirty) {
+      return;
+    }
+    reset(form, { initialInput: { content: row.content, minutes: row.minutes } });
+  }, [form, row.content, row.minutes]);
+
   return (
     <Form
       aria-label={`${row.itemName}の記録`}
@@ -112,7 +149,8 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
         onConfirm({ content: output.content, minutes: output.minutes, rowId: row._id });
       }}
     >
-      <Grid align="flex-end" gap="sm">
+      <div ref={rowRef}>
+        <Grid align="flex-end" gap="sm">
         <Grid.Col span={{ base: 12, sm: 5 }}>
           <Field of={form} path={["content"]}>
             {(field) => (
@@ -153,6 +191,10 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
                     event.currentTarget.closest("form")?.requestSubmit();
                     return;
                   }
+                  if (row.status === "確定") {
+                    requestSkip(row._id, onSkip);
+                    return;
+                  }
                   if (row.status !== "スキップ") {
                     onSkip(row._id);
                   }
@@ -179,6 +221,7 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
           </Input.Wrapper>
         </Grid.Col>
       </Grid>
+      </div>
     </Form>
   );
 }

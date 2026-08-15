@@ -10,6 +10,7 @@ import {
   mantineHtmlProps,
 } from "@mantine/core";
 import { DatesProvider } from "@mantine/dates";
+import { ModalsProvider } from "@mantine/modals";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import {
@@ -90,7 +91,9 @@ function RootDocument({ children }: Record<"children", ReactNode>) {
           forceColorScheme="light"
           theme={theme}
         >
-          <DatesProvider settings={{ locale: "ja" }}>{children}</DatesProvider>
+          <ModalsProvider labels={{ cancel: "キャンセル", confirm: "見送りにする" }}>
+            <DatesProvider settings={{ locale: "ja" }}>{children}</DatesProvider>
+          </ModalsProvider>
           {TanStackRouterDevtools ? (
             <Suspense fallback={null}>
               <TanStackRouterDevtools position="bottom-right" />

@@ -1,5 +1,6 @@
 import { MantineProvider } from "@mantine/core";
 import { DatesProvider } from "@mantine/dates";
+import { ModalsProvider } from "@mantine/modals";
 import { cleanup, render, type RenderOptions } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
 import "dayjs/locale/ja";
@@ -49,7 +50,9 @@ function Wrapper({ children }: Record<"children", ReactNode>) {
       forceColorScheme="light"
       theme={theme}
     >
-      <DatesProvider settings={{ locale: "ja" }}>{children}</DatesProvider>
+      <ModalsProvider labels={{ cancel: "キャンセル", confirm: "見送りにする" }}>
+        <DatesProvider settings={{ locale: "ja" }}>{children}</DatesProvider>
+      </ModalsProvider>
     </MantineProvider>
   );
 }

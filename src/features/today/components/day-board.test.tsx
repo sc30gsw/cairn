@@ -1,4 +1,4 @@
-import { waitFor } from "@testing-library/react";
+import { fireEvent, waitFor } from "@testing-library/react";
 import { expect, test, vi } from "vite-plus/test";
 
 import { DayBoard } from "~/features/today/components/day-board";
@@ -99,7 +99,43 @@ test("記録を確定スイッチで確定、オフでスキップできる", as
   });
 });
 
-test("確定済みの記録をスイッチオフでスキップできる", () => {
+test("確定済みの記録は行外へフォーカスすると更新できる", async () => {
+  const onConfirm = vi.fn();
+  const confirmedDay = {
+    ...day,
+    rows: [{ ...row, content: "Unit 1", status: "確定" as const }],
+  } satisfies DayPage;
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={confirmedDay}
+      isToday
+      items={items}
+      onAddRow={vi.fn()}
+      onConfirm={onConfirm}
+      onRemoveDay={vi.fn()}
+      onRemoveRow={vi.fn()}
+      onSaveCondition={vi.fn()}
+      onSaveMemo={vi.fn()}
+      onSkip={vi.fn()}
+      onSwitchPreset={vi.fn()}
+      presets={[]}
+      selectedPresetId={null}
+    />,
+  );
+  const input = getByRole("textbox", { name: "Distinction 2000 内容" });
+  fireEvent.change(input, { target: { value: "Unit 2" } });
+  getByRole("button", { name: "記録を足す" }).focus();
+  await waitFor(() => {
+    expect(onConfirm).toHaveBeenCalledWith({
+      content: "Unit 2",
+      minutes: 30,
+      rowId: row._id,
+    });
+  });
+});
+
+test("確定済みの記録をスイッチオフで見送り確認後にスキップできる", () => {
   const onSkip = vi.fn();
   const confirmedDay = {
     ...day,
@@ -124,7 +160,38 @@ test("確定済みの記録をスイッチオフでスキップできる", () =>
     />,
   );
   getByRole("switch", { name: "記録を確定" }).click();
+  expect(onSkip).not.toHaveBeenCalled();
+  getByRole("button", { name: "見送りにする" }).click();
   expect(onSkip).toHaveBeenCalledWith(row._id);
+});
+
+test("確定済みの見送り確認をキャンセルするとスキップしない", () => {
+  const onSkip = vi.fn();
+  const confirmedDay = {
+    ...day,
+    rows: [{ ...row, status: "確定" as const }],
+  } satisfies DayPage;
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={confirmedDay}
+      isToday
+      items={items}
+      onAddRow={vi.fn()}
+      onConfirm={vi.fn()}
+      onRemoveDay={vi.fn()}
+      onRemoveRow={vi.fn()}
+      onSaveCondition={vi.fn()}
+      onSaveMemo={vi.fn()}
+      onSkip={onSkip}
+      onSwitchPreset={vi.fn()}
+      presets={[]}
+      selectedPresetId={null}
+    />,
+  );
+  getByRole("switch", { name: "記録を確定" }).click();
+  getByRole("button", { name: "キャンセル" }).click();
+  expect(onSkip).not.toHaveBeenCalled();
 });
 
 test("未着手はスイッチがオフで未着手バッジが出る", () => {
