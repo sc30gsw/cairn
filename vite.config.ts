@@ -4,6 +4,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import { RECOMMENDED_RULES, TANSTACK_START_RULES } from "oxlint-plugin-react-doctor";
 import { defineConfig } from "vite-plus";
+import { nitro } from 'nitro/vite';
 
 const reactDoctorRules = {
   ...RECOMMENDED_RULES,
@@ -67,6 +68,7 @@ export default defineConfig({
     tanstackStart(),
     // react's vite plugin must come after start's vite plugin
     react(),
+    nitro(),
     babel({ presets: [reactCompilerPreset()] }),
   ],
   test: {

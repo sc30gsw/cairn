@@ -1,0 +1,79 @@
+# コーディング規約（概要）
+
+このドキュメントは本プロジェクト（Life Pulse — 家庭ライブハブ / パーソナル OS。要件は [docs/requirements.md](./docs/requirements.md)、技術仕様は [docs/spec.md](./docs/spec.md) を参照）の規約の**人間向け概説**です。
+
+> **Single Source of Truth は `.claude/rules/**`。** 各規約の正本はそちらにあり、セッション開始時に自動ロードされます。本ファイルは全体像と設計思想だけを示し、詳細は再掲しません。記述が食い違う場合は `.claude/rules/\*\*` を優先してください。
+
+## スタック
+
+| 領域           | 採用                                                                                                       |
+| -------------- | ---------------------------------------------------------------------------------------------------------- |
+| フレームワーク | TanStack Start + Router、React 19（React Compiler を Babel で有効化）                                      |
+| スタイル       | Tailwind CSS v4（`cn` は `cnfast`）。Mantine とは `tailwind-preset-mantine` で統合                         |
+| UI             | Mantine（`@mantine/core` + `@mantine/hooks` + `@mantine/dates`）                                           |
+| チャート       | `@tanstack/charts` + `@tanstack/charts-scales` + `@tanstack/react-charts` 0.7.2（SVG/SSR）                 |
+| バックエンド   | Convex（`convex` + `@convex-dev/react-query`。`convex/` ディレクトリは未実装）                             |
+| データ取得     | TanStack Query（`@tanstack/react-query`、SSR は `@tanstack/react-router-ssr-query`）                       |
+| 認証           | Convex Auth（`@convex-dev/auth` のクライアント側 `ConvexAuthProvider`。フォールバックは Clerk）            |
+| 検証           | Valibot（単一）                                                                                            |
+| フォーム       | Formisch（`@formisch/react`、valibot ネイティブ。`useForm({ schema })` / `<Form of>` / `<Field of path>`） |
+| エラー処理     | better-result                                                                                              |
+| テスト         | convex-test（`convexTest(schema)`、`t.withIdentity(...)`）                                                 |
+| ツールチェーン | Vite+（`vp`、[AGENTS.md](./AGENTS.md) 参照）。pnpm 維持                                                    |
+
+> **現状 vs 目標:** 上記の多くは**まだ未配線の目標規約**です（[CLAUDE.md](./CLAUDE.md) 参照）。依存は導入済みでも、`~/features/*` 等を import する前にそのモジュールが実在するか必ず確認してください。
+
+## 規約の所在（正本）
+
+| トピック                                          | 正本                                                                                 |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| プロジェクト構造 / `features/*` / `~` エイリアス  | [typescript/project-structure.md](./.claude/rules/typescript/project-structure.md)   |
+| React / 型 / named export / 関数宣言 / Utility 型 | [typescript/react-conventions.md](./.claude/rules/typescript/react-conventions.md)   |
+| コードスタイル / 命名 / 不変性 / hook 禁止事項    | [common/coding-style.md](./.claude/rules/common/coding-style.md)                     |
+| Valibot 検証                                      | [typescript/valibot-validation.md](./.claude/rules/typescript/valibot-validation.md) |
+| Formisch フォーム                                 | [typescript/formisch.md](./.claude/rules/typescript/formisch.md)                     |
+| better-result                                     | [typescript/better-result.md](./.claude/rules/typescript/better-result.md)           |
+| Convex 実装ルール（CVX-01〜20）                   | [convex-rules.md](./.claude/rules/convex-rules.md)                                   |
+| Convex × TanStack Router/Query 連携               | [web/convex-tanstack.md](./.claude/rules/web/convex-tanstack.md)                     |
+| スタイリング（Mantine + Tailwind 共存）           | [web/mantine-tailwind.md](./.claude/rules/web/mantine-tailwind.md)                   |
+| 開発ワークフロー（`vp`）                          | [common/development-workflow.md](./.claude/rules/common/development-workflow.md)     |
+| テスト                                            | [common/testing.md](./.claude/rules/common/testing.md)                               |
+| セキュリティ                                      | [common/security.md](./.claude/rules/common/security.md)                             |
+
+## 設計思想（rules に属さない原則）
+
+### 型の Single Source of Truth
+
+型は一箇所で定義し、派生型は `Pick` / `Omit` / `v.InferOutput` などで生成します。定数は `as const satisfies` でリテラル型を保持します（詳細は react-conventions）。
+
+### AHA Programming
+
+[AHA Programming](https://kentcdodds.com/blog/aha-programming)（Avoid Hasty Abstractions）に従います。
+
+> "prefer duplication over the wrong abstraction"（間違った抽象化よりも重複を選ぶ）— Sandi Metz
+
+1. 最初は重複を許容する（パターンが明確になるまで待つ）
+2. 3 回目の重複で抽象化を検討する
+3. 間違った抽象化は重複より高コスト
+
+### コメント規約
+
+- コメントは日本語で書く
+- [Better Comments](https://marketplace.visualstudio.com/items?itemName=aaron-bond.better-comments) 形式のプレフィックスを使う:
+  - `//*` — モジュール/セクションの概要
+  - `//?` — 設計判断や「なぜそうしているか」（「何をしているか」ではなく理由を書く）
+  - `//!` — 重要な注意・制約・TODO
+- CSS ではブロックコメントに `/* *` / `/* ?` / `/* !` を使う
+- ツール指令（`/// <reference ...>`、`// @vitest-environment` など）はそのまま維持する
+- TODO コメントには担当者と期限を記載する: `//! TODO(@username 2026-09): ...`
+
+## 参考リンク
+
+- [Bulletproof React](https://github.com/alan2207/bulletproof-react)
+- [TanStack Start](https://tanstack.com/start) / [Router](https://tanstack.com/router)
+- [Convex](https://docs.convex.dev/)
+- [Valibot](https://valibot.dev/) / [Formisch](https://formisch.dev/)
+- [Mantine](https://mantine.dev/)
+- [better-result](https://github.com/dmmulroy/better-result)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [AHA Programming](https://kentcdodds.com/blog/aha-programming)

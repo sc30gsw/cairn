@@ -7,6 +7,7 @@
     "build": "vp build",
     "check": "vp check",
     "dev": "vp dev",
+    "convex:dev": "npx convex dev",
     "doctor": "vp exec react-doctor . --verbose --yes --no-lint",
     "fallow": "vp exec fallow dead-code",
     "fix": "vp check --fix",
@@ -15,11 +16,21 @@
     "type-check": "vp check --no-lint"
   },
   "dependencies": {
+    "@convex-dev/better-auth": "^0.12.5",
+    "@convex-dev/react-query": "^0.1.0",
+    "@formisch/react": "1.0.0-rc.0",
+    "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-router": "^1.170.16",
+    "@tanstack/react-router-ssr-query": "^1.167.1",
     "@tanstack/react-start": "^1.168.26",
+    "better-auth": "^1.6.28",
+    "better-result": "^3.0.1",
     "cnfast": "^0.0.6",
+    "convex": "^1.44.0",
+    "nitro": "3.0.260610-beta",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "valibot": "^1.4.2"
   },
   "devDependencies": {
     "@rolldown/plugin-babel": "^0.2.3",
@@ -30,9 +41,9 @@
     "@vitejs/plugin-react": "^6.0.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "better-typescript-lib": "^2.12.0",
-    "fallow": "^2.101.0",
-    "oxlint-plugin-react-doctor": "^0.5.8",
-    "react-doctor": "^0.5.8",
+    "fallow": "^3.14.0",
+    "oxlint-plugin-react-doctor": "^0.9.11",
+    "react-doctor": "^0.9.11",
     "tailwindcss": "^4.3.1",
     "vite": "npm:@voidzero-dev/vite-plus-core@0.2.1",
     "vite-plus": "0.2.1"
