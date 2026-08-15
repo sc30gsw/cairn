@@ -12,6 +12,7 @@ test("カウントダウンと週間ゴールと障害プランが見える", ()
       onRemoveObstacle={vi.fn()}
       onSaveExam={vi.fn()}
       onSaveWeekly={vi.fn()}
+      onUpdateObstacle={vi.fn()}
       volumeMinutes={30}
       weeklyGoalMinutes={300}
     />,
@@ -21,4 +22,5 @@ test("カウントダウンと週間ゴールと障害プランが見える", ()
   expect(getByText(/今週の学習量 30分/)).toBeDefined();
   expect(getByText(/もし 眠い なら 金フレだけ/)).toBeDefined();
   expect(getByRole("button", { name: "障害プランを追加" })).toBeDefined();
+  expect(getByRole("button", { name: "眠いを保存" })).toBeDefined();
 });

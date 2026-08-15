@@ -88,6 +88,8 @@ test("確定とスキップが画面上で呼べる", () => {
     minutes: 30,
     rowId: row._id,
   });
+  expect((getByRole("button", { name: "確定" }) as HTMLButtonElement).type).toBe("submit");
+  getByRole("button", { name: "スキップ" }).focus();
   getByRole("button", { name: "スキップ" }).click();
   expect(onSkip).toHaveBeenCalledWith(row._id);
 });

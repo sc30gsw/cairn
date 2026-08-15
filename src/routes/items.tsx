@@ -30,6 +30,8 @@ function ItemsReady() {
   const createItem = useConvexMutation(api.items.create);
   const renameItem = useConvexMutation(api.items.rename);
   const removeItem = useConvexMutation(api.items.remove);
+  const createPreset = useConvexMutation(api.presets.create);
+  const updatePreset = useConvexMutation(api.presets.update);
   const removePreset = useConvexMutation(api.presets.remove);
 
   return (
@@ -48,8 +50,15 @@ function ItemsReady() {
         }}
       />
       <PresetList
+        items={items}
+        onCreate={(input) => {
+          void createPreset.mutateAsync(input);
+        }}
         onRemove={(presetId) => {
           void removePreset.mutateAsync({ presetId });
+        }}
+        onUpdate={(input) => {
+          void updatePreset.mutateAsync(input);
         }}
         presets={presets}
       />

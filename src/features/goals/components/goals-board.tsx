@@ -31,6 +31,7 @@ type GoalsBoardProps = {
   onRemoveObstacle: (planId: Obstacle["_id"]) => void;
   onSaveExam: (input: { examDate: string; maxScore: number; minScore: number }) => void;
   onSaveWeekly: (minutes: number) => void;
+  onUpdateObstacle: (input: { ifText: string; planId: Obstacle["_id"]; thenText: string }) => void;
   volumeMinutes: number;
   weeklyGoalMinutes: null | number;
 };
@@ -42,6 +43,7 @@ export function GoalsBoard({
   onRemoveObstacle,
   onSaveExam,
   onSaveWeekly,
+  onUpdateObstacle,
   volumeMinutes,
   weeklyGoalMinutes,
 }: GoalsBoardProps) {
@@ -160,15 +162,67 @@ export function GoalsBoard({
         </Group>
       </Form>
       {obstacles.map((plan) => (
-        <Group key={plan._id} justify="space-between">
-          <Text>
-            もし {plan.ifText} なら {plan.thenText}
-          </Text>
-          <Button color="red" onClick={() => onRemoveObstacle(plan._id)} variant="subtle">
-            削除
-          </Button>
-        </Group>
+        <ObstacleEditor
+          key={plan._id}
+          onRemove={onRemoveObstacle}
+          onUpdate={onUpdateObstacle}
+          plan={plan}
+        />
       ))}
     </Stack>
+  );
+}
+
+function ObstacleEditor({
+  onRemove,
+  onUpdate,
+  plan,
+}: {
+  onRemove: GoalsBoardProps["onRemoveObstacle"];
+  onUpdate: GoalsBoardProps["onUpdateObstacle"];
+  plan: Obstacle;
+}) {
+  const form = useForm({
+    initialInput: { ifText: plan.ifText, thenText: plan.thenText },
+    schema: ObstacleSchema,
+  });
+
+  return (
+    <Form
+      of={form}
+      onSubmit={(output) => {
+        onUpdate({ ...output, planId: plan._id });
+      }}
+    >
+      <Group align="flex-end" justify="space-between">
+        <Text>
+          もし {plan.ifText} なら {plan.thenText}
+        </Text>
+        <Field of={form} path={["ifText"]}>
+          {(field) => (
+            <TextInput
+              {...field.props}
+              aria-label={`${plan.ifText}のもし`}
+              error={field.errors?.[0]}
+              value={field.input}
+            />
+          )}
+        </Field>
+        <Field of={form} path={["thenText"]}>
+          {(field) => (
+            <TextInput
+              {...field.props}
+              aria-label={`${plan.ifText}のなら`}
+              error={field.errors?.[0]}
+              value={field.input}
+            />
+          )}
+        </Field>
+        <Button type="submit">{plan.ifText}を保存</Button>
+        <Button color="red" onClick={() => onRemove(plan._id)} type="button" variant="subtle">
+          削除
+        </Button>
+      </Group>
+    </Form>
   );
 }

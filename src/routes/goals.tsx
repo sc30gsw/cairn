@@ -34,6 +34,7 @@ function GoalsReady() {
   const saveExam = useConvexMutation(api.goals.saveExam);
   const saveWeekly = useConvexMutation(api.goals.saveWeekly);
   const createObstacle = useConvexMutation(api.goals.createObstacle);
+  const updateObstacle = useConvexMutation(api.goals.updateObstacle);
   const removeObstacle = useConvexMutation(api.goals.removeObstacle);
 
   return (
@@ -51,6 +52,9 @@ function GoalsReady() {
       }}
       onSaveWeekly={(minutes) => {
         void saveWeekly.mutateAsync({ minutes, weekStartJst: weekStart });
+      }}
+      onUpdateObstacle={(input) => {
+        void updateObstacle.mutateAsync(input);
       }}
       volumeMinutes={week.volumeMinutes}
       weeklyGoalMinutes={week.weeklyGoalMinutes}

@@ -40,6 +40,10 @@ export const skip = ownerMutation({
     if (row === null || row.ownerId !== ctx.ownerId || row.deletedAt !== undefined) {
       throwDomain(new NotFoundError({ message: "行が見つかりません", resource: "行" }));
     }
+    const day = await ctx.db.get(row.dayId);
+    if (day === null || day.deletedAt !== undefined) {
+      throwDomain(new NotFoundError({ message: "日が見つかりません", resource: "日" }));
+    }
     await ctx.db.patch(args.rowId, { status: "スキップ" });
     return null;
   },

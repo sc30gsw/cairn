@@ -1,9 +1,10 @@
 import { v } from "convex/values";
 
+import type { Id } from "./_generated/dataModel";
 import { internalMutation } from "./_generated/server";
 import { getDayByDate } from "./ensureCatalog";
 import { NotFoundError } from "./lib/errors";
-import { isPurgeDue } from "./lib/trash";
+import { isPurgeDue, TRASH_TTL_MS } from "./lib/trash";
 import { ownerMutation, ownerQuery, throwDomain } from "./ownerFunctions";
 
 export const list = ownerQuery({
@@ -81,23 +82,44 @@ export const purgeExpired = internalMutation({
   args: { now: v.optional(v.number()) },
   handler: async (ctx, args) => {
     const now = args.now ?? Date.now();
-    const [days, rows] = await Promise.all([
-      ctx.db.query("days").collect(),
-      ctx.db.query("rows").collect(),
+    const cutoff = now - TRASH_TTL_MS;
+    const [expiredDays, expiredRows] = await Promise.all([
+      ctx.db
+        .query("days")
+        .withIndex("by_deletedAt", (q) => q.lte("deletedAt", cutoff))
+        .collect(),
+      ctx.db
+        .query("rows")
+        .withIndex("by_deletedAt", (q) => q.lte("deletedAt", cutoff))
+        .collect(),
     ]);
     const expiredDayIds = new Set(
-      days.flatMap((day) =>
+      expiredDays.flatMap((day) =>
         day.deletedAt !== undefined && isPurgeDue(day.deletedAt, now) ? [day._id] : [],
       ),
     );
-    await Promise.all([
-      ...rows.flatMap((row) =>
-        expiredDayIds.has(row.dayId) ||
-        (row.deletedAt !== undefined && isPurgeDue(row.deletedAt, now))
-          ? [ctx.db.delete(row._id)]
-          : [],
+    const rowIds = new Set<Id<"rows">>();
+    const childRows = await Promise.all(
+      [...expiredDayIds].map((dayId) =>
+        ctx.db
+          .query("rows")
+          .withIndex("by_day", (q) => q.eq("dayId", dayId))
+          .collect(),
       ),
-      ...days.flatMap((day) => (expiredDayIds.has(day._id) ? [ctx.db.delete(day._id)] : [])),
+    );
+    for (const rows of childRows) {
+      for (const row of rows) {
+        rowIds.add(row._id);
+      }
+    }
+    for (const row of expiredRows) {
+      if (row.deletedAt !== undefined && isPurgeDue(row.deletedAt, now)) {
+        rowIds.add(row._id);
+      }
+    }
+    await Promise.all([
+      ...[...rowIds].map((id) => ctx.db.delete(id)),
+      ...[...expiredDayIds].map((id) => ctx.db.delete(id)),
     ]);
     return null;
   },

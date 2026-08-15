@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 
 import { ConflictError, NotFoundError, ValidationFailedError } from "./lib/errors";
-import { itemDtoValidator } from "./lib/validators";
+import { categoryValidator, itemDtoValidator } from "./lib/validators";
 import { ownerMutation, ownerQuery, throwDomain } from "./ownerFunctions";
 
 export const list = ownerQuery({
@@ -18,13 +18,7 @@ export const list = ownerQuery({
 
 export const create = ownerMutation({
   args: {
-    category: v.union(
-      v.literal("TOEIC対策"),
-      v.literal("多聴"),
-      v.literal("多読"),
-      v.literal("英会話"),
-      v.literal("その他"),
-    ),
+    category: categoryValidator,
     name: v.string(),
   },
   handler: async (ctx, args) => {
@@ -49,13 +43,7 @@ export const create = ownerMutation({
 
 export const rename = ownerMutation({
   args: {
-    category: v.union(
-      v.literal("TOEIC対策"),
-      v.literal("多聴"),
-      v.literal("多読"),
-      v.literal("英会話"),
-      v.literal("その他"),
-    ),
+    category: categoryValidator,
     itemId: v.id("items"),
     name: v.string(),
   },
@@ -66,6 +54,13 @@ export const rename = ownerMutation({
     }
     if (args.name.trim() === "") {
       throwDomain(new ValidationFailedError({ message: "項目名は必須です" }));
+    }
+    const duplicate = await ctx.db
+      .query("items")
+      .withIndex("by_owner_and_name", (q) => q.eq("ownerId", ctx.ownerId).eq("name", args.name))
+      .unique();
+    if (duplicate !== null && duplicate._id !== args.itemId) {
+      throwDomain(new ConflictError({ message: "同じ名前の項目があります" }));
     }
     await ctx.db.patch(args.itemId, { category: args.category, name: args.name });
     return null;

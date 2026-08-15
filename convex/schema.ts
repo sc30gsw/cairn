@@ -20,7 +20,8 @@ export default defineSchema({
     wakeHm: v.optional(v.string()),
   })
     .index("by_owner_and_date", ["ownerId", "dateJst"])
-    .index("by_owner_and_deletedAt", ["ownerId", "deletedAt"]),
+    .index("by_owner_and_deletedAt", ["ownerId", "deletedAt"])
+    .index("by_deletedAt", ["deletedAt"]),
 
   examGoals: defineTable({
     examDate: v.string(),
@@ -66,7 +67,8 @@ export default defineSchema({
     .index("by_day", ["dayId"])
     .index("by_item", ["itemId"])
     .index("by_owner_and_date", ["ownerId", "dateJst"])
-    .index("by_owner_and_deletedAt", ["ownerId", "deletedAt"]),
+    .index("by_owner_and_deletedAt", ["ownerId", "deletedAt"])
+    .index("by_deletedAt", ["deletedAt"]),
 
   tonight: defineTable({
     bedHm: v.string(),

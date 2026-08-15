@@ -64,23 +64,61 @@ export function ItemList({ items, onCreate, onRemove, onRename }: ItemListProps)
         </Group>
       </Form>
       {items.map((item) => (
-        <Group key={item._id} justify="space-between">
-          <span>
-            {item.name}（{item.category}）
-          </span>
-          <Button
-            onClick={() =>
-              onRename({ category: item.category, itemId: item._id, name: `${item.name}改` })
-            }
-            variant="light"
-          >
-            {item.name}を改名
-          </Button>
-          <Button color="red" onClick={() => onRemove(item._id)} variant="subtle">
-            {item.name}を削除
-          </Button>
-        </Group>
+        <ItemEditor key={item._id} item={item} onRemove={onRemove} onRename={onRename} />
       ))}
     </Stack>
+  );
+}
+
+function ItemEditor({
+  item,
+  onRemove,
+  onRename,
+}: {
+  item: ItemDto;
+  onRemove: ItemListProps["onRemove"];
+  onRename: ItemListProps["onRename"];
+}) {
+  const form = useForm({
+    initialInput: { category: item.category, name: item.name },
+    schema: ItemSchema,
+  });
+
+  return (
+    <Form
+      of={form}
+      onSubmit={(output) => {
+        onRename({ ...output, itemId: item._id });
+      }}
+    >
+      <Group align="flex-end" justify="space-between">
+        <Field of={form} path={["name"]}>
+          {(field) => (
+            <TextInput
+              {...field.props}
+              aria-label={`${item.name}の新しい名前`}
+              error={field.errors?.[0]}
+              label={item.name}
+              value={field.input}
+            />
+          )}
+        </Field>
+        <Field of={form} path={["category"]}>
+          {(field) => (
+            <NativeSelect
+              {...field.props}
+              aria-label={`${item.name}のカテゴリ`}
+              data={[...CATEGORIES]}
+              error={field.errors?.[0]}
+              value={field.input}
+            />
+          )}
+        </Field>
+        <Button type="submit">{item.name}を改名</Button>
+        <Button color="red" onClick={() => onRemove(item._id)} type="button" variant="subtle">
+          {item.name}を削除
+        </Button>
+      </Group>
+    </Form>
   );
 }

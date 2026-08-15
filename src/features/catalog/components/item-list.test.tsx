@@ -15,7 +15,10 @@ test("項目とプリセットの編集が見える", () => {
         onRename={vi.fn()}
       />
       <PresetList
+        items={[{ _id: "i1" as never, category: "多聴", name: "Distinction 2000" }]}
+        onCreate={vi.fn()}
         onRemove={vi.fn()}
+        onUpdate={vi.fn()}
         presets={[
           {
             _id: "p1" as never,
@@ -30,6 +33,9 @@ test("項目とプリセットの編集が見える", () => {
     </>,
   );
   expect(getByRole("button", { name: "項目を追加" })).toBeDefined();
+  expect(getByRole("button", { name: "Distinction 2000を改名" })).toBeDefined();
   expect(getByRole("button", { name: "Distinction 2000を削除" })).toBeDefined();
+  expect(getByRole("button", { name: "プリセットを追加" })).toBeDefined();
+  expect(getByRole("button", { name: "月曜日を保存" })).toBeDefined();
   expect(getByRole("button", { name: "月曜日を削除" })).toBeDefined();
 });

@@ -263,3 +263,27 @@ test("行と日のゴミ箱。30日後に完全削除。未認証は throw", asy
   expect((await t.query(api.days.get, { dateJst: MONDAY, todayJst: MONDAY })).day).toBeNull();
   await expect(raw().query(api.trash.list, {})).rejects.toThrow();
 });
+
+test("ゴミ箱の日には行を足さず、open も日を増やさない", async () => {
+  const t = owner();
+  await t.mutation(api.days.open, { dateJst: MONDAY, todayJst: MONDAY });
+  const items = await t.query(api.items.list, {});
+  const other = items.find((item) => item.name === "その他");
+  if (other === undefined) {
+    throw new Error("その他がない");
+  }
+  await t.mutation(api.trash.removeDay, { dateJst: MONDAY, now: 1_000 });
+  await expect(
+    t.mutation(api.rows.add, {
+      content: "復活させない",
+      dateJst: MONDAY,
+      itemId: other._id,
+      minutes: 10,
+      todayJst: MONDAY,
+    }),
+  ).rejects.toThrow();
+  expect(await t.mutation(api.days.open, { dateJst: MONDAY, todayJst: MONDAY })).toEqual({
+    applied: false,
+  });
+  expect((await t.query(api.trash.list, {})).days).toHaveLength(1);
+});

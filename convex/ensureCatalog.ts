@@ -7,6 +7,8 @@ import {
   WEEKDAY_NAMES,
   seedLineNamesForWeekday,
 } from "./lib/catalog";
+import { NotFoundError } from "./lib/errors";
+import { throwDomain } from "./ownerFunctions";
 
 export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<void> {
   const existingItems = await ctx.db
@@ -116,14 +118,19 @@ export async function requireLiveDay(
   ownerId: string,
   dateJst: string,
 ): Promise<Doc<"days">> {
-  const existing = await getLiveDay(ctx, ownerId, dateJst);
+  const existing = await getDayByDate(ctx, ownerId, dateJst);
+  if (existing !== null && existing.deletedAt !== undefined) {
+    throwDomain(
+      new NotFoundError({ message: "ゴミ箱の日です。先に戻してください", resource: "日" }),
+    );
+  }
   if (existing !== null) {
     return existing;
   }
   const id = await ctx.db.insert("days", { dateJst, ownerId });
   const created = await ctx.db.get(id);
   if (created === null) {
-    throw new Error("日を作れませんでした");
+    throwDomain(new NotFoundError({ message: "日を作れませんでした", resource: "日" }));
   }
   return created;
 }
