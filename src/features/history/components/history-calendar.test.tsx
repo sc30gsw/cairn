@@ -18,6 +18,9 @@ test("空マスが休養に見える", () => {
   );
   expect(getByText(/休養/)).toBeDefined();
   expect(getByText(/均10分/)).toBeDefined();
+  expect(getByText("背景色は学習時間のヒートマップです。")).toBeDefined();
+  expect(getByText("休養（記録なし）")).toBeDefined();
+  expect(getByText("120分+")).toBeDefined();
 });
 
 test("週の行がタイトルとステータスで見える", () => {

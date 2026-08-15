@@ -10,9 +10,9 @@ import {
   TextInput,
   Tooltip,
 } from "@mantine/core";
+import { IconTrash } from "@tabler/icons-react";
 import type { ChangeEvent } from "react";
 
-import { TrashIcon } from "~/components/trash-icon";
 import { RowEditorSchema } from "~/features/today/schemas/row-editor-schema";
 import type { DayRow } from "~/features/today/types/day";
 
@@ -172,7 +172,7 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
                   type="button"
                   variant="white"
                 >
-                  <TrashIcon />
+                  <IconTrash aria-hidden size={16} stroke={1.5} />
                 </ActionIcon>
               </Tooltip>
             </Group>

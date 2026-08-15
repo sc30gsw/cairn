@@ -1,8 +1,12 @@
-import { Card, Stack, Text } from "@mantine/core";
+import { Box, Card, Stack, Text } from "@mantine/core";
 import { MonthView } from "@mantine/schedule";
 import type { FunctionReturnType } from "convex/server";
 
 import type { api } from "~/../convex/_generated/api";
+import { HeatmapLegend } from "~/features/history/components/heatmap-legend";
+import classes from "~/features/history/components/history-month-view.module.css";
+import { heatmapBackgroundColor } from "~/features/history/lib/heatmap-colors";
+import { SCHEDULE_LABELS_JA } from "~/features/history/lib/schedule-labels";
 import { holidayName } from "~/lib/holiday";
 
 type MonthDay = FunctionReturnType<typeof api.history.month>["days"][number];
@@ -18,20 +22,14 @@ function formatDayAverage(minutes: number): string {
   return `${Math.round(minutes)}分`;
 }
 
-function heatmapColor(minutes: number): string | undefined {
-  if (minutes === 0) {
-    return undefined;
+function dayAriaLabel(cell: MonthDay | undefined, dateJst: string): string {
+  const holiday = holidayName(dateJst);
+  if (cell === undefined || cell.isRest) {
+    return holiday ? `休養、${holiday}` : "休養";
   }
-  if (minutes < 30) {
-    return "var(--mantine-color-blue-1)";
-  }
-  if (minutes < 60) {
-    return "var(--mantine-color-blue-2)";
-  }
-  if (minutes < 120) {
-    return "var(--mantine-color-blue-3)";
-  }
-  return "var(--mantine-color-blue-4)";
+  const average = formatDayAverage(cell.movingAverage);
+  const base = `${cell.minutes}分、均${average}`;
+  return holiday ? `${base}、${holiday}` : base;
 }
 
 export function HistoryMonthView({ days, month, onDayClick, onMonthChange }: HistoryMonthViewProps) {
@@ -57,34 +55,46 @@ export function HistoryMonthView({ days, month, onDayClick, onMonthChange }: His
         <Text c="dimmed" maw={420} size="sm" ta="center">
           各日の学習時間と、7日間の1日平均（均）。記録がない日は0分として数えます。
         </Text>
-        <MonthView
-          date={monthValue}
-          events={events}
-          getDayProps={(date) => {
-            const cell = byDate.get(date);
-            const holiday = holidayName(date);
-            const rest = cell?.isRest ?? true;
-            const bg = rest ? "var(--mantine-color-yellow-1)" : heatmapColor(cell?.minutes ?? 0);
-            const borderLeft = holiday && !rest ? "3px solid var(--mantine-color-red-4)" : undefined;
-            return {
-              style: {
-                backgroundColor: bg,
-                borderLeft,
-              },
-            };
-          }}
-          maxEventsPerDay={1}
-          onDateChange={(value) => onMonthChange(new Date(`${value}T12:00:00+09:00`))}
-          onDayClick={(date) => onDayClick(date)}
-          renderEventBody={(event) => {
-            const dateJst = event.start.slice(0, 10);
-            return (
-              <Text c={holidayName(dateJst) ? "red.6" : "dimmed"} lineClamp={2} size="xs">
-                {event.title}
-              </Text>
-            );
-          }}
-        />
+        <Box className={classes.root} w="100%">
+          <MonthView
+            date={monthValue}
+            events={events}
+            getDayProps={(date) => {
+              const cell = byDate.get(date);
+              const holiday = holidayName(date);
+              const rest = cell?.isRest ?? true;
+              const bg = heatmapBackgroundColor(cell?.minutes ?? 0, rest);
+              const borderLeft = holiday && !rest ? "3px solid var(--mantine-color-red-4)" : undefined;
+              const label = dayAriaLabel(cell, date);
+              return {
+                "aria-label": label,
+                style: {
+                  backgroundColor: bg,
+                  borderLeft,
+                },
+                title: label,
+              };
+            }}
+            labels={SCHEDULE_LABELS_JA}
+            locale="ja"
+            maxEventsPerDay={1}
+            monthYearSelectProps={{ popoverProps: { withinPortal: true } }}
+            onDateChange={(value) => onMonthChange(new Date(`${value}T12:00:00+09:00`))}
+            onDayClick={(date) => onDayClick(date)}
+            renderEventBody={(event) => {
+              const dateJst = event.start.slice(0, 10);
+              return (
+                <Text c={holidayName(dateJst) ? "red.6" : "dimmed"} lineClamp={2} size="xs">
+                  {event.title}
+                </Text>
+              );
+            }}
+            styles={{
+              viewSelect: { display: "none" },
+            }}
+          />
+        </Box>
+        <HeatmapLegend />
       </Stack>
     </Card>
   );

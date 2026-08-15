@@ -1,10 +1,5 @@
 import { Field, Form, useForm } from "@formisch/react";
-import {
-  DragDropContext,
-  Draggable,
-  Droppable,
-  type DropResult,
-} from "@hello-pangea/dnd";
+import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
 import {
   ActionIcon,
   Button,
@@ -347,6 +342,7 @@ function CategoryEditor({
             fullWidth
             onClick={() => onRemove(category._id)}
             type="button"
+            rightSection={<IconTrash aria-hidden size={16} stroke={1.5} />}
             variant="subtle"
           >
             削除
@@ -389,16 +385,30 @@ function ItemEditor({
         }}
       >
         <Stack gap="xs">
-          <Field of={form} path={["name"]}>
-            {(field) => (
-              <TextInput
-                {...field.props}
-                aria-label={`${item.name}の名前`}
-                error={field.errors?.[0]}
-                value={field.input}
-              />
-            )}
-          </Field>
+          <Group align="flex-start" wrap="nowrap">
+            <Field of={form} path={["name"]}>
+              {(field) => (
+                <TextInput
+                  {...field.props}
+                  aria-label={`${item.name}の名前`}
+                  error={field.errors?.[0]}
+                  value={field.input}
+                />
+              )}
+            </Field>
+            <Tooltip label={`${item.name}を削除`} withArrow>
+              <ActionIcon
+                aria-label={`${item.name}を削除`}
+                color="red"
+                onClick={() => onRemove(item._id)}
+                size="input-sm"
+                type="button"
+                variant="white"
+              >
+                <IconTrash aria-hidden size={16} stroke={1.5} />
+              </ActionIcon>
+            </Tooltip>
+          </Group>
           <Group gap="xs" grow preventGrowOverflow={false} wrap="nowrap">
             <Button aria-label={`${item.name}を保存`} fullWidth type="submit">
               保存
@@ -429,18 +439,6 @@ function ItemEditor({
                 </Menu.Dropdown>
               </Menu>
             ) : null}
-            <Tooltip label={`${item.name}を削除`} withArrow>
-              <ActionIcon
-                aria-label={`${item.name}を削除`}
-                color="red"
-                onClick={() => onRemove(item._id)}
-                size="input-sm"
-                type="button"
-                variant="white"
-              >
-                <IconTrash aria-hidden size={16} stroke={1.5} />
-              </ActionIcon>
-            </Tooltip>
           </Group>
         </Stack>
       </Form>

@@ -90,10 +90,12 @@ function HistoryReady() {
               day={dayBreakdown}
               month={monthBreakdown}
               onScopeChange={setAnalysisScope}
+              onSwitchToMonthTab={() => setActiveTab("month")}
               scope={analysisScope}
               selectedDateJst={selectedDateJst}
               todayJst={today}
               week={weekBreakdown}
+              yearMonth={yearMonth}
             />
           </Card>
           <Card mt="md" padding="md">

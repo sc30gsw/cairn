@@ -14,11 +14,11 @@ import {
   Title,
   Tooltip,
 } from "@mantine/core";
+import { IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
 import * as v from "valibot";
 import { WEEKDAY_NAMES } from "~domain/catalog";
 
-import { TrashIcon } from "~/components/trash-icon";
 import { CreatePresetSchema, PresetSchema } from "~/features/catalog/schemas/preset-schema";
 import type { ItemDto, PresetDto } from "~/features/catalog/types/item";
 import { parseItemId } from "~/features/catalog/types/item";
@@ -384,7 +384,7 @@ function PresetEditor({
                         type="button"
                         variant="white"
                       >
-                        <TrashIcon />
+                        <IconTrash aria-hidden size={16} stroke={1.5} />
                       </ActionIcon>
                     </Tooltip>
                   </Input.Wrapper>

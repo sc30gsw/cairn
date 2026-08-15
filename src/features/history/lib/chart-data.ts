@@ -33,7 +33,7 @@ export function buildDonutCells(
 export type WeekBarPoint = {
   dateJst: string;
   label: string;
-  確定: number;
+  完了: number;
 };
 
 export function buildWeekBarData(
@@ -42,6 +42,6 @@ export function buildWeekBarData(
   return byDay.map((day) => ({
     dateJst: day.dateJst,
     label: day.dateJst.slice(8),
-    確定: day.confirmedMinutes,
+    完了: day.confirmedMinutes,
   }));
 }

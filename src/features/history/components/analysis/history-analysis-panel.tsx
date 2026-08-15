@@ -6,6 +6,7 @@ import type { FunctionReturnType } from "convex/server";
 import type { api } from "~/../convex/_generated/api";
 import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
 import { BreakdownTable } from "~/features/history/components/breakdown-table";
+import { HeatmapLegend } from "~/features/history/components/heatmap-legend";
 import { buildDonutCells, buildWeekBarData } from "~/features/history/lib/chart-data";
 
 type DayBreakdown = FunctionReturnType<typeof api.history.dayBreakdown>;
@@ -18,11 +19,18 @@ type HistoryAnalysisPanelProps = {
   day: DayBreakdown;
   month: MonthBreakdown;
   onScopeChange: (scope: AnalysisScope) => void;
+  onSwitchToMonthTab: () => void;
   scope: AnalysisScope;
   selectedDateJst: string;
   todayJst: string;
   week: WeekBreakdown;
+  yearMonth: string;
 };
+
+function formatYearMonth(yearMonth: string): string {
+  const [year, month] = yearMonth.split("-");
+  return `${year}年${Number(month)}月`;
+}
 
 function RestAlert() {
   return (
@@ -34,8 +42,8 @@ function RestAlert() {
 
 function EmptyConfirmedAlert() {
   return (
-    <Alert color="blue" title="確定なし">
-      確定した記録がありません。
+    <Alert color="blue" title="完了なし">
+      完了した記録がありません。
     </Alert>
   );
 }
@@ -62,16 +70,19 @@ function DonutSection({
       <Title id={`${title}-donut`} order={3}>
         {title}
       </Title>
-      <DonutChart
-        chartLabel={`${breakdown.confirmedMinutes}分`}
-        data={data}
-        size={200}
-        strokeColor="var(--mantine-color-body)"
-        thickness={24}
-        tooltipDataSource="segment"
-        valueFormatter={(value) => `${value}分`}
-        withLegend
-      />
+      <Stack align="center" gap="sm" mt="sm">
+        <DonutChart
+          chartLabel={`${breakdown.confirmedMinutes}分`}
+          data={data}
+          size={200}
+          strokeColor="var(--mantine-color-body)"
+          styles={{ root: { marginInline: "auto" } }}
+          thickness={24}
+          tooltipDataSource="segment"
+          valueFormatter={(value) => `${value}分`}
+          withLegend
+        />
+      </Stack>
     </Card>
   );
 }
@@ -80,10 +91,12 @@ export function HistoryAnalysisPanel({
   day,
   month,
   onScopeChange,
+  onSwitchToMonthTab,
   scope,
   selectedDateJst,
   todayJst,
   week,
+  yearMonth,
 }: HistoryAnalysisPanelProps) {
   return (
     <Stack gap="md">
@@ -100,7 +113,7 @@ export function HistoryAnalysisPanel({
         <Text c="dimmed" size="sm">
           {scope === "day" && selectedDateJst}
           {scope === "week" && `${week.weekStart} 〜 ${week.weekEnd}`}
-          {scope === "month" && selectedDateJst.slice(0, 7)}
+          {scope === "month" && formatYearMonth(yearMonth)}
         </Text>
       </Group>
 
@@ -111,6 +124,18 @@ export function HistoryAnalysisPanel({
           weekEndJst={week.weekEnd}
           weeklyGoalMinutes={week.weeklyGoalMinutes}
         />
+      ) : null}
+
+      {scope === "month" ? (
+        <Stack gap="xs">
+          <Text size="sm">
+            完了 {month.confirmedMinutes}分 / 見送り {month.skippedMinutes}分
+          </Text>
+          <HeatmapLegend />
+          <Button onClick={onSwitchToMonthTab} size="compact-sm" variant="light">
+            月タブでヒートマップを見る
+          </Button>
+        </Stack>
       ) : null}
 
       <Grid>
@@ -124,7 +149,7 @@ export function HistoryAnalysisPanel({
                 data={buildWeekBarData(week.byDay)}
                 dataKey="label"
                 h={220}
-                series={[{ color: "blue.6", name: "確定" }]}
+                series={[{ color: "blue.6", name: "完了" }]}
                 tickLine="y"
                 valueFormatter={(value) => `${value}分`}
                 withLegend={false}
@@ -146,12 +171,6 @@ export function HistoryAnalysisPanel({
         </Grid.Col>
       </Grid>
 
-      {scope === "month" ? (
-        <Text c="dimmed" size="sm">
-          月の推移は「月」タブのカレンダーで確認できます。
-        </Text>
-      ) : null}
-
       <BreakdownTable
         confirmedMinutes={
           scope === "day"
@@ -164,7 +183,7 @@ export function HistoryAnalysisPanel({
       />
 
       {scope === "day" && !day.isRest ? (
-        <Button component={Link} to="/days/$dateJst" params={{ dateJst: selectedDateJst }}>
+        <Button component={Link} params={{ dateJst: selectedDateJst }} to="/days/$dateJst">
           この日を開く
         </Button>
       ) : null}

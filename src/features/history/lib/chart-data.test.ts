@@ -14,5 +14,5 @@ test("見送りスライスを Donut に足す", () => {
 test("週 Bar のラベルは日付", () => {
   expect(
     buildWeekBarData([{ confirmedMinutes: 10, dateJst: "2026-08-17" }]),
-  ).toEqual([{ dateJst: "2026-08-17", label: "17", 確定: 10 }]);
+  ).toEqual([{ dateJst: "2026-08-17", label: "17", 完了: 10 }]);
 });

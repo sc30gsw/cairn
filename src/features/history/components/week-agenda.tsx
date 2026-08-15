@@ -2,18 +2,12 @@ import { Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
 import type { FunctionReturnType } from "convex/server";
 import { addDaysJst } from "~domain/jst";
 
-import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
-
 import type { api } from "~/../convex/_generated/api";
+import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
+import { RECORD_STATUS_UI } from "~/features/history/lib/record-status-label";
 
 type WeekPage = FunctionReturnType<typeof api.history.week>;
 type WeekEvent = WeekPage["events"][number];
-
-const STATUS_BADGE = {
-  スキップ: { color: "yellow", label: "見送り" },
-  未着手: { color: "gray", label: "未着手" },
-  確定: { color: "blue", label: "完了" },
-} as const satisfies Record<WeekEvent["status"], { color: string; label: string }>;
 
 const DATE_HEADER_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
   day: "numeric",
@@ -57,7 +51,7 @@ function weekDates(weekStart: string): string[] {
 }
 
 function WeekEventRow({ event }: { event: WeekEvent }) {
-  const badge = STATUS_BADGE[event.status];
+  const badge = RECORD_STATUS_UI[event.status];
 
   return (
     <Group gap="sm" justify="space-between" wrap="nowrap">
@@ -76,13 +70,7 @@ function WeekEventRow({ event }: { event: WeekEvent }) {
   );
 }
 
-export function WeekAgenda({
-  todayJst,
-  week,
-}: {
-  todayJst: string;
-  week: WeekPage;
-}) {
+export function WeekAgenda({ todayJst, week }: { todayJst: string; week: WeekPage }) {
   const eventsByDate = new Map<string, WeekEvent[]>();
   for (const event of week.events) {
     const bucket = eventsByDate.get(event.dateJst) ?? [];
