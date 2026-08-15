@@ -1,7 +1,9 @@
+import { groupBy, mapValues, prop } from "remeda";
 import { v } from "convex/values";
 
 import type { Doc } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
+import { loadCatalog } from "./lib/catalogLoader";
 import { categoryFields } from "./lib/categoryFields";
 import {
   aggregateBreakdownRows,
@@ -11,53 +13,16 @@ import {
 import { addDaysJst, calendarDatesInMonth, mondayOfWeek } from "./lib/jst";
 import { sevenDayMovingAverage } from "./lib/movingAverage";
 import { confirmedVolumeMinutes } from "./lib/volume";
+import {
+  breakdownRowValidator,
+  categoryBreakdownValidator,
+  monthDayValidator,
+  monthEventValidator,
+  weekDayBreakdownValidator,
+} from "./lib/validators";
 import { ownerQuery } from "./ownerFunctions";
 
-const categoryBreakdownValidator = v.object({
-  category: v.string(),
-  categorySortOrder: v.number(),
-  minutes: v.number(),
-});
-
-const breakdownRowValidator = v.object({
-  category: v.string(),
-  itemName: v.string(),
-  minutes: v.number(),
-  status: v.union(v.literal("確定"), v.literal("未着手"), v.literal("スキップ")),
-});
-
-const monthDayValidator = v.object({
-  dateJst: v.string(),
-  isRest: v.boolean(),
-  minutes: v.number(),
-  movingAverage: v.number(),
-});
-
-const monthEventValidator = v.object({
-  category: v.string(),
-  dateJst: v.string(),
-  minutes: v.number(),
-  rowId: v.id("rows"),
-  status: v.union(v.literal("確定"), v.literal("未着手"), v.literal("スキップ")),
-  title: v.string(),
-});
-
-async function loadCatalog(ctx: QueryCtx, ownerId: string) {
-  const [items, categories] = await Promise.all([
-    ctx.db
-      .query("items")
-      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
-      .collect(),
-    ctx.db
-      .query("categories")
-      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
-      .collect(),
-  ]);
-  return {
-    categoryById: new Map(categories.map((category) => [category._id, category])),
-    itemById: new Map(items.map((item) => [item._id, item])),
-  };
-}
+const YEAR_HEATMAP_DAYS = 365;
 
 function liveDayDatesFrom(days: Doc<"days">[]): Set<string> {
   return new Set(days.filter((day) => day.deletedAt === undefined).map((day) => day.dateJst));
@@ -65,6 +30,66 @@ function liveDayDatesFrom(days: Doc<"days">[]): Set<string> {
 
 function liveRows(rows: Doc<"rows">[], liveDayDates: ReadonlySet<string>): Doc<"rows">[] {
   return rows.filter((row) => row.deletedAt === undefined && liveDayDates.has(row.dateJst));
+}
+
+function calendarDatesFromTo(startDateJst: string, endDateJst: string): string[] {
+  const dates: string[] = [];
+  let dateJst = startDateJst;
+  while (dateJst <= endDateJst) {
+    dates.push(dateJst);
+    dateJst = addDaysJst(dateJst, 1);
+  }
+  return dates;
+}
+
+function buildMinutesByDate(
+  rows: Doc<"rows">[],
+  liveDayDates: ReadonlySet<string>,
+): Record<string, number> {
+  return mapValues(
+    groupBy(liveRows(rows, liveDayDates), prop("dateJst")),
+    confirmedVolumeMinutes,
+  );
+}
+
+function buildHeatmapDays(
+  dates: readonly string[],
+  liveDayDates: ReadonlySet<string>,
+  minutesByDate: Readonly<Record<string, number>>,
+) {
+  return dates.map((dateJst) => ({
+    dateJst,
+    isRest: !liveDayDates.has(dateJst),
+    minutes: minutesByDate[dateJst] ?? 0,
+    movingAverage: sevenDayMovingAverage(minutesByDate, dateJst),
+  }));
+}
+
+async function computeYearHeatmap(ctx: QueryCtx, ownerId: string, todayJst: string) {
+  const end = todayJst;
+  const start = addDaysJst(end, -(YEAR_HEATMAP_DAYS - 1));
+  const lookbackStart = addDaysJst(start, -6);
+  const [rows, days] = await Promise.all([
+    ctx.db
+      .query("rows")
+      .withIndex("by_owner_and_date", (q) =>
+        q.eq("ownerId", ownerId).gte("dateJst", lookbackStart).lte("dateJst", end),
+      )
+      .collect(),
+    ctx.db
+      .query("days")
+      .withIndex("by_owner_and_date", (q) =>
+        q.eq("ownerId", ownerId).gte("dateJst", lookbackStart).lte("dateJst", end),
+      )
+      .collect(),
+  ]);
+  const liveDayDates = liveDayDatesFrom(days);
+  const minutesByDate = buildMinutesByDate(rows, liveDayDates);
+  return {
+    days: buildHeatmapDays(calendarDatesFromTo(start, end), liveDayDates, minutesByDate),
+    endDate: end,
+    startDate: start,
+  };
 }
 
 async function computeMonthBreakdown(
@@ -126,25 +151,11 @@ async function computeMonthBreakdown(
       title: item?.name ?? "不明",
     };
   });
-  const minutesByDate = new Map<string, number>();
-  const grouped = new Map<string, Doc<"rows">[]>();
-  for (const row of liveRows(rows, liveDayDates)) {
-    const bucket = grouped.get(row.dateJst) ?? [];
-    bucket.push(row);
-    grouped.set(row.dateJst, bucket);
-  }
-  for (const [dateJst, dateRows] of grouped) {
-    minutesByDate.set(dateJst, confirmedVolumeMinutes(dateRows));
-  }
+  const minutesByDate = buildMinutesByDate(rows, liveDayDates);
   return {
     byCategory: aggregated.byCategory,
     confirmedMinutes: aggregated.confirmedMinutes,
-    days: dates.map((dateJst) => ({
-      dateJst,
-      isRest: !liveDayDates.has(dateJst),
-      minutes: minutesByDate.get(dateJst) ?? 0,
-      movingAverage: sevenDayMovingAverage(minutesByDate, dateJst),
-    })),
+    days: buildHeatmapDays(dates, liveDayDates, minutesByDate),
     events,
     rows: aggregated.rows,
     skippedMinutes: aggregated.skippedMinutes,
@@ -233,6 +244,16 @@ export const monthBreakdown = ownerQuery({
   }),
 });
 
+export const yearHeatmap = ownerQuery({
+  args: { todayJst: v.string() },
+  handler: async (ctx, args) => computeYearHeatmap(ctx, ctx.ownerId, args.todayJst),
+  returns: v.object({
+    days: v.array(monthDayValidator),
+    endDate: v.string(),
+    startDate: v.string(),
+  }),
+});
+
 export const week = ownerQuery({
   args: { dateJst: v.string() },
   handler: async (ctx, args) => {
@@ -246,16 +267,7 @@ export const week = ownerQuery({
     };
   },
   returns: v.object({
-    events: v.array(
-      v.object({
-        category: v.string(),
-        dateJst: v.string(),
-        minutes: v.number(),
-        rowId: v.id("rows"),
-        status: v.union(v.literal("確定"), v.literal("未着手"), v.literal("スキップ")),
-        title: v.string(),
-      }),
-    ),
+    events: v.array(monthEventValidator),
     volumeMinutes: v.number(),
     weekEnd: v.string(),
     weekStart: v.string(),
@@ -308,14 +320,7 @@ export const weekBreakdown = ownerQuery({
   },
   returns: v.object({
     byCategory: v.array(categoryBreakdownValidator),
-    byDay: v.array(
-      v.object({
-        confirmedMinutes: v.number(),
-        dateJst: v.string(),
-        isRest: v.boolean(),
-        skippedMinutes: v.number(),
-      }),
-    ),
+    byDay: v.array(weekDayBreakdownValidator),
     confirmedMinutes: v.number(),
     rows: v.array(breakdownRowValidator),
     skippedMinutes: v.number(),

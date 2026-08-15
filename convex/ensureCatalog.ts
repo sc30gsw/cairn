@@ -1,3 +1,5 @@
+import { groupBy, indexBy, prop } from "remeda";
+
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import {
@@ -36,7 +38,12 @@ async function categoriesByName(
     .query("categories")
     .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
     .collect();
-  return new Map(categories.map((category) => [category.name, category._id]));
+  return new Map(
+    Object.entries(indexBy(categories, prop("name"))).map(([name, category]) => [
+      name,
+      category._id,
+    ]),
+  );
 }
 
 async function backfillItemCategories(
@@ -71,17 +78,12 @@ export async function backfillItemSortOrders(ctx: MutationCtx, ownerId: string):
     .query("items")
     .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
     .collect();
-  const byCategory = new Map<Id<"categories">, typeof items>();
-  for (const item of items) {
-    if (item.categoryId === undefined) {
-      continue;
-    }
-    const bucket = byCategory.get(item.categoryId) ?? [];
-    bucket.push(item);
-    byCategory.set(item.categoryId, bucket);
-  }
+  const byCategory = groupBy(
+    items.filter((item) => item.categoryId !== undefined),
+    (item) => item.categoryId!,
+  );
   await Promise.all(
-    [...byCategory.entries()].flatMap(([, categoryItems]) => {
+    Object.values(byCategory).flatMap((categoryItems) => {
       const ordered = categoryItems.toSorted(compareItemsBySortOrder);
       return ordered.map((item, sortOrder) => {
         if (item.sortOrder === sortOrder) {
@@ -129,7 +131,7 @@ export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<
     .query("items")
     .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
     .collect();
-  const itemByName = new Map(items.map((item) => [item.name, item]));
+  const itemByName = indexBy(items, prop("name"));
 
   const existingPresets = await ctx.db
     .query("presets")
@@ -139,7 +141,7 @@ export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<
     await Promise.all(
       WEEKDAY_NAMES.map((name, weekday) => {
         const lines = seedLineNamesForWeekday(weekday).flatMap((itemName) => {
-          const item = itemByName.get(itemName);
+          const item = itemByName[itemName];
           if (item === undefined) {
             return [];
           }

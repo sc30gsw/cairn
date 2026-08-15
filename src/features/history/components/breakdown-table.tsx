@@ -1,10 +1,7 @@
 import { Group, Progress, Table, Text } from "@mantine/core";
-import type { FunctionReturnType } from "convex/server";
 
-import type { api } from "~/../convex/_generated/api";
 import { recordStatusLabel } from "~/features/history/lib/record-status-label";
-
-type BreakdownRow = FunctionReturnType<typeof api.history.dayBreakdown>["rows"][number];
+import type { BreakdownRow } from "~/features/history/types/history";
 
 type BreakdownTableProps = {
   confirmedMinutes: number;

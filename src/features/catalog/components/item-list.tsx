@@ -16,6 +16,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { IconGripVertical, IconTrash } from "@tabler/icons-react";
+import { groupBy, mapValues, prop, sortBy } from "remeda";
 
 import { CategorySchema } from "~/features/catalog/schemas/category-schema";
 import { ItemNameSchema } from "~/features/catalog/schemas/item-schema";
@@ -53,18 +54,9 @@ export function ItemList({
   onReorderItems,
 }: ItemListProps) {
   const sortedCategories = categories.toSorted((left, right) => left.sortOrder - right.sortOrder);
-  const itemsByCategory = new Map<ItemDto["categoryId"], ItemDto[]>();
-  for (const item of items) {
-    const bucket = itemsByCategory.get(item.categoryId) ?? [];
-    bucket.push(item);
-    itemsByCategory.set(item.categoryId, bucket);
-  }
-  for (const [categoryId, categoryItems] of itemsByCategory) {
-    itemsByCategory.set(
-      categoryId,
-      categoryItems.toSorted((left, right) => left.sortOrder - right.sortOrder),
-    );
-  }
+  const itemsByCategory = mapValues(groupBy(items, prop("categoryId")), (categoryItems) =>
+    sortBy(categoryItems, prop("sortOrder")),
+  );
 
   async function handleDragEnd(result: DropResult) {
     const { destination, draggableId, source } = result;
@@ -73,7 +65,7 @@ export function ItemList({
     }
     const sourceCategoryId = parseCategoryId(source.droppableId);
     const destinationCategoryId = parseCategoryId(destination.droppableId);
-    const sourceItems = [...(itemsByCategory.get(sourceCategoryId) ?? [])];
+    const sourceItems = [...(itemsByCategory[sourceCategoryId] ?? [])];
     const movedIndex = sourceItems.findIndex((item) => item._id === draggableId);
     if (movedIndex === -1) {
       return;
@@ -101,7 +93,7 @@ export function ItemList({
       categoryId: sourceCategoryId,
       orderedItemIds: sourceItems.map((item) => item._id),
     });
-    const destinationItems = [...(itemsByCategory.get(destinationCategoryId) ?? [])].filter(
+    const destinationItems = [...(itemsByCategory[destinationCategoryId] ?? [])].filter(
       (item) => item._id !== moved._id,
     );
     destinationItems.splice(destination.index, 0, { ...moved, categoryId: destinationCategoryId });
@@ -127,7 +119,7 @@ export function ItemList({
               <KanbanColumn
                 categories={sortedCategories}
                 category={category}
-                items={itemsByCategory.get(category._id) ?? []}
+                items={itemsByCategory[category._id] ?? []}
                 key={category._id}
                 onCreateItem={onCreateItem}
                 onRemoveCategory={onRemoveCategory}

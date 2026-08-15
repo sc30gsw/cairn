@@ -19,6 +19,7 @@ import type * as history from "../history.js";
 import type * as http from "../http.js";
 import type * as items from "../items.js";
 import type * as lib_catalog from "../lib/catalog.js";
+import type * as lib_catalogLoader from "../lib/catalogLoader.js";
 import type * as lib_categories from "../lib/categories.js";
 import type * as lib_categoryFields from "../lib/categoryFields.js";
 import type * as lib_conditions from "../lib/conditions.js";
@@ -59,6 +60,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   items: typeof items;
   "lib/catalog": typeof lib_catalog;
+  "lib/catalogLoader": typeof lib_catalogLoader;
   "lib/categories": typeof lib_categories;
   "lib/categoryFields": typeof lib_categoryFields;
   "lib/conditions": typeof lib_conditions;

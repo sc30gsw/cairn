@@ -11,17 +11,12 @@ import {
   Title,
 } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
-import type { FunctionReturnType } from "convex/server";
 
-import type { api } from "~/../convex/_generated/api";
 import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
 import { BreakdownTable } from "~/features/history/components/breakdown-table";
 import { HeatmapLegend } from "~/features/history/components/heatmap-legend";
 import { buildDonutCells, buildWeekBarData } from "~/features/history/lib/chart-data";
-
-type DayBreakdown = FunctionReturnType<typeof api.history.dayBreakdown>;
-type WeekBreakdown = FunctionReturnType<typeof api.history.weekBreakdown>;
-type MonthBreakdown = FunctionReturnType<typeof api.history.monthBreakdown>;
+import type { DayBreakdown, MonthBreakdown, WeekBreakdown } from "~/features/history/types/history";
 
 type AnalysisScope = "day" | "month" | "week";
 

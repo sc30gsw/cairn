@@ -1,7 +1,6 @@
 import { Heatmap } from "@mantine/charts";
-import type { FunctionReturnType } from "convex/server";
+import { indexBy, prop } from "remeda";
 
-import type { api } from "~/../convex/_generated/api";
 import {
   buildHeatmapChartData,
   formatHeatmapTooltip,
@@ -9,20 +8,19 @@ import {
   HEATMAP_DOMAIN,
   HEATMAP_MONTH_LABELS,
   HEATMAP_WEEKDAY_LABELS,
-  monthHeatmapRange,
+  yearHeatmapRange,
 } from "~/features/history/lib/heatmap-colors";
-
-type MonthDay = FunctionReturnType<typeof api.history.month>["days"][number];
+import type { HeatmapDay } from "~/features/history/types/history";
 
 type HistoryLearningHeatmapProps = {
-  days: MonthDay[];
+  days: HeatmapDay[];
   onDayClick: (dateJst: string) => void;
-  yearMonth: string;
+  todayJst: string;
 };
 
-export function HistoryLearningHeatmap({ days, onDayClick, yearMonth }: HistoryLearningHeatmapProps) {
-  const byDate = new Map(days.map((day) => [day.dateJst, day]));
-  const { endDate, startDate } = monthHeatmapRange(yearMonth);
+export function HistoryLearningHeatmap({ days, onDayClick, todayJst }: HistoryLearningHeatmapProps) {
+  const byDate = indexBy(days, prop("dateJst"));
+  const { endDate, startDate } = yearHeatmapRange(todayJst);
 
   return (
     <Heatmap
@@ -35,7 +33,7 @@ export function HistoryLearningHeatmap({ days, onDayClick, yearMonth }: HistoryL
         onClick: () => onDayClick(date),
         style: { cursor: "pointer" },
       })}
-      getTooltipLabel={({ date, value }) => formatHeatmapTooltip(date, value, byDate.get(date))}
+      getTooltipLabel={({ date, value }) => formatHeatmapTooltip(date, value, byDate[date])}
       monthLabels={[...HEATMAP_MONTH_LABELS]}
       rectRadius={2}
       rectSize={12}

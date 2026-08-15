@@ -1,3 +1,4 @@
+import { flatMap, map, pipe } from "remeda";
 import { v } from "convex/values";
 
 import type { Id } from "./_generated/dataModel";
@@ -42,8 +43,9 @@ export const list = ownerQuery({
       .query("items")
       .withIndex("by_owner", (q) => q.eq("ownerId", ctx.ownerId))
       .collect();
-    return items
-      .flatMap((item) => {
+    return pipe(
+      items,
+      flatMap((item) => {
         if (item.categoryId === undefined) {
           return [];
         }
@@ -56,15 +58,17 @@ export const list = ownerQuery({
             sortOrder: item.sortOrder,
           },
         ];
-      })
-      .toSorted(
-        (left, right) =>
-          left.sortKey - right.sortKey || left.name.localeCompare(right.name, "ja"),
-      )
-      .map(({ sortKey: _sortKey, sortOrder, ...item }, index) => ({
+      }),
+      (list) =>
+        list.toSorted(
+          (left, right) =>
+            left.sortKey - right.sortKey || left.name.localeCompare(right.name, "ja"),
+        ),
+      map(({ sortKey: _sortKey, sortOrder, ...item }, index) => ({
         ...item,
         sortOrder: sortOrder ?? index,
-      }));
+      })),
+    );
   },
   returns: v.array(itemDtoValidator),
 });

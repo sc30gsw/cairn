@@ -1,11 +1,10 @@
-import { calendarDatesInMonth } from "~domain/jst";
+import { addDaysJst, calendarDatesInMonth } from "~domain/jst";
 
-export type HeatmapDay = {
-  dateJst: string;
-  isRest: boolean;
-  minutes: number;
-  movingAverage: number;
-};
+import type { HeatmapDay } from "~/features/history/types/history";
+
+export const YEAR_HEATMAP_DAYS = 365;
+
+export type { HeatmapDay };
 
 export type HeatmapLegendEntry = {
   backgroundColor: string;
@@ -43,6 +42,13 @@ export function monthHeatmapRange(yearMonth: string): { endDate: string; startDa
   return {
     endDate: dates.at(-1) ?? `${yearMonth}-01`,
     startDate: dates[0] ?? `${yearMonth}-01`,
+  };
+}
+
+export function yearHeatmapRange(todayJst: string): { endDate: string; startDate: string } {
+  return {
+    endDate: todayJst,
+    startDate: addDaysJst(todayJst, -(YEAR_HEATMAP_DAYS - 1)),
   };
 }
 

@@ -39,11 +39,11 @@ function HistoryReady() {
   const yearMonth = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`;
   const weekAnchor = mondayOfWeek(selectedDateJst);
 
-  const { data: monthData } = useSuspenseQuery(
-    convexQuery(api.history.month, { todayJst: today, yearMonth }),
-  );
   const { data: monthBreakdown } = useSuspenseQuery(
     convexQuery(api.history.monthBreakdown, { todayJst: today, yearMonth }),
+  );
+  const { data: yearHeatmap } = useSuspenseQuery(
+    convexQuery(api.history.yearHeatmap, { todayJst: today }),
   );
   const { data: week } = useSuspenseQuery(convexQuery(api.history.week, { dateJst: weekAnchor }));
   const { data: weekBreakdown } = useSuspenseQuery(
@@ -67,8 +67,8 @@ function HistoryReady() {
 
         <Tabs.Panel pt="md" value="month">
           <HistoryMonthView
-            days={monthData.days}
             events={monthBreakdown.events}
+            heatmapDays={yearHeatmap.days}
             month={month}
             onDayClick={(dateJst) => {
               setSelectedDateJst(dateJst);
@@ -76,6 +76,7 @@ function HistoryReady() {
               setActiveTab("analysis");
             }}
             onMonthChange={setMonth}
+            todayJst={today}
           />
         </Tabs.Panel>
 

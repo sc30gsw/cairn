@@ -1,0 +1,15 @@
+.compactMonthView {
+  --month-view-max-events: 3;
+}
+
+.compactMonthView :global(.mantine-Schedule-monthViewDay) {
+  min-height: 4.5rem;
+}
+
+.compactMonthView :global(.mantine-Schedule-monthViewDayLabel) {
+  font-size: var(--mantine-font-size-xs);
+}
+
+.compactMonthView :global(.mantine-Schedule-monthViewEvents) {
+  gap: 2px;
+}

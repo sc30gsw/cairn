@@ -3,7 +3,11 @@ import { expect, test, vi } from "vite-plus/test";
 import { HistoryLearningHeatmap } from "~/features/history/components/history-learning-heatmap";
 import { HistoryMonthView } from "~/features/history/components/history-month-view";
 import { WeekAgenda } from "~/features/history/components/week-agenda";
-import { buildHeatmapChartData, formatHeatmapTooltip } from "~/features/history/lib/heatmap-colors";
+import {
+  buildHeatmapChartData,
+  formatHeatmapTooltip,
+  yearHeatmapRange,
+} from "~/features/history/lib/heatmap-colors";
 import { renderWithMantine } from "~/test-utils/render";
 
 test("buildHeatmapChartData は休養を 0 にする", () => {
@@ -37,21 +41,27 @@ test("formatHeatmapTooltip", () => {
   ).toBe("2026-08-17 — 30分（均10分）");
 });
 
+test("yearHeatmapRange は直近365日", () => {
+  expect(yearHeatmapRange("2026-08-17")).toEqual({
+    endDate: "2026-08-17",
+    startDate: "2025-08-18",
+  });
+});
+
 test("学習量ヒートマップが Mantine Heatmap を描画", () => {
   const { container } = renderWithMantine(
     <HistoryLearningHeatmap
       days={[{ dateJst: "2026-08-17", isRest: false, minutes: 30, movingAverage: 10 }]}
       onDayClick={vi.fn()}
-      yearMonth="2026-08"
+      todayJst="2026-08-17"
     />,
   );
   expect(container.querySelector(".mantine-Heatmap-root")).toBeDefined();
 });
 
-test("MonthView に学習内容と分数が見える", () => {
-  const { getByText } = renderWithMantine(
+test("MonthView に確定した学習内容と分数が見える", () => {
+  const { getByText, queryByText } = renderWithMantine(
     <HistoryMonthView
-      days={[{ dateJst: "2026-08-17", isRest: false, minutes: 30, movingAverage: 10 }]}
       events={[
         {
           category: "多聴",
@@ -61,14 +71,25 @@ test("MonthView に学習内容と分数が見える", () => {
           status: "確定",
           title: "Distinction 2000",
         },
+        {
+          category: "英会話",
+          dateJst: "2026-08-17",
+          minutes: 20,
+          rowId: "r2" as never,
+          status: "未着手",
+          title: "英会話",
+        },
       ]}
+      heatmapDays={[]}
       month={new Date("2026-08-17T12:00:00+09:00")}
       onDayClick={vi.fn()}
       onMonthChange={vi.fn()}
+      todayJst="2026-08-17"
     />,
   );
   expect(getByText("Distinction 2000")).toBeDefined();
   expect(getByText("30分")).toBeDefined();
+  expect(queryByText("英会話")).toBeNull();
   expect(getByText("記録")).toBeDefined();
   expect(getByText("学習量")).toBeDefined();
   expect(getByText("色の濃さは1日の学習時間です。")).toBeDefined();
@@ -77,11 +98,12 @@ test("MonthView に学習内容と分数が見える", () => {
 test("記録が学習量より上に並ぶ", () => {
   const { getByText } = renderWithMantine(
     <HistoryMonthView
-      days={[]}
       events={[]}
+      heatmapDays={[]}
       month={new Date("2026-08-17T12:00:00+09:00")}
       onDayClick={vi.fn()}
       onMonthChange={vi.fn()}
+      todayJst="2026-08-17"
     />,
   );
   const record = getByText("記録");
@@ -93,11 +115,12 @@ test("年・月選択で onMonthChange が呼ばれる", () => {
   const onMonthChange = vi.fn();
   const { getByRole } = renderWithMantine(
     <HistoryMonthView
-      days={[]}
       events={[]}
+      heatmapDays={[]}
       month={new Date("2026-08-17T12:00:00+09:00")}
       onDayClick={vi.fn()}
       onMonthChange={onMonthChange}
+      todayJst="2026-08-17"
     />,
   );
 

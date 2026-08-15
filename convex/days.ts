@@ -11,6 +11,7 @@ import {
   requireEditableDay,
   requireLiveDay,
 } from "./ensureCatalog";
+import { loadCatalog } from "./lib/catalogLoader";
 import { categoryFields } from "./lib/categoryFields";
 import { isFutureDateJst, weekdayFromDateJst } from "./lib/jst";
 import { formatShareMarkdown } from "./lib/share";
@@ -18,33 +19,11 @@ import { conditionValidator, dayDtoValidator, rowDtoValidator } from "./lib/vali
 import { confirmedVolumeMinutes } from "./lib/volume";
 import { ownerMutation, ownerQuery } from "./ownerFunctions";
 
-async function itemMap(
-  ctx: QueryCtx | MutationCtx,
-  ownerId: string,
-): Promise<Map<Id<"items">, Doc<"items">>> {
-  const items = await ctx.db
-    .query("items")
-    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
-    .collect();
-  return new Map(items.map((item) => [item._id, item]));
-}
-
-async function categoryMap(
-  ctx: QueryCtx | MutationCtx,
-  ownerId: string,
-): Promise<Map<Id<"categories">, Doc<"categories">>> {
-  const categories = await ctx.db
-    .query("categories")
-    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
-    .collect();
-  return new Map(categories.map((category) => [category._id, category]));
-}
-
 export async function toRowDtos(ctx: QueryCtx | MutationCtx, ownerId: string, rows: Doc<"rows">[]) {
-  const [items, categories] = await Promise.all([itemMap(ctx, ownerId), categoryMap(ctx, ownerId)]);
+  const catalog = await loadCatalog(ctx, ownerId);
   return rows.map((row) => {
-    const item = items.get(row.itemId);
-    const fields = categoryFields(item, categories);
+    const item = catalog.itemById.get(row.itemId);
+    const fields = categoryFields(item, catalog.categoryById);
     return {
       _id: row._id,
       category: fields.category,

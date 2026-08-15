@@ -1,9 +1,5 @@
 import { chartCategoryColor } from "~/features/history/lib/chart-category-colors";
-
-type CategorySlice = {
-  category: string;
-  minutes: number;
-};
+import type { CategoryBreakdown } from "~/features/history/types/history";
 
 export type DonutCell = {
   color: string;
@@ -12,7 +8,7 @@ export type DonutCell = {
 };
 
 export function buildDonutCells(
-  byCategory: readonly CategorySlice[],
+  byCategory: readonly Pick<CategoryBreakdown, "category" | "minutes">[],
   skippedMinutes: number,
 ): DonutCell[] {
   const cells = byCategory.map((entry) => ({

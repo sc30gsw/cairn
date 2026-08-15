@@ -1,13 +1,10 @@
 import { Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
-import type { FunctionReturnType } from "convex/server";
+import { groupBy, prop } from "remeda";
 import { addDaysJst } from "~domain/jst";
 
-import type { api } from "~/../convex/_generated/api";
 import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
 import { RECORD_STATUS_UI } from "~/features/history/lib/record-status-label";
-
-type WeekPage = FunctionReturnType<typeof api.history.week>;
-type WeekEvent = WeekPage["events"][number];
+import type { WeekEvent, WeekPage } from "~/features/history/types/history";
 
 const DATE_HEADER_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
   day: "numeric",
@@ -71,12 +68,7 @@ function WeekEventRow({ event }: { event: WeekEvent }) {
 }
 
 export function WeekAgenda({ todayJst, week }: { todayJst: string; week: WeekPage }) {
-  const eventsByDate = new Map<string, WeekEvent[]>();
-  for (const event of week.events) {
-    const bucket = eventsByDate.get(event.dateJst) ?? [];
-    bucket.push(event);
-    eventsByDate.set(event.dateJst, bucket);
-  }
+  const eventsByDate = groupBy(week.events, prop("dateJst"));
 
   return (
     <Card>
@@ -93,7 +85,7 @@ export function WeekAgenda({ todayJst, week }: { todayJst: string; week: WeekPag
         />
         <Stack gap="lg" mt="lg">
           {weekDates(week.weekStart).map((dateJst) => {
-            const dayEvents = eventsByDate.get(dateJst) ?? [];
+            const dayEvents = eventsByDate[dateJst] ?? [];
             return (
               <Stack gap="xs" key={dateJst}>
                 <Text fw={600} size="sm">

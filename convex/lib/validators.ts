@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { type Infer, v } from "convex/values";
 
 import { CATEGORIES } from "./categories";
 import { CONDITIONS } from "./conditions";
@@ -25,6 +25,77 @@ export const conditionValidator = v.union(
   v.literal(ordinary),
   v.literal(collapsed),
 );
+
+export const breakdownRowValidator = v.object({
+  category: v.string(),
+  itemName: v.string(),
+  minutes: v.number(),
+  status: statusValidator,
+});
+
+export const categoryBreakdownValidator = v.object({
+  category: v.string(),
+  categorySortOrder: v.number(),
+  minutes: v.number(),
+});
+
+export const monthDayValidator = v.object({
+  dateJst: v.string(),
+  isRest: v.boolean(),
+  minutes: v.number(),
+  movingAverage: v.number(),
+});
+
+export const monthEventValidator = v.object({
+  category: v.string(),
+  dateJst: v.string(),
+  minutes: v.number(),
+  rowId: v.id("rows"),
+  status: statusValidator,
+  title: v.string(),
+});
+
+export const weekDayBreakdownValidator = v.object({
+  confirmedMinutes: v.number(),
+  dateJst: v.string(),
+  isRest: v.boolean(),
+  skippedMinutes: v.number(),
+});
+
+export type BreakdownRow = Infer<typeof breakdownRowValidator>;
+export type CategoryBreakdown = Infer<typeof categoryBreakdownValidator>;
+export type MonthBreakdownDay = Infer<typeof monthDayValidator>;
+export type MonthEventDto = Infer<typeof monthEventValidator>;
+export type WeekDayBreakdown = Infer<typeof weekDayBreakdownValidator>;
+
+export type DayBreakdown = {
+  byCategory: CategoryBreakdown[];
+  confirmedMinutes: number;
+  dateJst: string;
+  isRest: boolean;
+  rows: BreakdownRow[];
+  skippedMinutes: number;
+};
+
+export type WeekBreakdown = {
+  byCategory: CategoryBreakdown[];
+  byDay: WeekDayBreakdown[];
+  confirmedMinutes: number;
+  rows: BreakdownRow[];
+  skippedMinutes: number;
+  volumeMinutes: number;
+  weekEnd: string;
+  weekStart: string;
+  weeklyGoalMinutes: null | number;
+};
+
+export type MonthBreakdown = {
+  byCategory: CategoryBreakdown[];
+  confirmedMinutes: number;
+  days: MonthBreakdownDay[];
+  rows: BreakdownRow[];
+  skippedMinutes: number;
+};
 
 export const rowDtoValidator = v.object({
   _id: v.id("rows"),

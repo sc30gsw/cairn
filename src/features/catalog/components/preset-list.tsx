@@ -30,12 +30,7 @@ type PresetLineDraft = {
   minutes: number;
 };
 
-type PresetLineDto = {
-  content: string;
-  itemId: ItemDto["_id"];
-  itemName: string;
-  minutes: number;
-};
+type PresetLineDto = PresetDto["lines"][number];
 
 type PresetListProps = {
   items: ItemDto[];
