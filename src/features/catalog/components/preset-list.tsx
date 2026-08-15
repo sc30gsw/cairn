@@ -1,20 +1,24 @@
 import { Field, Form, useForm } from "@formisch/react";
 import {
   Accordion,
+  ActionIcon,
   Button,
   Card,
   Grid,
+  Input,
   NumberInput,
   Select,
   Stack,
   Text,
   TextInput,
   Title,
+  Tooltip,
 } from "@mantine/core";
 import { useState } from "react";
 import * as v from "valibot";
 import { WEEKDAY_NAMES } from "~domain/catalog";
 
+import { TrashIcon } from "~/components/trash-icon";
 import { PresetSchema } from "~/features/catalog/schemas/preset-schema";
 import type { ItemDto, PresetDto } from "~/features/catalog/types/item";
 import { parseItemId } from "~/features/catalog/types/item";
@@ -65,6 +69,11 @@ function parsedLines(lines: PresetLineDraft[]) {
 
 function itemOptions(items: ItemDto[]) {
   return items.map((item) => ({ label: item.name, value: item._id }));
+}
+
+function removeLineLabel(items: ItemDto[], itemId: string) {
+  const name = items.find((item) => item._id === itemId)?.name ?? "項目";
+  return `「${name}」を外す`;
 }
 
 export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: PresetListProps) {
@@ -297,7 +306,9 @@ function PresetEditor({
               </Button>
             </Grid.Col>
           </Grid>
-          {lines.map((line, index) => (
+          {lines.map((line, index) => {
+            const removeLabel = removeLineLabel(items, line.itemId);
+            return (
             <Grid key={`${preset._id}-${index}`} align="flex-end" gap="sm">
               <Grid.Col span={{ base: 12, sm: 4 }}>
                 <Select
@@ -347,19 +358,28 @@ function PresetEditor({
                 />
               </Grid.Col>
               <Grid.Col span={{ base: 6, sm: 2 }}>
-                <Button
-                  fullWidth
-                  onClick={() => {
-                    setLines((current) => current.filter((_, entryIndex) => entryIndex !== index));
-                  }}
-                  type="button"
-                  variant="subtle"
-                >
-                  雛形{index + 1}を外す
-                </Button>
+                <Input.Wrapper label={index === 0 ? " " : undefined}>
+                  <Tooltip label={removeLabel}>
+                    <ActionIcon
+                      aria-label={removeLabel}
+                      color="red"
+                      onClick={() => {
+                        setLines((current) =>
+                          current.filter((_, entryIndex) => entryIndex !== index),
+                        );
+                      }}
+                      size="lg"
+                      type="button"
+                      variant="white"
+                    >
+                      <TrashIcon />
+                    </ActionIcon>
+                  </Tooltip>
+                </Input.Wrapper>
               </Grid.Col>
             </Grid>
-          ))}
+            );
+          })}
           <Button
             onClick={() => {
               const next = items[0];

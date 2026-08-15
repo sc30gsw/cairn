@@ -17,9 +17,10 @@ test("空マスが休養に見える", () => {
     />,
   );
   expect(getByText(/休養/)).toBeDefined();
+  expect(getByText(/均10分/)).toBeDefined();
 });
 
-test("週 Agenda に終日の行が見える", () => {
+test("週の行がタイトルとステータスで見える", () => {
   const { getByText } = renderWithMantine(
     <WeekAgenda
       week={{
@@ -32,4 +33,6 @@ test("週 Agenda に終日の行が見える", () => {
     />,
   );
   expect(getByText(/Distinction 2000/)).toBeDefined();
+  expect(getByText("完了")).toBeDefined();
+  expect(getByText("30分")).toBeDefined();
 });

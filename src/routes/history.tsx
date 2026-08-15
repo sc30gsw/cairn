@@ -33,9 +33,7 @@ function HistoryReady() {
   const { data: monthData } = useSuspenseQuery(
     convexQuery(api.history.month, { todayJst: today, yearMonth }),
   );
-  const { data: week } = useSuspenseQuery(
-    convexQuery(api.history.week, { dateJst: `${yearMonth}-01` }),
-  );
+  const { data: week } = useSuspenseQuery(convexQuery(api.history.week, { dateJst: today }));
 
   return (
     <Grid gap="md">
