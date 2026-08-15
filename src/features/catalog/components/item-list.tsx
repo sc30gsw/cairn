@@ -27,7 +27,7 @@ export function ItemList({ items, onCreate, onRemove, onRename }: ItemListProps)
 
   return (
     <Stack gap="md">
-      <Title order={2}>項目</Title>
+      <Title order={1}>項目</Title>
       <Card>
         <Form
           of={form}

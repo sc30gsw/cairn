@@ -6,41 +6,43 @@ import { Suspense } from "react";
 import { api } from "~/../convex/_generated/api";
 import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
-import { ItemList } from "~/features/catalog/components/item-list";
+import { PresetList } from "~/features/catalog/components/preset-list";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
-export const Route = createFileRoute("/items")({
-  component: ItemsRoute,
+export const Route = createFileRoute("/presets")({
+  component: PresetsRoute,
 });
 
-function ItemsRoute() {
+function PresetsRoute() {
   return (
     <OwnerGate>
       <Suspense fallback={<PendingComponent />}>
-        <ItemsReady />
+        <PresetsReady />
       </Suspense>
     </OwnerGate>
   );
 }
 
-function ItemsReady() {
+function PresetsReady() {
   const { data: items } = useSuspenseQuery(convexQuery(api.items.list, {}));
-  const createItem = useConvexMutation(api.items.create);
-  const renameItem = useConvexMutation(api.items.rename);
-  const removeItem = useConvexMutation(api.items.remove);
+  const { data: presets } = useSuspenseQuery(convexQuery(api.presets.list, {}));
+  const createPreset = useConvexMutation(api.presets.create);
+  const updatePreset = useConvexMutation(api.presets.update);
+  const removePreset = useConvexMutation(api.presets.remove);
 
   return (
-    <ItemList
+    <PresetList
       items={items}
       onCreate={(input) => {
-        void createItem.mutateAsync(input);
+        void createPreset.mutateAsync(input);
       }}
-      onRemove={(itemId) => {
-        void removeItem.mutateAsync({ itemId });
+      onRemove={(presetId) => {
+        void removePreset.mutateAsync({ presetId });
       }}
-      onRename={(input) => {
-        void renameItem.mutateAsync(input);
+      onUpdate={(input) => {
+        void updatePreset.mutateAsync(input);
       }}
+      presets={presets}
     />
   );
 }

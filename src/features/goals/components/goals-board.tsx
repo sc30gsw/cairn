@@ -1,4 +1,4 @@
-import { Field, Form, useForm } from "@formisch/react";
+import { Field, Form, reset, useForm } from "@formisch/react";
 import { Button, Card, Grid, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 
@@ -164,7 +164,13 @@ export function GoalsBoard({
         <Card>
           <Stack gap="md">
             <Title order={2}>障害プラン</Title>
-            <Form of={obstacleForm} onSubmit={onCreateObstacle}>
+            <Form
+              of={obstacleForm}
+              onSubmit={(output) => {
+                onCreateObstacle(output);
+                reset(obstacleForm);
+              }}
+            >
               <Grid align="flex-end" gap="sm">
                 <Grid.Col span={{ base: 12, sm: 5 }}>
                   <Field of={obstacleForm} path={["ifText"]}>

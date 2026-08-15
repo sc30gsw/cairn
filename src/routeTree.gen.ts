@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrashRouteImport } from './routes/trash'
+import { Route as PresetsRouteImport } from './routes/presets'
 import { Route as ItemsRouteImport } from './routes/items'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as GoalsRouteImport } from './routes/goals'
@@ -20,6 +21,11 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 const TrashRoute = TrashRouteImport.update({
   id: '/trash',
   path: '/trash',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PresetsRoute = PresetsRouteImport.update({
+  id: '/presets',
+  path: '/presets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ItemsRoute = ItemsRouteImport.update({
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/goals': typeof GoalsRoute
   '/history': typeof HistoryRoute
   '/items': typeof ItemsRoute
+  '/presets': typeof PresetsRoute
   '/trash': typeof TrashRoute
   '/days/$dateJst': typeof DaysDateJstRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/goals': typeof GoalsRoute
   '/history': typeof HistoryRoute
   '/items': typeof ItemsRoute
+  '/presets': typeof PresetsRoute
   '/trash': typeof TrashRoute
   '/days/$dateJst': typeof DaysDateJstRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/goals': typeof GoalsRoute
   '/history': typeof HistoryRoute
   '/items': typeof ItemsRoute
+  '/presets': typeof PresetsRoute
   '/trash': typeof TrashRoute
   '/days/$dateJst': typeof DaysDateJstRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -88,6 +97,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/history'
     | '/items'
+    | '/presets'
     | '/trash'
     | '/days/$dateJst'
     | '/api/auth/$'
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/history'
     | '/items'
+    | '/presets'
     | '/trash'
     | '/days/$dateJst'
     | '/api/auth/$'
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/history'
     | '/items'
+    | '/presets'
     | '/trash'
     | '/days/$dateJst'
     | '/api/auth/$'
@@ -116,6 +128,7 @@ export interface RootRouteChildren {
   GoalsRoute: typeof GoalsRoute
   HistoryRoute: typeof HistoryRoute
   ItemsRoute: typeof ItemsRoute
+  PresetsRoute: typeof PresetsRoute
   TrashRoute: typeof TrashRoute
   DaysDateJstRoute: typeof DaysDateJstRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -128,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/trash'
       fullPath: '/trash'
       preLoaderRoute: typeof TrashRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/presets': {
+      id: '/presets'
+      path: '/presets'
+      fullPath: '/presets'
+      preLoaderRoute: typeof PresetsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/items': {
@@ -180,6 +200,7 @@ const rootRouteChildren: RootRouteChildren = {
   GoalsRoute: GoalsRoute,
   HistoryRoute: HistoryRoute,
   ItemsRoute: ItemsRoute,
+  PresetsRoute: PresetsRoute,
   TrashRoute: TrashRoute,
   DaysDateJstRoute: DaysDateJstRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

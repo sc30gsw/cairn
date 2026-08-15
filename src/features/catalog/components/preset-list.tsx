@@ -79,7 +79,7 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
 
   return (
     <Stack gap="md">
-      <Title order={2}>プリセット</Title>
+      <Title order={1}>プリセット</Title>
       <Card>
         <Form
           of={form}

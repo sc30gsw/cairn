@@ -13,6 +13,7 @@ const NAV = [
   { label: "日", match: (path: string) => path === "/" || path.startsWith("/days/"), to: "/" },
   { label: "履歴", match: (path: string) => path.startsWith("/history"), to: "/history" },
   { label: "項目", match: (path: string) => path.startsWith("/items"), to: "/items" },
+  { label: "プリセット", match: (path: string) => path.startsWith("/presets"), to: "/presets" },
   { label: "目標", match: (path: string) => path.startsWith("/goals"), to: "/goals" },
   { label: "ゴミ箱", match: (path: string) => path.startsWith("/trash"), to: "/trash" },
 ] as const;
