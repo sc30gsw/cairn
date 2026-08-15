@@ -23,6 +23,7 @@ import type * as lib_catalogLoader from "../lib/catalogLoader.js";
 import type * as lib_categories from "../lib/categories.js";
 import type * as lib_categoryFields from "../lib/categoryFields.js";
 import type * as lib_conditions from "../lib/conditions.js";
+import type * as lib_domain from "../lib/domain.js";
 import type * as lib_env from "../lib/env.js";
 import type * as lib_errors from "../lib/errors.js";
 import type * as lib_historyBreakdown from "../lib/historyBreakdown.js";
@@ -64,6 +65,7 @@ declare const fullApi: ApiFromModules<{
   "lib/categories": typeof lib_categories;
   "lib/categoryFields": typeof lib_categoryFields;
   "lib/conditions": typeof lib_conditions;
+  "lib/domain": typeof lib_domain;
   "lib/env": typeof lib_env;
   "lib/errors": typeof lib_errors;
   "lib/historyBreakdown": typeof lib_historyBreakdown;

@@ -1,9 +1,12 @@
 import { fireEvent, waitFor } from "@testing-library/react";
 import { expect, test, vi } from "vite-plus/test";
+import { STATUSES } from "~domain/domain";
 
 import { DayBoard } from "~/features/today/components/day-board";
 import type { DayPage, DayRow } from "~/features/today/types/day";
 import { renderWithMantine } from "~/test-utils/render";
+
+const [confirmed, pending] = [STATUSES[0], STATUSES[1]] as const;
 
 vi.mock("@tanstack/react-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-router")>();
@@ -22,7 +25,7 @@ const row = {
   itemName: "Distinction 2000",
   minutes: 30,
   sortOrder: 0,
-  status: "未着手",
+  status: pending,
 } satisfies DayRow;
 
 const day = {
@@ -103,7 +106,7 @@ test("確定済みの記録は行外へフォーカスすると更新できる",
   const onConfirm = vi.fn();
   const confirmedDay = {
     ...day,
-    rows: [{ ...row, content: "Unit 1", status: "確定" as const }],
+    rows: [{ ...row, content: "Unit 1", status: confirmed }],
   } satisfies DayPage;
   const { getByRole } = renderWithMantine(
     <DayBoard
@@ -139,7 +142,7 @@ test("確定済みの記録をスイッチオフで見送り確認後にスキ�
   const onSkip = vi.fn();
   const confirmedDay = {
     ...day,
-    rows: [{ ...row, status: "確定" as const }],
+    rows: [{ ...row, status: confirmed }],
   } satisfies DayPage;
   const { getByRole } = renderWithMantine(
     <DayBoard
@@ -169,7 +172,7 @@ test("確定済みの見送り確認をキャンセルするとスキップし�
   const onSkip = vi.fn();
   const confirmedDay = {
     ...day,
-    rows: [{ ...row, status: "確定" as const }],
+    rows: [{ ...row, status: confirmed }],
   } satisfies DayPage;
   const { getByRole } = renderWithMantine(
     <DayBoard

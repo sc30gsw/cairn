@@ -17,6 +17,7 @@ import { useCallback, useEffect, type ChangeEvent } from "react";
 
 import { RowEditorSchema } from "~/features/today/schemas/row-editor-schema";
 import type { DayRow } from "~/features/today/types/day";
+import { RECORD_STATUS_UI, statusTooltip } from "~/lib/record-status-ui";
 
 type RowEditorProps = {
   disabled?: boolean;
@@ -25,22 +26,6 @@ type RowEditorProps = {
   onSkip: (rowId: DayRow["_id"]) => void;
   row: DayRow;
 };
-
-const STATUS_BADGE = {
-  スキップ: { color: "yellow", label: "見送り" },
-  未着手: { color: "gray", label: "未着手" },
-  確定: { color: "blue", label: "完了" },
-} as const satisfies Record<DayRow["status"], { color: string; label: string }>;
-
-function statusTooltip(status: DayRow["status"]) {
-  if (status === "未着手") {
-    return "まだ決めていない";
-  }
-  if (status === "スキップ") {
-    return "見送り";
-  }
-  return "完了";
-}
 
 function CheckIcon({ size = 14 }: { size?: number }) {
   return (
@@ -113,7 +98,7 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
     schema: RowEditorSchema,
   });
   const isDone = row.status === "確定";
-  const badge = STATUS_BADGE[row.status];
+  const badge = RECORD_STATUS_UI[row.status];
   const contentLabel = `${row.itemName} 内容`;
 
   const saveIfConfirmedDirty = useCallback(async () => {

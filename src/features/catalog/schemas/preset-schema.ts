@@ -19,3 +19,7 @@ export const PresetSchema = v.object({
   name: v.pipe(v.string(), v.minLength(1, "名前は必須です")),
   weekday: v.pipe(v.number(), v.minValue(0), v.maxValue(6)),
 });
+
+export type PresetLineInput = v.InferOutput<typeof PresetLineSchema>;
+export type CreatePresetInput = v.InferOutput<typeof CreatePresetSchema>;
+export type PresetInput = v.InferOutput<typeof PresetSchema>;

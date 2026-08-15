@@ -1,21 +1,27 @@
 import { expect, test } from "vite-plus/test";
+import { STATUSES } from "~domain/domain";
 
 import {
   scheduleEventDateJst,
   toMonthScheduleEvents,
 } from "~/features/history/lib/month-schedule-events";
+import type { MonthEvent } from "~/features/history/types/history";
+
+const [confirmed, pending, skipped] = STATUSES;
 
 test("ステータス色付きの schedule events に変換", () => {
-  const events = toMonthScheduleEvents([
+  const input = [
     {
       category: "多聴",
       dateJst: "2026-08-17",
       minutes: 30,
       rowId: "r1" as never,
-      status: "確定",
+      status: confirmed,
       title: "Distinction 2000",
     },
-  ]);
+  ] as const satisfies readonly MonthEvent[];
+
+  const events = toMonthScheduleEvents([...input]);
   expect(events[0]).toMatchObject({
     color: "blue",
     id: "r1",
@@ -25,13 +31,13 @@ test("ステータス色付きの schedule events に変換", () => {
 });
 
 test("未着手と見送りは MonthView に載せない", () => {
-  const events = toMonthScheduleEvents([
+  const input = [
     {
       category: "多聴",
       dateJst: "2026-08-17",
       minutes: 30,
       rowId: "r1" as never,
-      status: "確定",
+      status: confirmed,
       title: "Distinction 2000",
     },
     {
@@ -39,7 +45,7 @@ test("未着手と見送りは MonthView に載せない", () => {
       dateJst: "2026-08-17",
       minutes: 20,
       rowId: "r2" as never,
-      status: "未着手",
+      status: pending,
       title: "英会話",
     },
     {
@@ -47,10 +53,12 @@ test("未着手と見送りは MonthView に載せない", () => {
       dateJst: "2026-08-17",
       minutes: 10,
       rowId: "r3" as never,
-      status: "スキップ",
+      status: skipped,
       title: "多読",
     },
-  ]);
+  ] as const satisfies readonly MonthEvent[];
+
+  const events = toMonthScheduleEvents([...input]);
   expect(events).toHaveLength(1);
   expect(events[0]?.title).toBe("Distinction 2000");
 });

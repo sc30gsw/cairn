@@ -1,11 +1,15 @@
 import { expect, test } from "vite-plus/test";
 
+import { STATUSES } from "./domain";
 import {
   itemIdIsInUse,
   keptRowsAfterSwitch,
   materializePresetRows,
   weekdayAlreadyTaken,
+  type ExistingRow,
 } from "./preset";
+
+const [confirmed, pending, skipped] = STATUSES;
 
 test("プリセット適用はすべて未着手", () => {
   expect(
@@ -14,15 +18,19 @@ test("プリセット適用はすべて未着手", () => {
       { content: "", itemId: "item-b", minutes: 30 },
     ]),
   ).toEqual([
-    { content: "Unit 1", itemId: "item-a", minutes: 30, status: "未着手" },
-    { content: "", itemId: "item-b", minutes: 30, status: "未着手" },
+    { content: "Unit 1", itemId: "item-a", minutes: 30, status: pending },
+    { content: "", itemId: "item-b", minutes: 30, status: pending },
   ]);
 });
 
 test("切替は未着手だけ差し替え、確定とスキップは残る", () => {
-  expect(
-    keptRowsAfterSwitch([{ status: "確定" }, { status: "スキップ" }, { status: "未着手" }]),
-  ).toEqual([{ status: "確定" }, { status: "スキップ" }]);
+  const rows = [
+    { status: confirmed },
+    { status: skipped },
+    { status: pending },
+  ] as const satisfies readonly ExistingRow[];
+
+  expect(keptRowsAfterSwitch(rows)).toEqual([{ status: confirmed }, { status: skipped }]);
 });
 
 test("同じ曜日のプリセットが二つある状態は拒否する", () => {

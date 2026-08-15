@@ -14,11 +14,12 @@ import { addDaysJst, calendarDatesInMonth, mondayOfWeek } from "./lib/jst";
 import { sevenDayMovingAverage } from "./lib/movingAverage";
 import { confirmedVolumeMinutes } from "./lib/volume";
 import {
-  breakdownRowValidator,
-  categoryBreakdownValidator,
+  dayBreakdownValidator,
+  monthBreakdownValidator,
   monthDayValidator,
   monthEventValidator,
-  weekDayBreakdownValidator,
+  weekBreakdownValidator,
+  yearHeatmapValidator,
 } from "./lib/validators";
 import { ownerQuery } from "./ownerFunctions";
 
@@ -234,24 +235,13 @@ export const month = ownerQuery({
 export const monthBreakdown = ownerQuery({
   args: { todayJst: v.string(), yearMonth: v.string() },
   handler: async (ctx, args) => computeMonthBreakdown(ctx, ctx.ownerId, args.yearMonth),
-  returns: v.object({
-    byCategory: v.array(categoryBreakdownValidator),
-    confirmedMinutes: v.number(),
-    days: v.array(monthDayValidator),
-    events: v.array(monthEventValidator),
-    rows: v.array(breakdownRowValidator),
-    skippedMinutes: v.number(),
-  }),
+  returns: monthBreakdownValidator,
 });
 
 export const yearHeatmap = ownerQuery({
   args: { todayJst: v.string() },
   handler: async (ctx, args) => computeYearHeatmap(ctx, ctx.ownerId, args.todayJst),
-  returns: v.object({
-    days: v.array(monthDayValidator),
-    endDate: v.string(),
-    startDate: v.string(),
-  }),
+  returns: yearHeatmapValidator,
 });
 
 export const week = ownerQuery({
@@ -302,14 +292,7 @@ export const dayBreakdown = ownerQuery({
       catalog.categoryById,
     );
   },
-  returns: v.object({
-    byCategory: v.array(categoryBreakdownValidator),
-    confirmedMinutes: v.number(),
-    dateJst: v.string(),
-    isRest: v.boolean(),
-    rows: v.array(breakdownRowValidator),
-    skippedMinutes: v.number(),
-  }),
+  returns: dayBreakdownValidator,
 });
 
 export const weekBreakdown = ownerQuery({
@@ -318,15 +301,5 @@ export const weekBreakdown = ownerQuery({
     const page = await computeWeekPage(ctx, ctx.ownerId, args.dateJst);
     return page.weekBreakdown;
   },
-  returns: v.object({
-    byCategory: v.array(categoryBreakdownValidator),
-    byDay: v.array(weekDayBreakdownValidator),
-    confirmedMinutes: v.number(),
-    rows: v.array(breakdownRowValidator),
-    skippedMinutes: v.number(),
-    volumeMinutes: v.number(),
-    weekEnd: v.string(),
-    weekStart: v.string(),
-    weeklyGoalMinutes: v.union(v.number(), v.null()),
-  }),
+  returns: weekBreakdownValidator,
 });

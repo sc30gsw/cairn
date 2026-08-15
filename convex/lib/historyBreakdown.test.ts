@@ -1,6 +1,9 @@
 import { expect, test } from "vite-plus/test";
 
+import { STATUSES } from "./domain";
 import { aggregateBreakdownRows } from "./historyBreakdown";
+
+const [confirmed, skipped] = [STATUSES[0], STATUSES[2]] as const;
 
 test("確定だけカテゴリ集計し、見送りは別カウント", () => {
   const itemById = new Map([
@@ -41,7 +44,7 @@ test("確定だけカテゴリ集計し、見送りは別カウント", () => {
         minutes: 30,
         ownerId: "owner",
         sortOrder: 0,
-        status: "確定",
+        status: confirmed,
       },
       {
         _id: "r2" as never,
@@ -52,7 +55,7 @@ test("確定だけカテゴリ集計し、見送りは別カウント", () => {
         minutes: 20,
         ownerId: "owner",
         sortOrder: 1,
-        status: "スキップ",
+        status: skipped,
       },
     ],
     itemById,

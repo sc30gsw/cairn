@@ -1,4 +1,5 @@
 import { expect, test, vi } from "vite-plus/test";
+import { STATUSES } from "~domain/domain";
 
 import { HistoryLearningHeatmap } from "~/features/history/components/history-learning-heatmap";
 import { HistoryAnalysisPanel } from "~/features/history/components/analysis/history-analysis-panel";
@@ -10,6 +11,9 @@ import {
   yearHeatmapRange,
 } from "~/features/history/lib/heatmap-colors";
 import { renderWithMantine } from "~/test-utils/render";
+import type { MonthEvent, WeekPage } from "~/features/history/types/history";
+
+const [confirmed, pending] = [STATUSES[0], STATUSES[1]] as const;
 
 test("buildHeatmapChartData は休養と0分を除外する", () => {
   expect(
@@ -68,7 +72,7 @@ test("MonthView に確定した学習内容と分数が見える", () => {
           dateJst: "2026-08-17",
           minutes: 30,
           rowId: "r1" as never,
-          status: "確定",
+          status: confirmed,
           title: "Distinction 2000",
         },
         {
@@ -76,10 +80,10 @@ test("MonthView に確定した学習内容と分数が見える", () => {
           dateJst: "2026-08-17",
           minutes: 20,
           rowId: "r2" as never,
-          status: "未着手",
+          status: pending,
           title: "英会話",
         },
-      ]}
+      ] satisfies MonthEvent[]}
       month={new Date("2026-08-17T12:00:00+09:00")}
       onDayClick={vi.fn()}
       onMonthChange={vi.fn()}
@@ -163,7 +167,7 @@ test("週の行がタイトルとステータスで見える", () => {
             dateJst: "2026-08-17",
             minutes: 30,
             rowId: "r1" as never,
-            status: "確定",
+            status: confirmed,
             title: "Distinction 2000",
           },
         ],
@@ -171,7 +175,7 @@ test("週の行がタイトルとステータスで見える", () => {
         weekEnd: "2026-08-23",
         weekStart: "2026-08-17",
         weeklyGoalMinutes: 300,
-      }}
+      } satisfies WeekPage}
     />,
   );
   expect(getByText(/Distinction 2000/)).toBeDefined();

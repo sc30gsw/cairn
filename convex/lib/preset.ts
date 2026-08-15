@@ -1,7 +1,7 @@
-export type RowStatus = "スキップ" | "未着手" | "確定";
+import type { Status } from "./domain";
 
 export type ExistingRow = {
-  status: RowStatus;
+  status: Status;
 };
 
 export type PresetLine = {

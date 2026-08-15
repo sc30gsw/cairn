@@ -1,5 +1,7 @@
 import { flatMap, groupBy, pipe, prop, sortBy } from "remeda";
 
+import type { StatusDto } from "./validators";
+
 export type ShareRow = {
   category: string;
   categorySortOrder: number;
@@ -7,7 +9,7 @@ export type ShareRow = {
   itemName: string;
   minutes: number;
   sortOrder: number;
-  status: "スキップ" | "未着手" | "確定";
+  status: StatusDto;
 };
 
 function lineText(row: ShareRow): string {

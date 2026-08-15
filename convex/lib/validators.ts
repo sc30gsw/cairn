@@ -2,9 +2,11 @@ import { type Infer, v } from "convex/values";
 
 import { CATEGORIES } from "./categories";
 import { CONDITIONS } from "./conditions";
+import { STATUSES } from "./domain";
 
 const [toeic, listening, reading, conversation, other] = CATEGORIES;
 const [good, ordinary, collapsed] = CONDITIONS;
+const [confirmed, pending, skipped] = STATUSES;
 
 export const categoryValidator = v.union(
   v.literal(toeic),
@@ -15,9 +17,9 @@ export const categoryValidator = v.union(
 );
 
 export const statusValidator = v.union(
-  v.literal("確定"),
-  v.literal("未着手"),
-  v.literal("スキップ"),
+  v.literal(confirmed),
+  v.literal(pending),
+  v.literal(skipped),
 );
 
 export const conditionValidator = v.union(
@@ -62,40 +64,51 @@ export const weekDayBreakdownValidator = v.object({
   skippedMinutes: v.number(),
 });
 
+export const dayBreakdownValidator = v.object({
+  byCategory: v.array(categoryBreakdownValidator),
+  confirmedMinutes: v.number(),
+  dateJst: v.string(),
+  isRest: v.boolean(),
+  rows: v.array(breakdownRowValidator),
+  skippedMinutes: v.number(),
+});
+
+export const weekBreakdownValidator = v.object({
+  byCategory: v.array(categoryBreakdownValidator),
+  byDay: v.array(weekDayBreakdownValidator),
+  confirmedMinutes: v.number(),
+  rows: v.array(breakdownRowValidator),
+  skippedMinutes: v.number(),
+  volumeMinutes: v.number(),
+  weekEnd: v.string(),
+  weekStart: v.string(),
+  weeklyGoalMinutes: v.union(v.number(), v.null()),
+});
+
+export const monthBreakdownValidator = v.object({
+  byCategory: v.array(categoryBreakdownValidator),
+  confirmedMinutes: v.number(),
+  days: v.array(monthDayValidator),
+  events: v.array(monthEventValidator),
+  rows: v.array(breakdownRowValidator),
+  skippedMinutes: v.number(),
+});
+
+export const yearHeatmapValidator = v.object({
+  days: v.array(monthDayValidator),
+  endDate: v.string(),
+  startDate: v.string(),
+});
+
 export type BreakdownRow = Infer<typeof breakdownRowValidator>;
 export type CategoryBreakdown = Infer<typeof categoryBreakdownValidator>;
 export type MonthBreakdownDay = Infer<typeof monthDayValidator>;
 export type MonthEventDto = Infer<typeof monthEventValidator>;
 export type WeekDayBreakdown = Infer<typeof weekDayBreakdownValidator>;
-
-export type DayBreakdown = {
-  byCategory: CategoryBreakdown[];
-  confirmedMinutes: number;
-  dateJst: string;
-  isRest: boolean;
-  rows: BreakdownRow[];
-  skippedMinutes: number;
-};
-
-export type WeekBreakdown = {
-  byCategory: CategoryBreakdown[];
-  byDay: WeekDayBreakdown[];
-  confirmedMinutes: number;
-  rows: BreakdownRow[];
-  skippedMinutes: number;
-  volumeMinutes: number;
-  weekEnd: string;
-  weekStart: string;
-  weeklyGoalMinutes: null | number;
-};
-
-export type MonthBreakdown = {
-  byCategory: CategoryBreakdown[];
-  confirmedMinutes: number;
-  days: MonthBreakdownDay[];
-  rows: BreakdownRow[];
-  skippedMinutes: number;
-};
+export type DayBreakdown = Infer<typeof dayBreakdownValidator>;
+export type WeekBreakdown = Infer<typeof weekBreakdownValidator>;
+export type MonthBreakdown = Infer<typeof monthBreakdownValidator>;
+export type YearHeatmapDto = Infer<typeof yearHeatmapValidator>;
 
 export const rowDtoValidator = v.object({
   _id: v.id("rows"),
@@ -142,3 +155,10 @@ export const presetDtoValidator = v.object({
   name: v.string(),
   weekday: v.number(),
 });
+
+export type StatusDto = Infer<typeof statusValidator>;
+export type RowDto = Infer<typeof rowDtoValidator>;
+export type DayDto = Infer<typeof dayDtoValidator>;
+export type ItemDto = Infer<typeof itemDtoValidator>;
+export type CategoryDto = Infer<typeof categoryDtoValidator>;
+export type PresetDto = Infer<typeof presetDtoValidator>;

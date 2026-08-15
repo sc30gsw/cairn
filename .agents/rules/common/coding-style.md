@@ -57,3 +57,22 @@ import { helper } from "~/features/tenants/utils/helper";
 ```
 
 - **No `export default`** outside `src/routes/**` and `*.config.ts`
+
+## Type SSoT (CVX-16)
+
+Domain enums and shared constraints live in [`convex/lib/domain.ts`](/convex/lib/domain.ts) as `as const` tuples. Derive types from a single source:
+
+| Layer | Source | Derivation |
+| ----- | ------ | ---------- |
+| Domain values | `convex/lib/domain.ts` | `(typeof STATUSES)[number]` etc. |
+| Convex DTOs | `convex/lib/validators.ts` | `Infer<typeof validator>` |
+| Client API shapes | `src/features/*/types/*.ts` | `FunctionReturnType<typeof api.x.y>` |
+| Form input | `src/features/*/schemas/*.ts` | `v.InferOutput<typeof Schema>` |
+| UI labels/colors | `src/lib/record-status-ui.ts` etc. | `as const satisfies Record<Status, …>` |
+
+Rules:
+
+- Do **not** hand-write `"確定" | "未着手" | "スキップ"` unions — import `Status` or `StatusDto`.
+- Array/object constants: `as const satisfies T` when a target type exists.
+- Import domain from `~domain/*` (maps to `convex/lib/*`); never import Convex server modules at runtime from `src/`.
+- Run `vp run type-ssot-check` in CI or before merge to catch regressions.
