@@ -19,10 +19,11 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
 
-    "baseUrl": ".",
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": ["./src/*"],
+      "~domain/*": ["./convex/lib/*"]
     }
   },
-  "include": ["src", "*.config.ts"]
+  "exclude": ["convex/_generated", "convex/betterAuth/_generated"],
+  "include": ["src", "*.config.ts", "convex"]
 }

@@ -1,0 +1,100 @@
+import { Button, NativeSelect, Stack, Text, Title } from "@mantine/core";
+import type { FunctionReturnType } from "convex/server";
+
+import type { api } from "~/../convex/_generated/api";
+import { AdhocRowForm } from "~/features/today/components/adhoc-row-form";
+import { DayMetaPanel } from "~/features/today/components/day-meta-panel";
+import { RowEditor } from "~/features/today/components/row-editor";
+import { ShareCopy } from "~/features/today/components/share-copy";
+import { TonightPanel } from "~/features/today/components/tonight-panel";
+import type { DayPage, DayRow } from "~/features/today/types/day";
+
+type ItemDto = FunctionReturnType<typeof api.items.list>[number];
+type PresetDto = FunctionReturnType<typeof api.presets.list>[number];
+
+type DayBoardProps = {
+  dateJst: string;
+  day: DayPage;
+  isToday: boolean;
+  items: ItemDto[];
+  onAddRow: (input: { content: string; itemId: ItemDto["_id"]; minutes: number }) => void;
+  onConfirm: (input: { content: string; minutes: number; rowId: DayRow["_id"] }) => void;
+  onRemoveDay: () => void;
+  onRemoveRow: (rowId: DayRow["_id"]) => void;
+  onSaveBed: (bedHm: string) => void;
+  onSaveCondition: (condition: "好調" | "普通" | "崩れた") => void;
+  onSaveMemo: (memo: string) => void;
+  onSaveWake: (wakeHm: string) => void;
+  onSkip: (rowId: DayRow["_id"]) => void;
+  onSwitchPreset: (presetId: PresetDto["_id"]) => void;
+  presets: PresetDto[];
+};
+
+export function DayBoard({
+  dateJst,
+  day,
+  isToday,
+  items,
+  onAddRow,
+  onConfirm,
+  onRemoveDay,
+  onRemoveRow,
+  onSaveBed,
+  onSaveCondition,
+  onSaveMemo,
+  onSaveWake,
+  onSkip,
+  onSwitchPreset,
+  presets,
+}: DayBoardProps) {
+  return (
+    <Stack gap="lg">
+      <Title order={1}>{dateJst}</Title>
+      <Text>学習量 {day.volumeMinutes}分</Text>
+      {day.rows.map((row) => (
+        <RowEditor
+          key={row._id}
+          onConfirm={onConfirm}
+          onRemove={onRemoveRow}
+          onSkip={onSkip}
+          row={row}
+        />
+      ))}
+      {day.rows.length === 0 ? <Text c="dimmed">この日の行はありません。</Text> : null}
+      <AdhocRowForm items={items} onAdd={onAddRow} />
+      {isToday ? (
+        <NativeSelect
+          aria-label="今日のプリセット切替"
+          data={[
+            { label: "プリセットを切り替える", value: "" },
+            ...presets.map((preset) => ({ label: preset.name, value: preset._id })),
+          ]}
+          onChange={(event) => {
+            const value = event.currentTarget.value;
+            if (value !== "") {
+              onSwitchPreset(value as PresetDto["_id"]);
+            }
+          }}
+        />
+      ) : null}
+      <TonightPanel
+        onSaveBed={onSaveBed}
+        onSaveWake={onSaveWake}
+        sleepHours={day.day?.sleepHours ?? null}
+        sleepWarning={day.day?.sleepWarning ?? false}
+        tonightBedHm={day.tonightBedHm}
+        wakeHm={day.day?.wakeHm ?? null}
+      />
+      <DayMetaPanel
+        condition={day.day?.condition ?? null}
+        memo={day.day?.memo ?? null}
+        onSaveCondition={onSaveCondition}
+        onSaveMemo={onSaveMemo}
+      />
+      <ShareCopy markdown={day.shareMarkdown} />
+      <Button color="red" onClick={onRemoveDay} variant="light">
+        この日をゴミ箱へ
+      </Button>
+    </Stack>
+  );
+}
