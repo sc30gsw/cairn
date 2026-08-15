@@ -21,7 +21,7 @@ export async function loadCatalog(ctx: QueryCtx | MutationCtx, ownerId: string) 
       .collect(),
   ]);
   return {
-    categoryById: toIdMap(indexBy(categories, prop("_id"))),
-    itemById: toIdMap(indexBy(items, prop("_id"))),
+    categoryById: toIdMap<"categories">(indexBy(categories, prop("_id"))),
+    itemById: toIdMap<"items">(indexBy(items, prop("_id"))),
   };
 }

@@ -102,11 +102,14 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
   const contentLabel = `${row.itemName} 内容`;
 
   async function saveIfConfirmedDirty() {
-    if (row.status !== "確定" || !form.isDirty) {
+    if (row.status !== "確定") {
       return;
     }
     const result = await validate(form);
     if (!result.success) {
+      return;
+    }
+    if (result.output.content === row.content && result.output.minutes === row.minutes) {
       return;
     }
     onConfirm({ content: result.output.content, minutes: result.output.minutes, rowId: row._id });
@@ -144,6 +147,10 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
                   disabled={disabled}
                   error={field.errors?.[0]}
                   label={contentLabel}
+                  onBlur={(event) => {
+                    field.props.onBlur?.(event);
+                    void saveIfConfirmedDirty();
+                  }}
                   placeholder="学習内容を入力"
                   value={field.input}
                 />
@@ -159,6 +166,10 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
                   error={field.errors?.[0]}
                   label="分数"
                   min={0}
+                  onBlur={(event) => {
+                    field.props.onBlur?.(event);
+                    void saveIfConfirmedDirty();
+                  }}
                   onChange={(value) => field.onChange(typeof value === "number" ? value : 0)}
                   value={field.input}
                 />

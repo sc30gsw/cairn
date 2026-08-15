@@ -55,8 +55,12 @@ function ItemsReady() {
       onRenameCategory={(input) => {
         void renameCategory.mutateAsync(input);
       }}
-      onRenameItem={(input) => renameItem.mutateAsync(input)}
-      onReorderItems={(input) => reorderItems.mutateAsync(input)}
+      onRenameItem={(input) => {
+        void renameItem.mutateAsync(input);
+      }}
+      onReorderItems={(input) => {
+        void reorderItems.mutateAsync(input);
+      }}
     />
   );
 }

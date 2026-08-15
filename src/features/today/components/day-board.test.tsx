@@ -130,7 +130,7 @@ test("確定済みの記録は行外へフォーカスすると更新できる",
   );
   const input = getByRole("textbox", { name: "Distinction 2000 内容" });
   fireEvent.change(input, { target: { value: "Unit 2" } });
-  getByRole("button", { name: "記録を足す" }).focus();
+  fireEvent.blur(input);
   await waitFor(() => {
     expect(onConfirm).toHaveBeenCalledWith({
       content: "Unit 2",
@@ -140,7 +140,7 @@ test("確定済みの記録は行外へフォーカスすると更新できる",
   });
 });
 
-test("確定済みの記録をスイッチオフで見送り確認後にスキップできる", () => {
+test("確定済みの記録をスイッチオフで見送り確認後にスキップできる", async () => {
   const onSkip = vi.fn();
   const confirmedDay = {
     ...day,
@@ -166,11 +166,14 @@ test("確定済みの記録をスイッチオフで見送り確認後にスキ�
   );
   getByRole("switch", { name: "記録を確定" }).click();
   expect(onSkip).not.toHaveBeenCalled();
+  await waitFor(() => {
+    expect(getByRole("button", { name: "見送りにする" })).toBeDefined();
+  });
   getByRole("button", { name: "見送りにする" }).click();
   expect(onSkip).toHaveBeenCalledWith(row._id);
 });
 
-test("確定済みの見送り確認をキャンセルするとスキップしない", () => {
+test("確定済みの見送り確認をキャンセルするとスキップしない", async () => {
   const onSkip = vi.fn();
   const confirmedDay = {
     ...day,
@@ -195,6 +198,9 @@ test("確定済みの見送り確認をキャンセルするとスキップし�
     />,
   );
   getByRole("switch", { name: "記録を確定" }).click();
+  await waitFor(() => {
+    expect(getByRole("button", { name: "キャンセル" })).toBeDefined();
+  });
   getByRole("button", { name: "キャンセル" }).click();
   expect(onSkip).not.toHaveBeenCalled();
 });

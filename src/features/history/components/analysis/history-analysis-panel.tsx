@@ -241,7 +241,11 @@ export function HistoryAnalysisPanel({
       />
 
       {scope === "day" && !day.isRest ? (
-        <Button component={Link} params={{ dateJst: selectedDateJst }} to="/days/$dateJst">
+        <Button
+          renderRoot={(props) => (
+            <Link {...props} params={{ dateJst: selectedDateJst }} to="/days/$dateJst" />
+          )}
+        >
           この日を開く
         </Button>
       ) : null}

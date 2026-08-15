@@ -53,7 +53,7 @@ export function ItemList({
   onRenameItem,
   onReorderItems,
 }: ItemListProps) {
-  const sortedCategories = categories.toSorted((left, right) => left.sortOrder - right.sortOrder);
+  const sortedCategories = sortBy(categories, prop("sortOrder"));
   const itemsByCategory = mapValues(groupBy(items, prop("categoryId")), (categoryItems) =>
     sortBy(categoryItems, prop("sortOrder")),
   );

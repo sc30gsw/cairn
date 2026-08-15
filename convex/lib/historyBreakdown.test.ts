@@ -10,6 +10,7 @@ test("確定だけカテゴリ集計し、見送りは別カウント", () => {
     [
       "i1" as never,
       {
+        _creationTime: 0,
         _id: "i1" as never,
         categoryId: "c1" as never,
         name: "Distinction 2000",
@@ -20,6 +21,7 @@ test("確定だけカテゴリ集計し、見送りは別カウント", () => {
     [
       "i2" as never,
       {
+        _creationTime: 0,
         _id: "i2" as never,
         categoryId: "c2" as never,
         name: "英会話",
@@ -29,13 +31,20 @@ test("確定だけカテゴリ集計し、見送りは別カウント", () => {
     ],
   ]);
   const categoryById = new Map([
-    ["c1" as never, { _id: "c1" as never, name: "多聴", ownerId: "owner", sortOrder: 1 }],
-    ["c2" as never, { _id: "c2" as never, name: "英会話", ownerId: "owner", sortOrder: 4 }],
+    [
+      "c1" as never,
+      { _creationTime: 0, _id: "c1" as never, name: "多聴", ownerId: "owner", sortOrder: 1 },
+    ],
+    [
+      "c2" as never,
+      { _creationTime: 0, _id: "c2" as never, name: "英会話", ownerId: "owner", sortOrder: 4 },
+    ],
   ]);
 
   const result = aggregateBreakdownRows(
     [
       {
+        _creationTime: 0,
         _id: "r1" as never,
         content: "",
         dateJst: "2026-08-17",
@@ -47,6 +56,7 @@ test("確定だけカテゴリ集計し、見送りは別カウント", () => {
         status: confirmed,
       },
       {
+        _creationTime: 0,
         _id: "r2" as never,
         content: "",
         dateJst: "2026-08-17",

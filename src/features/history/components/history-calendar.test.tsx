@@ -139,7 +139,7 @@ test("分析パネルの月スコープに学習量ヒートマップが見え�
   expect(getByText("学習量（直近365日）")).toBeDefined();
   expect(container.querySelector(".mantine-Heatmap-root")).toBeDefined();
   expect(queryByText(/完了.*見送り/)).toBeNull();
-  expect(getByText("7日平均")).toBeDefined();
+  expect(getByText("日別ペース")).toBeDefined();
 });
 
 test("年・月選択で onMonthChange が呼ばれる", () => {

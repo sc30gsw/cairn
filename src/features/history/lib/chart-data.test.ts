@@ -34,17 +34,15 @@ test("paceChartMonthTitle", () => {
 
 test("月の日別ペースは完了と7日平均を持つ", () => {
   expect(
-    buildMonthPaceChartData([
-      { dateJst: "2026-08-17", isRest: false, minutes: 30, movingAverage: 10 },
-    ]),
+    buildMonthPaceChartData([{ dateJst: "2026-08-17", minutes: 30, movingAverage: 10 }]),
   ).toEqual([{ dateJst: "2026-08-17", label: "08/17", 完了: 30, 均: 10 }]);
 });
 
 test("週の日別ペースは heatmap から均を引く", () => {
   expect(
     buildWeekPaceChartData(
-      [{ confirmedMinutes: 10, dateJst: "2026-08-17", isRest: false, skippedMinutes: 0 }],
-      [{ dateJst: "2026-08-17", isRest: false, minutes: 10, movingAverage: 12 }],
+      [{ confirmedMinutes: 10, dateJst: "2026-08-17" }],
+      [{ dateJst: "2026-08-17", movingAverage: 12 }],
     ),
   ).toEqual([{ dateJst: "2026-08-17", label: "08/17", 完了: 10, 均: 12 }]);
 });

@@ -4,7 +4,6 @@ import { flatMap, map, pipe } from "remeda";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { ConflictError, NotFoundError, ValidationFailedError } from "./lib/errors";
-import { compareItemsBySortOrder } from "./lib/itemSort";
 import { itemIdIsInUse } from "./lib/preset";
 import { itemDtoValidator } from "./lib/validators";
 import { ownerMutation, ownerQuery, throwDomain } from "./ownerFunctions";
