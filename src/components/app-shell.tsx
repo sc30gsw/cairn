@@ -8,7 +8,7 @@ type AppShellProps = {
 };
 
 const NAV = [
-  { label: "今日", match: (path: string) => path === "/" || path.startsWith("/days/"), to: "/" },
+  { label: "日", match: (path: string) => path === "/" || path.startsWith("/days/"), to: "/" },
   { label: "履歴", match: (path: string) => path.startsWith("/history"), to: "/history" },
   { label: "項目", match: (path: string) => path.startsWith("/items"), to: "/items" },
   { label: "目標", match: (path: string) => path.startsWith("/goals"), to: "/goals" },
