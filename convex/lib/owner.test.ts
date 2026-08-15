@@ -29,3 +29,11 @@ test("所有者なら ownerId は subject", () => {
     expect(result.value).toEqual({ ownerId: "owner-subject" });
   }
 });
+
+test("email の大文字小文字は問わない", () => {
+  const result = ownerFromIdentity(
+    { email: "owner@example.com", subject: "owner-subject" },
+    "Owner@Example.com",
+  );
+  expect(Result.isOk(result)).toBe(true);
+});

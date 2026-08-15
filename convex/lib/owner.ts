@@ -7,6 +7,13 @@ export type IdentityLike = {
   subject: string;
 };
 
+export function emailsMatch(email: string | null | undefined, allowedEmail: string | undefined) {
+  if (email === null || email === undefined || allowedEmail === undefined || allowedEmail === "") {
+    return false;
+  }
+  return email.toLowerCase() === allowedEmail.toLowerCase();
+}
+
 export function ownerFromIdentity(
   identity: IdentityLike | null | undefined,
   allowedEmail: string | undefined,
@@ -18,7 +25,7 @@ export function ownerFromIdentity(
       }),
     );
   }
-  if (allowedEmail === undefined || allowedEmail === "" || identity.email !== allowedEmail) {
+  if (!emailsMatch(identity.email, allowedEmail)) {
     return Result.err(
       new ForbiddenError({
         message: "許可されていないアカウントです。所有者の Notion だけが入れます。",

@@ -21,9 +21,9 @@ export function AppShell({ children, onSignOut }: AppShellProps) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   return (
-    <Shell header={{ height: 64 }} mode="static" padding="md">
+    <Shell header={{ height: { base: 108, sm: 64 } }} mode="static" padding="md">
       <Shell.Header px="md">
-        <Group h="100%" justify="space-between" wrap="nowrap">
+        <Group h="100%" justify="space-between" wrap="wrap">
           <Group gap="xs" wrap="wrap">
             <Title ff={DISPLAY_FONT} fw={500} order={4}>
               学習ログ

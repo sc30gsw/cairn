@@ -10,6 +10,7 @@ import type { DataModel } from "./_generated/dataModel";
 import authConfig from "./auth.config";
 import authSchema from "./betterAuth/schema";
 import { requireEnv } from "./lib/env";
+import { emailsMatch } from "./lib/owner";
 
 export const authComponent = createClient<DataModel, typeof authSchema>(components.betterAuth, {
   local: { schema: authSchema },
@@ -51,7 +52,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>, disableSignUp = tr
       user: {
         create: {
           before: async (user) => {
-            if (user.email !== requireEnv("ALLOWED_EMAIL")) {
+            if (!emailsMatch(user.email, requireEnv("ALLOWED_EMAIL"))) {
               throw new APIError("FORBIDDEN", {
                 message: "許可されていないアカウントです",
               });
@@ -63,8 +64,8 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>, disableSignUp = tr
     plugins: [convex({ authConfig })],
     socialProviders: {
       notion: {
-        clientId: process.env.NOTION_CLIENT_ID as string,
-        clientSecret: process.env.NOTION_CLIENT_SECRET as string,
+        clientId: process.env.NOTION_CLIENT_ID ?? "",
+        clientSecret: process.env.NOTION_CLIENT_SECRET ?? "",
         disableSignUp,
       },
     },

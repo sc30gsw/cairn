@@ -43,7 +43,6 @@ export const BODY_FONT = '"IBM Plex Sans JP", "IBM Plex Sans", sans-serif';
 export const DISPLAY_FONT = "Newsreader, 'IBM Plex Sans JP', serif";
 
 const INK = "#100F0F";
-const MUTED = "#6F6E69";
 const PAPER = "#FFFCF0";
 const PAPER_2 = "#F2F0E5";
 const RULE = "#E6E4D9";
@@ -71,14 +70,6 @@ export const theme = createTheme({
   primaryColor: "cyan",
   primaryShade: 5,
   white: PAPER,
-  other: {
-    displayFont: DISPLAY_FONT,
-    ink: INK,
-    muted: MUTED,
-    paper: PAPER,
-    paper2: PAPER_2,
-    rule: RULE,
-  },
   components: {
     AppShell: {
       styles: {
