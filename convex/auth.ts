@@ -16,7 +16,23 @@ export const authComponent = createClient<DataModel, typeof authSchema>(componen
   local: { schema: authSchema },
 });
 
-export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
+type AdapterPage = {
+  page: unknown[];
+};
+
+async function ownerUserExists(ctx: GenericCtx<DataModel>): Promise<boolean> {
+  //? HTTP 以外（CLI の staticAuth）ではユーザー表を引けないので、signup は閉じたままにする。
+  if (!("runQuery" in ctx)) {
+    return true;
+  }
+  const result = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
+    model: "user",
+    paginationOpts: { cursor: null, numItems: 1 },
+  })) as AdapterPage;
+  return result.page.length > 0;
+}
+
+export const createAuthOptions = (ctx: GenericCtx<DataModel>, disableSignUp = true) => {
   return {
     baseURL: siteUrl,
     database: authComponent.adapter(ctx),
@@ -38,6 +54,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
       notion: {
         clientId: requireEnv("NOTION_CLIENT_ID"),
         clientSecret: requireEnv("NOTION_CLIENT_SECRET"),
+        disableSignUp,
       },
     },
     trustedOrigins: [siteUrl],
@@ -45,5 +62,14 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
 };
 
 export const createAuth = (ctx: GenericCtx<DataModel>) => {
-  return betterAuth(createAuthOptions(ctx));
+  const auth = betterAuth(createAuthOptions(ctx, true));
+  if (!("runQuery" in ctx)) {
+    return auth;
+  }
+  return Object.assign(auth, {
+    handler: async (request: Request) => {
+      const exists = await ownerUserExists(ctx);
+      return betterAuth(createAuthOptions(ctx, exists)).handler(request);
+    },
+  });
 };
