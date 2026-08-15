@@ -9,11 +9,12 @@ import type { PresetId } from "~/features/catalog/types/item";
 import { parsePresetId } from "~/features/catalog/types/item";
 import { DayBoard, weekdayPresetId } from "~/features/today/components/day-board";
 import { useOpenAndLoadDay } from "~/features/today/hooks/use-open-and-load-day";
+import type { DaySearch } from "~/features/today/schemas/day-search-schema";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 type DayPageProps = {
   dateJst: string;
-  presetFromSearch?: string;
+  presetFromSearch?: DaySearch["preset"];
 };
 
 export function DayPage({ dateJst, presetFromSearch }: DayPageProps) {

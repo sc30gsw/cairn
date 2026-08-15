@@ -21,5 +21,5 @@ export const PresetSchema = v.object({
 });
 
 export type PresetLineInput = v.InferOutput<typeof PresetLineSchema>;
-export type CreatePresetInput = v.InferOutput<typeof CreatePresetSchema>;
-export type PresetInput = v.InferOutput<typeof PresetSchema>;
+export type CreatePresetFormInput = v.InferOutput<typeof CreatePresetSchema>;
+export type PresetFormInput = v.InferOutput<typeof PresetSchema>;

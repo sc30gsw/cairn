@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { AppShell } from "~/components/app-shell";
 import { PendingComponent } from "~/components/pending-component";
 import { LoginScreen } from "~/features/auth/components/login-screen";
+import type { AppShellUser } from "~/features/auth/types/session";
 import { authClient } from "~/lib/auth-client";
 
 export function OwnerGate({ children }: Record<"children", ReactNode>) {
@@ -33,11 +34,13 @@ export function OwnerGate({ children }: Record<"children", ReactNode>) {
           },
         });
       }}
-      user={{
-        email: session.data.user.email,
-        image: session.data.user.image,
-        name: session.data.user.name,
-      }}
+      user={
+        {
+          email: session.data.user.email,
+          image: session.data.user.image,
+          name: session.data.user.name,
+        } satisfies AppShellUser
+      }
     >
       {children}
     </AppShell>

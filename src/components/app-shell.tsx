@@ -24,13 +24,8 @@ import {
 import { Link, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import type { AppShellUser } from "~/features/auth/types/session";
 import { DISPLAY_FONT } from "~/lib/theme";
-
-type AppShellUser = {
-  email?: null | string;
-  image?: null | string;
-  name?: null | string;
-};
 
 type AppShellProps = {
   children: ReactNode;
