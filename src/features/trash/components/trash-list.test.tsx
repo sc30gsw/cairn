@@ -1,9 +1,10 @@
+import { fireEvent, waitFor, within } from "@testing-library/react";
 import { expect, test, vi } from "vite-plus/test";
 
 import { TrashList } from "~/features/trash/components/trash-list";
 import { renderWithMantine } from "~/test-utils/render";
 
-test("ゴミ箱と復元・完全削除が見える", () => {
+test("ゴミ箱と復元・完全削除が見える", async () => {
   const onRestoreRow = vi.fn();
   const onPurgeRow = vi.fn();
   const { getAllByRole, getByText } = renderWithMantine(
@@ -32,7 +33,10 @@ test("ゴミ箱と復元・完全削除が見える", () => {
   expect(getByText(/Unit 1 30分/)).toBeDefined();
   getAllByRole("button", { name: "戻す" })[1]?.click();
   expect(onRestoreRow).toHaveBeenCalled();
-  getAllByRole("button", { name: "完全削除" })[1]?.click();
-  getAllByRole("button", { name: "完全削除" }).at(-1)?.click();
+  fireEvent.click(getAllByRole("button", { name: "完全削除" })[1]!);
+  await waitFor(() => {
+    expect(getByText(/を完全に削除します/)).toBeDefined();
+  });
+  fireEvent.click(within(document.body).getAllByRole("button", { name: "完全削除" }).at(-1)!);
   expect(onPurgeRow).toHaveBeenCalled();
 });

@@ -322,7 +322,13 @@ function ItemEditor({
           </Button>
         </Grid.Col>
         <Grid.Col span={{ base: 6, sm: 2 }}>
-          <Button color="red" fullWidth onClick={() => onRemove(item._id)} type="button" variant="subtle">
+          <Button
+            color="red"
+            fullWidth
+            onClick={() => onRemove(item._id)}
+            type="button"
+            variant="subtle"
+          >
             {item.name}を削除
           </Button>
         </Grid.Col>

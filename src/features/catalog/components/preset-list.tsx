@@ -71,11 +71,7 @@ function itemOptions(items: ItemDto[]) {
   return items.map((item) => ({ label: item.name, value: item._id }));
 }
 
-function availableItemOptions(
-  items: ItemDto[],
-  lines: PresetLineDraft[],
-  currentIndex: number,
-) {
+function availableItemOptions(items: ItemDto[], lines: PresetLineDraft[], currentIndex: number) {
   const taken = new Set<string>();
   for (const [index, line] of lines.entries()) {
     if (index !== currentIndex) {
@@ -113,14 +109,17 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
       {presets.length === 0 ? (
         <Text c="dimmed">プリセットはまだありません。</Text>
       ) : (
-        <Accordion variant="separated">
+        <Accordion defaultValue={presets[0]?._id} variant="separated">
           {presets.map((preset) => (
             <Accordion.Item key={preset._id} value={preset._id}>
               <Accordion.Control>
                 <Stack gap={2}>
                   <Text fw={600}>{preset.name}</Text>
                   <Text c="dimmed" size="sm">
-                    {WEEKDAY_OPTIONS.find((option) => option.value === String(preset.weekday))?.label}
+                    {
+                      WEEKDAY_OPTIONS.find((option) => option.value === String(preset.weekday))
+                        ?.label
+                    }
                     {" · "}
                     {preset.lines.length === 0
                       ? "記録なし"
@@ -152,8 +151,7 @@ function PresetCreateForm({
   presets: PresetDto[];
 }) {
   const weekdayOptions = availableWeekdayOptions(presets);
-  const defaultWeekday =
-    weekdayOptions.length === 1 ? Number(weekdayOptions[0]?.value) : null;
+  const defaultWeekday = weekdayOptions.length === 1 ? Number(weekdayOptions[0]?.value) : null;
   const form = useForm({
     initialInput: {
       name: "",
@@ -323,75 +321,75 @@ function PresetEditor({
           {lines.map((line, index) => {
             const removeLabel = removeLineLabel(items, line.itemId);
             return (
-            <Grid key={`${preset._id}-${index}`} align="flex-end" gap="sm">
-              <Grid.Col span={{ base: 12, sm: 4 }}>
-                <Select
-                  aria-label={`${preset.name}の雛形${index + 1}の項目`}
-                  data={availableItemOptions(items, lines, index)}
-                  label={index === 0 ? "項目" : undefined}
-                  onChange={onRequiredSelect((value) => {
-                    setLines((current) =>
-                      current.map((entry, entryIndex) =>
-                        entryIndex === index ? { ...entry, itemId: value } : entry,
-                      ),
-                    );
-                  })}
-                  searchable
-                  value={line.itemId}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 12, sm: 4 }}>
-                <TextInput
-                  aria-label={`${preset.name}の雛形${index + 1}の内容`}
-                  label={index === 0 ? "内容" : undefined}
-                  onChange={(event) => {
-                    const content = event.currentTarget.value;
-                    setLines((current) =>
-                      current.map((entry, entryIndex) =>
-                        entryIndex === index ? { ...entry, content } : entry,
-                      ),
-                    );
-                  }}
-                  value={line.content}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 6, sm: 2 }}>
-                <NumberInput
-                  aria-label={`${preset.name}の雛形${index + 1}の分数`}
-                  label={index === 0 ? "分数" : undefined}
-                  min={0}
-                  onChange={(value) => {
-                    const minutes = typeof value === "number" ? value : 0;
-                    setLines((current) =>
-                      current.map((entry, entryIndex) =>
-                        entryIndex === index ? { ...entry, minutes } : entry,
-                      ),
-                    );
-                  }}
-                  value={line.minutes}
-                />
-              </Grid.Col>
-              <Grid.Col span={{ base: 6, sm: 2 }}>
-                <Input.Wrapper label={index === 0 ? " " : undefined}>
-                  <Tooltip label={removeLabel}>
-                    <ActionIcon
-                      aria-label={removeLabel}
-                      color="red"
-                      onClick={() => {
-                        setLines((current) =>
-                          current.filter((_, entryIndex) => entryIndex !== index),
-                        );
-                      }}
-                      size="lg"
-                      type="button"
-                      variant="white"
-                    >
-                      <TrashIcon />
-                    </ActionIcon>
-                  </Tooltip>
-                </Input.Wrapper>
-              </Grid.Col>
-            </Grid>
+              <Grid key={`${preset._id}-${index}`} align="flex-end" gap="sm">
+                <Grid.Col span={{ base: 12, sm: 4 }}>
+                  <Select
+                    aria-label={`${preset.name}の雛形${index + 1}の項目`}
+                    data={availableItemOptions(items, lines, index)}
+                    label={index === 0 ? "項目" : undefined}
+                    onChange={onRequiredSelect((value) => {
+                      setLines((current) =>
+                        current.map((entry, entryIndex) =>
+                          entryIndex === index ? { ...entry, itemId: value } : entry,
+                        ),
+                      );
+                    })}
+                    searchable
+                    value={line.itemId}
+                  />
+                </Grid.Col>
+                <Grid.Col span={{ base: 12, sm: 4 }}>
+                  <TextInput
+                    aria-label={`${preset.name}の雛形${index + 1}の内容`}
+                    label={index === 0 ? "内容" : undefined}
+                    onChange={(event) => {
+                      const content = event.currentTarget.value;
+                      setLines((current) =>
+                        current.map((entry, entryIndex) =>
+                          entryIndex === index ? { ...entry, content } : entry,
+                        ),
+                      );
+                    }}
+                    value={line.content}
+                  />
+                </Grid.Col>
+                <Grid.Col span={{ base: 6, sm: 2 }}>
+                  <NumberInput
+                    aria-label={`${preset.name}の雛形${index + 1}の分数`}
+                    label={index === 0 ? "分数" : undefined}
+                    min={0}
+                    onChange={(value) => {
+                      const minutes = typeof value === "number" ? value : 0;
+                      setLines((current) =>
+                        current.map((entry, entryIndex) =>
+                          entryIndex === index ? { ...entry, minutes } : entry,
+                        ),
+                      );
+                    }}
+                    value={line.minutes}
+                  />
+                </Grid.Col>
+                <Grid.Col span={{ base: 6, sm: 2 }}>
+                  <Input.Wrapper label={index === 0 ? " " : undefined}>
+                    <Tooltip label={removeLabel}>
+                      <ActionIcon
+                        aria-label={removeLabel}
+                        color="red"
+                        onClick={() => {
+                          setLines((current) =>
+                            current.filter((_, entryIndex) => entryIndex !== index),
+                          );
+                        }}
+                        size="lg"
+                        type="button"
+                        variant="white"
+                      >
+                        <TrashIcon />
+                      </ActionIcon>
+                    </Tooltip>
+                  </Input.Wrapper>
+                </Grid.Col>
+              </Grid>
             );
           })}
           <Button

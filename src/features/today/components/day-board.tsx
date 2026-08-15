@@ -60,6 +60,7 @@ function TodayPresetSelect({
       onChange={onRequiredSelect((value) => {
         const presetId = parsePresetId(value);
         void navigate({
+          to: ".",
           search: (current) => ({
             ...current,
             preset: presetId === defaultPresetId ? undefined : presetId,

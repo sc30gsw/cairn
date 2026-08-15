@@ -104,6 +104,7 @@ export const week = ownerQuery({
     const events: {
       dateJst: string;
       minutes: number;
+      rowId: Doc<"rows">["_id"];
       status: Doc<"rows">["status"];
       title: string;
     }[] = [];
@@ -115,6 +116,7 @@ export const week = ownerQuery({
       events.push({
         dateJst: row.dateJst,
         minutes: row.minutes,
+        rowId: row._id,
         status: row.status,
         title: itemById.get(row.itemId)?.name ?? "不明",
       });
@@ -133,6 +135,7 @@ export const week = ownerQuery({
       v.object({
         dateJst: v.string(),
         minutes: v.number(),
+        rowId: v.id("rows"),
         status: v.union(v.literal("確定"), v.literal("未着手"), v.literal("スキップ")),
         title: v.string(),
       }),

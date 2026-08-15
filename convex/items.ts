@@ -7,7 +7,11 @@ import { itemIdIsInUse } from "./lib/preset";
 import { itemDtoValidator } from "./lib/validators";
 import { ownerMutation, ownerQuery, throwDomain } from "./ownerFunctions";
 
-async function requireOwnedCategory(ctx: MutationCtx, ownerId: string, categoryId: Id<"categories">) {
+async function requireOwnedCategory(
+  ctx: MutationCtx,
+  ownerId: string,
+  categoryId: Id<"categories">,
+) {
   const category = await ctx.db.get(categoryId);
   if (category === null || category.ownerId !== ownerId) {
     throwDomain(new NotFoundError({ message: "カテゴリが見つかりません", resource: "カテゴリ" }));

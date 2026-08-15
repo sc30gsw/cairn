@@ -66,11 +66,13 @@ async function backfillItemCategories(
 }
 
 export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<void> {
-  const nameToId = await categoriesByName(ctx, ownerId);
-  const existingItems = await ctx.db
-    .query("items")
-    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
-    .collect();
+  const [nameToId, existingItems] = await Promise.all([
+    categoriesByName(ctx, ownerId),
+    ctx.db
+      .query("items")
+      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+      .collect(),
+  ]);
   if (existingItems.length === 0) {
     await Promise.all(
       SEED_ITEMS.map((item) => {

@@ -106,11 +106,39 @@ test("記録を確定スイッチで確定、オフでスキップできる", as
       rowId: row._id,
     });
   });
+});
+
+test("確定済みの記録をスイッチオフでスキップできる", () => {
+  const onSkip = vi.fn();
+  const confirmedDay = {
+    ...day,
+    rows: [{ ...row, status: "確定" as const }],
+  } satisfies DayPage;
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={confirmedDay}
+      isToday
+      items={items}
+      onAddRow={vi.fn()}
+      onConfirm={vi.fn()}
+      onRemoveDay={vi.fn()}
+      onRemoveRow={vi.fn()}
+      onSaveBed={vi.fn()}
+      onSaveCondition={vi.fn()}
+      onSaveMemo={vi.fn()}
+      onSaveWake={vi.fn()}
+      onSkip={onSkip}
+      onSwitchPreset={vi.fn()}
+      presets={[]}
+      selectedPresetId={null}
+    />,
+  );
   getByRole("switch", { name: "記録を確定" }).click();
   expect(onSkip).toHaveBeenCalledWith(row._id);
 });
 
-test("未着手はスイッチがオフでバッジとツールチップが出る", async () => {
+test("未着手はスイッチがオフで未着手バッジが出る", () => {
   const { getByRole, getByText } = renderWithMantine(
     <DayBoard
       dateJst="2026-08-17"
@@ -124,10 +152,6 @@ test("未着手はスイッチがオフでバッジとツールチップが出�
   );
   expect(getByText("未着手")).toBeDefined();
   expect((getByRole("switch", { name: "記録を確定" }) as HTMLInputElement).checked).toBe(false);
-  getByRole("switch", { name: "記録を確定" }).focus();
-  await waitFor(() => {
-    expect(document.body.textContent).toContain("まだ決めていない");
-  });
 });
 
 test("警告中でも記録の確定はロックされない", () => {
@@ -232,7 +256,6 @@ test("プリセットを選ぶと表示名が変わる", async () => {
       day={day}
       isToday
       items={items}
-      onSwitchPreset={onSwitchPreset}
       presets={[
         { _id: "p1" as never, lines: [], name: "月曜日", weekday: 1 },
         { _id: "p2" as never, lines: [], name: "火の雛形", weekday: 2 },

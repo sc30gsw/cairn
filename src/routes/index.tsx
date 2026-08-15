@@ -3,10 +3,13 @@ import { todayJst } from "~domain/jst";
 
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { DayPage } from "~/features/today/components/day-page";
-import { dayRouteSearch } from "~/features/today/lib/day-route-search";
+import { daySearchMiddlewares, DaySearchSchema } from "~/features/today/lib/day-route-search";
 
 export const Route = createFileRoute("/")({
-  ...dayRouteSearch,
+  search: {
+    middlewares: daySearchMiddlewares,
+  },
+  validateSearch: DaySearchSchema,
   component: HomeRoute,
 });
 

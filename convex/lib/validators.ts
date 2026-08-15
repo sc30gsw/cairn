@@ -74,4 +74,3 @@ export const presetDtoValidator = v.object({
   name: v.string(),
   weekday: v.number(),
 });
-

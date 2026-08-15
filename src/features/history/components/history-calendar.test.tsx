@@ -21,10 +21,18 @@ test("空マスが休養に見える", () => {
 });
 
 test("週の行がタイトルとステータスで見える", () => {
-  const { getByText } = renderWithMantine(
+  const { getAllByText, getByText } = renderWithMantine(
     <WeekAgenda
       week={{
-        events: [{ dateJst: "2026-08-17", minutes: 30, status: "確定", title: "Distinction 2000" }],
+        events: [
+          {
+            dateJst: "2026-08-17",
+            minutes: 30,
+            rowId: "r1" as never,
+            status: "確定",
+            title: "Distinction 2000",
+          },
+        ],
         volumeMinutes: 30,
         weekEnd: "2026-08-23",
         weekStart: "2026-08-17",
@@ -34,5 +42,5 @@ test("週の行がタイトルとステータスで見える", () => {
   );
   expect(getByText(/Distinction 2000/)).toBeDefined();
   expect(getByText("完了")).toBeDefined();
-  expect(getByText("30分")).toBeDefined();
+  expect(getAllByText("30分").length).toBeGreaterThan(0);
 });

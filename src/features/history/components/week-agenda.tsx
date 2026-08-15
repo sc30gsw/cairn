@@ -13,30 +13,36 @@ const STATUS_BADGE = {
   確定: { color: "cyan", label: "完了" },
 } as const satisfies Record<WeekEvent["status"], { color: string; label: string }>;
 
+const DATE_HEADER_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
+  day: "numeric",
+  month: "long",
+  timeZone: "Asia/Tokyo",
+  weekday: "short",
+});
+
+const WEEK_RANGE_START_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
+  day: "numeric",
+  month: "long",
+  timeZone: "Asia/Tokyo",
+  year: "numeric",
+});
+
+const WEEK_RANGE_END_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
+  day: "numeric",
+  month: "long",
+  timeZone: "Asia/Tokyo",
+});
+
 function formatDateHeader(dateJst: string): string {
   const date = new Date(`${dateJst}T12:00:00+09:00`);
-  return new Intl.DateTimeFormat("ja-JP", {
-    day: "numeric",
-    month: "long",
-    timeZone: "Asia/Tokyo",
-    weekday: "short",
-  }).format(date);
+  return DATE_HEADER_FORMATTER.format(date);
 }
 
 function formatWeekRange(weekStart: string, weekEnd: string): string {
   const start = new Date(`${weekStart}T12:00:00+09:00`);
   const end = new Date(`${weekEnd}T12:00:00+09:00`);
-  const startLabel = new Intl.DateTimeFormat("ja-JP", {
-    day: "numeric",
-    month: "long",
-    timeZone: "Asia/Tokyo",
-    year: "numeric",
-  }).format(start);
-  const endLabel = new Intl.DateTimeFormat("ja-JP", {
-    day: "numeric",
-    month: "long",
-    timeZone: "Asia/Tokyo",
-  }).format(end);
+  const startLabel = WEEK_RANGE_START_FORMATTER.format(start);
+  const endLabel = WEEK_RANGE_END_FORMATTER.format(end);
   return `${startLabel} 〜 ${endLabel}`;
 }
 
@@ -111,8 +117,8 @@ export function WeekAgenda({ week }: Record<"week", WeekPage>) {
                   </Text>
                 ) : (
                   <Stack gap="xs" pl="sm">
-                    {dayEvents.map((event, index) => (
-                      <WeekEventRow event={event} key={`${event.dateJst}-${event.title}-${index}`} />
+                    {dayEvents.map((event) => (
+                      <WeekEventRow event={event} key={event.rowId} />
                     ))}
                   </Stack>
                 )}
