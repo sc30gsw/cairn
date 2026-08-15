@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
 import { ConflictError, NotFoundError, ValidationFailedError } from "./lib/errors";
+import { itemIdIsInUse } from "./lib/preset";
 import { categoryValidator, itemDtoValidator } from "./lib/validators";
 import { ownerMutation, ownerQuery, throwDomain } from "./ownerFunctions";
 
@@ -75,12 +76,19 @@ export const remove = ownerMutation({
     if (item === null || item.ownerId !== ctx.ownerId) {
       throwDomain(new NotFoundError({ message: "項目が見つかりません", resource: "項目" }));
     }
-    const rows = await ctx.db
-      .query("rows")
-      .withIndex("by_item", (q) => q.eq("itemId", args.itemId))
-      .collect();
-    if (rows.length > 0) {
-      throwDomain(new ConflictError({ message: "使っている行がある項目は消せません" }));
+    const [rows, presets] = await Promise.all([
+      ctx.db
+        .query("rows")
+        .withIndex("by_item", (q) => q.eq("itemId", args.itemId))
+        .collect(),
+      ctx.db
+        .query("presets")
+        .withIndex("by_owner", (q) => q.eq("ownerId", ctx.ownerId))
+        .collect(),
+    ]);
+    const holders = [...rows, ...presets.flatMap((preset) => preset.lines)];
+    if (itemIdIsInUse(args.itemId, holders)) {
+      throwDomain(new ConflictError({ message: "使っている行または雛形がある項目は消せません" }));
     }
     await ctx.db.delete(args.itemId);
     return null;

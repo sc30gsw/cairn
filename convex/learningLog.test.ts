@@ -306,3 +306,29 @@ test("ゴミ箱の日には行を足さず、open も日を増やさない", asy
   });
   expect((await t.query(api.trash.list, {})).days).toHaveLength(1);
 });
+
+test("コンディションだけの日を開くとプリセット行が載る", async () => {
+  const t = owner();
+  await t.mutation(api.days.setCondition, { condition: "普通", dateJst: MONDAY, todayJst: MONDAY });
+  const before = await t.query(api.days.get, { dateJst: MONDAY, todayJst: MONDAY });
+  expect(before.rows).toEqual([]);
+  expect(before.day?.condition).toBe("普通");
+  expect(await t.mutation(api.days.open, { dateJst: MONDAY, todayJst: MONDAY })).toEqual({
+    applied: true,
+  });
+  const after = await t.query(api.days.get, { dateJst: MONDAY, todayJst: MONDAY });
+  expect(after.rows.map((row) => row.itemName)[0]).toBe("Distinction 2000");
+  expect(after.day?.condition).toBe("普通");
+});
+
+test("プリセット雛形だけの項目は消せない", async () => {
+  const t = owner();
+  await t.mutation(api.days.open, { dateJst: SATURDAY, todayJst: SATURDAY });
+  const items = await t.query(api.items.list, {});
+  const distinction = items.find((item) => item.name === "Distinction 2000");
+  if (distinction === undefined) {
+    throw new Error("Distinction がない");
+  }
+  await expect(t.mutation(api.items.remove, { itemId: distinction._id })).rejects.toThrow();
+});
+

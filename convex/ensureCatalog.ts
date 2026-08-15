@@ -7,7 +7,8 @@ import {
   WEEKDAY_NAMES,
   seedLineNamesForWeekday,
 } from "./lib/catalog";
-import { NotFoundError } from "./lib/errors";
+import { NotFoundError, ValidationFailedError } from "./lib/errors";
+import { isFutureDateJst } from "./lib/jst";
 import { throwDomain } from "./ownerFunctions";
 
 export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<void> {
@@ -82,10 +83,40 @@ export async function getDayByDate(
   ownerId: string,
   dateJst: string,
 ): Promise<Doc<"days"> | null> {
-  return await ctx.db
+  const days = await ctx.db
     .query("days")
     .withIndex("by_owner_and_date", (q) => q.eq("ownerId", ownerId).eq("dateJst", dateJst))
-    .unique();
+    .collect();
+  const live = days
+    .filter((day) => day.deletedAt === undefined)
+    .toSorted((left, right) => left._creationTime - right._creationTime);
+  if (live[0] !== undefined) {
+    return live[0];
+  }
+  const trashed = days
+    .filter((day) => day.deletedAt !== undefined)
+    .toSorted((left, right) => left._creationTime - right._creationTime);
+  return trashed[0] ?? null;
+}
+
+export async function collapseExtraLiveDays(
+  ctx: MutationCtx,
+  ownerId: string,
+  dateJst: string,
+): Promise<Doc<"days"> | null> {
+  const days = await ctx.db
+    .query("days")
+    .withIndex("by_owner_and_date", (q) => q.eq("ownerId", ownerId).eq("dateJst", dateJst))
+    .collect();
+  const live = days
+    .filter((day) => day.deletedAt === undefined)
+    .toSorted((left, right) => left._creationTime - right._creationTime);
+  const winner = live[0];
+  if (winner === undefined) {
+    return null;
+  }
+  await Promise.all(live.slice(1).map((day) => ctx.db.delete(day._id)));
+  return winner;
 }
 
 export async function getLiveDay(
@@ -127,10 +158,28 @@ export async function requireLiveDay(
   if (existing !== null) {
     return existing;
   }
-  const id = await ctx.db.insert("days", { dateJst, ownerId });
-  const created = await ctx.db.get(id);
-  if (created === null) {
+  await ctx.db.insert("days", { dateJst, ownerId });
+  const winner = await collapseExtraLiveDays(ctx, ownerId, dateJst);
+  if (winner === null) {
     throwDomain(new NotFoundError({ message: "日を作れませんでした", resource: "日" }));
   }
-  return created;
+  return winner;
+}
+
+export async function requireEditableDay(
+  ctx: MutationCtx,
+  ownerId: string,
+  dateJst: string,
+  todayJst: string,
+): Promise<Doc<"days"> | null> {
+  if (isFutureDateJst(dateJst, todayJst)) {
+    throwDomain(new ValidationFailedError({ message: "未来の日は編集できません" }));
+  }
+  const existing = await getDayByDate(ctx, ownerId, dateJst);
+  if (existing !== null && existing.deletedAt !== undefined) {
+    throwDomain(
+      new NotFoundError({ message: "ゴミ箱の日です。先に戻してください", resource: "日" }),
+    );
+  }
+  return existing;
 }

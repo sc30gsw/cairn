@@ -1,9 +1,19 @@
 import { v } from "convex/values";
 
-import { getDayByDate, liveRowsForDay, requireLiveDay } from "./ensureCatalog";
+import type { Id } from "./_generated/dataModel";
+import type { MutationCtx } from "./_generated/server";
+import { getDayByDate, liveRowsForDay, requireEditableDay, requireLiveDay } from "./ensureCatalog";
 import { ConflictError, NotFoundError, ValidationFailedError } from "./lib/errors";
-import { isFutureDateJst } from "./lib/jst";
+import { keptRowsAfterSwitch } from "./lib/preset";
 import { ownerMutation, throwDomain } from "./ownerFunctions";
+
+async function requireOwnedRow(ctx: MutationCtx, ownerId: string, rowId: Id<"rows">) {
+  const row = await ctx.db.get(rowId);
+  if (row === null || row.ownerId !== ownerId || row.deletedAt !== undefined) {
+    throwDomain(new NotFoundError({ message: "行が見つかりません", resource: "行" }));
+  }
+  return row;
+}
 
 export const confirm = ownerMutation({
   args: {
@@ -15,10 +25,7 @@ export const confirm = ownerMutation({
     if (args.minutes < 0) {
       throwDomain(new ValidationFailedError({ message: "分数は0以上です" }));
     }
-    const row = await ctx.db.get(args.rowId);
-    if (row === null || row.ownerId !== ctx.ownerId || row.deletedAt !== undefined) {
-      throwDomain(new NotFoundError({ message: "行が見つかりません", resource: "行" }));
-    }
+    const row = await requireOwnedRow(ctx, ctx.ownerId, args.rowId);
     const day = await ctx.db.get(row.dayId);
     if (day === null || day.deletedAt !== undefined) {
       throwDomain(new NotFoundError({ message: "日が見つかりません", resource: "日" }));
@@ -36,10 +43,7 @@ export const confirm = ownerMutation({
 export const skip = ownerMutation({
   args: { rowId: v.id("rows") },
   handler: async (ctx, args) => {
-    const row = await ctx.db.get(args.rowId);
-    if (row === null || row.ownerId !== ctx.ownerId || row.deletedAt !== undefined) {
-      throwDomain(new NotFoundError({ message: "行が見つかりません", resource: "行" }));
-    }
+    const row = await requireOwnedRow(ctx, ctx.ownerId, args.rowId);
     const day = await ctx.db.get(row.dayId);
     if (day === null || day.deletedAt !== undefined) {
       throwDomain(new NotFoundError({ message: "日が見つかりません", resource: "日" }));
@@ -59,17 +63,9 @@ export const add = ownerMutation({
     todayJst: v.string(),
   },
   handler: async (ctx, args) => {
-    if (isFutureDateJst(args.dateJst, args.todayJst)) {
-      throwDomain(new ValidationFailedError({ message: "未来の日には行を足しません" }));
-    }
+    await requireEditableDay(ctx, ctx.ownerId, args.dateJst, args.todayJst);
     if (args.minutes < 0) {
       throwDomain(new ValidationFailedError({ message: "分数は0以上です" }));
-    }
-    const existingDay = await getDayByDate(ctx, ctx.ownerId, args.dateJst);
-    if (existingDay !== null && existingDay.deletedAt !== undefined) {
-      throwDomain(
-        new NotFoundError({ message: "ゴミ箱の日です。先に戻してください", resource: "日" }),
-      );
     }
     const item = await ctx.db.get(args.itemId);
     if (item === null || item.ownerId !== ctx.ownerId) {
@@ -96,10 +92,7 @@ export const add = ownerMutation({
 export const remove = ownerMutation({
   args: { now: v.number(), rowId: v.id("rows") },
   handler: async (ctx, args) => {
-    const row = await ctx.db.get(args.rowId);
-    if (row === null || row.ownerId !== ctx.ownerId || row.deletedAt !== undefined) {
-      throwDomain(new NotFoundError({ message: "行が見つかりません", resource: "行" }));
-    }
+    await requireOwnedRow(ctx, ctx.ownerId, args.rowId);
     await ctx.db.patch(args.rowId, { deletedAt: args.now });
     return null;
   },
@@ -148,7 +141,7 @@ export const switchPreset = ownerMutation({
       throwDomain(new NotFoundError({ message: "今日の日がありません", resource: "日" }));
     }
     const rows = await liveRowsForDay(ctx, day._id);
-    const kept = rows.filter((row) => row.status !== "未着手");
+    const kept = keptRowsAfterSwitch(rows);
     const startOrder = kept.reduce((max, row) => Math.max(max, row.sortOrder), -1);
     await Promise.all(
       rows.flatMap((row) => (row.status === "未着手" ? [ctx.db.delete(row._id)] : [])),

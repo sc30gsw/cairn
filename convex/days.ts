@@ -3,17 +3,19 @@ import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import {
+  collapseExtraLiveDays,
   ensureCatalog,
   getDayByDate,
   getLiveDay,
   liveRowsForDay,
+  requireEditableDay,
   requireLiveDay,
 } from "./ensureCatalog";
-import { ConflictError, NotFoundError, ValidationFailedError } from "./lib/errors";
+import { ConflictError } from "./lib/errors";
 import { isFutureDateJst, weekdayFromDateJst } from "./lib/jst";
 import { formatShareMarkdown } from "./lib/share";
 import { isShortSleep, sleepHours } from "./lib/sleep";
-import { dayDtoValidator, rowDtoValidator } from "./lib/validators";
+import { conditionValidator, dayDtoValidator, rowDtoValidator } from "./lib/validators";
 import { confirmedVolumeMinutes } from "./lib/volume";
 import { ownerMutation, ownerQuery, throwDomain } from "./ownerFunctions";
 
@@ -61,7 +63,7 @@ export const open = ownerMutation({
       return { applied: false };
     }
     const existing = await getDayByDate(ctx, ctx.ownerId, args.dateJst);
-    if (existing !== null) {
+    if (existing !== null && existing.deletedAt !== undefined) {
       return { applied: false };
     }
     const weekday = weekdayFromDateJst(args.dateJst);
@@ -72,13 +74,25 @@ export const open = ownerMutation({
     if (preset === null || preset.lines.length === 0) {
       return { applied: false };
     }
-    const dayId = await ctx.db.insert("days", { dateJst: args.dateJst, ownerId: ctx.ownerId });
+    let day = existing;
+    if (day === null) {
+      await ctx.db.insert("days", { dateJst: args.dateJst, ownerId: ctx.ownerId });
+      day = await collapseExtraLiveDays(ctx, ctx.ownerId, args.dateJst);
+      if (day === null) {
+        return { applied: false };
+      }
+    }
+    await ctx.db.patch(day._id, { dateJst: day.dateJst });
+    const liveRows = await liveRowsForDay(ctx, day._id);
+    if (liveRows.length > 0) {
+      return { applied: false };
+    }
     await Promise.all(
       preset.lines.map((line, index) =>
         ctx.db.insert("rows", {
           content: line.content,
           dateJst: args.dateJst,
-          dayId,
+          dayId: day._id,
           itemId: line.itemId,
           minutes: line.minutes,
           ownerId: ctx.ownerId,
@@ -140,20 +154,12 @@ export const get = ownerQuery({
 
 export const setCondition = ownerMutation({
   args: {
-    condition: v.union(v.literal("好調"), v.literal("普通"), v.literal("崩れた")),
+    condition: conditionValidator,
     dateJst: v.string(),
     todayJst: v.string(),
   },
   handler: async (ctx, args) => {
-    if (isFutureDateJst(args.dateJst, args.todayJst)) {
-      throwDomain(new ValidationFailedError({ message: "未来の日は編集できません" }));
-    }
-    const existing = await getDayByDate(ctx, ctx.ownerId, args.dateJst);
-    if (existing !== null && existing.deletedAt !== undefined) {
-      throwDomain(
-        new NotFoundError({ message: "ゴミ箱の日です。先に戻してください", resource: "日" }),
-      );
-    }
+    await requireEditableDay(ctx, ctx.ownerId, args.dateJst, args.todayJst);
     const day = await requireLiveDay(ctx, ctx.ownerId, args.dateJst);
     await ctx.db.patch(day._id, { condition: args.condition });
     return null;
@@ -164,20 +170,12 @@ export const setCondition = ownerMutation({
 export const setMemo = ownerMutation({
   args: { dateJst: v.string(), memo: v.string(), todayJst: v.string() },
   handler: async (ctx, args) => {
-    if (isFutureDateJst(args.dateJst, args.todayJst)) {
-      throwDomain(new ValidationFailedError({ message: "未来の日は編集できません" }));
-    }
-    const existing = await getDayByDate(ctx, ctx.ownerId, args.dateJst);
-    if (existing !== null && existing.deletedAt !== undefined) {
-      throwDomain(
-        new NotFoundError({ message: "ゴミ箱の日です。先に戻してください", resource: "日" }),
-      );
-    }
+    const existing = await requireEditableDay(ctx, ctx.ownerId, args.dateJst, args.todayJst);
     if (args.memo.trim() === "") {
       if (existing === null) {
         return null;
       }
-      await ctx.db.patch(existing._id, { memo: "" });
+      await ctx.db.patch(existing._id, { memo: undefined });
       return null;
     }
     const day = existing ?? (await requireLiveDay(ctx, ctx.ownerId, args.dateJst));
@@ -190,26 +188,18 @@ export const setMemo = ownerMutation({
 export const setWake = ownerMutation({
   args: { dateJst: v.string(), todayJst: v.string(), wakeHm: v.string() },
   handler: async (ctx, args) => {
-    if (isFutureDateJst(args.dateJst, args.todayJst)) {
-      throwDomain(new ValidationFailedError({ message: "未来の日は編集できません" }));
-    }
-    const existing = await getDayByDate(ctx, ctx.ownerId, args.dateJst);
-    if (existing !== null && existing.deletedAt !== undefined) {
-      throwDomain(
-        new NotFoundError({ message: "ゴミ箱の日です。先に戻してください", resource: "日" }),
-      );
-    }
-    const day = await requireLiveDay(ctx, ctx.ownerId, args.dateJst);
+    const existing = await requireEditableDay(ctx, ctx.ownerId, args.dateJst, args.todayJst);
     const tonight = await ctx.db
       .query("tonight")
       .withIndex("by_owner", (q) => q.eq("ownerId", ctx.ownerId))
       .unique();
-    const bedHm = day.bedHm ?? tonight?.bedHm;
+    const bedHm = existing?.bedHm ?? tonight?.bedHm;
     if (bedHm === undefined) {
       throwDomain(new ConflictError({ message: "今夜の就寝がまだありません" }));
     }
+    const day = existing ?? (await requireLiveDay(ctx, ctx.ownerId, args.dateJst));
     await ctx.db.patch(day._id, { bedHm, wakeHm: args.wakeHm });
-    if (tonight !== null) {
+    if (tonight !== null && existing?.bedHm === undefined) {
       await ctx.db.delete(tonight._id);
     }
     return null;

@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { ConflictError, NotFoundError, ValidationFailedError } from "./lib/errors";
+import { weekdayAlreadyTaken } from "./lib/preset";
 import { presetDtoValidator } from "./lib/validators";
 import { ownerMutation, ownerQuery, throwDomain } from "./ownerFunctions";
 
@@ -43,6 +44,21 @@ export const list = ownerQuery({
   returns: v.array(presetDtoValidator),
 });
 
+async function assertOwnedLines(
+  ctx: MutationCtx,
+  ownerId: string,
+  lines: { itemId: Id<"items"> }[],
+) {
+  await Promise.all(
+    lines.map(async (line) => {
+      const item = await ctx.db.get(line.itemId);
+      if (item === null || item.ownerId !== ownerId) {
+        throwDomain(new NotFoundError({ message: "項目が見つかりません", resource: "項目" }));
+      }
+    }),
+  );
+}
+
 async function assertWeekdayFree(
   ctx: MutationCtx,
   ownerId: string,
@@ -53,7 +69,8 @@ async function assertWeekdayFree(
     .query("presets")
     .withIndex("by_owner_and_weekday", (q) => q.eq("ownerId", ownerId).eq("weekday", weekday))
     .collect();
-  if (existing.some((preset) => preset._id !== ignoreId)) {
+  const taken = existing.filter((preset) => preset._id !== ignoreId).map((preset) => preset.weekday);
+  if (weekdayAlreadyTaken(weekday, taken)) {
     throwDomain(new ConflictError({ message: "各曜日はプリセット1つだけです" }));
   }
 }
@@ -69,6 +86,7 @@ export const create = ownerMutation({
       throwDomain(new ValidationFailedError({ message: "曜日が不正です" }));
     }
     await assertWeekdayFree(ctx, ctx.ownerId, args.weekday);
+    await assertOwnedLines(ctx, ctx.ownerId, args.lines);
     return await ctx.db.insert("presets", {
       lines: args.lines,
       name: args.name,
@@ -97,6 +115,7 @@ export const update = ownerMutation({
       throwDomain(new ValidationFailedError({ message: "曜日が不正です" }));
     }
     await assertWeekdayFree(ctx, ctx.ownerId, args.weekday, args.presetId);
+    await assertOwnedLines(ctx, ctx.ownerId, args.lines);
     await ctx.db.patch(args.presetId, {
       lines: args.lines,
       name: args.name,
