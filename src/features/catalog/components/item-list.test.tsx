@@ -4,22 +4,24 @@ import { ItemList } from "~/features/catalog/components/item-list";
 import { PresetList } from "~/features/catalog/components/preset-list";
 import { renderWithMantine } from "~/test-utils/render";
 
-test("項目とプリセットの編集が見える", () => {
-  const onCreate = vi.fn();
-  const onUpdate = vi.fn();
+test("カテゴリーの下に学習内容が並び、カテゴリーも編集できる", () => {
   const { getByRole, getByLabelText } = renderWithMantine(
     <>
       <ItemList
-        items={[{ _id: "i1" as never, category: "多聴", name: "Distinction 2000" }]}
-        onCreate={onCreate}
-        onRemove={vi.fn()}
-        onRename={vi.fn()}
+        categories={[{ _id: "c1" as never, name: "多聴", sortOrder: 1 }]}
+        items={[{ _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000" }]}
+        onCreateCategory={vi.fn()}
+        onCreateItem={vi.fn()}
+        onRemoveCategory={vi.fn()}
+        onRemoveItem={vi.fn()}
+        onRenameCategory={vi.fn()}
+        onRenameItem={vi.fn()}
       />
       <PresetList
-        items={[{ _id: "i1" as never, category: "多聴", name: "Distinction 2000" }]}
+        items={[{ _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000" }]}
         onCreate={vi.fn()}
         onRemove={vi.fn()}
-        onUpdate={onUpdate}
+        onUpdate={vi.fn()}
         presets={[
           {
             _id: "p1" as never,
@@ -34,9 +36,13 @@ test("項目とプリセットの編集が見える", () => {
       />
     </>,
   );
-  expect(getByRole("button", { name: "項目を追加" })).toBeDefined();
-  expect(getByRole("button", { name: "Distinction 2000を改名" })).toBeDefined();
+  expect(getByRole("button", { name: "カテゴリーを追加" })).toBeDefined();
+  expect(getByRole("button", { name: "学習内容を追加" })).toBeDefined();
+  expect(getByRole("button", { name: "多聴を更新" })).toBeDefined();
+  expect(getByRole("button", { name: "多聴を削除" })).toBeDefined();
+  expect(getByRole("button", { name: "Distinction 2000を更新" })).toBeDefined();
   expect(getByRole("button", { name: "Distinction 2000を削除" })).toBeDefined();
+  expect(getByRole("combobox", { name: "Distinction 2000のカテゴリー" })).toBeDefined();
   expect(getByRole("button", { name: "プリセットを追加" })).toBeDefined();
   expect(getByRole("button", { name: "月曜日を保存" })).toBeDefined();
   expect(getByRole("button", { name: "月曜日を削除" })).toBeDefined();

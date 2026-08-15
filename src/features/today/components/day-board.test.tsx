@@ -5,9 +5,18 @@ import { DayBoard } from "~/features/today/components/day-board";
 import type { DayPage, DayRow } from "~/features/today/types/day";
 import { renderWithMantine } from "~/test-utils/render";
 
+vi.mock("@tanstack/react-router", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@tanstack/react-router")>();
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+  };
+});
+
 const row = {
   _id: "row1" as DayRow["_id"],
   category: "多聴",
+  categorySortOrder: 1,
   content: "",
   itemId: "item1" as DayRow["itemId"],
   itemName: "Distinction 2000",
@@ -35,33 +44,38 @@ const day = {
   volumeMinutes: 0,
 } satisfies DayPage;
 
-const items = [{ _id: row.itemId, category: "多聴" as const, name: "Distinction 2000" }];
+const items = [{ _id: row.itemId, categoryId: "c1" as never, name: "Distinction 2000" }];
 
-test("ログイン済みなら今日の未着手行が見える", () => {
+const idleHandlers = {
+  onAddRow: vi.fn(),
+  onConfirm: vi.fn(),
+  onRemoveDay: vi.fn(),
+  onRemoveRow: vi.fn(),
+  onSaveBed: vi.fn(),
+  onSaveCondition: vi.fn(),
+  onSaveMemo: vi.fn(),
+  onSaveWake: vi.fn(),
+  onSkip: vi.fn(),
+  onSwitchPreset: vi.fn(),
+};
+
+test("ログイン済みなら今日の未着手の記録が見える", () => {
   const { getByRole, getByText } = renderWithMantine(
     <DayBoard
       dateJst="2026-08-17"
       day={day}
       isToday
       items={items}
-      onAddRow={vi.fn()}
-      onConfirm={vi.fn()}
-      onRemoveDay={vi.fn()}
-      onRemoveRow={vi.fn()}
-      onSaveBed={vi.fn()}
-      onSaveCondition={vi.fn()}
-      onSaveMemo={vi.fn()}
-      onSaveWake={vi.fn()}
-      onSkip={vi.fn()}
-      onSwitchPreset={vi.fn()}
       presets={[]}
+      selectedPresetId={null}
+      {...idleHandlers}
     />,
   );
-  expect(getByRole("textbox", { name: /Distinction 2000/ })).toBeDefined();
+  expect(getByRole("textbox", { name: "Distinction 2000 内容" })).toBeDefined();
   expect(getByText("未着手")).toBeDefined();
 });
 
-test("確定とスキップが画面上で呼べる", async () => {
+test("記録を確定スイッチで確定、オフでスキップできる", async () => {
   const onConfirm = vi.fn();
   const onSkip = vi.fn();
   const { getByRole } = renderWithMantine(
@@ -81,9 +95,10 @@ test("確定とスキップが画面上で呼べる", async () => {
       onSkip={onSkip}
       onSwitchPreset={vi.fn()}
       presets={[]}
+      selectedPresetId={null}
     />,
   );
-  getByRole("button", { name: "確定" }).click();
+  getByRole("switch", { name: "記録を確定" }).click();
   await waitFor(() => {
     expect(onConfirm).toHaveBeenCalledWith({
       content: "",
@@ -91,13 +106,31 @@ test("確定とスキップが画面上で呼べる", async () => {
       rowId: row._id,
     });
   });
-  expect((getByRole("button", { name: "確定" }) as HTMLButtonElement).type).toBe("submit");
-  getByRole("button", { name: "スキップ" }).focus();
-  getByRole("button", { name: "スキップ" }).click();
+  getByRole("switch", { name: "記録を確定" }).click();
   expect(onSkip).toHaveBeenCalledWith(row._id);
 });
 
-test("警告中でも確定はロックされない", () => {
+test("未着手はスイッチがオフでバッジとツールチップが出る", async () => {
+  const { getByRole, getByText } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={day}
+      isToday
+      items={items}
+      presets={[]}
+      selectedPresetId={null}
+      {...idleHandlers}
+    />,
+  );
+  expect(getByText("未着手")).toBeDefined();
+  expect((getByRole("switch", { name: "記録を確定" }) as HTMLInputElement).checked).toBe(false);
+  getByRole("switch", { name: "記録を確定" }).focus();
+  await waitFor(() => {
+    expect(document.body.textContent).toContain("まだ決めていない");
+  });
+});
+
+test("警告中でも記録の確定はロックされない", () => {
   const warned = {
     ...day,
     day: { ...day.day, sleepHours: 6, sleepWarning: true },
@@ -108,21 +141,13 @@ test("警告中でも確定はロックされない", () => {
       day={warned}
       isToday
       items={items}
-      onAddRow={vi.fn()}
-      onConfirm={vi.fn()}
-      onRemoveDay={vi.fn()}
-      onRemoveRow={vi.fn()}
-      onSaveBed={vi.fn()}
-      onSaveCondition={vi.fn()}
-      onSaveMemo={vi.fn()}
-      onSaveWake={vi.fn()}
-      onSkip={vi.fn()}
-      onSwitchPreset={vi.fn()}
       presets={[]}
+      selectedPresetId={null}
+      {...idleHandlers}
     />,
   );
-  expect(getByText("睡眠が7時間未満です。行の確定はできます。")).toBeDefined();
-  expect((getByRole("button", { name: "確定" }) as HTMLButtonElement).disabled).toBe(false);
+  expect(getByText("睡眠が7時間未満です。記録の確定はできます。")).toBeDefined();
+  expect((getByRole("switch", { name: "記録を確定" }) as HTMLInputElement).disabled).toBe(false);
 });
 
 test("今夜の就寝に日付ピッカーはない", () => {
@@ -132,17 +157,9 @@ test("今夜の就寝に日付ピッカーはない", () => {
       day={day}
       isToday
       items={items}
-      onAddRow={vi.fn()}
-      onConfirm={vi.fn()}
-      onRemoveDay={vi.fn()}
-      onRemoveRow={vi.fn()}
-      onSaveBed={vi.fn()}
-      onSaveCondition={vi.fn()}
-      onSaveMemo={vi.fn()}
-      onSaveWake={vi.fn()}
-      onSkip={vi.fn()}
-      onSwitchPreset={vi.fn()}
       presets={[]}
+      selectedPresetId={null}
+      {...idleHandlers}
     />,
   );
   expect(getByLabelText(/今夜の就寝/)).toBeDefined();
@@ -161,25 +178,17 @@ test("共有文のコピー操作が見える", () => {
       day={withShare}
       isToday
       items={items}
-      onAddRow={vi.fn()}
-      onConfirm={vi.fn()}
-      onRemoveDay={vi.fn()}
-      onRemoveRow={vi.fn()}
-      onSaveBed={vi.fn()}
-      onSaveCondition={vi.fn()}
-      onSaveMemo={vi.fn()}
-      onSaveWake={vi.fn()}
-      onSkip={vi.fn()}
-      onSwitchPreset={vi.fn()}
       presets={[]}
+      selectedPresetId={null}
+      {...idleHandlers}
     />,
   );
   expect(getByRole("button", { name: "共有文をコピー" })).toBeDefined();
 });
 
-test("今日のプリセット切替が見える。未設定のコンディションは普通にしない", () => {
+test("セクションはプリセット、記録、コンディション、睡眠の順。コンディションは未選択のまま普通にしない", () => {
   const onSaveCondition = vi.fn();
-  const { getByLabelText, getByRole } = renderWithMantine(
+  const { getAllByRole, getByRole } = renderWithMantine(
     <DayBoard
       dateJst="2026-08-17"
       day={day}
@@ -196,14 +205,50 @@ test("今日のプリセット切替が見える。未設定のコンディシ�
       onSkip={vi.fn()}
       onSwitchPreset={vi.fn()}
       presets={[{ _id: "p1" as never, lines: [], name: "月曜日", weekday: 1 }]}
+      selectedPresetId={null}
     />,
   );
-  expect(getByRole("combobox", { name: "今日のプリセット切替" })).toBeDefined();
-  expect(getByLabelText("コンディション").textContent).toContain("未設定");
+  const sectionTitles = getAllByRole("heading")
+    .map((heading) => heading.textContent)
+    .filter(
+      (text) =>
+        text === "プリセット" || text === "記録" || text === "コンディション" || text === "睡眠",
+    );
+  expect(sectionTitles).toEqual(["プリセット", "記録", "コンディション", "睡眠"]);
+  expect((getByRole("combobox", { name: "今日のプリセット切替" }) as HTMLInputElement).value).toBe(
+    "月曜日",
+  );
+  expect((getByRole("radio", { name: "好調" }) as HTMLInputElement).checked).toBe(false);
+  expect((getByRole("radio", { name: "普通" }) as HTMLInputElement).checked).toBe(false);
+  expect((getByRole("radio", { name: "崩れた" }) as HTMLInputElement).checked).toBe(false);
   expect(onSaveCondition).not.toHaveBeenCalled();
 });
 
-test("未来の日は行を足せず今夜も出さない", () => {
+test("プリセットを選ぶと表示名が変わる", async () => {
+  const onSwitchPreset = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={day}
+      isToday
+      items={items}
+      onSwitchPreset={onSwitchPreset}
+      presets={[
+        { _id: "p1" as never, lines: [], name: "月曜日", weekday: 1 },
+        { _id: "p2" as never, lines: [], name: "火の雛形", weekday: 2 },
+      ]}
+      selectedPresetId={null}
+      {...{ ...idleHandlers, onSwitchPreset }}
+    />,
+  );
+  getByRole("combobox", { name: "今日のプリセット切替" }).click();
+  getByRole("option", { hidden: true, name: "火の雛形" }).click();
+  await waitFor(() => {
+    expect(onSwitchPreset).toHaveBeenCalledWith("p2");
+  });
+});
+
+test("未来の日は記録を足せず今夜も出さない", () => {
   const future = { ...day, isFuture: true } satisfies DayPage;
   const { queryByRole, queryByLabelText } = renderWithMantine(
     <DayBoard
@@ -211,20 +256,12 @@ test("未来の日は行を足せず今夜も出さない", () => {
       day={future}
       isToday={false}
       items={items}
-      onAddRow={vi.fn()}
-      onConfirm={vi.fn()}
-      onRemoveDay={vi.fn()}
-      onRemoveRow={vi.fn()}
-      onSaveBed={vi.fn()}
-      onSaveCondition={vi.fn()}
-      onSaveMemo={vi.fn()}
-      onSaveWake={vi.fn()}
-      onSkip={vi.fn()}
-      onSwitchPreset={vi.fn()}
       presets={[]}
+      selectedPresetId={null}
+      {...idleHandlers}
     />,
   );
-  expect(queryByRole("button", { name: "行を足す" })).toBeNull();
+  expect(queryByRole("button", { name: "記録を足す" })).toBeNull();
   expect(queryByLabelText(/今夜の就寝/)).toBeNull();
 });
 
@@ -235,24 +272,33 @@ test("過去の日は起床を出せるが今夜の就寝は出さない", () =>
       day={day}
       isToday={false}
       items={items}
-      onAddRow={vi.fn()}
-      onConfirm={vi.fn()}
-      onRemoveDay={vi.fn()}
-      onRemoveRow={vi.fn()}
-      onSaveBed={vi.fn()}
-      onSaveCondition={vi.fn()}
-      onSaveMemo={vi.fn()}
-      onSaveWake={vi.fn()}
-      onSkip={vi.fn()}
-      onSwitchPreset={vi.fn()}
       presets={[]}
+      selectedPresetId={null}
+      {...idleHandlers}
     />,
   );
   expect(getByLabelText("起床")).toBeDefined();
   expect(queryByLabelText(/今夜の就寝/)).toBeNull();
 });
 
-test("その日に行を足せる", () => {
+test("その日に記録を足せる", () => {
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={day}
+      isToday
+      items={items}
+      presets={[]}
+      selectedPresetId={null}
+      {...idleHandlers}
+    />,
+  );
+  expect(getByRole("combobox", { name: /その日限りの項目/ })).toBeDefined();
+  expect(getByRole("button", { name: "記録を足す" })).toBeDefined();
+});
+
+test("記録のゴミ箱はアイコンボタン", () => {
+  const onRemoveRow = vi.fn();
   const { getByRole } = renderWithMantine(
     <DayBoard
       dateJst="2026-08-17"
@@ -262,7 +308,7 @@ test("その日に行を足せる", () => {
       onAddRow={vi.fn()}
       onConfirm={vi.fn()}
       onRemoveDay={vi.fn()}
-      onRemoveRow={vi.fn()}
+      onRemoveRow={onRemoveRow}
       onSaveBed={vi.fn()}
       onSaveCondition={vi.fn()}
       onSaveMemo={vi.fn()}
@@ -270,8 +316,9 @@ test("その日に行を足せる", () => {
       onSkip={vi.fn()}
       onSwitchPreset={vi.fn()}
       presets={[]}
+      selectedPresetId={null}
     />,
   );
-  expect(getByRole("combobox", { name: /その日限りの項目/ })).toBeDefined();
-  expect(getByRole("button", { name: "行を足す" })).toBeDefined();
+  getByRole("button", { name: "ゴミ箱へ" }).click();
+  expect(onRemoveRow).toHaveBeenCalledWith(row._id);
 });

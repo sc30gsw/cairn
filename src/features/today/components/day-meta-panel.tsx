@@ -1,5 +1,5 @@
 import { Field, Form, useForm } from "@formisch/react";
-import { Button, SegmentedControl, Stack, Textarea, Title } from "@mantine/core";
+import { Button, Group, Radio, Stack, Textarea, Title } from "@mantine/core";
 import type { Condition } from "~domain/conditions";
 import { CONDITIONS } from "~domain/conditions";
 
@@ -21,21 +21,22 @@ export function DayMetaPanel({ condition, memo, onSaveCondition, onSaveMemo }: D
   return (
     <section aria-label="コンディションとメモ">
       <Stack gap="sm">
-        <Title order={3}>コンディションとメモ</Title>
-        <SegmentedControl
+        <Title order={3}>コンディション</Title>
+        <Radio.Group
           aria-label="コンディション"
-          data={[
-            { label: "未設定", value: "unset" },
-            ...CONDITIONS.map((value) => ({ label: value, value })),
-          ]}
-          fullWidth
           onChange={(value) => {
             if (value === "好調" || value === "普通" || value === "崩れた") {
               onSaveCondition(value);
             }
           }}
-          value={condition ?? "unset"}
-        />
+          value={condition ?? ""}
+        >
+          <Group mt="xs">
+            {CONDITIONS.map((value) => (
+              <Radio key={value} label={value} value={value} />
+            ))}
+          </Group>
+        </Radio.Group>
         <Form
           of={form}
           onSubmit={(output) => {

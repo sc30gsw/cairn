@@ -9,6 +9,8 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as catalog from "../catalog.js";
+import type * as categories from "../categories.js";
 import type * as crons from "../crons.js";
 import type * as days from "../days.js";
 import type * as ensureCatalog from "../ensureCatalog.js";
@@ -18,6 +20,7 @@ import type * as http from "../http.js";
 import type * as items from "../items.js";
 import type * as lib_catalog from "../lib/catalog.js";
 import type * as lib_categories from "../lib/categories.js";
+import type * as lib_categoryFields from "../lib/categoryFields.js";
 import type * as lib_conditions from "../lib/conditions.js";
 import type * as lib_env from "../lib/env.js";
 import type * as lib_errors from "../lib/errors.js";
@@ -45,6 +48,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  catalog: typeof catalog;
+  categories: typeof categories;
   crons: typeof crons;
   days: typeof days;
   ensureCatalog: typeof ensureCatalog;
@@ -54,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   items: typeof items;
   "lib/catalog": typeof lib_catalog;
   "lib/categories": typeof lib_categories;
+  "lib/categoryFields": typeof lib_categoryFields;
   "lib/conditions": typeof lib_conditions;
   "lib/env": typeof lib_env;
   "lib/errors": typeof lib_errors;

@@ -10,6 +10,15 @@ const presetLine = v.object({
 });
 
 export default defineSchema({
+  categories: defineTable({
+    name: v.string(),
+    ownerId: v.string(),
+    sortOrder: v.number(),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_owner_and_name", ["ownerId", "name"])
+    .index("by_owner_and_sortOrder", ["ownerId", "sortOrder"]),
+
   days: defineTable({
     bedHm: v.optional(v.string()),
     condition: v.optional(conditionValidator),
@@ -31,12 +40,14 @@ export default defineSchema({
   }).index("by_owner", ["ownerId"]),
 
   items: defineTable({
-    category: categoryValidator,
+    category: v.optional(categoryValidator),
+    categoryId: v.optional(v.id("categories")),
     name: v.string(),
     ownerId: v.string(),
   })
     .index("by_owner", ["ownerId"])
-    .index("by_owner_and_name", ["ownerId", "name"]),
+    .index("by_owner_and_name", ["ownerId", "name"])
+    .index("by_category", ["categoryId"]),
 
   obstaclePlans: defineTable({
     ifText: v.string(),

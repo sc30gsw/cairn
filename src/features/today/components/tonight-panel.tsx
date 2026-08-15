@@ -36,7 +36,7 @@ export function TonightPanel({
     <section aria-label="今夜と睡眠">
       <Grid gap="sm">
         <Grid.Col span={12}>
-          <Title order={3}>今夜と睡眠</Title>
+          <Title order={3}>睡眠</Title>
         </Grid.Col>
         {showBed ? (
           <Grid.Col span={12}>
@@ -100,7 +100,7 @@ export function TonightPanel({
         {sleepWarning ? (
           <Grid.Col span={12}>
             <Alert color="yellow" title="睡眠">
-              睡眠が7時間未満です。行の確定はできます。
+              睡眠が7時間未満です。記録の確定はできます。
             </Alert>
           </Grid.Col>
         ) : null}

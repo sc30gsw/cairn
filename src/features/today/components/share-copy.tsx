@@ -5,7 +5,7 @@ export function ShareCopy({ markdown }: Record<"markdown", string>) {
     return (
       <Stack gap="sm">
         <Title order={3}>共有文</Title>
-        <Text c="dimmed">確定した行がまだないので共有文はありません。</Text>
+        <Text c="dimmed">確定した記録がまだないので共有文はありません。</Text>
       </Stack>
     );
   }

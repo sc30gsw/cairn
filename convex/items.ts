@@ -1,9 +1,18 @@
 import { v } from "convex/values";
 
+import type { Id } from "./_generated/dataModel";
+import type { MutationCtx } from "./_generated/server";
 import { ConflictError, NotFoundError, ValidationFailedError } from "./lib/errors";
 import { itemIdIsInUse } from "./lib/preset";
-import { categoryValidator, itemDtoValidator } from "./lib/validators";
+import { itemDtoValidator } from "./lib/validators";
 import { ownerMutation, ownerQuery, throwDomain } from "./ownerFunctions";
+
+async function requireOwnedCategory(ctx: MutationCtx, ownerId: string, categoryId: Id<"categories">) {
+  const category = await ctx.db.get(categoryId);
+  if (category === null || category.ownerId !== ownerId) {
+    throwDomain(new NotFoundError({ message: "カテゴリが見つかりません", resource: "カテゴリ" }));
+  }
+}
 
 export const list = ownerQuery({
   args: {},
@@ -12,17 +21,23 @@ export const list = ownerQuery({
       .query("items")
       .withIndex("by_owner", (q) => q.eq("ownerId", ctx.ownerId))
       .collect();
-    return items.map((item) => ({ _id: item._id, category: item.category, name: item.name }));
+    return items.flatMap((item) => {
+      if (item.categoryId === undefined) {
+        return [];
+      }
+      return [{ _id: item._id, categoryId: item.categoryId, name: item.name }];
+    });
   },
   returns: v.array(itemDtoValidator),
 });
 
 export const create = ownerMutation({
   args: {
-    category: categoryValidator,
+    categoryId: v.id("categories"),
     name: v.string(),
   },
   handler: async (ctx, args) => {
+    await requireOwnedCategory(ctx, ctx.ownerId, args.categoryId);
     if (args.name.trim() === "") {
       throwDomain(new ValidationFailedError({ message: "項目名は必須です" }));
     }
@@ -34,7 +49,7 @@ export const create = ownerMutation({
       throwDomain(new ConflictError({ message: "同じ名前の項目があります" }));
     }
     return await ctx.db.insert("items", {
-      category: args.category,
+      categoryId: args.categoryId,
       name: args.name,
       ownerId: ctx.ownerId,
     });
@@ -44,7 +59,7 @@ export const create = ownerMutation({
 
 export const rename = ownerMutation({
   args: {
-    category: categoryValidator,
+    categoryId: v.id("categories"),
     itemId: v.id("items"),
     name: v.string(),
   },
@@ -53,6 +68,7 @@ export const rename = ownerMutation({
     if (item === null || item.ownerId !== ctx.ownerId) {
       throwDomain(new NotFoundError({ message: "項目が見つかりません", resource: "項目" }));
     }
+    await requireOwnedCategory(ctx, ctx.ownerId, args.categoryId);
     if (args.name.trim() === "") {
       throwDomain(new ValidationFailedError({ message: "項目名は必須です" }));
     }
@@ -63,7 +79,7 @@ export const rename = ownerMutation({
     if (duplicate !== null && duplicate._id !== args.itemId) {
       throwDomain(new ConflictError({ message: "同じ名前の項目があります" }));
     }
-    await ctx.db.patch(args.itemId, { category: args.category, name: args.name });
+    await ctx.db.patch(args.itemId, { categoryId: args.categoryId, name: args.name });
     return null;
   },
   returns: v.null(),

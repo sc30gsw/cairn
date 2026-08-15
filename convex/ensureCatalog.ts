@@ -7,25 +7,86 @@ import {
   WEEKDAY_NAMES,
   seedLineNamesForWeekday,
 } from "./lib/catalog";
+import { SEED_CATEGORIES } from "./lib/categories";
 import { NotFoundError, ValidationFailedError } from "./lib/errors";
 import { isFutureDateJst } from "./lib/jst";
 import { throwDomain } from "./ownerFunctions";
 
+async function categoriesByName(
+  ctx: MutationCtx,
+  ownerId: string,
+): Promise<Map<string, Id<"categories">>> {
+  const existing = await ctx.db
+    .query("categories")
+    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+    .collect();
+  if (existing.length === 0) {
+    await Promise.all(
+      SEED_CATEGORIES.map((category) =>
+        ctx.db.insert("categories", {
+          name: category.name,
+          ownerId,
+          sortOrder: category.sortOrder,
+        }),
+      ),
+    );
+  }
+  const categories = await ctx.db
+    .query("categories")
+    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+    .collect();
+  return new Map(categories.map((category) => [category.name, category._id]));
+}
+
+async function backfillItemCategories(
+  ctx: MutationCtx,
+  ownerId: string,
+  nameToId: Map<string, Id<"categories">>,
+): Promise<void> {
+  const items = await ctx.db
+    .query("items")
+    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+    .collect();
+  await Promise.all(
+    items.map(async (item) => {
+      if (item.categoryId !== undefined) {
+        return;
+      }
+      const name = item.category;
+      if (name === undefined) {
+        return;
+      }
+      const categoryId = nameToId.get(name);
+      if (categoryId === undefined) {
+        return;
+      }
+      await ctx.db.patch(item._id, { category: undefined, categoryId });
+    }),
+  );
+}
+
 export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<void> {
+  const nameToId = await categoriesByName(ctx, ownerId);
   const existingItems = await ctx.db
     .query("items")
     .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
     .collect();
   if (existingItems.length === 0) {
     await Promise.all(
-      SEED_ITEMS.map((item) =>
-        ctx.db.insert("items", {
-          category: item.category,
+      SEED_ITEMS.map((item) => {
+        const categoryId = nameToId.get(item.category);
+        if (categoryId === undefined) {
+          return Promise.resolve();
+        }
+        return ctx.db.insert("items", {
+          categoryId,
           name: item.name,
           ownerId,
-        }),
-      ),
+        });
+      }),
     );
+  } else {
+    await backfillItemCategories(ctx, ownerId, nameToId);
   }
 
   const items = await ctx.db

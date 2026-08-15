@@ -27,9 +27,17 @@ function TrashReady() {
   const { data: trash } = useSuspenseQuery(convexQuery(api.trash.list, {}));
   const restoreDay = useConvexMutation(api.trash.restoreDay);
   const restoreRow = useConvexMutation(api.rows.restore);
+  const purgeDay = useConvexMutation(api.trash.purgeDay);
+  const purgeRow = useConvexMutation(api.trash.purgeRow);
 
   return (
     <TrashList
+      onPurgeDay={(dayId) => {
+        void purgeDay.mutateAsync({ dayId });
+      }}
+      onPurgeRow={(rowId) => {
+        void purgeRow.mutateAsync({ rowId });
+      }}
       onRestoreDay={(dayId) => {
         void restoreDay.mutateAsync({ dayId });
       }}

@@ -7,6 +7,7 @@ test("カテゴリが1つなら平坦、未着手とスキップは出ない", (
     formatShareMarkdown([
       {
         category: "TOEIC対策",
+        categorySortOrder: 0,
         content: "1-50",
         itemName: "金のフレーズ",
         minutes: 20,
@@ -15,6 +16,7 @@ test("カテゴリが1つなら平坦、未着手とスキップは出ない", (
       },
       {
         category: "TOEIC対策",
+        categorySortOrder: 0,
         content: "Unit 2",
         itemName: "出る文特急",
         minutes: 20,
@@ -23,6 +25,7 @@ test("カテゴリが1つなら平坦、未着手とスキップは出ない", (
       },
       {
         category: "TOEIC対策",
+        categorySortOrder: 0,
         content: "",
         itemName: "英文法（解く）",
         minutes: 20,
@@ -33,11 +36,12 @@ test("カテゴリが1つなら平坦、未着手とスキップは出ない", (
   ).toBe("- 金のフレーズ: 1-50 20分");
 });
 
-test("カテゴリが2つ以上なら親+子で固定順、カテゴリ内は入力順", () => {
+test("カテゴリが2つ以上なら親+子で sortOrder 順、カテゴリ内は入力順", () => {
   expect(
     formatShareMarkdown([
       {
         category: "多聴",
+        categorySortOrder: 1,
         content: "Unit 1",
         itemName: "Distinction 2000",
         minutes: 30,
@@ -46,6 +50,7 @@ test("カテゴリが2つ以上なら親+子で固定順、カテゴリ内は入
       },
       {
         category: "TOEIC対策",
+        categorySortOrder: 0,
         content: "1-50",
         itemName: "金のフレーズ",
         minutes: 20,
@@ -54,6 +59,7 @@ test("カテゴリが2つ以上なら親+子で固定順、カテゴリ内は入
       },
       {
         category: "英会話",
+        categorySortOrder: 3,
         content: "",
         itemName: "英会話",
         minutes: 30,

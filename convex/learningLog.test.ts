@@ -149,8 +149,21 @@ test("項目 CRUD・使用中削除失敗・プリセット切替", async () => 
     throw new Error("Distinction がない");
   }
   await expect(t.mutation(api.items.remove, { itemId: distinction._id })).rejects.toThrow();
-  const extraId = await t.mutation(api.items.create, { category: "その他", name: "単語帳" });
-  await t.mutation(api.items.rename, { category: "多読", itemId: extraId, name: "単語帳2" });
+  const categories = await t.query(api.categories.list, {});
+  const otherCategory = categories.find((category) => category.name === "その他");
+  const readingCategory = categories.find((category) => category.name === "多読");
+  if (otherCategory === undefined || readingCategory === undefined) {
+    throw new Error("カテゴリがない");
+  }
+  const extraId = await t.mutation(api.items.create, {
+    categoryId: otherCategory._id,
+    name: "単語帳",
+  });
+  await t.mutation(api.items.rename, {
+    categoryId: readingCategory._id,
+    itemId: extraId,
+    name: "単語帳2",
+  });
   await t.mutation(api.items.remove, { itemId: extraId });
   const presets = await t.query(api.presets.list, {});
   const saturday = presets.find((preset) => preset.weekday === 6);
@@ -169,6 +182,31 @@ test("項目 CRUD・使用中削除失敗・プリセット切替", async () => 
   expect(after.rows.some((row) => row.content === "残す" && row.status === "確定")).toBe(true);
   expect(after.rows.filter((row) => row.status === "未着手")).toEqual([]);
   await expect(raw().query(api.items.list, {})).rejects.toThrow();
+});
+
+test("カテゴリ CRUD・項目が残っていると削除失敗", async () => {
+  const t = owner();
+  await t.mutation(api.days.open, { dateJst: MONDAY, todayJst: MONDAY });
+  const categories = await t.query(api.categories.list, {});
+  expect(categories.map((category) => category.name)).toEqual([
+    "TOEIC対策",
+    "多聴",
+    "多読",
+    "英会話",
+    "その他",
+  ]);
+  const listening = categories.find((category) => category.name === "多聴");
+  if (listening === undefined) {
+    throw new Error("多聴がない");
+  }
+  await expect(t.mutation(api.categories.remove, { categoryId: listening._id })).rejects.toThrow();
+  const extraId = await t.mutation(api.categories.create, { name: "単語" });
+  await t.mutation(api.categories.rename, { categoryId: extraId, name: "語彙" });
+  const afterRename = await t.query(api.categories.list, {});
+  expect(afterRename.some((category) => category.name === "語彙")).toBe(true);
+  await t.mutation(api.categories.remove, { categoryId: extraId });
+  const afterRemove = await t.query(api.categories.list, {});
+  expect(afterRemove.some((category) => category.name === "語彙")).toBe(false);
 });
 
 test("その日限りの行を足せる。未来には足さない", async () => {
@@ -251,12 +289,25 @@ test("行と日のゴミ箱。30日後に完全削除。未認証は throw", asy
   await t.mutation(api.rows.remove, { now, rowId: row._id });
   const trashed = await t.query(api.trash.list, {});
   expect(trashed.rows.some((entry) => entry.itemName === "Distinction 2000")).toBe(true);
+  expect(trashed.rows[0]?.minutes).toBe(row.minutes);
   await t.mutation(api.rows.restore, { rowId: row._id });
+  expect((await t.query(api.trash.list, {})).rows).toEqual([]);
+  await t.mutation(api.rows.remove, { now, rowId: row._id });
+  await t.mutation(api.trash.purgeRow, { rowId: row._id });
   expect((await t.query(api.trash.list, {})).rows).toEqual([]);
   await t.mutation(api.trash.removeDay, { dateJst: MONDAY, now });
   const daysInTrash = await t.query(api.trash.list, {});
   expect(daysInTrash.days.some((entry) => entry.dateJst === MONDAY)).toBe(true);
   await t.mutation(api.trash.restoreDay, { dayId: day.day._id });
+  await t.mutation(api.trash.removeDay, { dateJst: MONDAY, now });
+  await t.mutation(api.trash.purgeDay, { dayId: day.day._id });
+  expect((await t.query(api.trash.list, {})).days).toEqual([]);
+  expect((await t.query(api.days.get, { dateJst: MONDAY, todayJst: MONDAY })).day).toBeNull();
+  await t.mutation(api.days.open, { dateJst: MONDAY, todayJst: MONDAY });
+  const reopened = await t.query(api.days.get, { dateJst: MONDAY, todayJst: MONDAY });
+  if (reopened.day === null) {
+    throw new Error("日の再作成に失敗");
+  }
   await t.mutation(api.trash.removeDay, { dateJst: MONDAY, now });
   await t.mutation(internal.trash.purgeExpired, { now: now + 30 * 24 * 60 * 60 * 1000 });
   expect((await t.query(api.trash.list, {})).days).toEqual([]);

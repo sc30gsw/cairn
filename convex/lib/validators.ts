@@ -28,7 +28,8 @@ export const conditionValidator = v.union(
 
 export const rowDtoValidator = v.object({
   _id: v.id("rows"),
-  category: categoryValidator,
+  category: v.string(),
+  categorySortOrder: v.number(),
   content: v.string(),
   itemId: v.id("items"),
   itemName: v.string(),
@@ -50,8 +51,14 @@ export const dayDtoValidator = v.object({
 
 export const itemDtoValidator = v.object({
   _id: v.id("items"),
-  category: categoryValidator,
+  categoryId: v.id("categories"),
   name: v.string(),
+});
+
+export const categoryDtoValidator = v.object({
+  _id: v.id("categories"),
+  name: v.string(),
+  sortOrder: v.number(),
 });
 
 export const presetDtoValidator = v.object({
@@ -68,4 +75,3 @@ export const presetDtoValidator = v.object({
   weekday: v.number(),
 });
 
-export const categoryOrder = CATEGORIES;

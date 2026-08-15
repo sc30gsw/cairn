@@ -1,5 +1,6 @@
 import { Field, Form, useForm } from "@formisch/react";
 import {
+  Accordion,
   Button,
   Card,
   Grid,
@@ -169,15 +170,36 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
           </Grid>
         </Form>
       </Card>
-      {presets.map((preset) => (
-        <PresetEditor
-          key={preset._id}
-          items={items}
-          onRemove={onRemove}
-          onUpdate={onUpdate}
-          preset={preset}
-        />
-      ))}
+      {presets.length === 0 ? (
+        <Text c="dimmed">プリセットはまだありません。</Text>
+      ) : (
+        <Accordion variant="separated">
+          {presets.map((preset) => (
+            <Accordion.Item key={preset._id} value={preset._id}>
+              <Accordion.Control>
+                <Stack gap={2}>
+                  <Text fw={600}>{preset.name}</Text>
+                  <Text c="dimmed" size="sm">
+                    {WEEKDAY_OPTIONS.find((option) => option.value === String(preset.weekday))?.label}
+                    {" · "}
+                    {preset.lines.length === 0
+                      ? "記録なし"
+                      : preset.lines.map((line: PresetLineDto) => line.itemName).join("、")}
+                  </Text>
+                </Stack>
+              </Accordion.Control>
+              <Accordion.Panel>
+                <PresetEditor
+                  items={items}
+                  onRemove={onRemove}
+                  onUpdate={onUpdate}
+                  preset={preset}
+                />
+              </Accordion.Panel>
+            </Accordion.Item>
+          ))}
+        </Accordion>
+      )}
     </Stack>
   );
 }
@@ -214,7 +236,7 @@ function PresetEditor({
   });
 
   return (
-    <Card>
+    <Card p="md" withBorder={false}>
       <Form
         of={form}
         onSubmit={(output) => {
@@ -228,10 +250,6 @@ function PresetEditor({
         }}
       >
         <Stack gap="sm">
-          <Text c="dimmed" size="sm">
-            {preset.name}:{" "}
-            {preset.lines.map((line: PresetLineDto) => line.itemName).join("、") || "行なし"}
-          </Text>
           <Grid align="flex-end" gap="sm">
             <Grid.Col span={{ base: 12, sm: 4 }}>
               <Field of={form} path={["name"]}>

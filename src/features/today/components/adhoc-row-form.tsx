@@ -77,7 +77,7 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
         </Grid.Col>
         <Grid.Col span={{ base: 6, sm: 2 }}>
           <Button disabled={first === undefined} fullWidth type="submit">
-            行を足す
+            記録を足す
           </Button>
         </Grid.Col>
       </Grid>

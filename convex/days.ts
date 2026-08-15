@@ -11,6 +11,7 @@ import {
   requireEditableDay,
   requireLiveDay,
 } from "./ensureCatalog";
+import { categoryFields } from "./lib/categoryFields";
 import { ConflictError } from "./lib/errors";
 import { isFutureDateJst, weekdayFromDateJst } from "./lib/jst";
 import { formatShareMarkdown } from "./lib/share";
@@ -30,13 +31,26 @@ async function itemMap(
   return new Map(items.map((item) => [item._id, item]));
 }
 
+async function categoryMap(
+  ctx: QueryCtx | MutationCtx,
+  ownerId: string,
+): Promise<Map<Id<"categories">, Doc<"categories">>> {
+  const categories = await ctx.db
+    .query("categories")
+    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+    .collect();
+  return new Map(categories.map((category) => [category._id, category]));
+}
+
 export async function toRowDtos(ctx: QueryCtx | MutationCtx, ownerId: string, rows: Doc<"rows">[]) {
-  const items = await itemMap(ctx, ownerId);
+  const [items, categories] = await Promise.all([itemMap(ctx, ownerId), categoryMap(ctx, ownerId)]);
   return rows.map((row) => {
     const item = items.get(row.itemId);
+    const fields = categoryFields(item, categories);
     return {
       _id: row._id,
-      category: item?.category ?? "その他",
+      category: fields.category,
+      categorySortOrder: fields.categorySortOrder,
       content: row.content,
       itemId: row.itemId,
       itemName: item?.name ?? "不明",

@@ -10,7 +10,7 @@ import { ownerMutation, throwDomain } from "./ownerFunctions";
 async function requireOwnedRow(ctx: MutationCtx, ownerId: string, rowId: Id<"rows">) {
   const row = await ctx.db.get(rowId);
   if (row === null || row.ownerId !== ownerId || row.deletedAt !== undefined) {
-    throwDomain(new NotFoundError({ message: "行が見つかりません", resource: "行" }));
+    throwDomain(new NotFoundError({ message: "記録が見つかりません", resource: "記録" }));
   }
   return row;
 }
@@ -104,7 +104,7 @@ export const restore = ownerMutation({
   handler: async (ctx, args) => {
     const row = await ctx.db.get(args.rowId);
     if (row === null || row.ownerId !== ctx.ownerId || row.deletedAt === undefined) {
-      throwDomain(new NotFoundError({ message: "ゴミ箱にその行はありません", resource: "行" }));
+      throwDomain(new NotFoundError({ message: "ゴミ箱にその記録はありません", resource: "記録" }));
     }
     const day = await ctx.db.get(row.dayId);
     if (day !== null && day.deletedAt !== undefined) {

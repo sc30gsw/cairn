@@ -1,7 +1,6 @@
-import { CATEGORIES, type Category } from "./categories";
-
 export type ShareRow = {
-  category: Category;
+  category: string;
+  categorySortOrder: number;
   content: string;
   itemName: string;
   minutes: number;
@@ -16,6 +15,18 @@ function lineText(row: ShareRow): string {
   return `${row.itemName}: ${row.content} ${row.minutes}分`;
 }
 
+function usedCategories(rows: readonly ShareRow[]): string[] {
+  const seen = new Map<string, number>();
+  for (const row of rows) {
+    if (!seen.has(row.category)) {
+      seen.set(row.category, row.categorySortOrder);
+    }
+  }
+  return [...seen.entries()]
+    .toSorted((left, right) => left[1] - right[1] || left[0].localeCompare(right[0], "ja"))
+    .map(([name]) => name);
+}
+
 export function formatShareMarkdown(rows: readonly ShareRow[]): string {
   const confirmed = rows
     .filter((row) => row.status === "確定")
@@ -24,23 +35,23 @@ export function formatShareMarkdown(rows: readonly ShareRow[]): string {
     return "";
   }
 
-  const byCategory = new Map<Category, ShareRow[]>();
+  const byCategory = new Map<string, ShareRow[]>();
   for (const row of confirmed) {
     const bucket = byCategory.get(row.category) ?? [];
     bucket.push(row);
     byCategory.set(row.category, bucket);
   }
 
-  const usedCategories = CATEGORIES.filter((category) => byCategory.has(category));
-  if (usedCategories.length === 1) {
-    const only = usedCategories[0];
+  const names = usedCategories(confirmed);
+  if (names.length === 1) {
+    const only = names[0];
     if (only === undefined) {
       return "";
     }
     return (byCategory.get(only) ?? []).map((row) => `- ${lineText(row)}`).join("\n");
   }
 
-  return usedCategories
+  return names
     .flatMap((category) => {
       const lines = (byCategory.get(category) ?? []).map((row) => `  - ${lineText(row)}`);
       return [`- ${category}`, ...lines];

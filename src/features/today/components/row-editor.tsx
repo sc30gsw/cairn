@@ -1,5 +1,16 @@
 import { Field, Form, useForm } from "@formisch/react";
-import { Badge, Button, Grid, Group, NumberInput, TextInput } from "@mantine/core";
+import {
+  ActionIcon,
+  Badge,
+  Grid,
+  Group,
+  Input,
+  NumberInput,
+  Switch,
+  TextInput,
+  Tooltip,
+} from "@mantine/core";
+import type { ChangeEvent } from "react";
 
 import { RowEditorSchema } from "~/features/today/schemas/row-editor-schema";
 import type { DayRow } from "~/features/today/types/day";
@@ -12,21 +23,103 @@ type RowEditorProps = {
   row: DayRow;
 };
 
-const STATUS_COLOR = {
-  スキップ: "yellow",
-  未着手: "gray",
-  確定: "cyan",
-} as const satisfies Record<DayRow["status"], string>;
+const STATUS_BADGE = {
+  スキップ: { color: "yellow", label: "見送り" },
+  未着手: { color: "gray", label: "未着手" },
+  確定: { color: "cyan", label: "完了" },
+} as const satisfies Record<DayRow["status"], { color: string; label: string }>;
+
+function statusTooltip(status: DayRow["status"]) {
+  if (status === "未着手") {
+    return "まだ決めていない";
+  }
+  if (status === "スキップ") {
+    return "見送り";
+  }
+  return "完了";
+}
+
+function CheckIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg aria-hidden="true" fill="none" height={size} viewBox="0 0 24 24" width={size}>
+      <path
+        d="M5 13l4 4L19 7"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2.5"
+      />
+    </svg>
+  );
+}
+
+function XIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg aria-hidden="true" fill="none" height={size} viewBox="0 0 24 24" width={size}>
+      <path
+        d="M6 6l12 12M18 6 6 18"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2.5"
+      />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" height="22" viewBox="0 0 24 24" width="22">
+      <path
+        d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v11a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7h12Z"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.75"
+      />
+    </svg>
+  );
+}
+
+function RowStatusSwitch({
+  checked,
+  disabled,
+  onChange,
+  status,
+}: {
+  checked: boolean;
+  disabled: boolean;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  status: DayRow["status"];
+}) {
+  return (
+    <Tooltip label={statusTooltip(status)} refProp="rootRef">
+      <Switch
+        aria-label="記録を確定"
+        checked={checked}
+        color="cyan"
+        disabled={disabled}
+        offLabel={<XIcon />}
+        onChange={onChange}
+        onLabel={<CheckIcon />}
+        size="md"
+      />
+    </Tooltip>
+  );
+}
 
 export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }: RowEditorProps) {
   const form = useForm({
     initialInput: { content: row.content, minutes: row.minutes },
     schema: RowEditorSchema,
   });
+  const isDone = row.status === "確定";
+  const badge = STATUS_BADGE[row.status];
+  const contentLabel = `${row.itemName} 内容`;
 
   return (
     <Form
-      aria-label={`${row.itemName}の行`}
+      aria-label={`${row.itemName}の記録`}
       of={form}
       onSubmit={(output) => {
         onConfirm({ content: output.content, minutes: output.minutes, rowId: row._id });
@@ -40,7 +133,8 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
                 {...field.props}
                 disabled={disabled}
                 error={field.errors?.[0]}
-                label={row.itemName}
+                label={contentLabel}
+                placeholder="Unit 1"
                 value={field.input}
               />
             )}
@@ -62,31 +156,40 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
           </Field>
         </Grid.Col>
         <Grid.Col span={{ base: 6, sm: 5 }}>
-          <Group gap="xs" wrap="wrap">
-            <Button disabled={disabled} type="submit">
-              確定
-            </Button>
-            <Button
-              disabled={disabled}
-              onClick={() => onSkip(row._id)}
-              type="button"
-              variant="light"
-            >
-              スキップ
-            </Button>
-            <Button
-              color="red"
-              disabled={disabled}
-              onClick={() => onRemove(row._id)}
-              type="button"
-              variant="subtle"
-            >
-              ゴミ箱へ
-            </Button>
-            <Badge color={STATUS_COLOR[row.status]} variant="light">
-              {row.status}
-            </Badge>
-          </Group>
+          <Input.Wrapper label="状態">
+            <Group gap="sm" wrap="nowrap">
+              <RowStatusSwitch
+                checked={isDone}
+                disabled={disabled}
+                onChange={(event) => {
+                  if (event.currentTarget.checked) {
+                    event.currentTarget.closest("form")?.requestSubmit();
+                    return;
+                  }
+                  if (row.status !== "スキップ") {
+                    onSkip(row._id);
+                  }
+                }}
+                status={row.status}
+              />
+              <Badge color={badge.color} variant="light">
+                {badge.label}
+              </Badge>
+              <Tooltip label="ゴミ箱へ">
+                <ActionIcon
+                  aria-label="ゴミ箱へ"
+                  color="red"
+                  disabled={disabled}
+                  onClick={() => onRemove(row._id)}
+                  size="lg"
+                  type="button"
+                  variant="white"
+                >
+                  <TrashIcon />
+                </ActionIcon>
+              </Tooltip>
+            </Group>
+          </Input.Wrapper>
         </Grid.Col>
       </Grid>
     </Form>
