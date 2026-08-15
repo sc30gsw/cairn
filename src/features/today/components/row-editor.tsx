@@ -13,7 +13,7 @@ import {
 import { useFocusWithin } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
 import { IconTrash } from "@tabler/icons-react";
-import { useCallback, useEffect, type ChangeEvent } from "react";
+import { useEffect, type ChangeEvent } from "react";
 
 import { RowEditorSchema } from "~/features/today/schemas/row-editor-schema";
 import type { DayRow } from "~/features/today/types/day";
@@ -101,7 +101,7 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
   const badge = RECORD_STATUS_UI[row.status];
   const contentLabel = `${row.itemName} 内容`;
 
-  const saveIfConfirmedDirty = useCallback(async () => {
+  async function saveIfConfirmedDirty() {
     if (row.status !== "確定" || !form.isDirty) {
       return;
     }
@@ -111,7 +111,7 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
     }
     onConfirm({ content: result.output.content, minutes: result.output.minutes, rowId: row._id });
     reset(form, { initialInput: result.output, keepInput: true });
-  }, [form, onConfirm, row._id, row.status]);
+  }
 
   const { ref: rowRef } = useFocusWithin({
     onBlur: () => {
@@ -136,76 +136,76 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
     >
       <div ref={rowRef}>
         <Grid align="flex-end" gap="sm">
-        <Grid.Col span={{ base: 12, sm: 5 }}>
-          <Field of={form} path={["content"]}>
-            {(field) => (
-              <TextInput
-                {...field.props}
-                disabled={disabled}
-                error={field.errors?.[0]}
-                label={contentLabel}
-                placeholder="学習内容を入力"
-                value={field.input}
-              />
-            )}
-          </Field>
-        </Grid.Col>
-        <Grid.Col span={{ base: 6, sm: 2 }}>
-          <Field of={form} path={["minutes"]}>
-            {(field) => (
-              <NumberInput
-                {...field.props}
-                disabled={disabled}
-                error={field.errors?.[0]}
-                label="分数"
-                min={0}
-                onChange={(value) => field.onChange(typeof value === "number" ? value : 0)}
-                value={field.input}
-              />
-            )}
-          </Field>
-        </Grid.Col>
-        <Grid.Col span={{ base: 6, sm: 5 }}>
-          <Input.Wrapper label="状態">
-            <Group gap="sm" wrap="nowrap">
-              <RowStatusSwitch
-                checked={isDone}
-                disabled={disabled}
-                onChange={(event) => {
-                  if (event.currentTarget.checked) {
-                    event.currentTarget.closest("form")?.requestSubmit();
-                    return;
-                  }
-                  if (row.status === "確定") {
-                    requestSkip(row._id, onSkip);
-                    return;
-                  }
-                  if (row.status !== "スキップ") {
-                    onSkip(row._id);
-                  }
-                }}
-                status={row.status}
-              />
-              <Badge color={badge.color} variant="light">
-                {badge.label}
-              </Badge>
-              <Tooltip label="ゴミ箱へ">
-                <ActionIcon
-                  aria-label="ゴミ箱へ"
-                  color="red"
+          <Grid.Col span={{ base: 12, sm: 5 }}>
+            <Field of={form} path={["content"]}>
+              {(field) => (
+                <TextInput
+                  {...field.props}
                   disabled={disabled}
-                  onClick={() => onRemove(row._id)}
-                  size="lg"
-                  type="button"
-                  variant="white"
-                >
-                  <IconTrash aria-hidden size={16} stroke={1.5} />
-                </ActionIcon>
-              </Tooltip>
-            </Group>
-          </Input.Wrapper>
-        </Grid.Col>
-      </Grid>
+                  error={field.errors?.[0]}
+                  label={contentLabel}
+                  placeholder="学習内容を入力"
+                  value={field.input}
+                />
+              )}
+            </Field>
+          </Grid.Col>
+          <Grid.Col span={{ base: 6, sm: 2 }}>
+            <Field of={form} path={["minutes"]}>
+              {(field) => (
+                <NumberInput
+                  {...field.props}
+                  disabled={disabled}
+                  error={field.errors?.[0]}
+                  label="分数"
+                  min={0}
+                  onChange={(value) => field.onChange(typeof value === "number" ? value : 0)}
+                  value={field.input}
+                />
+              )}
+            </Field>
+          </Grid.Col>
+          <Grid.Col span={{ base: 6, sm: 5 }}>
+            <Input.Wrapper label="状態">
+              <Group gap="sm" wrap="nowrap">
+                <RowStatusSwitch
+                  checked={isDone}
+                  disabled={disabled}
+                  onChange={(event) => {
+                    if (event.currentTarget.checked) {
+                      event.currentTarget.closest("form")?.requestSubmit();
+                      return;
+                    }
+                    if (row.status === "確定") {
+                      requestSkip(row._id, onSkip);
+                      return;
+                    }
+                    if (row.status !== "スキップ") {
+                      onSkip(row._id);
+                    }
+                  }}
+                  status={row.status}
+                />
+                <Badge color={badge.color} variant="light">
+                  {badge.label}
+                </Badge>
+                <Tooltip label="ゴミ箱へ">
+                  <ActionIcon
+                    aria-label="ゴミ箱へ"
+                    color="red"
+                    disabled={disabled}
+                    onClick={() => onRemove(row._id)}
+                    size="lg"
+                    type="button"
+                    variant="white"
+                  >
+                    <IconTrash aria-hidden size={16} stroke={1.5} />
+                  </ActionIcon>
+                </Tooltip>
+              </Group>
+            </Input.Wrapper>
+          </Grid.Col>
+        </Grid>
       </div>
     </Form>
   );

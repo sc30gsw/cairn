@@ -1,3 +1,4 @@
+import { flatMap } from "remeda";
 import { addDaysJst } from "~domain/jst";
 
 import type { HeatmapDay } from "~/features/history/types/history";
@@ -48,7 +49,7 @@ export function yearHeatmapRange(todayJst: string): { endDate: string; startDate
 
 export function buildHeatmapChartData(days: HeatmapDay[]): Record<string, number> {
   return Object.fromEntries(
-    days.filter((day) => !day.isRest && day.minutes > 0).map((day) => [day.dateJst, day.minutes]),
+    flatMap(days, (day) => (!day.isRest && day.minutes > 0 ? [[day.dateJst, day.minutes]] : [])),
   );
 }
 
