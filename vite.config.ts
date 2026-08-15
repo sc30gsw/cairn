@@ -44,6 +44,7 @@ export default defineConfig({
         files: ["src/router.tsx", "*.config.ts", "convex/schema.ts"],
         rules: {
           "no-default-export": "off",
+          "react-doctor/no-nested-components": "off",
           "react-doctor/only-export-components": "off",
         },
       },

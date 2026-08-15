@@ -3,8 +3,7 @@ import { ColorSchemeScript, Container, Loader, MantineProvider, Text, Title, man
 import type { QueryClient } from "@tanstack/react-query";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
-import type { ReactNode } from "react";
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, type ReactNode } from "react";
 
 import { theme } from "~/lib/theme";
 import appCss from "~/styles.css?url";

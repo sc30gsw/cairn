@@ -1,5 +1,6 @@
-import { query } from "./_generated/server";
 import { v } from "convex/values";
+
+import { query } from "./_generated/server";
 
 //* クイックスタート用の tasks 一覧。認証は後続チケット。
 export const get = query({
