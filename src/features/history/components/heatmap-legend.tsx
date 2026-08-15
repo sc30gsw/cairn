@@ -4,11 +4,11 @@ import { HEATMAP_LEGEND } from "~/features/history/lib/heatmap-colors";
 
 export function HeatmapLegend() {
   return (
-    <Stack gap={4}>
-      <Text c="dimmed" size="xs">
+    <Stack align="center" gap={4}>
+      <Text c="dimmed" size="xs" ta="center">
         色の濃さは1日の学習時間です。
       </Text>
-      <Group gap="md" wrap="wrap">
+      <Group gap="md" justify="center" wrap="wrap">
         {HEATMAP_LEGEND.map((entry) => (
           <Group gap={6} key={entry.label} wrap="nowrap">
             <span

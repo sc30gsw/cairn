@@ -153,9 +153,6 @@ export function HistoryAnalysisPanel({
             <Title order={4} ta="center">
               学習量（直近365日）
             </Title>
-            <Text c="dimmed" size="xs" ta="center">
-              色の濃さは1日の学習時間です。記録のない日は休養です。
-            </Text>
             <HistoryLearningHeatmap days={heatmapDays} onDayClick={onDayClick} todayJst={todayJst} />
             <HeatmapLegend />
           </Stack>
