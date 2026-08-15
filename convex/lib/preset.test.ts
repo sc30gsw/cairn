@@ -1,5 +1,6 @@
 import { expect, test } from "vite-plus/test";
 
+import type { Id } from "../_generated/dataModel";
 import { STATUSES } from "./domain";
 import {
   itemIdIsInUse,
@@ -10,16 +11,18 @@ import {
 } from "./preset";
 
 const [confirmed, pending, skipped] = STATUSES;
+const itemA = "item-a" as Id<"items">;
+const itemB = "item-b" as Id<"items">;
 
 test("プリセット適用はすべて未着手", () => {
   expect(
     materializePresetRows([
-      { content: "Unit 1", itemId: "item-a", minutes: 30 },
-      { content: "", itemId: "item-b", minutes: 30 },
+      { content: "Unit 1", itemId: itemA, minutes: 30 },
+      { content: "", itemId: itemB, minutes: 30 },
     ]),
   ).toEqual([
-    { content: "Unit 1", itemId: "item-a", minutes: 30, status: pending },
-    { content: "", itemId: "item-b", minutes: 30, status: pending },
+    { content: "Unit 1", itemId: itemA, minutes: 30, status: pending },
+    { content: "", itemId: itemB, minutes: 30, status: pending },
   ]);
 });
 
@@ -40,6 +43,6 @@ test("同じ曜日のプリセットが二つある状態は拒否する", () =>
 });
 
 test("使っている行または雛形がある項目は削除不可", () => {
-  expect(itemIdIsInUse("item-a", [{ itemId: "item-a" }])).toBe(true);
-  expect(itemIdIsInUse("item-b", [{ itemId: "item-a" }])).toBe(false);
+  expect(itemIdIsInUse(itemA, [{ itemId: itemA }])).toBe(true);
+  expect(itemIdIsInUse(itemB, [{ itemId: itemA }])).toBe(false);
 });

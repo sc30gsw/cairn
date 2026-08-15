@@ -15,7 +15,7 @@ import { loadCatalog } from "./lib/catalogLoader";
 import { categoryFields } from "./lib/categoryFields";
 import { isFutureDateJst, weekdayFromDateJst } from "./lib/jst";
 import { formatShareMarkdown } from "./lib/share";
-import { conditionValidator, dayDtoValidator, rowDtoValidator } from "./lib/validators";
+import { conditionValidator, dayPageValidator, presetApplyResultValidator } from "./lib/validators";
 import { confirmedVolumeMinutes } from "./lib/volume";
 import { ownerMutation, ownerQuery } from "./ownerFunctions";
 
@@ -86,7 +86,7 @@ export const open = ownerMutation({
     );
     return { applied: true };
   },
-  returns: v.object({ applied: v.boolean() }),
+  returns: presetApplyResultValidator,
 });
 
 export const get = ownerQuery({
@@ -112,14 +112,7 @@ export const get = ownerQuery({
       volumeMinutes: confirmedVolumeMinutes(rowDtos),
     };
   },
-  returns: v.object({
-    dateJst: v.string(),
-    day: v.union(dayDtoValidator, v.null()),
-    isFuture: v.boolean(),
-    rows: v.array(rowDtoValidator),
-    shareMarkdown: v.string(),
-    volumeMinutes: v.number(),
-  }),
+  returns: dayPageValidator,
 });
 
 export const setCondition = ownerMutation({

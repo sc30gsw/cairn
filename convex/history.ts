@@ -14,9 +14,9 @@ import { addDaysJst, calendarDatesInMonth, mondayOfWeek } from "./lib/jst";
 import { sevenDayMovingAverage } from "./lib/movingAverage";
 import {
   dayBreakdownValidator,
+  historyMonthValidator,
+  historyWeekValidator,
   monthBreakdownValidator,
-  monthDayValidator,
-  monthEventValidator,
   weekBreakdownValidator,
   yearHeatmapValidator,
 } from "./lib/validators";
@@ -218,9 +218,7 @@ export const month = ownerQuery({
     const breakdown = await computeMonthBreakdown(ctx, ctx.ownerId, args.yearMonth);
     return { days: breakdown.days };
   },
-  returns: v.object({
-    days: v.array(monthDayValidator),
-  }),
+  returns: historyMonthValidator,
 });
 
 export const monthBreakdown = ownerQuery({
@@ -247,13 +245,7 @@ export const week = ownerQuery({
       weeklyGoalMinutes: page.weeklyGoalMinutes,
     };
   },
-  returns: v.object({
-    events: v.array(monthEventValidator),
-    volumeMinutes: v.number(),
-    weekEnd: v.string(),
-    weekStart: v.string(),
-    weeklyGoalMinutes: v.union(v.number(), v.null()),
-  }),
+  returns: historyWeekValidator,
 });
 
 export const dayBreakdown = ownerQuery({
