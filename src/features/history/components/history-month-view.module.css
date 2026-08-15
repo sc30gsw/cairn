@@ -80,3 +80,8 @@
 .compactMonthView :global(.mantine-ScheduleEvent-body) {
   color: var(--mantine-color-blue-9);
 }
+
+.compactMonthView :global([data-today] .mantine-Schedule-monthViewDayLabel),
+.compactMonthView :global([data-today] .mantine-MonthView-monthViewDayLabel) {
+  color: var(--mantine-primary-color-contrast);
+}

@@ -18,6 +18,7 @@ type HistoryMonthViewProps = {
   month: Date;
   onDayClick: (dateJst: string) => void;
   onMonthChange: (month: Date) => void;
+  todayJst?: string;
 };
 
 function toDateString(month: Date): DateStringValue {
@@ -28,7 +29,10 @@ function toMonthDate(value: string): Date {
   return new Date(`${value}T12:00:00+09:00`);
 }
 
-function dayCellClassName(day: string): string | undefined {
+function dayCellClassName(day: string, todayJst?: string): string | undefined {
+  if (todayJst !== undefined && day === todayJst) {
+    return undefined;
+  }
   if (holidayName(day)) {
     return classes.holidayDay;
   }
@@ -42,7 +46,13 @@ function dayCellClassName(day: string): string | undefined {
   return undefined;
 }
 
-export function HistoryMonthView({ events, month, onDayClick, onMonthChange }: HistoryMonthViewProps) {
+export function HistoryMonthView({
+  events,
+  month,
+  onDayClick,
+  onMonthChange,
+  todayJst,
+}: HistoryMonthViewProps) {
   const date = toDateString(month);
   const confirmedEvents = confirmedMonthEvents(events);
   const scheduleEvents = toMonthScheduleEvents(confirmedEvents);
@@ -96,7 +106,7 @@ export function HistoryMonthView({ events, month, onDayClick, onMonthChange }: H
             firstDayOfWeek={1}
             getDayProps={(day) => {
               const holiday = holidayName(day);
-              const className = dayCellClassName(day);
+              const className = dayCellClassName(day, todayJst);
               return {
                 ...(className ? { className } : {}),
                 ...(holiday ? { title: holiday } : {}),
@@ -106,8 +116,10 @@ export function HistoryMonthView({ events, month, onDayClick, onMonthChange }: H
             locale="ja"
             maxEventsPerDay={2}
             moreEventsProps={{
-              onEventClick: handleEventClick,
-              popoverProps: { withinPortal: true },
+              dropdownType: "modal",
+              modalProps: { centered: true },
+              modalTitle: "この日の記録",
+              mode: "static",
             }}
             onDateChange={setDate}
             onDayClick={(day) => onDayClick(day)}

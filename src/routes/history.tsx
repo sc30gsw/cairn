@@ -80,6 +80,7 @@ function HistoryReady() {
             month={month}
             onDayClick={openDayAnalysis}
             onMonthChange={setMonth}
+            todayJst={today}
           />
         </Tabs.Panel>
 

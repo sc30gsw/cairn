@@ -1,4 +1,4 @@
-import { BarChart, DonutChart } from "@mantine/charts";
+import { CompositeChart, DonutChart } from "@mantine/charts";
 import {
   Alert,
   Button,
@@ -16,7 +16,15 @@ import { BreakdownTable } from "~/features/history/components/breakdown-table";
 import { HeatmapLegend } from "~/features/history/components/heatmap-legend";
 import { HistoryLearningHeatmap } from "~/features/history/components/history-learning-heatmap";
 import tabBarClasses from "~/features/history/components/history-tab-bar.module.css";
-import { buildDonutCells, buildWeekBarData } from "~/features/history/lib/chart-data";
+import {
+  buildDonutCells,
+  buildMonthPaceChartData,
+  buildWeekPaceChartData,
+  paceChartMonthTitle,
+  paceChartWeekTitle,
+  PACE_CHART_SERIES,
+  type PaceChartPoint,
+} from "~/features/history/lib/chart-data";
 import type {
   DayBreakdown,
   HeatmapDay,
@@ -57,6 +65,44 @@ function EmptyConfirmedAlert() {
     <Alert color="blue" title="完了なし">
       完了した記録がありません。
     </Alert>
+  );
+}
+
+function PaceChartCard({
+  data,
+  subtitle,
+  title,
+  xAxisAngle,
+}: {
+  data: PaceChartPoint[];
+  subtitle?: string;
+  title: string;
+  xAxisAngle?: number;
+}) {
+  return (
+    <Card aria-labelledby={`${title}-pace`} padding="md">
+      <Title id={`${title}-pace`} order={3}>
+        {title}
+      </Title>
+      {subtitle ? (
+        <Text c="dimmed" size="sm">
+          {subtitle}
+        </Text>
+      ) : null}
+      <CompositeChart
+        data={data}
+        dataKey="label"
+        gridAxis="x"
+        h={220}
+        legendProps={{ height: 36, verticalAlign: "bottom" }}
+        maxBarWidth={20}
+        series={[...PACE_CHART_SERIES]}
+        tickLine="y"
+        valueFormatter={(value) => `${value}分`}
+        withLegend
+        xAxisProps={xAxisAngle === undefined ? undefined : { angle: xAxisAngle }}
+      />
+    </Card>
   );
 }
 
@@ -145,40 +191,39 @@ export function HistoryAnalysisPanel({
       ) : null}
 
       {scope === "month" ? (
-        <Stack gap="sm">
-          <Text size="sm" ta="center">
-            完了 {month.confirmedMinutes}分 / 見送り {month.skippedMinutes}分
+        <Stack gap="xs">
+          <Title order={4} ta="center">
+            学習量（直近365日）
+          </Title>
+          <Text c="dimmed" size="xs" ta="center">
+            色の濃さは1日の学習時間です。記録のない日は休養です。
           </Text>
-          <Stack gap="xs">
-            <Title order={4} ta="center">
-              学習量（直近365日）
-            </Title>
-            <HistoryLearningHeatmap days={heatmapDays} onDayClick={onDayClick} todayJst={todayJst} />
-            <HeatmapLegend />
-          </Stack>
+          <HistoryLearningHeatmap days={heatmapDays} onDayClick={onDayClick} todayJst={todayJst} />
+          <HeatmapLegend />
         </Stack>
       ) : null}
 
       <Grid>
         {scope === "week" ? (
           <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card aria-labelledby="week-bar" padding="md">
-              <Title id="week-bar" order={3}>
-                日別ペース
-              </Title>
-              <BarChart
-                data={buildWeekBarData(week.byDay)}
-                dataKey="label"
-                h={220}
-                series={[{ color: "blue.6", name: "完了" }]}
-                tickLine="y"
-                valueFormatter={(value) => `${value}分`}
-                withLegend={false}
-              />
-            </Card>
+            <PaceChartCard
+              data={buildWeekPaceChartData(week.byDay, heatmapDays)}
+              subtitle="日別ペース"
+              title={paceChartWeekTitle(week.weekStart, week.weekEnd)}
+            />
           </Grid.Col>
         ) : null}
-        <Grid.Col span={{ base: 12, md: scope === "week" ? 6 : 12 }}>
+        {scope === "month" ? (
+          <Grid.Col span={{ base: 12, md: 6 }}>
+            <PaceChartCard
+              data={buildMonthPaceChartData(month.days)}
+              subtitle="日別ペース"
+              title={paceChartMonthTitle(yearMonth)}
+              xAxisAngle={-45}
+            />
+          </Grid.Col>
+        ) : null}
+        <Grid.Col span={{ base: 12, md: scope === "day" ? 12 : 6 }}>
           <DonutSection
             breakdown={
               scope === "day"

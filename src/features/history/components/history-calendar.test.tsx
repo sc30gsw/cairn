@@ -92,7 +92,7 @@ test("MonthView に確定した学習内容と分数が見える", () => {
 });
 
 test("分析パネルの月スコープに学習量ヒートマップが見える", () => {
-  const { getByText, container } = renderWithMantine(
+  const { getByText, container, queryByText } = renderWithMantine(
     <HistoryAnalysisPanel
       day={{
         byCategory: [],
@@ -106,7 +106,7 @@ test("分析パネルの月スコープに学習量ヒートマップが見え�
       month={{
         byCategory: [],
         confirmedMinutes: 30,
-        days: [],
+        days: [{ dateJst: "2026-08-17", isRest: false, minutes: 30, movingAverage: 10 }],
         events: [],
         rows: [],
         skippedMinutes: 0,
@@ -132,6 +132,8 @@ test("分析パネルの月スコープに学習量ヒートマップが見え�
   );
   expect(getByText("学習量（直近365日）")).toBeDefined();
   expect(container.querySelector(".mantine-Heatmap-root")).toBeDefined();
+  expect(queryByText(/完了.*見送り/)).toBeNull();
+  expect(getByText("7日平均")).toBeDefined();
 });
 
 test("年・月選択で onMonthChange が呼ばれる", () => {
