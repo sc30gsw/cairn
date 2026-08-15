@@ -4,7 +4,6 @@ import {
   Button,
   Card,
   Grid,
-  Group,
   SegmentedControl,
   Stack,
   Text,
@@ -15,16 +14,24 @@ import { Link } from "@tanstack/react-router";
 import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
 import { BreakdownTable } from "~/features/history/components/breakdown-table";
 import { HeatmapLegend } from "~/features/history/components/heatmap-legend";
+import { HistoryLearningHeatmap } from "~/features/history/components/history-learning-heatmap";
+import tabBarClasses from "~/features/history/components/history-tab-bar.module.css";
 import { buildDonutCells, buildWeekBarData } from "~/features/history/lib/chart-data";
-import type { DayBreakdown, MonthBreakdown, WeekBreakdown } from "~/features/history/types/history";
+import type {
+  DayBreakdown,
+  HeatmapDay,
+  MonthBreakdown,
+  WeekBreakdown,
+} from "~/features/history/types/history";
 
 type AnalysisScope = "day" | "month" | "week";
 
 type HistoryAnalysisPanelProps = {
   day: DayBreakdown;
+  heatmapDays: HeatmapDay[];
   month: MonthBreakdown;
+  onDayClick: (dateJst: string) => void;
   onScopeChange: (scope: AnalysisScope) => void;
-  onSwitchToMonthTab: () => void;
   scope: AnalysisScope;
   selectedDateJst: string;
   todayJst: string;
@@ -57,7 +64,12 @@ function DonutSection({
   breakdown,
   title,
 }: {
-  breakdown: Pick<DayBreakdown, "byCategory" | "confirmedMinutes" | "isRest" | "skippedMinutes">;
+  breakdown: {
+    byCategory: DayBreakdown["byCategory"];
+    confirmedMinutes: number;
+    isRest?: boolean;
+    skippedMinutes: number;
+  };
   title: string;
 }) {
   if (breakdown.isRest) {
@@ -94,9 +106,10 @@ function DonutSection({
 
 export function HistoryAnalysisPanel({
   day,
+  heatmapDays,
   month,
+  onDayClick,
   onScopeChange,
-  onSwitchToMonthTab,
   scope,
   selectedDateJst,
   todayJst,
@@ -105,22 +118,22 @@ export function HistoryAnalysisPanel({
 }: HistoryAnalysisPanelProps) {
   return (
     <Stack gap="md">
-      <Group justify="space-between" wrap="wrap">
-        <SegmentedControl
-          data={[
-            { label: "日", value: "day" },
-            { label: "週", value: "week" },
-            { label: "月", value: "month" },
-          ]}
-          onChange={(value) => onScopeChange(value as AnalysisScope)}
-          value={scope}
-        />
-        <Text c="dimmed" size="sm">
-          {scope === "day" && selectedDateJst}
-          {scope === "week" && `${week.weekStart} 〜 ${week.weekEnd}`}
-          {scope === "month" && formatYearMonth(yearMonth)}
-        </Text>
-      </Group>
+      <SegmentedControl
+        className={tabBarClasses.tabBar}
+        data={[
+          { label: "日", value: "day" },
+          { label: "週", value: "week" },
+          { label: "月", value: "month" },
+        ]}
+        fullWidth
+        onChange={(value) => onScopeChange(value as AnalysisScope)}
+        value={scope}
+      />
+      <Text c="dimmed" size="sm" ta="center">
+        {scope === "day" && selectedDateJst}
+        {scope === "week" && `${week.weekStart} 〜 ${week.weekEnd}`}
+        {scope === "month" && formatYearMonth(yearMonth)}
+      </Text>
 
       {scope === "week" ? (
         <WeeklyProgressCard
@@ -132,14 +145,20 @@ export function HistoryAnalysisPanel({
       ) : null}
 
       {scope === "month" ? (
-        <Stack gap="xs">
-          <Text size="sm">
+        <Stack gap="sm">
+          <Text size="sm" ta="center">
             完了 {month.confirmedMinutes}分 / 見送り {month.skippedMinutes}分
           </Text>
-          <HeatmapLegend />
-          <Button onClick={onSwitchToMonthTab} size="compact-sm" variant="light">
-            月タブでヒートマップを見る
-          </Button>
+          <Stack gap="xs">
+            <Title order={4} ta="center">
+              学習量（直近365日）
+            </Title>
+            <Text c="dimmed" size="xs" ta="center">
+              色の濃さは1日の学習時間です。記録のない日は休養です。
+            </Text>
+            <HistoryLearningHeatmap days={heatmapDays} onDayClick={onDayClick} todayJst={todayJst} />
+            <HeatmapLegend />
+          </Stack>
         </Stack>
       ) : null}
 

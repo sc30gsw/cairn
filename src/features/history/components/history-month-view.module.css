@@ -1,15 +1,30 @@
 .compactMonthView {
-  --month-view-max-events: 3;
+  --month-view-max-events: 2;
+}
+
+.compactMonthView :global(.mantine-Schedule-monthViewScrollArea) {
+  overflow: visible;
 }
 
 .compactMonthView :global(.mantine-Schedule-monthViewDay) {
-  min-height: 4.5rem;
+  min-height: 3.25rem;
+  padding-block: 2px;
 }
 
 .compactMonthView :global(.mantine-Schedule-monthViewDayLabel) {
   font-size: var(--mantine-font-size-xs);
+  line-height: 1.1;
 }
 
 .compactMonthView :global(.mantine-Schedule-monthViewEvents) {
-  gap: 2px;
+  gap: 1px;
+}
+
+.compactMonthView :global(.mantine-Schedule-monthViewWeekday) {
+  font-size: var(--mantine-font-size-xs);
+  padding-block: 2px;
+}
+
+.compactMonthView :global(.mantine-Schedule-monthViewWeek) {
+  min-height: 0;
 }

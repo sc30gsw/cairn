@@ -18,7 +18,9 @@ export const HEATMAP_CHART_COLORS = [
   "var(--mantine-color-blue-4)",
 ] as const;
 
-export const HEATMAP_DOMAIN: [number, number] = [0, 120];
+export const HEATMAP_DOMAIN: [number, number] = [1, 120];
+
+export const REST_HEATMAP_FILL = "var(--mantine-color-default-hover)";
 
 export const HEATMAP_MONTH_LABELS = [
   "1月",
@@ -53,7 +55,13 @@ export function yearHeatmapRange(todayJst: string): { endDate: string; startDate
 }
 
 export function buildHeatmapChartData(days: HeatmapDay[]): Record<string, number> {
-  return Object.fromEntries(days.map((day) => [day.dateJst, day.isRest ? 0 : day.minutes]));
+  return Object.fromEntries(
+    days.filter((day) => !day.isRest && day.minutes > 0).map((day) => [day.dateJst, day.minutes]),
+  );
+}
+
+export function isRestHeatmapDay(day: HeatmapDay | undefined): boolean {
+  return day === undefined || day.isRest || day.minutes === 0;
 }
 
 export function formatHeatmapTooltip(

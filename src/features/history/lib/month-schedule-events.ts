@@ -19,7 +19,5 @@ export function toMonthScheduleEvents(events: MonthEvent[]): ScheduleEventData[]
 }
 
 export function monthEventMinutesById(events: MonthEvent[]): Map<string, number> {
-  return new Map(
-    Object.entries(mapValues(indexBy(events, prop("rowId")), prop("minutes"))),
-  );
+  return new Map(Object.entries(mapValues(indexBy(events, prop("rowId")), prop("minutes"))));
 }

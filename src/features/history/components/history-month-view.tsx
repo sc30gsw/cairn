@@ -2,8 +2,6 @@ import { Card, Group, Stack, Text, Title } from "@mantine/core";
 import { MonthView, ScheduleHeader, type DateStringValue } from "@mantine/schedule";
 import dayjs from "dayjs";
 
-import { HeatmapLegend } from "~/features/history/components/heatmap-legend";
-import { HistoryLearningHeatmap } from "~/features/history/components/history-learning-heatmap";
 import classes from "~/features/history/components/history-month-view.module.css";
 import {
   confirmedMonthEvents,
@@ -11,16 +9,14 @@ import {
   toMonthScheduleEvents,
 } from "~/features/history/lib/month-schedule-events";
 import { SCHEDULE_LABELS_JA } from "~/features/history/lib/schedule-labels";
-import type { MonthEvent, YearHeatmapDay } from "~/features/history/types/history";
+import type { MonthEvent } from "~/features/history/types/history";
 import { holidayName } from "~/lib/holiday";
 
 type HistoryMonthViewProps = {
   events: MonthEvent[];
-  heatmapDays: YearHeatmapDay[];
   month: Date;
   onDayClick: (dateJst: string) => void;
   onMonthChange: (month: Date) => void;
-  todayJst: string;
 };
 
 function toDateString(month: Date): DateStringValue {
@@ -31,14 +27,7 @@ function toMonthDate(value: string): Date {
   return new Date(`${value}T12:00:00+09:00`);
 }
 
-export function HistoryMonthView({
-  events,
-  heatmapDays,
-  month,
-  onDayClick,
-  onMonthChange,
-  todayJst,
-}: HistoryMonthViewProps) {
+export function HistoryMonthView({ events, month, onDayClick, onMonthChange }: HistoryMonthViewProps) {
   const date = toDateString(month);
   const confirmedEvents = confirmedMonthEvents(events);
   const scheduleEvents = toMonthScheduleEvents(confirmedEvents);
@@ -53,8 +42,8 @@ export function HistoryMonthView({
   };
 
   return (
-    <Card>
-      <Stack gap="lg">
+    <Card padding="md">
+      <Stack gap="sm">
         <ScheduleHeader labels={SCHEDULE_LABELS_JA}>
           <ScheduleHeader.Previous aria-label={SCHEDULE_LABELS_JA.previous} onClick={() => shiftMonth(-1)} />
           <ScheduleHeader.MonthYearSelect
@@ -75,10 +64,10 @@ export function HistoryMonthView({
           />
         </ScheduleHeader>
 
-        <Stack gap="sm">
-          <Title order={3}>記録</Title>
-          <Text c="dimmed" size="sm">
-            確定した学習内容と分数です。
+        <Stack gap="xs">
+          <Title order={4}>記録</Title>
+          <Text c="dimmed" size="xs">
+            確定した学習内容と分数です。2件を超える日は「+N件」で省略します。
           </Text>
           <MonthView
             className={classes.compactMonthView}
@@ -96,7 +85,7 @@ export function HistoryMonthView({
             }}
             labels={SCHEDULE_LABELS_JA}
             locale="ja"
-            maxEventsPerDay={3}
+            maxEventsPerDay={2}
             onDateChange={setDate}
             onDayClick={(day) => onDayClick(day)}
             renderEventBody={(event) => {
@@ -114,17 +103,9 @@ export function HistoryMonthView({
                 </Group>
               );
             }}
+            scrollAreaProps={{ type: "never" }}
             withHeader={false}
           />
-        </Stack>
-
-        <Stack gap="sm">
-          <Title order={3}>学習量</Title>
-          <Text c="dimmed" size="sm">
-            直近365日の学習時間を GitHub の草のように表示します。記録がない日は休養です。
-          </Text>
-          <HistoryLearningHeatmap days={heatmapDays} onDayClick={onDayClick} todayJst={todayJst} />
-          <HeatmapLegend />
         </Stack>
       </Stack>
     </Card>

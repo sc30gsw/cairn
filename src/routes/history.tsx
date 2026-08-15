@@ -13,6 +13,8 @@ import { HistoryAnalysisPanel } from "~/features/history/components/analysis/his
 import { HistoryMonthView } from "~/features/history/components/history-month-view";
 import { WeekAgenda } from "~/features/history/components/week-agenda";
 
+import tabBarClasses from "~/features/history/components/history-tab-bar.module.css";
+
 export const Route = createFileRoute("/history")({
   component: HistoryRoute,
 });
@@ -53,13 +55,20 @@ function HistoryReady() {
     convexQuery(api.history.dayBreakdown, { dateJst: selectedDateJst }),
   );
 
+  const openDayAnalysis = (dateJst: string) => {
+    setSelectedDateJst(dateJst);
+    setMonth(new Date(`${dateJst}T12:00:00+09:00`));
+    setAnalysisScope("day");
+    setActiveTab("analysis");
+  };
+
   return (
     <>
       <Title mb="md" order={1}>
         履歴
       </Title>
       <Tabs onChange={setActiveTab} value={activeTab}>
-        <Tabs.List>
+        <Tabs.List className={tabBarClasses.tabBar} grow justify="center">
           <Tabs.Tab value="month">月</Tabs.Tab>
           <Tabs.Tab value="week">週</Tabs.Tab>
           <Tabs.Tab value="analysis">分析</Tabs.Tab>
@@ -68,15 +77,9 @@ function HistoryReady() {
         <Tabs.Panel pt="md" value="month">
           <HistoryMonthView
             events={monthBreakdown.events}
-            heatmapDays={yearHeatmap.days}
             month={month}
-            onDayClick={(dateJst) => {
-              setSelectedDateJst(dateJst);
-              setAnalysisScope("day");
-              setActiveTab("analysis");
-            }}
+            onDayClick={openDayAnalysis}
             onMonthChange={setMonth}
-            todayJst={today}
           />
         </Tabs.Panel>
 
@@ -90,9 +93,10 @@ function HistoryReady() {
           <Card>
             <HistoryAnalysisPanel
               day={dayBreakdown}
+              heatmapDays={yearHeatmap.days}
               month={monthBreakdown}
+              onDayClick={openDayAnalysis}
               onScopeChange={setAnalysisScope}
-              onSwitchToMonthTab={() => setActiveTab("month")}
               scope={analysisScope}
               selectedDateJst={selectedDateJst}
               todayJst={today}
@@ -100,8 +104,12 @@ function HistoryReady() {
               yearMonth={yearMonth}
             />
           </Card>
-          <Card mt="md" padding="md">
-            <Link params={{ dateJst: selectedDateJst }} to="/days/$dateJst">
+          <Card mt="md" padding="md" className="text-center">
+            <Link
+              params={{ dateJst: selectedDateJst }}
+              to="/days/$dateJst"
+              className="text-blue-400 hover:underline"
+            >
               選択中の日 ({selectedDateJst}) を編集
             </Link>
           </Card>
