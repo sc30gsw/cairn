@@ -3,13 +3,13 @@ import { Stack, Title } from "@mantine/core";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Suspense, useState } from "react";
+import { todayJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
 import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { HistoryCalendar } from "~/features/history/components/history-calendar";
 import { WeekAgenda } from "~/features/history/components/week-agenda";
-import { todayJst } from "~/lib/date-jst";
 
 export const Route = createFileRoute("/history")({
   component: HistoryRoute,
@@ -33,7 +33,9 @@ function HistoryReady() {
   const { data: monthData } = useSuspenseQuery(
     convexQuery(api.history.month, { todayJst: today, yearMonth }),
   );
-  const { data: week } = useSuspenseQuery(convexQuery(api.history.week, { dateJst: today }));
+  const { data: week } = useSuspenseQuery(
+    convexQuery(api.history.week, { dateJst: `${yearMonth}-01` }),
+  );
 
   return (
     <Stack gap="lg">

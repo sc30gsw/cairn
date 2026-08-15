@@ -1,16 +1,13 @@
 import { Button, NativeSelect, Stack, Text, Title } from "@mantine/core";
-import type { FunctionReturnType } from "convex/server";
 
-import type { api } from "~/../convex/_generated/api";
+import type { ItemDto, PresetDto } from "~/features/catalog/types/item";
+import { parsePresetId } from "~/features/catalog/types/item";
 import { AdhocRowForm } from "~/features/today/components/adhoc-row-form";
 import { DayMetaPanel } from "~/features/today/components/day-meta-panel";
 import { RowEditor } from "~/features/today/components/row-editor";
 import { ShareCopy } from "~/features/today/components/share-copy";
 import { TonightPanel } from "~/features/today/components/tonight-panel";
 import type { DayPage, DayRow } from "~/features/today/types/day";
-
-type ItemDto = FunctionReturnType<typeof api.items.list>[number];
-type PresetDto = FunctionReturnType<typeof api.presets.list>[number];
 
 type DayBoardProps = {
   dateJst: string;
@@ -75,15 +72,16 @@ export function DayBoard({
           onChange={(event) => {
             const value = event.currentTarget.value;
             if (value !== "") {
-              onSwitchPreset(value as PresetDto["_id"]);
+              onSwitchPreset(parsePresetId(value));
             }
           }}
         />
       ) : null}
-      {isToday ? (
+      {canEdit ? (
         <TonightPanel
           onSaveBed={onSaveBed}
           onSaveWake={onSaveWake}
+          showBed={isToday}
           sleepHours={day.day?.sleepHours ?? null}
           sleepWarning={day.day?.sleepWarning ?? false}
           tonightBedHm={day.tonightBedHm}

@@ -1,6 +1,8 @@
 import { AgendaView } from "@mantine/schedule";
 import type { FunctionReturnType } from "convex/server";
 
+import { addDaysJst } from "~domain/jst";
+
 import type { api } from "~/../convex/_generated/api";
 
 type WeekPage = FunctionReturnType<typeof api.history.week>;
@@ -15,7 +17,7 @@ export function WeekAgenda({ week }: Record<"week", WeekPage>) {
         dateHeaderFormat="M月D日(ddd)"
         events={week.events.map((event, index) => ({
           color: "blue",
-          end: `${event.dateJst} 23:59:59`,
+          end: `${addDaysJst(event.dateJst, 1)} 00:00:00`,
           id: `${event.dateJst}-${event.title}-${index}`,
           start: `${event.dateJst} 00:00:00`,
           title: `${event.title}（${event.status} ${event.minutes}分）`,

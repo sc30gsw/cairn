@@ -2,12 +2,11 @@ import { convexQuery } from "@convex-dev/react-query";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
-import { mondayOfWeek } from "~domain/jst";
+import { mondayOfWeek, todayJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { GoalsBoard } from "~/features/goals/components/goals-board";
-import { todayJst } from "~/lib/date-jst";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 import { PendingComponent } from "~/components/pending-component";
 

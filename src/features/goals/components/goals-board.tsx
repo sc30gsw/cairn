@@ -1,28 +1,11 @@
 import { Field, Form, useForm } from "@formisch/react";
 import { Button, Group, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
-import type { FunctionReturnType } from "convex/server";
-import * as v from "valibot";
 
-import type { api } from "~/../convex/_generated/api";
-
-const ExamSchema = v.object({
-  examDate: v.pipe(v.string(), v.minLength(1)),
-  maxScore: v.pipe(v.number(), v.minValue(0)),
-  minScore: v.pipe(v.number(), v.minValue(0)),
-});
-
-const WeeklySchema = v.object({
-  minutes: v.pipe(v.number(), v.minValue(0, "週間ゴールは0分以上です")),
-});
-
-const ObstacleSchema = v.object({
-  ifText: v.pipe(v.string(), v.minLength(1, "if は必須です")),
-  thenText: v.pipe(v.string(), v.minLength(1, "then は必須です")),
-});
-
-type ExamGoal = FunctionReturnType<typeof api.goals.getExam>;
-type Obstacle = FunctionReturnType<typeof api.goals.listObstacles>[number];
+import { ExamSchema } from "~/features/goals/schemas/exam-schema";
+import { ObstacleSchema } from "~/features/goals/schemas/obstacle-schema";
+import { WeeklySchema } from "~/features/goals/schemas/weekly-schema";
+import type { ExamGoal, Obstacle } from "~/features/goals/types/goal";
 
 type GoalsBoardProps = {
   exam: ExamGoal;

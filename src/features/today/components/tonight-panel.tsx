@@ -1,19 +1,13 @@
 import { Field, Form, useForm } from "@formisch/react";
 import { Button, Group, TextInput } from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
-import * as v from "valibot";
 
-const TonightSchema = v.object({
-  bedHm: v.pipe(v.string(), v.minLength(1, "今夜の就寝を入れてください")),
-});
-
-const WakeSchema = v.object({
-  wakeHm: v.pipe(v.string(), v.minLength(1, "起床を入れてください")),
-});
+import { TonightSchema, WakeSchema } from "~/features/today/schemas/tonight-schema";
 
 type TonightPanelProps = {
   onSaveBed: (bedHm: string) => void;
   onSaveWake: (wakeHm: string) => void;
+  showBed: boolean;
   sleepHours: null | number;
   sleepWarning: boolean;
   tonightBedHm: null | string;
@@ -23,6 +17,7 @@ type TonightPanelProps = {
 export function TonightPanel({
   onSaveBed,
   onSaveWake,
+  showBed,
   sleepHours,
   sleepWarning,
   tonightBedHm,
@@ -39,26 +34,28 @@ export function TonightPanel({
 
   return (
     <section aria-label="今夜と睡眠">
-      <Form
-        of={bedForm}
-        onSubmit={(output) => {
-          onSaveBed(output.bedHm);
-        }}
-      >
-        <Group align="flex-end" gap="xs">
-          <Field of={bedForm} path={["bedHm"]}>
-            {(field) => (
-              <TimeInput
-                {...field.props}
-                error={field.errors?.[0]}
-                label="今夜の就寝"
-                value={field.input}
-              />
-            )}
-          </Field>
-          <Button type="submit">就寝を保存</Button>
-        </Group>
-      </Form>
+      {showBed ? (
+        <Form
+          of={bedForm}
+          onSubmit={(output) => {
+            onSaveBed(output.bedHm);
+          }}
+        >
+          <Group align="flex-end" gap="xs">
+            <Field of={bedForm} path={["bedHm"]}>
+              {(field) => (
+                <TimeInput
+                  {...field.props}
+                  error={field.errors?.[0]}
+                  label="今夜の就寝"
+                  value={field.input}
+                />
+              )}
+            </Field>
+            <Button type="submit">就寝を保存</Button>
+          </Group>
+        </Form>
+      ) : null}
       <Form
         of={wakeForm}
         onSubmit={(output) => {
@@ -71,7 +68,7 @@ export function TonightPanel({
               <TimeInput
                 {...field.props}
                 error={field.errors?.[0]}
-                label="今日の起床"
+                label={showBed ? "今日の起床" : "起床"}
                 value={field.input}
               />
             )}

@@ -1,17 +1,9 @@
 import { Field, Form, useForm } from "@formisch/react";
 import { Button, Group, NativeSelect, Stack, TextInput } from "@mantine/core";
-import type { FunctionReturnType } from "convex/server";
-import * as v from "valibot";
 import { CATEGORIES } from "~domain/categories";
 
-import type { api } from "~/../convex/_generated/api";
-
-const ItemSchema = v.object({
-  category: v.picklist(CATEGORIES),
-  name: v.pipe(v.string(), v.minLength(1, "項目名は必須です")),
-});
-
-type ItemDto = FunctionReturnType<typeof api.items.list>[number];
+import { ItemSchema } from "~/features/catalog/schemas/item-schema";
+import type { ItemDto } from "~/features/catalog/types/item";
 
 type ItemListProps = {
   items: ItemDto[];

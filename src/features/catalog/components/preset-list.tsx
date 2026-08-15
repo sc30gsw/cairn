@@ -1,30 +1,16 @@
 import { Field, Form, useForm } from "@formisch/react";
 import { Button, Group, NativeSelect, NumberInput, Stack, Text, TextInput } from "@mantine/core";
-import type { FunctionReturnType } from "convex/server";
 import { useState } from "react";
 import * as v from "valibot";
 import { WEEKDAY_NAMES } from "~domain/catalog";
 
-import type { api } from "~/../convex/_generated/api";
+import { PresetSchema } from "~/features/catalog/schemas/preset-schema";
+import type { ItemDto, PresetDto } from "~/features/catalog/types/item";
+import { parseItemId } from "~/features/catalog/types/item";
 
-const PresetSchema = v.object({
-  content: v.string(),
-  itemId: v.pipe(v.string(), v.minLength(1, "項目を選んでください")),
-  minutes: v.pipe(v.number(), v.minValue(0)),
-  name: v.pipe(v.string(), v.minLength(1, "名前は必須です")),
-  weekday: v.pipe(v.number(), v.minValue(0), v.maxValue(6)),
-});
-
-const PresetMetaSchema = v.object({
-  name: v.pipe(v.string(), v.minLength(1, "名前は必須です")),
-  weekday: v.pipe(v.number(), v.minValue(0), v.maxValue(6)),
-});
-
-type ItemDto = FunctionReturnType<typeof api.items.list>[number];
-type PresetDto = FunctionReturnType<typeof api.presets.list>[number];
 type PresetLineDraft = {
   content: string;
-  itemId: ItemDto["_id"];
+  itemId: string;
   minutes: number;
 };
 
@@ -45,12 +31,19 @@ type PresetListProps = {
   presets: PresetDto[];
 };
 
+function parsedLines(lines: PresetLineDraft[]) {
+  return lines.map((line) => ({
+    content: line.content,
+    itemId: parseItemId(line.itemId),
+    minutes: line.minutes,
+  }));
+}
+
 export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: PresetListProps) {
+  const first = items[0];
   const form = useForm({
     initialInput: {
-      content: "",
-      itemId: items[0]?._id ?? "",
-      minutes: 20,
+      lines: [{ content: "", itemId: first?._id ?? "", minutes: 20 }],
       name: "",
       weekday: 1,
     },
@@ -63,13 +56,7 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
         of={form}
         onSubmit={(output) => {
           onCreate({
-            lines: [
-              {
-                content: output.content,
-                itemId: output.itemId as ItemDto["_id"],
-                minutes: output.minutes,
-              },
-            ],
+            lines: parsedLines(output.lines),
             name: output.name,
             weekday: output.weekday,
           });
@@ -101,7 +88,7 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
               />
             )}
           </Field>
-          <Field of={form} path={["itemId"]}>
+          <Field of={form} path={["lines", 0, "itemId"]}>
             {(field) => (
               <NativeSelect
                 {...field.props}
@@ -112,7 +99,7 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
               />
             )}
           </Field>
-          <Field of={form} path={["content"]}>
+          <Field of={form} path={["lines", 0, "content"]}>
             {(field) => (
               <TextInput
                 {...field.props}
@@ -122,7 +109,7 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
               />
             )}
           </Field>
-          <Field of={form} path={["minutes"]}>
+          <Field of={form} path={["lines", 0, "minutes"]}>
             {(field) => (
               <NumberInput
                 {...field.props}
@@ -134,7 +121,9 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
               />
             )}
           </Field>
-          <Button type="submit">プリセットを追加</Button>
+          <Button disabled={first === undefined} type="submit">
+            プリセットを追加
+          </Button>
         </Group>
       </Form>
       {presets.map((preset) => (
@@ -162,7 +151,7 @@ function PresetEditor({
   preset: PresetDto;
 }) {
   const [lines, setLines] = useState<PresetLineDraft[]>(() =>
-    preset.lines.map((line: PresetDto["lines"][number]) => ({
+    preset.lines.map((line) => ({
       content: line.content,
       itemId: line.itemId,
       minutes: line.minutes,
@@ -170,30 +159,34 @@ function PresetEditor({
   );
   const form = useForm({
     initialInput: {
+      lines: preset.lines.map((line) => ({
+        content: line.content,
+        itemId: line.itemId,
+        minutes: line.minutes,
+      })),
       name: preset.name,
       weekday: preset.weekday,
     },
-    schema: PresetMetaSchema,
+    schema: PresetSchema,
   });
 
   return (
     <Form
       of={form}
       onSubmit={(output) => {
+        const parsed = v.parse(PresetSchema, { ...output, lines });
         onUpdate({
-          lines,
-          name: output.name,
+          lines: parsedLines(parsed.lines),
+          name: parsed.name,
           presetId: preset._id,
-          weekday: output.weekday,
+          weekday: parsed.weekday,
         });
       }}
     >
       <Stack gap="xs">
         <Group align="flex-end" justify="space-between" wrap="wrap">
           <Text>
-            {preset.name}:{" "}
-            {preset.lines.map((line: PresetDto["lines"][number]) => line.itemName).join("、") ||
-              "行なし"}
+            {preset.name}: {preset.lines.map((line) => line.itemName).join("、") || "行なし"}
           </Text>
           <Field of={form} path={["name"]}>
             {(field) => (
@@ -231,7 +224,7 @@ function PresetEditor({
               aria-label={`${preset.name}の雛形${index + 1}の項目`}
               data={items.map((item) => ({ label: item.name, value: item._id }))}
               onChange={(event) => {
-                const itemId = event.currentTarget.value as ItemDto["_id"];
+                const itemId = event.currentTarget.value;
                 setLines((current) =>
                   current.map((entry, entryIndex) =>
                     entryIndex === index ? { ...entry, itemId } : entry,
@@ -278,9 +271,13 @@ function PresetEditor({
         ))}
         <Button
           onClick={() => {
+            const next = items[0];
+            if (next === undefined) {
+              return;
+            }
             setLines((current) => [
               ...current,
-              { content: "", itemId: items[0]?._id ?? ("" as ItemDto["_id"]), minutes: 20 },
+              { content: "", itemId: next._id, minutes: 20 },
             ]);
           }}
           type="button"

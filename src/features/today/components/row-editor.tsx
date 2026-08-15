@@ -1,6 +1,7 @@
+import { Field, Form, useForm } from "@formisch/react";
 import { Button, Group, NumberInput, TextInput } from "@mantine/core";
-import { useState } from "react";
 
+import { RowEditorSchema } from "~/features/today/schemas/row-editor-schema";
 import type { DayRow } from "~/features/today/types/day";
 
 type RowEditorProps = {
@@ -12,31 +13,44 @@ type RowEditorProps = {
 };
 
 export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }: RowEditorProps) {
-  const [content, setContent] = useState(row.content);
-  const [minutes, setMinutes] = useState(row.minutes);
+  const form = useForm({
+    initialInput: { content: row.content, minutes: row.minutes },
+    schema: RowEditorSchema,
+  });
 
   return (
-    <form
+    <Form
       aria-label={`${row.itemName}の行`}
-      onSubmit={(event) => {
-        event.preventDefault();
-        onConfirm({ content, minutes, rowId: row._id });
+      of={form}
+      onSubmit={(output) => {
+        onConfirm({ content: output.content, minutes: output.minutes, rowId: row._id });
       }}
     >
       <Group align="flex-end" gap="xs" wrap="wrap">
-        <TextInput
-          disabled={disabled}
-          label={row.itemName}
-          onChange={(event) => setContent(event.currentTarget.value)}
-          value={content}
-        />
-        <NumberInput
-          disabled={disabled}
-          label="分数"
-          min={0}
-          onChange={(value) => setMinutes(typeof value === "number" ? value : 0)}
-          value={minutes}
-        />
+        <Field of={form} path={["content"]}>
+          {(field) => (
+            <TextInput
+              {...field.props}
+              disabled={disabled}
+              error={field.errors?.[0]}
+              label={row.itemName}
+              value={field.input}
+            />
+          )}
+        </Field>
+        <Field of={form} path={["minutes"]}>
+          {(field) => (
+            <NumberInput
+              {...field.props}
+              disabled={disabled}
+              error={field.errors?.[0]}
+              label="分数"
+              min={0}
+              onChange={(value) => field.onChange(typeof value === "number" ? value : 0)}
+              value={field.input}
+            />
+          )}
+        </Field>
         <Button disabled={disabled} type="submit">
           確定
         </Button>
@@ -54,6 +68,6 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
         </Button>
         <span>{row.status}</span>
       </Group>
-    </form>
+    </Form>
   );
 }

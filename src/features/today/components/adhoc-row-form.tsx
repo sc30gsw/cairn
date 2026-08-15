@@ -1,17 +1,9 @@
 import { Field, Form, useForm } from "@formisch/react";
 import { Button, Group, NativeSelect, NumberInput, TextInput } from "@mantine/core";
-import type { FunctionReturnType } from "convex/server";
-import * as v from "valibot";
 
-import type { api } from "~/../convex/_generated/api";
-
-const AdhocSchema = v.object({
-  content: v.string(),
-  itemId: v.pipe(v.string(), v.minLength(1, "項目を選んでください")),
-  minutes: v.pipe(v.number(), v.minValue(0, "分数は0以上です")),
-});
-
-type ItemDto = FunctionReturnType<typeof api.items.list>[number];
+import type { ItemDto } from "~/features/catalog/types/item";
+import { parseItemId } from "~/features/catalog/types/item";
+import { AdhocRowSchema } from "~/features/today/schemas/adhoc-row-schema";
 
 type AdhocRowFormProps = {
   items: ItemDto[];
@@ -19,13 +11,14 @@ type AdhocRowFormProps = {
 };
 
 export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
+  const first = items[0];
   const form = useForm({
     initialInput: {
       content: "",
-      itemId: items[0]?._id ?? "",
+      itemId: first?._id ?? "",
       minutes: 20,
     },
-    schema: AdhocSchema,
+    schema: AdhocRowSchema,
   });
 
   return (
@@ -34,7 +27,7 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
       onSubmit={(output) => {
         onAdd({
           content: output.content,
-          itemId: output.itemId as ItemDto["_id"],
+          itemId: parseItemId(output.itemId),
           minutes: output.minutes,
         });
       }}
@@ -73,7 +66,9 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
             />
           )}
         </Field>
-        <Button type="submit">行を足す</Button>
+        <Button disabled={first === undefined} type="submit">
+          行を足す
+        </Button>
       </Group>
     </Form>
   );

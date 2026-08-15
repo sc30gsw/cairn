@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 import { api } from "~/../convex/_generated/api";
-import { todayJst } from "~/lib/date-jst";
+import { todayJst } from "~domain/jst";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export function useOpenAndLoadDay(dateJst: string) {

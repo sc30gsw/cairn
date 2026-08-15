@@ -225,6 +225,30 @@ test("未来の日は行を足せず今夜も出さない", () => {
   expect(queryByLabelText(/今夜の就寝/)).toBeNull();
 });
 
+test("過去の日は起床を出せるが今夜の就寝は出さない", () => {
+  const { getByLabelText, queryByLabelText } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-16"
+      day={day}
+      isToday={false}
+      items={items}
+      onAddRow={vi.fn()}
+      onConfirm={vi.fn()}
+      onRemoveDay={vi.fn()}
+      onRemoveRow={vi.fn()}
+      onSaveBed={vi.fn()}
+      onSaveCondition={vi.fn()}
+      onSaveMemo={vi.fn()}
+      onSaveWake={vi.fn()}
+      onSkip={vi.fn()}
+      onSwitchPreset={vi.fn()}
+      presets={[]}
+    />,
+  );
+  expect(getByLabelText("起床")).toBeDefined();
+  expect(queryByLabelText(/今夜の就寝/)).toBeNull();
+});
+
 test("その日に行を足せる", () => {
   const { getByRole, getByLabelText } = renderWithMantine(
     <DayBoard
