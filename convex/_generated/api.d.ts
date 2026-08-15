@@ -18,6 +18,8 @@ import type * as http from "../http.js";
 import type * as items from "../items.js";
 import type * as lib_catalog from "../lib/catalog.js";
 import type * as lib_categories from "../lib/categories.js";
+import type * as lib_conditions from "../lib/conditions.js";
+import type * as lib_env from "../lib/env.js";
 import type * as lib_errors from "../lib/errors.js";
 import type * as lib_jst from "../lib/jst.js";
 import type * as lib_movingAverage from "../lib/movingAverage.js";
@@ -52,6 +54,8 @@ declare const fullApi: ApiFromModules<{
   items: typeof items;
   "lib/catalog": typeof lib_catalog;
   "lib/categories": typeof lib_categories;
+  "lib/conditions": typeof lib_conditions;
+  "lib/env": typeof lib_env;
   "lib/errors": typeof lib_errors;
   "lib/jst": typeof lib_jst;
   "lib/movingAverage": typeof lib_movingAverage;

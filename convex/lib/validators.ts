@@ -1,13 +1,17 @@
 import { v } from "convex/values";
 
 import { CATEGORIES } from "./categories";
+import { CONDITIONS } from "./conditions";
+
+const [toeic, listening, reading, conversation, other] = CATEGORIES;
+const [good, ordinary, collapsed] = CONDITIONS;
 
 export const categoryValidator = v.union(
-  v.literal("TOEIC対策"),
-  v.literal("多聴"),
-  v.literal("多読"),
-  v.literal("英会話"),
-  v.literal("その他"),
+  v.literal(toeic),
+  v.literal(listening),
+  v.literal(reading),
+  v.literal(conversation),
+  v.literal(other),
 );
 
 export const statusValidator = v.union(
@@ -17,9 +21,9 @@ export const statusValidator = v.union(
 );
 
 export const conditionValidator = v.union(
-  v.literal("好調"),
-  v.literal("普通"),
-  v.literal("崩れた"),
+  v.literal(good),
+  v.literal(ordinary),
+  v.literal(collapsed),
 );
 
 export const rowDtoValidator = v.object({
