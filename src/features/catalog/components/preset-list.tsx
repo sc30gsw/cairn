@@ -71,6 +71,25 @@ function itemOptions(items: ItemDto[]) {
   return items.map((item) => ({ label: item.name, value: item._id }));
 }
 
+function availableItemOptions(
+  items: ItemDto[],
+  lines: PresetLineDraft[],
+  currentIndex: number,
+) {
+  const taken = new Set<string>();
+  for (const [index, line] of lines.entries()) {
+    if (index !== currentIndex) {
+      taken.add(line.itemId);
+    }
+  }
+  return itemOptions(items.filter((item) => !taken.has(item._id)));
+}
+
+function firstAvailableItem(items: ItemDto[], lines: PresetLineDraft[]) {
+  const taken = new Set(lines.map((line) => line.itemId));
+  return items.find((item) => !taken.has(item._id));
+}
+
 function availableWeekdayOptions(presets: PresetDto[]) {
   const taken = new Set(presets.map((preset) => preset.weekday));
   return WEEKDAY_OPTIONS.filter((option) => !taken.has(Number(option.value)));
@@ -308,7 +327,7 @@ function PresetEditor({
               <Grid.Col span={{ base: 12, sm: 4 }}>
                 <Select
                   aria-label={`${preset.name}の雛形${index + 1}の項目`}
-                  data={itemOptions(items)}
+                  data={availableItemOptions(items, lines, index)}
                   label={index === 0 ? "項目" : undefined}
                   onChange={onRequiredSelect((value) => {
                     setLines((current) =>
@@ -376,8 +395,9 @@ function PresetEditor({
             );
           })}
           <Button
+            disabled={firstAvailableItem(items, lines) === undefined}
             onClick={() => {
-              const next = items[0];
+              const next = firstAvailableItem(items, lines);
               if (next === undefined) {
                 return;
               }

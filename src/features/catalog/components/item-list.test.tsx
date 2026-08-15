@@ -1,3 +1,4 @@
+import { fireEvent } from "@testing-library/react";
 import { expect, test, vi } from "vite-plus/test";
 
 import { ItemList } from "~/features/catalog/components/item-list";
@@ -126,4 +127,59 @@ test("プリセット追加は未登録曜日が2つ以上なら初期値は空"
 
   const weekday = getByRole("combobox", { name: "曜日" });
   expect(weekday.textContent).toBe("曜日を選ぶ");
+});
+
+test("プリセット雛形を足すと未使用の項目が選ばれる", () => {
+  const { getByRole } = renderWithMantine(
+    <PresetList
+      items={[
+        { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000" },
+        { _id: "i2" as never, categoryId: "c1" as never, name: "英会話" },
+      ]}
+      onCreate={vi.fn()}
+      onRemove={vi.fn()}
+      onUpdate={vi.fn()}
+      presets={[
+        {
+          _id: "p1" as never,
+          lines: [
+            { content: "", itemId: "i1" as never, itemName: "Distinction 2000", minutes: 30 },
+          ],
+          name: "月曜日",
+          weekday: 1,
+        },
+      ]}
+    />,
+  );
+
+  fireEvent.click(getByRole("button", { name: "雛形を足す" }));
+  expect(getByRole("combobox", { name: "月曜日の雛形2の項目" }).textContent).toBe("英会話");
+});
+
+test("プリセット雛形ですべての項目を使うと雛形を足すは無効", () => {
+  const { getByRole } = renderWithMantine(
+    <PresetList
+      items={[
+        { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000" },
+        { _id: "i2" as never, categoryId: "c1" as never, name: "英会話" },
+      ]}
+      onCreate={vi.fn()}
+      onRemove={vi.fn()}
+      onUpdate={vi.fn()}
+      presets={[
+        {
+          _id: "p1" as never,
+          lines: [
+            { content: "", itemId: "i1" as never, itemName: "Distinction 2000", minutes: 30 },
+            { content: "", itemId: "i2" as never, itemName: "英会話", minutes: 20 },
+          ],
+          name: "月曜日",
+          weekday: 1,
+        },
+      ]}
+    />,
+  );
+
+  const addLine = getByRole("button", { name: "雛形を足す" });
+  expect((addLine as HTMLButtonElement).disabled).toBe(true);
 });
