@@ -1,8 +1,12 @@
 import { Card, Group, Stack, Text, Title } from "@mantine/core";
-import { MonthView, ScheduleHeader, type DateStringValue, type ScheduleEventData } from "@mantine/schedule";
+import {
+  MonthView,
+  ScheduleHeader,
+  type DateStringValue,
+  type ScheduleEventData,
+} from "@mantine/schedule";
 import dayjs from "dayjs";
 
-import classes from "~/features/history/components/history-month-view.module.css";
 import {
   confirmedMonthEvents,
   monthEventMinutesById,
@@ -12,6 +16,8 @@ import {
 import { SCHEDULE_LABELS_JA } from "~/features/history/lib/schedule-labels";
 import type { MonthEvent } from "~/features/history/types/history";
 import { holidayName } from "~/lib/holiday";
+
+import classes from "~/features/history/components/history-month-view.module.css";
 
 type HistoryMonthViewProps = {
   events: MonthEvent[];
@@ -74,7 +80,10 @@ export function HistoryMonthView({
     <Card padding="md">
       <Stack gap="sm">
         <ScheduleHeader labels={SCHEDULE_LABELS_JA}>
-          <ScheduleHeader.Previous aria-label={SCHEDULE_LABELS_JA.previous} onClick={() => shiftMonth(-1)} />
+          <ScheduleHeader.Previous
+            aria-label={SCHEDULE_LABELS_JA.previous}
+            onClick={() => shiftMonth(-1)}
+          />
           <ScheduleHeader.MonthYearSelect
             monthValue={dayjs(date).month()}
             onMonthChange={(monthValue) => {

@@ -64,7 +64,5 @@ test("確定だけカテゴリ集計し、見送りは別カウント", () => {
 
   expect(result.confirmedMinutes).toBe(30);
   expect(result.skippedMinutes).toBe(20);
-  expect(result.byCategory).toEqual([
-    { category: "多聴", categorySortOrder: 1, minutes: 30 },
-  ]);
+  expect(result.byCategory).toEqual([{ category: "多聴", categorySortOrder: 1, minutes: 30 }]);
 });

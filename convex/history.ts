@@ -1,5 +1,5 @@
-import { groupBy, mapValues, prop } from "remeda";
 import { v } from "convex/values";
+import { groupBy, mapValues, prop } from "remeda";
 
 import type { Doc } from "./_generated/dataModel";
 import type { QueryCtx } from "./_generated/server";
@@ -12,7 +12,6 @@ import {
 } from "./lib/historyBreakdown";
 import { addDaysJst, calendarDatesInMonth, mondayOfWeek } from "./lib/jst";
 import { sevenDayMovingAverage } from "./lib/movingAverage";
-import { confirmedVolumeMinutes } from "./lib/volume";
 import {
   dayBreakdownValidator,
   monthBreakdownValidator,
@@ -21,6 +20,7 @@ import {
   weekBreakdownValidator,
   yearHeatmapValidator,
 } from "./lib/validators";
+import { confirmedVolumeMinutes } from "./lib/volume";
 import { ownerQuery } from "./ownerFunctions";
 
 const YEAR_HEATMAP_DAYS = 365;
@@ -47,10 +47,7 @@ function buildMinutesByDate(
   rows: Doc<"rows">[],
   liveDayDates: ReadonlySet<string>,
 ): Record<string, number> {
-  return mapValues(
-    groupBy(liveRows(rows, liveDayDates), prop("dateJst")),
-    confirmedVolumeMinutes,
-  );
+  return mapValues(groupBy(liveRows(rows, liveDayDates), prop("dateJst")), confirmedVolumeMinutes);
 }
 
 function buildHeatmapDays(
@@ -93,11 +90,7 @@ async function computeYearHeatmap(ctx: QueryCtx, ownerId: string, todayJst: stri
   };
 }
 
-async function computeMonthBreakdown(
-  ctx: QueryCtx,
-  ownerId: string,
-  yearMonth: string,
-) {
+async function computeMonthBreakdown(ctx: QueryCtx, ownerId: string, yearMonth: string) {
   const dates = calendarDatesInMonth(yearMonth);
   const start = dates[0];
   const end = dates[dates.length - 1];
@@ -183,9 +176,7 @@ async function computeWeekPage(ctx: QueryCtx, ownerId: string, dateJst: string) 
     loadCatalog(ctx, ownerId),
     ctx.db
       .query("weeklyGoals")
-      .withIndex("by_owner_and_week", (q) =>
-        q.eq("ownerId", ownerId).eq("weekStartJst", weekStart),
-      )
+      .withIndex("by_owner_and_week", (q) => q.eq("ownerId", ownerId).eq("weekStartJst", weekStart))
       .unique(),
   ]);
   const liveDayDates = liveDayDatesFrom(days);

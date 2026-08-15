@@ -1,8 +1,8 @@
 import { expect, test, vi } from "vite-plus/test";
 import { STATUSES } from "~domain/domain";
 
-import { HistoryLearningHeatmap } from "~/features/history/components/history-learning-heatmap";
 import { HistoryAnalysisPanel } from "~/features/history/components/analysis/history-analysis-panel";
+import { HistoryLearningHeatmap } from "~/features/history/components/history-learning-heatmap";
 import { HistoryMonthView } from "~/features/history/components/history-month-view";
 import { WeekAgenda } from "~/features/history/components/week-agenda";
 import {
@@ -10,8 +10,8 @@ import {
   formatHeatmapTooltip,
   yearHeatmapRange,
 } from "~/features/history/lib/heatmap-colors";
-import { renderWithMantine } from "~/test-utils/render";
 import type { MonthEvent, WeekPage } from "~/features/history/types/history";
+import { renderWithMantine } from "~/test-utils/render";
 
 const [confirmed, pending] = [STATUSES[0], STATUSES[1]] as const;
 
@@ -66,24 +66,26 @@ test("学習量ヒートマップが Mantine Heatmap を描画", () => {
 test("MonthView に確定した学習内容と分数が見える", () => {
   const { getByText, queryByText } = renderWithMantine(
     <HistoryMonthView
-      events={[
-        {
-          category: "多聴",
-          dateJst: "2026-08-17",
-          minutes: 30,
-          rowId: "r1" as never,
-          status: confirmed,
-          title: "Distinction 2000",
-        },
-        {
-          category: "英会話",
-          dateJst: "2026-08-17",
-          minutes: 20,
-          rowId: "r2" as never,
-          status: pending,
-          title: "英会話",
-        },
-      ] satisfies MonthEvent[]}
+      events={
+        [
+          {
+            category: "多聴",
+            dateJst: "2026-08-17",
+            minutes: 30,
+            rowId: "r1" as never,
+            status: confirmed,
+            title: "Distinction 2000",
+          },
+          {
+            category: "英会話",
+            dateJst: "2026-08-17",
+            minutes: 20,
+            rowId: "r2" as never,
+            status: pending,
+            title: "英会話",
+          },
+        ] satisfies MonthEvent[]
+      }
       month={new Date("2026-08-17T12:00:00+09:00")}
       onDayClick={vi.fn()}
       onMonthChange={vi.fn()}
@@ -160,22 +162,24 @@ test("週の行がタイトルとステータスで見える", () => {
   const { getAllByText, getByText } = renderWithMantine(
     <WeekAgenda
       todayJst="2026-08-17"
-      week={{
-        events: [
-          {
-            category: "多聴",
-            dateJst: "2026-08-17",
-            minutes: 30,
-            rowId: "r1" as never,
-            status: confirmed,
-            title: "Distinction 2000",
-          },
-        ],
-        volumeMinutes: 30,
-        weekEnd: "2026-08-23",
-        weekStart: "2026-08-17",
-        weeklyGoalMinutes: 300,
-      } satisfies WeekPage}
+      week={
+        {
+          events: [
+            {
+              category: "多聴",
+              dateJst: "2026-08-17",
+              minutes: 30,
+              rowId: "r1" as never,
+              status: confirmed,
+              title: "Distinction 2000",
+            },
+          ],
+          volumeMinutes: 30,
+          weekEnd: "2026-08-23",
+          weekStart: "2026-08-17",
+          weeklyGoalMinutes: 300,
+        } satisfies WeekPage
+      }
     />,
   );
   expect(getByText(/Distinction 2000/)).toBeDefined();

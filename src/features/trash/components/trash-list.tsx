@@ -1,8 +1,8 @@
 import { Button, Card, Grid, Group, Modal, Stack, Text, Title } from "@mantine/core";
 import { useState } from "react";
 
-import { trashStatusLabel } from "~/lib/record-status-ui";
 import type { TrashDay, TrashPage, TrashRow } from "~/features/trash/types/trash";
+import { trashStatusLabel } from "~/lib/record-status-ui";
 
 type TrashListProps = {
   onPurgeDay: (dayId: TrashDay["_id"]) => void;

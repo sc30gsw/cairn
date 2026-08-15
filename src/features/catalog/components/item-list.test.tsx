@@ -13,7 +13,9 @@ test("カテゴリーの下に学習内容が並び、カテゴリーも編集�
           { _id: "c1" as never, name: "多聴", sortOrder: 1 },
           { _id: "c2" as never, name: "英会話", sortOrder: 2 },
         ]}
-        items={[{ _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 }]}
+        items={[
+          { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
+        ]}
         onCreateCategory={vi.fn()}
         onCreateItem={vi.fn()}
         onRemoveCategory={vi.fn()}
@@ -23,7 +25,9 @@ test("カテゴリーの下に学習内容が並び、カテゴリーも編集�
         onReorderItems={vi.fn()}
       />
       <PresetList
-        items={[{ _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 }]}
+        items={[
+          { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
+        ]}
         onCreate={vi.fn()}
         onRemove={vi.fn()}
         onUpdate={vi.fn()}
@@ -59,7 +63,9 @@ test("カテゴリーの下に学習内容が並び、カテゴリーも編集�
 test("プリセット追加は未登録の曜日だけ選べ、1つだけならそれが初期値", () => {
   const { getByRole } = renderWithMantine(
     <PresetList
-      items={[{ _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 }]}
+      items={[
+        { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
+      ]}
       onCreate={vi.fn()}
       onRemove={vi.fn()}
       onUpdate={vi.fn()}
@@ -111,7 +117,9 @@ test("プリセット追加は未登録の曜日だけ選べ、1つだけなら�
 test("プリセット追加は未登録曜日が2つ以上なら初期値は空", () => {
   const { getByRole } = renderWithMantine(
     <PresetList
-      items={[{ _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 }]}
+      items={[
+        { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
+      ]}
       onCreate={vi.fn()}
       onRemove={vi.fn()}
       onUpdate={vi.fn()}

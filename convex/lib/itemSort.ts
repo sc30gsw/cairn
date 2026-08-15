@@ -6,7 +6,8 @@ export function compareItemsBySortOrder(
   left: { name: string; sortOrder?: number },
   right: { name: string; sortOrder?: number },
 ): number {
-  const orderDiff = effectiveItemSortOrder(left.sortOrder) - effectiveItemSortOrder(right.sortOrder);
+  const orderDiff =
+    effectiveItemSortOrder(left.sortOrder) - effectiveItemSortOrder(right.sortOrder);
   if (orderDiff !== 0) {
     return orderDiff;
   }

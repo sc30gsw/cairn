@@ -1,21 +1,11 @@
 import { CompositeChart, DonutChart } from "@mantine/charts";
-import {
-  Alert,
-  Button,
-  Card,
-  Grid,
-  SegmentedControl,
-  Stack,
-  Text,
-  Title,
-} from "@mantine/core";
+import { Alert, Button, Card, Grid, SegmentedControl, Stack, Text, Title } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
 
 import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
 import { BreakdownTable } from "~/features/history/components/breakdown-table";
 import { HeatmapLegend } from "~/features/history/components/heatmap-legend";
 import { HistoryLearningHeatmap } from "~/features/history/components/history-learning-heatmap";
-import tabBarClasses from "~/features/history/components/history-tab-bar.module.css";
 import {
   buildDonutCells,
   buildMonthPaceChartData,
@@ -31,6 +21,8 @@ import type {
   MonthBreakdown,
   WeekBreakdown,
 } from "~/features/history/types/history";
+
+import tabBarClasses from "~/features/history/components/history-tab-bar.module.css";
 
 type AnalysisScope = "day" | "month" | "week";
 

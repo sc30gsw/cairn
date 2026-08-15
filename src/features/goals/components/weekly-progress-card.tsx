@@ -44,7 +44,8 @@ export function WeeklyProgressCard({
         </Text>
         {progress.remaining > 0 ? (
           <Text c="dimmed" size="sm">
-            残り {progress.remaining}分 / あと {progress.daysLeft} 日 → 1日約 {progress.dailyNeeded} 分
+            残り {progress.remaining}分 / あと {progress.daysLeft} 日 → 1日約 {progress.dailyNeeded}{" "}
+            分
           </Text>
         ) : (
           <Text c="dimmed" size="sm">

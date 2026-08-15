@@ -23,9 +23,7 @@ test("確定行は完了ラベルと確定比を表示する", () => {
     },
   ] as const satisfies readonly BreakdownRow[];
 
-  const { getByText } = renderWithMantine(
-    <BreakdownTable confirmedMinutes={60} rows={rows} />,
-  );
+  const { getByText } = renderWithMantine(<BreakdownTable confirmedMinutes={60} rows={rows} />);
 
   expect(getByText("完了")).toBeDefined();
   expect(getByText("見送り")).toBeDefined();

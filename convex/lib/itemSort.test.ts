@@ -5,10 +5,7 @@ import { compareItemsBySortOrder, effectiveItemSortOrder } from "./itemSort";
 test("sortOrder 未設定は末尾扱い", () => {
   expect(effectiveItemSortOrder(undefined)).toBe(Number.MAX_SAFE_INTEGER);
   expect(
-    compareItemsBySortOrder(
-      { name: "あ", sortOrder: undefined },
-      { name: "い", sortOrder: 0 },
-    ),
+    compareItemsBySortOrder({ name: "あ", sortOrder: undefined }, { name: "い", sortOrder: 0 }),
   ).toBeGreaterThan(0);
 });
 

@@ -42,7 +42,9 @@ const day = {
   volumeMinutes: 0,
 } satisfies DayPage;
 
-const items = [{ _id: row.itemId, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 }];
+const items = [
+  { _id: row.itemId, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
+];
 
 const idleHandlers = {
   onAddRow: vi.fn(),

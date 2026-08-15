@@ -1,7 +1,6 @@
 import { Heatmap } from "@mantine/charts";
 import { indexBy, prop } from "remeda";
 
-import classes from "~/features/history/components/history-learning-heatmap.module.css";
 import {
   buildHeatmapChartData,
   formatHeatmapTooltip,
@@ -15,13 +14,19 @@ import {
 } from "~/features/history/lib/heatmap-colors";
 import type { HeatmapDay } from "~/features/history/types/history";
 
+import classes from "~/features/history/components/history-learning-heatmap.module.css";
+
 type HistoryLearningHeatmapProps = {
   days: HeatmapDay[];
   onDayClick: (dateJst: string) => void;
   todayJst: string;
 };
 
-export function HistoryLearningHeatmap({ days, onDayClick, todayJst }: HistoryLearningHeatmapProps) {
+export function HistoryLearningHeatmap({
+  days,
+  onDayClick,
+  todayJst,
+}: HistoryLearningHeatmapProps) {
   const byDate = indexBy(days, prop("dateJst"));
   const { endDate, startDate } = yearHeatmapRange(todayJst);
 
