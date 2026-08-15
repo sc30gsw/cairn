@@ -32,13 +32,18 @@ Object.defineProperty(window, "ResizeObserver", {
   writable: true,
 });
 
+HTMLElement.prototype.hasPointerCapture ??= () => false;
+HTMLElement.prototype.releasePointerCapture ??= () => undefined;
+HTMLElement.prototype.scrollIntoView ??= () => undefined;
+HTMLElement.prototype.setPointerCapture ??= () => undefined;
+
 afterEach(() => {
   cleanup();
 });
 
 function Wrapper({ children }: Record<"children", ReactNode>) {
   return (
-    <MantineProvider defaultColorScheme="dark" theme={theme}>
+    <MantineProvider defaultColorScheme="light" forceColorScheme="light" theme={theme}>
       <DatesProvider settings={{ locale: "ja" }}>{children}</DatesProvider>
     </MantineProvider>
   );

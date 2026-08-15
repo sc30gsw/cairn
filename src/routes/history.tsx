@@ -1,5 +1,5 @@
 import { convexQuery } from "@convex-dev/react-query";
-import { Stack, Title } from "@mantine/core";
+import { Grid, Title } from "@mantine/core";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Suspense, useState } from "react";
@@ -38,17 +38,23 @@ function HistoryReady() {
   );
 
   return (
-    <Stack gap="lg">
-      <Title order={1}>履歴</Title>
-      <HistoryCalendar
-        days={monthData.days}
-        month={month}
-        onMonthChange={setMonth}
-        onOpenDate={(dateJst) => {
-          void navigate({ params: { dateJst }, to: "/days/$dateJst" });
-        }}
-      />
-      <WeekAgenda week={week} />
-    </Stack>
+    <Grid gap="md">
+      <Grid.Col span={12}>
+        <Title order={1}>履歴</Title>
+      </Grid.Col>
+      <Grid.Col span={{ base: 12, lg: 5 }}>
+        <HistoryCalendar
+          days={monthData.days}
+          month={month}
+          onMonthChange={setMonth}
+          onOpenDate={(dateJst) => {
+            void navigate({ params: { dateJst }, to: "/days/$dateJst" });
+          }}
+        />
+      </Grid.Col>
+      <Grid.Col span={{ base: 12, lg: 7 }}>
+        <WeekAgenda week={week} />
+      </Grid.Col>
+    </Grid>
   );
 }

@@ -1,11 +1,9 @@
-import { Center, Container, Loader } from "@mantine/core";
+import { Center, Loader } from "@mantine/core";
 
 export function PendingComponent() {
   return (
-    <Container py="xl">
-      <Center h={"100dvh"}>
-        <Loader aria-label="読み込み中" />
-      </Center>
-    </Container>
+    <Center h="calc(100dvh - var(--app-shell-header-offset, 0px))">
+      <Loader aria-label="読み込み中" color="cyan" />
+    </Center>
   );
 }
