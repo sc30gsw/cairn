@@ -18,7 +18,7 @@ export function TrashList({ onRestoreDay, onRestoreRow, trash }: TrashListProps)
         <Title order={1}>ゴミ箱</Title>
       </Grid.Col>
       <Grid.Col span={{ base: 12, md: 6 }}>
-        <Card h="100%" padding="lg" withBorder>
+        <Card h="100%">
           <Stack gap="md">
             <Title order={2}>日</Title>
             {trash.days.length === 0 ? <Text c="dimmed">ゴミ箱の日はありません。</Text> : null}
@@ -36,7 +36,7 @@ export function TrashList({ onRestoreDay, onRestoreRow, trash }: TrashListProps)
         </Card>
       </Grid.Col>
       <Grid.Col span={{ base: 12, md: 6 }}>
-        <Card h="100%" padding="lg" withBorder>
+        <Card h="100%">
           <Stack gap="md">
             <Title order={2}>行</Title>
             {trash.rows.length === 0 ? <Text c="dimmed">ゴミ箱の行はありません。</Text> : null}

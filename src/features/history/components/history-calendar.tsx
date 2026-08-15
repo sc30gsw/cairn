@@ -17,7 +17,7 @@ export function HistoryCalendar({ days, month, onMonthChange, onOpenDate }: Hist
   const byDate = new Map(days.map((day) => [day.dateJst, day]));
 
   return (
-    <Card padding="lg" withBorder>
+    <Card>
       <Calendar
         date={month}
         getDayProps={(date) => {

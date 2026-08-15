@@ -26,7 +26,7 @@ import { Suspense, lazy, type ReactNode } from "react";
 import { PendingComponent } from "~/components/pending-component";
 import { authClient } from "~/lib/auth-client";
 import { getToken } from "~/lib/auth-server";
-import { theme } from "~/lib/theme";
+import { cssVariablesResolver, theme } from "~/lib/theme";
 
 import appCss from "~/styles.css?url";
 
@@ -85,6 +85,7 @@ function RootDocument({ children }: Record<"children", ReactNode>) {
       </head>
       <body>
         <MantineProvider
+          cssVariablesResolver={cssVariablesResolver}
           defaultColorScheme={DEFAULT_COLOR_SCHEME}
           forceColorScheme="light"
           theme={theme}

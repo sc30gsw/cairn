@@ -120,28 +120,16 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     //? Vitest では tanstackStart / nitro が React の CJS を edge-runtime に引き込み、`module is not defined` とプロセス残留を起こす。
-    ...(isVitest
-      ? [
-          react({
-            include: /\.[jt]sx$/,
-          }),
-          babel({
-            include: /\.[jt]sx$/,
-            presets: [reactCompilerPreset()],
-          }),
-        ]
-      : [
-          tanstackStart(),
-          // react's vite plugin must come after start's vite plugin
-          react({
-            include: /\.[jt]sx$/,
-          }),
-          nitro(),
-          babel({
-            include: /\.[jt]sx$/,
-            presets: [reactCompilerPreset()],
-          }),
-        ]),
+    ...(isVitest ? [] : [tanstackStart()]),
+    // react's vite plugin must come after start's vite plugin
+    react({
+      include: /\.[jt]sx$/,
+    }),
+    ...(isVitest ? [] : [nitro()]),
+    babel({
+      include: /\.[jt]sx$/,
+      presets: [reactCompilerPreset()],
+    }),
   ],
   ssr: {
     noExternal: ["@convex-dev/better-auth"],

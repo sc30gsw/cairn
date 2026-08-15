@@ -17,20 +17,29 @@ export const authComponent = createClient<DataModel, typeof authSchema>(componen
 
 const isLiveConvexCtx = (ctx: GenericCtx<DataModel>) => isQueryCtx(ctx) || isActionCtx(ctx);
 
-type AdapterPage = {
-  page: unknown[];
-};
+function pageFromAdapter(value: unknown): unknown[] | null {
+  if (typeof value !== "object" || value === null || !("page" in value)) {
+    return null;
+  }
+  const page = value.page;
+  return Array.isArray(page) ? page : null;
+}
 
 async function ownerUserExists(ctx: GenericCtx<DataModel>): Promise<boolean> {
   //? HTTP 以外（CLI の staticAuth）ではユーザー表を引けないので、signup は閉じたままにする。
   if (!("runQuery" in ctx)) {
     return true;
   }
-  const result = (await ctx.runQuery(components.betterAuth.adapter.findMany, {
+  const result = await ctx.runQuery(components.betterAuth.adapter.findMany, {
     model: "user",
     paginationOpts: { cursor: null, numItems: 1 },
-  })) as AdapterPage;
-  return result.page.length > 0;
+  });
+  const page = pageFromAdapter(result);
+  //? 表が読めないときは閉じる。空だけ最初の所有者を通す。
+  if (page === null) {
+    return true;
+  }
+  return page.length > 0;
 }
 
 export const createAuthOptions = (ctx: GenericCtx<DataModel>, disableSignUp = true) => {

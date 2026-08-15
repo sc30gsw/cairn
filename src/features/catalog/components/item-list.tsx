@@ -4,6 +4,7 @@ import { CATEGORIES } from "~domain/categories";
 
 import { ItemSchema } from "~/features/catalog/schemas/item-schema";
 import type { ItemDto } from "~/features/catalog/types/item";
+import { onRequiredSelect } from "~/lib/select";
 
 type ItemListProps = {
   items: ItemDto[];
@@ -27,7 +28,7 @@ export function ItemList({ items, onCreate, onRemove, onRename }: ItemListProps)
   return (
     <Stack gap="md">
       <Title order={2}>項目</Title>
-      <Card padding="lg" withBorder>
+      <Card>
         <Form
           of={form}
           onSubmit={(output) => {
@@ -52,15 +53,12 @@ export function ItemList({ items, onCreate, onRemove, onRename }: ItemListProps)
                 {(field) => (
                   <Select
                     {...field.props}
-                    allowDeselect={false}
                     data={CATEGORY_OPTIONS}
                     error={field.errors?.[0]}
                     label="カテゴリ"
-                    onChange={(value) => {
-                      if (value !== null) {
-                        field.onChange(value);
-                      }
-                    }}
+                    onChange={onRequiredSelect((value) => {
+                      field.onChange(value as ItemDto["category"]);
+                    })}
                     value={field.input}
                   />
                 )}
@@ -96,7 +94,7 @@ function ItemEditor({
   });
 
   return (
-    <Card padding="md" withBorder>
+    <Card padding="md">
       <Form
         of={form}
         onSubmit={(output) => {
@@ -122,15 +120,12 @@ function ItemEditor({
               {(field) => (
                 <Select
                   {...field.props}
-                  allowDeselect={false}
                   aria-label={`${item.name}のカテゴリ`}
                   data={CATEGORY_OPTIONS}
                   error={field.errors?.[0]}
-                  onChange={(value) => {
-                    if (value !== null) {
-                      field.onChange(value);
-                    }
-                  }}
+                  onChange={onRequiredSelect((value) => {
+                    field.onChange(value as ItemDto["category"]);
+                  })}
                   value={field.input}
                 />
               )}

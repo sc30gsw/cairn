@@ -1,5 +1,5 @@
 import { Field, Form, useForm } from "@formisch/react";
-import { Button, Grid, SegmentedControl, Stack, Textarea, Title } from "@mantine/core";
+import { Button, SegmentedControl, Stack, Textarea, Title } from "@mantine/core";
 import type { Condition } from "~domain/conditions";
 import { CONDITIONS } from "~domain/conditions";
 
@@ -53,13 +53,9 @@ export function DayMetaPanel({ condition, memo, onSaveCondition, onSaveMemo }: D
               />
             )}
           </Field>
-          <Grid mt="sm">
-            <Grid.Col span="content">
-              <Button type="submit" variant="light">
-                メモを保存
-              </Button>
-            </Grid.Col>
-          </Grid>
+          <Button mt="sm" type="submit" variant="light">
+            メモを保存
+          </Button>
         </Form>
       </Stack>
     </section>

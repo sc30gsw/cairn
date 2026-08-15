@@ -17,6 +17,7 @@ import { WEEKDAY_NAMES } from "~domain/catalog";
 import { PresetSchema } from "~/features/catalog/schemas/preset-schema";
 import type { ItemDto, PresetDto } from "~/features/catalog/types/item";
 import { parseItemId } from "~/features/catalog/types/item";
+import { onRequiredSelect } from "~/lib/select";
 
 type PresetLineDraft = {
   content: string;
@@ -79,7 +80,7 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
   return (
     <Stack gap="md">
       <Title order={2}>プリセット</Title>
-      <Card padding="lg" withBorder>
+      <Card>
         <Form
           of={form}
           onSubmit={(output) => {
@@ -108,15 +109,12 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
                 {(field) => (
                   <Select
                     {...field.props}
-                    allowDeselect={false}
                     data={WEEKDAY_OPTIONS}
                     error={field.errors?.[0]}
                     label="曜日"
-                    onChange={(value) => {
-                      if (value !== null) {
-                        field.onChange(Number(value));
-                      }
-                    }}
+                    onChange={onRequiredSelect((value) => {
+                      field.onChange(Number(value));
+                    })}
                     value={String(field.input)}
                   />
                 )}
@@ -127,15 +125,10 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
                 {(field) => (
                   <Select
                     {...field.props}
-                    allowDeselect={false}
                     data={itemOptions(items)}
                     error={field.errors?.[0]}
                     label="雛形の項目"
-                    onChange={(value) => {
-                      if (value !== null) {
-                        field.onChange(value);
-                      }
-                    }}
+                    onChange={onRequiredSelect(field.onChange)}
                     searchable
                     value={field.input}
                   />
@@ -221,7 +214,7 @@ function PresetEditor({
   });
 
   return (
-    <Card padding="lg" withBorder>
+    <Card>
       <Form
         of={form}
         onSubmit={(output) => {
@@ -258,15 +251,12 @@ function PresetEditor({
                 {(field) => (
                   <Select
                     {...field.props}
-                    allowDeselect={false}
                     aria-label={`${preset.name}の曜日`}
                     data={WEEKDAY_OPTIONS}
                     error={field.errors?.[0]}
-                    onChange={(value) => {
-                      if (value !== null) {
-                        field.onChange(Number(value));
-                      }
-                    }}
+                    onChange={onRequiredSelect((value) => {
+                      field.onChange(Number(value));
+                    })}
                     value={String(field.input)}
                   />
                 )}
@@ -293,19 +283,16 @@ function PresetEditor({
             <Grid key={`${preset._id}-${index}`} align="flex-end" gap="sm">
               <Grid.Col span={{ base: 12, sm: 4 }}>
                 <Select
-                  allowDeselect={false}
                   aria-label={`${preset.name}の雛形${index + 1}の項目`}
                   data={itemOptions(items)}
-                  onChange={(value) => {
-                    if (value === null) {
-                      return;
-                    }
+                  label={index === 0 ? "項目" : undefined}
+                  onChange={onRequiredSelect((value) => {
                     setLines((current) =>
                       current.map((entry, entryIndex) =>
                         entryIndex === index ? { ...entry, itemId: value } : entry,
                       ),
                     );
-                  }}
+                  })}
                   searchable
                   value={line.itemId}
                 />
@@ -313,6 +300,7 @@ function PresetEditor({
               <Grid.Col span={{ base: 12, sm: 4 }}>
                 <TextInput
                   aria-label={`${preset.name}の雛形${index + 1}の内容`}
+                  label={index === 0 ? "内容" : undefined}
                   onChange={(event) => {
                     const content = event.currentTarget.value;
                     setLines((current) =>
@@ -327,6 +315,7 @@ function PresetEditor({
               <Grid.Col span={{ base: 6, sm: 2 }}>
                 <NumberInput
                   aria-label={`${preset.name}の雛形${index + 1}の分数`}
+                  label={index === 0 ? "分数" : undefined}
                   min={0}
                   onChange={(value) => {
                     const minutes = typeof value === "number" ? value : 0;

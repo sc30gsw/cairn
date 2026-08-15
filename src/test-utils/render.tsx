@@ -5,7 +5,7 @@ import type { ReactElement, ReactNode } from "react";
 import "dayjs/locale/ja";
 import { afterEach, vi } from "vite-plus/test";
 
-import { theme } from "~/lib/theme";
+import { cssVariablesResolver, theme } from "~/lib/theme";
 
 Object.defineProperty(window, "matchMedia", {
   value: (query: string) => ({
@@ -43,7 +43,12 @@ afterEach(() => {
 
 function Wrapper({ children }: Record<"children", ReactNode>) {
   return (
-    <MantineProvider defaultColorScheme="light" forceColorScheme="light" theme={theme}>
+    <MantineProvider
+      cssVariablesResolver={cssVariablesResolver}
+      defaultColorScheme="light"
+      forceColorScheme="light"
+      theme={theme}
+    >
       <DatesProvider settings={{ locale: "ja" }}>{children}</DatesProvider>
     </MantineProvider>
   );

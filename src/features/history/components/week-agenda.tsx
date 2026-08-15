@@ -9,7 +9,7 @@ type WeekPage = FunctionReturnType<typeof api.history.week>;
 
 export function WeekAgenda({ week }: Record<"week", WeekPage>) {
   return (
-    <Card padding="lg" withBorder>
+    <Card>
       <section aria-label="週の Agenda">
         <Title mb="sm" order={2}>
           週

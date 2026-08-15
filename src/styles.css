@@ -3,16 +3,16 @@
 @import "@mantine/schedule/styles.layer.css";
 
 html {
-  background: var(--mantine-color-white);
+  background: var(--cairn-paper-2, #f2f0e5);
 }
 
 body {
-  background-color: var(--mantine-color-white);
+  background-color: var(--cairn-paper-2, #f2f0e5);
   background-image: repeating-linear-gradient(
     to bottom,
     transparent 0,
     transparent 31px,
-    color-mix(in srgb, var(--mantine-color-black) 8%, var(--mantine-color-white)) 32px
+    var(--cairn-rule, #e6e4d9) 32px
   );
   color: var(--mantine-color-black);
 }

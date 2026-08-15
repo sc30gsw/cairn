@@ -6,6 +6,7 @@ import { ExamSchema } from "~/features/goals/schemas/exam-schema";
 import { ObstacleSchema } from "~/features/goals/schemas/obstacle-schema";
 import { WeeklySchema } from "~/features/goals/schemas/weekly-schema";
 import type { ExamGoal, Obstacle } from "~/features/goals/types/goal";
+import { BODY_FONT, DISPLAY_FONT } from "~/lib/theme";
 
 type GoalsBoardProps = {
   exam: ExamGoal;
@@ -53,15 +54,15 @@ export function GoalsBoard({
         <Title order={1}>本番目標</Title>
       </Grid.Col>
       <Grid.Col span={{ base: 12, md: 6 }}>
-        <Card h="100%" padding="lg" withBorder>
+        <Card h="100%">
           <Stack gap="md">
             <Text>
               {exam.examDate} まであと {exam.daysRemaining} 日。目標 {exam.minScore}〜
               {exam.maxScore}。
             </Text>
-            <Title ff="Newsreader, serif" fw={500} order={2}>
+            <Title ff={DISPLAY_FONT} fw={500} order={2}>
               {exam.daysRemaining}
-              <Text c="dimmed" ff="IBM Plex Sans JP, sans-serif" fz="md" span>
+              <Text c="dimmed" ff={BODY_FONT} fz="md" span>
                 日
               </Text>
             </Title>
@@ -120,7 +121,7 @@ export function GoalsBoard({
         </Card>
       </Grid.Col>
       <Grid.Col span={{ base: 12, md: 6 }}>
-        <Card h="100%" padding="lg" withBorder>
+        <Card h="100%">
           <Stack gap="md">
             <Title order={2}>週間ゴール</Title>
             <Text>
@@ -160,7 +161,7 @@ export function GoalsBoard({
         </Card>
       </Grid.Col>
       <Grid.Col span={12}>
-        <Card padding="lg" withBorder>
+        <Card>
           <Stack gap="md">
             <Title order={2}>障害プラン</Title>
             <Form of={obstacleForm} onSubmit={onCreateObstacle}>
@@ -226,7 +227,7 @@ function ObstacleEditor({
   });
 
   return (
-    <Card padding="md" withBorder>
+    <Card padding="md">
       <Form
         of={form}
         onSubmit={(output) => {

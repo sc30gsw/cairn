@@ -4,6 +4,7 @@ import { Button, Grid, NumberInput, Select, TextInput } from "@mantine/core";
 import type { ItemDto } from "~/features/catalog/types/item";
 import { parseItemId } from "~/features/catalog/types/item";
 import { AdhocRowSchema } from "~/features/today/schemas/adhoc-row-schema";
+import { onRequiredSelect } from "~/lib/select";
 
 type AdhocRowFormProps = {
   items: ItemDto[];
@@ -38,15 +39,10 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
             {(field) => (
               <Select
                 {...field.props}
-                allowDeselect={false}
                 data={items.map((item) => ({ label: item.name, value: item._id }))}
                 error={field.errors?.[0]}
                 label="その日限りの項目"
-                onChange={(value) => {
-                  if (value !== null) {
-                    field.onChange(value);
-                  }
-                }}
+                onChange={onRequiredSelect(field.onChange)}
                 searchable
                 value={field.input}
               />

@@ -12,15 +12,11 @@ type RowEditorProps = {
   row: DayRow;
 };
 
-function statusColor(status: DayRow["status"]) {
-  if (status === "確定") {
-    return "cyan";
-  }
-  if (status === "スキップ") {
-    return "yellow";
-  }
-  return "gray";
-}
+const STATUS_COLOR = {
+  スキップ: "yellow",
+  未着手: "gray",
+  確定: "cyan",
+} as const satisfies Record<DayRow["status"], string>;
 
 export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }: RowEditorProps) {
   const form = useForm({
@@ -87,7 +83,7 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
             >
               ゴミ箱へ
             </Button>
-            <Badge color={statusColor(row.status)} variant="light">
+            <Badge color={STATUS_COLOR[row.status]} variant="light">
               {row.status}
             </Badge>
           </Group>

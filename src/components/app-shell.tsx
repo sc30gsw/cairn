@@ -1,6 +1,8 @@
-import { AppShell as Shell, Button, Group, Title } from "@mantine/core";
+import { AppShell as Shell, Button, Container, Group, Title } from "@mantine/core";
 import { Link, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+
+import { DISPLAY_FONT } from "~/lib/theme";
 
 type AppShellProps = {
   children: ReactNode;
@@ -23,7 +25,7 @@ export function AppShell({ children, onSignOut }: AppShellProps) {
       <Shell.Header px="md">
         <Group h="100%" justify="space-between" wrap="nowrap">
           <Group gap="xs" wrap="wrap">
-            <Title ff="Newsreader, serif" fw={500} order={4}>
+            <Title ff={DISPLAY_FONT} fw={500} order={4}>
               学習ログ
             </Title>
             {NAV.map((item) => (
@@ -43,7 +45,11 @@ export function AppShell({ children, onSignOut }: AppShellProps) {
           </Button>
         </Group>
       </Shell.Header>
-      <Shell.Main>{children}</Shell.Main>
+      <Shell.Main>
+        <Container px={0} size="lg">
+          {children}
+        </Container>
+      </Shell.Main>
     </Shell>
   );
 }

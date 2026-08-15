@@ -1,4 +1,4 @@
-import { createTheme, type MantineColorsTuple } from "@mantine/core";
+import { createTheme, type CSSVariablesResolver, type MantineColorsTuple } from "@mantine/core";
 
 const cyan = [
   "#E8F3F1",
@@ -39,12 +39,27 @@ const yellow = [
   "#362B01",
 ] as const satisfies MantineColorsTuple;
 
-const BODY_FONT = '"IBM Plex Sans JP", "IBM Plex Sans", sans-serif';
-const DISPLAY_FONT = "Newsreader, 'IBM Plex Sans JP', serif";
+export const BODY_FONT = '"IBM Plex Sans JP", "IBM Plex Sans", sans-serif';
+export const DISPLAY_FONT = "Newsreader, 'IBM Plex Sans JP', serif";
+
+const INK = "#100F0F";
+const MUTED = "#6F6E69";
+const PAPER = "#FFFCF0";
+const PAPER_2 = "#F2F0E5";
+const RULE = "#E6E4D9";
+
+export const cssVariablesResolver: CSSVariablesResolver = () => ({
+  dark: {},
+  light: {},
+  variables: {
+    "--cairn-paper-2": PAPER_2,
+    "--cairn-rule": RULE,
+  },
+});
 
 export const theme = createTheme({
   autoContrast: true,
-  black: "#100F0F",
+  black: INK,
   colors: { cyan, red, yellow },
   cursorType: "pointer",
   defaultRadius: "sm",
@@ -55,21 +70,21 @@ export const theme = createTheme({
   },
   primaryColor: "cyan",
   primaryShade: 5,
-  white: "#FFFCF0",
+  white: PAPER,
   other: {
     displayFont: DISPLAY_FONT,
-    ink: "#100F0F",
-    muted: "#6F6E69",
-    paper: "#FFFCF0",
-    paper2: "#F2F0E5",
-    rule: "#E6E4D9",
+    ink: INK,
+    muted: MUTED,
+    paper: PAPER,
+    paper2: PAPER_2,
+    rule: RULE,
   },
   components: {
     AppShell: {
       styles: {
         header: {
-          backgroundColor: "#FFFCF0",
-          borderBottom: "1px solid #E6E4D9",
+          backgroundColor: PAPER,
+          borderBottom: `1px solid ${RULE}`,
         },
         main: {
           backgroundColor: "transparent",
@@ -84,8 +99,8 @@ export const theme = createTheme({
       },
       styles: {
         root: {
-          backgroundColor: "#FFFCF0",
-          borderColor: "#E6E4D9",
+          backgroundColor: PAPER,
+          borderColor: RULE,
         },
       },
     },
