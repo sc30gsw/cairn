@@ -179,7 +179,7 @@ test("共有文のコピー操作が見える", () => {
 
 test("今日のプリセット切替が見える。未設定のコンディションは普通にしない", () => {
   const onSaveCondition = vi.fn();
-  const { getByLabelText } = renderWithMantine(
+  const { getByLabelText, getByRole } = renderWithMantine(
     <DayBoard
       dateJst="2026-08-17"
       day={day}
@@ -198,7 +198,7 @@ test("今日のプリセット切替が見える。未設定のコンディシ�
       presets={[{ _id: "p1" as never, lines: [], name: "月曜日", weekday: 1 }]}
     />,
   );
-  expect(getByLabelText("今日のプリセット切替")).toBeDefined();
+  expect(getByRole("combobox", { name: "今日のプリセット切替" })).toBeDefined();
   expect(getByLabelText("コンディション").textContent).toContain("未設定");
   expect(onSaveCondition).not.toHaveBeenCalled();
 });
@@ -253,7 +253,7 @@ test("過去の日は起床を出せるが今夜の就寝は出さない", () =>
 });
 
 test("その日に行を足せる", () => {
-  const { getByRole, getByLabelText } = renderWithMantine(
+  const { getByRole } = renderWithMantine(
     <DayBoard
       dateJst="2026-08-17"
       day={day}
@@ -272,6 +272,6 @@ test("その日に行を足せる", () => {
       presets={[]}
     />,
   );
-  expect(getByLabelText(/その日限りの項目/)).toBeDefined();
+  expect(getByRole("combobox", { name: /その日限りの項目/ })).toBeDefined();
   expect(getByRole("button", { name: "行を足す" })).toBeDefined();
 });

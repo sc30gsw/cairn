@@ -1,5 +1,5 @@
 import { Field, Form, useForm } from "@formisch/react";
-import { Button, Group, NativeSelect, NumberInput, TextInput } from "@mantine/core";
+import { Button, Grid, NumberInput, Select, TextInput } from "@mantine/core";
 
 import type { ItemDto } from "~/features/catalog/types/item";
 import { parseItemId } from "~/features/catalog/types/item";
@@ -32,44 +32,59 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
         });
       }}
     >
-      <Group align="flex-end" gap="xs" wrap="wrap">
-        <Field of={form} path={["itemId"]}>
-          {(field) => (
-            <NativeSelect
-              {...field.props}
-              data={items.map((item) => ({ label: item.name, value: item._id }))}
-              error={field.errors?.[0]}
-              label="その日限りの項目"
-              value={field.input}
-            />
-          )}
-        </Field>
-        <Field of={form} path={["content"]}>
-          {(field) => (
-            <TextInput
-              {...field.props}
-              error={field.errors?.[0]}
-              label="内容"
-              value={field.input}
-            />
-          )}
-        </Field>
-        <Field of={form} path={["minutes"]}>
-          {(field) => (
-            <NumberInput
-              {...field.props}
-              error={field.errors?.[0]}
-              label="分数"
-              min={0}
-              onChange={(value) => field.onChange(typeof value === "number" ? value : 0)}
-              value={field.input}
-            />
-          )}
-        </Field>
-        <Button disabled={first === undefined} type="submit">
-          行を足す
-        </Button>
-      </Group>
+      <Grid align="flex-end" gap="sm">
+        <Grid.Col span={{ base: 12, sm: 4 }}>
+          <Field of={form} path={["itemId"]}>
+            {(field) => (
+              <Select
+                {...field.props}
+                allowDeselect={false}
+                data={items.map((item) => ({ label: item.name, value: item._id }))}
+                error={field.errors?.[0]}
+                label="その日限りの項目"
+                onChange={(value) => {
+                  if (value !== null) {
+                    field.onChange(value);
+                  }
+                }}
+                searchable
+                value={field.input}
+              />
+            )}
+          </Field>
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, sm: 4 }}>
+          <Field of={form} path={["content"]}>
+            {(field) => (
+              <TextInput
+                {...field.props}
+                error={field.errors?.[0]}
+                label="内容"
+                value={field.input}
+              />
+            )}
+          </Field>
+        </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 2 }}>
+          <Field of={form} path={["minutes"]}>
+            {(field) => (
+              <NumberInput
+                {...field.props}
+                error={field.errors?.[0]}
+                label="分数"
+                min={0}
+                onChange={(value) => field.onChange(typeof value === "number" ? value : 0)}
+                value={field.input}
+              />
+            )}
+          </Field>
+        </Grid.Col>
+        <Grid.Col span={{ base: 6, sm: 2 }}>
+          <Button disabled={first === undefined} fullWidth type="submit">
+            行を足す
+          </Button>
+        </Grid.Col>
+      </Grid>
     </Form>
   );
 }

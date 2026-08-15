@@ -1,4 +1,4 @@
-import { Button, NativeSelect, Stack, Text, Title } from "@mantine/core";
+import { Button, Card, Grid, Select, Stack, Text, Title } from "@mantine/core";
 
 import type { ItemDto, PresetDto } from "~/features/catalog/types/item";
 import { parsePresetId } from "~/features/catalog/types/item";
@@ -47,61 +47,104 @@ export function DayBoard({
   const canEdit = !day.isFuture;
 
   return (
-    <Stack gap="lg">
-      <Title order={1}>{dateJst}</Title>
-      <Text>学習量 {day.volumeMinutes}分</Text>
-      {day.rows.map((row) => (
-        <RowEditor
-          key={row._id}
-          disabled={!canEdit}
-          onConfirm={onConfirm}
-          onRemove={onRemoveRow}
-          onSkip={onSkip}
-          row={row}
-        />
-      ))}
-      {day.rows.length === 0 ? <Text c="dimmed">この日の行はありません。</Text> : null}
-      {canEdit ? <AdhocRowForm items={items} onAdd={onAddRow} /> : null}
-      {isToday ? (
-        <NativeSelect
-          aria-label="今日のプリセット切替"
-          data={[
-            { label: "プリセットを切り替える", value: "" },
-            ...presets.map((preset) => ({ label: preset.name, value: preset._id })),
-          ]}
-          onChange={(event) => {
-            const value = event.currentTarget.value;
-            if (value !== "") {
-              onSwitchPreset(parsePresetId(value));
-            }
-          }}
-        />
-      ) : null}
-      {canEdit ? (
-        <TonightPanel
-          onSaveBed={onSaveBed}
-          onSaveWake={onSaveWake}
-          showBed={isToday}
-          sleepHours={day.day?.sleepHours ?? null}
-          sleepWarning={day.day?.sleepWarning ?? false}
-          tonightBedHm={day.tonightBedHm}
-          wakeHm={day.day?.wakeHm ?? null}
-        />
-      ) : null}
-      {canEdit ? (
-        <DayMetaPanel
-          condition={day.day?.condition ?? null}
-          memo={day.day?.memo ?? null}
-          onSaveCondition={onSaveCondition}
-          onSaveMemo={onSaveMemo}
-        />
-      ) : null}
-      <ShareCopy markdown={day.shareMarkdown} />
-      {canEdit && day.day !== null ? (
-        <Button color="red" onClick={onRemoveDay} variant="light">
-          この日をゴミ箱へ
-        </Button>
-      ) : null}
-    </Stack>
+    <Grid gap="md">
+      <Grid.Col span={12}>
+        <Card padding="lg" withBorder>
+          <Grid align="end">
+            <Grid.Col span={{ base: 12, sm: 7 }}>
+              <Text c="dimmed" fw={600} size="xs" tt="uppercase">
+                {isToday ? "今日" : "日"}
+              </Text>
+              <Title order={1}>{dateJst}</Title>
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 5 }}>
+              <Text c="dimmed" size="sm">
+                学習量
+              </Text>
+              <Title ff="Newsreader, serif" fw={500} lh={1} order={1}>
+                {day.volumeMinutes}
+                <Text c="dimmed" ff="IBM Plex Sans JP, sans-serif" fz="lg" span>
+                  分
+                </Text>
+              </Title>
+            </Grid.Col>
+          </Grid>
+        </Card>
+      </Grid.Col>
+      <Grid.Col span={{ base: 12, md: 8 }}>
+        <Card padding="lg" withBorder>
+          <Stack gap="md">
+            <Title order={2}>行</Title>
+            {day.rows.map((row) => (
+              <RowEditor
+                key={row._id}
+                disabled={!canEdit}
+                onConfirm={onConfirm}
+                onRemove={onRemoveRow}
+                onSkip={onSkip}
+                row={row}
+              />
+            ))}
+            {day.rows.length === 0 ? <Text c="dimmed">この日の行はありません。</Text> : null}
+            {canEdit ? <AdhocRowForm items={items} onAdd={onAddRow} /> : null}
+          </Stack>
+        </Card>
+      </Grid.Col>
+      <Grid.Col span={{ base: 12, md: 4 }}>
+        <Stack gap="md">
+          {isToday ? (
+            <Card padding="lg" withBorder>
+              <Stack gap="sm">
+                <Title order={3}>プリセット</Title>
+                <Select
+                  allowDeselect={false}
+                  aria-label="今日のプリセット切替"
+                  data={presets.map((preset) => ({ label: preset.name, value: preset._id }))}
+                  label="今日の雛形"
+                  onChange={(value) => {
+                    if (value !== null) {
+                      onSwitchPreset(parsePresetId(value));
+                    }
+                  }}
+                  placeholder="切り替える"
+                  value={null}
+                />
+              </Stack>
+            </Card>
+          ) : null}
+          {canEdit ? (
+            <Card padding="lg" withBorder>
+              <TonightPanel
+                onSaveBed={onSaveBed}
+                onSaveWake={onSaveWake}
+                showBed={isToday}
+                sleepHours={day.day?.sleepHours ?? null}
+                sleepWarning={day.day?.sleepWarning ?? false}
+                tonightBedHm={day.tonightBedHm}
+                wakeHm={day.day?.wakeHm ?? null}
+              />
+            </Card>
+          ) : null}
+          {canEdit ? (
+            <Card padding="lg" withBorder>
+              <DayMetaPanel
+                condition={day.day?.condition ?? null}
+                memo={day.day?.memo ?? null}
+                onSaveCondition={onSaveCondition}
+                onSaveMemo={onSaveMemo}
+              />
+            </Card>
+          ) : null}
+          <Card padding="lg" withBorder>
+            <ShareCopy markdown={day.shareMarkdown} />
+          </Card>
+          {canEdit && day.day !== null ? (
+            <Button color="red" onClick={onRemoveDay} variant="light">
+              この日をゴミ箱へ
+            </Button>
+          ) : null}
+        </Stack>
+      </Grid.Col>
+    </Grid>
   );
 }

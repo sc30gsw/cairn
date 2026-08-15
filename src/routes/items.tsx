@@ -1,5 +1,5 @@
 import { convexQuery } from "@convex-dev/react-query";
-import { Stack, Title } from "@mantine/core";
+import { Grid, Title } from "@mantine/core";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
@@ -36,33 +36,39 @@ function ItemsReady() {
   const removePreset = useConvexMutation(api.presets.remove);
 
   return (
-    <Stack gap="lg">
-      <Title order={1}>項目とプリセット</Title>
-      <ItemList
-        items={items}
-        onCreate={(input) => {
-          void createItem.mutateAsync(input);
-        }}
-        onRemove={(itemId) => {
-          void removeItem.mutateAsync({ itemId });
-        }}
-        onRename={(input) => {
-          void renameItem.mutateAsync(input);
-        }}
-      />
-      <PresetList
-        items={items}
-        onCreate={(input) => {
-          void createPreset.mutateAsync(input);
-        }}
-        onRemove={(presetId) => {
-          void removePreset.mutateAsync({ presetId });
-        }}
-        onUpdate={(input) => {
-          void updatePreset.mutateAsync(input);
-        }}
-        presets={presets}
-      />
-    </Stack>
+    <Grid gap="md">
+      <Grid.Col span={12}>
+        <Title order={1}>項目とプリセット</Title>
+      </Grid.Col>
+      <Grid.Col span={{ base: 12, lg: 5 }}>
+        <ItemList
+          items={items}
+          onCreate={(input) => {
+            void createItem.mutateAsync(input);
+          }}
+          onRemove={(itemId) => {
+            void removeItem.mutateAsync({ itemId });
+          }}
+          onRename={(input) => {
+            void renameItem.mutateAsync(input);
+          }}
+        />
+      </Grid.Col>
+      <Grid.Col span={{ base: 12, lg: 7 }}>
+        <PresetList
+          items={items}
+          onCreate={(input) => {
+            void createPreset.mutateAsync(input);
+          }}
+          onRemove={(presetId) => {
+            void removePreset.mutateAsync({ presetId });
+          }}
+          onUpdate={(input) => {
+            void updatePreset.mutateAsync(input);
+          }}
+          presets={presets}
+        />
+      </Grid.Col>
+    </Grid>
   );
 }

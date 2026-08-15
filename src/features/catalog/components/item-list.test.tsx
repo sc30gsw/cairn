@@ -40,7 +40,7 @@ test("項目とプリセットの編集が見える", () => {
   expect(getByRole("button", { name: "プリセットを追加" })).toBeDefined();
   expect(getByRole("button", { name: "月曜日を保存" })).toBeDefined();
   expect(getByRole("button", { name: "月曜日を削除" })).toBeDefined();
-  expect(getByLabelText("月曜日の雛形1の項目")).toBeDefined();
+  expect(getByRole("combobox", { name: "月曜日の雛形1の項目" })).toBeDefined();
   expect(getByLabelText("月曜日の雛形2の内容")).toBeDefined();
   expect(getByRole("button", { name: "雛形を足す" })).toBeDefined();
 });

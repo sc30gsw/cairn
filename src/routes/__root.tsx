@@ -30,7 +30,7 @@ import { theme } from "~/lib/theme";
 
 import appCss from "~/styles.css?url";
 
-const DEFAULT_COLOR_SCHEME = "dark";
+const DEFAULT_COLOR_SCHEME = "light";
 
 const getAuth = createServerFn({ method: "GET" }).handler(async () => {
   return await getToken();
@@ -57,7 +57,15 @@ export const Route = createRootRouteWithContext<{
   component: RootComponent,
   errorComponent: RootErrorComponent,
   head: () => ({
-    links: [{ href: appCss, rel: "stylesheet" }],
+    links: [
+      { href: "https://fonts.googleapis.com", rel: "preconnect" },
+      { crossOrigin: "anonymous", href: "https://fonts.gstatic.com", rel: "preconnect" },
+      {
+        href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap",
+        rel: "stylesheet",
+      },
+      { href: appCss, rel: "stylesheet" },
+    ],
     meta: [
       { charSet: "utf-8" },
       { content: "width=device-width, initial-scale=1", name: "viewport" },
@@ -72,11 +80,15 @@ function RootDocument({ children }: Record<"children", ReactNode>) {
   return (
     <html lang="ja" {...mantineHtmlProps}>
       <head>
-        <ColorSchemeScript defaultColorScheme={DEFAULT_COLOR_SCHEME} />
+        <ColorSchemeScript defaultColorScheme={DEFAULT_COLOR_SCHEME} forceColorScheme="light" />
         <HeadContent />
       </head>
       <body>
-        <MantineProvider defaultColorScheme={DEFAULT_COLOR_SCHEME} theme={theme}>
+        <MantineProvider
+          defaultColorScheme={DEFAULT_COLOR_SCHEME}
+          forceColorScheme="light"
+          theme={theme}
+        >
           <DatesProvider settings={{ locale: "ja" }}>{children}</DatesProvider>
           {TanStackRouterDevtools ? (
             <Suspense fallback={null}>

@@ -1,5 +1,5 @@
 import { Field, Form, useForm } from "@formisch/react";
-import { Button, Group, NativeSelect, Stack, TextInput } from "@mantine/core";
+import { Button, Card, Grid, Select, Stack, TextInput, Title } from "@mantine/core";
 import { CATEGORIES } from "~domain/categories";
 
 import { ItemSchema } from "~/features/catalog/schemas/item-schema";
@@ -16,6 +16,8 @@ type ItemListProps = {
   }) => void;
 };
 
+const CATEGORY_OPTIONS = CATEGORIES.map((category) => ({ label: category, value: category }));
+
 export function ItemList({ items, onCreate, onRemove, onRename }: ItemListProps) {
   const form = useForm({
     initialInput: { category: "その他", name: "" },
@@ -24,37 +26,54 @@ export function ItemList({ items, onCreate, onRemove, onRename }: ItemListProps)
 
   return (
     <Stack gap="md">
-      <Form
-        of={form}
-        onSubmit={(output) => {
-          onCreate(output);
-        }}
-      >
-        <Group align="flex-end">
-          <Field of={form} path={["name"]}>
-            {(field) => (
-              <TextInput
-                {...field.props}
-                error={field.errors?.[0]}
-                label="項目名"
-                value={field.input}
-              />
-            )}
-          </Field>
-          <Field of={form} path={["category"]}>
-            {(field) => (
-              <NativeSelect
-                {...field.props}
-                data={[...CATEGORIES]}
-                error={field.errors?.[0]}
-                label="カテゴリ"
-                value={field.input}
-              />
-            )}
-          </Field>
-          <Button type="submit">項目を追加</Button>
-        </Group>
-      </Form>
+      <Title order={2}>項目</Title>
+      <Card padding="lg" withBorder>
+        <Form
+          of={form}
+          onSubmit={(output) => {
+            onCreate(output);
+          }}
+        >
+          <Grid align="flex-end" gap="sm">
+            <Grid.Col span={{ base: 12, sm: 6 }}>
+              <Field of={form} path={["name"]}>
+                {(field) => (
+                  <TextInput
+                    {...field.props}
+                    error={field.errors?.[0]}
+                    label="項目名"
+                    value={field.input}
+                  />
+                )}
+              </Field>
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 4 }}>
+              <Field of={form} path={["category"]}>
+                {(field) => (
+                  <Select
+                    {...field.props}
+                    allowDeselect={false}
+                    data={CATEGORY_OPTIONS}
+                    error={field.errors?.[0]}
+                    label="カテゴリ"
+                    onChange={(value) => {
+                      if (value !== null) {
+                        field.onChange(value);
+                      }
+                    }}
+                    value={field.input}
+                  />
+                )}
+              </Field>
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 2 }}>
+              <Button fullWidth type="submit">
+                項目を追加
+              </Button>
+            </Grid.Col>
+          </Grid>
+        </Form>
+      </Card>
       {items.map((item) => (
         <ItemEditor key={item._id} item={item} onRemove={onRemove} onRename={onRename} />
       ))}
@@ -77,40 +96,64 @@ function ItemEditor({
   });
 
   return (
-    <Form
-      of={form}
-      onSubmit={(output) => {
-        onRename({ ...output, itemId: item._id });
-      }}
-    >
-      <Group align="flex-end" justify="space-between">
-        <Field of={form} path={["name"]}>
-          {(field) => (
-            <TextInput
-              {...field.props}
-              aria-label={`${item.name}の新しい名前`}
-              error={field.errors?.[0]}
-              label={item.name}
-              value={field.input}
-            />
-          )}
-        </Field>
-        <Field of={form} path={["category"]}>
-          {(field) => (
-            <NativeSelect
-              {...field.props}
-              aria-label={`${item.name}のカテゴリ`}
-              data={[...CATEGORIES]}
-              error={field.errors?.[0]}
-              value={field.input}
-            />
-          )}
-        </Field>
-        <Button type="submit">{item.name}を改名</Button>
-        <Button color="red" onClick={() => onRemove(item._id)} type="button" variant="subtle">
-          {item.name}を削除
-        </Button>
-      </Group>
-    </Form>
+    <Card padding="md" withBorder>
+      <Form
+        of={form}
+        onSubmit={(output) => {
+          onRename({ ...output, itemId: item._id });
+        }}
+      >
+        <Grid align="flex-end" gap="sm">
+          <Grid.Col span={{ base: 12, sm: 5 }}>
+            <Field of={form} path={["name"]}>
+              {(field) => (
+                <TextInput
+                  {...field.props}
+                  aria-label={`${item.name}の新しい名前`}
+                  error={field.errors?.[0]}
+                  label={item.name}
+                  value={field.input}
+                />
+              )}
+            </Field>
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 3 }}>
+            <Field of={form} path={["category"]}>
+              {(field) => (
+                <Select
+                  {...field.props}
+                  allowDeselect={false}
+                  aria-label={`${item.name}のカテゴリ`}
+                  data={CATEGORY_OPTIONS}
+                  error={field.errors?.[0]}
+                  onChange={(value) => {
+                    if (value !== null) {
+                      field.onChange(value);
+                    }
+                  }}
+                  value={field.input}
+                />
+              )}
+            </Field>
+          </Grid.Col>
+          <Grid.Col span={{ base: 6, sm: 2 }}>
+            <Button fullWidth type="submit">
+              {item.name}を改名
+            </Button>
+          </Grid.Col>
+          <Grid.Col span={{ base: 6, sm: 2 }}>
+            <Button
+              color="red"
+              fullWidth
+              onClick={() => onRemove(item._id)}
+              type="button"
+              variant="subtle"
+            >
+              {item.name}を削除
+            </Button>
+          </Grid.Col>
+        </Grid>
+      </Form>
+    </Card>
   );
 }
