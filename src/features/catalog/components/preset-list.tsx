@@ -19,7 +19,7 @@ import * as v from "valibot";
 import { WEEKDAY_NAMES } from "~domain/catalog";
 
 import { TrashIcon } from "~/components/trash-icon";
-import { PresetSchema } from "~/features/catalog/schemas/preset-schema";
+import { CreatePresetSchema, PresetSchema } from "~/features/catalog/schemas/preset-schema";
 import type { ItemDto, PresetDto } from "~/features/catalog/types/item";
 import { parseItemId } from "~/features/catalog/types/item";
 import { onRequiredSelect } from "~/lib/select";
@@ -71,114 +71,26 @@ function itemOptions(items: ItemDto[]) {
   return items.map((item) => ({ label: item.name, value: item._id }));
 }
 
+function availableWeekdayOptions(presets: PresetDto[]) {
+  const taken = new Set(presets.map((preset) => preset.weekday));
+  return WEEKDAY_OPTIONS.filter((option) => !taken.has(Number(option.value)));
+}
+
 function removeLineLabel(items: ItemDto[], itemId: string) {
   const name = items.find((item) => item._id === itemId)?.name ?? "項目";
   return `「${name}」を外す`;
 }
 
 export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: PresetListProps) {
-  const first = items[0];
-  const form = useForm({
-    initialInput: {
-      lines: [{ content: "", itemId: first?._id ?? "", minutes: 20 }],
-      name: "",
-      weekday: 1,
-    },
-    schema: PresetSchema,
-  });
+  const createFormKey = [...presets]
+    .map((preset) => preset.weekday)
+    .sort((left, right) => left - right)
+    .join(",");
 
   return (
     <Stack gap="md">
       <Title order={1}>プリセット</Title>
-      <Card>
-        <Form
-          of={form}
-          onSubmit={(output) => {
-            onCreate({
-              lines: parsedLines(output.lines),
-              name: output.name,
-              weekday: output.weekday,
-            });
-          }}
-        >
-          <Grid align="flex-end" gap="sm">
-            <Grid.Col span={{ base: 12, sm: 4 }}>
-              <Field of={form} path={["name"]}>
-                {(field) => (
-                  <TextInput
-                    {...field.props}
-                    error={field.errors?.[0]}
-                    label="プリセット名"
-                    value={field.input}
-                  />
-                )}
-              </Field>
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 2 }}>
-              <Field of={form} path={["weekday"]}>
-                {(field) => (
-                  <Select
-                    {...field.props}
-                    data={WEEKDAY_OPTIONS}
-                    error={field.errors?.[0]}
-                    label="曜日"
-                    onChange={onRequiredSelect((value) => {
-                      field.onChange(Number(value));
-                    })}
-                    value={String(field.input)}
-                  />
-                )}
-              </Field>
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 3 }}>
-              <Field of={form} path={["lines", 0, "itemId"]}>
-                {(field) => (
-                  <Select
-                    {...field.props}
-                    data={itemOptions(items)}
-                    error={field.errors?.[0]}
-                    label="雛形の項目"
-                    onChange={onRequiredSelect(field.onChange)}
-                    searchable
-                    value={field.input}
-                  />
-                )}
-              </Field>
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 3 }}>
-              <Field of={form} path={["lines", 0, "content"]}>
-                {(field) => (
-                  <TextInput
-                    {...field.props}
-                    error={field.errors?.[0]}
-                    label="内容"
-                    value={field.input}
-                  />
-                )}
-              </Field>
-            </Grid.Col>
-            <Grid.Col span={{ base: 6, sm: 3 }}>
-              <Field of={form} path={["lines", 0, "minutes"]}>
-                {(field) => (
-                  <NumberInput
-                    {...field.props}
-                    error={field.errors?.[0]}
-                    label="分数"
-                    min={0}
-                    onChange={(value) => field.onChange(typeof value === "number" ? value : 0)}
-                    value={field.input}
-                  />
-                )}
-              </Field>
-            </Grid.Col>
-            <Grid.Col span={{ base: 6, sm: 3 }}>
-              <Button disabled={first === undefined} fullWidth type="submit">
-                プリセットを追加
-              </Button>
-            </Grid.Col>
-          </Grid>
-        </Form>
-      </Card>
+      <PresetCreateForm key={createFormKey} onCreate={onCreate} presets={presets} />
       {presets.length === 0 ? (
         <Text c="dimmed">プリセットはまだありません。</Text>
       ) : (
@@ -210,6 +122,89 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
         </Accordion>
       )}
     </Stack>
+  );
+}
+
+function PresetCreateForm({
+  onCreate,
+  presets,
+}: {
+  onCreate: PresetListProps["onCreate"];
+  presets: PresetDto[];
+}) {
+  const weekdayOptions = availableWeekdayOptions(presets);
+  const defaultWeekday =
+    weekdayOptions.length === 1 ? Number(weekdayOptions[0]?.value) : null;
+  const form = useForm({
+    initialInput: {
+      name: "",
+      weekday: defaultWeekday,
+    },
+    schema: CreatePresetSchema,
+  });
+
+  if (weekdayOptions.length === 0) {
+    return (
+      <Card>
+        <Text c="dimmed">すべての曜日にプリセットがあります。</Text>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <Form
+        of={form}
+        onSubmit={(output) => {
+          const weekday = output.weekday;
+          if (weekday === null) {
+            return;
+          }
+          onCreate({
+            lines: [],
+            name: output.name,
+            weekday,
+          });
+        }}
+      >
+        <Grid align="flex-end" gap="sm">
+          <Grid.Col span={{ base: 12, sm: 6 }}>
+            <Field of={form} path={["name"]}>
+              {(field) => (
+                <TextInput
+                  {...field.props}
+                  error={field.errors?.[0]}
+                  label="プリセット名"
+                  value={field.input}
+                />
+              )}
+            </Field>
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 4 }}>
+            <Field of={form} path={["weekday"]}>
+              {(field) => (
+                <Select
+                  {...field.props}
+                  data={weekdayOptions}
+                  error={field.errors?.[0]}
+                  label="曜日"
+                  placeholder="曜日を選ぶ"
+                  onChange={onRequiredSelect((value) => {
+                    field.onChange(Number(value));
+                  })}
+                  value={field.input === null ? null : String(field.input)}
+                />
+              )}
+            </Field>
+          </Grid.Col>
+          <Grid.Col span={{ base: 12, sm: 2 }}>
+            <Button fullWidth type="submit">
+              プリセットを追加
+            </Button>
+          </Grid.Col>
+        </Grid>
+      </Form>
+    </Card>
   );
 }
 
