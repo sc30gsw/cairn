@@ -89,6 +89,9 @@ importers:
       recharts:
         specifier: ^3.2.1
         version: 3.10.1(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react-is@17.0.2)(react@19.2.7)(redux@5.0.1)
+      remeda:
+        specifier: ^2.39.0
+        version: 2.39.0
       tailwind-preset-mantine:
         specifier: ^4.1.0
         version: 4.1.0(@mantine/core@9.5.1(@mantine/hooks@9.5.1(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(tailwindcss@4.3.1)
