@@ -1,6 +1,9 @@
 import { expect, test } from "vite-plus/test";
 
-import { scheduleEventDateJst, toMonthScheduleEvents } from "~/features/history/lib/month-schedule-events";
+import {
+  scheduleEventDateJst,
+  toMonthScheduleEvents,
+} from "~/features/history/lib/month-schedule-events";
 
 test("ステータス色付きの schedule events に変換", () => {
   const events = toMonthScheduleEvents([
