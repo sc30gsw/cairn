@@ -9,12 +9,11 @@ trustPolicyExclude:
   - "nanoid@3.3.14"
   - "semver@6.3.1"
 
-onlyBuiltDependencies:
-  - esbuild
-
 # 公開直後の侵害された可能性のあるリリースを避けるため、公開から1日（1440分）経過したバージョンのみ許可する
 minimumReleaseAge: 1440
 
+# pnpm 11 は onlyBuiltDependencies を廃止し allowBuilds だけを見る。
+# プレースホルダのままだと CI の `vp install` が ERR_PNPM_IGNORED_BUILDS で落ちる。
 allowBuilds:
-  esbuild: set this to true or false
+  esbuild: true
   msgpackr-extract: false
