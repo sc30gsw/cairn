@@ -29,5 +29,6 @@ jobs:
           node-version-file: .node-version
           cache: true
       - run: vp check
+      - run: vp run type-ssot-check
       - run: vp test
       - run: vp build
