@@ -84,7 +84,7 @@ test("確定とスキップが画面上で呼べる", async () => {
     />,
   );
   getByRole("button", { name: "確定" }).click();
-  await vi.waitFor(() => {
+  await waitFor(() => {
     expect(onConfirm).toHaveBeenCalledWith({
       content: "",
       minutes: 30,
