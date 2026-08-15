@@ -1,11 +1,12 @@
 import { Card, Group, Stack, Text, Title } from "@mantine/core";
-import { MonthView, ScheduleHeader, type DateStringValue } from "@mantine/schedule";
+import { MonthView, ScheduleHeader, type DateStringValue, type ScheduleEventData } from "@mantine/schedule";
 import dayjs from "dayjs";
 
 import classes from "~/features/history/components/history-month-view.module.css";
 import {
   confirmedMonthEvents,
   monthEventMinutesById,
+  scheduleEventDateJst,
   toMonthScheduleEvents,
 } from "~/features/history/lib/month-schedule-events";
 import { SCHEDULE_LABELS_JA } from "~/features/history/lib/schedule-labels";
@@ -27,6 +28,20 @@ function toMonthDate(value: string): Date {
   return new Date(`${value}T12:00:00+09:00`);
 }
 
+function dayCellClassName(day: string): string | undefined {
+  if (holidayName(day)) {
+    return classes.holidayDay;
+  }
+  const weekday = dayjs(day).day();
+  if (weekday === 0) {
+    return classes.sundayDay;
+  }
+  if (weekday === 6) {
+    return classes.saturdayDay;
+  }
+  return undefined;
+}
+
 export function HistoryMonthView({ events, month, onDayClick, onMonthChange }: HistoryMonthViewProps) {
   const date = toDateString(month);
   const confirmedEvents = confirmedMonthEvents(events);
@@ -39,6 +54,10 @@ export function HistoryMonthView({ events, month, onDayClick, onMonthChange }: H
 
   const shiftMonth = (offset: number) => {
     setDate(dayjs(date).add(offset, "month").startOf("month").format("YYYY-MM-DD"));
+  };
+
+  const handleEventClick = (event: ScheduleEventData) => {
+    onDayClick(scheduleEventDateJst(event));
   };
 
   return (
@@ -74,29 +93,34 @@ export function HistoryMonthView({ events, month, onDayClick, onMonthChange }: H
             consistentWeeks={false}
             date={date}
             events={scheduleEvents}
+            firstDayOfWeek={1}
             getDayProps={(day) => {
               const holiday = holidayName(day);
-              return holiday
-                ? {
-                    style: { borderLeft: "3px solid var(--mantine-color-red-4)" },
-                    title: holiday,
-                  }
-                : {};
+              const className = dayCellClassName(day);
+              return {
+                ...(className ? { className } : {}),
+                ...(holiday ? { title: holiday } : {}),
+              };
             }}
             labels={SCHEDULE_LABELS_JA}
             locale="ja"
             maxEventsPerDay={2}
+            moreEventsProps={{
+              onEventClick: handleEventClick,
+              popoverProps: { withinPortal: true },
+            }}
             onDateChange={setDate}
             onDayClick={(day) => onDayClick(day)}
+            onEventClick={handleEventClick}
             renderEventBody={(event) => {
               const minutes = minutesByEventId.get(String(event.id));
               return (
                 <Group gap={4} wrap="nowrap">
-                  <Text lineClamp={1} size="xs">
+                  <Text fw={600} lineClamp={1} size="xs">
                     {event.title}
                   </Text>
                   {minutes !== undefined ? (
-                    <Text c="dimmed" size="xs">
+                    <Text c="blue.7" fw={600} size="xs">
                       {minutes}分
                     </Text>
                   ) : null}

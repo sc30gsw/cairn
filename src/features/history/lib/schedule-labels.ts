@@ -4,6 +4,7 @@ export const SCHEDULE_LABELS_JA: ScheduleLabelsOverride = {
   agenda: "Agenda",
   day: "日",
   month: "月",
+  moreLabel: (hiddenEventsCount) => `+${hiddenEventsCount}件`,
   next: "次",
   previous: "前",
   selectMonth: "月を選択",

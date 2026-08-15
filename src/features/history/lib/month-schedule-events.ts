@@ -1,4 +1,5 @@
 import type { ScheduleEventData } from "@mantine/schedule";
+import dayjs from "dayjs";
 import { indexBy, mapValues, prop } from "remeda";
 
 import { RECORD_STATUS_UI } from "~/features/history/lib/record-status-label";
@@ -20,4 +21,12 @@ export function toMonthScheduleEvents(events: MonthEvent[]): ScheduleEventData[]
 
 export function monthEventMinutesById(events: MonthEvent[]): Map<string, number> {
   return new Map(Object.entries(mapValues(indexBy(events, prop("rowId")), prop("minutes"))));
+}
+
+export function scheduleEventDateJst(event: Pick<ScheduleEventData, "start">): string {
+  const { start } = event;
+  if (typeof start === "string") {
+    return start.slice(0, 10);
+  }
+  return dayjs(start).format("YYYY-MM-DD");
 }
