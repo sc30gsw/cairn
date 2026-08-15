@@ -29,7 +29,6 @@ import type * as lib_movingAverage from "../lib/movingAverage.js";
 import type * as lib_owner from "../lib/owner.js";
 import type * as lib_preset from "../lib/preset.js";
 import type * as lib_share from "../lib/share.js";
-import type * as lib_sleep from "../lib/sleep.js";
 import type * as lib_trash from "../lib/trash.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as lib_volume from "../lib/volume.js";
@@ -37,7 +36,6 @@ import type * as ownerFunctions from "../ownerFunctions.js";
 import type * as presets from "../presets.js";
 import type * as rows from "../rows.js";
 import type * as session from "../session.js";
-import type * as tonight from "../tonight.js";
 import type * as trash from "../trash.js";
 
 import type {
@@ -68,7 +66,6 @@ declare const fullApi: ApiFromModules<{
   "lib/owner": typeof lib_owner;
   "lib/preset": typeof lib_preset;
   "lib/share": typeof lib_share;
-  "lib/sleep": typeof lib_sleep;
   "lib/trash": typeof lib_trash;
   "lib/validators": typeof lib_validators;
   "lib/volume": typeof lib_volume;
@@ -76,7 +73,6 @@ declare const fullApi: ApiFromModules<{
   presets: typeof presets;
   rows: typeof rows;
   session: typeof session;
-  tonight: typeof tonight;
   trash: typeof trash;
 }>;
 

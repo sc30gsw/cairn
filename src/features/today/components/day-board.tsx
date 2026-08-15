@@ -8,7 +8,6 @@ import { AdhocRowForm } from "~/features/today/components/adhoc-row-form";
 import { DayMetaPanel } from "~/features/today/components/day-meta-panel";
 import { RowEditor } from "~/features/today/components/row-editor";
 import { ShareCopy } from "~/features/today/components/share-copy";
-import { TonightPanel } from "~/features/today/components/tonight-panel";
 import type { DayPage, DayRow } from "~/features/today/types/day";
 import { onRequiredSelect } from "~/lib/select";
 import { BODY_FONT, DISPLAY_FONT } from "~/lib/theme";
@@ -22,10 +21,8 @@ type DayBoardProps = {
   onConfirm: (input: { content: string; minutes: number; rowId: DayRow["_id"] }) => void;
   onRemoveDay: () => void;
   onRemoveRow: (rowId: DayRow["_id"]) => void;
-  onSaveBed: (bedHm: string) => void;
   onSaveCondition: (condition: "好調" | "普通" | "崩れた") => void;
   onSaveMemo: (memo: string) => void;
-  onSaveWake: (wakeHm: string) => void;
   onSkip: (rowId: DayRow["_id"]) => void;
   onSwitchPreset: (presetId: PresetDto["_id"]) => void;
   presets: PresetDto[];
@@ -83,10 +80,8 @@ export function DayBoard({
   onConfirm,
   onRemoveDay,
   onRemoveRow,
-  onSaveBed,
   onSaveCondition,
   onSaveMemo,
-  onSaveWake,
   onSkip,
   onSwitchPreset,
   presets,
@@ -154,19 +149,6 @@ export function DayBoard({
             memo={day.day?.memo ?? null}
             onSaveCondition={onSaveCondition}
             onSaveMemo={onSaveMemo}
-          />
-        </Card>
-      ) : null}
-      {canEdit ? (
-        <Card>
-          <TonightPanel
-            onSaveBed={onSaveBed}
-            onSaveWake={onSaveWake}
-            showBed={isToday}
-            sleepHours={day.day?.sleepHours ?? null}
-            sleepWarning={day.day?.sleepWarning ?? false}
-            tonightBedHm={day.tonightBedHm}
-            wakeHm={day.day?.wakeHm ?? null}
           />
         </Card>
       ) : null}

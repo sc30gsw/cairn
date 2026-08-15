@@ -20,13 +20,11 @@ export default defineSchema({
     .index("by_owner_and_sortOrder", ["ownerId", "sortOrder"]),
 
   days: defineTable({
-    bedHm: v.optional(v.string()),
     condition: v.optional(conditionValidator),
     dateJst: v.string(),
     deletedAt: v.optional(v.number()),
     memo: v.optional(v.string()),
     ownerId: v.string(),
-    wakeHm: v.optional(v.string()),
   })
     .index("by_owner_and_date", ["ownerId", "dateJst"])
     .index("by_owner_and_deletedAt", ["ownerId", "deletedAt"])
@@ -80,11 +78,6 @@ export default defineSchema({
     .index("by_owner_and_date", ["ownerId", "dateJst"])
     .index("by_owner_and_deletedAt", ["ownerId", "deletedAt"])
     .index("by_deletedAt", ["deletedAt"]),
-
-  tonight: defineTable({
-    bedHm: v.string(),
-    ownerId: v.string(),
-  }).index("by_owner", ["ownerId"]),
 
   weeklyGoals: defineTable({
     minutes: v.number(),

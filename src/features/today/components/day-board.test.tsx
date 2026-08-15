@@ -29,18 +29,13 @@ const day = {
   dateJst: "2026-08-17",
   day: {
     _id: "day1" as NonNullable<DayPage["day"]>["_id"],
-    bedHm: null,
     condition: null,
     dateJst: "2026-08-17",
     memo: null,
-    sleepHours: null,
-    sleepWarning: false,
-    wakeHm: null,
   },
   isFuture: false,
   rows: [row],
   shareMarkdown: "",
-  tonightBedHm: null,
   volumeMinutes: 0,
 } satisfies DayPage;
 
@@ -51,10 +46,8 @@ const idleHandlers = {
   onConfirm: vi.fn(),
   onRemoveDay: vi.fn(),
   onRemoveRow: vi.fn(),
-  onSaveBed: vi.fn(),
   onSaveCondition: vi.fn(),
   onSaveMemo: vi.fn(),
-  onSaveWake: vi.fn(),
   onSkip: vi.fn(),
   onSwitchPreset: vi.fn(),
 };
@@ -88,10 +81,8 @@ test("記録を確定スイッチで確定、オフでスキップできる", as
       onConfirm={onConfirm}
       onRemoveDay={vi.fn()}
       onRemoveRow={vi.fn()}
-      onSaveBed={vi.fn()}
       onSaveCondition={vi.fn()}
       onSaveMemo={vi.fn()}
-      onSaveWake={vi.fn()}
       onSkip={onSkip}
       onSwitchPreset={vi.fn()}
       presets={[]}
@@ -124,10 +115,8 @@ test("確定済みの記録をスイッチオフでスキップできる", () =>
       onConfirm={vi.fn()}
       onRemoveDay={vi.fn()}
       onRemoveRow={vi.fn()}
-      onSaveBed={vi.fn()}
       onSaveCondition={vi.fn()}
       onSaveMemo={vi.fn()}
-      onSaveWake={vi.fn()}
       onSkip={onSkip}
       onSwitchPreset={vi.fn()}
       presets={[]}
@@ -154,42 +143,6 @@ test("未着手はスイッチがオフで未着手バッジが出る", () => {
   expect((getByRole("switch", { name: "記録を確定" }) as HTMLInputElement).checked).toBe(false);
 });
 
-test("警告中でも記録の確定はロックされない", () => {
-  const warned = {
-    ...day,
-    day: { ...day.day, sleepHours: 6, sleepWarning: true },
-  } satisfies DayPage;
-  const { getByRole, getByText } = renderWithMantine(
-    <DayBoard
-      dateJst="2026-08-17"
-      day={warned}
-      isToday
-      items={items}
-      presets={[]}
-      selectedPresetId={null}
-      {...idleHandlers}
-    />,
-  );
-  expect(getByText("睡眠が7時間未満です。記録の確定はできます。")).toBeDefined();
-  expect((getByRole("switch", { name: "記録を確定" }) as HTMLInputElement).disabled).toBe(false);
-});
-
-test("今夜の就寝に日付ピッカーはない", () => {
-  const { getByLabelText, queryByLabelText } = renderWithMantine(
-    <DayBoard
-      dateJst="2026-08-17"
-      day={day}
-      isToday
-      items={items}
-      presets={[]}
-      selectedPresetId={null}
-      {...idleHandlers}
-    />,
-  );
-  expect(getByLabelText(/今夜の就寝/)).toBeDefined();
-  expect(queryByLabelText(/日付/)).toBeNull();
-});
-
 test("共有文のコピー操作が見える", () => {
   const withShare = {
     ...day,
@@ -210,7 +163,7 @@ test("共有文のコピー操作が見える", () => {
   expect(getByRole("button", { name: "共有文をコピー" })).toBeDefined();
 });
 
-test("セクションはプリセット、記録、コンディション、睡眠の順。コンディションは未選択のまま普通にしない", () => {
+test("セクションはプリセット、記録、コンディションの順。コンディションは未選択のまま普通にしない", () => {
   const onSaveCondition = vi.fn();
   const { getAllByRole, getByRole } = renderWithMantine(
     <DayBoard
@@ -222,10 +175,8 @@ test("セクションはプリセット、記録、コンディション、睡�
       onConfirm={vi.fn()}
       onRemoveDay={vi.fn()}
       onRemoveRow={vi.fn()}
-      onSaveBed={vi.fn()}
       onSaveCondition={onSaveCondition}
       onSaveMemo={vi.fn()}
-      onSaveWake={vi.fn()}
       onSkip={vi.fn()}
       onSwitchPreset={vi.fn()}
       presets={[{ _id: "p1" as never, lines: [], name: "月曜日", weekday: 1 }]}
@@ -234,11 +185,8 @@ test("セクションはプリセット、記録、コンディション、睡�
   );
   const sectionTitles = getAllByRole("heading")
     .map((heading) => heading.textContent)
-    .filter(
-      (text) =>
-        text === "プリセット" || text === "記録" || text === "コンディション" || text === "睡眠",
-    );
-  expect(sectionTitles).toEqual(["プリセット", "記録", "コンディション", "睡眠"]);
+    .filter((text) => text === "プリセット" || text === "記録" || text === "コンディション");
+  expect(sectionTitles).toEqual(["プリセット", "記録", "コンディション"]);
   expect((getByRole("combobox", { name: "今日のプリセット切替" }) as HTMLInputElement).value).toBe(
     "月曜日",
   );
@@ -271,9 +219,9 @@ test("プリセットを選ぶと表示名が変わる", async () => {
   });
 });
 
-test("未来の日は記録を足せず今夜も出さない", () => {
+test("未来の日は記録を足せない", () => {
   const future = { ...day, isFuture: true } satisfies DayPage;
-  const { queryByRole, queryByLabelText } = renderWithMantine(
+  const { queryByRole } = renderWithMantine(
     <DayBoard
       dateJst="2026-08-20"
       day={future}
@@ -285,23 +233,6 @@ test("未来の日は記録を足せず今夜も出さない", () => {
     />,
   );
   expect(queryByRole("button", { name: "記録を足す" })).toBeNull();
-  expect(queryByLabelText(/今夜の就寝/)).toBeNull();
-});
-
-test("過去の日は起床を出せるが今夜の就寝は出さない", () => {
-  const { getByLabelText, queryByLabelText } = renderWithMantine(
-    <DayBoard
-      dateJst="2026-08-16"
-      day={day}
-      isToday={false}
-      items={items}
-      presets={[]}
-      selectedPresetId={null}
-      {...idleHandlers}
-    />,
-  );
-  expect(getByLabelText("起床")).toBeDefined();
-  expect(queryByLabelText(/今夜の就寝/)).toBeNull();
 });
 
 test("その日に記録を足せる", () => {
@@ -332,10 +263,8 @@ test("記録のゴミ箱はアイコンボタン", () => {
       onConfirm={vi.fn()}
       onRemoveDay={vi.fn()}
       onRemoveRow={onRemoveRow}
-      onSaveBed={vi.fn()}
       onSaveCondition={vi.fn()}
       onSaveMemo={vi.fn()}
-      onSaveWake={vi.fn()}
       onSkip={vi.fn()}
       onSwitchPreset={vi.fn()}
       presets={[]}

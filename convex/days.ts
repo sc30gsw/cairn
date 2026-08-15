@@ -12,13 +12,11 @@ import {
   requireLiveDay,
 } from "./ensureCatalog";
 import { categoryFields } from "./lib/categoryFields";
-import { ConflictError } from "./lib/errors";
 import { isFutureDateJst, weekdayFromDateJst } from "./lib/jst";
 import { formatShareMarkdown } from "./lib/share";
-import { isShortSleep, sleepHours } from "./lib/sleep";
 import { conditionValidator, dayDtoValidator, rowDtoValidator } from "./lib/validators";
 import { confirmedVolumeMinutes } from "./lib/volume";
-import { ownerMutation, ownerQuery, throwDomain } from "./ownerFunctions";
+import { ownerMutation, ownerQuery } from "./ownerFunctions";
 
 async function itemMap(
   ctx: QueryCtx | MutationCtx,
@@ -59,14 +57,6 @@ export async function toRowDtos(ctx: QueryCtx | MutationCtx, ownerId: string, ro
       status: row.status,
     };
   });
-}
-
-function sleepFields(day: Doc<"days"> | null) {
-  if (day === null || day.bedHm === undefined || day.wakeHm === undefined) {
-    return { sleepHours: null, sleepWarning: false };
-  }
-  const hours = sleepHours(day.bedHm, day.wakeHm);
-  return { sleepHours: hours, sleepWarning: isShortSleep(hours) };
 }
 
 export const open = ownerMutation({
@@ -124,15 +114,8 @@ export const get = ownerQuery({
   args: { dateJst: v.string(), todayJst: v.string() },
   handler: async (ctx, args) => {
     const day = await getLiveDay(ctx, ctx.ownerId, args.dateJst);
-    const [rows, tonight] = await Promise.all([
-      day === null ? Promise.resolve([]) : liveRowsForDay(ctx, day._id),
-      ctx.db
-        .query("tonight")
-        .withIndex("by_owner", (q) => q.eq("ownerId", ctx.ownerId))
-        .unique(),
-    ]);
+    const rows = day === null ? [] : await liveRowsForDay(ctx, day._id);
     const rowDtos = await toRowDtos(ctx, ctx.ownerId, rows);
-    const sleep = sleepFields(day);
     return {
       dateJst: args.dateJst,
       day:
@@ -140,18 +123,13 @@ export const get = ownerQuery({
           ? null
           : {
               _id: day._id,
-              bedHm: day.bedHm ?? null,
               condition: day.condition ?? null,
               dateJst: day.dateJst,
               memo: day.memo ?? null,
-              sleepHours: sleep.sleepHours,
-              sleepWarning: sleep.sleepWarning,
-              wakeHm: day.wakeHm ?? null,
             },
       isFuture: isFutureDateJst(args.dateJst, args.todayJst),
       rows: rowDtos,
       shareMarkdown: formatShareMarkdown(rowDtos),
-      tonightBedHm: tonight?.bedHm ?? null,
       volumeMinutes: confirmedVolumeMinutes(rowDtos),
     };
   },
@@ -161,7 +139,6 @@ export const get = ownerQuery({
     isFuture: v.boolean(),
     rows: v.array(rowDtoValidator),
     shareMarkdown: v.string(),
-    tonightBedHm: v.union(v.string(), v.null()),
     volumeMinutes: v.number(),
   }),
 });
@@ -194,28 +171,6 @@ export const setMemo = ownerMutation({
     }
     const day = existing ?? (await requireLiveDay(ctx, ctx.ownerId, args.dateJst));
     await ctx.db.patch(day._id, { memo: args.memo });
-    return null;
-  },
-  returns: v.null(),
-});
-
-export const setWake = ownerMutation({
-  args: { dateJst: v.string(), todayJst: v.string(), wakeHm: v.string() },
-  handler: async (ctx, args) => {
-    const existing = await requireEditableDay(ctx, ctx.ownerId, args.dateJst, args.todayJst);
-    const tonight = await ctx.db
-      .query("tonight")
-      .withIndex("by_owner", (q) => q.eq("ownerId", ctx.ownerId))
-      .unique();
-    const bedHm = existing?.bedHm ?? tonight?.bedHm;
-    if (bedHm === undefined) {
-      throwDomain(new ConflictError({ message: "今夜の就寝がまだありません" }));
-    }
-    const day = existing ?? (await requireLiveDay(ctx, ctx.ownerId, args.dateJst));
-    await ctx.db.patch(day._id, { bedHm, wakeHm: args.wakeHm });
-    if (tonight !== null && existing?.bedHm === undefined) {
-      await ctx.db.delete(tonight._id);
-    }
     return null;
   },
   returns: v.null(),

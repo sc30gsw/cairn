@@ -40,13 +40,9 @@ export const rowDtoValidator = v.object({
 
 export const dayDtoValidator = v.object({
   _id: v.id("days"),
-  bedHm: v.union(v.string(), v.null()),
   condition: v.union(conditionValidator, v.null()),
   dateJst: v.string(),
   memo: v.union(v.string(), v.null()),
-  sleepHours: v.union(v.number(), v.null()),
-  sleepWarning: v.boolean(),
-  wakeHm: v.union(v.string(), v.null()),
 });
 
 export const itemDtoValidator = v.object({
