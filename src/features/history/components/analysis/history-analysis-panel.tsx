@@ -1,5 +1,15 @@
-import { Alert, Button, Card, Grid, Group, SegmentedControl, Stack, Text, Title } from "@mantine/core";
 import { BarChart, DonutChart } from "@mantine/charts";
+import {
+  Alert,
+  Button,
+  Card,
+  Grid,
+  Group,
+  SegmentedControl,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
 import { Link } from "@tanstack/react-router";
 import type { FunctionReturnType } from "convex/server";
 

@@ -1,4 +1,0 @@
-.root :global([class*="compactControls"]),
-.root :global([class*="viewSelect"]) {
-  display: none;
-}

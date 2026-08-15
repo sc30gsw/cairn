@@ -68,6 +68,7 @@ function HistoryReady() {
         <Tabs.Panel pt="md" value="month">
           <HistoryMonthView
             days={monthData.days}
+            events={monthBreakdown.events}
             month={month}
             onDayClick={(dateJst) => {
               setSelectedDateJst(dateJst);

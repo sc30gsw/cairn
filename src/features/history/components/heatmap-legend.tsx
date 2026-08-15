@@ -6,7 +6,7 @@ export function HeatmapLegend() {
   return (
     <Stack gap={4}>
       <Text c="dimmed" size="xs">
-        背景色は学習時間のヒートマップです。
+        色の濃さは1日の学習時間です。
       </Text>
       <Group gap="md" wrap="wrap">
         {HEATMAP_LEGEND.map((entry) => (

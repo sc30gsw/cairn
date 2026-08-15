@@ -33,6 +33,15 @@ const monthDayValidator = v.object({
   movingAverage: v.number(),
 });
 
+const monthEventValidator = v.object({
+  category: v.string(),
+  dateJst: v.string(),
+  minutes: v.number(),
+  rowId: v.id("rows"),
+  status: v.union(v.literal("確定"), v.literal("未着手"), v.literal("スキップ")),
+  title: v.string(),
+});
+
 async function loadCatalog(ctx: QueryCtx, ownerId: string) {
   const [items, categories] = await Promise.all([
     ctx.db
@@ -71,6 +80,7 @@ async function computeMonthBreakdown(
       byCategory: [],
       confirmedMinutes: 0,
       days: [],
+      events: [],
       rows: [],
       skippedMinutes: 0,
     };
@@ -104,6 +114,18 @@ async function computeMonthBreakdown(
     catalog.itemById,
     catalog.categoryById,
   );
+  const events = liveRowsInMonth.map((row) => {
+    const item = catalog.itemById.get(row.itemId);
+    const { category } = categoryFields(item, catalog.categoryById);
+    return {
+      category,
+      dateJst: row.dateJst,
+      minutes: row.minutes,
+      rowId: row._id,
+      status: row.status,
+      title: item?.name ?? "不明",
+    };
+  });
   const minutesByDate = new Map<string, number>();
   const grouped = new Map<string, Doc<"rows">[]>();
   for (const row of liveRows(rows, liveDayDates)) {
@@ -123,6 +145,7 @@ async function computeMonthBreakdown(
       minutes: minutesByDate.get(dateJst) ?? 0,
       movingAverage: sevenDayMovingAverage(minutesByDate, dateJst),
     })),
+    events,
     rows: aggregated.rows,
     skippedMinutes: aggregated.skippedMinutes,
   };
@@ -204,6 +227,7 @@ export const monthBreakdown = ownerQuery({
     byCategory: v.array(categoryBreakdownValidator),
     confirmedMinutes: v.number(),
     days: v.array(monthDayValidator),
+    events: v.array(monthEventValidator),
     rows: v.array(breakdownRowValidator),
     skippedMinutes: v.number(),
   }),
