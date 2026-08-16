@@ -5,9 +5,9 @@ import { BreakdownTable } from "~/features/history/components/breakdown-table";
 import type { BreakdownRow } from "~/features/history/types/history";
 import { renderWithMantine } from "~/test-utils/render";
 
-const [confirmed, skipped] = [STATUSES[0], STATUSES[2]] as const;
+const [confirmed] = STATUSES;
 
-test("確定行は完了ラベルと確定比を表示する", () => {
+test("完了行の項目・分数・確定比を表示する", () => {
   const rows = [
     {
       category: "多聴",
@@ -18,15 +18,24 @@ test("確定行は完了ラベルと確定比を表示する", () => {
     {
       category: "英会話",
       itemName: "英会話",
-      minutes: 20,
-      status: skipped,
+      minutes: 30,
+      status: confirmed,
     },
   ] as const satisfies readonly BreakdownRow[];
 
-  const { getByText } = renderWithMantine(<BreakdownTable confirmedMinutes={60} rows={rows} />);
+  const { getByText, queryByText } = renderWithMantine(
+    <BreakdownTable confirmedMinutes={60} rows={rows} />,
+  );
 
-  expect(getByText("完了")).toBeDefined();
-  expect(getByText("見送り")).toBeDefined();
+  expect(getByText("Distinction 2000")).toBeDefined();
+  expect(getByText("英会話")).toBeDefined();
   expect(getByText("50%")).toBeDefined();
   expect(getByText(/確定合計（60分）/)).toBeDefined();
+  expect(queryByText("見送り")).toBeNull();
+  expect(queryByText("状態")).toBeNull();
+});
+
+test("完了行がないときは空メッセージを出す", () => {
+  const { getByText } = renderWithMantine(<BreakdownTable confirmedMinutes={0} rows={[]} />);
+  expect(getByText("完了した記録がありません。")).toBeDefined();
 });
