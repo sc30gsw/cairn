@@ -149,6 +149,7 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
                   disabled={disabled}
                   error={field.errors?.[0]}
                   itemName={row.itemName}
+                  label={row.itemName}
                   onBlur={(event) => {
                     field.props.onBlur?.(event);
                     void saveIfConfirmedDirty();
