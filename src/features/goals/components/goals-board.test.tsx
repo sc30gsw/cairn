@@ -4,11 +4,13 @@ import { expect, test, vi } from "vite-plus/test";
 import { GoalsBoard } from "~/features/goals/components/goals-board";
 import { renderWithMantine } from "~/test-utils/render";
 
+const THEN_ACTION = "Unit 3 の例文を声に出して5文読む";
+
 test("カウントダウンと週間ゴールと障害プランが見える", () => {
   const { getByText, getByRole } = renderWithMantine(
     <GoalsBoard
       exam={{ daysRemaining: 43, examDate: "2026-09-27", maxScore: 850, minScore: 730 }}
-      obstacles={[{ _id: "o1" as never, ifText: "眠い", thenText: "金フレだけ" }]}
+      obstacles={[{ _id: "o1" as never, ifText: "眠い", thenText: THEN_ACTION }]}
       onCreateObstacle={vi.fn()}
       onRemoveObstacle={vi.fn()}
       onSaveExam={vi.fn()}
@@ -23,7 +25,7 @@ test("カウントダウンと週間ゴールと障害プランが見える", ()
   expect(getByText(/2026-09-27 まであと 43 日/)).toBeDefined();
   expect(getByText(/730/)).toBeDefined();
   expect(getByText(/週間ゴール 10%/)).toBeDefined();
-  expect(getByText(/もし 眠い なら 金フレだけ/)).toBeDefined();
+  expect(getByText(/もし 眠い なら Unit 3 の例文を声に出して5文読む/)).toBeDefined();
   expect(getByRole("button", { name: "障害プランを追加" })).toBeDefined();
   expect(getByRole("button", { name: "眠いを保存" })).toBeDefined();
 });
@@ -48,12 +50,12 @@ test("障害プランを追加したら入力が空に戻る", async () => {
   const ifInput = getByRole("textbox", { name: "もし" }) as HTMLInputElement;
   const thenInput = getByRole("textbox", { name: "なら" }) as HTMLInputElement;
   fireEvent.change(ifInput, { target: { value: "眠い" } });
-  fireEvent.change(thenInput, { target: { value: "金フレだけ" } });
+  fireEvent.change(thenInput, { target: { value: THEN_ACTION } });
   getByRole("button", { name: "障害プランを追加" }).click();
   await waitFor(() => {
     expect(onCreateObstacle).toHaveBeenCalledWith({
       ifText: "眠い",
-      thenText: "金フレだけ",
+      thenText: THEN_ACTION,
     });
   });
   expect(ifInput.value).toBe("");

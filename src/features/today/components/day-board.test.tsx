@@ -16,6 +16,9 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
   };
 });
 
+const CONCRETE_ACTION = "Unit 1 を音読する";
+const CONCRETE_ACTION_2 = "Unit 2 を音読する";
+
 const row = {
   _id: "row1" as DayRow["_id"],
   category: "多聴",
@@ -69,7 +72,7 @@ test("ログイン済みなら今日の未着手の記録が見える", () => {
       {...idleHandlers}
     />,
   );
-  expect(getByRole("textbox", { name: "Distinction 2000 内容" })).toBeDefined();
+  expect(getByRole("textbox", { name: "Distinction 2000の具体的手順" })).toBeDefined();
   expect(getByText("未着手")).toBeDefined();
 });
 
@@ -94,10 +97,12 @@ test("記録を確定スイッチで確定、オフでスキップできる", as
       selectedPresetId={null}
     />,
   );
+  const input = getByRole("textbox", { name: "Distinction 2000の具体的手順" });
+  fireEvent.change(input, { target: { value: CONCRETE_ACTION } });
   getByRole("switch", { name: "記録を確定" }).click();
   await waitFor(() => {
     expect(onConfirm).toHaveBeenCalledWith({
-      content: "",
+      content: CONCRETE_ACTION,
       minutes: 30,
       rowId: row._id,
     });
@@ -108,7 +113,7 @@ test("確定済みの記録は行外へフォーカスすると更新できる",
   const onConfirm = vi.fn();
   const confirmedDay = {
     ...day,
-    rows: [{ ...row, content: "Unit 1", status: confirmed }],
+    rows: [{ ...row, content: CONCRETE_ACTION, status: confirmed }],
   } satisfies DayPage;
   const { getByRole } = renderWithMantine(
     <DayBoard
@@ -128,12 +133,12 @@ test("確定済みの記録は行外へフォーカスすると更新できる",
       selectedPresetId={null}
     />,
   );
-  const input = getByRole("textbox", { name: "Distinction 2000 内容" });
-  fireEvent.change(input, { target: { value: "Unit 2" } });
+  const input = getByRole("textbox", { name: "Distinction 2000の具体的手順" });
+  fireEvent.change(input, { target: { value: CONCRETE_ACTION_2 } });
   fireEvent.blur(input);
   await waitFor(() => {
     expect(onConfirm).toHaveBeenCalledWith({
-      content: "Unit 2",
+      content: CONCRETE_ACTION_2,
       minutes: 30,
       rowId: row._id,
     });

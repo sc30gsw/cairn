@@ -1,5 +1,6 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
+import { assertConcreteAction } from "../../lib/concreteAction";
 import { NotFoundError, ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { requireOwnedRow } from "./requireOwnedRow";
@@ -9,6 +10,7 @@ export async function confirm(
   ownerId: string,
   args: { content: string; minutes: number; rowId: Id<"rows"> },
 ): Promise<null> {
+  assertConcreteAction(args.content);
   if (args.minutes < 0) {
     throwDomain(new ValidationFailedError({ message: "分数は0以上です" }));
   }

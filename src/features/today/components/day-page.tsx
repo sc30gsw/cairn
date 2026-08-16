@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { DateJst } from "~domain/jst";
 import { todayJst } from "~domain/jst";
 
+import { ConcreteActionTour } from "~/components/concrete-action-tour";
 import type { PresetId } from "~/features/catalog/types/item";
 import { DayBoard } from "~/features/today/components/day-board";
 import { DayPagePending } from "~/features/today/components/day-page-pending";
@@ -69,38 +70,40 @@ function DayPageCore({ dateJst, presetFromSearch }: DayPageCoreProps) {
   );
 
   return (
-    <DayBoard
-      dateJst={dateJst}
-      day={day}
-      isToday={isToday}
-      items={items}
-      onAddRow={(input) => {
-        void add.mutateAsync({ ...input, dateJst, todayJst: today });
-      }}
-      onConfirm={(input) => {
-        void confirm.mutateAsync(input);
-      }}
-      onRemoveDay={() => {
-        void removeDay.mutateAsync({ dateJst });
-      }}
-      onRemoveRow={(rowId) => {
-        void removeRow.mutateAsync({ rowId });
-      }}
-      onSaveCondition={(condition) => {
-        void setCondition.mutateAsync({ condition, dateJst, todayJst: today });
-      }}
-      onSaveMemo={(memo) => {
-        void setMemo.mutateAsync({ dateJst, memo, todayJst: today });
-      }}
-      onSkip={(rowId) => {
-        void skip.mutateAsync({ rowId });
-      }}
-      onSwitchPreset={(presetId: PresetId) => {
-        appliedPresetRef.current = presetId;
-        void switchPreset.mutateAsync({ dateJst, presetId, todayJst: today });
-      }}
-      presets={presets}
-      selectedPresetId={selectedPresetId}
-    />
+    <ConcreteActionTour screen="today">
+      <DayBoard
+        dateJst={dateJst}
+        day={day}
+        isToday={isToday}
+        items={items}
+        onAddRow={(input) => {
+          void add.mutateAsync({ ...input, dateJst, todayJst: today });
+        }}
+        onConfirm={(input) => {
+          void confirm.mutateAsync(input);
+        }}
+        onRemoveDay={() => {
+          void removeDay.mutateAsync({ dateJst });
+        }}
+        onRemoveRow={(rowId) => {
+          void removeRow.mutateAsync({ rowId });
+        }}
+        onSaveCondition={(condition) => {
+          void setCondition.mutateAsync({ condition, dateJst, todayJst: today });
+        }}
+        onSaveMemo={(memo) => {
+          void setMemo.mutateAsync({ dateJst, memo, todayJst: today });
+        }}
+        onSkip={(rowId) => {
+          void skip.mutateAsync({ rowId });
+        }}
+        onSwitchPreset={(presetId: PresetId) => {
+          appliedPresetRef.current = presetId;
+          void switchPreset.mutateAsync({ dateJst, presetId, todayJst: today });
+        }}
+        presets={presets}
+        selectedPresetId={selectedPresetId}
+      />
+    </ConcreteActionTour>
   );
 }

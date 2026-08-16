@@ -4,6 +4,7 @@ import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import {
   DEFAULT_EXAM_GOAL,
+  SEED_CONTENT,
   SEED_ITEMS,
   SEED_MINUTES,
   WEEKDAY_NAMES,
@@ -122,7 +123,7 @@ export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<
           }
           return [
             {
-              content: "",
+              content: SEED_CONTENT[itemName as keyof typeof SEED_CONTENT],
               itemId: item._id,
               minutes: SEED_MINUTES[itemName as keyof typeof SEED_MINUTES],
             },

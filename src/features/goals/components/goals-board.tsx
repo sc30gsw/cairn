@@ -3,6 +3,8 @@ import { Button, Card, Grid, NumberInput, Stack, Text, TextInput, Title } from "
 import { DatePickerInput } from "@mantine/dates";
 import type { DateJst } from "~domain/jst";
 
+import { ConcreteActionField } from "~/components/concrete-action-field";
+import { ConcreteThenFieldLabel } from "~/components/concrete-then-field-label";
 import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
 import { ExamSchema } from "~/features/goals/schemas/exam-schema";
 import { ObstacleSchema } from "~/features/goals/schemas/obstacle-schema";
@@ -210,10 +212,13 @@ export function GoalsBoard({
                 <Grid.Col span={{ base: 12, sm: 5 }}>
                   <Field of={obstacleForm} path={["thenText"]}>
                     {(field) => (
-                      <TextInput
+                      <ConcreteActionField
                         {...field.props}
                         error={field.errors?.[0]}
-                        label="なら"
+                        label={<ConcreteThenFieldLabel />}
+                        placeholder="例: 机に向かって金のフレーズを1 Unit だけ開く"
+                        showLabel
+                        tourId="svo-obstacle-then"
                         value={field.input}
                       />
                     )}
@@ -283,10 +288,13 @@ function ObstacleEditor({
             <Grid.Col span={{ base: 12, sm: 4 }}>
               <Field of={form} path={["thenText"]}>
                 {(field) => (
-                  <TextInput
+                  <ConcreteActionField
                     {...field.props}
                     aria-label={`${plan.ifText}のなら`}
                     error={field.errors?.[0]}
+                    label={<ConcreteThenFieldLabel />}
+                    placeholder="例: 机に向かって金のフレーズを1 Unit だけ開く"
+                    showLabel={false}
                     value={field.input}
                   />
                 )}

@@ -1,6 +1,7 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
-import { NotFoundError } from "../../lib/errors";
+import { assertConcreteAction } from "../../lib/concreteAction";
+import { NotFoundError, ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 
 export async function updateObstacle(
@@ -8,6 +9,12 @@ export async function updateObstacle(
   ownerId: string,
   args: { ifText: string; planId: Id<"obstaclePlans">; thenText: string },
 ): Promise<null> {
+  const ifText = args.ifText.trim();
+  const thenText = args.thenText.trim();
+  if (ifText === "") {
+    throwDomain(new ValidationFailedError({ message: "if は必須です" }));
+  }
+  assertConcreteAction(thenText);
   const plan = await ctx.db.get("obstaclePlans", args.planId);
   if (plan === null || plan.ownerId !== ownerId) {
     throwDomain(
@@ -15,8 +22,8 @@ export async function updateObstacle(
     );
   }
   await ctx.db.patch("obstaclePlans", args.planId, {
-    ifText: args.ifText,
-    thenText: args.thenText,
+    ifText,
+    thenText,
   });
   return null;
 }

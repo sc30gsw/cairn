@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { ConcreteActionTour } from "~/components/concrete-action-tour";
 import { PresetList } from "~/features/catalog/components/preset-list";
 import { PresetListPending } from "~/features/catalog/components/preset-list-pending";
 import {
@@ -25,18 +26,20 @@ function PresetsReady() {
   const removePreset = useRemovePreset();
 
   return (
-    <PresetList
-      items={items}
-      onCreate={(input) => {
-        void createPreset.mutateAsync(input);
-      }}
-      onRemove={(presetId) => {
-        void removePreset.mutateAsync({ presetId });
-      }}
-      onUpdate={(input) => {
-        void updatePreset.mutateAsync(input);
-      }}
-      presets={presets}
-    />
+    <ConcreteActionTour screen="presets">
+      <PresetList
+        items={items}
+        onCreate={(input) => {
+          void createPreset.mutateAsync(input);
+        }}
+        onRemove={(presetId) => {
+          void removePreset.mutateAsync({ presetId });
+        }}
+        onUpdate={(input) => {
+          void updatePreset.mutateAsync(input);
+        }}
+        presets={presets}
+      />
+    </ConcreteActionTour>
   );
 }

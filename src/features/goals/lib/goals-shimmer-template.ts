@@ -8,7 +8,11 @@ export const goalsShimmerExam = {
 } satisfies ExamGoal;
 
 export const goalsShimmerObstacles = [
-  { _id: "shimmer-obstacle" as Obstacle["_id"], ifText: "眠い", thenText: "金フレだけ" },
+  {
+    _id: "shimmer-obstacle" as Obstacle["_id"],
+    ifText: "眠い",
+    thenText: "Unit 3 の例文を声に出して5文読む",
+  },
 ] satisfies Obstacle[];
 
 export const goalsShimmerTodayJst = "2026-08-17";

@@ -18,7 +18,9 @@ import { IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
 import * as v from "valibot";
 import { WEEKDAY_NAMES } from "~domain/catalog";
+import { concreteActionPlaceholder } from "~domain/concreteAction";
 
+import { ConcreteActionField } from "~/components/concrete-action-field";
 import { CreatePresetSchema, PresetSchema } from "~/features/catalog/schemas/preset-schema";
 import type { PresetLineInput } from "~/features/catalog/schemas/preset-schema";
 import type { ItemDto, PresetDto } from "~/features/catalog/types/item";
@@ -306,6 +308,7 @@ function PresetEditor({
           </Grid>
           {lines.map((line, index) => {
             const removeLabel = removeLineLabel(items, line.itemId);
+            const itemName = items.find((item) => item._id === line.itemId)?.name;
             return (
               <Grid key={`${preset._id}-${index}`} align="flex-end" gap="sm">
                 <Grid.Col span={{ base: 12, sm: 4 }}>
@@ -325,9 +328,9 @@ function PresetEditor({
                   />
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, sm: 4 }}>
-                  <TextInput
-                    aria-label={`${preset.name}の雛形${index + 1}の内容`}
-                    label={index === 0 ? "内容" : undefined}
+                  <ConcreteActionField
+                    aria-label={`${preset.name}の雛形${index + 1}の具体的手順`}
+                    itemName={itemName}
                     onChange={(event) => {
                       const content = event.currentTarget.value;
                       setLines((current) =>
@@ -336,6 +339,11 @@ function PresetEditor({
                         ),
                       );
                     }}
+                    placeholder={
+                      itemName === undefined ? undefined : concreteActionPlaceholder(itemName)
+                    }
+                    showLabel={index === 0}
+                    tourId={index === 0 ? "svo-preset-content" : undefined}
                     value={line.content}
                   />
                 </Grid.Col>
