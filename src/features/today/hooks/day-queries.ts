@@ -4,9 +4,9 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { api } from "~/../convex/_generated/api";
 
 export function usePresetsList() {
-  return useSuspenseQuery(convexQuery(api.presets.list, {}));
+  return useSuspenseQuery(convexQuery(api.queries.presets.list.list, {}));
 }
 
 export function useItemsList() {
-  return useSuspenseQuery(convexQuery(api.items.list, {}));
+  return useSuspenseQuery(convexQuery(api.queries.items.list.list, {}));
 }

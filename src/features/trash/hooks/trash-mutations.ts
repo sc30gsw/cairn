@@ -2,17 +2,17 @@ import { api } from "~/../convex/_generated/api";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export function useRestoreDay() {
-  return useConvexMutation(api.trash.restoreDay);
+  return useConvexMutation(api.mutations.trash.restoreDay.restoreDay);
 }
 
 export function useRestoreRow() {
-  return useConvexMutation(api.rows.restore);
+  return useConvexMutation(api.mutations.rows.restore.restore);
 }
 
 export function usePurgeDay() {
-  return useConvexMutation(api.trash.purgeDay);
+  return useConvexMutation(api.mutations.trash.purgeDay.purgeDay);
 }
 
 export function usePurgeRow() {
-  return useConvexMutation(api.trash.purgeRow);
+  return useConvexMutation(api.mutations.trash.purgeRow.purgeRow);
 }

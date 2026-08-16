@@ -8,10 +8,10 @@ import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export function useOpenAndLoadDay(dateJst: string) {
   const today = todayJst();
-  const open = useConvexMutation(api.days.open);
+  const open = useConvexMutation(api.mutations.days.open.open);
   const [openPromise] = useState(() =>
     open.mutateAsync({ dateJst, todayJst: today }).then(() => undefined),
   );
   use(openPromise);
-  return useSuspenseQuery(convexQuery(api.days.get, { dateJst, todayJst: today }));
+  return useSuspenseQuery(convexQuery(api.queries.days.get.get, { dateJst, todayJst: today }));
 }
