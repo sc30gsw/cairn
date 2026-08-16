@@ -1,17 +1,7 @@
 /// <reference types="vite-plus/client" />
 import { ConvexBetterAuthProvider, type AuthClient } from "@convex-dev/better-auth/react";
 import type { ConvexQueryClient } from "@convex-dev/react-query";
-import {
-  Button,
-  Card,
-  Center,
-  ColorSchemeScript,
-  MantineProvider,
-  Stack,
-  Text,
-  Title,
-  mantineHtmlProps,
-} from "@mantine/core";
+import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from "@mantine/core";
 import { DatesProvider } from "@mantine/dates";
 import { ModalsProvider } from "@mantine/modals";
 import { Notifications } from "@mantine/notifications";
@@ -20,7 +10,6 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import {
   HeadContent,
-  Link,
   Outlet,
   Scripts,
   createRootRouteWithContext,
@@ -31,10 +20,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { Suspense, lazy, type ReactNode } from "react";
 
 import { FullPageErrorState } from "~/components/error-state";
+import { NotFoundState } from "~/components/not-found-state";
 import { PendingComponent } from "~/components/pending-component";
 import { authClient } from "~/lib/auth-client";
 import { getToken } from "~/lib/auth-server";
-import { DISPLAY_FONT, cssVariablesResolver, theme } from "~/lib/theme";
+import { cssVariablesResolver, theme } from "~/lib/theme";
 
 import appCss from "~/styles.css?url";
 
@@ -150,7 +140,7 @@ function RootErrorComponent(props: ErrorComponentProps) {
 function RootNotFoundComponent() {
   return (
     <RootDocument>
-      <NotFoundComponent />
+      <NotFoundState />
     </RootDocument>
   );
 }
@@ -160,27 +150,6 @@ function RootPendingComponent() {
     <RootDocument>
       <PendingComponent />
     </RootDocument>
-  );
-}
-
-function NotFoundComponent() {
-  return (
-    <Center h="100dvh" p="md">
-      <Card maw={420} padding="xl" shadow="sm" w="100%">
-        <Stack gap="md">
-          <Text c="dimmed" fw={600} size="xs" tt="uppercase">
-            学習ログ
-          </Text>
-          <Title ff={DISPLAY_FONT} fw={500} order={1}>
-            ページが見つかりません
-          </Title>
-          <Text>アドレスが変わったか、削除された可能性があります。</Text>
-          <Button component={Link} to="/">
-            今日の記録へ戻る
-          </Button>
-        </Stack>
-      </Card>
-    </Center>
   );
 }
 
