@@ -11,7 +11,6 @@ export type RemoveCategoryInput = Pick<
 export type CreateItemInput = FunctionArgs<typeof api.mutations.items.create.create>;
 export type RenameItemInput = FunctionArgs<typeof api.mutations.items.rename.rename>;
 export type ApplyItemOrderInput = FunctionArgs<typeof api.mutations.items.applyOrder.applyOrder>;
-export type ReorderItemsInput = FunctionArgs<typeof api.mutations.items.reorder.reorder>;
 export type RemoveItemInput = Pick<
   FunctionArgs<typeof api.mutations.items.remove.remove>,
   "itemId"

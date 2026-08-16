@@ -83,10 +83,10 @@ function DayPageReady({ dateJst, presetFromSearch }: DayPageProps) {
         void confirm.mutateAsync(input);
       }}
       onRemoveDay={() => {
-        void removeDay.mutateAsync({ dateJst, now: Date.now() });
+        void removeDay.mutateAsync({ dateJst });
       }}
       onRemoveRow={(rowId) => {
-        void removeRow.mutateAsync({ now: Date.now(), rowId });
+        void removeRow.mutateAsync({ rowId });
       }}
       onSaveCondition={(condition) => {
         void setCondition.mutateAsync({ condition, dateJst, todayJst: today });

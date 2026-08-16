@@ -1,5 +1,6 @@
 import type { MutationCtx } from "../../_generated/server";
 import { isFutureDateJst, weekdayFromDateJst } from "../../lib/jst";
+import { ensureCatalog } from "../catalog/ensureCatalog";
 import { collapseExtraLiveDays } from "./collapseExtraLiveDays";
 import { getDayByDate } from "./getDayByDate";
 import { liveRowsForDay } from "./liveRowsForDay";
@@ -9,6 +10,7 @@ export async function openDay(
   ownerId: string,
   args: { dateJst: string; todayJst: string },
 ): Promise<{ applied: boolean }> {
+  await ensureCatalog(ctx, ownerId);
   if (isFutureDateJst(args.dateJst, args.todayJst)) {
     return { applied: false };
   }
@@ -32,7 +34,6 @@ export async function openDay(
       return { applied: false };
     }
   }
-  await ctx.db.patch("days", day._id, { dateJst: day.dateJst });
   const liveRows = await liveRowsForDay(ctx, day._id);
   if (liveRows.length > 0) {
     return { applied: false };

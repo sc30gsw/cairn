@@ -6,12 +6,12 @@ import { getDayByDate } from "../days/getDayByDate";
 export async function removeDay(
   ctx: MutationCtx,
   ownerId: string,
-  args: { dateJst: string; now: number },
+  args: { dateJst: string },
 ): Promise<null> {
   const day = await getDayByDate(ctx, ownerId, args.dateJst);
   if (day === null || day.deletedAt !== undefined) {
     throwDomain(new NotFoundError({ message: "日が見つかりません", resource: "日" }));
   }
-  await ctx.db.patch("days", day._id, { deletedAt: args.now });
+  await ctx.db.patch("days", day._id, { deletedAt: Date.now() });
   return null;
 }

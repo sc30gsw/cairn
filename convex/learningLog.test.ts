@@ -329,21 +329,21 @@ test("行と日のゴミ箱。30日後に完全削除。未認証は throw", asy
   if (row === undefined || day.day === null) {
     throw new Error("ゴミ箱の材料がない");
   }
-  const now = 1_000;
-  await t.mutation(api.mutations.rows.remove.remove, { now, rowId: row._id });
+  const purgeAfter = (deletedAt: number) => deletedAt + 30 * 24 * 60 * 60 * 1000;
+  await t.mutation(api.mutations.rows.remove.remove, { rowId: row._id });
   const trashed = await t.query(api.queries.trash.list.list, {});
   expect(trashed.rows.some((entry) => entry.itemName === "Distinction 2000")).toBe(true);
   expect(trashed.rows[0]?.minutes).toBe(row.minutes);
   await t.mutation(api.mutations.rows.restore.restore, { rowId: row._id });
   expect((await t.query(api.queries.trash.list.list, {})).rows).toEqual([]);
-  await t.mutation(api.mutations.rows.remove.remove, { now, rowId: row._id });
+  await t.mutation(api.mutations.rows.remove.remove, { rowId: row._id });
   await t.mutation(api.mutations.trash.purgeRow.purgeRow, { rowId: row._id });
   expect((await t.query(api.queries.trash.list.list, {})).rows).toEqual([]);
-  await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: MONDAY, now });
+  await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: MONDAY });
   const daysInTrash = await t.query(api.queries.trash.list.list, {});
   expect(daysInTrash.days.some((entry) => entry.dateJst === MONDAY)).toBe(true);
   await t.mutation(api.mutations.trash.restoreDay.restoreDay, { dayId: day.day._id });
-  await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: MONDAY, now });
+  await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: MONDAY });
   await t.mutation(api.mutations.trash.purgeDay.purgeDay, { dayId: day.day._id });
   expect((await t.query(api.queries.trash.list.list, {})).days).toEqual([]);
   expect(
@@ -354,9 +354,15 @@ test("行と日のゴミ箱。30日後に完全削除。未認証は throw", asy
   if (reopened.day === null) {
     throw new Error("日の再作成に失敗");
   }
-  await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: MONDAY, now });
+  await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: MONDAY });
+  const trashedDay = (await t.query(api.queries.trash.list.list, {})).days.find(
+    (entry) => entry.dateJst === MONDAY,
+  );
+  if (trashedDay === undefined) {
+    throw new Error("ゴミ箱の日がない");
+  }
   await t.mutation(internal.mutations.trash.purgeExpired.purgeExpired, {
-    now: now + 30 * 24 * 60 * 60 * 1000,
+    now: purgeAfter(trashedDay.deletedAt),
   });
   expect((await t.query(api.queries.trash.list.list, {})).days).toEqual([]);
   expect(
@@ -401,7 +407,7 @@ test("ゴミ箱の日には行を足さず、open も日を増やさない", asy
   if (other === undefined) {
     throw new Error("その他がない");
   }
-  await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: MONDAY, now: 1_000 });
+  await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: MONDAY });
   await expect(
     t.mutation(api.mutations.rows.add.add, {
       content: "復活させない",
@@ -449,5 +455,139 @@ test("プリセット雛形だけの項目は消せない", async () => {
   }
   await expect(
     t.mutation(api.mutations.items.remove.remove, { itemId: distinction._id }),
+  ).rejects.toThrow();
+});
+
+test("分析クエリと年ヒートマップが学習量を返す", async () => {
+  const t = owner();
+  await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
+  const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  const distinction = day.rows.find((row) => row.itemName === "Distinction 2000");
+  if (distinction === undefined) {
+    throw new Error("Distinction がない");
+  }
+  await t.mutation(api.mutations.rows.confirm.confirm, {
+    content: "Unit 1",
+    minutes: 45,
+    rowId: distinction._id,
+  });
+  const dayBreakdown = await t.query(api.queries.history.dayBreakdown.dayBreakdown, {
+    dateJst: MONDAY,
+  });
+  expect(dayBreakdown.confirmedMinutes).toBe(45);
+  const weekBreakdown = await t.query(api.queries.history.weekBreakdown.weekBreakdown, {
+    dateJst: MONDAY,
+  });
+  expect(weekBreakdown.volumeMinutes).toBe(45);
+  const monthBreakdown = await t.query(api.queries.history.monthBreakdown.monthBreakdown, {
+    todayJst: MONDAY,
+    yearMonth: "2026-08",
+  });
+  expect(monthBreakdown.confirmedMinutes).toBe(45);
+  const heatmap = await t.query(api.queries.history.yearHeatmap.yearHeatmap, {
+    todayJst: MONDAY,
+  });
+  const mondayHeat = heatmap.days.find((entry) => entry.dateJst === MONDAY);
+  expect(mondayHeat?.minutes).toBe(45);
+});
+
+test("プリセット CRUD と曜日重複は失敗", async () => {
+  const t = owner();
+  await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
+  const items = await t.query(api.queries.items.list.list, {});
+  const distinction = items.find((item) => item.name === "Distinction 2000");
+  if (distinction === undefined || distinction.categoryId === undefined) {
+    throw new Error("Distinction がない");
+  }
+  await expect(
+    t.mutation(api.mutations.presets.create.create, {
+      lines: [{ content: "x", itemId: distinction._id, minutes: 10 }],
+      name: "重複月曜",
+      weekday: 1,
+    }),
+  ).rejects.toThrow();
+  const presetId = await t.mutation(api.mutations.presets.create.create, {
+    lines: [{ content: "日曜だけ", itemId: distinction._id, minutes: 20 }],
+    name: "日曜",
+    weekday: 0,
+  });
+  await t.mutation(api.mutations.presets.update.update, {
+    lines: [{ content: "日曜更新", itemId: distinction._id, minutes: 25 }],
+    name: "日曜改",
+    presetId,
+    weekday: 0,
+  });
+  const presets = await t.query(api.queries.presets.list.list, {});
+  const sunday = presets.find((preset) => preset._id === presetId);
+  expect(sunday?.name).toBe("日曜改");
+  expect(sunday?.lines[0]?.content).toBe("日曜更新");
+  await t.mutation(api.mutations.presets.remove.remove, { presetId });
+  expect((await t.query(api.queries.presets.list.list, {})).some((p) => p._id === presetId)).toBe(
+    false,
+  );
+});
+
+test("applyOrder で項目順とカテゴリを更新", async () => {
+  const t = owner();
+  await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
+  const items = await t.query(api.queries.items.list.list, {});
+  const categories = await t.query(api.queries.categories.list.list, {});
+  const toeic = categories.find((category) => category.name === "TOEIC対策");
+  const reading = categories.find((category) => category.name === "多読");
+  if (toeic === undefined || reading === undefined) {
+    throw new Error("カテゴリがない");
+  }
+  const toeicItems = items.filter((item) => item.categoryId === toeic._id);
+  if (toeicItems.length < 2) {
+    throw new Error("TOEIC 項目が足りない");
+  }
+  const reordered = [...toeicItems].reverse();
+  await t.mutation(api.mutations.items.applyOrder.applyOrder, {
+    updates: [{ categoryId: toeic._id, orderedItemIds: reordered.map((item) => item._id) }],
+  });
+  const after = await t.query(api.queries.items.list.list, {});
+  const afterToeic = after.filter((item) => item.categoryId === toeic._id);
+  expect(afterToeic.map((item) => item._id)).toEqual(reordered.map((item) => item._id));
+  const moved = afterToeic[0];
+  if (moved === undefined) {
+    throw new Error("移動元がない");
+  }
+  await t.mutation(api.mutations.items.applyOrder.applyOrder, {
+    updates: [
+      { categoryId: toeic._id, orderedItemIds: afterToeic.slice(1).map((item) => item._id) },
+      { categoryId: reading._id, orderedItemIds: [moved._id] },
+    ],
+  });
+  const movedAfter = await t.query(api.queries.items.list.list, {});
+  expect(movedAfter.find((item) => item._id === moved._id)?.categoryId).toBe(reading._id);
+});
+
+test("試験目標の保存と障害プラン更新", async () => {
+  const t = owner();
+  await t.mutation(api.mutations.goals.saveExam.saveExam, {
+    examDate: "2026-10-01",
+    maxScore: 900,
+    minScore: 800,
+  });
+  const exam = await t.query(api.queries.goals.getExam.getExam, { todayJst: MONDAY });
+  expect(exam).toEqual({
+    daysRemaining: 45,
+    examDate: "2026-10-01",
+    maxScore: 900,
+    minScore: 800,
+  });
+  const planId = await t.mutation(api.mutations.goals.createObstacle.createObstacle, {
+    ifText: "眠い",
+    thenText: "金フレだけ",
+  });
+  await t.mutation(api.mutations.goals.updateObstacle.updateObstacle, {
+    ifText: "眠い朝",
+    planId,
+    thenText: "金フレ10分",
+  });
+  const plans = await t.query(api.queries.goals.listObstacles.listObstacles, {});
+  expect(plans).toEqual([{ _id: planId, ifText: "眠い朝", thenText: "金フレ10分" }]);
+  await expect(
+    t.mutation(api.mutations.goals.createObstacle.createObstacle, { ifText: " ", thenText: "x" }),
   ).rejects.toThrow();
 });

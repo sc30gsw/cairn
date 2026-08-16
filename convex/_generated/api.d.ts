@@ -47,8 +47,6 @@ import type * as mutations_items_applyOrder from "../mutations/items/applyOrder.
 import type * as mutations_items_create from "../mutations/items/create.js";
 import type * as mutations_items_remove from "../mutations/items/remove.js";
 import type * as mutations_items_rename from "../mutations/items/rename.js";
-import type * as mutations_items_reorder from "../mutations/items/reorder.js";
-import type * as mutations_migrations_backfillAllItemSortOrders from "../mutations/migrations/backfillAllItemSortOrders.js";
 import type * as mutations_presets_create from "../mutations/presets/create.js";
 import type * as mutations_presets_remove from "../mutations/presets/remove.js";
 import type * as mutations_presets_update from "../mutations/presets/update.js";
@@ -115,8 +113,6 @@ import type * as services_items_helpers from "../services/items/helpers.js";
 import type * as services_items_list from "../services/items/list.js";
 import type * as services_items_remove from "../services/items/remove.js";
 import type * as services_items_rename from "../services/items/rename.js";
-import type * as services_items_reorder from "../services/items/reorder.js";
-import type * as services_migrations_backfillAllItemSortOrders from "../services/migrations/backfillAllItemSortOrders.js";
 import type * as services_presets_create from "../services/presets/create.js";
 import type * as services_presets_helpers from "../services/presets/helpers.js";
 import type * as services_presets_list from "../services/presets/list.js";
@@ -183,8 +179,6 @@ declare const fullApi: ApiFromModules<{
   "mutations/items/create": typeof mutations_items_create;
   "mutations/items/remove": typeof mutations_items_remove;
   "mutations/items/rename": typeof mutations_items_rename;
-  "mutations/items/reorder": typeof mutations_items_reorder;
-  "mutations/migrations/backfillAllItemSortOrders": typeof mutations_migrations_backfillAllItemSortOrders;
   "mutations/presets/create": typeof mutations_presets_create;
   "mutations/presets/remove": typeof mutations_presets_remove;
   "mutations/presets/update": typeof mutations_presets_update;
@@ -251,8 +245,6 @@ declare const fullApi: ApiFromModules<{
   "services/items/list": typeof services_items_list;
   "services/items/remove": typeof services_items_remove;
   "services/items/rename": typeof services_items_rename;
-  "services/items/reorder": typeof services_items_reorder;
-  "services/migrations/backfillAllItemSortOrders": typeof services_migrations_backfillAllItemSortOrders;
   "services/presets/create": typeof services_presets_create;
   "services/presets/helpers": typeof services_presets_helpers;
   "services/presets/list": typeof services_presets_list;

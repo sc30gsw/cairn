@@ -5,9 +5,9 @@ import { requireOwnedRow } from "./requireOwnedRow";
 export async function remove(
   ctx: MutationCtx,
   ownerId: string,
-  args: { now: number; rowId: Id<"rows"> },
+  args: { rowId: Id<"rows"> },
 ): Promise<null> {
   await requireOwnedRow(ctx, ownerId, args.rowId);
-  await ctx.db.patch("rows", args.rowId, { deletedAt: args.now });
+  await ctx.db.patch("rows", args.rowId, { deletedAt: Date.now() });
   return null;
 }

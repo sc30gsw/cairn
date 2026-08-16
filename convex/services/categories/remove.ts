@@ -1,17 +1,15 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
-import { ConflictError, NotFoundError } from "../../lib/errors";
+import { ConflictError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
+import { requireOwnedCategory } from "../items/helpers";
 
 export async function remove(
   ctx: MutationCtx,
   ownerId: string,
   args: { categoryId: Id<"categories"> },
 ): Promise<null> {
-  const category = await ctx.db.get("categories", args.categoryId);
-  if (category === null || category.ownerId !== ownerId) {
-    throwDomain(new NotFoundError({ message: "カテゴリが見つかりません", resource: "カテゴリ" }));
-  }
+  await requireOwnedCategory(ctx, ownerId, args.categoryId);
   const items = await ctx.db
     .query("items")
     .withIndex("by_category", (q) => q.eq("categoryId", args.categoryId))
