@@ -11,6 +11,9 @@ export function todayJst(now = new Date()): string {
   return JST_CALENDAR_DATE.format(now);
 }
 
+/** JST 暦日 `YYYY-MM-DD`。`todayJst()` の戻り値から派生する。 */
+export type DateJst = ReturnType<typeof todayJst>;
+
 export function weekdayFromDateJst(dateJst: string): number {
   return new Date(`${dateJst}T12:00:00+09:00`).getUTCDay();
 }

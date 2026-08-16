@@ -8,7 +8,7 @@ export function isPurgeDue(deletedAt: number, now: number): boolean {
 }
 
 export async function deleteRowsByIds(ctx: MutationCtx, rowIds: Iterable<Id<"rows">>) {
-  await Promise.all([...rowIds].map((id) => ctx.db.delete(id)));
+  await Promise.all([...rowIds].map((id) => ctx.db.delete("rows", id)));
 }
 
 export async function deleteDayAndRows(ctx: MutationCtx, dayId: Id<"days">) {
@@ -20,5 +20,5 @@ export async function deleteDayAndRows(ctx: MutationCtx, dayId: Id<"days">) {
     ctx,
     rows.map((row) => row._id),
   );
-  await ctx.db.delete(dayId);
+  await ctx.db.delete("days", dayId);
 }

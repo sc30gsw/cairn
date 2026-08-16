@@ -1,5 +1,6 @@
 import { Button, Card, Grid, Select, Stack, Text, Title } from "@mantine/core";
 import { useNavigate } from "@tanstack/react-router";
+import type { DateJst } from "~domain/jst";
 import { weekdayFromDateJst } from "~domain/jst";
 
 import type { ItemDto, PresetDto, PresetId } from "~/features/catalog/types/item";
@@ -21,7 +22,7 @@ import { onRequiredSelect } from "~/lib/select";
 import { BODY_FONT, DISPLAY_FONT } from "~/lib/theme";
 
 type DayBoardProps = {
-  dateJst: string;
+  dateJst: DateJst;
   day: DayPage;
   isToday: boolean;
   items: ItemDto[];
@@ -38,13 +39,13 @@ type DayBoardProps = {
 };
 
 type TodayPresetSelectProps = {
-  dateJst: string;
+  dateJst: DateJst;
   onSwitchPreset: (presetId: PresetDto["_id"]) => void;
   presets: PresetDto[];
   selectedPresetId: null | PresetId;
 };
 
-function weekdayPresetId(dateJst: string, presets: PresetDto[]) {
+export function weekdayPresetId(dateJst: DateJst, presets: PresetDto[]) {
   return presets.find((preset) => preset.weekday === weekdayFromDateJst(dateJst))?._id ?? null;
 }
 
@@ -171,5 +172,3 @@ export function DayBoard({
     </Stack>
   );
 }
-
-export { weekdayPresetId };

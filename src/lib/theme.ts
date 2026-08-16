@@ -51,8 +51,10 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
   dark: {},
   light: {},
   variables: {
+    "--bd2": RULE,
     "--cairn-paper-2": PAPER_2,
     "--cairn-rule": RULE,
+    "--inset": PAPER_2,
   },
 });
 

@@ -1,9 +1,9 @@
-import { addDaysJst, compareDateJst } from "~domain/jst";
+import { addDaysJst, compareDateJst, type DateJst } from "~domain/jst";
 
 import type { WeekBreakdown } from "~/features/history/types/history";
 
 export type WeeklyProgressInput = Pick<WeekBreakdown, "volumeMinutes" | "weeklyGoalMinutes"> & {
-  todayJst: string;
+  todayJst: DateJst;
   weekEndJst: WeekBreakdown["weekEnd"];
 };
 

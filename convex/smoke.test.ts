@@ -21,20 +21,20 @@ const OWNER = { email: ALLOWED_EMAIL, subject: "owner-subject" };
 test("未認証の session.get は throw する", async () => {
   process.env.ALLOWED_EMAIL = ALLOWED_EMAIL;
   const t = convexTest(schema, modules);
-  await expect(t.query(api.session.get, {})).rejects.toThrow();
+  await expect(t.query(api.queries.session.get.get, {})).rejects.toThrow();
 });
 
 test("allowlist 外は throw する", async () => {
   process.env.ALLOWED_EMAIL = ALLOWED_EMAIL;
   const t = convexTest(schema, modules);
   const asOther = t.withIdentity({ email: "other@example.com", subject: "other" });
-  await expect(asOther.query(api.session.get, {})).rejects.toThrow();
+  await expect(asOther.query(api.queries.session.get.get, {})).rejects.toThrow();
 });
 
 test("所有者なら session.get が通る", async () => {
   process.env.ALLOWED_EMAIL = ALLOWED_EMAIL;
   const t = convexTest(schema, modules);
   const asOwner = t.withIdentity(OWNER);
-  const session = await asOwner.query(api.session.get, {});
+  const session = await asOwner.query(api.queries.session.get.get, {});
   expect(session).toEqual({ ownerId: "owner-subject" });
 });

@@ -1,17 +1,26 @@
 import { convexQuery } from "@convex-dev/react-query";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import type { DateJst } from "~domain/jst";
 import { todayJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
-export function useOpenAndLoadDay(dateJst: string) {
+export function useOpenAndLoadDay(dateJst: DateJst) {
   const today = todayJst();
-  const open = useConvexMutation(api.days.open);
-  const openDay = open.mutateAsync;
-  useEffect(() => {
-    void openDay({ dateJst, todayJst: today });
-  }, [dateJst, openDay, today]);
-  return useSuspenseQuery(convexQuery(api.days.get, { dateJst, todayJst: today }));
+  const open = useConvexMutation(api.mutations.days.open.open);
+
+  // React throws away hook state when a component suspends before it mounts, so useState
+  // cannot hold this promise: the query cache is what keeps `open` to a single call.
+  useSuspenseQuery({
+    gcTime: Number.POSITIVE_INFINITY,
+    queryFn: async () => {
+      await open.mutateAsync({ dateJst, todayJst: today });
+      return null;
+    },
+    queryKey: ["days.open", dateJst, today],
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+
+  return useSuspenseQuery(convexQuery(api.queries.days.get.get, { dateJst, todayJst: today }));
 }

@@ -14,7 +14,6 @@ export default defineSchema({
     ownerId: v.string(),
     sortOrder: v.number(),
   })
-    .index("by_owner", ["ownerId"])
     .index("by_owner_and_name", ["ownerId", "name"])
     .index("by_owner_and_sortOrder", ["ownerId", "sortOrder"]),
 
@@ -43,7 +42,6 @@ export default defineSchema({
     ownerId: v.string(),
     sortOrder: v.optional(v.number()),
   })
-    .index("by_owner", ["ownerId"])
     .index("by_owner_and_name", ["ownerId", "name"])
     .index("by_category", ["categoryId"])
     .index("by_category_and_sortOrder", ["categoryId", "sortOrder"]),
@@ -59,9 +57,7 @@ export default defineSchema({
     name: v.string(),
     ownerId: v.string(),
     weekday: v.number(),
-  })
-    .index("by_owner", ["ownerId"])
-    .index("by_owner_and_weekday", ["ownerId", "weekday"]),
+  }).index("by_owner_and_weekday", ["ownerId", "weekday"]),
 
   rows: defineTable({
     content: v.string(),

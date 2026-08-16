@@ -1,8 +1,8 @@
 import { Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { groupBy, prop } from "remeda";
-import { addDaysJst } from "~domain/jst";
+import { addDaysJst, type DateJst } from "~domain/jst";
 
-import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
+import { WeeklyProgressCard } from "~/components/weekly-progress-card";
 import { RECORD_STATUS_UI } from "~/features/history/lib/record-status-label";
 import type { WeekEvent, WeekPage } from "~/features/history/types/history";
 
@@ -26,12 +26,12 @@ const WEEK_RANGE_END_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
   timeZone: "Asia/Tokyo",
 });
 
-function formatDateHeader(dateJst: string): string {
+function formatDateHeader(dateJst: DateJst): string {
   const date = new Date(`${dateJst}T12:00:00+09:00`);
   return DATE_HEADER_FORMATTER.format(date);
 }
 
-function formatWeekRange(weekStart: string, weekEnd: string): string {
+function formatWeekRange(weekStart: DateJst, weekEnd: DateJst): string {
   const start = new Date(`${weekStart}T12:00:00+09:00`);
   const end = new Date(`${weekEnd}T12:00:00+09:00`);
   const startLabel = WEEK_RANGE_START_FORMATTER.format(start);
@@ -39,8 +39,8 @@ function formatWeekRange(weekStart: string, weekEnd: string): string {
   return `${startLabel} 〜 ${endLabel}`;
 }
 
-function weekDates(weekStart: string): string[] {
-  const dates: string[] = [];
+function weekDates(weekStart: DateJst): DateJst[] {
+  const dates: DateJst[] = [];
   for (let offset = 0; offset < 7; offset += 1) {
     dates.push(addDaysJst(weekStart, offset));
   }
@@ -67,7 +67,7 @@ function WeekEventRow({ event }: { event: WeekEvent }) {
   );
 }
 
-export function WeekAgenda({ todayJst, week }: { todayJst: string; week: WeekPage }) {
+export function WeekAgenda({ todayJst, week }: { todayJst: DateJst; week: WeekPage }) {
   const eventsByDate = groupBy(week.events, prop("dateJst"));
 
   return (

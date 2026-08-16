@@ -1,6 +1,6 @@
 import type { Status } from "~domain/domain";
 
-export type StatusUi = {
+type StatusUi = {
   color: string;
   label: string;
 };
@@ -11,7 +11,7 @@ export const RECORD_STATUS_UI = {
   確定: { color: "blue", label: "完了" },
 } as const satisfies Record<Status, StatusUi>;
 
-export const TRASH_STATUS_LABEL = {
+const TRASH_STATUS_LABEL = {
   スキップ: "やってない",
   未着手: "未着手",
   確定: "やった",

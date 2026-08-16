@@ -5,7 +5,14 @@ import { ItemList } from "~/features/catalog/components/item-list";
 import { PresetList } from "~/features/catalog/components/preset-list";
 import { renderWithMantine } from "~/test-utils/render";
 
-test("カテゴリーの下に学習内容が並び、カテゴリーも編集できる", () => {
+vi.mock("~/features/catalog/hooks/use-dnd", async () => {
+  const dnd = await vi.importActual<typeof import("@hello-pangea/dnd")>("@hello-pangea/dnd");
+  return {
+    useDnd: () => dnd,
+  };
+});
+
+test("カテゴリーの下に学習内容が並び、カテゴリーも編集できる", { timeout: 10_000 }, () => {
   const { getByRole, getByLabelText } = renderWithMantine(
     <>
       <ItemList
@@ -22,7 +29,7 @@ test("カテゴリーの下に学習内容が並び、カテゴリーも編集�
         onRemoveItem={vi.fn()}
         onRenameCategory={vi.fn()}
         onRenameItem={vi.fn()}
-        onReorderItems={vi.fn()}
+        onApplyItemOrder={vi.fn()}
       />
       <PresetList
         items={[

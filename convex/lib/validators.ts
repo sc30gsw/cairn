@@ -263,3 +263,16 @@ export type DayDto = Infer<typeof dayDtoValidator>;
 export type ItemDto = Infer<typeof itemDtoValidator>;
 export type CategoryDto = Infer<typeof categoryDtoValidator>;
 export type PresetDto = Infer<typeof presetDtoValidator>;
+
+export const categoryItemOrderValidator = v.object({
+  categoryId: v.id("categories"),
+  orderedItemIds: v.array(v.id("items")),
+});
+
+export type CategoryItemOrder = Infer<typeof categoryItemOrderValidator>;
+
+export const applyItemOrderArgsValidator = v.object({
+  updates: v.array(categoryItemOrderValidator),
+});
+
+export type ApplyItemOrderInput = Infer<typeof applyItemOrderArgsValidator>;

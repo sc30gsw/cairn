@@ -1,4 +1,4 @@
-export const CHART_CATEGORY_COLORS: Record<string, string> = {
+const CHART_CATEGORY_COLORS: Record<string, string> = {
   TOEIC対策: "blue.6",
   多聴: "yellow.6",
   多読: "blue.4",

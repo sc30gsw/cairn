@@ -1,23 +1,41 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import * as v from "valibot";
+import { todayJst } from "~domain/jst";
 
 import { OwnerGate } from "~/features/auth/components/owner-gate";
-import { DayPage } from "~/features/today/components/day-page";
-import { daySearchMiddlewares, DaySearchSchema } from "~/features/today/lib/day-route-search";
+import { DatedDayPage } from "~/features/today/components/day-page";
+import {
+  daySearchMiddlewares,
+  DaySearchSchema,
+  shouldStripDatedDayPreset,
+} from "~/features/today/lib/day-route-search";
 
 export const Route = createFileRoute("/days/$dateJst")({
+  validateSearch: DaySearchSchema,
   search: {
     middlewares: daySearchMiddlewares,
   },
-  validateSearch: DaySearchSchema,
+  beforeLoad: ({ location, params }) => {
+    const parsedSearch = v.safeParse(DaySearchSchema, location.search);
+    if (
+      parsedSearch.success &&
+      shouldStripDatedDayPreset(params.dateJst, parsedSearch.output.preset, todayJst())
+    ) {
+      throw redirect({
+        params,
+        replace: true,
+        search: { ...parsedSearch.output, preset: undefined },
+        to: "/days/$dateJst",
+      });
+    }
+  },
   component: DayRoute,
 });
 
 function DayRoute() {
-  const { dateJst } = Route.useParams();
-  const { preset } = Route.useSearch();
   return (
     <OwnerGate>
-      <DayPage dateJst={dateJst} presetFromSearch={preset} />
+      <DatedDayPage />
     </OwnerGate>
   );
 }
