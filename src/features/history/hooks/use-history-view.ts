@@ -55,6 +55,7 @@ export function useHistoryView() {
               : yearMonthFromDateJst(dateJst),
           scope: "day",
           tab: "analysis",
+          week: undefined,
         }),
       });
     },
