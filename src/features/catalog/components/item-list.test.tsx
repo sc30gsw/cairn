@@ -12,8 +12,12 @@ vi.mock("~/features/catalog/hooks/use-dnd", async () => {
   };
 });
 
+vi.mock("~/hooks/use-recent-concrete-actions", () => ({
+  useRecentConcreteActions: () => ({ data: [] }),
+}));
+
 test("カテゴリーの下に学習内容が並び、カテゴリーも編集できる", { timeout: 10_000 }, () => {
-  const { getByRole, getByLabelText } = renderWithMantine(
+  const { getByRole } = renderWithMantine(
     <>
       <ItemList
         categories={[
@@ -68,7 +72,7 @@ test("カテゴリーの下に学習内容が並び、カテゴリーも編集�
   expect(getByRole("button", { name: "月曜日を保存" })).toBeDefined();
   expect(getByRole("button", { name: "月曜日を削除" })).toBeDefined();
   expect(getByRole("combobox", { name: "月曜日の雛形1の項目" })).toBeDefined();
-  expect(getByLabelText("月曜日の雛形2の具体的手順")).toBeDefined();
+  expect(getByRole("combobox", { name: "月曜日の雛形2の具体的手順" })).toBeDefined();
   expect(getByRole("button", { name: "雛形を足す" })).toBeDefined();
 });
 

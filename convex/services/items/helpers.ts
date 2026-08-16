@@ -1,7 +1,19 @@
-import type { Id } from "../../_generated/dataModel";
+import type { Doc, Id } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
 import { NotFoundError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
+
+export async function requireOwnedItem(
+  ctx: MutationCtx | QueryCtx,
+  ownerId: string,
+  itemId: Id<"items">,
+): Promise<Doc<"items">> {
+  const item = await ctx.db.get("items", itemId);
+  if (item === null || item.ownerId !== ownerId) {
+    throwDomain(new NotFoundError({ message: "項目が見つかりません", resource: "項目" }));
+  }
+  return item;
+}
 
 export async function requireOwnedCategory(
   ctx: MutationCtx | QueryCtx,

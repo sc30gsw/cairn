@@ -21,7 +21,7 @@ import { useState } from "react";
 import * as v from "valibot";
 import { WEEKDAY_NAMES } from "~domain/catalog";
 
-import { ConcreteActionField } from "~/components/concrete-action-field";
+import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action-field-with-suggestions";
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
 import {
@@ -30,7 +30,7 @@ import {
   PresetSchema,
 } from "~/features/catalog/schemas/preset-schema";
 import type { PresetLineInput } from "~/features/catalog/schemas/preset-schema";
-import type { ItemDto, PresetDto } from "~/features/catalog/types/item";
+import type { ItemDto, ItemId, PresetDto } from "~/features/catalog/types/item";
 import { parseItemId } from "~/features/catalog/types/item";
 import type {
   CreatePresetInput,
@@ -380,9 +380,11 @@ function PresetEditor({
                   />
                 </Grid.Col>
                 <Grid.Col span={{ base: 12, sm: 4 }}>
-                  <ConcreteActionField
+                  <ConcreteActionFieldWithSuggestions
                     aria-label={`${preset.name}の雛形${index + 1}の具体的手順`}
                     error={lineContentErrors[index]}
+                    //? line.itemId は Select の選択肢由来で常に有効な項目 id(firstAvailableItem で補充)。parseItemId の実行時ガードは submit 時のみ必要
+                    itemId={line.itemId as ItemId}
                     itemName={itemName}
                     onChange={(event) => {
                       const content = event.currentTarget.value;

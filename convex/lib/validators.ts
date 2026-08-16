@@ -286,3 +286,7 @@ export const applyItemOrderArgsValidator = v.object({
 });
 
 export type ApplyItemOrderInput = Infer<typeof applyItemOrderArgsValidator>;
+
+export const recentConcreteActionsValidator = v.array(v.string());
+
+export type RecentConcreteActions = Infer<typeof recentConcreteActionsValidator>;

@@ -75,6 +75,7 @@ import type * as queries_history_week from "../queries/history/week.js";
 import type * as queries_history_weekBreakdown from "../queries/history/weekBreakdown.js";
 import type * as queries_history_yearHeatmap from "../queries/history/yearHeatmap.js";
 import type * as queries_items_list from "../queries/items/list.js";
+import type * as queries_items_recentConcreteActions from "../queries/items/recentConcreteActions.js";
 import type * as queries_presets_list from "../queries/presets/list.js";
 import type * as queries_session_get from "../queries/session/get.js";
 import type * as queries_trash_list from "../queries/trash/list.js";
@@ -115,6 +116,7 @@ import type * as services_items_applyOrder from "../services/items/applyOrder.js
 import type * as services_items_create from "../services/items/create.js";
 import type * as services_items_helpers from "../services/items/helpers.js";
 import type * as services_items_list from "../services/items/list.js";
+import type * as services_items_recentConcreteActions from "../services/items/recentConcreteActions.js";
 import type * as services_items_remove from "../services/items/remove.js";
 import type * as services_items_rename from "../services/items/rename.js";
 import type * as services_presets_create from "../services/presets/create.js";
@@ -211,6 +213,7 @@ declare const fullApi: ApiFromModules<{
   "queries/history/weekBreakdown": typeof queries_history_weekBreakdown;
   "queries/history/yearHeatmap": typeof queries_history_yearHeatmap;
   "queries/items/list": typeof queries_items_list;
+  "queries/items/recentConcreteActions": typeof queries_items_recentConcreteActions;
   "queries/presets/list": typeof queries_presets_list;
   "queries/session/get": typeof queries_session_get;
   "queries/trash/list": typeof queries_trash_list;
@@ -251,6 +254,7 @@ declare const fullApi: ApiFromModules<{
   "services/items/create": typeof services_items_create;
   "services/items/helpers": typeof services_items_helpers;
   "services/items/list": typeof services_items_list;
+  "services/items/recentConcreteActions": typeof services_items_recentConcreteActions;
   "services/items/remove": typeof services_items_remove;
   "services/items/rename": typeof services_items_rename;
   "services/presets/create": typeof services_presets_create;

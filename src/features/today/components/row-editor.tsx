@@ -6,7 +6,7 @@ import { IconTrash } from "@tabler/icons-react";
 import { useEffect, type ChangeEvent } from "react";
 import { concreteActionPlaceholder } from "~domain/concreteActionCore";
 
-import { ConcreteActionField } from "~/components/concrete-action-field";
+import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action-field-with-suggestions";
 import { validateConfirmRow } from "~/features/today/lib/validate-confirm-row";
 import { RowEditorSchema } from "~/features/today/schemas/row-editor-schema";
 import type { DayRow } from "~/features/today/types/day";
@@ -143,11 +143,12 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
           <Grid.Col span={{ base: 12, sm: 5 }}>
             <Field of={form} path={["content"]}>
               {(field) => (
-                <ConcreteActionField
+                <ConcreteActionFieldWithSuggestions
                   {...field.props}
                   aria-label={`${row.itemName}の具体的手順`}
                   disabled={disabled}
                   error={field.errors?.[0]}
+                  itemId={row.itemId}
                   itemName={row.itemName}
                   label={row.itemName}
                   onBlur={(event) => {

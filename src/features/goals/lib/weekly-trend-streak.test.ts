@@ -44,3 +44,15 @@ test("ゴール未設定週でストリークは途切れる", () => {
 test("空配列は 0", () => {
   expect(currentStreak([])).toBe(0);
 });
+
+test("全週達成なら配列の長さと同じ数を返す(12週上限の表示側判定に使う)", () => {
+  const weeks = Array.from({ length: 12 }, (_, index) =>
+    makeWeek({
+      achieved: true,
+      goalMinutes: 300,
+      volumeMinutes: 320,
+      weekStart: `2026-0${(index % 9) + 1}-01`,
+    }),
+  );
+  expect(currentStreak(weeks)).toBe(12);
+});

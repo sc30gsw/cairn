@@ -1,18 +1,16 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
-import { ConflictError, NotFoundError } from "../../lib/errors";
+import { ConflictError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { itemIdIsInUse } from "../../lib/preset";
+import { requireOwnedItem } from "./helpers";
 
 export async function remove(
   ctx: MutationCtx,
   ownerId: string,
   args: { itemId: Id<"items"> },
 ): Promise<null> {
-  const item = await ctx.db.get("items", args.itemId);
-  if (item === null || item.ownerId !== ownerId) {
-    throwDomain(new NotFoundError({ message: "項目が見つかりません", resource: "項目" }));
-  }
+  await requireOwnedItem(ctx, ownerId, args.itemId);
   //? 使用中かどうかだけ知りたいので、履歴 rows 全件ではなく先頭1件で判定する(CVX-11)
   const [rowUsingItem, presets] = await Promise.all([
     ctx.db

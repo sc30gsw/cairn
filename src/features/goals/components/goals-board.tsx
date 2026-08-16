@@ -24,6 +24,7 @@ import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-
 import { ConcreteThenFieldLabel } from "~/components/concrete-then-field-label";
 import { MissedWeekBanner } from "~/features/goals/components/missed-week-banner";
 import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
+import { WeeklyTrendChart } from "~/features/goals/components/weekly-trend-chart";
 import { WeeklyTrendList } from "~/features/goals/components/weekly-trend-list";
 import { currentStreak } from "~/features/goals/lib/weekly-trend-streak";
 import { ExamSchema } from "~/features/goals/schemas/exam-schema";
@@ -118,6 +119,7 @@ export function GoalsBoard({
               {showMissedBanner && (
                 <MissedWeekBanner
                   lastWeek={lastWeek}
+                  obstacles={obstacles.length > 0 ? obstacles : undefined}
                   onShowObstacles={() =>
                     obstacleSectionRef.current?.scrollIntoView({
                       behavior: "smooth",
@@ -129,13 +131,15 @@ export function GoalsBoard({
               <Stack gap="xs">
                 <Group gap="xs" wrap="nowrap">
                   <Title order={3}>達成履歴</Title>
-                  {streak > 0 && (
+                  {streak >= 2 && (
                     <Badge color="blue" variant="light">
-                      {streak}週連続達成中
+                      {streak}
+                      {streak === trendWeeks.length ? "+" : ""}週連続達成中
                     </Badge>
                   )}
                 </Group>
                 <WeeklyTrendList weeks={trendWeeks} />
+                <WeeklyTrendChart weeks={trendWeeks} />
               </Stack>
             </Stack>
           </Card>
