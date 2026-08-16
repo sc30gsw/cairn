@@ -67,6 +67,7 @@ import type * as queries_categories_list from "../queries/categories/list.js";
 import type * as queries_days_get from "../queries/days/get.js";
 import type * as queries_goals_getExam from "../queries/goals/getExam.js";
 import type * as queries_goals_listObstacles from "../queries/goals/listObstacles.js";
+import type * as queries_goals_weeklyTrend from "../queries/goals/weeklyTrend.js";
 import type * as queries_history_dayBreakdown from "../queries/history/dayBreakdown.js";
 import type * as queries_history_month from "../queries/history/month.js";
 import type * as queries_history_monthBreakdown from "../queries/history/monthBreakdown.js";
@@ -102,6 +103,7 @@ import type * as services_goals_removeObstacle from "../services/goals/removeObs
 import type * as services_goals_saveExam from "../services/goals/saveExam.js";
 import type * as services_goals_saveWeekly from "../services/goals/saveWeekly.js";
 import type * as services_goals_updateObstacle from "../services/goals/updateObstacle.js";
+import type * as services_goals_weeklyTrend from "../services/goals/weeklyTrend.js";
 import type * as services_history_dayBreakdown from "../services/history/dayBreakdown.js";
 import type * as services_history_month from "../services/history/month.js";
 import type * as services_history_monthBreakdown from "../services/history/monthBreakdown.js";
@@ -201,6 +203,7 @@ declare const fullApi: ApiFromModules<{
   "queries/days/get": typeof queries_days_get;
   "queries/goals/getExam": typeof queries_goals_getExam;
   "queries/goals/listObstacles": typeof queries_goals_listObstacles;
+  "queries/goals/weeklyTrend": typeof queries_goals_weeklyTrend;
   "queries/history/dayBreakdown": typeof queries_history_dayBreakdown;
   "queries/history/month": typeof queries_history_month;
   "queries/history/monthBreakdown": typeof queries_history_monthBreakdown;
@@ -236,6 +239,7 @@ declare const fullApi: ApiFromModules<{
   "services/goals/saveExam": typeof services_goals_saveExam;
   "services/goals/saveWeekly": typeof services_goals_saveWeekly;
   "services/goals/updateObstacle": typeof services_goals_updateObstacle;
+  "services/goals/weeklyTrend": typeof services_goals_weeklyTrend;
   "services/history/dayBreakdown": typeof services_history_dayBreakdown;
   "services/history/month": typeof services_history_month;
   "services/history/monthBreakdown": typeof services_history_monthBreakdown;
