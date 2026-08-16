@@ -1,4 +1,3 @@
-import { ScrollArea } from "@mantine/core";
 import { Shimmer } from "@shimmer-from-structure/react";
 
 import { HistoryAnalysisPanel } from "~/features/history/components/analysis/history-analysis-panel";
