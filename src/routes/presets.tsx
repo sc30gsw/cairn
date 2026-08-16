@@ -1,13 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 
-import { api } from "~/../convex/_generated/api";
-import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { PresetList } from "~/features/catalog/components/preset-list";
+import { PresetListPending } from "~/features/catalog/components/preset-list-pending";
+import {
+  useCreatePreset,
+  useRemovePreset,
+  useUpdatePreset,
+} from "~/features/catalog/hooks/catalog-mutations";
 import { useItemsList, usePresetsList } from "~/features/catalog/hooks/catalog-queries";
 import { useEnsureCatalog } from "~/features/catalog/hooks/use-ensure-catalog";
-import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export const Route = createFileRoute("/presets")({
   component: PresetsRoute,
@@ -16,7 +19,7 @@ export const Route = createFileRoute("/presets")({
 function PresetsRoute() {
   return (
     <OwnerGate>
-      <Suspense fallback={<PendingComponent />}>
+      <Suspense fallback={<PresetListPending />}>
         <PresetsReady />
       </Suspense>
     </OwnerGate>
@@ -27,9 +30,9 @@ function PresetsReady() {
   useEnsureCatalog();
   const { data: items } = useItemsList();
   const { data: presets } = usePresetsList();
-  const createPreset = useConvexMutation(api.presets.create);
-  const updatePreset = useConvexMutation(api.presets.update);
-  const removePreset = useConvexMutation(api.presets.remove);
+  const createPreset = useCreatePreset();
+  const updatePreset = useUpdatePreset();
+  const removePreset = useRemovePreset();
 
   return (
     <PresetList

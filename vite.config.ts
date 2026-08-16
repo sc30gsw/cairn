@@ -90,12 +90,6 @@ export default defineConfig({
         },
       },
       {
-        files: ["src/features/today/hooks/use-open-and-load-day.ts"],
-        rules: {
-          "react-doctor/react-compiler-no-manual-memoization": "off",
-        },
-      },
-      {
         files: ["src/test-utils/**", "src/**/*.test.ts", "src/**/*.test.tsx", "src/features/**"],
         rules: {
           "react-doctor/no-derived-useState": "off",

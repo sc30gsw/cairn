@@ -1,15 +1,23 @@
 import { Suspense, useEffect, useRef } from "react";
 import { todayJst } from "~domain/jst";
 
-import { api } from "~/../convex/_generated/api";
-import { PendingComponent } from "~/components/pending-component";
 import type { PresetId } from "~/features/catalog/types/item";
 import { parsePresetId } from "~/features/catalog/types/item";
 import { DayBoard, weekdayPresetId } from "~/features/today/components/day-board";
+import { DayPagePending } from "~/features/today/components/day-page-pending";
+import {
+  useAddRow,
+  useConfirmRow,
+  useRemoveDay,
+  useRemoveRow,
+  useSetDayCondition,
+  useSetDayMemo,
+  useSkipRow,
+  useSwitchPreset,
+} from "~/features/today/hooks/day-mutations";
 import { useItemsList, usePresetsList } from "~/features/today/hooks/day-queries";
 import { useOpenAndLoadDay } from "~/features/today/hooks/use-open-and-load-day";
 import type { DaySearch } from "~/features/today/schemas/day-search-schema";
-import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 type DayPageProps = {
   dateJst: string;
@@ -18,8 +26,8 @@ type DayPageProps = {
 
 export function DayPage({ dateJst, presetFromSearch }: DayPageProps) {
   return (
-    <Suspense fallback={<PendingComponent />}>
-      <DayPageReady dateJst={dateJst} presetFromSearch={presetFromSearch} />
+    <Suspense fallback={<DayPagePending />}>
+      <DayPageReady key={dateJst} dateJst={dateJst} presetFromSearch={presetFromSearch} />
     </Suspense>
   );
 }
@@ -30,14 +38,14 @@ function DayPageReady({ dateJst, presetFromSearch }: DayPageProps) {
   const { data: day } = useOpenAndLoadDay(dateJst);
   const { data: items } = useItemsList();
   const { data: presets } = usePresetsList();
-  const confirm = useConvexMutation(api.rows.confirm);
-  const skip = useConvexMutation(api.rows.skip);
-  const add = useConvexMutation(api.rows.add);
-  const removeRow = useConvexMutation(api.rows.remove);
-  const switchPreset = useConvexMutation(api.rows.switchPreset);
-  const setCondition = useConvexMutation(api.days.setCondition);
-  const setMemo = useConvexMutation(api.days.setMemo);
-  const removeDay = useConvexMutation(api.trash.removeDay);
+  const confirm = useConfirmRow();
+  const skip = useSkipRow();
+  const add = useAddRow();
+  const removeRow = useRemoveRow();
+  const switchPreset = useSwitchPreset();
+  const setCondition = useSetDayCondition();
+  const setMemo = useSetDayMemo();
+  const removeDay = useRemoveDay();
   const appliedPresetRef = useRef<null | PresetId>(null);
 
   const defaultPresetId = weekdayPresetId(dateJst, presets);

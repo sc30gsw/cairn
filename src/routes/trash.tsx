@@ -1,12 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 
-import { api } from "~/../convex/_generated/api";
-import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { TrashList } from "~/features/trash/components/trash-list";
+import { TrashPending } from "~/features/trash/components/trash-pending";
+import {
+  usePurgeDay,
+  usePurgeRow,
+  useRestoreDay,
+  useRestoreRow,
+} from "~/features/trash/hooks/trash-mutations";
 import { useTrashList } from "~/features/trash/hooks/trash-queries";
-import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export const Route = createFileRoute("/trash")({
   component: TrashRoute,
@@ -15,7 +19,7 @@ export const Route = createFileRoute("/trash")({
 function TrashRoute() {
   return (
     <OwnerGate>
-      <Suspense fallback={<PendingComponent />}>
+      <Suspense fallback={<TrashPending />}>
         <TrashReady />
       </Suspense>
     </OwnerGate>
@@ -24,10 +28,10 @@ function TrashRoute() {
 
 function TrashReady() {
   const { data: trash } = useTrashList();
-  const restoreDay = useConvexMutation(api.trash.restoreDay);
-  const restoreRow = useConvexMutation(api.rows.restore);
-  const purgeDay = useConvexMutation(api.trash.purgeDay);
-  const purgeRow = useConvexMutation(api.trash.purgeRow);
+  const restoreDay = useRestoreDay();
+  const restoreRow = useRestoreRow();
+  const purgeDay = usePurgeDay();
+  const purgeRow = usePurgeRow();
 
   return (
     <TrashList

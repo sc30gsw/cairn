@@ -1,14 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 
-import { api } from "~/../convex/_generated/api";
-import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { ItemList } from "~/features/catalog/components/item-list";
+import { ItemListPending } from "~/features/catalog/components/item-list-pending";
+import {
+  useApplyItemOrder,
+  useCreateCategory,
+  useCreateItem,
+  useRemoveCategory,
+  useRemoveItem,
+  useRenameCategory,
+  useRenameItem,
+} from "~/features/catalog/hooks/catalog-mutations";
 import { useCategoriesList, useItemsList } from "~/features/catalog/hooks/catalog-queries";
 import { useEnsureCatalog } from "~/features/catalog/hooks/use-ensure-catalog";
-import { useApplyItemOrder, useRenameItem } from "~/features/catalog/hooks/use-rename-item";
-import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export const Route = createFileRoute("/items")({
   component: ItemsRoute,
@@ -17,7 +23,7 @@ export const Route = createFileRoute("/items")({
 function ItemsRoute() {
   return (
     <OwnerGate>
-      <Suspense fallback={<PendingComponent />}>
+      <Suspense fallback={<ItemListPending />}>
         <ItemsReady />
       </Suspense>
     </OwnerGate>
@@ -28,13 +34,13 @@ function ItemsReady() {
   useEnsureCatalog();
   const { data: categories } = useCategoriesList();
   const { data: items } = useItemsList();
-  const createCategory = useConvexMutation(api.categories.create);
-  const renameCategory = useConvexMutation(api.categories.rename);
-  const removeCategory = useConvexMutation(api.categories.remove);
-  const createItem = useConvexMutation(api.items.create);
+  const createCategory = useCreateCategory();
+  const renameCategory = useRenameCategory();
+  const removeCategory = useRemoveCategory();
+  const createItem = useCreateItem();
   const renameItem = useRenameItem();
   const applyItemOrder = useApplyItemOrder();
-  const removeItem = useConvexMutation(api.items.remove);
+  const removeItem = useRemoveItem();
 
   return (
     <ItemList

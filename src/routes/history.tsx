@@ -1,21 +1,14 @@
-import { Card, ScrollArea, Tabs, Title } from "@mantine/core";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Tabs, Title } from "@mantine/core";
+import { createFileRoute } from "@tanstack/react-router";
 import { Suspense, useState } from "react";
 import { mondayOfWeek, todayJst } from "~domain/jst";
 
-import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { useEnsureCatalog } from "~/features/catalog/hooks/use-ensure-catalog";
-import { HistoryAnalysisPanel } from "~/features/history/components/analysis/history-analysis-panel";
-import { HistoryMonthView } from "~/features/history/components/history-month-view";
-import { WeekAgenda } from "~/features/history/components/week-agenda";
-import {
-  useHistoryDayBreakdown,
-  useHistoryMonthBreakdown,
-  useHistoryWeek,
-  useHistoryWeekBreakdown,
-  useHistoryYearHeatmap,
-} from "~/features/history/hooks/history-queries";
+import { HistoryAnalysisTab } from "~/features/history/components/history-analysis-tab";
+import { HistoryMonthTab } from "~/features/history/components/history-month-tab";
+import { HistoryPending } from "~/features/history/components/history-pending";
+import { HistoryWeekTab } from "~/features/history/components/history-week-tab";
 import type { AnalysisScope } from "~/features/history/schemas/analysis-scope-schema";
 
 import tabBarClasses from "~/features/history/components/history-tab-bar.module.css";
@@ -27,7 +20,7 @@ export const Route = createFileRoute("/history")({
 function HistoryRoute() {
   return (
     <OwnerGate>
-      <Suspense fallback={<PendingComponent />}>
+      <Suspense fallback={<HistoryPending />}>
         <HistoryReady />
       </Suspense>
     </OwnerGate>
@@ -65,7 +58,7 @@ function HistoryReady() {
 
         <Tabs.Panel pt="md" value="month">
           {activeTab === "month" ? (
-            <Suspense fallback={<PendingComponent />}>
+            <Suspense fallback={<HistoryPending />}>
               <HistoryMonthTab
                 month={month}
                 onDayClick={openDayAnalysis}
@@ -79,7 +72,7 @@ function HistoryReady() {
 
         <Tabs.Panel pt="md" value="week">
           {activeTab === "week" ? (
-            <Suspense fallback={<PendingComponent />}>
+            <Suspense fallback={<HistoryPending />}>
               <HistoryWeekTab today={today} weekAnchor={weekAnchor} />
             </Suspense>
           ) : null}
@@ -87,7 +80,7 @@ function HistoryReady() {
 
         <Tabs.Panel pt="md" value="analysis">
           {activeTab === "analysis" ? (
-            <Suspense fallback={<PendingComponent />}>
+            <Suspense fallback={<HistoryPending />}>
               <HistoryAnalysisTab
                 analysisScope={analysisScope}
                 onDayClick={openDayAnalysis}
@@ -101,93 +94,6 @@ function HistoryReady() {
           ) : null}
         </Tabs.Panel>
       </Tabs>
-    </>
-  );
-}
-
-function HistoryMonthTab({
-  month,
-  onDayClick,
-  onMonthChange,
-  today,
-  yearMonth,
-}: {
-  month: Date;
-  onDayClick: (dateJst: string) => void;
-  onMonthChange: (month: Date) => void;
-  today: string;
-  yearMonth: string;
-}) {
-  const { data: monthBreakdown } = useHistoryMonthBreakdown(today, yearMonth);
-
-  return (
-    <HistoryMonthView
-      events={monthBreakdown.events}
-      month={month}
-      onDayClick={onDayClick}
-      onMonthChange={onMonthChange}
-      todayJst={today}
-    />
-  );
-}
-
-function HistoryWeekTab({ today, weekAnchor }: { today: string; weekAnchor: string }) {
-  const { data: week } = useHistoryWeek(weekAnchor);
-
-  return (
-    <ScrollArea.Autosize mah={640} offsetScrollbars type="auto">
-      <WeekAgenda todayJst={today} week={week} />
-    </ScrollArea.Autosize>
-  );
-}
-
-function HistoryAnalysisTab({
-  analysisScope,
-  onDayClick,
-  onScopeChange,
-  selectedDateJst,
-  today,
-  weekAnchor,
-  yearMonth,
-}: {
-  analysisScope: AnalysisScope;
-  onDayClick: (dateJst: string) => void;
-  onScopeChange: (scope: AnalysisScope) => void;
-  selectedDateJst: string;
-  today: string;
-  weekAnchor: string;
-  yearMonth: string;
-}) {
-  const { data: monthBreakdown } = useHistoryMonthBreakdown(today, yearMonth);
-  const { data: yearHeatmap } = useHistoryYearHeatmap(today);
-  const { data: weekBreakdown } = useHistoryWeekBreakdown(weekAnchor);
-  const { data: dayBreakdown } = useHistoryDayBreakdown(selectedDateJst);
-
-  return (
-    <>
-      <Card>
-        <HistoryAnalysisPanel
-          day={dayBreakdown}
-          heatmapDays={yearHeatmap.days}
-          month={monthBreakdown}
-          onDayClick={onDayClick}
-          onScopeChange={onScopeChange}
-          scope={analysisScope}
-          selectedDateJst={selectedDateJst}
-          todayJst={today}
-          week={weekBreakdown}
-          yearMonth={yearMonth}
-        />
-      </Card>
-      <Card mt="md" padding="md" className="text-center">
-        <Link
-          params={{ dateJst: selectedDateJst }}
-          to="/days/$dateJst"
-          className="text-blue-400 hover:underline"
-        >
-          選択中の日 ({selectedDateJst}) を編集
-        </Link>
-      </Card>
     </>
   );
 }
