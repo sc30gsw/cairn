@@ -7,6 +7,7 @@ import {
   type ConcreteActionFieldProps,
 } from "~/components/concrete-action-field";
 import { useRecentConcreteActions } from "~/hooks/use-recent-concrete-actions";
+import { isShimmerId } from "~/lib/shimmer-id";
 
 type ConcreteActionFieldWithSuggestionsProps = ConcreteActionFieldProps & {
   itemId: Id<"items">;
@@ -22,6 +23,11 @@ export function ConcreteActionFieldWithSuggestions({
   itemId,
   ...props
 }: ConcreteActionFieldWithSuggestionsProps) {
+  //? shimmer テンプレートの疑似 id は v.id("items") を満たさないため、問い合わせず候補なしで描画する
+  if (isShimmerId(itemId)) {
+    return <ConcreteActionField {...props} />;
+  }
+
   return (
     <Suspense
       fallback={
