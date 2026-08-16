@@ -16,10 +16,14 @@ export const CreatePresetSchema = v.object({
   ),
 });
 
-export const PresetSchema = v.object({
-  lines: v.array(PresetLineSchema),
+export const PresetMetaSchema = v.object({
   name: v.pipe(v.string(), v.minLength(1, "名前は必須です")),
   weekday: v.pipe(v.number(), v.minValue(0), v.maxValue(6)),
+});
+
+export const PresetSchema = v.object({
+  lines: v.array(PresetLineSchema),
+  ...PresetMetaSchema.entries,
 });
 
 export type PresetLineInput = v.InferOutput<typeof PresetLineSchema>;

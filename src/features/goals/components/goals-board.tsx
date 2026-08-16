@@ -1,5 +1,6 @@
 import { Field, Form, reset, useForm, type FormStore } from "@formisch/react";
 import {
+  Badge,
   Button,
   Card,
   Grid,
@@ -12,6 +13,7 @@ import {
   Box,
 } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
+import { useRef } from "react";
 import { OBSTACLE_THEN_PLACEHOLDER } from "~domain/concreteActionCore";
 import type { DateJst } from "~domain/jst";
 
@@ -19,8 +21,10 @@ import { ConcreteActionField } from "~/components/concrete-action-field";
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
 import { ConcreteThenFieldLabel } from "~/components/concrete-then-field-label";
+import { MissedWeekBanner } from "~/features/goals/components/missed-week-banner";
 import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
 import { WeeklyTrendList } from "~/features/goals/components/weekly-trend-list";
+import { currentStreak } from "~/features/goals/lib/weekly-trend-streak";
 import { ExamSchema } from "~/features/goals/schemas/exam-schema";
 import { ObstacleSchema } from "~/features/goals/schemas/obstacle-schema";
 import { WeeklySchema } from "~/features/goals/schemas/weekly-schema";
@@ -69,6 +73,12 @@ export function GoalsBoard({
     initialInput: { ifText: "", thenText: "" },
     schema: ObstacleSchema,
   });
+  const obstacleSectionRef = useRef<HTMLDivElement>(null);
+  //? trendWeeks は新しい順。先頭 = 直近の完了週
+  const lastWeek = trendWeeks[0];
+  const showMissedBanner =
+    lastWeek !== undefined && lastWeek.goalMinutes !== null && !lastWeek.achieved;
+  const streak = currentStreak(trendWeeks);
 
   return (
     <ConcreteActionTour screen="obstacles">
@@ -104,15 +114,33 @@ export function GoalsBoard({
                 weeklyGoalMinutes={weeklyGoalMinutes}
               />
               <WeeklyGoalForm onSaveWeekly={onSaveWeekly} weeklyGoalMinutes={weeklyGoalMinutes} />
+              {showMissedBanner && (
+                <MissedWeekBanner
+                  lastWeek={lastWeek}
+                  onShowObstacles={() =>
+                    obstacleSectionRef.current?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    })
+                  }
+                />
+              )}
               <Stack gap="xs">
-                <Title order={3}>達成履歴</Title>
+                <Group gap="xs" wrap="nowrap">
+                  <Title order={3}>達成履歴</Title>
+                  {streak > 0 && (
+                    <Badge color="blue" variant="light">
+                      {streak}週連続達成中
+                    </Badge>
+                  )}
+                </Group>
                 <WeeklyTrendList weeks={trendWeeks} />
               </Stack>
             </Stack>
           </Card>
         </Grid.Col>
         <Grid.Col span={12}>
-          <Card>
+          <Card ref={obstacleSectionRef}>
             <Stack gap="md">
               <Group gap="xs" wrap="nowrap">
                 <Title order={2}>障害プラン</Title>

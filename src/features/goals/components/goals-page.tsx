@@ -10,7 +10,11 @@ import {
   useSaveWeeklyGoal,
   useUpdateObstacle,
 } from "~/features/goals/hooks/goals-mutations";
-import { useExamGoal, useObstaclesList, useWeeklyTrend } from "~/features/goals/hooks/goals-queries";
+import {
+  useExamGoal,
+  useObstaclesList,
+  useWeeklyTrend,
+} from "~/features/goals/hooks/goals-queries";
 import { useHistoryWeek } from "~/features/history/hooks/history-queries";
 
 export function GoalsPage() {

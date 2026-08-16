@@ -6,6 +6,4 @@ export type ExamGoal = FunctionReturnType<typeof api.queries.goals.getExam.getEx
 export type Obstacle = FunctionReturnType<
   typeof api.queries.goals.listObstacles.listObstacles
 >[number];
-export type WeeklyTrendWeeks = FunctionReturnType<
-  typeof api.queries.goals.weeklyTrend.weeklyTrend
->;
+export type WeeklyTrendWeeks = FunctionReturnType<typeof api.queries.goals.weeklyTrend.weeklyTrend>;

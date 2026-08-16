@@ -17,6 +17,7 @@ test("カウントダウンと週間ゴールと障害プランが見える", ()
       onSaveWeekly={vi.fn()}
       onUpdateObstacle={vi.fn()}
       todayJst="2026-08-17"
+      trendWeeks={[]}
       volumeMinutes={30}
       weekEndJst="2026-08-23"
       weeklyGoalMinutes={300}
@@ -43,6 +44,7 @@ test("障害プランを追加したら入力が空に戻る", async () => {
       onSaveWeekly={vi.fn()}
       onUpdateObstacle={vi.fn()}
       todayJst="2026-08-17"
+      trendWeeks={[]}
       volumeMinutes={30}
       weekEndJst="2026-08-23"
       weeklyGoalMinutes={300}
