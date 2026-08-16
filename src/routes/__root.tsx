@@ -11,6 +11,7 @@ import {
 } from "@mantine/core";
 import { DatesProvider } from "@mantine/dates";
 import { ModalsProvider } from "@mantine/modals";
+import { Notifications } from "@mantine/notifications";
 import { ShimmerProvider } from "@shimmer-from-structure/react";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ErrorComponentProps } from "@tanstack/react-router";
@@ -103,6 +104,7 @@ function RootDocument({ children }: Record<"children", ReactNode>) {
             <ModalsProvider labels={{ cancel: "キャンセル", confirm: "見送りにする" }}>
               <DatesProvider settings={{ locale: "ja" }}>{children}</DatesProvider>
             </ModalsProvider>
+            <Notifications position="top-right" />
           </ShimmerProvider>
           {TanStackRouterDevtools ? (
             <Suspense fallback={null}>

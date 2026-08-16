@@ -9,6 +9,7 @@ import {
   useRestoreRow,
 } from "~/features/trash/hooks/trash-mutations";
 import { useTrashList } from "~/features/trash/hooks/trash-queries";
+import { runMutation } from "~/lib/run-mutation";
 
 export function TrashPage() {
   return (
@@ -28,16 +29,24 @@ function TrashReady() {
   return (
     <TrashList
       onPurgeDay={(dayId) => {
-        void purgeDay.mutateAsync({ dayId });
+        void runMutation(() => purgeDay.mutateAsync({ dayId }), {
+          successMessage: "日を完全に削除しました",
+        });
       }}
       onPurgeRow={(rowId) => {
-        void purgeRow.mutateAsync({ rowId });
+        void runMutation(() => purgeRow.mutateAsync({ rowId }), {
+          successMessage: "記録を完全に削除しました",
+        });
       }}
       onRestoreDay={(dayId) => {
-        void restoreDay.mutateAsync({ dayId });
+        void runMutation(() => restoreDay.mutateAsync({ dayId }), {
+          successMessage: "日を復元しました",
+        });
       }}
       onRestoreRow={(rowId) => {
-        void restoreRow.mutateAsync({ rowId });
+        void runMutation(() => restoreRow.mutateAsync({ rowId }), {
+          successMessage: "記録を復元しました",
+        });
       }}
       trash={trash}
     />

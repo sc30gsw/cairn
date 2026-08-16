@@ -24,7 +24,11 @@ import { WEEKDAY_NAMES } from "~domain/catalog";
 import { ConcreteActionField } from "~/components/concrete-action-field";
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
-import { CreatePresetSchema, PresetSchema } from "~/features/catalog/schemas/preset-schema";
+import {
+  CreatePresetSchema,
+  PresetMetaSchema,
+  PresetSchema,
+} from "~/features/catalog/schemas/preset-schema";
 import type { PresetLineInput } from "~/features/catalog/schemas/preset-schema";
 import type { ItemDto, PresetDto } from "~/features/catalog/types/item";
 import { parseItemId } from "~/features/catalog/types/item";
@@ -274,15 +278,10 @@ function PresetEditor({
   const [lineContentErrors, setLineContentErrors] = useState<Record<number, string>>({});
   const form = useForm({
     initialInput: {
-      lines: preset.lines.map((line: PresetLineDto) => ({
-        content: line.content,
-        itemId: line.itemId,
-        minutes: line.minutes,
-      })),
       name: preset.name,
       weekday: preset.weekday,
     },
-    schema: PresetSchema,
+    schema: PresetMetaSchema,
   });
 
   return (

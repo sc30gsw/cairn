@@ -39,6 +39,19 @@ const yellow = [
   "#362B01",
 ] as const satisfies MantineColorsTuple;
 
+const green = [
+  "#EEF1D8",
+  "#DCE2B0",
+  "#C6D07E",
+  "#AFBC4C",
+  "#98A61F",
+  "#66800B",
+  "#536A09",
+  "#405407",
+  "#2E3E05",
+  "#1C2803",
+] as const satisfies MantineColorsTuple;
+
 export const BODY_FONT = '"IBM Plex Sans JP", "IBM Plex Sans", sans-serif';
 export const DISPLAY_FONT = "Newsreader, 'IBM Plex Sans JP', serif";
 
@@ -61,7 +74,7 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
 export const theme = createTheme({
   autoContrast: true,
   black: INK,
-  colors: { blue, red, yellow },
+  colors: { blue, green, red, yellow },
   cursorType: "pointer",
   defaultRadius: "sm",
   fontFamily: BODY_FONT,

@@ -8,6 +8,7 @@ import { weekdayPresetId } from "~/features/today/components/day-board";
 import { useSwitchPreset } from "~/features/today/hooks/day-mutations";
 import { usePresetsList } from "~/features/today/hooks/day-queries";
 import type { DaySearch } from "~/features/today/schemas/day-search-schema";
+import { runMutation } from "~/lib/run-mutation";
 
 export function useApplyPresetFromSearch(
   dateJst: DateJst,
@@ -29,7 +30,7 @@ export function useApplyPresetFromSearch(
       return;
     }
     appliedPresetRef.current = presetId;
-    void switchPreset.mutateAsync({ dateJst, presetId, todayJst: today });
+    void runMutation(() => switchPreset.mutateAsync({ dateJst, presetId, todayJst: today }));
   }, [dateJst, isToday, presetFromSearch, switchPreset, today]);
 
   useEffect(() => {

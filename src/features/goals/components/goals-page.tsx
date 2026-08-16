@@ -16,6 +16,7 @@ import {
   useWeeklyTrend,
 } from "~/features/goals/hooks/goals-queries";
 import { useHistoryWeek } from "~/features/history/hooks/history-queries";
+import { runMutation } from "~/lib/run-mutation";
 
 export function GoalsPage() {
   return (
@@ -43,19 +44,29 @@ function GoalsReady() {
       exam={exam}
       obstacles={obstacles}
       onCreateObstacle={(input) => {
-        void createObstacle.mutateAsync(input);
+        void runMutation(() => createObstacle.mutateAsync(input), {
+          successMessage: "障害プランを追加しました",
+        });
       }}
       onRemoveObstacle={(planId) => {
-        void removeObstacle.mutateAsync({ planId });
+        void runMutation(() => removeObstacle.mutateAsync({ planId }), {
+          successMessage: "障害プランを削除しました",
+        });
       }}
       onSaveExam={(input) => {
-        void saveExam.mutateAsync(input);
+        void runMutation(() => saveExam.mutateAsync(input), {
+          successMessage: "本番目標を保存しました",
+        });
       }}
       onSaveWeekly={(minutes) => {
-        void saveWeekly.mutateAsync({ minutes, weekStartJst: weekStart });
+        void runMutation(() => saveWeekly.mutateAsync({ minutes, weekStartJst: weekStart }), {
+          successMessage: "週間ゴールを保存しました",
+        });
       }}
       onUpdateObstacle={(input) => {
-        void updateObstacle.mutateAsync(input);
+        void runMutation(() => updateObstacle.mutateAsync(input), {
+          successMessage: "障害プランを更新しました",
+        });
       }}
       todayJst={today}
       trendWeeks={trendWeeks}
