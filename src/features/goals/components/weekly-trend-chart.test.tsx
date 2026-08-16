@@ -1,4 +1,3 @@
-// @vitest-environment happy-dom
 import { expect, test } from "vite-plus/test";
 
 import { WeeklyTrendChart } from "~/features/goals/components/weekly-trend-chart";
@@ -18,7 +17,7 @@ test("記録もゴールもない週しかない場合は何も描画しない",
       ]}
     />,
   );
-  expect(container.firstChild).toBeNull();
+  expect(container.querySelector("svg")).toBeNull();
 });
 
 test("記録がある週があればチャートを描画する", () => {
@@ -35,5 +34,6 @@ test("記録がある週があればチャートを描画する", () => {
       ]}
     />,
   );
-  expect(container.firstChild).not.toBeNull();
+  //? jsdom はレイアウトしないため recharts の内側 svg は 0x0 判定で描画されない。Mantine 側のチャートルートまでは描画されることを確認する
+  expect(container.querySelector(".mantine-BarChart-root")).not.toBeNull();
 });

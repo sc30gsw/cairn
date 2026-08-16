@@ -4,7 +4,7 @@ import type { Obstacle, WeeklyTrendWeeks } from "~/features/goals/types/goal";
 
 type MissedWeekBannerProps = {
   lastWeek: WeeklyTrendWeeks[number];
-  obstacles: Obstacle[];
+  obstacles?: Obstacle[];
   onShowObstacles: () => void;
 };
 
@@ -18,7 +18,7 @@ export function MissedWeekBanner({ lastWeek, obstacles, onShowObstacles }: Misse
           分。つまずきに備えるなら、障害プランを見直せます。
         </Text>
         <Button color="yellow" onClick={onShowObstacles} size="xs" type="button">
-          {obstacles && obstacles.length > 0 ? "障害プランを見る" : "障害プランを作成する"}
+          {obstacles === undefined ? "障害プランを作成する" : "障害プランを見る"}
         </Button>
       </Stack>
     </Alert>
