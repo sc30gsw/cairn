@@ -3,10 +3,7 @@ import type { DateJst } from "~domain/jst";
 import { mondayOfWeek, todayJst } from "~domain/jst";
 
 import type { AnalysisScope } from "~/features/history/schemas/analysis-scope-schema";
-import type {
-  HistorySearch,
-  HistoryTab,
-} from "~/features/history/schemas/history-search-schema";
+import type { HistorySearch, HistoryTab } from "~/features/history/schemas/history-search-schema";
 
 /** `/history` 専用 — HistoryPage 配下からのみ import すること */
 const historyRoute = getRouteApi("/history");

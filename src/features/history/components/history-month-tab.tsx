@@ -16,9 +16,7 @@ export function HistoryMonthTab() {
         openDayAnalysis(dateJst);
       }}
       onMonthChange={(month) => {
-        setMonth(
-          `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`,
-        );
+        setMonth(`${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`);
       }}
       todayJst={today}
     />
