@@ -4,57 +4,57 @@ import { api } from "~/../convex/_generated/api";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export function useCreateCategory() {
-  return useConvexMutation(api.categories.create);
+  return useConvexMutation(api.mutations.categories.create.create);
 }
 
 export function useRenameCategory() {
-  return useConvexMutation(api.categories.rename);
+  return useConvexMutation(api.mutations.categories.rename.rename);
 }
 
 export function useRemoveCategory() {
-  return useConvexMutation(api.categories.remove);
+  return useConvexMutation(api.mutations.categories.remove.remove);
 }
 
 export function useCreateItem() {
-  return useConvexMutation(api.items.create);
+  return useConvexMutation(api.mutations.items.create.create);
 }
 
 export function useRemoveItem() {
-  return useConvexMutation(api.items.remove);
+  return useConvexMutation(api.mutations.items.remove.remove);
 }
 
 export function useApplyItemOrder() {
-  const mutation = useConvexMutation(api.items.applyOrder);
+  const mutation = useConvexMutation(api.mutations.items.applyOrder.applyOrder);
 
   return mutation.withOptimisticUpdate((localStore, args) => {
-    const current = localStore.getQuery(api.items.list, {});
+    const current = localStore.getQuery(api.queries.items.list.list, {});
     if (current === undefined) {
       return;
     }
-    localStore.setQuery(api.items.list, {}, applyItemOrderToList(current, args.updates));
+    localStore.setQuery(api.queries.items.list.list, {}, applyItemOrderToList(current, args.updates));
   });
 }
 
 export function useRenameItem() {
-  const mutation = useConvexMutation(api.items.rename);
+  const mutation = useConvexMutation(api.mutations.items.rename.rename);
 
   return mutation.withOptimisticUpdate((localStore, args) => {
-    const current = localStore.getQuery(api.items.list, {});
+    const current = localStore.getQuery(api.queries.items.list.list, {});
     if (current === undefined) {
       return;
     }
-    localStore.setQuery(api.items.list, {}, applyRenameToList(current, args));
+    localStore.setQuery(api.queries.items.list.list, {}, applyRenameToList(current, args));
   });
 }
 
 export function useCreatePreset() {
-  return useConvexMutation(api.presets.create);
+  return useConvexMutation(api.mutations.presets.create.create);
 }
 
 export function useUpdatePreset() {
-  return useConvexMutation(api.presets.update);
+  return useConvexMutation(api.mutations.presets.update.update);
 }
 
 export function useRemovePreset() {
-  return useConvexMutation(api.presets.remove);
+  return useConvexMutation(api.mutations.presets.remove.remove);
 }
