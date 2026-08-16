@@ -129,10 +129,11 @@ function RootComponent() {
   );
 }
 
-function RootErrorComponent(props: ErrorComponentProps) {
+//? 生の error.message は Convex の内部ログやスタックを含むため描画しない(FullPageErrorState が文言を決める)
+function RootErrorComponent({ error, reset }: ErrorComponentProps) {
   return (
     <RootDocument>
-      <ErrorComponent {...props} />
+      <FullPageErrorState error={error} onRetry={reset} />
     </RootDocument>
   );
 }
@@ -151,9 +152,4 @@ function RootPendingComponent() {
       <PendingComponent />
     </RootDocument>
   );
-}
-
-//? 生の error.message は Convex の内部ログやスタックを含むため描画しない(FullPageErrorState が文言を決める)
-function ErrorComponent({ error, reset }: ErrorComponentProps) {
-  return <FullPageErrorState error={error} onRetry={reset} />;
 }
