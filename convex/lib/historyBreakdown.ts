@@ -11,19 +11,38 @@ function skippedVolumeMinutes(rows: readonly VolumeRow[]): number {
   return sumBy(rows, (row) => (row.status === "スキップ" ? row.minutes : 0));
 }
 
-function breakdownRow(
-  row: Doc<"rows">,
+function distinctConfirmedBreakdownRows(
+  rows: readonly Doc<"rows">[],
   itemById: Map<Id<"items">, Doc<"items">>,
   categoryById: Map<Id<"categories">, Doc<"categories">>,
-): BreakdownRow {
-  const item = itemById.get(row.itemId);
-  const { category } = categoryFields(item, categoryById);
-  return {
-    category,
-    itemName: item?.name ?? "不明",
-    minutes: row.minutes,
-    status: row.status,
-  };
+): BreakdownRow[] {
+  const confirmed = rows.filter((row) => row.status === "確定");
+  const grouped = groupBy(confirmed, prop("itemId"));
+
+  return Object.values(grouped)
+    .map((itemRows) => {
+      const first = itemRows[0]!;
+      const item = itemById.get(first.itemId);
+      const { category, categorySortOrder } = categoryFields(item, categoryById);
+      return {
+        category,
+        categorySortOrder,
+        itemName: item?.name ?? "不明",
+        minutes: sumBy(itemRows, prop("minutes")),
+        status: "確定" as const,
+      };
+    })
+    .toSorted(
+      (left, right) =>
+        left.categorySortOrder - right.categorySortOrder ||
+        left.itemName.localeCompare(right.itemName, "ja"),
+    )
+    .map(({ category, itemName, minutes, status }) => ({
+      category,
+      itemName,
+      minutes,
+      status,
+    }));
 }
 
 function aggregateByCategory(
@@ -67,7 +86,7 @@ export function aggregateBreakdownRows(
   return {
     byCategory: aggregateByCategory(rows, itemById, categoryById),
     confirmedMinutes: confirmedVolumeMinutes(rows),
-    rows: rows.map((row) => breakdownRow(row, itemById, categoryById)),
+    rows: distinctConfirmedBreakdownRows(rows, itemById, categoryById),
     skippedMinutes: skippedVolumeMinutes(rows),
   };
 }

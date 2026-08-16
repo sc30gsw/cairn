@@ -1,6 +1,5 @@
 import { Group, Progress, Table, Text } from "@mantine/core";
 
-import { recordStatusLabel } from "~/features/history/lib/record-status-label";
 import type { BreakdownRow } from "~/features/history/types/history";
 
 type BreakdownTableProps = {
@@ -12,7 +11,7 @@ export function BreakdownTable({ confirmedMinutes, rows }: BreakdownTableProps) 
   if (rows.length === 0) {
     return (
       <Text c="dimmed" size="sm">
-        記録がありません。
+        完了した記録がありません。
       </Text>
     );
   }
@@ -20,13 +19,13 @@ export function BreakdownTable({ confirmedMinutes, rows }: BreakdownTableProps) 
   return (
     <Table captionSide="top" highlightOnHover striped withTableBorder>
       <Table.Caption>
-        内訳一覧。確定比は、選択範囲の確定合計（{confirmedMinutes}分）に占める割合です。
+        完了項目のみ。同一項目は合算。確定比は、選択範囲の確定合計（{confirmedMinutes}
+        分）に占める割合です。
       </Table.Caption>
       <Table.Thead>
         <Table.Tr>
           <Table.Th>項目</Table.Th>
           <Table.Th>カテゴリ</Table.Th>
-          <Table.Th>状態</Table.Th>
           <Table.Th>分数</Table.Th>
           <Table.Th>確定比</Table.Th>
         </Table.Tr>
@@ -34,32 +33,25 @@ export function BreakdownTable({ confirmedMinutes, rows }: BreakdownTableProps) 
       <Table.Tbody>
         {rows.map((row) => {
           const ratio =
-            row.status === "確定" && confirmedMinutes > 0
-              ? Math.round((row.minutes / confirmedMinutes) * 100)
-              : 0;
+            confirmedMinutes > 0 ? Math.round((row.minutes / confirmedMinutes) * 100) : 0;
           return (
-            <Table.Tr key={`${row.itemName}-${row.status}-${row.minutes}`}>
+            <Table.Tr key={`${row.category}-${row.itemName}`}>
               <Table.Td>{row.itemName}</Table.Td>
               <Table.Td>{row.category}</Table.Td>
-              <Table.Td>{recordStatusLabel(row.status)}</Table.Td>
               <Table.Td>{row.minutes}分</Table.Td>
               <Table.Td>
-                {row.status === "確定" ? (
-                  <Group gap="xs" wrap="nowrap">
-                    <Progress
-                      aria-label={`${row.itemName}、確定合計${confirmedMinutes}分中${row.minutes}分（${ratio}%）`}
-                      flex={1}
-                      miw={80}
-                      size="sm"
-                      value={ratio}
-                    />
-                    <Text aria-hidden size="sm" w={40}>
-                      {ratio}%
-                    </Text>
-                  </Group>
-                ) : (
-                  "—"
-                )}
+                <Group gap="xs" wrap="nowrap">
+                  <Progress
+                    aria-label={`${row.itemName}、確定合計${confirmedMinutes}分中${row.minutes}分（${ratio}%）`}
+                    flex={1}
+                    miw={80}
+                    size="sm"
+                    value={ratio}
+                  />
+                  <Text aria-hidden size="sm" w={40}>
+                    {ratio}%
+                  </Text>
+                </Group>
               </Table.Td>
             </Table.Tr>
           );

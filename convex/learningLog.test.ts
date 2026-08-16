@@ -463,32 +463,105 @@ test("分析クエリと年ヒートマップが学習量を返す", async () =>
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   const distinction = day.rows.find((row) => row.itemName === "Distinction 2000");
-  if (distinction === undefined) {
-    throw new Error("Distinction がない");
+  const kaiwa = day.rows.find((row) => row.itemName === "英会話");
+  if (distinction === undefined || kaiwa === undefined) {
+    throw new Error("シード行がない");
   }
   await t.mutation(api.mutations.rows.confirm.confirm, {
     content: "Unit 1",
     minutes: 45,
     rowId: distinction._id,
   });
+  await t.mutation(api.mutations.rows.skip.skip, { rowId: kaiwa._id });
   const dayBreakdown = await t.query(api.queries.history.dayBreakdown.dayBreakdown, {
     dateJst: MONDAY,
   });
   expect(dayBreakdown.confirmedMinutes).toBe(45);
+  expect(dayBreakdown.skippedMinutes).toBeGreaterThan(0);
+  expect(dayBreakdown.rows).toEqual([
+    expect.objectContaining({
+      itemName: "Distinction 2000",
+      minutes: 45,
+      status: "確定",
+    }),
+  ]);
+  expect(dayBreakdown.rows.every((row) => row.status === "確定")).toBe(true);
   const weekBreakdown = await t.query(api.queries.history.weekBreakdown.weekBreakdown, {
     dateJst: MONDAY,
   });
   expect(weekBreakdown.volumeMinutes).toBe(45);
+  expect(weekBreakdown.rows.every((row) => row.status === "確定")).toBe(true);
   const monthBreakdown = await t.query(api.queries.history.monthBreakdown.monthBreakdown, {
     todayJst: MONDAY,
     yearMonth: "2026-08",
   });
   expect(monthBreakdown.confirmedMinutes).toBe(45);
+  expect(monthBreakdown.rows.every((row) => row.status === "確定")).toBe(true);
   const heatmap = await t.query(api.queries.history.yearHeatmap.yearHeatmap, {
     todayJst: MONDAY,
   });
   const mondayHeat = heatmap.days.find((entry) => entry.dateJst === MONDAY);
   expect(mondayHeat?.minutes).toBe(45);
+});
+
+test("分析内訳は同一項目の確定を合算し、未着手を載せない", async () => {
+  const t = owner();
+  await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
+  const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  const distinction = day.rows.find((row) => row.itemName === "Distinction 2000");
+  if (distinction === undefined) {
+    throw new Error("Distinction がない");
+  }
+  await t.mutation(api.mutations.rows.confirm.confirm, {
+    content: "Unit 1",
+    minutes: 30,
+    rowId: distinction._id,
+  });
+  await t.mutation(api.mutations.rows.add.add, {
+    content: "Unit 2",
+    dateJst: MONDAY,
+    itemId: distinction.itemId,
+    minutes: 15,
+    todayJst: MONDAY,
+  });
+  const afterAdd = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  const second = afterAdd.rows.find((row) => row.content === "Unit 2");
+  if (second === undefined) {
+    throw new Error("追加の Distinction 行がない");
+  }
+  await t.mutation(api.mutations.rows.confirm.confirm, {
+    content: "Unit 2",
+    minutes: 15,
+    rowId: second._id,
+  });
+
+  const dayBreakdown = await t.query(api.queries.history.dayBreakdown.dayBreakdown, {
+    dateJst: MONDAY,
+  });
+  expect(dayBreakdown.confirmedMinutes).toBe(45);
+  expect(dayBreakdown.rows).toEqual([
+    expect.objectContaining({
+      itemName: "Distinction 2000",
+      minutes: 45,
+      status: "確定",
+    }),
+  ]);
+  expect(dayBreakdown.rows).toHaveLength(1);
+
+  const weekBreakdown = await t.query(api.queries.history.weekBreakdown.weekBreakdown, {
+    dateJst: MONDAY,
+  });
+  expect(weekBreakdown.rows).toEqual([
+    expect.objectContaining({ itemName: "Distinction 2000", minutes: 45 }),
+  ]);
+
+  const monthBreakdown = await t.query(api.queries.history.monthBreakdown.monthBreakdown, {
+    todayJst: MONDAY,
+    yearMonth: "2026-08",
+  });
+  expect(monthBreakdown.rows).toEqual([
+    expect.objectContaining({ itemName: "Distinction 2000", minutes: 45 }),
+  ]);
 });
 
 test("プリセット CRUD と曜日重複は失敗", async () => {

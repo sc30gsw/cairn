@@ -229,16 +229,19 @@ export function HistoryAnalysisPanel({
         </Grid.Col>
       </Grid>
 
-      <BreakdownTable
-        confirmedMinutes={
-          scope === "day"
-            ? day.confirmedMinutes
-            : scope === "week"
-              ? week.confirmedMinutes
-              : month.confirmedMinutes
-        }
-        rows={scope === "day" ? day.rows : scope === "week" ? week.rows : month.rows}
-      />
+      <Stack gap="xs">
+        <Title order={4}>完了内訳</Title>
+        <BreakdownTable
+          confirmedMinutes={
+            scope === "day"
+              ? day.confirmedMinutes
+              : scope === "week"
+                ? week.confirmedMinutes
+                : month.confirmedMinutes
+          }
+          rows={scope === "day" ? day.rows : scope === "week" ? week.rows : month.rows}
+        />
+      </Stack>
 
       {scope === "day" && !day.isRest ? (
         <Button
