@@ -216,7 +216,7 @@ function PresetCreateForm({
           });
         }}
       >
-        <Grid align="flex-end" gap="sm">
+        <Grid align="flex-start" gap="sm">
           <Grid.Col span={{ base: 12, sm: 6 }}>
             <Field of={form} path={["name"]}>
               {(field) => (
@@ -247,9 +247,11 @@ function PresetCreateForm({
             </Field>
           </Grid.Col>
           <Grid.Col span={{ base: 12, sm: 2 }}>
-            <Button fullWidth type="submit">
-              プリセットを追加
-            </Button>
+            <Input.Wrapper label=" ">
+              <Button fullWidth type="submit">
+                プリセットを追加
+              </Button>
+            </Input.Wrapper>
           </Grid.Col>
         </Grid>
       </Form>
@@ -304,7 +306,7 @@ function PresetEditor({
         }}
       >
         <Stack gap="sm">
-          <Grid align="flex-end" gap="sm">
+          <Grid align="flex-start" gap="sm">
             <Grid.Col span={{ base: 12, sm: 4 }}>
               <Field of={form} path={["name"]}>
                 {(field) => (
@@ -326,6 +328,7 @@ function PresetEditor({
                     aria-label={`${preset.name}の曜日`}
                     data={WEEKDAY_OPTIONS}
                     error={field.errors?.[0]}
+                    label=" "
                     onChange={onRequiredSelect((value) => {
                       field.onChange(Number(value));
                     })}
@@ -335,27 +338,31 @@ function PresetEditor({
               </Field>
             </Grid.Col>
             <Grid.Col span={{ base: 6, sm: 3 }}>
-              <Button fullWidth type="submit">
-                {preset.name}を保存
-              </Button>
+              <Input.Wrapper label=" ">
+                <Button fullWidth type="submit">
+                  {preset.name}を保存
+                </Button>
+              </Input.Wrapper>
             </Grid.Col>
             <Grid.Col span={{ base: 6, sm: 2 }}>
-              <Button
-                color="red"
-                fullWidth
-                onClick={() => onRemove(preset._id)}
-                type="button"
-                variant="subtle"
-              >
-                {preset.name}を削除
-              </Button>
+              <Input.Wrapper label=" ">
+                <Button
+                  color="red"
+                  fullWidth
+                  onClick={() => onRemove(preset._id)}
+                  type="button"
+                  variant="subtle"
+                >
+                  {preset.name}を削除
+                </Button>
+              </Input.Wrapper>
             </Grid.Col>
           </Grid>
           {lines.map((line, index) => {
             const removeLabel = removeLineLabel(items, line.itemId);
             const itemName = items.find((item) => item._id === line.itemId)?.name;
             return (
-              <Grid key={`${preset._id}-${index}`} align="flex-end" gap="sm">
+              <Grid key={`${preset._id}-${index}`} align="flex-start" gap="sm">
                 <Grid.Col span={{ base: 12, sm: 4 }}>
                   <Select
                     aria-label={`${preset.name}の雛形${index + 1}の項目`}

@@ -1,5 +1,5 @@
 import { Field, Form, useForm } from "@formisch/react";
-import { Button, Grid, NumberInput, Select } from "@mantine/core";
+import { Button, Grid, Input, NumberInput, Select } from "@mantine/core";
 import { useState } from "react";
 
 import { ConcreteActionField } from "~/components/concrete-action-field";
@@ -38,7 +38,7 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
         });
       }}
     >
-      <Grid align="flex-end" gap="sm">
+      <Grid align="flex-start" gap="sm">
         <Grid.Col span={{ base: 12, sm: 4 }}>
           <Field of={form} path={["itemId"]}>
             {(field) => (
@@ -85,9 +85,11 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
           </Field>
         </Grid.Col>
         <Grid.Col span={{ base: 6, sm: 2 }}>
-          <Button disabled={first === undefined} fullWidth type="submit">
-            記録を足す
-          </Button>
+          <Input.Wrapper label=" ">
+            <Button disabled={first === undefined} fullWidth type="submit">
+              記録を足す
+            </Button>
+          </Input.Wrapper>
         </Grid.Col>
       </Grid>
     </Form>

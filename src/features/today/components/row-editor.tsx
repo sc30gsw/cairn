@@ -139,7 +139,7 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
       }}
     >
       <div ref={rowRef}>
-        <Grid align="flex-end" gap="sm">
+        <Grid align="flex-start" gap="sm">
           <Grid.Col span={{ base: 12, sm: 5 }}>
             <Field of={form} path={["content"]}>
               {(field) => (

@@ -5,6 +5,7 @@ import {
   Card,
   Grid,
   Group,
+  Input,
   NumberInput,
   Stack,
   Text,
@@ -153,7 +154,7 @@ export function GoalsBoard({
                   reset(obstacleForm);
                 }}
               >
-                <Grid align="flex-end" gap="sm">
+                <Grid align="flex-start" gap="sm">
                   <Grid.Col span={{ base: 12, sm: 5 }}>
                     <ObstacleIfField form={obstacleForm} />
                   </Grid.Col>
@@ -174,9 +175,11 @@ export function GoalsBoard({
                     </Box>
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 2 }}>
-                    <Button fullWidth type="submit">
-                      障害プランを追加
-                    </Button>
+                    <Input.Wrapper label=" ">
+                      <Button fullWidth type="submit">
+                        障害プランを追加
+                      </Button>
+                    </Input.Wrapper>
                   </Grid.Col>
                 </Grid>
               </Form>
@@ -214,7 +217,7 @@ function ExamGoalForm({ exam, onSaveExam, todayJst }: ExamGoalFormProps) {
 
   return (
     <Form of={examForm} onSubmit={onSaveExam}>
-      <Grid align="flex-end" gap="sm">
+      <Grid align="flex-start" gap="sm">
         <Grid.Col span={12}>
           <Field of={examForm} path={["examDate"]}>
             {(field) => (
@@ -286,7 +289,7 @@ function WeeklyGoalForm({ onSaveWeekly, weeklyGoalMinutes }: WeeklyGoalFormProps
         onSaveWeekly(output.minutes);
       }}
     >
-      <Grid align="flex-end" gap="sm">
+      <Grid align="flex-start" gap="sm">
         <Grid.Col span={{ base: 12, sm: 8 }}>
           <Field of={weeklyForm} path={["minutes"]}>
             {(field) => (
@@ -302,9 +305,11 @@ function WeeklyGoalForm({ onSaveWeekly, weeklyGoalMinutes }: WeeklyGoalFormProps
           </Field>
         </Grid.Col>
         <Grid.Col span={{ base: 12, sm: 4 }}>
-          <Button fullWidth type="submit">
-            週間ゴールを保存
-          </Button>
+          <Input.Wrapper label=" ">
+            <Button fullWidth type="submit">
+              週間ゴールを保存
+            </Button>
+          </Input.Wrapper>
         </Grid.Col>
       </Grid>
     </Form>
@@ -351,7 +356,7 @@ function ObstacleEditor({
           <Text>
             もし {plan.ifText} なら {plan.thenText}
           </Text>
-          <Grid align="flex-end" gap="sm">
+          <Grid align="flex-start" gap="sm">
             <Grid.Col span={{ base: 12, sm: 4 }}>
               <Field of={form} path={["ifText"]}>
                 {(field) => (
@@ -359,6 +364,7 @@ function ObstacleEditor({
                     {...field.props}
                     aria-label={`${plan.ifText}のもし`}
                     error={field.errors?.[0]}
+                    label=" "
                     value={field.input}
                   />
                 )}
@@ -380,20 +386,24 @@ function ObstacleEditor({
               </Field>
             </Grid.Col>
             <Grid.Col span={{ base: 6, sm: 2 }}>
-              <Button fullWidth type="submit">
-                {plan.ifText}を保存
-              </Button>
+              <Input.Wrapper label=" ">
+                <Button fullWidth type="submit">
+                  {plan.ifText}を保存
+                </Button>
+              </Input.Wrapper>
             </Grid.Col>
             <Grid.Col span={{ base: 6, sm: 2 }}>
-              <Button
-                color="red"
-                fullWidth
-                onClick={() => onRemove(plan._id)}
-                type="button"
-                variant="subtle"
-              >
-                削除
-              </Button>
+              <Input.Wrapper label=" ">
+                <Button
+                  color="red"
+                  fullWidth
+                  onClick={() => onRemove(plan._id)}
+                  type="button"
+                  variant="subtle"
+                >
+                  削除
+                </Button>
+              </Input.Wrapper>
             </Grid.Col>
           </Grid>
         </Stack>
