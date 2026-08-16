@@ -1,26 +1,22 @@
-import { Card, Grid, Group, Stack, Title } from "@mantine/core";
 import { Shimmer } from "@shimmer-from-structure/react";
+
+import { PresetList } from "~/features/catalog/components/preset-list";
+import {
+  catalogShimmerItems,
+  catalogShimmerPresets,
+} from "~/features/catalog/lib/catalog-shimmer-template";
+import { shimmerNoop } from "~/lib/shimmer-noop";
 
 export function PresetListPending() {
   return (
     <Shimmer loading>
-      <Stack gap="md">
-        <Title order={1}>プリセット</Title>
-        <Card padding="md">
-          <Group grow>
-            <Card h={36} padding={0} />
-            <Card h={36} padding={0} />
-          </Group>
-        </Card>
-        <Grid>
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card h={220} padding={0} />
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card h={220} padding={0} />
-          </Grid.Col>
-        </Grid>
-      </Stack>
+      <PresetList
+        items={catalogShimmerItems}
+        onCreate={shimmerNoop}
+        onRemove={shimmerNoop}
+        onUpdate={shimmerNoop}
+        presets={catalogShimmerPresets}
+      />
     </Shimmer>
   );
 }

@@ -26,7 +26,7 @@ type DayPageProps = {
 
 export function DayPage({ dateJst, presetFromSearch }: DayPageProps) {
   return (
-    <Suspense fallback={<DayPagePending />}>
+    <Suspense fallback={<DayPagePending dateJst={dateJst} />}>
       <DayPageReady key={dateJst} dateJst={dateJst} presetFromSearch={presetFromSearch} />
     </Suspense>
   );

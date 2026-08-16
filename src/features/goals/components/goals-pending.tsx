@@ -1,23 +1,32 @@
-import { Card, Grid, Stack, Title } from "@mantine/core";
 import { Shimmer } from "@shimmer-from-structure/react";
+
+import { GoalsBoard } from "~/features/goals/components/goals-board";
+import {
+  goalsShimmerExam,
+  goalsShimmerObstacles,
+  goalsShimmerTodayJst,
+  goalsShimmerVolumeMinutes,
+  goalsShimmerWeekEndJst,
+  goalsShimmerWeeklyGoalMinutes,
+} from "~/features/goals/lib/goals-shimmer-template";
+import { shimmerNoop } from "~/lib/shimmer-noop";
 
 export function GoalsPending() {
   return (
     <Shimmer loading>
-      <Stack gap="md">
-        <Title order={1}>目標</Title>
-        <Grid>
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card h={180} padding={0} />
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, md: 6 }}>
-            <Card h={180} padding={0} />
-          </Grid.Col>
-          <Grid.Col span={12}>
-            <Card h={240} padding={0} />
-          </Grid.Col>
-        </Grid>
-      </Stack>
+      <GoalsBoard
+        exam={goalsShimmerExam}
+        obstacles={goalsShimmerObstacles}
+        onCreateObstacle={shimmerNoop}
+        onRemoveObstacle={shimmerNoop}
+        onSaveExam={shimmerNoop}
+        onSaveWeekly={shimmerNoop}
+        onUpdateObstacle={shimmerNoop}
+        todayJst={goalsShimmerTodayJst}
+        volumeMinutes={goalsShimmerVolumeMinutes}
+        weekEndJst={goalsShimmerWeekEndJst}
+        weeklyGoalMinutes={goalsShimmerWeeklyGoalMinutes}
+      />
     </Shimmer>
   );
 }

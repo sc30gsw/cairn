@@ -1,26 +1,26 @@
-import { Card, Group, Stack, Title } from "@mantine/core";
 import { Shimmer } from "@shimmer-from-structure/react";
+
+import { ItemList } from "~/features/catalog/components/item-list";
+import {
+  catalogShimmerCategories,
+  catalogShimmerItems,
+} from "~/features/catalog/lib/catalog-shimmer-template";
+import { shimmerNoop } from "~/lib/shimmer-noop";
 
 export function ItemListPending() {
   return (
     <Shimmer loading>
-      <Stack gap="md">
-        <Stack gap={4}>
-          <Title order={1}>項目</Title>
-          <Card h={20} padding={0} w="70%" />
-        </Stack>
-        <Card padding="md">
-          <Group grow>
-            <Card h={36} padding={0} />
-            <Card h={36} padding={0} />
-          </Group>
-        </Card>
-        <Group align="flex-start" gap="md" wrap="nowrap">
-          <Card h={320} miw={300} padding={0} />
-          <Card h={320} miw={300} padding={0} />
-          <Card h={320} miw={300} padding={0} />
-        </Group>
-      </Stack>
+      <ItemList
+        categories={catalogShimmerCategories}
+        items={catalogShimmerItems}
+        onApplyItemOrder={shimmerNoop}
+        onCreateCategory={shimmerNoop}
+        onCreateItem={shimmerNoop}
+        onRemoveCategory={shimmerNoop}
+        onRemoveItem={shimmerNoop}
+        onRenameCategory={shimmerNoop}
+        onRenameItem={shimmerNoop}
+      />
     </Shimmer>
   );
 }

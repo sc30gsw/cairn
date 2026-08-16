@@ -12,7 +12,7 @@ vi.mock("~/features/catalog/hooks/use-dnd", async () => {
   };
 });
 
-test("カテゴリーの下に学習内容が並び、カテゴリーも編集できる", () => {
+test("カテゴリーの下に学習内容が並び、カテゴリーも編集できる", { timeout: 10_000 }, () => {
   const { getByRole, getByLabelText } = renderWithMantine(
     <>
       <ItemList

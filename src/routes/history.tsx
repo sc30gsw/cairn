@@ -6,9 +6,12 @@ import { mondayOfWeek, todayJst } from "~domain/jst";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { useEnsureCatalog } from "~/features/catalog/hooks/use-ensure-catalog";
 import { HistoryAnalysisTab } from "~/features/history/components/history-analysis-tab";
+import { HistoryAnalysisTabPending } from "~/features/history/components/history-analysis-tab-pending";
 import { HistoryMonthTab } from "~/features/history/components/history-month-tab";
+import { HistoryMonthTabPending } from "~/features/history/components/history-month-tab-pending";
 import { HistoryPending } from "~/features/history/components/history-pending";
 import { HistoryWeekTab } from "~/features/history/components/history-week-tab";
+import { HistoryWeekTabPending } from "~/features/history/components/history-week-tab-pending";
 import type { AnalysisScope } from "~/features/history/schemas/analysis-scope-schema";
 
 import tabBarClasses from "~/features/history/components/history-tab-bar.module.css";
@@ -58,7 +61,7 @@ function HistoryReady() {
 
         <Tabs.Panel pt="md" value="month">
           {activeTab === "month" ? (
-            <Suspense fallback={<HistoryPending />}>
+            <Suspense fallback={<HistoryMonthTabPending />}>
               <HistoryMonthTab
                 month={month}
                 onDayClick={openDayAnalysis}
@@ -72,7 +75,7 @@ function HistoryReady() {
 
         <Tabs.Panel pt="md" value="week">
           {activeTab === "week" ? (
-            <Suspense fallback={<HistoryPending />}>
+            <Suspense fallback={<HistoryWeekTabPending />}>
               <HistoryWeekTab today={today} weekAnchor={weekAnchor} />
             </Suspense>
           ) : null}
@@ -80,7 +83,7 @@ function HistoryReady() {
 
         <Tabs.Panel pt="md" value="analysis">
           {activeTab === "analysis" ? (
-            <Suspense fallback={<HistoryPending />}>
+            <Suspense fallback={<HistoryAnalysisTabPending />}>
               <HistoryAnalysisTab
                 analysisScope={analysisScope}
                 onDayClick={openDayAnalysis}
