@@ -1,11 +1,12 @@
 import { convexQuery } from "@convex-dev/react-query";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import type { DateJst } from "~domain/jst";
 import { todayJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
-export function useOpenAndLoadDay(dateJst: string) {
+export function useOpenAndLoadDay(dateJst: DateJst) {
   const today = todayJst();
   const open = useConvexMutation(api.mutations.days.open.open);
 

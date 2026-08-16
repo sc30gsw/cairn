@@ -1,4 +1,5 @@
 import { Shimmer } from "@shimmer-from-structure/react";
+import type { DateJst } from "~domain/jst";
 import { todayJst } from "~domain/jst";
 
 import { DayBoard } from "~/features/today/components/day-board";
@@ -9,11 +10,7 @@ import {
 } from "~/features/today/lib/day-board-shimmer-template";
 import { shimmerNoop } from "~/lib/shimmer-noop";
 
-type DayPagePendingProps = {
-  dateJst: string;
-};
-
-export function DayPagePending({ dateJst }: DayPagePendingProps) {
+export function DayPagePending({ dateJst }: Record<"dateJst", DateJst>) {
   const today = todayJst();
 
   return (

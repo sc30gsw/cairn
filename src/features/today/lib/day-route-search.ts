@@ -15,4 +15,9 @@ export const daySearchMiddlewares: SearchMiddleware<DaySearch>[] = [
   stripSearchParams(daySearchDefaults),
 ];
 
+/** `/days/$dateJst` では preset 切替 UI がないため、常に strip する。 */
+export const datedDaySearchMiddlewares: SearchMiddleware<DaySearch>[] = [
+  ({ next, search }) => next({ ...search, preset: undefined }),
+];
+
 export { DaySearchSchema };

@@ -1,9 +1,9 @@
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense } from "react";
+import type { DateJst } from "~domain/jst";
 import { todayJst } from "~domain/jst";
 
 import type { PresetId } from "~/features/catalog/types/item";
-import { parsePresetId } from "~/features/catalog/types/item";
-import { DayBoard, weekdayPresetId } from "~/features/today/components/day-board";
+import { DayBoard } from "~/features/today/components/day-board";
 import { DayPagePending } from "~/features/today/components/day-page-pending";
 import {
   useAddRow,
@@ -13,26 +13,43 @@ import {
   useSetDayCondition,
   useSetDayMemo,
   useSkipRow,
-  useSwitchPreset,
 } from "~/features/today/hooks/day-mutations";
 import { useItemsList, usePresetsList } from "~/features/today/hooks/day-queries";
+import { useApplyPresetFromSearch } from "~/features/today/hooks/use-apply-preset-from-search";
 import { useOpenAndLoadDay } from "~/features/today/hooks/use-open-and-load-day";
+import { datedDayRoute, indexDayRoute } from "~/features/today/lib/day-route-api";
 import type { DaySearch } from "~/features/today/schemas/day-search-schema";
 
-type DayPageProps = {
-  dateJst: string;
-  presetFromSearch?: DaySearch["preset"];
-};
+/** `/` 専用 entry。`indexDayRoute` はこのコンポーネントからのみ使う。 */
+export function TodayDayPage() {
+  const dateJst = todayJst();
+  const { preset } = indexDayRoute.useSearch();
 
-export function DayPage({ dateJst, presetFromSearch }: DayPageProps) {
   return (
     <Suspense fallback={<DayPagePending dateJst={dateJst} />}>
-      <DayPageReady key={dateJst} dateJst={dateJst} presetFromSearch={presetFromSearch} />
+      <DayPageCore key={dateJst} dateJst={dateJst} presetFromSearch={preset} />
     </Suspense>
   );
 }
 
-function DayPageReady({ dateJst, presetFromSearch }: DayPageProps) {
+/** `/days/$dateJst` 専用 entry。`datedDayRoute` はこのコンポーネントからのみ使う。 */
+export function DatedDayPage() {
+  const { dateJst } = datedDayRoute.useParams();
+  const { preset } = datedDayRoute.useSearch();
+
+  return (
+    <Suspense fallback={<DayPagePending dateJst={dateJst} />}>
+      <DayPageCore key={dateJst} dateJst={dateJst} presetFromSearch={preset} />
+    </Suspense>
+  );
+}
+
+type DayPageCoreProps = {
+  dateJst: DateJst;
+  presetFromSearch?: DaySearch["preset"];
+};
+
+function DayPageCore({ dateJst, presetFromSearch }: DayPageCoreProps) {
   const today = todayJst();
   const isToday = dateJst === today;
   const { data: day } = useOpenAndLoadDay(dateJst);
@@ -42,33 +59,14 @@ function DayPageReady({ dateJst, presetFromSearch }: DayPageProps) {
   const skip = useSkipRow();
   const add = useAddRow();
   const removeRow = useRemoveRow();
-  const switchPreset = useSwitchPreset();
   const setCondition = useSetDayCondition();
   const setMemo = useSetDayMemo();
   const removeDay = useRemoveDay();
-  const appliedPresetRef = useRef<null | PresetId>(null);
-
-  const defaultPresetId = weekdayPresetId(dateJst, presets);
-  const selectedPresetId =
-    presetFromSearch === undefined ? null : (parsePresetId(presetFromSearch) as PresetId);
-
-  useEffect(() => {
-    if (!isToday || presetFromSearch === undefined) {
-      return;
-    }
-    const presetId = parsePresetId(presetFromSearch);
-    if (appliedPresetRef.current === presetId) {
-      return;
-    }
-    appliedPresetRef.current = presetId;
-    void switchPreset.mutateAsync({ dateJst, presetId, todayJst: today });
-  }, [dateJst, isToday, presetFromSearch, switchPreset, today]);
-
-  useEffect(() => {
-    if (presetFromSearch === undefined) {
-      appliedPresetRef.current = defaultPresetId;
-    }
-  }, [defaultPresetId, presetFromSearch]);
+  const { appliedPresetRef, selectedPresetId, switchPreset } = useApplyPresetFromSearch(
+    dateJst,
+    presetFromSearch,
+    isToday,
+  );
 
   return (
     <DayBoard
@@ -97,7 +95,7 @@ function DayPageReady({ dateJst, presetFromSearch }: DayPageProps) {
       onSkip={(rowId) => {
         void skip.mutateAsync({ rowId });
       }}
-      onSwitchPreset={(presetId) => {
+      onSwitchPreset={(presetId: PresetId) => {
         appliedPresetRef.current = presetId;
         void switchPreset.mutateAsync({ dateJst, presetId, todayJst: today });
       }}

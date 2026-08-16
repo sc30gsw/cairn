@@ -1,5 +1,6 @@
 import { Heatmap } from "@mantine/charts";
 import { indexBy, prop } from "remeda";
+import type { DateJst } from "~domain/jst";
 
 import {
   buildHeatmapChartData,
@@ -18,8 +19,8 @@ import classes from "~/features/history/components/history-learning-heatmap.modu
 
 type HistoryLearningHeatmapProps = {
   days: HeatmapDay[];
-  onDayClick: (dateJst: string) => void;
-  todayJst: string;
+  onDayClick: (dateJst: DateJst) => void;
+  todayJst: DateJst;
 };
 
 export function HistoryLearningHeatmap({

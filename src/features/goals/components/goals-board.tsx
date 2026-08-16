@@ -1,6 +1,7 @@
 import { Field, Form, reset, useForm } from "@formisch/react";
 import { Button, Card, Grid, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
+import type { DateJst } from "~domain/jst";
 
 import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
 import { ExamSchema } from "~/features/goals/schemas/exam-schema";
@@ -14,6 +15,7 @@ import type {
   SaveWeeklyInput,
   UpdateObstacleInput,
 } from "~/features/goals/types/mutations";
+import type { WeekPage } from "~/features/history/types/history";
 import { BODY_FONT, DISPLAY_FONT } from "~/lib/theme";
 
 type GoalsBoardProps = {
@@ -24,10 +26,10 @@ type GoalsBoardProps = {
   onSaveExam: (input: SaveExamInput) => void;
   onSaveWeekly: (minutes: SaveWeeklyInput) => void;
   onUpdateObstacle: (input: UpdateObstacleInput) => void;
-  todayJst: string;
-  volumeMinutes: number;
-  weekEndJst: string;
-  weeklyGoalMinutes: null | number;
+  todayJst: DateJst;
+  volumeMinutes: WeekPage["volumeMinutes"];
+  weekEndJst: WeekPage["weekEnd"];
+  weeklyGoalMinutes: WeekPage["weeklyGoalMinutes"];
 };
 
 export function GoalsBoard({

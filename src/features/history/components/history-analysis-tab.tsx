@@ -8,27 +8,18 @@ import {
   useHistoryWeekBreakdown,
   useHistoryYearHeatmap,
 } from "~/features/history/hooks/history-queries";
-import type { AnalysisScope } from "~/features/history/schemas/analysis-scope-schema";
+import { useHistoryView } from "~/features/history/hooks/use-history-view";
 
-type HistoryAnalysisTabProps = {
-  analysisScope: AnalysisScope;
-  onDayClick: (dateJst: string) => void;
-  onScopeChange: (scope: AnalysisScope) => void;
-  selectedDateJst: string;
-  today: string;
-  weekAnchor: string;
-  yearMonth: string;
-};
-
-export function HistoryAnalysisTab({
-  analysisScope,
-  onDayClick,
-  onScopeChange,
-  selectedDateJst,
-  today,
-  weekAnchor,
-  yearMonth,
-}: HistoryAnalysisTabProps) {
+export function HistoryAnalysisTab() {
+  const {
+    analysisScope,
+    openDayAnalysis,
+    selectedDateJst,
+    setScope,
+    today,
+    weekAnchor,
+    yearMonth,
+  } = useHistoryView();
   const { data: monthBreakdown } = useHistoryMonthBreakdown(today, yearMonth);
   const { data: yearHeatmap } = useHistoryYearHeatmap(today);
   const { data: weekBreakdown } = useHistoryWeekBreakdown(weekAnchor);
@@ -41,8 +32,8 @@ export function HistoryAnalysisTab({
           day={dayBreakdown}
           heatmapDays={yearHeatmap.days}
           month={monthBreakdown}
-          onDayClick={onDayClick}
-          onScopeChange={onScopeChange}
+          onDayClick={openDayAnalysis}
+          onScopeChange={setScope}
           scope={analysisScope}
           selectedDateJst={selectedDateJst}
           todayJst={today}

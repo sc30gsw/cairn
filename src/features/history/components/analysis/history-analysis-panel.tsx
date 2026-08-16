@@ -1,6 +1,7 @@
 import { CompositeChart, DonutChart } from "@mantine/charts";
 import { Alert, Button, Card, Grid, SegmentedControl, Stack, Text, Title } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
+import type { DateJst } from "~domain/jst";
 
 import { WeeklyProgressCard } from "~/components/weekly-progress-card";
 import { BreakdownTable } from "~/features/history/components/breakdown-table";
@@ -29,11 +30,11 @@ type HistoryAnalysisPanelProps = {
   day: DayBreakdown;
   heatmapDays: HeatmapDay[];
   month: MonthBreakdown;
-  onDayClick: (dateJst: string) => void;
+  onDayClick: (dateJst: DateJst) => void;
   onScopeChange: (scope: AnalysisScope) => void;
   scope: AnalysisScope;
-  selectedDateJst: string;
-  todayJst: string;
+  selectedDateJst: DateJst;
+  todayJst: DateJst;
   week: WeekBreakdown;
   yearMonth: string;
 };

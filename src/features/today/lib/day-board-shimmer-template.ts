@@ -1,4 +1,5 @@
 import { STATUSES } from "~domain/domain";
+import type { DateJst } from "~domain/jst";
 
 import type { ItemDto, PresetDto } from "~/features/catalog/types/item";
 import type { DayPage, DayRow } from "~/features/today/types/day";
@@ -27,7 +28,7 @@ export const dayBoardShimmerRow2 = {
   sortOrder: 1,
 } satisfies DayRow;
 
-export function dayBoardShimmerDay(dateJst: string): DayPage {
+export function dayBoardShimmerDay(dateJst: DateJst): DayPage {
   return {
     dateJst,
     day: {

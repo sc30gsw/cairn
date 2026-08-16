@@ -1,6 +1,6 @@
 import { Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { groupBy, prop } from "remeda";
-import { addDaysJst } from "~domain/jst";
+import { addDaysJst, type DateJst } from "~domain/jst";
 
 import { WeeklyProgressCard } from "~/components/weekly-progress-card";
 import { RECORD_STATUS_UI } from "~/features/history/lib/record-status-label";
@@ -67,7 +67,7 @@ function WeekEventRow({ event }: { event: WeekEvent }) {
   );
 }
 
-export function WeekAgenda({ todayJst, week }: { todayJst: string; week: WeekPage }) {
+export function WeekAgenda({ todayJst, week }: { todayJst: DateJst; week: WeekPage }) {
   const eventsByDate = groupBy(week.events, prop("dateJst"));
 
   return (

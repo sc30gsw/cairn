@@ -6,6 +6,7 @@ import {
   type ScheduleEventData,
 } from "@mantine/schedule";
 import dayjs from "dayjs";
+import type { DateJst } from "~domain/jst";
 
 import {
   confirmedMonthEvents,
@@ -22,9 +23,9 @@ import classes from "~/features/history/components/history-month-view.module.css
 type HistoryMonthViewProps = {
   events: MonthEvent[];
   month: Date;
-  onDayClick: (dateJst: string) => void;
+  onDayClick: (dateJst: DateJst) => void;
   onMonthChange: (month: Date) => void;
-  todayJst?: string;
+  todayJst?: DateJst;
 };
 
 function toDateString(month: Date): DateStringValue {
@@ -35,7 +36,7 @@ function toMonthDate(value: string): Date {
   return new Date(`${value}T12:00:00+09:00`);
 }
 
-function dayCellClassName(day: string, todayJst?: string): string | undefined {
+function dayCellClassName(day: DateJst, todayJst?: DateJst): string | undefined {
   if (todayJst !== undefined && day === todayJst) {
     return undefined;
   }

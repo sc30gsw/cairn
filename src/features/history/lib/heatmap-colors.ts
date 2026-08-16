@@ -1,5 +1,5 @@
 import { flatMap } from "remeda";
-import { addDaysJst } from "~domain/jst";
+import { addDaysJst, type DateJst } from "~domain/jst";
 
 import type { HeatmapDay } from "~/features/history/types/history";
 
@@ -40,7 +40,7 @@ export const HEATMAP_MONTH_LABELS = [
 
 export const HEATMAP_WEEKDAY_LABELS = ["", "月", "", "水", "", "金", ""] as const;
 
-export function yearHeatmapRange(todayJst: string): { endDate: string; startDate: string } {
+export function yearHeatmapRange(todayJst: DateJst): { endDate: DateJst; startDate: DateJst } {
   return {
     endDate: todayJst,
     startDate: addDaysJst(todayJst, -(YEAR_HEATMAP_DAYS - 1)),
