@@ -109,7 +109,7 @@ test("記録を確定スイッチで確定、オフでスキップできる", as
   });
 });
 
-test("8文字未満の具体的手順では確定できない", async () => {
+test("空の具体的手順では確定できない", async () => {
   const onConfirm = vi.fn();
   const { getByRole } = renderWithMantine(
     <DayBoard
@@ -130,7 +130,7 @@ test("8文字未満の具体的手順では確定できない", async () => {
     />,
   );
   const input = getByRole("textbox", { name: "Distinction 2000の具体的手順" });
-  fireEvent.change(input, { target: { value: "短い" } });
+  fireEvent.change(input, { target: { value: "   " } });
   getByRole("switch", { name: "記録を確定" }).click();
   await waitFor(() => {
     expect(onConfirm).not.toHaveBeenCalled();

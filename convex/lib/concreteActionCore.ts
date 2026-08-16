@@ -1,9 +1,11 @@
 import { SEED_CONTENT } from "./catalog";
 
-export const CONCRETE_ACTION_MIN_LENGTH = 8;
+export const CONCRETE_ACTION_MIN_LENGTH = 1;
 
-export const CONCRETE_ACTION_VALIDATION_MESSAGE =
-  "具体的手順は8文字以上で、最初の一歩を書いてください";
+export const CONCRETE_ACTION_VALIDATION_MESSAGE = "具体的手順を入力してください";
+
+export const CONCRETE_ACTION_GUIDANCE =
+  "「〜を勉強する」ではなく、今日の最初の一歩を書くのがおすすめです";
 
 export const DEFAULT_CONCRETE_ACTION_PLACEHOLDER = "例: 最初の一歩を具体的に書く";
 

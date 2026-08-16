@@ -1,4 +1,4 @@
-import type { ExamGoal, Obstacle } from "~/features/goals/types/goal";
+import type { ExamGoal, Obstacle, WeeklyTrendWeeks } from "~/features/goals/types/goal";
 
 export const goalsShimmerExam = {
   daysRemaining: 43,
@@ -14,6 +14,23 @@ export const goalsShimmerObstacles = [
     thenText: "Unit 3 の例文を声に出して5文読む",
   },
 ] satisfies Obstacle[];
+
+export const goalsShimmerTrendWeeks = [
+  {
+    achieved: true,
+    goalMinutes: 300,
+    volumeMinutes: 320,
+    weekEnd: "2026-08-16",
+    weekStart: "2026-08-10",
+  },
+  {
+    achieved: false,
+    goalMinutes: 300,
+    volumeMinutes: 180,
+    weekEnd: "2026-08-09",
+    weekStart: "2026-08-03",
+  },
+] satisfies WeeklyTrendWeeks;
 
 export const goalsShimmerTodayJst = "2026-08-17";
 export const goalsShimmerWeekEndJst = "2026-08-23";

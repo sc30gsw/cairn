@@ -1,4 +1,4 @@
-import { Field, Form, reset, useForm } from "@formisch/react";
+import { Field, Form, reset, useForm, type FormStore } from "@formisch/react";
 import {
   Button,
   Card,
@@ -20,10 +20,11 @@ import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/conc
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
 import { ConcreteThenFieldLabel } from "~/components/concrete-then-field-label";
 import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
+import { WeeklyTrendList } from "~/features/goals/components/weekly-trend-list";
 import { ExamSchema } from "~/features/goals/schemas/exam-schema";
 import { ObstacleSchema } from "~/features/goals/schemas/obstacle-schema";
 import { WeeklySchema } from "~/features/goals/schemas/weekly-schema";
-import type { ExamGoal, Obstacle } from "~/features/goals/types/goal";
+import type { ExamGoal, Obstacle, WeeklyTrendWeeks } from "~/features/goals/types/goal";
 import type {
   CreateObstacleInput,
   RemoveObstacleInput,
@@ -44,6 +45,7 @@ type GoalsBoardProps = {
   onSaveWeekly: (minutes: SaveWeeklyInput) => void;
   onUpdateObstacle: (input: UpdateObstacleInput) => void;
   todayJst: DateJst;
+  trendWeeks: WeeklyTrendWeeks;
   volumeMinutes: WeekPage["volumeMinutes"];
   weekEndJst: WeekPage["weekEnd"];
   weeklyGoalMinutes: WeekPage["weeklyGoalMinutes"];
@@ -58,22 +60,11 @@ export function GoalsBoard({
   onSaveWeekly,
   onUpdateObstacle,
   todayJst,
+  trendWeeks,
   volumeMinutes,
   weekEndJst,
   weeklyGoalMinutes,
 }: GoalsBoardProps) {
-  const examForm = useForm({
-    initialInput: {
-      examDate: exam.examDate,
-      maxScore: exam.maxScore,
-      minScore: exam.minScore,
-    },
-    schema: ExamSchema,
-  });
-  const weeklyForm = useForm({
-    initialInput: { minutes: weeklyGoalMinutes ?? 0 },
-    schema: WeeklySchema,
-  });
   const obstacleForm = useForm({
     initialInput: { ifText: "", thenText: "" },
     schema: ObstacleSchema,
@@ -98,62 +89,7 @@ export function GoalsBoard({
                   日
                 </Text>
               </Title>
-              <Form of={examForm} onSubmit={onSaveExam}>
-                <Grid align="flex-end" gap="sm">
-                  <Grid.Col span={12}>
-                    <Field of={examForm} path={["examDate"]}>
-                      {(field) => (
-                        <DatePickerInput
-                          classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
-                          error={field.errors?.[0]}
-                          firstDayOfWeek={1}
-                          getDayProps={(date) => calendarDayProps(date, todayJst)}
-                          label="本番日"
-                          locale="ja"
-                          name={field.props.name}
-                          onChange={(value) => field.onChange(value ?? "")}
-                          popoverProps={{ withinPortal: true }}
-                          value={field.input}
-                          valueFormat="YYYY-MM-DD"
-                        />
-                      )}
-                    </Field>
-                  </Grid.Col>
-                  <Grid.Col span={6}>
-                    <Field of={examForm} path={["minScore"]}>
-                      {(field) => (
-                        <NumberInput
-                          {...field.props}
-                          error={field.errors?.[0]}
-                          label="下限"
-                          onChange={(value) =>
-                            field.onChange(value === "" ? undefined : Number(value))
-                          }
-                          value={field.input}
-                        />
-                      )}
-                    </Field>
-                  </Grid.Col>
-                  <Grid.Col span={6}>
-                    <Field of={examForm} path={["maxScore"]}>
-                      {(field) => (
-                        <NumberInput
-                          {...field.props}
-                          error={field.errors?.[0]}
-                          label="上限"
-                          onChange={(value) =>
-                            field.onChange(value === "" ? undefined : Number(value))
-                          }
-                          value={field.input}
-                        />
-                      )}
-                    </Field>
-                  </Grid.Col>
-                  <Grid.Col span={12}>
-                    <Button type="submit">本番目標を保存</Button>
-                  </Grid.Col>
-                </Grid>
-              </Form>
+              <ExamGoalForm exam={exam} onSaveExam={onSaveExam} todayJst={todayJst} />
             </Stack>
           </Card>
         </Grid.Col>
@@ -167,36 +103,11 @@ export function GoalsBoard({
                 weekEndJst={weekEndJst}
                 weeklyGoalMinutes={weeklyGoalMinutes}
               />
-              <Form
-                of={weeklyForm}
-                onSubmit={(output) => {
-                  onSaveWeekly(output.minutes);
-                }}
-              >
-                <Grid align="flex-end" gap="sm">
-                  <Grid.Col span={{ base: 12, sm: 8 }}>
-                    <Field of={weeklyForm} path={["minutes"]}>
-                      {(field) => (
-                        <NumberInput
-                          {...field.props}
-                          error={field.errors?.[0]}
-                          label="今週の分数ゴール"
-                          min={0}
-                          onChange={(value) =>
-                            field.onChange(value === "" ? undefined : Number(value))
-                          }
-                          value={field.input}
-                        />
-                      )}
-                    </Field>
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 4 }}>
-                    <Button fullWidth type="submit">
-                      週間ゴールを保存
-                    </Button>
-                  </Grid.Col>
-                </Grid>
-              </Form>
+              <WeeklyGoalForm onSaveWeekly={onSaveWeekly} weeklyGoalMinutes={weeklyGoalMinutes} />
+              <Stack gap="xs">
+                <Title order={3}>達成履歴</Title>
+                <WeeklyTrendList weeks={trendWeeks} />
+              </Stack>
             </Stack>
           </Card>
         </Grid.Col>
@@ -216,16 +127,7 @@ export function GoalsBoard({
               >
                 <Grid align="flex-end" gap="sm">
                   <Grid.Col span={{ base: 12, sm: 5 }}>
-                    <Field of={obstacleForm} path={["ifText"]}>
-                      {(field) => (
-                        <TextInput
-                          {...field.props}
-                          error={field.errors?.[0]}
-                          label="もし"
-                          value={field.input}
-                        />
-                      )}
-                    </Field>
+                    <ObstacleIfField form={obstacleForm} />
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 5 }}>
                     <Box data-onboarding-tour-id={CONCRETE_ACTION_TOUR_TARGETS.obstacles}>
@@ -263,6 +165,135 @@ export function GoalsBoard({
         </Grid.Col>
       </Grid>
     </ConcreteActionTour>
+  );
+}
+
+type ExamGoalFormProps = {
+  exam: ExamGoal;
+  onSaveExam: (input: SaveExamInput) => void;
+  todayJst: DateJst;
+};
+
+function ExamGoalForm({ exam, onSaveExam, todayJst }: ExamGoalFormProps) {
+  const examForm = useForm({
+    initialInput: {
+      examDate: exam.examDate,
+      maxScore: exam.maxScore,
+      minScore: exam.minScore,
+    },
+    schema: ExamSchema,
+  });
+
+  return (
+    <Form of={examForm} onSubmit={onSaveExam}>
+      <Grid align="flex-end" gap="sm">
+        <Grid.Col span={12}>
+          <Field of={examForm} path={["examDate"]}>
+            {(field) => (
+              <DatePickerInput
+                classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
+                error={field.errors?.[0]}
+                firstDayOfWeek={1}
+                getDayProps={(date) => calendarDayProps(date, todayJst)}
+                label="本番日"
+                locale="ja"
+                name={field.props.name}
+                onChange={(value) => field.onChange(value ?? "")}
+                popoverProps={{ withinPortal: true }}
+                value={field.input}
+                valueFormat="YYYY-MM-DD"
+              />
+            )}
+          </Field>
+        </Grid.Col>
+        <Grid.Col span={6}>
+          <Field of={examForm} path={["minScore"]}>
+            {(field) => (
+              <NumberInput
+                {...field.props}
+                error={field.errors?.[0]}
+                label="下限"
+                onChange={(value) => field.onChange(value === "" ? undefined : Number(value))}
+                value={field.input}
+              />
+            )}
+          </Field>
+        </Grid.Col>
+        <Grid.Col span={6}>
+          <Field of={examForm} path={["maxScore"]}>
+            {(field) => (
+              <NumberInput
+                {...field.props}
+                error={field.errors?.[0]}
+                label="上限"
+                onChange={(value) => field.onChange(value === "" ? undefined : Number(value))}
+                value={field.input}
+              />
+            )}
+          </Field>
+        </Grid.Col>
+        <Grid.Col span={12}>
+          <Button type="submit">本番目標を保存</Button>
+        </Grid.Col>
+      </Grid>
+    </Form>
+  );
+}
+
+type WeeklyGoalFormProps = {
+  onSaveWeekly: (minutes: SaveWeeklyInput) => void;
+  weeklyGoalMinutes: WeekPage["weeklyGoalMinutes"];
+};
+
+function WeeklyGoalForm({ onSaveWeekly, weeklyGoalMinutes }: WeeklyGoalFormProps) {
+  const weeklyForm = useForm({
+    initialInput: { minutes: weeklyGoalMinutes ?? 0 },
+    schema: WeeklySchema,
+  });
+
+  return (
+    <Form
+      of={weeklyForm}
+      onSubmit={(output) => {
+        onSaveWeekly(output.minutes);
+      }}
+    >
+      <Grid align="flex-end" gap="sm">
+        <Grid.Col span={{ base: 12, sm: 8 }}>
+          <Field of={weeklyForm} path={["minutes"]}>
+            {(field) => (
+              <NumberInput
+                {...field.props}
+                error={field.errors?.[0]}
+                label="今週の分数ゴール"
+                min={0}
+                onChange={(value) => field.onChange(value === "" ? undefined : Number(value))}
+                value={field.input}
+              />
+            )}
+          </Field>
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, sm: 4 }}>
+          <Button fullWidth type="submit">
+            週間ゴールを保存
+          </Button>
+        </Grid.Col>
+      </Grid>
+    </Form>
+  );
+}
+
+type ObstacleIfFieldProps = {
+  form: FormStore<typeof ObstacleSchema>;
+};
+
+function ObstacleIfField({ form }: ObstacleIfFieldProps) {
+  return (
+    <Field of={form} path={["ifText"]}>
+      {(field) => (
+        <TextInput {...field.props} error={field.errors?.[0]} label="もし" value={field.input} />
+      )}
+    </Field>
   );
 }
 

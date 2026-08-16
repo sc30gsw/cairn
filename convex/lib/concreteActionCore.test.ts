@@ -6,22 +6,20 @@ import {
   validateConcreteAction,
 } from "./concreteActionCore";
 
-test("8文字未満は具体的手順として拒否する", () => {
-  expect(validateConcreteAction("Unit 1")).toBe(
-    "具体的手順は8文字以上で、最初の一歩を書いてください",
-  );
-  expect(validateConcreteAction("   abc   ")).toBe(
-    "具体的手順は8文字以上で、最初の一歩を書いてください",
-  );
+test("空文字・空白のみは具体的手順として拒否する", () => {
+  expect(validateConcreteAction("")).toBe("具体的手順を入力してください");
+  expect(validateConcreteAction("   ")).toBe("具体的手順を入力してください");
 });
 
-test("8文字以上の具体的手順は通す", () => {
+test("1文字以上の具体的手順は通す", () => {
+  expect(validateConcreteAction("Unit 1")).toBeNull();
+  expect(validateConcreteAction("x")).toBeNull();
   expect(validateConcreteAction("アプリを開いて単語カードを10枚めくる")).toBeNull();
   expect(validateConcreteAction("  Unit 3 の例文を声に出して5文読む  ")).toBeNull();
 });
 
-test("最小文字数定数は8", () => {
-  expect(CONCRETE_ACTION_MIN_LENGTH).toBe(8);
+test("最小文字数定数は1", () => {
+  expect(CONCRETE_ACTION_MIN_LENGTH).toBe(1);
 });
 
 test("項目名から placeholder 例を返す", () => {

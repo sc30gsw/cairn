@@ -1,7 +1,7 @@
 import { TextInput, type TextInputProps } from "@mantine/core";
 import type { ReactNode } from "react";
 import {
-  CONCRETE_ACTION_VALIDATION_MESSAGE,
+  CONCRETE_ACTION_GUIDANCE,
   concreteActionPlaceholder,
   DEFAULT_CONCRETE_ACTION_PLACEHOLDER,
 } from "~domain/concreteActionCore";
@@ -32,7 +32,7 @@ export function ConcreteActionField({
   return (
     <TextInput
       {...props}
-      description={CONCRETE_ACTION_VALIDATION_MESSAGE}
+      description={CONCRETE_ACTION_GUIDANCE}
       label={
         showLabel ? <ConcreteActionLabel label={label} tooltipExample={tooltipExample} /> : label
       }

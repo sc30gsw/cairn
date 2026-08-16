@@ -12,7 +12,7 @@ const TOUR_STEPS = {
   obstacles: [
     {
       content:
-        "障害が起きたとき、最初に取る行動を書きます。「金フレだけ」ではなく、何をどうするかを8文字以上で。",
+        "障害が起きたとき、最初に取る行動を書きます。「金フレだけ」ではなく、何をどうするかを具体的に。",
       id: CONCRETE_ACTION_TOUR_TARGETS.obstacles,
       title: "具体的手順（なら）",
     },
@@ -27,8 +27,7 @@ const TOUR_STEPS = {
   ],
   today: [
     {
-      content:
-        "「〜を勉強する」ではなく、今日の最初の一歩を書きます。8文字以上で、声に出して実行できる粒度に。",
+      content: "「〜を勉強する」ではなく、今日の最初の一歩を、声に出して実行できる粒度で書きます。",
       id: CONCRETE_ACTION_TOUR_TARGETS.today,
       title: "具体的手順",
     },
@@ -68,6 +67,7 @@ export function ConcreteActionTour({ children, screen }: ConcreteActionTourProps
   return (
     <ConcreteActionTourContext value={open}>
       <OnboardingTour
+        focusRevealProps={{ popoverProps: { position: "bottom" } }}
         onOnboardingTourEnd={close}
         onOnboardingTourSkip={close}
         started={started}

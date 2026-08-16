@@ -10,7 +10,7 @@ import {
   useSaveWeeklyGoal,
   useUpdateObstacle,
 } from "~/features/goals/hooks/goals-mutations";
-import { useExamGoal, useObstaclesList } from "~/features/goals/hooks/goals-queries";
+import { useExamGoal, useObstaclesList, useWeeklyTrend } from "~/features/goals/hooks/goals-queries";
 import { useHistoryWeek } from "~/features/history/hooks/history-queries";
 
 export function GoalsPage() {
@@ -27,6 +27,7 @@ function GoalsReady() {
   const { data: exam } = useExamGoal(today);
   const { data: week } = useHistoryWeek(today);
   const { data: obstacles } = useObstaclesList();
+  const { data: trendWeeks } = useWeeklyTrend(today);
   const saveExam = useSaveExamGoal();
   const saveWeekly = useSaveWeeklyGoal();
   const createObstacle = useCreateObstacle();
@@ -53,6 +54,7 @@ function GoalsReady() {
         void updateObstacle.mutateAsync(input);
       }}
       todayJst={today}
+      trendWeeks={trendWeeks}
       volumeMinutes={week.volumeMinutes}
       weekEndJst={week.weekEnd}
       weeklyGoalMinutes={week.weeklyGoalMinutes}
