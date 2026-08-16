@@ -10,7 +10,8 @@ export async function confirm(
   ownerId: string,
   args: { content: string; minutes: number; rowId: Id<"rows"> },
 ): Promise<null> {
-  assertConcreteAction(args.content);
+  const content = args.content.trim();
+  assertConcreteAction(content);
   if (args.minutes < 0) {
     throwDomain(new ValidationFailedError({ message: "分数は0以上です" }));
   }
@@ -20,7 +21,7 @@ export async function confirm(
     throwDomain(new NotFoundError({ message: "日が見つかりません", resource: "日" }));
   }
   await ctx.db.patch("rows", args.rowId, {
-    content: args.content,
+    content,
     minutes: args.minutes,
     status: "確定",
   });
