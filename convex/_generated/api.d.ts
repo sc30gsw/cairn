@@ -15,6 +15,7 @@ import type * as lib_catalog from "../lib/catalog.js";
 import type * as lib_catalogLoader from "../lib/catalogLoader.js";
 import type * as lib_categories from "../lib/categories.js";
 import type * as lib_categoryFields from "../lib/categoryFields.js";
+import type * as lib_concreteAction from "../lib/concreteAction.js";
 import type * as lib_conditions from "../lib/conditions.js";
 import type * as lib_domain from "../lib/domain.js";
 import type * as lib_env from "../lib/env.js";
@@ -147,6 +148,7 @@ declare const fullApi: ApiFromModules<{
   "lib/catalogLoader": typeof lib_catalogLoader;
   "lib/categories": typeof lib_categories;
   "lib/categoryFields": typeof lib_categoryFields;
+  "lib/concreteAction": typeof lib_concreteAction;
   "lib/conditions": typeof lib_conditions;
   "lib/domain": typeof lib_domain;
   "lib/env": typeof lib_env;
