@@ -4,7 +4,6 @@ import { Suspense, useState } from "react";
 import { mondayOfWeek, todayJst } from "~domain/jst";
 
 import { OwnerGate } from "~/features/auth/components/owner-gate";
-import { useEnsureCatalog } from "~/features/catalog/hooks/use-ensure-catalog";
 import { HistoryAnalysisTab } from "~/features/history/components/history-analysis-tab";
 import { HistoryAnalysisTabPending } from "~/features/history/components/history-analysis-tab-pending";
 import { HistoryMonthTab } from "~/features/history/components/history-month-tab";
@@ -31,7 +30,6 @@ function HistoryRoute() {
 }
 
 function HistoryReady() {
-  useEnsureCatalog();
   const today = todayJst();
   const [month, setMonth] = useState(() => new Date(`${today}T12:00:00+09:00`));
   const [selectedDateJst, setSelectedDateJst] = useState(today);

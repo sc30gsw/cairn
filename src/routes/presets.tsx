@@ -10,7 +10,6 @@ import {
   useUpdatePreset,
 } from "~/features/catalog/hooks/catalog-mutations";
 import { useItemsList, usePresetsList } from "~/features/catalog/hooks/catalog-queries";
-import { useEnsureCatalog } from "~/features/catalog/hooks/use-ensure-catalog";
 
 export const Route = createFileRoute("/presets")({
   component: PresetsRoute,
@@ -27,7 +26,6 @@ function PresetsRoute() {
 }
 
 function PresetsReady() {
-  useEnsureCatalog();
   const { data: items } = useItemsList();
   const { data: presets } = usePresetsList();
   const createPreset = useCreatePreset();

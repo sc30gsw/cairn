@@ -14,7 +14,6 @@ import {
   useRenameItem,
 } from "~/features/catalog/hooks/catalog-mutations";
 import { useCategoriesList, useItemsList } from "~/features/catalog/hooks/catalog-queries";
-import { useEnsureCatalog } from "~/features/catalog/hooks/use-ensure-catalog";
 
 export const Route = createFileRoute("/items")({
   component: ItemsRoute,
@@ -31,7 +30,6 @@ function ItemsRoute() {
 }
 
 function ItemsReady() {
-  useEnsureCatalog();
   const { data: categories } = useCategoriesList();
   const { data: items } = useItemsList();
   const createCategory = useCreateCategory();
