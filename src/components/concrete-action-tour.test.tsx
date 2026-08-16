@@ -19,7 +19,7 @@ test("初回表示ではツアーを自動開始しない", () => {
 });
 
 test("ページのヘルプアイコンをクリックするとツアーを開始する", async () => {
-  const { container, getByLabelText } = renderWithMantine(
+  const { container, findByText, getByLabelText } = renderWithMantine(
     <ConcreteActionTour screen="today">
       <ConcreteActionTourTrigger />
       <ConcreteActionField
@@ -35,6 +35,8 @@ test("ページのヘルプアイコンをクリックするとツアーを開�
   await waitFor(() => {
     expect(container.querySelector("[data-onboarding-tour-overlay]")).not.toBeNull();
   });
+  expect(await findByText("具体的手順")).toBeDefined();
+  expect(container.querySelector("[data-onboarding-tour-focus-reveal-focused]")).not.toBeNull();
 });
 
 test("フィールドのアイコンはクリックしてもツアーを開始しない", () => {
