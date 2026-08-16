@@ -236,7 +236,7 @@ export function GoalsBoard({
                             error={field.errors?.[0]}
                             label={<ConcreteThenFieldLabel />}
                             placeholder={OBSTACLE_THEN_PLACEHOLDER}
-                            showLabel
+                            showLabel={false}
                             value={field.input}
                           />
                         )}

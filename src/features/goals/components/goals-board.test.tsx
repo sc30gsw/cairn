@@ -7,7 +7,7 @@ import { renderWithMantine } from "~/test-utils/render";
 const THEN_ACTION = "Unit 3 の例文を声に出して5文読む";
 
 test("カウントダウンと週間ゴールと障害プランが見える", () => {
-  const { getByText, getByRole } = renderWithMantine(
+  const { getByText, getByRole, getAllByLabelText } = renderWithMantine(
     <GoalsBoard
       exam={{ daysRemaining: 43, examDate: "2026-09-27", maxScore: 850, minScore: 730 }}
       obstacles={[{ _id: "o1" as never, ifText: "眠い", thenText: THEN_ACTION }]}
@@ -28,6 +28,7 @@ test("カウントダウンと週間ゴールと障害プランが見える", ()
   expect(getByText(/もし 眠い なら Unit 3 の例文を声に出して5文読む/)).toBeDefined();
   expect(getByRole("button", { name: "障害プランを追加" })).toBeDefined();
   expect(getByRole("button", { name: "眠いを保存" })).toBeDefined();
+  expect(getAllByLabelText("具体的手順の書き方")).toHaveLength(2);
 });
 
 test("障害プランを追加したら入力が空に戻る", async () => {
