@@ -13,11 +13,11 @@ export async function loadCatalog(ctx: QueryCtx | MutationCtx, ownerId: string) 
   const [items, categories] = await Promise.all([
     ctx.db
       .query("items")
-      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+      .withIndex("by_owner_and_name", (q) => q.eq("ownerId", ownerId))
       .collect(),
     ctx.db
       .query("categories")
-      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+      .withIndex("by_owner_and_sortOrder", (q) => q.eq("ownerId", ownerId))
       .collect(),
   ]);
   return {

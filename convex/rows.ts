@@ -8,7 +8,7 @@ import { keptRowsAfterSwitch } from "./lib/preset";
 import { ownerMutation, throwDomain } from "./ownerFunctions";
 
 async function requireOwnedRow(ctx: MutationCtx, ownerId: string, rowId: Id<"rows">) {
-  const row = await ctx.db.get(rowId);
+  const row = await ctx.db.get("rows", rowId);
   if (row === null || row.ownerId !== ownerId || row.deletedAt !== undefined) {
     throwDomain(new NotFoundError({ message: "記録が見つかりません", resource: "記録" }));
   }
@@ -26,11 +26,11 @@ export const confirm = ownerMutation({
       throwDomain(new ValidationFailedError({ message: "分数は0以上です" }));
     }
     const row = await requireOwnedRow(ctx, ctx.ownerId, args.rowId);
-    const day = await ctx.db.get(row.dayId);
+    const day = await ctx.db.get("days", row.dayId);
     if (day === null || day.deletedAt !== undefined) {
       throwDomain(new NotFoundError({ message: "日が見つかりません", resource: "日" }));
     }
-    await ctx.db.patch(args.rowId, {
+    await ctx.db.patch("rows", args.rowId, {
       content: args.content,
       minutes: args.minutes,
       status: "確定",
@@ -44,11 +44,11 @@ export const skip = ownerMutation({
   args: { rowId: v.id("rows") },
   handler: async (ctx, args) => {
     const row = await requireOwnedRow(ctx, ctx.ownerId, args.rowId);
-    const day = await ctx.db.get(row.dayId);
+    const day = await ctx.db.get("days", row.dayId);
     if (day === null || day.deletedAt !== undefined) {
       throwDomain(new NotFoundError({ message: "日が見つかりません", resource: "日" }));
     }
-    await ctx.db.patch(args.rowId, { status: "スキップ" });
+    await ctx.db.patch("rows", args.rowId, { status: "スキップ" });
     return null;
   },
   returns: v.null(),
@@ -67,7 +67,7 @@ export const add = ownerMutation({
     if (args.minutes < 0) {
       throwDomain(new ValidationFailedError({ message: "分数は0以上です" }));
     }
-    const item = await ctx.db.get(args.itemId);
+    const item = await ctx.db.get("items", args.itemId);
     if (item === null || item.ownerId !== ctx.ownerId) {
       throwDomain(new NotFoundError({ message: "項目が見つかりません", resource: "項目" }));
     }
@@ -93,7 +93,7 @@ export const remove = ownerMutation({
   args: { now: v.number(), rowId: v.id("rows") },
   handler: async (ctx, args) => {
     await requireOwnedRow(ctx, ctx.ownerId, args.rowId);
-    await ctx.db.patch(args.rowId, { deletedAt: args.now });
+    await ctx.db.patch("rows", args.rowId, { deletedAt: args.now });
     return null;
   },
   returns: v.null(),
@@ -102,15 +102,15 @@ export const remove = ownerMutation({
 export const restore = ownerMutation({
   args: { rowId: v.id("rows") },
   handler: async (ctx, args) => {
-    const row = await ctx.db.get(args.rowId);
+    const row = await ctx.db.get("rows", args.rowId);
     if (row === null || row.ownerId !== ctx.ownerId || row.deletedAt === undefined) {
       throwDomain(new NotFoundError({ message: "ゴミ箱にその記録はありません", resource: "記録" }));
     }
-    const day = await ctx.db.get(row.dayId);
+    const day = await ctx.db.get("days", row.dayId);
     if (day !== null && day.deletedAt !== undefined) {
       throwDomain(new ConflictError({ message: "日がゴミ箱にあります。先に日を戻してください" }));
     }
-    await ctx.db.patch(args.rowId, { deletedAt: undefined });
+    await ctx.db.patch("rows", args.rowId, { deletedAt: undefined });
     return null;
   },
   returns: v.null(),
@@ -122,7 +122,7 @@ export const switchPreset = ownerMutation({
     if (args.dateJst !== args.todayJst) {
       throwDomain(new ValidationFailedError({ message: "今日だけ別プリセットに切り替えられます" }));
     }
-    const preset = await ctx.db.get(args.presetId);
+    const preset = await ctx.db.get("presets", args.presetId);
     if (preset === null || preset.ownerId !== ctx.ownerId) {
       throwDomain(
         new NotFoundError({ message: "プリセットが見つかりません", resource: "プリセット" }),
@@ -144,7 +144,7 @@ export const switchPreset = ownerMutation({
     const kept = keptRowsAfterSwitch(rows);
     const startOrder = kept.reduce((max, row) => Math.max(max, row.sortOrder), -1);
     await Promise.all(
-      rows.flatMap((row) => (row.status === "未着手" ? [ctx.db.delete(row._id)] : [])),
+      rows.flatMap((row) => (row.status === "未着手" ? [ctx.db.delete("rows", row._id)] : [])),
     );
     await Promise.all(
       preset.lines.map((line, index) =>

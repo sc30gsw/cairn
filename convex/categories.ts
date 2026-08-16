@@ -51,7 +51,7 @@ export const create = ownerMutation({
 export const rename = ownerMutation({
   args: { categoryId: v.id("categories"), name: v.string() },
   handler: async (ctx, args) => {
-    const category = await ctx.db.get(args.categoryId);
+    const category = await ctx.db.get("categories", args.categoryId);
     if (category === null || category.ownerId !== ctx.ownerId) {
       throwDomain(new NotFoundError({ message: "カテゴリが見つかりません", resource: "カテゴリ" }));
     }
@@ -66,7 +66,7 @@ export const rename = ownerMutation({
     if (duplicate !== null && duplicate._id !== args.categoryId) {
       throwDomain(new ConflictError({ message: "同じ名前のカテゴリがあります" }));
     }
-    await ctx.db.patch(args.categoryId, { name });
+    await ctx.db.patch("categories", args.categoryId, { name });
     return null;
   },
   returns: v.null(),
@@ -75,7 +75,7 @@ export const rename = ownerMutation({
 export const remove = ownerMutation({
   args: { categoryId: v.id("categories") },
   handler: async (ctx, args) => {
-    const category = await ctx.db.get(args.categoryId);
+    const category = await ctx.db.get("categories", args.categoryId);
     if (category === null || category.ownerId !== ctx.ownerId) {
       throwDomain(new NotFoundError({ message: "カテゴリが見つかりません", resource: "カテゴリ" }));
     }
@@ -86,7 +86,7 @@ export const remove = ownerMutation({
     if (items.length > 0) {
       throwDomain(new ConflictError({ message: "項目が残っているカテゴリは消せません" }));
     }
-    await ctx.db.delete(args.categoryId);
+    await ctx.db.delete("categories", args.categoryId);
     return null;
   },
   returns: v.null(),

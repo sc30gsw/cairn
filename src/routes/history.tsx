@@ -40,20 +40,6 @@ function HistoryReady() {
   const yearMonth = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, "0")}`;
   const weekAnchor = mondayOfWeek(selectedDateJst);
 
-  const { data: monthBreakdown } = useSuspenseQuery(
-    convexQuery(api.history.monthBreakdown, { todayJst: today, yearMonth }),
-  );
-  const { data: yearHeatmap } = useSuspenseQuery(
-    convexQuery(api.history.yearHeatmap, { todayJst: today }),
-  );
-  const { data: week } = useSuspenseQuery(convexQuery(api.history.week, { dateJst: weekAnchor }));
-  const { data: weekBreakdown } = useSuspenseQuery(
-    convexQuery(api.history.weekBreakdown, { dateJst: weekAnchor }),
-  );
-  const { data: dayBreakdown } = useSuspenseQuery(
-    convexQuery(api.history.dayBreakdown, { dateJst: selectedDateJst }),
-  );
-
   const openDayAnalysis = (dateJst: string) => {
     setSelectedDateJst(dateJst);
     setMonth(new Date(`${dateJst}T12:00:00+09:00`));
@@ -74,47 +60,140 @@ function HistoryReady() {
         </Tabs.List>
 
         <Tabs.Panel pt="md" value="month">
-          <HistoryMonthView
-            events={monthBreakdown.events}
-            month={month}
-            onDayClick={openDayAnalysis}
-            onMonthChange={setMonth}
-            todayJst={today}
-          />
+          {activeTab === "month" ? (
+            <Suspense fallback={<PendingComponent />}>
+              <HistoryMonthTab
+                month={month}
+                onDayClick={openDayAnalysis}
+                onMonthChange={setMonth}
+                today={today}
+                yearMonth={yearMonth}
+              />
+            </Suspense>
+          ) : null}
         </Tabs.Panel>
 
         <Tabs.Panel pt="md" value="week">
-          <ScrollArea.Autosize mah={640} offsetScrollbars type="auto">
-            <WeekAgenda todayJst={today} week={week} />
-          </ScrollArea.Autosize>
+          {activeTab === "week" ? (
+            <Suspense fallback={<PendingComponent />}>
+              <HistoryWeekTab today={today} weekAnchor={weekAnchor} />
+            </Suspense>
+          ) : null}
         </Tabs.Panel>
 
         <Tabs.Panel pt="md" value="analysis">
-          <Card>
-            <HistoryAnalysisPanel
-              day={dayBreakdown}
-              heatmapDays={yearHeatmap.days}
-              month={monthBreakdown}
-              onDayClick={openDayAnalysis}
-              onScopeChange={setAnalysisScope}
-              scope={analysisScope}
-              selectedDateJst={selectedDateJst}
-              todayJst={today}
-              week={weekBreakdown}
-              yearMonth={yearMonth}
-            />
-          </Card>
-          <Card mt="md" padding="md" className="text-center">
-            <Link
-              params={{ dateJst: selectedDateJst }}
-              to="/days/$dateJst"
-              className="text-blue-400 hover:underline"
-            >
-              選択中の日 ({selectedDateJst}) を編集
-            </Link>
-          </Card>
+          {activeTab === "analysis" ? (
+            <Suspense fallback={<PendingComponent />}>
+              <HistoryAnalysisTab
+                analysisScope={analysisScope}
+                onDayClick={openDayAnalysis}
+                onScopeChange={setAnalysisScope}
+                selectedDateJst={selectedDateJst}
+                today={today}
+                weekAnchor={weekAnchor}
+                yearMonth={yearMonth}
+              />
+            </Suspense>
+          ) : null}
         </Tabs.Panel>
       </Tabs>
+    </>
+  );
+}
+
+function HistoryMonthTab({
+  month,
+  onDayClick,
+  onMonthChange,
+  today,
+  yearMonth,
+}: {
+  month: Date;
+  onDayClick: (dateJst: string) => void;
+  onMonthChange: (month: Date) => void;
+  today: string;
+  yearMonth: string;
+}) {
+  const { data: monthBreakdown } = useSuspenseQuery(
+    convexQuery(api.history.monthBreakdown, { todayJst: today, yearMonth }),
+  );
+
+  return (
+    <HistoryMonthView
+      events={monthBreakdown.events}
+      month={month}
+      onDayClick={onDayClick}
+      onMonthChange={onMonthChange}
+      todayJst={today}
+    />
+  );
+}
+
+function HistoryWeekTab({ today, weekAnchor }: { today: string; weekAnchor: string }) {
+  const { data: week } = useSuspenseQuery(convexQuery(api.history.week, { dateJst: weekAnchor }));
+
+  return (
+    <ScrollArea.Autosize mah={640} offsetScrollbars type="auto">
+      <WeekAgenda todayJst={today} week={week} />
+    </ScrollArea.Autosize>
+  );
+}
+
+function HistoryAnalysisTab({
+  analysisScope,
+  onDayClick,
+  onScopeChange,
+  selectedDateJst,
+  today,
+  weekAnchor,
+  yearMonth,
+}: {
+  analysisScope: AnalysisScope;
+  onDayClick: (dateJst: string) => void;
+  onScopeChange: (scope: AnalysisScope) => void;
+  selectedDateJst: string;
+  today: string;
+  weekAnchor: string;
+  yearMonth: string;
+}) {
+  const { data: monthBreakdown } = useSuspenseQuery(
+    convexQuery(api.history.monthBreakdown, { todayJst: today, yearMonth }),
+  );
+  const { data: yearHeatmap } = useSuspenseQuery(
+    convexQuery(api.history.yearHeatmap, { todayJst: today }),
+  );
+  const { data: weekBreakdown } = useSuspenseQuery(
+    convexQuery(api.history.weekBreakdown, { dateJst: weekAnchor }),
+  );
+  const { data: dayBreakdown } = useSuspenseQuery(
+    convexQuery(api.history.dayBreakdown, { dateJst: selectedDateJst }),
+  );
+
+  return (
+    <>
+      <Card>
+        <HistoryAnalysisPanel
+          day={dayBreakdown}
+          heatmapDays={yearHeatmap.days}
+          month={monthBreakdown}
+          onDayClick={onDayClick}
+          onScopeChange={onScopeChange}
+          scope={analysisScope}
+          selectedDateJst={selectedDateJst}
+          todayJst={today}
+          week={weekBreakdown}
+          yearMonth={yearMonth}
+        />
+      </Card>
+      <Card mt="md" padding="md" className="text-center">
+        <Link
+          params={{ dateJst: selectedDateJst }}
+          to="/days/$dateJst"
+          className="text-blue-400 hover:underline"
+        >
+          選択中の日 ({selectedDateJst}) を編集
+        </Link>
+      </Card>
     </>
   );
 }

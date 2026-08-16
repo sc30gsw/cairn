@@ -1,7 +1,7 @@
-import { useConvexMutation } from "@convex-dev/react-query";
 import { applyItemOrderToList } from "~domain/itemOrder";
 
 import { api } from "~/../convex/_generated/api";
+import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export function useApplyItemOrder() {
   const mutation = useConvexMutation(api.items.applyOrder);

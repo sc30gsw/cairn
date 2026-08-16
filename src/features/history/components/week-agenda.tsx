@@ -2,7 +2,7 @@ import { Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { groupBy, prop } from "remeda";
 import { addDaysJst } from "~domain/jst";
 
-import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
+import { WeeklyProgressCard } from "~/components/weekly-progress-card";
 import { RECORD_STATUS_UI } from "~/features/history/lib/record-status-label";
 import type { WeekEvent, WeekPage } from "~/features/history/types/history";
 

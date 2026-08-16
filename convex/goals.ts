@@ -44,7 +44,7 @@ export const saveExam = ownerMutation({
         ownerId: ctx.ownerId,
       });
     } else {
-      await ctx.db.patch(existing._id, {
+      await ctx.db.patch("examGoals", existing._id, {
         examDate: args.examDate,
         maxScore: args.maxScore,
         minScore: args.minScore,
@@ -74,7 +74,7 @@ export const saveWeekly = ownerMutation({
         weekStartJst: args.weekStartJst,
       });
     } else {
-      await ctx.db.patch(existing._id, { minutes: args.minutes });
+      await ctx.db.patch("weeklyGoals", existing._id, { minutes: args.minutes });
     }
     return null;
   },
@@ -112,13 +112,16 @@ export const createObstacle = ownerMutation({
 export const updateObstacle = ownerMutation({
   args: { ifText: v.string(), planId: v.id("obstaclePlans"), thenText: v.string() },
   handler: async (ctx, args) => {
-    const plan = await ctx.db.get(args.planId);
+    const plan = await ctx.db.get("obstaclePlans", args.planId);
     if (plan === null || plan.ownerId !== ctx.ownerId) {
       throwDomain(
         new NotFoundError({ message: "障害プランが見つかりません", resource: "障害プラン" }),
       );
     }
-    await ctx.db.patch(args.planId, { ifText: args.ifText, thenText: args.thenText });
+    await ctx.db.patch("obstaclePlans", args.planId, {
+      ifText: args.ifText,
+      thenText: args.thenText,
+    });
     return null;
   },
   returns: v.null(),
@@ -127,13 +130,13 @@ export const updateObstacle = ownerMutation({
 export const removeObstacle = ownerMutation({
   args: { planId: v.id("obstaclePlans") },
   handler: async (ctx, args) => {
-    const plan = await ctx.db.get(args.planId);
+    const plan = await ctx.db.get("obstaclePlans", args.planId);
     if (plan === null || plan.ownerId !== ctx.ownerId) {
       throwDomain(
         new NotFoundError({ message: "障害プランが見つかりません", resource: "障害プラン" }),
       );
     }
-    await ctx.db.delete(args.planId);
+    await ctx.db.delete("obstaclePlans", args.planId);
     return null;
   },
   returns: v.null(),

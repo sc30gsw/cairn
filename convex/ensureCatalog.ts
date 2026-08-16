@@ -21,7 +21,7 @@ async function categoriesByName(
 ): Promise<Map<string, Id<"categories">>> {
   const existing = await ctx.db
     .query("categories")
-    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+    .withIndex("by_owner_and_sortOrder", (q) => q.eq("ownerId", ownerId))
     .collect();
   if (existing.length === 0) {
     await Promise.all(
@@ -36,7 +36,7 @@ async function categoriesByName(
   }
   const categories = await ctx.db
     .query("categories")
-    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+    .withIndex("by_owner_and_sortOrder", (q) => q.eq("ownerId", ownerId))
     .collect();
   return new Map(
     Object.entries(indexBy(categories, prop("name"))).map(([name, category]) => [
@@ -53,7 +53,7 @@ async function backfillItemCategories(
 ): Promise<void> {
   const items = await ctx.db
     .query("items")
-    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+    .withIndex("by_owner_and_name", (q) => q.eq("ownerId", ownerId))
     .collect();
   await Promise.all(
     items.map(async (item) => {
@@ -68,7 +68,7 @@ async function backfillItemCategories(
       if (categoryId === undefined) {
         return;
       }
-      await ctx.db.patch(item._id, { category: undefined, categoryId });
+      await ctx.db.patch("items", item._id, { category: undefined, categoryId });
     }),
   );
 }
@@ -76,7 +76,7 @@ async function backfillItemCategories(
 export async function backfillItemSortOrders(ctx: MutationCtx, ownerId: string): Promise<void> {
   const items = await ctx.db
     .query("items")
-    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+    .withIndex("by_owner_and_name", (q) => q.eq("ownerId", ownerId))
     .collect();
   const byCategory = groupBy(
     items.filter((item) => item.categoryId !== undefined),
@@ -89,7 +89,7 @@ export async function backfillItemSortOrders(ctx: MutationCtx, ownerId: string):
         if (item.sortOrder === sortOrder) {
           return Promise.resolve();
         }
-        return ctx.db.patch(item._id, { sortOrder });
+        return ctx.db.patch("items", item._id, { sortOrder });
       });
     }),
   );
@@ -100,7 +100,7 @@ export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<
     categoriesByName(ctx, ownerId),
     ctx.db
       .query("items")
-      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+      .withIndex("by_owner_and_name", (q) => q.eq("ownerId", ownerId))
       .collect(),
   ]);
   if (existingItems.length === 0) {
@@ -129,13 +129,13 @@ export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<
 
   const items = await ctx.db
     .query("items")
-    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+    .withIndex("by_owner_and_name", (q) => q.eq("ownerId", ownerId))
     .collect();
   const itemByName = indexBy(items, prop("name"));
 
   const existingPresets = await ctx.db
     .query("presets")
-    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+    .withIndex("by_owner_and_weekday", (q) => q.eq("ownerId", ownerId))
     .collect();
   if (existingPresets.length === 0) {
     await Promise.all(
@@ -214,7 +214,7 @@ export async function collapseExtraLiveDays(
   if (winner === undefined) {
     return null;
   }
-  await Promise.all(live.slice(1).map((day) => ctx.db.delete(day._id)));
+  await Promise.all(live.slice(1).map((day) => ctx.db.delete("days", day._id)));
   return winner;
 }
 

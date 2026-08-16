@@ -13,11 +13,11 @@ export const list = ownerQuery({
     const [presets, items] = await Promise.all([
       ctx.db
         .query("presets")
-        .withIndex("by_owner", (q) => q.eq("ownerId", ctx.ownerId))
+        .withIndex("by_owner_and_weekday", (q) => q.eq("ownerId", ctx.ownerId))
         .collect(),
       ctx.db
         .query("items")
-        .withIndex("by_owner", (q) => q.eq("ownerId", ctx.ownerId))
+        .withIndex("by_owner_and_name", (q) => q.eq("ownerId", ctx.ownerId))
         .collect(),
     ]);
     const itemById = new Map(items.map((item) => [item._id, item]));
@@ -45,7 +45,7 @@ async function assertOwnedLines(
 ) {
   await Promise.all(
     lines.map(async (line) => {
-      const item = await ctx.db.get(line.itemId);
+      const item = await ctx.db.get("items", line.itemId);
       if (item === null || item.ownerId !== ownerId) {
         throwDomain(new NotFoundError({ message: "項目が見つかりません", resource: "項目" }));
       }
@@ -105,7 +105,7 @@ export const update = ownerMutation({
     weekday: v.number(),
   },
   handler: async (ctx, args) => {
-    const preset = await ctx.db.get(args.presetId);
+    const preset = await ctx.db.get("presets", args.presetId);
     if (preset === null || preset.ownerId !== ctx.ownerId) {
       throwDomain(
         new NotFoundError({ message: "プリセットが見つかりません", resource: "プリセット" }),
@@ -116,7 +116,7 @@ export const update = ownerMutation({
     }
     await assertWeekdayFree(ctx, ctx.ownerId, args.weekday, args.presetId);
     await assertOwnedLines(ctx, ctx.ownerId, args.lines);
-    await ctx.db.patch(args.presetId, {
+    await ctx.db.patch("presets", args.presetId, {
       lines: args.lines,
       name: args.name,
       weekday: args.weekday,
@@ -129,13 +129,13 @@ export const update = ownerMutation({
 export const remove = ownerMutation({
   args: { presetId: v.id("presets") },
   handler: async (ctx, args) => {
-    const preset = await ctx.db.get(args.presetId);
+    const preset = await ctx.db.get("presets", args.presetId);
     if (preset === null || preset.ownerId !== ctx.ownerId) {
       throwDomain(
         new NotFoundError({ message: "プリセットが見つかりません", resource: "プリセット" }),
       );
     }
-    await ctx.db.delete(args.presetId);
+    await ctx.db.delete("presets", args.presetId);
     return null;
   },
   returns: v.null(),

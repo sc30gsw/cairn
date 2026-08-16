@@ -14,7 +14,7 @@ async function requireOwnedCategory(
   ownerId: string,
   categoryId: Id<"categories">,
 ) {
-  const category = await ctx.db.get(categoryId);
+  const category = await ctx.db.get("categories", categoryId);
   if (category === null || category.ownerId !== ownerId) {
     throwDomain(new NotFoundError({ message: "カテゴリが見つかりません", resource: "カテゴリ" }));
   }
@@ -41,7 +41,7 @@ export const list = ownerQuery({
   handler: async (ctx) => {
     const items = await ctx.db
       .query("items")
-      .withIndex("by_owner", (q) => q.eq("ownerId", ctx.ownerId))
+      .withIndex("by_owner_and_name", (q) => q.eq("ownerId", ctx.ownerId))
       .collect();
     return pipe(
       items,
@@ -108,7 +108,7 @@ export const rename = ownerMutation({
     name: v.string(),
   },
   handler: async (ctx, args) => {
-    const item = await ctx.db.get(args.itemId);
+    const item = await ctx.db.get("items", args.itemId);
     if (item === null || item.ownerId !== ctx.ownerId) {
       throwDomain(new NotFoundError({ message: "項目が見つかりません", resource: "項目" }));
     }
@@ -127,7 +127,7 @@ export const rename = ownerMutation({
     const sortOrder = movedCategory
       ? await nextSortOrder(ctx, ctx.ownerId, args.categoryId)
       : (item.sortOrder ?? (await nextSortOrder(ctx, ctx.ownerId, args.categoryId)));
-    await ctx.db.patch(args.itemId, {
+    await ctx.db.patch("items", args.itemId, {
       categoryId: args.categoryId,
       name: args.name,
       sortOrder,
@@ -159,7 +159,7 @@ export const reorder = ownerMutation({
       }
     }
     await Promise.all(
-      args.orderedItemIds.map((itemId, sortOrder) => ctx.db.patch(itemId, { sortOrder })),
+      args.orderedItemIds.map((itemId, sortOrder) => ctx.db.patch("items", itemId, { sortOrder })),
     );
     return null;
   },
@@ -191,7 +191,7 @@ export const applyOrder = ownerMutation({
 
     const items = await ctx.db
       .query("items")
-      .withIndex("by_owner", (q) => q.eq("ownerId", ctx.ownerId))
+      .withIndex("by_owner_and_name", (q) => q.eq("ownerId", ctx.ownerId))
       .collect();
     const itemById = new Map(items.map((item) => [item._id, item]));
 
@@ -231,7 +231,7 @@ export const applyOrder = ownerMutation({
         if (item.categoryId === next.categoryId && item.sortOrder === next.sortOrder) {
           return;
         }
-        await ctx.db.patch(itemId, {
+        await ctx.db.patch("items", itemId, {
           categoryId: next.categoryId,
           sortOrder: next.sortOrder,
         });
@@ -245,7 +245,7 @@ export const applyOrder = ownerMutation({
 export const remove = ownerMutation({
   args: { itemId: v.id("items") },
   handler: async (ctx, args) => {
-    const item = await ctx.db.get(args.itemId);
+    const item = await ctx.db.get("items", args.itemId);
     if (item === null || item.ownerId !== ctx.ownerId) {
       throwDomain(new NotFoundError({ message: "項目が見つかりません", resource: "項目" }));
     }
@@ -256,14 +256,14 @@ export const remove = ownerMutation({
         .collect(),
       ctx.db
         .query("presets")
-        .withIndex("by_owner", (q) => q.eq("ownerId", ctx.ownerId))
+        .withIndex("by_owner_and_weekday", (q) => q.eq("ownerId", ctx.ownerId))
         .collect(),
     ]);
     const holders = [...rows, ...presets.flatMap((preset) => preset.lines)];
     if (itemIdIsInUse(args.itemId, holders)) {
       throwDomain(new ConflictError({ message: "使っている行または雛形がある項目は消せません" }));
     }
-    await ctx.db.delete(args.itemId);
+    await ctx.db.delete("items", args.itemId);
     return null;
   },
   returns: v.null(),

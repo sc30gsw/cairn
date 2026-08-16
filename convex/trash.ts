@@ -22,7 +22,7 @@ export const list = ownerQuery({
         .collect(),
       ctx.db
         .query("items")
-        .withIndex("by_owner", (q) => q.eq("ownerId", ctx.ownerId))
+        .withIndex("by_owner_and_name", (q) => q.eq("ownerId", ctx.ownerId))
         .collect(),
     ]);
     const itemById = new Map(items.map((item) => [item._id, item]));
@@ -53,7 +53,7 @@ export const removeDay = ownerMutation({
     if (day === null || day.deletedAt !== undefined) {
       throwDomain(new NotFoundError({ message: "日が見つかりません", resource: "日" }));
     }
-    await ctx.db.patch(day._id, { deletedAt: args.now });
+    await ctx.db.patch("days", day._id, { deletedAt: args.now });
     return null;
   },
   returns: v.null(),
@@ -62,11 +62,11 @@ export const removeDay = ownerMutation({
 export const restoreDay = ownerMutation({
   args: { dayId: v.id("days") },
   handler: async (ctx, args) => {
-    const day = await ctx.db.get(args.dayId);
+    const day = await ctx.db.get("days", args.dayId);
     if (day === null || day.ownerId !== ctx.ownerId || day.deletedAt === undefined) {
       throwDomain(new NotFoundError({ message: "ゴミ箱にその日はありません", resource: "日" }));
     }
-    await ctx.db.patch(args.dayId, { deletedAt: undefined });
+    await ctx.db.patch("days", args.dayId, { deletedAt: undefined });
     return null;
   },
   returns: v.null(),
@@ -75,11 +75,11 @@ export const restoreDay = ownerMutation({
 export const purgeRow = ownerMutation({
   args: { rowId: v.id("rows") },
   handler: async (ctx, args) => {
-    const row = await ctx.db.get(args.rowId);
+    const row = await ctx.db.get("rows", args.rowId);
     if (row === null || row.ownerId !== ctx.ownerId || row.deletedAt === undefined) {
       throwDomain(new NotFoundError({ message: "ゴミ箱にその記録はありません", resource: "記録" }));
     }
-    await ctx.db.delete(args.rowId);
+    await ctx.db.delete("rows", args.rowId);
     return null;
   },
   returns: v.null(),
@@ -88,7 +88,7 @@ export const purgeRow = ownerMutation({
 export const purgeDay = ownerMutation({
   args: { dayId: v.id("days") },
   handler: async (ctx, args) => {
-    const day = await ctx.db.get(args.dayId);
+    const day = await ctx.db.get("days", args.dayId);
     if (day === null || day.ownerId !== ctx.ownerId || day.deletedAt === undefined) {
       throwDomain(new NotFoundError({ message: "ゴミ箱にその日はありません", resource: "日" }));
     }
@@ -139,9 +139,9 @@ export const purgeExpired = internalMutation({
     await deleteRowsByIds(ctx, rowIds);
     await Promise.all(
       [...purgedDayIds].map(async (dayId) => {
-        const day = await ctx.db.get(dayId);
+        const day = await ctx.db.get("days", dayId);
         if (day !== null) {
-          await ctx.db.delete(dayId);
+          await ctx.db.delete("days", dayId);
         }
       }),
     );

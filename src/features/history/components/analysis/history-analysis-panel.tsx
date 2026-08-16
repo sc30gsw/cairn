@@ -2,7 +2,7 @@ import { CompositeChart, DonutChart } from "@mantine/charts";
 import { Alert, Button, Card, Grid, SegmentedControl, Stack, Text, Title } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
 
-import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
+import { WeeklyProgressCard } from "~/components/weekly-progress-card";
 import { BreakdownTable } from "~/features/history/components/breakdown-table";
 import { HeatmapLegend } from "~/features/history/components/heatmap-legend";
 import { HistoryLearningHeatmap } from "~/features/history/components/history-learning-heatmap";
