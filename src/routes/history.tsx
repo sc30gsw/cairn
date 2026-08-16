@@ -8,10 +8,10 @@ import {
 } from "~/features/history/lib/history-route-search";
 
 export const Route = createFileRoute("/history")({
+  validateSearch: HistorySearchSchema,
   search: {
     middlewares: historySearchMiddlewares,
   },
-  validateSearch: HistorySearchSchema,
   component: HistoryRoute,
 });
 

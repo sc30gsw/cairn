@@ -5,10 +5,10 @@ import { TodayDayPage } from "~/features/today/components/day-page";
 import { daySearchMiddlewares, DaySearchSchema } from "~/features/today/lib/day-route-search";
 
 export const Route = createFileRoute("/")({
+  validateSearch: DaySearchSchema,
   search: {
     middlewares: daySearchMiddlewares,
   },
-  validateSearch: DaySearchSchema,
   component: HomeRoute,
 });
 

@@ -11,10 +11,10 @@ import {
 } from "~/features/today/lib/day-route-search";
 
 export const Route = createFileRoute("/days/$dateJst")({
+  validateSearch: DaySearchSchema,
   search: {
     middlewares: daySearchMiddlewares,
   },
-  validateSearch: DaySearchSchema,
   beforeLoad: ({ location, params }) => {
     const parsedSearch = v.safeParse(DaySearchSchema, location.search);
     if (
