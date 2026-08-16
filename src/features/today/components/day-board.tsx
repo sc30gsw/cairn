@@ -1,4 +1,4 @@
-import { Button, Card, Grid, Group, Select, Stack, Text, Title } from "@mantine/core";
+import { Button, Card, Grid, Group, Select, Stack, Text, Title, Box } from "@mantine/core";
 import { useNavigate } from "@tanstack/react-router";
 import type { DateJst } from "~domain/jst";
 import { weekdayFromDateJst } from "~domain/jst";
@@ -143,18 +143,33 @@ export function DayBoard({
               <Title order={2}>記録</Title>
               <ConcreteActionTourTrigger />
             </Group>
-            {day.rows.map((row, index) => (
-              <RowEditor
-                key={row._id}
-                disabled={!canEdit}
-                onConfirm={onConfirm}
-                onRemove={onRemoveRow}
-                onSkip={onSkip}
-                row={row}
-                tourId={index === 0 ? CONCRETE_ACTION_TOUR_TARGETS.today : undefined}
-              />
-            ))}
-            {day.rows.length === 0 ? <Text c="dimmed">この日の記録はありません。</Text> : null}
+            {day.rows.map((row, index) =>
+              index === 0 ? (
+                <Box key={row._id} data-onboarding-tour-id={CONCRETE_ACTION_TOUR_TARGETS.today}>
+                  <RowEditor
+                    disabled={!canEdit}
+                    onConfirm={onConfirm}
+                    onRemove={onRemoveRow}
+                    onSkip={onSkip}
+                    row={row}
+                  />
+                </Box>
+              ) : (
+                <RowEditor
+                  key={row._id}
+                  disabled={!canEdit}
+                  onConfirm={onConfirm}
+                  onRemove={onRemoveRow}
+                  onSkip={onSkip}
+                  row={row}
+                />
+              ),
+            )}
+            {day.rows.length === 0 ? (
+              <Box data-onboarding-tour-id={CONCRETE_ACTION_TOUR_TARGETS.today}>
+                <Text c="dimmed">この日の記録はありません。</Text>
+              </Box>
+            ) : null}
             {canEdit ? <AdhocRowForm items={items} onAdd={onAddRow} /> : null}
           </Stack>
         </Card>

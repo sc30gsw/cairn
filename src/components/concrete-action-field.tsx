@@ -12,7 +12,6 @@ type ConcreteActionFieldProps = Omit<TextInputProps, "description" | "label"> & 
   itemName?: string;
   label?: ReactNode;
   showLabel?: boolean;
-  tourId?: string;
   tooltipExample?: string;
 };
 
@@ -21,7 +20,6 @@ export function ConcreteActionField({
   label,
   placeholder,
   showLabel = true,
-  tourId,
   tooltipExample,
   ...props
 }: ConcreteActionFieldProps) {
@@ -34,7 +32,6 @@ export function ConcreteActionField({
   return (
     <TextInput
       {...props}
-      data-onboarding-tour-id={tourId}
       description={CONCRETE_ACTION_VALIDATION_MESSAGE}
       label={
         showLabel ? <ConcreteActionLabel label={label} tooltipExample={tooltipExample} /> : label

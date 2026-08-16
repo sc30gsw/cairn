@@ -2,6 +2,7 @@ import { Field, Form, useForm } from "@formisch/react";
 import {
   Accordion,
   ActionIcon,
+  Box,
   Button,
   Card,
   Grid,
@@ -146,12 +147,20 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
                   </Stack>
                 </Accordion.Control>
                 <Accordion.Panel>
-                  <PresetEditor
-                    items={items}
-                    onRemove={onRemove}
-                    onUpdate={onUpdate}
-                    preset={preset}
-                  />
+                  <Box
+                    data-onboarding-tour-id={
+                      preset._id === presets[0]?._id
+                        ? CONCRETE_ACTION_TOUR_TARGETS.presets
+                        : undefined
+                    }
+                  >
+                    <PresetEditor
+                      items={items}
+                      onRemove={onRemove}
+                      onUpdate={onUpdate}
+                      preset={preset}
+                    />
+                  </Box>
                 </Accordion.Panel>
               </Accordion.Item>
             ))}
@@ -386,7 +395,6 @@ function PresetEditor({
                       );
                     }}
                     showLabel={index === 0}
-                    tourId={index === 0 ? CONCRETE_ACTION_TOUR_TARGETS.presets : undefined}
                     value={line.content}
                   />
                 </Grid.Col>

@@ -23,7 +23,6 @@ type RowEditorProps = {
   onRemove: (rowId: RemoveRowInput["rowId"]) => void;
   onSkip: (rowId: SkipRowInput["rowId"]) => void;
   row: DayRow;
-  tourId?: string;
 };
 
 function CheckIcon({ size = 14 }: { size?: number }) {
@@ -91,14 +90,7 @@ function requestSkip(rowId: SkipRowInput["rowId"], onSkip: (rowId: SkipRowInput[
   });
 }
 
-export function RowEditor({
-  disabled = false,
-  onConfirm,
-  onRemove,
-  onSkip,
-  row,
-  tourId,
-}: RowEditorProps) {
+export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }: RowEditorProps) {
   const form = useForm({
     initialInput: { content: row.content, minutes: row.minutes },
     schema: RowEditorSchema,
@@ -163,7 +155,6 @@ export function RowEditor({
                   }}
                   onChange={(event) => field.onChange(event.currentTarget.value)}
                   placeholder={concreteActionPlaceholder(row.itemName)}
-                  tourId={tourId}
                   value={field.input}
                 />
               )}

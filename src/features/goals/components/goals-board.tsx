@@ -9,6 +9,7 @@ import {
   Text,
   TextInput,
   Title,
+  Box,
 } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { OBSTACLE_THEN_PLACEHOLDER } from "~domain/concreteActionCore";
@@ -227,19 +228,20 @@ export function GoalsBoard({
                     </Field>
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 5 }}>
-                    <Field of={obstacleForm} path={["thenText"]}>
-                      {(field) => (
-                        <ConcreteActionField
-                          {...field.props}
-                          error={field.errors?.[0]}
-                          label={<ConcreteThenFieldLabel />}
-                          placeholder={OBSTACLE_THEN_PLACEHOLDER}
-                          showLabel
-                          tourId={CONCRETE_ACTION_TOUR_TARGETS.obstacles}
-                          value={field.input}
-                        />
-                      )}
-                    </Field>
+                    <Box data-onboarding-tour-id={CONCRETE_ACTION_TOUR_TARGETS.obstacles}>
+                      <Field of={obstacleForm} path={["thenText"]}>
+                        {(field) => (
+                          <ConcreteActionField
+                            {...field.props}
+                            error={field.errors?.[0]}
+                            label={<ConcreteThenFieldLabel />}
+                            placeholder={OBSTACLE_THEN_PLACEHOLDER}
+                            showLabel
+                            value={field.input}
+                          />
+                        )}
+                      </Field>
+                    </Box>
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 2 }}>
                     <Button fullWidth type="submit">
