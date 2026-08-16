@@ -27,6 +27,7 @@ import type * as lib_domain from "../lib/domain.js";
 import type * as lib_env from "../lib/env.js";
 import type * as lib_errors from "../lib/errors.js";
 import type * as lib_historyBreakdown from "../lib/historyBreakdown.js";
+import type * as lib_itemOrder from "../lib/itemOrder.js";
 import type * as lib_itemSort from "../lib/itemSort.js";
 import type * as lib_jst from "../lib/jst.js";
 import type * as lib_movingAverage from "../lib/movingAverage.js";
@@ -40,6 +41,9 @@ import type * as migrations from "../migrations.js";
 import type * as ownerFunctions from "../ownerFunctions.js";
 import type * as presets from "../presets.js";
 import type * as rows from "../rows.js";
+import type * as services_days_getDayPage from "../services/days/getDayPage.js";
+import type * as services_days_openDay from "../services/days/openDay.js";
+import type * as services_days_toRowDtos from "../services/days/toRowDtos.js";
 import type * as session from "../session.js";
 import type * as trash from "../trash.js";
 
@@ -69,6 +73,7 @@ declare const fullApi: ApiFromModules<{
   "lib/env": typeof lib_env;
   "lib/errors": typeof lib_errors;
   "lib/historyBreakdown": typeof lib_historyBreakdown;
+  "lib/itemOrder": typeof lib_itemOrder;
   "lib/itemSort": typeof lib_itemSort;
   "lib/jst": typeof lib_jst;
   "lib/movingAverage": typeof lib_movingAverage;
@@ -82,6 +87,9 @@ declare const fullApi: ApiFromModules<{
   ownerFunctions: typeof ownerFunctions;
   presets: typeof presets;
   rows: typeof rows;
+  "services/days/getDayPage": typeof services_days_getDayPage;
+  "services/days/openDay": typeof services_days_openDay;
+  "services/days/toRowDtos": typeof services_days_toRowDtos;
   session: typeof session;
   trash: typeof trash;
 }>;
