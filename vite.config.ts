@@ -138,6 +138,7 @@ export default defineConfig({
     coverage: {
       exclude: ["**/_generated/**", "**/*.test.ts"],
       include: [
+        "convex/lib/concreteActionCore.ts",
         "convex/lib/concreteAction.ts",
         "convex/lib/catalog.ts",
         "src/lib/validation/**/*.ts",
