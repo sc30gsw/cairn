@@ -1,6 +1,8 @@
 import { Field, Form, useForm } from "@formisch/react";
-import { Button, Grid, NumberInput, Select, TextInput } from "@mantine/core";
+import { Button, Grid, NumberInput, Select } from "@mantine/core";
+import { useState } from "react";
 
+import { ConcreteActionField } from "~/components/concrete-action-field";
 import type { ItemDto } from "~/features/catalog/types/item";
 import { parseItemId } from "~/features/catalog/types/item";
 import { AdhocRowSchema } from "~/features/today/schemas/adhoc-row-schema";
@@ -14,6 +16,7 @@ type AdhocRowFormProps = {
 
 export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
   const first = items[0];
+  const [selectedItemId, setSelectedItemId] = useState(first?._id ?? "");
   const form = useForm({
     initialInput: {
       content: "",
@@ -22,6 +25,7 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
     },
     schema: AdhocRowSchema,
   });
+  const selectedItemName = items.find((item) => item._id === selectedItemId)?.name;
 
   return (
     <Form
@@ -43,7 +47,10 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
                 data={items.map((item) => ({ label: item.name, value: item._id }))}
                 error={field.errors?.[0]}
                 label="その日限りの項目"
-                onChange={onRequiredSelect(field.onChange)}
+                onChange={onRequiredSelect((value) => {
+                  setSelectedItemId(value);
+                  field.onChange(value);
+                })}
                 searchable
                 value={field.input}
               />
@@ -53,11 +60,11 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
         <Grid.Col span={{ base: 12, sm: 4 }}>
           <Field of={form} path={["content"]}>
             {(field) => (
-              <TextInput
+              <ConcreteActionField
                 {...field.props}
+                aria-label="その日限りの具体的手順"
                 error={field.errors?.[0]}
-                label="内容"
-                placeholder="学習内容を入力"
+                itemName={selectedItemName}
                 value={field.input}
               />
             )}

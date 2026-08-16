@@ -4,7 +4,7 @@ import { useFocusWithin } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
 import { IconTrash } from "@tabler/icons-react";
 import { useEffect, type ChangeEvent } from "react";
-import { concreteActionPlaceholder } from "~domain/concreteAction";
+import { concreteActionPlaceholder } from "~domain/concreteActionCore";
 
 import { ConcreteActionField } from "~/components/concrete-action-field";
 import { validateConfirmRow } from "~/features/today/lib/validate-confirm-row";
@@ -23,6 +23,7 @@ type RowEditorProps = {
   onRemove: (rowId: RemoveRowInput["rowId"]) => void;
   onSkip: (rowId: SkipRowInput["rowId"]) => void;
   row: DayRow;
+  tourId?: string;
 };
 
 function CheckIcon({ size = 14 }: { size?: number }) {
@@ -90,7 +91,14 @@ function requestSkip(rowId: SkipRowInput["rowId"], onSkip: (rowId: SkipRowInput[
   });
 }
 
-export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }: RowEditorProps) {
+export function RowEditor({
+  disabled = false,
+  onConfirm,
+  onRemove,
+  onSkip,
+  row,
+  tourId,
+}: RowEditorProps) {
   const form = useForm({
     initialInput: { content: row.content, minutes: row.minutes },
     schema: RowEditorSchema,
@@ -155,7 +163,7 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
                   }}
                   onChange={(event) => field.onChange(event.currentTarget.value)}
                   placeholder={concreteActionPlaceholder(row.itemName)}
-                  tourId="svo-row-content"
+                  tourId={tourId}
                   value={field.input}
                 />
               )}

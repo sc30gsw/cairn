@@ -1,9 +1,11 @@
 import { Field, Form, reset, useForm } from "@formisch/react";
 import { Button, Card, Grid, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
+import { OBSTACLE_THEN_PLACEHOLDER } from "~domain/concreteActionCore";
 import type { DateJst } from "~domain/jst";
 
 import { ConcreteActionField } from "~/components/concrete-action-field";
+import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
 import { ConcreteThenFieldLabel } from "~/components/concrete-then-field-label";
 import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
 import { ExamSchema } from "~/features/goals/schemas/exam-schema";
@@ -216,9 +218,9 @@ export function GoalsBoard({
                         {...field.props}
                         error={field.errors?.[0]}
                         label={<ConcreteThenFieldLabel />}
-                        placeholder="例: 机に向かって金のフレーズを1 Unit だけ開く"
+                        placeholder={OBSTACLE_THEN_PLACEHOLDER}
                         showLabel
-                        tourId="svo-obstacle-then"
+                        tourId={CONCRETE_ACTION_TOUR_TARGETS.goals}
                         value={field.input}
                       />
                     )}
@@ -293,7 +295,7 @@ function ObstacleEditor({
                     aria-label={`${plan.ifText}のなら`}
                     error={field.errors?.[0]}
                     label={<ConcreteThenFieldLabel />}
-                    placeholder="例: 机に向かって金のフレーズを1 Unit だけ開く"
+                    placeholder={OBSTACLE_THEN_PLACEHOLDER}
                     showLabel={false}
                     value={field.input}
                   />

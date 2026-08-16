@@ -18,9 +18,9 @@ import { IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
 import * as v from "valibot";
 import { WEEKDAY_NAMES } from "~domain/catalog";
-import { concreteActionPlaceholder } from "~domain/concreteAction";
 
 import { ConcreteActionField } from "~/components/concrete-action-field";
+import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
 import { CreatePresetSchema, PresetSchema } from "~/features/catalog/schemas/preset-schema";
 import type { PresetLineInput } from "~/features/catalog/schemas/preset-schema";
 import type { ItemDto, PresetDto } from "~/features/catalog/types/item";
@@ -77,6 +77,30 @@ function firstAvailableItem(items: ItemDto[], lines: PresetLineInput[]) {
 function availableWeekdayOptions(presets: PresetDto[]) {
   const taken = new Set(presets.map((preset) => preset.weekday));
   return WEEKDAY_OPTIONS.filter((option) => !taken.has(Number(option.value)));
+}
+
+function pathSegmentKey(segment: v.IssuePathItem | undefined): string | number | undefined {
+  if (segment === undefined) {
+    return undefined;
+  }
+  if (typeof segment === "object" && segment !== null && "key" in segment) {
+    return segment.key as string | number;
+  }
+  return segment;
+}
+
+function lineContentErrorsFromParse(issues: v.BaseIssue<unknown>[]): Record<number, string> {
+  const errors: Record<number, string> = {};
+  for (const issue of issues) {
+    const path = issue.path ?? [];
+    const root = pathSegmentKey(path[0]);
+    const index = path[1];
+    const field = pathSegmentKey(path[2]);
+    if (root === "lines" && typeof index === "number" && field === "content") {
+      errors[index] = issue.message;
+    }
+  }
+  return errors;
 }
 
 function removeLineLabel(items: ItemDto[], itemId: string) {
@@ -231,6 +255,7 @@ function PresetEditor({
       minutes: line.minutes,
     })),
   );
+  const [lineContentErrors, setLineContentErrors] = useState<Record<number, string>>({});
   const form = useForm({
     initialInput: {
       lines: preset.lines.map((line: PresetLineDto) => ({
@@ -249,12 +274,17 @@ function PresetEditor({
       <Form
         of={form}
         onSubmit={(output) => {
-          const parsed = v.parse(PresetSchema, { ...output, lines });
+          const parsed = v.safeParse(PresetSchema, { ...output, lines });
+          if (!parsed.success) {
+            setLineContentErrors(lineContentErrorsFromParse(parsed.issues));
+            return;
+          }
+          setLineContentErrors({});
           onUpdate({
-            lines: parsedLines(parsed.lines),
-            name: parsed.name,
+            lines: parsedLines(parsed.output.lines),
+            name: parsed.output.name,
             presetId: preset._id,
-            weekday: parsed.weekday,
+            weekday: parsed.output.weekday,
           });
         }}
       >
@@ -330,20 +360,26 @@ function PresetEditor({
                 <Grid.Col span={{ base: 12, sm: 4 }}>
                   <ConcreteActionField
                     aria-label={`${preset.name}の雛形${index + 1}の具体的手順`}
+                    error={lineContentErrors[index]}
                     itemName={itemName}
                     onChange={(event) => {
                       const content = event.currentTarget.value;
+                      setLineContentErrors((current) => {
+                        if (current[index] === undefined) {
+                          return current;
+                        }
+                        const next = { ...current };
+                        delete next[index];
+                        return next;
+                      });
                       setLines((current) =>
                         current.map((entry, entryIndex) =>
                           entryIndex === index ? { ...entry, content } : entry,
                         ),
                       );
                     }}
-                    placeholder={
-                      itemName === undefined ? undefined : concreteActionPlaceholder(itemName)
-                    }
                     showLabel={index === 0}
-                    tourId={index === 0 ? "svo-preset-content" : undefined}
+                    tourId={index === 0 ? CONCRETE_ACTION_TOUR_TARGETS.presets : undefined}
                     value={line.content}
                   />
                 </Grid.Col>

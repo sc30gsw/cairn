@@ -1,7 +1,7 @@
-import { ActionIcon, Group, Text, Tooltip } from "@mantine/core";
-import { IconInfoCircle } from "@tabler/icons-react";
 import type { ReactNode } from "react";
-import { CONCRETE_ACTION_VALIDATION_MESSAGE } from "~domain/concreteAction";
+import { OBSTACLE_THEN_PLACEHOLDER } from "~domain/concreteActionCore";
+
+import { ConcreteActionLabel } from "~/components/concrete-action-label";
 
 type ConcreteThenFieldLabelProps = {
   label?: ReactNode;
@@ -10,18 +10,7 @@ type ConcreteThenFieldLabelProps = {
 
 export function ConcreteThenFieldLabel({
   label = "なら",
-  tooltipExample = "例: 机に向かって金のフレーズを1 Unit だけ開く",
+  tooltipExample = OBSTACLE_THEN_PLACEHOLDER,
 }: ConcreteThenFieldLabelProps) {
-  return (
-    <Group gap={4} wrap="nowrap">
-      <Text span>{label}</Text>
-      <Tooltip label={tooltipExample} multiline w={280}>
-        <ActionIcon aria-label="具体的手順の書き方" size="xs" tabIndex={-1} variant="subtle">
-          <IconInfoCircle aria-hidden size={14} />
-        </ActionIcon>
-      </Tooltip>
-    </Group>
-  );
+  return <ConcreteActionLabel label={label} tooltipExample={tooltipExample} />;
 }
-
-export { CONCRETE_ACTION_VALIDATION_MESSAGE };

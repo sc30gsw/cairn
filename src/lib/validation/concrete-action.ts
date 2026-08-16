@@ -2,12 +2,13 @@ import * as v from "valibot";
 import {
   CONCRETE_ACTION_MIN_LENGTH,
   CONCRETE_ACTION_VALIDATION_MESSAGE,
-} from "~domain/concreteAction";
+  validateConcreteAction,
+} from "~domain/concreteActionCore";
 
 export { CONCRETE_ACTION_MIN_LENGTH, CONCRETE_ACTION_VALIDATION_MESSAGE };
 
 export const ConcreteActionSchema = v.pipe(
   v.string(),
   v.trim(),
-  v.minLength(CONCRETE_ACTION_MIN_LENGTH, CONCRETE_ACTION_VALIDATION_MESSAGE),
+  v.check((value) => validateConcreteAction(value) === null, CONCRETE_ACTION_VALIDATION_MESSAGE),
 );

@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import type { DateJst } from "~domain/jst";
 import { weekdayFromDateJst } from "~domain/jst";
 
+import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
 import type { ItemDto, PresetDto, PresetId } from "~/features/catalog/types/item";
 import { parsePresetId } from "~/features/catalog/types/item";
 import { AdhocRowForm } from "~/features/today/components/adhoc-row-form";
@@ -137,7 +138,7 @@ export function DayBoard({
       <Card>
         <Stack gap="md">
           <Title order={2}>記録</Title>
-          {day.rows.map((row) => (
+          {day.rows.map((row, index) => (
             <RowEditor
               key={row._id}
               disabled={!canEdit}
@@ -145,6 +146,7 @@ export function DayBoard({
               onRemove={onRemoveRow}
               onSkip={onSkip}
               row={row}
+              tourId={index === 0 ? CONCRETE_ACTION_TOUR_TARGETS.today : undefined}
             />
           ))}
           {day.rows.length === 0 ? <Text c="dimmed">この日の記録はありません。</Text> : null}
