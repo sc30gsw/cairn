@@ -1,5 +1,5 @@
 import { Field, Form, useForm } from "@formisch/react";
-import { DragDropContext, Draggable, Droppable, type DropResult } from "@hello-pangea/dnd";
+import type { DropResult } from "@hello-pangea/dnd";
 import {
   ActionIcon,
   Button,
@@ -18,6 +18,7 @@ import {
 import { IconGripVertical, IconTrash } from "@tabler/icons-react";
 import { groupBy, mapValues, prop, sortBy } from "remeda";
 
+import { useDnd } from "~/features/catalog/hooks/use-dnd";
 import { CategorySchema } from "~/features/catalog/schemas/category-schema";
 import { ItemNameSchema } from "~/features/catalog/schemas/item-schema";
 import type { CategoryDto, ItemDto } from "~/features/catalog/types/item";
@@ -55,6 +56,7 @@ export function ItemList({
   onRenameItem,
   onApplyItemOrder,
 }: ItemListProps) {
+  const { DragDropContext } = useDnd();
   const sortedCategories = sortBy(categories, prop("sortOrder"));
   const itemsByCategory = mapValues(groupBy(items, prop("categoryId")), (categoryItems) =>
     sortBy(categoryItems, prop("sortOrder")),
@@ -243,6 +245,8 @@ function KanbanColumn({
   onRenameCategory: ItemListProps["onRenameCategory"];
   onRenameItem: ItemListProps["onRenameItem"];
 }) {
+  const { Draggable, Droppable } = useDnd();
+
   return (
     <Paper miw={300} p="md" radius="sm" withBorder>
       <Stack gap="md">

@@ -11,6 +11,7 @@ import {
 } from "@mantine/core";
 import { DatesProvider } from "@mantine/dates";
 import { ModalsProvider } from "@mantine/modals";
+import { ShimmerProvider } from "@shimmer-from-structure/react";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import {
@@ -20,8 +21,8 @@ import {
   createRootRouteWithContext,
   useRouteContext,
 } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
 import "dayjs/locale/ja";
+import { createServerFn } from "@tanstack/react-start";
 import { Suspense, lazy, type ReactNode } from "react";
 
 import { PendingComponent } from "~/components/pending-component";
@@ -91,9 +92,18 @@ function RootDocument({ children }: Record<"children", ReactNode>) {
           forceColorScheme="light"
           theme={theme}
         >
-          <ModalsProvider labels={{ cancel: "キャンセル", confirm: "見送りにする" }}>
-            <DatesProvider settings={{ locale: "ja" }}>{children}</DatesProvider>
-          </ModalsProvider>
+          <ShimmerProvider
+            config={{
+              backgroundColor: "var(--inset)",
+              duration: 2,
+              fallbackBorderRadius: 8,
+              shimmerColor: "var(--bd2)",
+            }}
+          >
+            <ModalsProvider labels={{ cancel: "キャンセル", confirm: "見送りにする" }}>
+              <DatesProvider settings={{ locale: "ja" }}>{children}</DatesProvider>
+            </ModalsProvider>
+          </ShimmerProvider>
           {TanStackRouterDevtools ? (
             <Suspense fallback={null}>
               <TanStackRouterDevtools position="bottom-right" />

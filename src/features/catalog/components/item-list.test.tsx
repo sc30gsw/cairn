@@ -5,6 +5,13 @@ import { ItemList } from "~/features/catalog/components/item-list";
 import { PresetList } from "~/features/catalog/components/preset-list";
 import { renderWithMantine } from "~/test-utils/render";
 
+vi.mock("~/features/catalog/hooks/use-dnd", async () => {
+  const dnd = await vi.importActual<typeof import("@hello-pangea/dnd")>("@hello-pangea/dnd");
+  return {
+    useDnd: () => dnd,
+  };
+});
+
 test("カテゴリーの下に学習内容が並び、カテゴリーも編集できる", () => {
   const { getByRole, getByLabelText } = renderWithMantine(
     <>

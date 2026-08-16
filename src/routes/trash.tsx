@@ -1,5 +1,3 @@
-import { convexQuery } from "@convex-dev/react-query";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 
@@ -7,6 +5,7 @@ import { api } from "~/../convex/_generated/api";
 import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { TrashList } from "~/features/trash/components/trash-list";
+import { useTrashList } from "~/features/trash/hooks/trash-queries";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export const Route = createFileRoute("/trash")({
@@ -24,7 +23,7 @@ function TrashRoute() {
 }
 
 function TrashReady() {
-  const { data: trash } = useSuspenseQuery(convexQuery(api.trash.list, {}));
+  const { data: trash } = useTrashList();
   const restoreDay = useConvexMutation(api.trash.restoreDay);
   const restoreRow = useConvexMutation(api.rows.restore);
   const purgeDay = useConvexMutation(api.trash.purgeDay);

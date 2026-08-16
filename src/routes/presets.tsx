@@ -1,5 +1,3 @@
-import { convexQuery } from "@convex-dev/react-query";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 
@@ -7,6 +5,7 @@ import { api } from "~/../convex/_generated/api";
 import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { PresetList } from "~/features/catalog/components/preset-list";
+import { useItemsList, usePresetsList } from "~/features/catalog/hooks/catalog-queries";
 import { useEnsureCatalog } from "~/features/catalog/hooks/use-ensure-catalog";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
@@ -26,8 +25,8 @@ function PresetsRoute() {
 
 function PresetsReady() {
   useEnsureCatalog();
-  const { data: items } = useSuspenseQuery(convexQuery(api.items.list, {}));
-  const { data: presets } = useSuspenseQuery(convexQuery(api.presets.list, {}));
+  const { data: items } = useItemsList();
+  const { data: presets } = usePresetsList();
   const createPreset = useConvexMutation(api.presets.create);
   const updatePreset = useConvexMutation(api.presets.update);
   const removePreset = useConvexMutation(api.presets.remove);

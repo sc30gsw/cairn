@@ -1,5 +1,3 @@
-import { convexQuery } from "@convex-dev/react-query";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 import { mondayOfWeek, todayJst } from "~domain/jst";
@@ -8,6 +6,8 @@ import { api } from "~/../convex/_generated/api";
 import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { GoalsBoard } from "~/features/goals/components/goals-board";
+import { useExamGoal, useObstaclesList } from "~/features/goals/hooks/goals-queries";
+import { useHistoryWeek } from "~/features/history/hooks/history-queries";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export const Route = createFileRoute("/goals")({
@@ -27,9 +27,9 @@ function GoalsRoute() {
 function GoalsReady() {
   const today = todayJst();
   const weekStart = mondayOfWeek(today);
-  const { data: exam } = useSuspenseQuery(convexQuery(api.goals.getExam, { todayJst: today }));
-  const { data: week } = useSuspenseQuery(convexQuery(api.history.week, { dateJst: today }));
-  const { data: obstacles } = useSuspenseQuery(convexQuery(api.goals.listObstacles, {}));
+  const { data: exam } = useExamGoal(today);
+  const { data: week } = useHistoryWeek(today);
+  const { data: obstacles } = useObstaclesList();
   const saveExam = useConvexMutation(api.goals.saveExam);
   const saveWeekly = useConvexMutation(api.goals.saveWeekly);
   const createObstacle = useConvexMutation(api.goals.createObstacle);

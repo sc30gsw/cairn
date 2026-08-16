@@ -1,5 +1,3 @@
-import { convexQuery } from "@convex-dev/react-query";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense, useEffect, useRef } from "react";
 import { todayJst } from "~domain/jst";
 
@@ -8,6 +6,7 @@ import { PendingComponent } from "~/components/pending-component";
 import type { PresetId } from "~/features/catalog/types/item";
 import { parsePresetId } from "~/features/catalog/types/item";
 import { DayBoard, weekdayPresetId } from "~/features/today/components/day-board";
+import { useItemsList, usePresetsList } from "~/features/today/hooks/day-queries";
 import { useOpenAndLoadDay } from "~/features/today/hooks/use-open-and-load-day";
 import type { DaySearch } from "~/features/today/schemas/day-search-schema";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
@@ -29,8 +28,8 @@ function DayPageReady({ dateJst, presetFromSearch }: DayPageProps) {
   const today = todayJst();
   const isToday = dateJst === today;
   const { data: day } = useOpenAndLoadDay(dateJst);
-  const { data: items } = useSuspenseQuery(convexQuery(api.items.list, {}));
-  const { data: presets } = useSuspenseQuery(convexQuery(api.presets.list, {}));
+  const { data: items } = useItemsList();
+  const { data: presets } = usePresetsList();
   const confirm = useConvexMutation(api.rows.confirm);
   const skip = useConvexMutation(api.rows.skip);
   const add = useConvexMutation(api.rows.add);

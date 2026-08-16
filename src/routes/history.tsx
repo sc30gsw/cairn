@@ -1,17 +1,21 @@
-import { convexQuery } from "@convex-dev/react-query";
 import { Card, ScrollArea, Tabs, Title } from "@mantine/core";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Suspense, useState } from "react";
 import { mondayOfWeek, todayJst } from "~domain/jst";
 
-import { api } from "~/../convex/_generated/api";
 import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { useEnsureCatalog } from "~/features/catalog/hooks/use-ensure-catalog";
 import { HistoryAnalysisPanel } from "~/features/history/components/analysis/history-analysis-panel";
 import { HistoryMonthView } from "~/features/history/components/history-month-view";
 import { WeekAgenda } from "~/features/history/components/week-agenda";
+import {
+  useHistoryDayBreakdown,
+  useHistoryMonthBreakdown,
+  useHistoryWeek,
+  useHistoryWeekBreakdown,
+  useHistoryYearHeatmap,
+} from "~/features/history/hooks/history-queries";
 import type { AnalysisScope } from "~/features/history/schemas/analysis-scope-schema";
 
 import tabBarClasses from "~/features/history/components/history-tab-bar.module.css";
@@ -114,9 +118,7 @@ function HistoryMonthTab({
   today: string;
   yearMonth: string;
 }) {
-  const { data: monthBreakdown } = useSuspenseQuery(
-    convexQuery(api.history.monthBreakdown, { todayJst: today, yearMonth }),
-  );
+  const { data: monthBreakdown } = useHistoryMonthBreakdown(today, yearMonth);
 
   return (
     <HistoryMonthView
@@ -130,7 +132,7 @@ function HistoryMonthTab({
 }
 
 function HistoryWeekTab({ today, weekAnchor }: { today: string; weekAnchor: string }) {
-  const { data: week } = useSuspenseQuery(convexQuery(api.history.week, { dateJst: weekAnchor }));
+  const { data: week } = useHistoryWeek(weekAnchor);
 
   return (
     <ScrollArea.Autosize mah={640} offsetScrollbars type="auto">
@@ -156,18 +158,10 @@ function HistoryAnalysisTab({
   weekAnchor: string;
   yearMonth: string;
 }) {
-  const { data: monthBreakdown } = useSuspenseQuery(
-    convexQuery(api.history.monthBreakdown, { todayJst: today, yearMonth }),
-  );
-  const { data: yearHeatmap } = useSuspenseQuery(
-    convexQuery(api.history.yearHeatmap, { todayJst: today }),
-  );
-  const { data: weekBreakdown } = useSuspenseQuery(
-    convexQuery(api.history.weekBreakdown, { dateJst: weekAnchor }),
-  );
-  const { data: dayBreakdown } = useSuspenseQuery(
-    convexQuery(api.history.dayBreakdown, { dateJst: selectedDateJst }),
-  );
+  const { data: monthBreakdown } = useHistoryMonthBreakdown(today, yearMonth);
+  const { data: yearHeatmap } = useHistoryYearHeatmap(today);
+  const { data: weekBreakdown } = useHistoryWeekBreakdown(weekAnchor);
+  const { data: dayBreakdown } = useHistoryDayBreakdown(selectedDateJst);
 
   return (
     <>

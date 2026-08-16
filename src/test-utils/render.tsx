@@ -1,8 +1,10 @@
 import { MantineProvider } from "@mantine/core";
 import { DatesProvider } from "@mantine/dates";
 import { ModalsProvider } from "@mantine/modals";
+import { ShimmerProvider } from "@shimmer-from-structure/react";
 import { cleanup, render, type RenderOptions } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
+import { Suspense } from "react";
 import "dayjs/locale/ja";
 import { afterEach, vi } from "vite-plus/test";
 
@@ -51,7 +53,11 @@ function Wrapper({ children }: Record<"children", ReactNode>) {
       theme={theme}
     >
       <ModalsProvider labels={{ cancel: "キャンセル", confirm: "見送りにする" }}>
-        <DatesProvider settings={{ locale: "ja" }}>{children}</DatesProvider>
+        <DatesProvider settings={{ locale: "ja" }}>
+          <ShimmerProvider>
+            <Suspense fallback={null}>{children}</Suspense>
+          </ShimmerProvider>
+        </DatesProvider>
       </ModalsProvider>
     </MantineProvider>
   );

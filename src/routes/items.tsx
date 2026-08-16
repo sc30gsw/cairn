@@ -1,5 +1,3 @@
-import { convexQuery } from "@convex-dev/react-query";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 
@@ -7,8 +5,9 @@ import { api } from "~/../convex/_generated/api";
 import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { ItemList } from "~/features/catalog/components/item-list";
-import { useApplyItemOrder } from "~/features/catalog/hooks/use-apply-item-order";
+import { useCategoriesList, useItemsList } from "~/features/catalog/hooks/catalog-queries";
 import { useEnsureCatalog } from "~/features/catalog/hooks/use-ensure-catalog";
+import { useApplyItemOrder, useRenameItem } from "~/features/catalog/hooks/use-rename-item";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export const Route = createFileRoute("/items")({
@@ -27,13 +26,13 @@ function ItemsRoute() {
 
 function ItemsReady() {
   useEnsureCatalog();
-  const { data: categories } = useSuspenseQuery(convexQuery(api.categories.list, {}));
-  const { data: items } = useSuspenseQuery(convexQuery(api.items.list, {}));
+  const { data: categories } = useCategoriesList();
+  const { data: items } = useItemsList();
   const createCategory = useConvexMutation(api.categories.create);
   const renameCategory = useConvexMutation(api.categories.rename);
   const removeCategory = useConvexMutation(api.categories.remove);
   const createItem = useConvexMutation(api.items.create);
-  const renameItem = useConvexMutation(api.items.rename);
+  const renameItem = useRenameItem();
   const applyItemOrder = useApplyItemOrder();
   const removeItem = useConvexMutation(api.items.remove);
 
@@ -57,7 +56,7 @@ function ItemsReady() {
         void renameCategory.mutateAsync(input);
       }}
       onRenameItem={(input) => {
-        void renameItem.mutateAsync(input);
+        void renameItem(input);
       }}
       onApplyItemOrder={(input) => {
         void applyItemOrder(input);
