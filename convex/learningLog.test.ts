@@ -506,6 +506,13 @@ test("プリセット CRUD と曜日重複は失敗", async () => {
       weekday: 1,
     }),
   ).rejects.toThrow();
+  const seededSunday = (await t.query(api.queries.presets.list.list, {})).find(
+    (preset) => preset.weekday === 0,
+  );
+  if (seededSunday === undefined) {
+    throw new Error("日曜プリセットがない");
+  }
+  await t.mutation(api.mutations.presets.remove.remove, { presetId: seededSunday._id });
   const presetId = await t.mutation(api.mutations.presets.create.create, {
     lines: [{ content: "日曜だけ", itemId: distinction._id, minutes: 20 }],
     name: "日曜",

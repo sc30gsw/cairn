@@ -17,12 +17,16 @@ vi.mock("~/components/app-shell", () => ({
   AppShell: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
+const refetch = vi.fn();
+const now = new Date();
+
 test("未ログインならログイン画面が見える", () => {
   vi.mocked(authClient.useSession).mockReturnValue({
     data: null,
     error: null,
     isPending: false,
     isRefetching: false,
+    refetch,
   });
   const { getByRole } = renderWithMantine(
     <OwnerGate>
@@ -35,12 +39,28 @@ test("未ログインならログイン画面が見える", () => {
 test("ログイン済みなら子が見える", () => {
   vi.mocked(authClient.useSession).mockReturnValue({
     data: {
-      session: { id: "s" },
-      user: { email: "owner@example.com", image: null, name: "Owner" },
+      session: {
+        id: "s",
+        createdAt: now,
+        updatedAt: now,
+        userId: "u",
+        expiresAt: now,
+        token: "t",
+      },
+      user: {
+        id: "u",
+        createdAt: now,
+        updatedAt: now,
+        email: "owner@example.com",
+        emailVerified: true,
+        image: null,
+        name: "Owner",
+      },
     },
     error: null,
     isPending: false,
     isRefetching: false,
+    refetch,
   });
   const { getByText } = renderWithMantine(
     <OwnerGate>
