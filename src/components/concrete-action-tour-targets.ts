@@ -1,5 +1,5 @@
 export const CONCRETE_ACTION_TOUR_TARGETS = {
-  goals: "svo-obstacle-then",
+  obstacles: "svo-obstacle-then",
   presets: "svo-preset-content",
   today: "svo-row-content",
 } as const;

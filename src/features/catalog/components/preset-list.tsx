@@ -5,6 +5,7 @@ import {
   Button,
   Card,
   Grid,
+  Group,
   Input,
   NumberInput,
   Select,
@@ -20,6 +21,7 @@ import * as v from "valibot";
 import { WEEKDAY_NAMES } from "~domain/catalog";
 
 import { ConcreteActionField } from "~/components/concrete-action-field";
+import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
 import { CreatePresetSchema, PresetSchema } from "~/features/catalog/schemas/preset-schema";
 import type { PresetLineInput } from "~/features/catalog/schemas/preset-schema";
@@ -115,43 +117,48 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
     .join(",");
 
   return (
-    <Stack gap="md">
-      <Title order={1}>プリセット</Title>
-      <PresetCreateForm key={createFormKey} onCreate={onCreate} presets={presets} />
-      {presets.length === 0 ? (
-        <Text c="dimmed">プリセットはまだありません。</Text>
-      ) : (
-        <Accordion defaultValue={presets[0]?._id} variant="separated">
-          {presets.map((preset) => (
-            <Accordion.Item key={preset._id} value={preset._id}>
-              <Accordion.Control>
-                <Stack gap={2}>
-                  <Text fw={600}>{preset.name}</Text>
-                  <Text c="dimmed" size="sm">
-                    {
-                      WEEKDAY_OPTIONS.find((option) => option.value === String(preset.weekday))
-                        ?.label
-                    }
-                    {" · "}
-                    {preset.lines.length === 0
-                      ? "記録なし"
-                      : preset.lines.map((line: PresetLineDto) => line.itemName).join("、")}
-                  </Text>
-                </Stack>
-              </Accordion.Control>
-              <Accordion.Panel>
-                <PresetEditor
-                  items={items}
-                  onRemove={onRemove}
-                  onUpdate={onUpdate}
-                  preset={preset}
-                />
-              </Accordion.Panel>
-            </Accordion.Item>
-          ))}
-        </Accordion>
-      )}
-    </Stack>
+    <ConcreteActionTour screen="presets">
+      <Stack gap="md">
+        <Group gap="xs" wrap="nowrap">
+          <Title order={1}>プリセット</Title>
+          <ConcreteActionTourTrigger />
+        </Group>
+        <PresetCreateForm key={createFormKey} onCreate={onCreate} presets={presets} />
+        {presets.length === 0 ? (
+          <Text c="dimmed">プリセットはまだありません。</Text>
+        ) : (
+          <Accordion defaultValue={presets[0]?._id} variant="separated">
+            {presets.map((preset) => (
+              <Accordion.Item key={preset._id} value={preset._id}>
+                <Accordion.Control>
+                  <Stack gap={2}>
+                    <Text fw={600}>{preset.name}</Text>
+                    <Text c="dimmed" size="sm">
+                      {
+                        WEEKDAY_OPTIONS.find((option) => option.value === String(preset.weekday))
+                          ?.label
+                      }
+                      {" · "}
+                      {preset.lines.length === 0
+                        ? "記録なし"
+                        : preset.lines.map((line: PresetLineDto) => line.itemName).join("、")}
+                    </Text>
+                  </Stack>
+                </Accordion.Control>
+                <Accordion.Panel>
+                  <PresetEditor
+                    items={items}
+                    onRemove={onRemove}
+                    onUpdate={onUpdate}
+                    preset={preset}
+                  />
+                </Accordion.Panel>
+              </Accordion.Item>
+            ))}
+          </Accordion>
+        )}
+      </Stack>
+    </ConcreteActionTour>
   );
 }
 

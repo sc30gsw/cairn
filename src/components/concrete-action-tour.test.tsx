@@ -1,37 +1,61 @@
-import { waitFor } from "@testing-library/react";
-import { expect, test, vi } from "vite-plus/test";
+import { fireEvent, waitFor } from "@testing-library/react";
+import { expect, test } from "vite-plus/test";
 
-import { ConcreteActionTour } from "~/components/concrete-action-tour";
+import { ConcreteActionField } from "~/components/concrete-action-field";
+import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
 import { renderWithMantine } from "~/test-utils/render";
 
-test("初回訪問はマウント後にツアーオーバーレイを出す", async () => {
-  const storage = new Map<string, string>();
-  vi.spyOn(Storage.prototype, "getItem").mockImplementation((key) => storage.get(key) ?? null);
-
-  renderWithMantine(
+test("初回表示ではツアーを自動開始しない", () => {
+  const { container, queryByLabelText } = renderWithMantine(
     <ConcreteActionTour screen="today">
+      <ConcreteActionTourTrigger />
       <div data-onboarding-tour-id={CONCRETE_ACTION_TOUR_TARGETS.today}>記録</div>
     </ConcreteActionTour>,
   );
 
-  expect(storage.has("cairn:concrete-action-tour:v1:today")).toBe(false);
-  await waitFor(() => {
-    expect(document.querySelector('[data-onboarding-tour-overlay="true"]')).not.toBeNull();
-  });
+  expect(container.querySelector("[data-onboarding-tour-overlay]")).toBeNull();
+  expect(queryByLabelText("この画面の書き方ガイドを表示")).toBeDefined();
 });
 
-test("localStorage に記録済みならツアーオーバーレイを出さない", async () => {
-  const storage = new Map<string, string>([["cairn:concrete-action-tour:v1:presets", "1"]]);
-  vi.spyOn(Storage.prototype, "getItem").mockImplementation((key) => storage.get(key) ?? null);
-
-  renderWithMantine(
-    <ConcreteActionTour screen="presets">
-      <div>プリセット</div>
+test("ページのヘルプアイコンをクリックするとツアーを開始する", async () => {
+  const { container, getByLabelText } = renderWithMantine(
+    <ConcreteActionTour screen="today">
+      <ConcreteActionTourTrigger />
+      <ConcreteActionField
+        label="記録"
+        name="content"
+        tourId={CONCRETE_ACTION_TOUR_TARGETS.today}
+      />
     </ConcreteActionTour>,
   );
 
+  fireEvent.click(getByLabelText("この画面の書き方ガイドを表示"));
+
   await waitFor(() => {
-    expect(document.querySelector('[data-onboarding-tour-overlay="true"]')).toBeNull();
+    expect(container.querySelector("[data-onboarding-tour-overlay]")).not.toBeNull();
   });
+});
+
+test("フィールドのアイコンはクリックしてもツアーを開始しない", () => {
+  const { container, getByLabelText } = renderWithMantine(
+    <ConcreteActionTour screen="today">
+      <ConcreteActionTourTrigger />
+      <ConcreteActionField
+        label="記録"
+        name="content"
+        tourId={CONCRETE_ACTION_TOUR_TARGETS.today}
+      />
+    </ConcreteActionTour>,
+  );
+
+  fireEvent.click(getByLabelText("具体的手順の書き方"));
+
+  expect(container.querySelector("[data-onboarding-tour-overlay]")).toBeNull();
+});
+
+test("ツアー外ではページトリガーを描画しない", () => {
+  const { queryByLabelText } = renderWithMantine(<ConcreteActionTourTrigger />);
+
+  expect(queryByLabelText("この画面の書き方ガイドを表示")).toBeNull();
 });
