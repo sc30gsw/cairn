@@ -1,7 +1,7 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { ValidationFailedError } from "../../lib/errors";
-import { applyItemOrderToList } from "../../lib/itemOrder";
+import { applyItemOrderToList, validateCategoryOrderUpdates } from "../../lib/itemOrder";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { requireOwnedCategory } from "./helpers";
 
@@ -41,6 +41,14 @@ export async function applyOrder(
         throwDomain(new ValidationFailedError({ message: "項目の並べ替えが不正です" }));
       }
     }
+  }
+
+  const validationError = validateCategoryOrderUpdates(
+    items.map((item) => ({ _id: item._id, categoryId: item.categoryId })),
+    args.updates,
+  );
+  if (validationError !== null) {
+    throwDomain(new ValidationFailedError({ message: validationError }));
   }
 
   const listDto = applyItemOrderToList(

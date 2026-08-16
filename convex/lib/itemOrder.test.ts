@@ -1,6 +1,6 @@
 import { expect, test } from "vite-plus/test";
 
-import { applyItemOrderToList, applyRenameToList } from "./itemOrder";
+import { applyItemOrderToList, applyRenameToList, validateCategoryOrderUpdates } from "./itemOrder";
 import type { ItemDto } from "./validators";
 
 const itemA = {
@@ -57,6 +57,40 @@ test("カテゴリ間移動と両方の並べ替えを反映する", () => {
 
 test("更新対象外の項目はそのまま", () => {
   expect(applyItemOrderToList([itemA, itemC], [])).toEqual([itemA, itemC]);
+});
+
+test("カテゴリ内の項目が欠ける並べ替えは不正", () => {
+  expect(
+    validateCategoryOrderUpdates(
+      [itemA, itemB],
+      [{ categoryId: itemA.categoryId, orderedItemIds: [itemB._id] }],
+    ),
+  ).toBe("項目の並べ替えが不正です");
+});
+
+test("他カテゴリへ移す項目を除けばカテゴリ内の件数不足は許容", () => {
+  expect(
+    validateCategoryOrderUpdates(
+      [itemA, itemB, itemC],
+      [
+        { categoryId: itemA.categoryId, orderedItemIds: [itemB._id] },
+        { categoryId: itemC.categoryId, orderedItemIds: [itemC._id, itemA._id] },
+      ],
+    ),
+  ).toBeNull();
+});
+
+test("カテゴリ未設定の項目は並べ替え不可", () => {
+  const uncategorized = {
+    _id: "i4" as ItemDto["_id"],
+    categoryId: undefined,
+  };
+  expect(
+    validateCategoryOrderUpdates(
+      [itemA, uncategorized],
+      [{ categoryId: itemA.categoryId, orderedItemIds: [itemA._id, uncategorized._id] }],
+    ),
+  ).toBe("カテゴリ未設定の項目は並べ替えできません");
 });
 
 test("同一カテゴリ内の名前変更を楽観的に反映する", () => {

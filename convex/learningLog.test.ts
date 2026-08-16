@@ -555,14 +555,25 @@ test("applyOrder で項目順とカテゴリを更新", async () => {
   const after = await t.query(api.queries.items.list.list, {});
   const afterToeic = after.filter((item) => item.categoryId === toeic._id);
   expect(afterToeic.map((item) => item._id)).toEqual(reordered.map((item) => item._id));
+  await expect(
+    t.mutation(api.mutations.items.applyOrder.applyOrder, {
+      updates: [
+        { categoryId: toeic._id, orderedItemIds: reordered.slice(1).map((item) => item._id) },
+      ],
+    }),
+  ).rejects.toThrow();
   const moved = afterToeic[0];
   if (moved === undefined) {
     throw new Error("移動元がない");
   }
+  const readingItems = after.filter((item) => item.categoryId === reading._id);
   await t.mutation(api.mutations.items.applyOrder.applyOrder, {
     updates: [
       { categoryId: toeic._id, orderedItemIds: afterToeic.slice(1).map((item) => item._id) },
-      { categoryId: reading._id, orderedItemIds: [moved._id] },
+      {
+        categoryId: reading._id,
+        orderedItemIds: [...readingItems.map((item) => item._id), moved._id],
+      },
     ],
   });
   const movedAfter = await t.query(api.queries.items.list.list, {});
