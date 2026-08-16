@@ -1,3 +1,5 @@
+import { groupBy, indexBy, prop } from "remeda";
+
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import {
@@ -9,6 +11,7 @@ import {
 } from "./lib/catalog";
 import { SEED_CATEGORIES } from "./lib/categories";
 import { NotFoundError, ValidationFailedError } from "./lib/errors";
+import { compareItemsBySortOrder } from "./lib/itemSort";
 import { isFutureDateJst } from "./lib/jst";
 import { throwDomain } from "./ownerFunctions";
 
@@ -35,7 +38,12 @@ async function categoriesByName(
     .query("categories")
     .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
     .collect();
-  return new Map(categories.map((category) => [category.name, category._id]));
+  return new Map(
+    Object.entries(indexBy(categories, prop("name"))).map(([name, category]) => [
+      name,
+      category._id,
+    ]),
+  );
 }
 
 async function backfillItemCategories(
@@ -65,6 +73,28 @@ async function backfillItemCategories(
   );
 }
 
+export async function backfillItemSortOrders(ctx: MutationCtx, ownerId: string): Promise<void> {
+  const items = await ctx.db
+    .query("items")
+    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+    .collect();
+  const byCategory = groupBy(
+    items.filter((item) => item.categoryId !== undefined),
+    (item) => item.categoryId!,
+  );
+  await Promise.all(
+    Object.values(byCategory).flatMap((categoryItems) => {
+      const ordered = categoryItems.toSorted(compareItemsBySortOrder);
+      return ordered.map((item, sortOrder) => {
+        if (item.sortOrder === sortOrder) {
+          return Promise.resolve();
+        }
+        return ctx.db.patch(item._id, { sortOrder });
+      });
+    }),
+  );
+}
+
 export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<void> {
   const [nameToId, existingItems] = await Promise.all([
     categoriesByName(ctx, ownerId),
@@ -74,16 +104,20 @@ export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<
       .collect(),
   ]);
   if (existingItems.length === 0) {
+    const sortOrderByCategory = new Map<Id<"categories">, number>();
     await Promise.all(
       SEED_ITEMS.map((item) => {
         const categoryId = nameToId.get(item.category);
         if (categoryId === undefined) {
           return Promise.resolve();
         }
+        const sortOrder = sortOrderByCategory.get(categoryId) ?? 0;
+        sortOrderByCategory.set(categoryId, sortOrder + 1);
         return ctx.db.insert("items", {
           categoryId,
           name: item.name,
           ownerId,
+          sortOrder,
         });
       }),
     );
@@ -91,11 +125,13 @@ export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<
     await backfillItemCategories(ctx, ownerId, nameToId);
   }
 
+  await backfillItemSortOrders(ctx, ownerId);
+
   const items = await ctx.db
     .query("items")
     .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
     .collect();
-  const itemByName = new Map(items.map((item) => [item.name, item]));
+  const itemByName = indexBy(items, prop("name"));
 
   const existingPresets = await ctx.db
     .query("presets")
@@ -105,7 +141,7 @@ export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<
     await Promise.all(
       WEEKDAY_NAMES.map((name, weekday) => {
         const lines = seedLineNamesForWeekday(weekday).flatMap((itemName) => {
-          const item = itemByName.get(itemName);
+          const item = itemByName[itemName];
           if (item === undefined) {
             return [];
           }

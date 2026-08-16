@@ -1,12 +1,8 @@
-export type ShareRow = {
-  category: string;
-  categorySortOrder: number;
-  content: string;
-  itemName: string;
-  minutes: number;
-  sortOrder: number;
-  status: "スキップ" | "未着手" | "確定";
-};
+import { flatMap, groupBy, pipe, prop, sortBy } from "remeda";
+
+import type { ShareRow } from "./validators";
+
+export type { ShareRow };
 
 function lineText(row: ShareRow): string {
   if (row.content === "") {
@@ -28,19 +24,15 @@ function usedCategories(rows: readonly ShareRow[]): string[] {
 }
 
 export function formatShareMarkdown(rows: readonly ShareRow[]): string {
-  const confirmed = rows
-    .filter((row) => row.status === "確定")
-    .toSorted((left, right) => left.sortOrder - right.sortOrder);
+  const confirmed = sortBy(
+    rows.filter((row) => row.status === "確定"),
+    prop("sortOrder"),
+  );
   if (confirmed.length === 0) {
     return "";
   }
 
-  const byCategory = new Map<string, ShareRow[]>();
-  for (const row of confirmed) {
-    const bucket = byCategory.get(row.category) ?? [];
-    bucket.push(row);
-    byCategory.set(row.category, bucket);
-  }
+  const byCategory = groupBy(confirmed, prop("category"));
 
   const names = usedCategories(confirmed);
   if (names.length === 1) {
@@ -48,13 +40,14 @@ export function formatShareMarkdown(rows: readonly ShareRow[]): string {
     if (only === undefined) {
       return "";
     }
-    return (byCategory.get(only) ?? []).map((row) => `- ${lineText(row)}`).join("\n");
+    return (byCategory[only] ?? []).map((row) => `- ${lineText(row)}`).join("\n");
   }
 
-  return names
-    .flatMap((category) => {
-      const lines = (byCategory.get(category) ?? []).map((row) => `  - ${lineText(row)}`);
+  return pipe(
+    names,
+    flatMap((category) => {
+      const lines = (byCategory[category] ?? []).map((row) => `  - ${lineText(row)}`);
       return [`- ${category}`, ...lines];
-    })
-    .join("\n");
+    }),
+  ).join("\n");
 }

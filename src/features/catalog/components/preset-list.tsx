@@ -14,43 +14,29 @@ import {
   Title,
   Tooltip,
 } from "@mantine/core";
+import { IconTrash } from "@tabler/icons-react";
 import { useState } from "react";
 import * as v from "valibot";
 import { WEEKDAY_NAMES } from "~domain/catalog";
 
-import { TrashIcon } from "~/components/trash-icon";
 import { CreatePresetSchema, PresetSchema } from "~/features/catalog/schemas/preset-schema";
+import type { PresetLineInput } from "~/features/catalog/schemas/preset-schema";
 import type { ItemDto, PresetDto } from "~/features/catalog/types/item";
 import { parseItemId } from "~/features/catalog/types/item";
+import type {
+  CreatePresetInput,
+  RemovePresetInput,
+  UpdatePresetInput,
+} from "~/features/catalog/types/mutations";
 import { onRequiredSelect } from "~/lib/select";
 
-type PresetLineDraft = {
-  content: string;
-  itemId: string;
-  minutes: number;
-};
-
-type PresetLineDto = {
-  content: string;
-  itemId: ItemDto["_id"];
-  itemName: string;
-  minutes: number;
-};
+type PresetLineDto = PresetDto["lines"][number];
 
 type PresetListProps = {
   items: ItemDto[];
-  onCreate: (input: {
-    lines: { content: string; itemId: ItemDto["_id"]; minutes: number }[];
-    name: string;
-    weekday: number;
-  }) => void;
-  onRemove: (presetId: PresetDto["_id"]) => void;
-  onUpdate: (input: {
-    lines: { content: string; itemId: ItemDto["_id"]; minutes: number }[];
-    name: string;
-    presetId: PresetDto["_id"];
-    weekday: number;
-  }) => void;
+  onCreate: (input: CreatePresetInput) => void;
+  onRemove: (presetId: RemovePresetInput["presetId"]) => void;
+  onUpdate: (input: UpdatePresetInput) => void;
   presets: PresetDto[];
 };
 
@@ -59,7 +45,7 @@ const WEEKDAY_OPTIONS = WEEKDAY_NAMES.map((label, value) => ({
   value: String(value),
 }));
 
-function parsedLines(lines: PresetLineDraft[]) {
+function parsedLines(lines: PresetLineInput[]) {
   return lines.map((line) => ({
     content: line.content,
     itemId: parseItemId(line.itemId),
@@ -71,7 +57,7 @@ function itemOptions(items: ItemDto[]) {
   return items.map((item) => ({ label: item.name, value: item._id }));
 }
 
-function availableItemOptions(items: ItemDto[], lines: PresetLineDraft[], currentIndex: number) {
+function availableItemOptions(items: ItemDto[], lines: PresetLineInput[], currentIndex: number) {
   const taken = new Set<string>();
   for (const [index, line] of lines.entries()) {
     if (index !== currentIndex) {
@@ -81,7 +67,7 @@ function availableItemOptions(items: ItemDto[], lines: PresetLineDraft[], curren
   return itemOptions(items.filter((item) => !taken.has(item._id)));
 }
 
-function firstAvailableItem(items: ItemDto[], lines: PresetLineDraft[]) {
+function firstAvailableItem(items: ItemDto[], lines: PresetLineInput[]) {
   const taken = new Set(lines.map((line) => line.itemId));
   return items.find((item) => !taken.has(item._id));
 }
@@ -236,7 +222,7 @@ function PresetEditor({
   onUpdate: PresetListProps["onUpdate"];
   preset: PresetDto;
 }) {
-  const [lines, setLines] = useState<PresetLineDraft[]>(() =>
+  const [lines, setLines] = useState<PresetLineInput[]>(() =>
     preset.lines.map((line: PresetLineDto) => ({
       content: line.content,
       itemId: line.itemId,
@@ -384,7 +370,7 @@ function PresetEditor({
                         type="button"
                         variant="white"
                       >
-                        <TrashIcon />
+                        <IconTrash aria-hidden size={16} stroke={1.5} />
                       </ActionIcon>
                     </Tooltip>
                   </Input.Wrapper>

@@ -14,13 +14,15 @@ test("カウントダウンと週間ゴールと障害プランが見える", ()
       onSaveExam={vi.fn()}
       onSaveWeekly={vi.fn()}
       onUpdateObstacle={vi.fn()}
+      todayJst="2026-08-17"
       volumeMinutes={30}
+      weekEndJst="2026-08-23"
       weeklyGoalMinutes={300}
     />,
   );
   expect(getByText(/2026-09-27/)).toBeDefined();
   expect(getByText(/730/)).toBeDefined();
-  expect(getByText(/今週の学習量 30分/)).toBeDefined();
+  expect(getByText(/週間ゴール 10%/)).toBeDefined();
   expect(getByText(/もし 眠い なら 金フレだけ/)).toBeDefined();
   expect(getByRole("button", { name: "障害プランを追加" })).toBeDefined();
   expect(getByRole("button", { name: "眠いを保存" })).toBeDefined();
@@ -37,7 +39,9 @@ test("障害プランを追加したら入力が空に戻る", async () => {
       onSaveExam={vi.fn()}
       onSaveWeekly={vi.fn()}
       onUpdateObstacle={vi.fn()}
+      todayJst="2026-08-17"
       volumeMinutes={30}
+      weekEndJst="2026-08-23"
       weeklyGoalMinutes={300}
     />,
   );

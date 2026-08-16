@@ -1,9 +1,12 @@
-import { waitFor } from "@testing-library/react";
+import { fireEvent, waitFor } from "@testing-library/react";
 import { expect, test, vi } from "vite-plus/test";
+import { STATUSES } from "~domain/domain";
 
 import { DayBoard } from "~/features/today/components/day-board";
 import type { DayPage, DayRow } from "~/features/today/types/day";
 import { renderWithMantine } from "~/test-utils/render";
+
+const [confirmed, pending] = [STATUSES[0], STATUSES[1]] as const;
 
 vi.mock("@tanstack/react-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-router")>();
@@ -22,39 +25,34 @@ const row = {
   itemName: "Distinction 2000",
   minutes: 30,
   sortOrder: 0,
-  status: "未着手",
+  status: pending,
 } satisfies DayRow;
 
 const day = {
   dateJst: "2026-08-17",
   day: {
     _id: "day1" as NonNullable<DayPage["day"]>["_id"],
-    bedHm: null,
     condition: null,
     dateJst: "2026-08-17",
     memo: null,
-    sleepHours: null,
-    sleepWarning: false,
-    wakeHm: null,
   },
   isFuture: false,
   rows: [row],
   shareMarkdown: "",
-  tonightBedHm: null,
   volumeMinutes: 0,
 } satisfies DayPage;
 
-const items = [{ _id: row.itemId, categoryId: "c1" as never, name: "Distinction 2000" }];
+const items = [
+  { _id: row.itemId, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
+];
 
 const idleHandlers = {
   onAddRow: vi.fn(),
   onConfirm: vi.fn(),
   onRemoveDay: vi.fn(),
   onRemoveRow: vi.fn(),
-  onSaveBed: vi.fn(),
   onSaveCondition: vi.fn(),
   onSaveMemo: vi.fn(),
-  onSaveWake: vi.fn(),
   onSkip: vi.fn(),
   onSwitchPreset: vi.fn(),
 };
@@ -88,10 +86,8 @@ test("記録を確定スイッチで確定、オフでスキップできる", as
       onConfirm={onConfirm}
       onRemoveDay={vi.fn()}
       onRemoveRow={vi.fn()}
-      onSaveBed={vi.fn()}
       onSaveCondition={vi.fn()}
       onSaveMemo={vi.fn()}
-      onSaveWake={vi.fn()}
       onSkip={onSkip}
       onSwitchPreset={vi.fn()}
       presets={[]}
@@ -108,11 +104,47 @@ test("記録を確定スイッチで確定、オフでスキップできる", as
   });
 });
 
-test("確定済みの記録をスイッチオフでスキップできる", () => {
+test("確定済みの記録は行外へフォーカスすると更新できる", async () => {
+  const onConfirm = vi.fn();
+  const confirmedDay = {
+    ...day,
+    rows: [{ ...row, content: "Unit 1", status: confirmed }],
+  } satisfies DayPage;
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={confirmedDay}
+      isToday
+      items={items}
+      onAddRow={vi.fn()}
+      onConfirm={onConfirm}
+      onRemoveDay={vi.fn()}
+      onRemoveRow={vi.fn()}
+      onSaveCondition={vi.fn()}
+      onSaveMemo={vi.fn()}
+      onSkip={vi.fn()}
+      onSwitchPreset={vi.fn()}
+      presets={[]}
+      selectedPresetId={null}
+    />,
+  );
+  const input = getByRole("textbox", { name: "Distinction 2000 内容" });
+  fireEvent.change(input, { target: { value: "Unit 2" } });
+  fireEvent.blur(input);
+  await waitFor(() => {
+    expect(onConfirm).toHaveBeenCalledWith({
+      content: "Unit 2",
+      minutes: 30,
+      rowId: row._id,
+    });
+  });
+});
+
+test("確定済みの記録をスイッチオフで見送り確認後にスキップできる", async () => {
   const onSkip = vi.fn();
   const confirmedDay = {
     ...day,
-    rows: [{ ...row, status: "確定" as const }],
+    rows: [{ ...row, status: confirmed }],
   } satisfies DayPage;
   const { getByRole } = renderWithMantine(
     <DayBoard
@@ -124,10 +156,8 @@ test("確定済みの記録をスイッチオフでスキップできる", () =>
       onConfirm={vi.fn()}
       onRemoveDay={vi.fn()}
       onRemoveRow={vi.fn()}
-      onSaveBed={vi.fn()}
       onSaveCondition={vi.fn()}
       onSaveMemo={vi.fn()}
-      onSaveWake={vi.fn()}
       onSkip={onSkip}
       onSwitchPreset={vi.fn()}
       presets={[]}
@@ -135,7 +165,44 @@ test("確定済みの記録をスイッチオフでスキップできる", () =>
     />,
   );
   getByRole("switch", { name: "記録を確定" }).click();
+  expect(onSkip).not.toHaveBeenCalled();
+  await waitFor(() => {
+    expect(getByRole("button", { name: "見送りにする" })).toBeDefined();
+  });
+  getByRole("button", { name: "見送りにする" }).click();
   expect(onSkip).toHaveBeenCalledWith(row._id);
+});
+
+test("確定済みの見送り確認をキャンセルするとスキップしない", async () => {
+  const onSkip = vi.fn();
+  const confirmedDay = {
+    ...day,
+    rows: [{ ...row, status: confirmed }],
+  } satisfies DayPage;
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={confirmedDay}
+      isToday
+      items={items}
+      onAddRow={vi.fn()}
+      onConfirm={vi.fn()}
+      onRemoveDay={vi.fn()}
+      onRemoveRow={vi.fn()}
+      onSaveCondition={vi.fn()}
+      onSaveMemo={vi.fn()}
+      onSkip={onSkip}
+      onSwitchPreset={vi.fn()}
+      presets={[]}
+      selectedPresetId={null}
+    />,
+  );
+  getByRole("switch", { name: "記録を確定" }).click();
+  await waitFor(() => {
+    expect(getByRole("button", { name: "キャンセル" })).toBeDefined();
+  });
+  getByRole("button", { name: "キャンセル" }).click();
+  expect(onSkip).not.toHaveBeenCalled();
 });
 
 test("未着手はスイッチがオフで未着手バッジが出る", () => {
@@ -152,42 +219,6 @@ test("未着手はスイッチがオフで未着手バッジが出る", () => {
   );
   expect(getByText("未着手")).toBeDefined();
   expect((getByRole("switch", { name: "記録を確定" }) as HTMLInputElement).checked).toBe(false);
-});
-
-test("警告中でも記録の確定はロックされない", () => {
-  const warned = {
-    ...day,
-    day: { ...day.day, sleepHours: 6, sleepWarning: true },
-  } satisfies DayPage;
-  const { getByRole, getByText } = renderWithMantine(
-    <DayBoard
-      dateJst="2026-08-17"
-      day={warned}
-      isToday
-      items={items}
-      presets={[]}
-      selectedPresetId={null}
-      {...idleHandlers}
-    />,
-  );
-  expect(getByText("睡眠が7時間未満です。記録の確定はできます。")).toBeDefined();
-  expect((getByRole("switch", { name: "記録を確定" }) as HTMLInputElement).disabled).toBe(false);
-});
-
-test("今夜の就寝に日付ピッカーはない", () => {
-  const { getByLabelText, queryByLabelText } = renderWithMantine(
-    <DayBoard
-      dateJst="2026-08-17"
-      day={day}
-      isToday
-      items={items}
-      presets={[]}
-      selectedPresetId={null}
-      {...idleHandlers}
-    />,
-  );
-  expect(getByLabelText(/今夜の就寝/)).toBeDefined();
-  expect(queryByLabelText(/日付/)).toBeNull();
 });
 
 test("共有文のコピー操作が見える", () => {
@@ -210,7 +241,7 @@ test("共有文のコピー操作が見える", () => {
   expect(getByRole("button", { name: "共有文をコピー" })).toBeDefined();
 });
 
-test("セクションはプリセット、記録、コンディション、睡眠の順。コンディションは未選択のまま普通にしない", () => {
+test("セクションはプリセット、記録、コンディションの順。コンディションは未選択のまま普通にしない", () => {
   const onSaveCondition = vi.fn();
   const { getAllByRole, getByRole } = renderWithMantine(
     <DayBoard
@@ -222,10 +253,8 @@ test("セクションはプリセット、記録、コンディション、睡�
       onConfirm={vi.fn()}
       onRemoveDay={vi.fn()}
       onRemoveRow={vi.fn()}
-      onSaveBed={vi.fn()}
       onSaveCondition={onSaveCondition}
       onSaveMemo={vi.fn()}
-      onSaveWake={vi.fn()}
       onSkip={vi.fn()}
       onSwitchPreset={vi.fn()}
       presets={[{ _id: "p1" as never, lines: [], name: "月曜日", weekday: 1 }]}
@@ -234,11 +263,8 @@ test("セクションはプリセット、記録、コンディション、睡�
   );
   const sectionTitles = getAllByRole("heading")
     .map((heading) => heading.textContent)
-    .filter(
-      (text) =>
-        text === "プリセット" || text === "記録" || text === "コンディション" || text === "睡眠",
-    );
-  expect(sectionTitles).toEqual(["プリセット", "記録", "コンディション", "睡眠"]);
+    .filter((text) => text === "プリセット" || text === "記録" || text === "コンディション");
+  expect(sectionTitles).toEqual(["プリセット", "記録", "コンディション"]);
   expect((getByRole("combobox", { name: "今日のプリセット切替" }) as HTMLInputElement).value).toBe(
     "月曜日",
   );
@@ -271,9 +297,9 @@ test("プリセットを選ぶと表示名が変わる", async () => {
   });
 });
 
-test("未来の日は記録を足せず今夜も出さない", () => {
+test("未来の日は記録を足せない", () => {
   const future = { ...day, isFuture: true } satisfies DayPage;
-  const { queryByRole, queryByLabelText } = renderWithMantine(
+  const { queryByRole } = renderWithMantine(
     <DayBoard
       dateJst="2026-08-20"
       day={future}
@@ -285,23 +311,6 @@ test("未来の日は記録を足せず今夜も出さない", () => {
     />,
   );
   expect(queryByRole("button", { name: "記録を足す" })).toBeNull();
-  expect(queryByLabelText(/今夜の就寝/)).toBeNull();
-});
-
-test("過去の日は起床を出せるが今夜の就寝は出さない", () => {
-  const { getByLabelText, queryByLabelText } = renderWithMantine(
-    <DayBoard
-      dateJst="2026-08-16"
-      day={day}
-      isToday={false}
-      items={items}
-      presets={[]}
-      selectedPresetId={null}
-      {...idleHandlers}
-    />,
-  );
-  expect(getByLabelText("起床")).toBeDefined();
-  expect(queryByLabelText(/今夜の就寝/)).toBeNull();
 });
 
 test("その日に記録を足せる", () => {
@@ -332,10 +341,8 @@ test("記録のゴミ箱はアイコンボタン", () => {
       onConfirm={vi.fn()}
       onRemoveDay={vi.fn()}
       onRemoveRow={onRemoveRow}
-      onSaveBed={vi.fn()}
       onSaveCondition={vi.fn()}
       onSaveMemo={vi.fn()}
-      onSaveWake={vi.fn()}
       onSkip={vi.fn()}
       onSwitchPreset={vi.fn()}
       presets={[]}

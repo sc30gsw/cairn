@@ -5,24 +5,8 @@ import { internalMutation } from "./_generated/server";
 import { getDayByDate } from "./ensureCatalog";
 import { NotFoundError } from "./lib/errors";
 import { deleteDayAndRows, deleteRowsByIds, isPurgeDue, TRASH_TTL_MS } from "./lib/trash";
-import { statusValidator } from "./lib/validators";
+import { trashPageValidator } from "./lib/validators";
 import { ownerMutation, ownerQuery, throwDomain } from "./ownerFunctions";
-
-const trashedDayValidator = v.object({
-  _id: v.id("days"),
-  dateJst: v.string(),
-  deletedAt: v.number(),
-});
-
-const trashedRowValidator = v.object({
-  _id: v.id("rows"),
-  content: v.string(),
-  dateJst: v.string(),
-  deletedAt: v.number(),
-  itemName: v.string(),
-  minutes: v.number(),
-  status: statusValidator,
-});
 
 export const list = ownerQuery({
   args: {},
@@ -59,10 +43,7 @@ export const list = ownerQuery({
         })),
     };
   },
-  returns: v.object({
-    days: v.array(trashedDayValidator),
-    rows: v.array(trashedRowValidator),
-  }),
+  returns: trashPageValidator,
 });
 
 export const removeDay = ownerMutation({

@@ -1,16 +1,16 @@
 import { createTheme, type CSSVariablesResolver, type MantineColorsTuple } from "@mantine/core";
 
-const cyan = [
-  "#E8F3F1",
-  "#CDE6E2",
-  "#A8D5CE",
-  "#7DC0B6",
-  "#54A89D",
-  "#24837B",
-  "#1C6C66",
-  "#155650",
-  "#0F403C",
-  "#092B28",
+const blue = [
+  "#E8F0F8",
+  "#C9DBEF",
+  "#A8C4E4",
+  "#84AAD6",
+  "#5F91C8",
+  "#4385BE",
+  "#356EA0",
+  "#2A5782",
+  "#204064",
+  "#162A46",
 ] as const satisfies MantineColorsTuple;
 
 const red = [
@@ -59,7 +59,7 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
 export const theme = createTheme({
   autoContrast: true,
   black: INK,
-  colors: { cyan, red, yellow },
+  colors: { blue, red, yellow },
   cursorType: "pointer",
   defaultRadius: "sm",
   fontFamily: BODY_FONT,
@@ -67,7 +67,7 @@ export const theme = createTheme({
     fontFamily: BODY_FONT,
     fontWeight: "600",
   },
-  primaryColor: "cyan",
+  primaryColor: "blue",
   primaryShade: 5,
   white: PAPER,
   components: {
@@ -80,6 +80,11 @@ export const theme = createTheme({
         main: {
           backgroundColor: "transparent",
         },
+      },
+    },
+    Button: {
+      defaultProps: {
+        color: "blue",
       },
     },
     Card: {

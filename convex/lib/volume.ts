@@ -1,7 +1,6 @@
-export type VolumeRow = {
-  minutes: number;
-  status: "スキップ" | "未着手" | "確定";
-};
+import type { RowDto } from "./validators";
+
+export type VolumeRow = Pick<RowDto, "minutes" | "status">;
 
 export function confirmedVolumeMinutes(rows: readonly VolumeRow[]): number {
   let total = 0;

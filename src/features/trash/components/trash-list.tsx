@@ -1,29 +1,27 @@
 import { Button, Card, Grid, Group, Modal, Stack, Text, Title } from "@mantine/core";
-import type { FunctionReturnType } from "convex/server";
 import { useState } from "react";
 
-import type { api } from "~/../convex/_generated/api";
-
-type TrashPage = FunctionReturnType<typeof api.trash.list>;
+import type {
+  PurgeDayInput,
+  PurgeRowInput,
+  RestoreDayInput,
+  RestoreRowInput,
+} from "~/features/trash/types/mutations";
+import type { TrashDay, TrashPage, TrashRow } from "~/features/trash/types/trash";
+import { trashStatusLabel } from "~/lib/record-status-ui";
 
 type TrashListProps = {
-  onPurgeDay: (dayId: TrashPage["days"][number]["_id"]) => void;
-  onPurgeRow: (rowId: TrashPage["rows"][number]["_id"]) => void;
-  onRestoreDay: (dayId: TrashPage["days"][number]["_id"]) => void;
-  onRestoreRow: (rowId: TrashPage["rows"][number]["_id"]) => void;
+  onPurgeDay: (dayId: PurgeDayInput["dayId"]) => void;
+  onPurgeRow: (rowId: PurgeRowInput["rowId"]) => void;
+  onRestoreDay: (dayId: RestoreDayInput["dayId"]) => void;
+  onRestoreRow: (rowId: RestoreRowInput["rowId"]) => void;
   trash: TrashPage;
 };
 
-const STATUS_LABEL = {
-  スキップ: "やってない",
-  未着手: "未着手",
-  確定: "やった",
-} as const satisfies Record<TrashPage["rows"][number]["status"], string>;
-
-function rowSummary(row: TrashPage["rows"][number]) {
+function rowSummary(row: TrashRow) {
   const content = row.content.trim();
   const detail = content === "" ? `${row.minutes}分` : `${content} ${row.minutes}分`;
-  return `${row.dateJst} ${row.itemName}（${detail}・${STATUS_LABEL[row.status]}）`;
+  return `${row.dateJst} ${row.itemName}（${detail}・${trashStatusLabel(row.status)}）`;
 }
 
 export function TrashList({
@@ -33,8 +31,8 @@ export function TrashList({
   onRestoreRow,
   trash,
 }: TrashListProps) {
-  const [purgeDayTarget, setPurgeDayTarget] = useState<null | TrashPage["days"][number]>(null);
-  const [purgeRowTarget, setPurgeRowTarget] = useState<null | TrashPage["rows"][number]>(null);
+  const [purgeDayTarget, setPurgeDayTarget] = useState<null | TrashDay>(null);
+  const [purgeRowTarget, setPurgeRowTarget] = useState<null | TrashRow>(null);
 
   return (
     <>

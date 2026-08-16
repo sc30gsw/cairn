@@ -1,0 +1,99 @@
+.compactMonthView {
+  --month-view-max-events: 2;
+}
+
+.saturdayDay,
+.sundayDay,
+.holidayDay {
+  /* Marker classes applied via getDayProps. */
+}
+
+.compactMonthView :global(.mantine-Schedule-monthViewScrollArea),
+.compactMonthView :global(.mantine-MonthView-monthViewScrollArea) {
+  overflow: visible;
+}
+
+.compactMonthView :global(.mantine-Schedule-monthViewDay),
+.compactMonthView :global(.mantine-MonthView-monthViewDay) {
+  min-height: 3.25rem;
+  padding-block: 2px;
+}
+
+.compactMonthView :global(.mantine-Schedule-monthViewDayLabel),
+.compactMonthView :global(.mantine-MonthView-monthViewDayLabel) {
+  font-size: var(--mantine-font-size-xs);
+  line-height: 1.1;
+}
+
+.compactMonthView :global(.mantine-Schedule-monthViewEvents),
+.compactMonthView :global(.mantine-MonthView-monthViewEvents) {
+  gap: 1px;
+}
+
+.compactMonthView :global(.mantine-Schedule-monthViewWeekday),
+.compactMonthView :global(.mantine-MonthView-monthViewWeekday) {
+  font-size: var(--mantine-font-size-xs);
+  padding-block: 2px;
+}
+
+.compactMonthView :global(.mantine-Schedule-monthViewWeek),
+.compactMonthView :global(.mantine-MonthView-monthViewWeek) {
+  min-height: 0;
+}
+
+.compactMonthView :global(.mantine-Schedule-monthViewWeekday:nth-child(6)),
+.compactMonthView :global(.mantine-MonthView-monthViewWeekday:nth-child(6)) {
+  color: var(--mantine-color-blue-6);
+}
+
+.compactMonthView :global(.mantine-Schedule-monthViewWeekday:nth-child(7)),
+.compactMonthView :global(.mantine-MonthView-monthViewWeekday:nth-child(7)) {
+  color: var(--mantine-color-red-6);
+}
+
+.compactMonthView
+  :global(.mantine-Schedule-monthViewDay).saturdayDay
+  :global(.mantine-Schedule-monthViewDayLabel),
+.compactMonthView
+  :global(.mantine-MonthView-monthViewDay).saturdayDay
+  :global(.mantine-MonthView-monthViewDayLabel) {
+  color: var(--mantine-color-blue-6);
+}
+
+.compactMonthView
+  :global(.mantine-Schedule-monthViewDay).sundayDay
+  :global(.mantine-Schedule-monthViewDayLabel),
+.compactMonthView
+  :global(.mantine-MonthView-monthViewDay).sundayDay
+  :global(.mantine-MonthView-monthViewDayLabel),
+.compactMonthView
+  :global(.mantine-Schedule-monthViewDay).holidayDay
+  :global(.mantine-Schedule-monthViewDayLabel),
+.compactMonthView
+  :global(.mantine-MonthView-monthViewDay).holidayDay
+  :global(.mantine-MonthView-monthViewDayLabel) {
+  color: var(--mantine-color-red-6);
+}
+
+.compactMonthView :global(.mantine-MoreEvents-moreEventsButton) {
+  color: var(--mantine-color-blue-6);
+  font-weight: 600;
+}
+
+.compactMonthView :global(.mantine-MoreEvents-moreEventsButton:hover) {
+  background-color: var(--mantine-color-blue-0);
+  color: var(--mantine-color-blue-7);
+}
+
+.compactMonthView :global(.mantine-ScheduleEvent-root) {
+  --schedule-event-color: var(--mantine-color-blue-6);
+}
+
+.compactMonthView :global(.mantine-ScheduleEvent-body) {
+  color: var(--mantine-color-blue-9);
+}
+
+.compactMonthView :global([data-today] .mantine-Schedule-monthViewDayLabel),
+.compactMonthView :global([data-today] .mantine-MonthView-monthViewDayLabel) {
+  color: var(--mantine-primary-color-contrast);
+}

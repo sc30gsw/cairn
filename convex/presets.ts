@@ -4,14 +4,8 @@ import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { ConflictError, NotFoundError, ValidationFailedError } from "./lib/errors";
 import { weekdayAlreadyTaken } from "./lib/preset";
-import { presetDtoValidator } from "./lib/validators";
+import { presetDtoValidator, presetLineValidator } from "./lib/validators";
 import { ownerMutation, ownerQuery, throwDomain } from "./ownerFunctions";
-
-const lineValidator = v.object({
-  content: v.string(),
-  itemId: v.id("items"),
-  minutes: v.number(),
-});
 
 export const list = ownerQuery({
   args: {},
@@ -83,7 +77,7 @@ async function assertWeekdayFree(
 
 export const create = ownerMutation({
   args: {
-    lines: v.array(lineValidator),
+    lines: v.array(presetLineValidator),
     name: v.string(),
     weekday: v.number(),
   },
@@ -105,7 +99,7 @@ export const create = ownerMutation({
 
 export const update = ownerMutation({
   args: {
-    lines: v.array(lineValidator),
+    lines: v.array(presetLineValidator),
     name: v.string(),
     presetId: v.id("presets"),
     weekday: v.number(),

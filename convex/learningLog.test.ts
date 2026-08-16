@@ -101,19 +101,14 @@ test("確定とスキップで学習量が変わる。未認証は throw", async
   ).rejects.toThrow();
 });
 
-test("今夜の就寝・起床・コンディション・メモ", async () => {
+test("コンディションとメモ", async () => {
   const t = owner();
   await t.mutation(api.days.open, { dateJst: MONDAY, todayJst: MONDAY });
-  await t.mutation(api.tonight.setBed, { bedHm: "21:00" });
-  await t.mutation(api.days.setWake, { dateJst: MONDAY, todayJst: MONDAY, wakeHm: "05:30" });
   await t.mutation(api.days.setCondition, { condition: "普通", dateJst: MONDAY, todayJst: MONDAY });
   await t.mutation(api.days.setMemo, { dateJst: MONDAY, memo: "枕元", todayJst: MONDAY });
   const day = await t.query(api.days.get, { dateJst: MONDAY, todayJst: MONDAY });
-  expect(day.day?.sleepHours).toBe(8.5);
-  expect(day.day?.sleepWarning).toBe(false);
   expect(day.day?.condition).toBe("普通");
   expect(day.day?.memo).toBe("枕元");
-  await expect(raw().mutation(api.tonight.setBed, { bedHm: "22:00" })).rejects.toThrow();
 });
 
 test("月と週の学習量が所有者に読める", async () => {

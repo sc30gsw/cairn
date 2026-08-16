@@ -28,6 +28,8 @@ export const SEED_MINUTES = {
   "英文法（解く）": 20,
 } as const satisfies Record<(typeof SEED_ITEMS)[number]["name"], number>;
 
+export type SeedItemName = (typeof SEED_ITEMS)[number]["name"];
+
 export const WEEKDAY_LINE_NAMES = [
   "Distinction 2000",
   "英会話",
@@ -36,7 +38,7 @@ export const WEEKDAY_LINE_NAMES = [
   "英文法（解く）",
   "英文法（復習）",
   "出る文特急",
-] as const;
+] as const satisfies readonly SeedItemName[];
 
 export const WEDNESDAY_LINE_NAMES = [
   "Distinction 2000",
@@ -44,7 +46,7 @@ export const WEDNESDAY_LINE_NAMES = [
   "金のフレーズ",
   "多読",
   "出る文特急",
-] as const;
+] as const satisfies readonly SeedItemName[];
 
 export const WEEKDAY_NAMES = [
   "日曜日",
@@ -56,11 +58,19 @@ export const WEEKDAY_NAMES = [
   "土曜日",
 ] as const;
 
+export type WeekdayName = (typeof WEEKDAY_NAMES)[number];
+
+export type DefaultExamGoal = {
+  examDate: string;
+  maxScore: number;
+  minScore: number;
+};
+
 export const DEFAULT_EXAM_GOAL = {
   examDate: "2026-09-27",
   maxScore: 850,
   minScore: 730,
-} as const;
+} as const satisfies DefaultExamGoal;
 
 export function seedLineNamesForWeekday(weekday: number): readonly string[] {
   if (weekday === 0 || weekday === 6) {

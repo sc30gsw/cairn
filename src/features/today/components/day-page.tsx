@@ -9,11 +9,12 @@ import type { PresetId } from "~/features/catalog/types/item";
 import { parsePresetId } from "~/features/catalog/types/item";
 import { DayBoard, weekdayPresetId } from "~/features/today/components/day-board";
 import { useOpenAndLoadDay } from "~/features/today/hooks/use-open-and-load-day";
+import type { DaySearch } from "~/features/today/schemas/day-search-schema";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 type DayPageProps = {
   dateJst: string;
-  presetFromSearch?: string;
+  presetFromSearch?: DaySearch["preset"];
 };
 
 export function DayPage({ dateJst, presetFromSearch }: DayPageProps) {
@@ -35,8 +36,6 @@ function DayPageReady({ dateJst, presetFromSearch }: DayPageProps) {
   const add = useConvexMutation(api.rows.add);
   const removeRow = useConvexMutation(api.rows.remove);
   const switchPreset = useConvexMutation(api.rows.switchPreset);
-  const setBed = useConvexMutation(api.tonight.setBed);
-  const setWake = useConvexMutation(api.days.setWake);
   const setCondition = useConvexMutation(api.days.setCondition);
   const setMemo = useConvexMutation(api.days.setMemo);
   const removeDay = useConvexMutation(api.trash.removeDay);
@@ -82,17 +81,11 @@ function DayPageReady({ dateJst, presetFromSearch }: DayPageProps) {
       onRemoveRow={(rowId) => {
         void removeRow.mutateAsync({ now: Date.now(), rowId });
       }}
-      onSaveBed={(bedHm) => {
-        void setBed.mutateAsync({ bedHm });
-      }}
       onSaveCondition={(condition) => {
         void setCondition.mutateAsync({ condition, dateJst, todayJst: today });
       }}
       onSaveMemo={(memo) => {
         void setMemo.mutateAsync({ dateJst, memo, todayJst: today });
-      }}
-      onSaveWake={(wakeHm) => {
-        void setWake.mutateAsync({ dateJst, todayJst: today, wakeHm });
       }}
       onSkip={(rowId) => {
         void skip.mutateAsync({ rowId });

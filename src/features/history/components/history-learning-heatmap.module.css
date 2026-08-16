@@ -1,0 +1,5 @@
+.root {
+  margin-inline: auto;
+  max-width: 100%;
+  overflow-x: auto;
+}

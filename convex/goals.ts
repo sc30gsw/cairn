@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import { DEFAULT_EXAM_GOAL } from "./lib/catalog";
 import { NotFoundError, ValidationFailedError } from "./lib/errors";
 import { daysUntil } from "./lib/jst";
+import { examGoalDtoValidator, obstacleDtoValidator } from "./lib/validators";
 import { ownerMutation, ownerQuery, throwDomain } from "./ownerFunctions";
 
 export const getExam = ownerQuery({
@@ -22,12 +23,7 @@ export const getExam = ownerQuery({
       minScore,
     };
   },
-  returns: v.object({
-    daysRemaining: v.number(),
-    examDate: v.string(),
-    maxScore: v.number(),
-    minScore: v.number(),
-  }),
+  returns: examGoalDtoValidator,
 });
 
 export const saveExam = ownerMutation({
@@ -98,13 +94,7 @@ export const listObstacles = ownerQuery({
       thenText: plan.thenText,
     }));
   },
-  returns: v.array(
-    v.object({
-      _id: v.id("obstaclePlans"),
-      ifText: v.string(),
-      thenText: v.string(),
-    }),
-  ),
+  returns: v.array(obstacleDtoValidator),
 });
 
 export const createObstacle = ownerMutation({

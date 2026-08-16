@@ -1,13 +1,12 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
-import { categoryValidator, conditionValidator, statusValidator } from "./lib/validators";
-
-const presetLine = v.object({
-  content: v.string(),
-  itemId: v.id("items"),
-  minutes: v.number(),
-});
+import {
+  categoryValidator,
+  conditionValidator,
+  presetLineValidator,
+  statusValidator,
+} from "./lib/validators";
 
 export default defineSchema({
   categories: defineTable({
@@ -20,13 +19,11 @@ export default defineSchema({
     .index("by_owner_and_sortOrder", ["ownerId", "sortOrder"]),
 
   days: defineTable({
-    bedHm: v.optional(v.string()),
     condition: v.optional(conditionValidator),
     dateJst: v.string(),
     deletedAt: v.optional(v.number()),
     memo: v.optional(v.string()),
     ownerId: v.string(),
-    wakeHm: v.optional(v.string()),
   })
     .index("by_owner_and_date", ["ownerId", "dateJst"])
     .index("by_owner_and_deletedAt", ["ownerId", "deletedAt"])
@@ -44,10 +41,12 @@ export default defineSchema({
     categoryId: v.optional(v.id("categories")),
     name: v.string(),
     ownerId: v.string(),
+    sortOrder: v.optional(v.number()),
   })
     .index("by_owner", ["ownerId"])
     .index("by_owner_and_name", ["ownerId", "name"])
-    .index("by_category", ["categoryId"]),
+    .index("by_category", ["categoryId"])
+    .index("by_category_and_sortOrder", ["categoryId", "sortOrder"]),
 
   obstaclePlans: defineTable({
     ifText: v.string(),
@@ -56,7 +55,7 @@ export default defineSchema({
   }).index("by_owner", ["ownerId"]),
 
   presets: defineTable({
-    lines: v.array(presetLine),
+    lines: v.array(presetLineValidator),
     name: v.string(),
     ownerId: v.string(),
     weekday: v.number(),
@@ -80,11 +79,6 @@ export default defineSchema({
     .index("by_owner_and_date", ["ownerId", "dateJst"])
     .index("by_owner_and_deletedAt", ["ownerId", "deletedAt"])
     .index("by_deletedAt", ["deletedAt"]),
-
-  tonight: defineTable({
-    bedHm: v.string(),
-    ownerId: v.string(),
-  }).index("by_owner", ["ownerId"]),
 
   weeklyGoals: defineTable({
     minutes: v.number(),

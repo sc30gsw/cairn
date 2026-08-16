@@ -4,11 +4,12 @@ import { Button, Grid, NumberInput, Select, TextInput } from "@mantine/core";
 import type { ItemDto } from "~/features/catalog/types/item";
 import { parseItemId } from "~/features/catalog/types/item";
 import { AdhocRowSchema } from "~/features/today/schemas/adhoc-row-schema";
+import type { AddRowInput } from "~/features/today/types/mutations";
 import { onRequiredSelect } from "~/lib/select";
 
 type AdhocRowFormProps = {
   items: ItemDto[];
-  onAdd: (input: { content: string; itemId: ItemDto["_id"]; minutes: number }) => void;
+  onAdd: (input: AddRowInput) => void;
 };
 
 export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
@@ -56,6 +57,7 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
                 {...field.props}
                 error={field.errors?.[0]}
                 label="内容"
+                placeholder="学習内容を入力"
                 value={field.input}
               />
             )}

@@ -33,6 +33,7 @@ function ItemsReady() {
   const removeCategory = useConvexMutation(api.categories.remove);
   const createItem = useConvexMutation(api.items.create);
   const renameItem = useConvexMutation(api.items.rename);
+  const reorderItems = useConvexMutation(api.items.reorder);
   const removeItem = useConvexMutation(api.items.remove);
 
   return (
@@ -56,6 +57,9 @@ function ItemsReady() {
       }}
       onRenameItem={(input) => {
         void renameItem.mutateAsync(input);
+      }}
+      onReorderItems={(input) => {
+        void reorderItems.mutateAsync(input);
       }}
     />
   );
