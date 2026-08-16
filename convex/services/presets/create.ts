@@ -14,6 +14,10 @@ export async function create(
     weekday: number;
   },
 ): Promise<Id<"presets">> {
+  const name = args.name.trim();
+  if (name === "") {
+    throwDomain(new ValidationFailedError({ message: "プリセット名は必須です" }));
+  }
   if (args.weekday < 0 || args.weekday > 6) {
     throwDomain(new ValidationFailedError({ message: "曜日が不正です" }));
   }
@@ -22,7 +26,7 @@ export async function create(
   assertConcreteActionLines(args.lines);
   return await ctx.db.insert("presets", {
     lines: args.lines,
-    name: args.name,
+    name,
     ownerId,
     weekday: args.weekday,
   });

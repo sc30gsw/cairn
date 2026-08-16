@@ -21,6 +21,10 @@ export async function update(
       new NotFoundError({ message: "プリセットが見つかりません", resource: "プリセット" }),
     );
   }
+  const name = args.name.trim();
+  if (name === "") {
+    throwDomain(new ValidationFailedError({ message: "プリセット名は必須です" }));
+  }
   if (args.weekday < 0 || args.weekday > 6) {
     throwDomain(new ValidationFailedError({ message: "曜日が不正です" }));
   }
@@ -29,7 +33,7 @@ export async function update(
   assertConcreteActionLines(args.lines);
   await ctx.db.patch("presets", args.presetId, {
     lines: args.lines,
-    name: args.name,
+    name,
     weekday: args.weekday,
   });
   return null;

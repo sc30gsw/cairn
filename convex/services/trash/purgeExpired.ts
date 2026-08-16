@@ -8,11 +8,11 @@ export async function purgeExpired(ctx: MutationCtx, args: { now?: number } = {}
   const [expiredDays, expiredRows] = await Promise.all([
     ctx.db
       .query("days")
-      .withIndex("by_deletedAt", (q) => q.lte("deletedAt", cutoff))
+      .withIndex("by_deletedAt", (q) => q.gte("deletedAt", 0).lte("deletedAt", cutoff))
       .collect(),
     ctx.db
       .query("rows")
-      .withIndex("by_deletedAt", (q) => q.lte("deletedAt", cutoff))
+      .withIndex("by_deletedAt", (q) => q.gte("deletedAt", 0).lte("deletedAt", cutoff))
       .collect(),
   ]);
   const expiredDayIds = expiredDays.flatMap((day) =>

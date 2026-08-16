@@ -43,8 +43,7 @@ export default defineSchema({
     sortOrder: v.optional(v.number()),
   })
     .index("by_owner_and_name", ["ownerId", "name"])
-    .index("by_category", ["categoryId"])
-    .index("by_category_and_sortOrder", ["categoryId", "sortOrder"]),
+    .index("by_category", ["categoryId"]),
 
   obstaclePlans: defineTable({
     ifText: v.string(),

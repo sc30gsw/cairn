@@ -4,11 +4,11 @@ export async function list(ctx: QueryCtx, ownerId: string) {
   const [days, rows, items] = await Promise.all([
     ctx.db
       .query("days")
-      .withIndex("by_owner_and_deletedAt", (q) => q.eq("ownerId", ownerId))
+      .withIndex("by_owner_and_deletedAt", (q) => q.eq("ownerId", ownerId).gte("deletedAt", 0))
       .collect(),
     ctx.db
       .query("rows")
-      .withIndex("by_owner_and_deletedAt", (q) => q.eq("ownerId", ownerId))
+      .withIndex("by_owner_and_deletedAt", (q) => q.eq("ownerId", ownerId).gte("deletedAt", 0))
       .collect(),
     ctx.db
       .query("items")
