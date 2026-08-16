@@ -9,15 +9,8 @@
  */
 
 import type * as auth from "../auth.js";
-import type * as catalog from "../catalog.js";
-import type * as categories from "../categories.js";
 import type * as crons from "../crons.js";
-import type * as days from "../days.js";
-import type * as ensureCatalog from "../ensureCatalog.js";
-import type * as goals from "../goals.js";
-import type * as history from "../history.js";
 import type * as http from "../http.js";
-import type * as items from "../items.js";
 import type * as lib_catalog from "../lib/catalog.js";
 import type * as lib_catalogLoader from "../lib/catalogLoader.js";
 import type * as lib_categories from "../lib/categories.js";
@@ -38,7 +31,6 @@ import type * as lib_share from "../lib/share.js";
 import type * as lib_trash from "../lib/trash.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as lib_volume from "../lib/volume.js";
-import type * as migrations from "../migrations.js";
 import type * as mutations_catalog_ensure from "../mutations/catalog/ensure.js";
 import type * as mutations_categories_create from "../mutations/categories/create.js";
 import type * as mutations_categories_remove from "../mutations/categories/remove.js";
@@ -71,8 +63,6 @@ import type * as mutations_trash_purgeExpired from "../mutations/trash/purgeExpi
 import type * as mutations_trash_purgeRow from "../mutations/trash/purgeRow.js";
 import type * as mutations_trash_removeDay from "../mutations/trash/removeDay.js";
 import type * as mutations_trash_restoreDay from "../mutations/trash/restoreDay.js";
-import type * as ownerFunctions from "../ownerFunctions.js";
-import type * as presets from "../presets.js";
 import type * as queries_categories_list from "../queries/categories/list.js";
 import type * as queries_days_get from "../queries/days/get.js";
 import type * as queries_goals_getExam from "../queries/goals/getExam.js";
@@ -87,7 +77,6 @@ import type * as queries_items_list from "../queries/items/list.js";
 import type * as queries_presets_list from "../queries/presets/list.js";
 import type * as queries_session_get from "../queries/session/get.js";
 import type * as queries_trash_list from "../queries/trash/list.js";
-import type * as rows from "../rows.js";
 import type * as services_catalog_backfillItemSortOrders from "../services/catalog/backfillItemSortOrders.js";
 import type * as services_catalog_ensure from "../services/catalog/ensure.js";
 import type * as services_catalog_ensureCatalog from "../services/catalog/ensureCatalog.js";
@@ -147,8 +136,6 @@ import type * as services_trash_purgeExpired from "../services/trash/purgeExpire
 import type * as services_trash_purgeRow from "../services/trash/purgeRow.js";
 import type * as services_trash_removeDay from "../services/trash/removeDay.js";
 import type * as services_trash_restoreDay from "../services/trash/restoreDay.js";
-import type * as session from "../session.js";
-import type * as trash from "../trash.js";
 
 import type {
   ApiFromModules,
@@ -158,15 +145,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
-  catalog: typeof catalog;
-  categories: typeof categories;
   crons: typeof crons;
-  days: typeof days;
-  ensureCatalog: typeof ensureCatalog;
-  goals: typeof goals;
-  history: typeof history;
   http: typeof http;
-  items: typeof items;
   "lib/catalog": typeof lib_catalog;
   "lib/catalogLoader": typeof lib_catalogLoader;
   "lib/categories": typeof lib_categories;
@@ -187,7 +167,6 @@ declare const fullApi: ApiFromModules<{
   "lib/trash": typeof lib_trash;
   "lib/validators": typeof lib_validators;
   "lib/volume": typeof lib_volume;
-  migrations: typeof migrations;
   "mutations/catalog/ensure": typeof mutations_catalog_ensure;
   "mutations/categories/create": typeof mutations_categories_create;
   "mutations/categories/remove": typeof mutations_categories_remove;
@@ -220,8 +199,6 @@ declare const fullApi: ApiFromModules<{
   "mutations/trash/purgeRow": typeof mutations_trash_purgeRow;
   "mutations/trash/removeDay": typeof mutations_trash_removeDay;
   "mutations/trash/restoreDay": typeof mutations_trash_restoreDay;
-  ownerFunctions: typeof ownerFunctions;
-  presets: typeof presets;
   "queries/categories/list": typeof queries_categories_list;
   "queries/days/get": typeof queries_days_get;
   "queries/goals/getExam": typeof queries_goals_getExam;
@@ -236,7 +213,6 @@ declare const fullApi: ApiFromModules<{
   "queries/presets/list": typeof queries_presets_list;
   "queries/session/get": typeof queries_session_get;
   "queries/trash/list": typeof queries_trash_list;
-  rows: typeof rows;
   "services/catalog/backfillItemSortOrders": typeof services_catalog_backfillItemSortOrders;
   "services/catalog/ensure": typeof services_catalog_ensure;
   "services/catalog/ensureCatalog": typeof services_catalog_ensureCatalog;
@@ -296,8 +272,6 @@ declare const fullApi: ApiFromModules<{
   "services/trash/purgeRow": typeof services_trash_purgeRow;
   "services/trash/removeDay": typeof services_trash_removeDay;
   "services/trash/restoreDay": typeof services_trash_restoreDay;
-  session: typeof session;
-  trash: typeof trash;
 }>;
 
 /**
