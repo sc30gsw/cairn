@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { mondayOfWeek, todayJst } from "~domain/jst";
 
-import { ConcreteActionTour } from "~/components/concrete-action-tour";
 import { GoalsBoard } from "~/features/goals/components/goals-board";
 import { GoalsPending } from "~/features/goals/components/goals-pending";
 import {
@@ -35,30 +34,28 @@ function GoalsReady() {
   const removeObstacle = useRemoveObstacle();
 
   return (
-    <ConcreteActionTour screen="goals">
-      <GoalsBoard
-        exam={exam}
-        obstacles={obstacles}
-        onCreateObstacle={(input) => {
-          void createObstacle.mutateAsync(input);
-        }}
-        onRemoveObstacle={(planId) => {
-          void removeObstacle.mutateAsync({ planId });
-        }}
-        onSaveExam={(input) => {
-          void saveExam.mutateAsync(input);
-        }}
-        onSaveWeekly={(minutes) => {
-          void saveWeekly.mutateAsync({ minutes, weekStartJst: weekStart });
-        }}
-        onUpdateObstacle={(input) => {
-          void updateObstacle.mutateAsync(input);
-        }}
-        todayJst={today}
-        volumeMinutes={week.volumeMinutes}
-        weekEndJst={week.weekEnd}
-        weeklyGoalMinutes={week.weeklyGoalMinutes}
-      />
-    </ConcreteActionTour>
+    <GoalsBoard
+      exam={exam}
+      obstacles={obstacles}
+      onCreateObstacle={(input) => {
+        void createObstacle.mutateAsync(input);
+      }}
+      onRemoveObstacle={(planId) => {
+        void removeObstacle.mutateAsync({ planId });
+      }}
+      onSaveExam={(input) => {
+        void saveExam.mutateAsync(input);
+      }}
+      onSaveWeekly={(minutes) => {
+        void saveWeekly.mutateAsync({ minutes, weekStartJst: weekStart });
+      }}
+      onUpdateObstacle={(input) => {
+        void updateObstacle.mutateAsync(input);
+      }}
+      todayJst={today}
+      volumeMinutes={week.volumeMinutes}
+      weekEndJst={week.weekEnd}
+      weeklyGoalMinutes={week.weeklyGoalMinutes}
+    />
   );
 }

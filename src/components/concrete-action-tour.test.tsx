@@ -1,39 +1,52 @@
-import { fireEvent } from "@testing-library/react";
+import { fireEvent, waitFor } from "@testing-library/react";
 import { expect, test } from "vite-plus/test";
 
 import { ConcreteActionField } from "~/components/concrete-action-field";
-import { ConcreteActionTour } from "~/components/concrete-action-tour";
+import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { renderWithMantine } from "~/test-utils/render";
 
 test("初回表示ではツアーを自動開始しない", () => {
-  const { queryByText } = renderWithMantine(
+  const { container, queryByLabelText } = renderWithMantine(
     <ConcreteActionTour screen="today">
+      <ConcreteActionTourTrigger />
       <div data-onboarding-tour-id="svo-row-content">記録</div>
     </ConcreteActionTour>,
   );
 
-  expect(queryByText("具体的手順")).toBeNull();
+  expect(container.querySelector("[data-onboarding-tour-overlay]")).toBeNull();
+  expect(queryByLabelText("この画面の書き方ガイドを表示")).toBeDefined();
 });
 
-test("ヘルプアイコンをクリックするとツアーを開始する", () => {
-  const { getByLabelText, getByText } = renderWithMantine(
+test("ページのヘルプアイコンをクリックするとツアーを開始する", async () => {
+  const { container, getByLabelText } = renderWithMantine(
     <ConcreteActionTour screen="today">
+      <ConcreteActionTourTrigger />
       <ConcreteActionField label="記録" name="content" tourId="svo-row-content" />
     </ConcreteActionTour>,
   );
 
-  fireEvent.click(getByLabelText("具体的手順のガイドを表示"));
+  fireEvent.click(getByLabelText("この画面の書き方ガイドを表示"));
 
-  expect(getByText("具体的手順")).toBeDefined();
-  expect(
-    getByText("「〜を勉強する」ではなく、今日の最初の一歩を書きます。8文字以上で、声に出して実行できる粒度に。"),
-  ).toBeDefined();
+  await waitFor(() => {
+    expect(container.querySelector("[data-onboarding-tour-overlay]")).not.toBeNull();
+  });
 });
 
-test("ツアー外ではヘルプアイコンを押してもクラッシュしない", () => {
-  const { getByLabelText } = renderWithMantine(
-    <ConcreteActionField label="記録" name="content" tourId="svo-row-content" />,
+test("フィールドのアイコンはクリックしてもツアーを開始しない", () => {
+  const { container, getByLabelText } = renderWithMantine(
+    <ConcreteActionTour screen="today">
+      <ConcreteActionTourTrigger />
+      <ConcreteActionField label="記録" name="content" tourId="svo-row-content" />
+    </ConcreteActionTour>,
   );
 
-  fireEvent.click(getByLabelText("具体的手順のガイドを表示"));
+  fireEvent.click(getByLabelText("具体的手順の書き方"));
+
+  expect(container.querySelector("[data-onboarding-tour-overlay]")).toBeNull();
+});
+
+test("ツアー外ではページトリガーを描画しない", () => {
+  const { queryByLabelText } = renderWithMantine(<ConcreteActionTourTrigger />);
+
+  expect(queryByLabelText("この画面の書き方ガイドを表示")).toBeNull();
 });

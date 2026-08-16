@@ -1,11 +1,13 @@
 import { OnboardingTour, type OnboardingTourStep } from "@gfazioli/mantine-onboarding-tour";
+import { ActionIcon, Tooltip } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import { IconHelpCircle } from "@tabler/icons-react";
 import { createContext, use, type ReactNode } from "react";
 
-type TourScreen = "goals" | "presets" | "today";
+type TourScreen = "obstacles" | "presets" | "today";
 
 const TOUR_STEPS = {
-  goals: [
+  obstacles: [
     {
       content:
         "障害が起きたとき、最初に取る行動を書きます。「金フレだけ」ではなく、何をどうするかを8文字以上で。",
@@ -31,14 +33,26 @@ const TOUR_STEPS = {
   ],
 } as const satisfies Record<TourScreen, OnboardingTourStep[]>;
 
-type ConcreteActionTourContextValue = {
-  startTour: () => void;
-};
+const ConcreteActionTourContext = createContext<(() => void) | null>(null);
 
-const ConcreteActionTourContext = createContext<ConcreteActionTourContextValue | null>(null);
+export function ConcreteActionTourTrigger() {
+  const startTour = use(ConcreteActionTourContext);
+  if (startTour === null) {
+    return null;
+  }
 
-export function useConcreteActionTour() {
-  return use(ConcreteActionTourContext);
+  return (
+    <Tooltip label="この画面の書き方ガイド">
+      <ActionIcon
+        aria-label="この画面の書き方ガイドを表示"
+        onClick={startTour}
+        size="sm"
+        variant="subtle"
+      >
+        <IconHelpCircle aria-hidden size={18} stroke={1.5} />
+      </ActionIcon>
+    </Tooltip>
+  );
 }
 
 type ConcreteActionTourProps = {
@@ -50,7 +64,7 @@ export function ConcreteActionTour({ children, screen }: ConcreteActionTourProps
   const [started, { close, open }] = useDisclosure(false);
 
   return (
-    <ConcreteActionTourContext value={{ startTour: open }}>
+    <ConcreteActionTourContext value={open}>
       <OnboardingTour
         onOnboardingTourEnd={close}
         onOnboardingTourSkip={close}

@@ -1,9 +1,20 @@
 import { Field, Form, reset, useForm } from "@formisch/react";
-import { Button, Card, Grid, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
+import {
+  Button,
+  Card,
+  Grid,
+  Group,
+  NumberInput,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import type { DateJst } from "~domain/jst";
 
 import { ConcreteActionField } from "~/components/concrete-action-field";
+import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { ConcreteThenFieldLabel } from "~/components/concrete-then-field-label";
 import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
 import { ExamSchema } from "~/features/goals/schemas/exam-schema";
@@ -66,183 +77,188 @@ export function GoalsBoard({
   });
 
   return (
-    <Grid gap="md">
-      <Grid.Col span={12}>
-        <Title order={1}>本番目標</Title>
-      </Grid.Col>
-      <Grid.Col span={{ base: 12, md: 6 }}>
-        <Card h="100%">
-          <Stack gap="md">
-            <Text>
-              {exam.examDate} まであと {exam.daysRemaining} 日。目標 {exam.minScore}〜
-              {exam.maxScore}。
-            </Text>
-            <Title ff={DISPLAY_FONT} fw={500} order={2}>
-              {exam.daysRemaining}
-              <Text c="dimmed" ff={BODY_FONT} fz="md" span>
-                日
+    <ConcreteActionTour screen="obstacles">
+      <Grid gap="md">
+        <Grid.Col span={12}>
+          <Title order={1}>本番目標</Title>
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <Card h="100%">
+            <Stack gap="md">
+              <Text>
+                {exam.examDate} まであと {exam.daysRemaining} 日。目標 {exam.minScore}〜
+                {exam.maxScore}。
               </Text>
-            </Title>
-            <Form of={examForm} onSubmit={onSaveExam}>
-              <Grid align="flex-end" gap="sm">
-                <Grid.Col span={12}>
-                  <Field of={examForm} path={["examDate"]}>
-                    {(field) => (
-                      <DatePickerInput
-                        classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
-                        error={field.errors?.[0]}
-                        firstDayOfWeek={1}
-                        getDayProps={(date) => calendarDayProps(date, todayJst)}
-                        label="本番日"
-                        locale="ja"
-                        name={field.props.name}
-                        onChange={(value) => field.onChange(value ?? "")}
-                        popoverProps={{ withinPortal: true }}
-                        value={field.input}
-                        valueFormat="YYYY-MM-DD"
-                      />
-                    )}
-                  </Field>
-                </Grid.Col>
-                <Grid.Col span={6}>
-                  <Field of={examForm} path={["minScore"]}>
-                    {(field) => (
-                      <NumberInput
-                        {...field.props}
-                        error={field.errors?.[0]}
-                        label="下限"
-                        onChange={(value) =>
-                          field.onChange(value === "" ? undefined : Number(value))
-                        }
-                        value={field.input}
-                      />
-                    )}
-                  </Field>
-                </Grid.Col>
-                <Grid.Col span={6}>
-                  <Field of={examForm} path={["maxScore"]}>
-                    {(field) => (
-                      <NumberInput
-                        {...field.props}
-                        error={field.errors?.[0]}
-                        label="上限"
-                        onChange={(value) =>
-                          field.onChange(value === "" ? undefined : Number(value))
-                        }
-                        value={field.input}
-                      />
-                    )}
-                  </Field>
-                </Grid.Col>
-                <Grid.Col span={12}>
-                  <Button type="submit">本番目標を保存</Button>
-                </Grid.Col>
-              </Grid>
-            </Form>
-          </Stack>
-        </Card>
-      </Grid.Col>
-      <Grid.Col span={{ base: 12, md: 6 }}>
-        <Card h="100%">
-          <Stack gap="md">
-            <Title order={2}>週間ゴール</Title>
-            <WeeklyProgressCard
-              todayJst={todayJst}
-              volumeMinutes={volumeMinutes}
-              weekEndJst={weekEndJst}
-              weeklyGoalMinutes={weeklyGoalMinutes}
-            />
-            <Form
-              of={weeklyForm}
-              onSubmit={(output) => {
-                onSaveWeekly(output.minutes);
-              }}
-            >
-              <Grid align="flex-end" gap="sm">
-                <Grid.Col span={{ base: 12, sm: 8 }}>
-                  <Field of={weeklyForm} path={["minutes"]}>
-                    {(field) => (
-                      <NumberInput
-                        {...field.props}
-                        error={field.errors?.[0]}
-                        label="今週の分数ゴール"
-                        min={0}
-                        onChange={(value) =>
-                          field.onChange(value === "" ? undefined : Number(value))
-                        }
-                        value={field.input}
-                      />
-                    )}
-                  </Field>
-                </Grid.Col>
-                <Grid.Col span={{ base: 12, sm: 4 }}>
-                  <Button fullWidth type="submit">
-                    週間ゴールを保存
-                  </Button>
-                </Grid.Col>
-              </Grid>
-            </Form>
-          </Stack>
-        </Card>
-      </Grid.Col>
-      <Grid.Col span={12}>
-        <Card>
-          <Stack gap="md">
-            <Title order={2}>障害プラン</Title>
-            <Form
-              of={obstacleForm}
-              onSubmit={(output) => {
-                onCreateObstacle(output);
-                reset(obstacleForm);
-              }}
-            >
-              <Grid align="flex-end" gap="sm">
-                <Grid.Col span={{ base: 12, sm: 5 }}>
-                  <Field of={obstacleForm} path={["ifText"]}>
-                    {(field) => (
-                      <TextInput
-                        {...field.props}
-                        error={field.errors?.[0]}
-                        label="もし"
-                        value={field.input}
-                      />
-                    )}
-                  </Field>
-                </Grid.Col>
-                <Grid.Col span={{ base: 12, sm: 5 }}>
-                  <Field of={obstacleForm} path={["thenText"]}>
-                    {(field) => (
-                      <ConcreteActionField
-                        {...field.props}
-                        error={field.errors?.[0]}
-                        label={<ConcreteThenFieldLabel />}
-                        placeholder="例: 机に向かって金のフレーズを1 Unit だけ開く"
-                        showLabel
-                        tourId="svo-obstacle-then"
-                        value={field.input}
-                      />
-                    )}
-                  </Field>
-                </Grid.Col>
-                <Grid.Col span={{ base: 12, sm: 2 }}>
-                  <Button fullWidth type="submit">
-                    障害プランを追加
-                  </Button>
-                </Grid.Col>
-              </Grid>
-            </Form>
-            {obstacles.map((plan) => (
-              <ObstacleEditor
-                key={plan._id}
-                onRemove={onRemoveObstacle}
-                onUpdate={onUpdateObstacle}
-                plan={plan}
+              <Title ff={DISPLAY_FONT} fw={500} order={2}>
+                {exam.daysRemaining}
+                <Text c="dimmed" ff={BODY_FONT} fz="md" span>
+                  日
+                </Text>
+              </Title>
+              <Form of={examForm} onSubmit={onSaveExam}>
+                <Grid align="flex-end" gap="sm">
+                  <Grid.Col span={12}>
+                    <Field of={examForm} path={["examDate"]}>
+                      {(field) => (
+                        <DatePickerInput
+                          classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
+                          error={field.errors?.[0]}
+                          firstDayOfWeek={1}
+                          getDayProps={(date) => calendarDayProps(date, todayJst)}
+                          label="本番日"
+                          locale="ja"
+                          name={field.props.name}
+                          onChange={(value) => field.onChange(value ?? "")}
+                          popoverProps={{ withinPortal: true }}
+                          value={field.input}
+                          valueFormat="YYYY-MM-DD"
+                        />
+                      )}
+                    </Field>
+                  </Grid.Col>
+                  <Grid.Col span={6}>
+                    <Field of={examForm} path={["minScore"]}>
+                      {(field) => (
+                        <NumberInput
+                          {...field.props}
+                          error={field.errors?.[0]}
+                          label="下限"
+                          onChange={(value) =>
+                            field.onChange(value === "" ? undefined : Number(value))
+                          }
+                          value={field.input}
+                        />
+                      )}
+                    </Field>
+                  </Grid.Col>
+                  <Grid.Col span={6}>
+                    <Field of={examForm} path={["maxScore"]}>
+                      {(field) => (
+                        <NumberInput
+                          {...field.props}
+                          error={field.errors?.[0]}
+                          label="上限"
+                          onChange={(value) =>
+                            field.onChange(value === "" ? undefined : Number(value))
+                          }
+                          value={field.input}
+                        />
+                      )}
+                    </Field>
+                  </Grid.Col>
+                  <Grid.Col span={12}>
+                    <Button type="submit">本番目標を保存</Button>
+                  </Grid.Col>
+                </Grid>
+              </Form>
+            </Stack>
+          </Card>
+        </Grid.Col>
+        <Grid.Col span={{ base: 12, md: 6 }}>
+          <Card h="100%">
+            <Stack gap="md">
+              <Title order={2}>週間ゴール</Title>
+              <WeeklyProgressCard
+                todayJst={todayJst}
+                volumeMinutes={volumeMinutes}
+                weekEndJst={weekEndJst}
+                weeklyGoalMinutes={weeklyGoalMinutes}
               />
-            ))}
-          </Stack>
-        </Card>
-      </Grid.Col>
-    </Grid>
+              <Form
+                of={weeklyForm}
+                onSubmit={(output) => {
+                  onSaveWeekly(output.minutes);
+                }}
+              >
+                <Grid align="flex-end" gap="sm">
+                  <Grid.Col span={{ base: 12, sm: 8 }}>
+                    <Field of={weeklyForm} path={["minutes"]}>
+                      {(field) => (
+                        <NumberInput
+                          {...field.props}
+                          error={field.errors?.[0]}
+                          label="今週の分数ゴール"
+                          min={0}
+                          onChange={(value) =>
+                            field.onChange(value === "" ? undefined : Number(value))
+                          }
+                          value={field.input}
+                        />
+                      )}
+                    </Field>
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 4 }}>
+                    <Button fullWidth type="submit">
+                      週間ゴールを保存
+                    </Button>
+                  </Grid.Col>
+                </Grid>
+              </Form>
+            </Stack>
+          </Card>
+        </Grid.Col>
+        <Grid.Col span={12}>
+          <Card>
+            <Stack gap="md">
+              <Group gap="xs" wrap="nowrap">
+                <Title order={2}>障害プラン</Title>
+                <ConcreteActionTourTrigger />
+              </Group>
+              <Form
+                of={obstacleForm}
+                onSubmit={(output) => {
+                  onCreateObstacle(output);
+                  reset(obstacleForm);
+                }}
+              >
+                <Grid align="flex-end" gap="sm">
+                  <Grid.Col span={{ base: 12, sm: 5 }}>
+                    <Field of={obstacleForm} path={["ifText"]}>
+                      {(field) => (
+                        <TextInput
+                          {...field.props}
+                          error={field.errors?.[0]}
+                          label="もし"
+                          value={field.input}
+                        />
+                      )}
+                    </Field>
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 5 }}>
+                    <Field of={obstacleForm} path={["thenText"]}>
+                      {(field) => (
+                        <ConcreteActionField
+                          {...field.props}
+                          error={field.errors?.[0]}
+                          label={<ConcreteThenFieldLabel />}
+                          placeholder="例: 机に向かって金のフレーズを1 Unit だけ開く"
+                          showLabel
+                          tourId="svo-obstacle-then"
+                          value={field.input}
+                        />
+                      )}
+                    </Field>
+                  </Grid.Col>
+                  <Grid.Col span={{ base: 12, sm: 2 }}>
+                    <Button fullWidth type="submit">
+                      障害プランを追加
+                    </Button>
+                  </Grid.Col>
+                </Grid>
+              </Form>
+              {obstacles.map((plan) => (
+                <ObstacleEditor
+                  key={plan._id}
+                  onRemove={onRemoveObstacle}
+                  onUpdate={onUpdateObstacle}
+                  plan={plan}
+                />
+              ))}
+            </Stack>
+          </Card>
+        </Grid.Col>
+      </Grid>
+    </ConcreteActionTour>
   );
 }
 

@@ -1,8 +1,9 @@
-import { Button, Card, Grid, Select, Stack, Text, Title } from "@mantine/core";
+import { Button, Card, Grid, Group, Select, Stack, Text, Title } from "@mantine/core";
 import { useNavigate } from "@tanstack/react-router";
 import type { DateJst } from "~domain/jst";
 import { weekdayFromDateJst } from "~domain/jst";
 
+import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import type { ItemDto, PresetDto, PresetId } from "~/features/catalog/types/item";
 import { parsePresetId } from "~/features/catalog/types/item";
 import { AdhocRowForm } from "~/features/today/components/adhoc-row-form";
@@ -99,76 +100,81 @@ export function DayBoard({
   const canEdit = !day.isFuture;
 
   return (
-    <Stack gap="md">
-      <Card>
-        <Grid align="end">
-          <Grid.Col span={{ base: 12, sm: 7 }}>
-            <Text c="dimmed" fw={600} size="xs" tt="uppercase">
-              {isToday ? "今日" : "日"}
-            </Text>
-            <Title order={1}>{dateJst}</Title>
-          </Grid.Col>
-          <Grid.Col span={{ base: 12, sm: 5 }}>
-            <Text c="dimmed" size="sm">
-              学習量
-            </Text>
-            <Title ff={DISPLAY_FONT} fw={500} lh={1} order={1}>
-              {day.volumeMinutes}
-              <Text c="dimmed" ff={BODY_FONT} fz="lg" span>
-                分
-              </Text>
-            </Title>
-          </Grid.Col>
-        </Grid>
-      </Card>
-      {isToday ? (
+    <ConcreteActionTour screen="today">
+      <Stack gap="md">
         <Card>
-          <Stack gap="sm">
-            <Title order={3}>プリセット</Title>
-            <TodayPresetSelect
-              dateJst={dateJst}
-              onSwitchPreset={onSwitchPreset}
-              presets={presets}
-              selectedPresetId={selectedPresetId}
-            />
+          <Grid align="end">
+            <Grid.Col span={{ base: 12, sm: 7 }}>
+              <Text c="dimmed" fw={600} size="xs" tt="uppercase">
+                {isToday ? "今日" : "日"}
+              </Text>
+              <Title order={1}>{dateJst}</Title>
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 5 }}>
+              <Text c="dimmed" size="sm">
+                学習量
+              </Text>
+              <Title ff={DISPLAY_FONT} fw={500} lh={1} order={1}>
+                {day.volumeMinutes}
+                <Text c="dimmed" ff={BODY_FONT} fz="lg" span>
+                  分
+                </Text>
+              </Title>
+            </Grid.Col>
+          </Grid>
+        </Card>
+        {isToday ? (
+          <Card>
+            <Stack gap="sm">
+              <Title order={3}>プリセット</Title>
+              <TodayPresetSelect
+                dateJst={dateJst}
+                onSwitchPreset={onSwitchPreset}
+                presets={presets}
+                selectedPresetId={selectedPresetId}
+              />
+            </Stack>
+          </Card>
+        ) : null}
+        <Card>
+          <Stack gap="md">
+            <Group gap="xs" wrap="nowrap">
+              <Title order={2}>記録</Title>
+              <ConcreteActionTourTrigger />
+            </Group>
+            {day.rows.map((row) => (
+              <RowEditor
+                key={row._id}
+                disabled={!canEdit}
+                onConfirm={onConfirm}
+                onRemove={onRemoveRow}
+                onSkip={onSkip}
+                row={row}
+              />
+            ))}
+            {day.rows.length === 0 ? <Text c="dimmed">この日の記録はありません。</Text> : null}
+            {canEdit ? <AdhocRowForm items={items} onAdd={onAddRow} /> : null}
           </Stack>
         </Card>
-      ) : null}
-      <Card>
-        <Stack gap="md">
-          <Title order={2}>記録</Title>
-          {day.rows.map((row) => (
-            <RowEditor
-              key={row._id}
-              disabled={!canEdit}
-              onConfirm={onConfirm}
-              onRemove={onRemoveRow}
-              onSkip={onSkip}
-              row={row}
+        {canEdit ? (
+          <Card>
+            <DayMetaPanel
+              condition={day.day?.condition ?? null}
+              memo={day.day?.memo ?? null}
+              onSaveCondition={onSaveCondition}
+              onSaveMemo={onSaveMemo}
             />
-          ))}
-          {day.rows.length === 0 ? <Text c="dimmed">この日の記録はありません。</Text> : null}
-          {canEdit ? <AdhocRowForm items={items} onAdd={onAddRow} /> : null}
-        </Stack>
-      </Card>
-      {canEdit ? (
+          </Card>
+        ) : null}
         <Card>
-          <DayMetaPanel
-            condition={day.day?.condition ?? null}
-            memo={day.day?.memo ?? null}
-            onSaveCondition={onSaveCondition}
-            onSaveMemo={onSaveMemo}
-          />
+          <ShareCopy markdown={day.shareMarkdown} />
         </Card>
-      ) : null}
-      <Card>
-        <ShareCopy markdown={day.shareMarkdown} />
-      </Card>
-      {canEdit && day.day !== null ? (
-        <Button color="red" onClick={onRemoveDay} variant="light">
-          この日をゴミ箱へ
-        </Button>
-      ) : null}
-    </Stack>
+        {canEdit && day.day !== null ? (
+          <Button color="red" onClick={onRemoveDay} variant="light">
+            この日をゴミ箱へ
+          </Button>
+        ) : null}
+      </Stack>
+    </ConcreteActionTour>
   );
 }
