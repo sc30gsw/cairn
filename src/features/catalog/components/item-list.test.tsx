@@ -22,7 +22,7 @@ test("カテゴリーの下に学習内容が並び、カテゴリーも編集�
         onRemoveItem={vi.fn()}
         onRenameCategory={vi.fn()}
         onRenameItem={vi.fn()}
-        onReorderItems={vi.fn()}
+        onApplyItemOrder={vi.fn()}
       />
       <PresetList
         items={[

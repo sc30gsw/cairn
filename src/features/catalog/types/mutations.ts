@@ -7,6 +7,7 @@ export type RenameCategoryInput = FunctionArgs<typeof api.categories.rename>;
 export type RemoveCategoryInput = Pick<FunctionArgs<typeof api.categories.remove>, "categoryId">;
 export type CreateItemInput = FunctionArgs<typeof api.items.create>;
 export type RenameItemInput = FunctionArgs<typeof api.items.rename>;
+export type ApplyItemOrderInput = FunctionArgs<typeof api.items.applyOrder>;
 export type ReorderItemsInput = FunctionArgs<typeof api.items.reorder>;
 export type RemoveItemInput = Pick<FunctionArgs<typeof api.items.remove>, "itemId">;
 export type CreatePresetInput = FunctionArgs<typeof api.presets.create>;

@@ -7,6 +7,7 @@ import { api } from "~/../convex/_generated/api";
 import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { ItemList } from "~/features/catalog/components/item-list";
+import { useApplyItemOrder } from "~/features/catalog/hooks/use-apply-item-order";
 import { useEnsureCatalog } from "~/features/catalog/hooks/use-ensure-catalog";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
@@ -33,7 +34,7 @@ function ItemsReady() {
   const removeCategory = useConvexMutation(api.categories.remove);
   const createItem = useConvexMutation(api.items.create);
   const renameItem = useConvexMutation(api.items.rename);
-  const reorderItems = useConvexMutation(api.items.reorder);
+  const applyItemOrder = useApplyItemOrder();
   const removeItem = useConvexMutation(api.items.remove);
 
   return (
@@ -58,8 +59,8 @@ function ItemsReady() {
       onRenameItem={(input) => {
         void renameItem.mutateAsync(input);
       }}
-      onReorderItems={(input) => {
-        void reorderItems.mutateAsync(input);
+      onApplyItemOrder={(input) => {
+        void applyItemOrder(input);
       }}
     />
   );

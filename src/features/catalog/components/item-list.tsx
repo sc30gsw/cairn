@@ -23,13 +23,13 @@ import { ItemNameSchema } from "~/features/catalog/schemas/item-schema";
 import type { CategoryDto, ItemDto } from "~/features/catalog/types/item";
 import { parseCategoryId } from "~/features/catalog/types/item";
 import type {
+  ApplyItemOrderInput,
   CreateCategoryInput,
   CreateItemInput,
   RemoveCategoryInput,
   RemoveItemInput,
   RenameCategoryInput,
   RenameItemInput,
-  ReorderItemsInput,
 } from "~/features/catalog/types/mutations";
 
 type ItemListProps = {
@@ -41,7 +41,7 @@ type ItemListProps = {
   onRemoveItem: (itemId: RemoveItemInput["itemId"]) => void;
   onRenameCategory: (input: RenameCategoryInput) => void;
   onRenameItem: (input: RenameItemInput) => void | Promise<void>;
-  onReorderItems: (input: ReorderItemsInput) => void | Promise<void>;
+  onApplyItemOrder: (input: ApplyItemOrderInput) => void | Promise<void>;
 };
 
 export function ItemList({
@@ -53,7 +53,7 @@ export function ItemList({
   onRemoveItem,
   onRenameCategory,
   onRenameItem,
-  onReorderItems,
+  onApplyItemOrder,
 }: ItemListProps) {
   const sortedCategories = sortBy(categories, prop("sortOrder"));
   const itemsByCategory = mapValues(groupBy(items, prop("categoryId")), (categoryItems) =>
@@ -79,29 +79,32 @@ export function ItemList({
 
     if (sourceCategoryId === destinationCategoryId) {
       sourceItems.splice(destination.index, 0, moved);
-      await onReorderItems({
-        categoryId: sourceCategoryId,
-        orderedItemIds: sourceItems.map((item) => item._id),
+      await onApplyItemOrder({
+        updates: [
+          {
+            categoryId: sourceCategoryId,
+            orderedItemIds: sourceItems.map((item) => item._id),
+          },
+        ],
       });
       return;
     }
 
-    await onRenameItem({
-      categoryId: destinationCategoryId,
-      itemId: moved._id,
-      name: moved.name,
-    });
-    await onReorderItems({
-      categoryId: sourceCategoryId,
-      orderedItemIds: sourceItems.map((item) => item._id),
-    });
     const destinationItems = [...(itemsByCategory[destinationCategoryId] ?? [])].filter(
       (item) => item._id !== moved._id,
     );
-    destinationItems.splice(destination.index, 0, { ...moved, categoryId: destinationCategoryId });
-    await onReorderItems({
-      categoryId: destinationCategoryId,
-      orderedItemIds: destinationItems.map((item) => item._id),
+    destinationItems.splice(destination.index, 0, moved);
+    await onApplyItemOrder({
+      updates: [
+        {
+          categoryId: sourceCategoryId,
+          orderedItemIds: sourceItems.map((item) => item._id),
+        },
+        {
+          categoryId: destinationCategoryId,
+          orderedItemIds: destinationItems.map((item) => item._id),
+        },
+      ],
     });
   }
 

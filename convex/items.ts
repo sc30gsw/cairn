@@ -4,8 +4,9 @@ import { flatMap, map, pipe } from "remeda";
 import type { Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
 import { ConflictError, NotFoundError, ValidationFailedError } from "./lib/errors";
+import { applyItemOrderToList } from "./lib/itemOrder";
 import { itemIdIsInUse } from "./lib/preset";
-import { itemDtoValidator } from "./lib/validators";
+import { categoryItemOrderValidator, itemDtoValidator } from "./lib/validators";
 import { ownerMutation, ownerQuery, throwDomain } from "./ownerFunctions";
 
 async function requireOwnedCategory(
@@ -159,6 +160,82 @@ export const reorder = ownerMutation({
     }
     await Promise.all(
       args.orderedItemIds.map((itemId, sortOrder) => ctx.db.patch(itemId, { sortOrder })),
+    );
+    return null;
+  },
+  returns: v.null(),
+});
+
+export const applyOrder = ownerMutation({
+  args: {
+    updates: v.array(categoryItemOrderValidator),
+  },
+  handler: async (ctx, args) => {
+    if (args.updates.length === 0) {
+      return null;
+    }
+
+    const seenItemIds = new Set<Id<"items">>();
+    const categoryIds = [...new Set(args.updates.map((update) => update.categoryId))];
+    await Promise.all(
+      categoryIds.map((categoryId) => requireOwnedCategory(ctx, ctx.ownerId, categoryId)),
+    );
+    for (const update of args.updates) {
+      for (const itemId of update.orderedItemIds) {
+        if (seenItemIds.has(itemId)) {
+          throwDomain(new ValidationFailedError({ message: "項目の並べ替えが不正です" }));
+        }
+        seenItemIds.add(itemId);
+      }
+    }
+
+    const items = await ctx.db
+      .query("items")
+      .withIndex("by_owner", (q) => q.eq("ownerId", ctx.ownerId))
+      .collect();
+    const itemById = new Map(items.map((item) => [item._id, item]));
+
+    for (const update of args.updates) {
+      for (const itemId of update.orderedItemIds) {
+        const item = itemById.get(itemId);
+        if (item === undefined) {
+          throwDomain(new ValidationFailedError({ message: "項目の並べ替えが不正です" }));
+        }
+      }
+    }
+
+    const listDto = applyItemOrderToList(
+      items.flatMap((item) =>
+        item.categoryId === undefined
+          ? []
+          : [
+              {
+                _id: item._id,
+                categoryId: item.categoryId,
+                name: item.name,
+                sortOrder: item.sortOrder ?? Number.MAX_SAFE_INTEGER,
+              },
+            ],
+      ),
+      args.updates,
+    );
+    const nextById = new Map(listDto.map((item) => [item._id, item]));
+
+    await Promise.all(
+      [...seenItemIds].map(async (itemId) => {
+        const item = itemById.get(itemId);
+        const next = nextById.get(itemId);
+        if (item === undefined || next === undefined) {
+          return;
+        }
+        if (item.categoryId === next.categoryId && item.sortOrder === next.sortOrder) {
+          return;
+        }
+        await ctx.db.patch(itemId, {
+          categoryId: next.categoryId,
+          sortOrder: next.sortOrder,
+        });
+      }),
     );
     return null;
   },
