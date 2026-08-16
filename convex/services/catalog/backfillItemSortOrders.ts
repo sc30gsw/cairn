@@ -1,6 +1,5 @@
 import { groupBy } from "remeda";
 
-import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { compareItemsBySortOrder } from "../../lib/itemSort";
 

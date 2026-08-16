@@ -1,5 +1,3 @@
-import { v } from "convex/values";
-
 import { ownerQuery } from "../../lib/ownerFunctions";
 import { trashPageValidator } from "../../lib/validators";
 import { list as listTrash } from "../../services/trash/list";

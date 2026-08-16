@@ -2,10 +2,7 @@ import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { deleteRowsByIds, isPurgeDue, TRASH_TTL_MS } from "../../lib/trash";
 
-export async function purgeExpired(
-  ctx: MutationCtx,
-  args: { now?: number } = {},
-): Promise<null> {
+export async function purgeExpired(ctx: MutationCtx, args: { now?: number } = {}): Promise<null> {
   const now = args.now ?? Date.now();
   const cutoff = now - TRASH_TTL_MS;
   const [expiredDays, expiredRows] = await Promise.all([
