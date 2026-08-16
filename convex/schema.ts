@@ -1,13 +1,12 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
-import { categoryValidator, conditionValidator, statusValidator } from "./lib/validators";
-
-const presetLine = v.object({
-  content: v.string(),
-  itemId: v.id("items"),
-  minutes: v.number(),
-});
+import {
+  categoryValidator,
+  conditionValidator,
+  presetLineValidator,
+  statusValidator,
+} from "./lib/validators";
 
 export default defineSchema({
   categories: defineTable({
@@ -56,7 +55,7 @@ export default defineSchema({
   }).index("by_owner", ["ownerId"]),
 
   presets: defineTable({
-    lines: v.array(presetLine),
+    lines: v.array(presetLineValidator),
     name: v.string(),
     ownerId: v.string(),
     weekday: v.number(),

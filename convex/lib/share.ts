@@ -1,16 +1,8 @@
 import { flatMap, groupBy, pipe, prop, sortBy } from "remeda";
 
-import type { StatusDto } from "./validators";
+import type { ShareRow } from "./validators";
 
-export type ShareRow = {
-  category: string;
-  categorySortOrder: number;
-  content: string;
-  itemName: string;
-  minutes: number;
-  sortOrder: number;
-  status: StatusDto;
-};
+export type { ShareRow };
 
 function lineText(row: ShareRow): string {
   if (row.content === "") {
