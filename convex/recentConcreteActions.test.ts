@@ -2,7 +2,7 @@ import { convexTest } from "convex-test";
 import { expect, test } from "vite-plus/test";
 
 import { api } from "./_generated/api";
-import type { Id } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import schema from "./schema";
 
 const modules = import.meta.glob([
@@ -26,7 +26,7 @@ function newTest() {
 
 async function seedItemWithRows(
   t: ReturnType<typeof newTest>,
-  rows: { content: string; status: "確定" | "未着手" | "スキップ" }[],
+  rows: Pick<Doc<"rows">, "content" | "status">[],
 ): Promise<Id<"items">> {
   return t.run(async (ctx) => {
     const itemId = await ctx.db.insert("items", {
