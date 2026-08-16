@@ -1,9 +1,8 @@
 import { OnboardingTour, type OnboardingTourStep } from "@gfazioli/mantine-onboarding-tour";
-import { useState, type ReactNode } from "react";
+import { useDisclosure } from "@mantine/hooks";
+import { createContext, use, type ReactNode } from "react";
 
 type TourScreen = "goals" | "presets" | "today";
-
-const STORAGE_PREFIX = "cairn:concrete-action-tour:v1";
 
 const TOUR_STEPS = {
   goals: [
@@ -32,24 +31,14 @@ const TOUR_STEPS = {
   ],
 } as const satisfies Record<TourScreen, OnboardingTourStep[]>;
 
-function tourStorageKey(screen: TourScreen) {
-  return `${STORAGE_PREFIX}:${screen}`;
-}
+type ConcreteActionTourContextValue = {
+  startTour: () => void;
+};
 
-function hasSeenTour(screen: TourScreen) {
-  try {
-    return localStorage.getItem(tourStorageKey(screen)) === "1";
-  } catch {
-    return true;
-  }
-}
+const ConcreteActionTourContext = createContext<ConcreteActionTourContextValue | null>(null);
 
-function markTourSeen(screen: TourScreen) {
-  try {
-    localStorage.setItem(tourStorageKey(screen), "1");
-  } catch {
-    // localStorage unavailable
-  }
+export function useConcreteActionTour() {
+  return use(ConcreteActionTourContext);
 }
 
 type ConcreteActionTourProps = {
@@ -58,18 +47,18 @@ type ConcreteActionTourProps = {
 };
 
 export function ConcreteActionTour({ children, screen }: ConcreteActionTourProps) {
-  const [started, setStarted] = useState(() => !hasSeenTour(screen));
+  const [started, { close, open }] = useDisclosure(false);
 
   return (
-    <OnboardingTour
-      onOnboardingTourEnd={() => {
-        markTourSeen(screen);
-        setStarted(false);
-      }}
-      started={started}
-      tour={[...TOUR_STEPS[screen]]}
-    >
-      {children}
-    </OnboardingTour>
+    <ConcreteActionTourContext value={{ startTour: open }}>
+      <OnboardingTour
+        onOnboardingTourEnd={close}
+        onOnboardingTourSkip={close}
+        started={started}
+        tour={[...TOUR_STEPS[screen]]}
+      >
+        {children}
+      </OnboardingTour>
+    </ConcreteActionTourContext>
   );
 }
