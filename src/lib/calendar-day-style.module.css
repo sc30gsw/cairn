@@ -4,15 +4,19 @@
   /* Marker classes applied via getDayProps. */
 }
 
+/* @mantine/schedule exposes stable `mantine-MonthView-*` classes, but @mantine/dates names its
+   day/weekday classes after the root component (`mantine-DatePickerInput-day`, …), so the dates
+   calendar is matched by table structure instead. Its own `[data-weekend]` rule is beaten by
+   specificity; `:not()` keeps outside/selected/disabled days on Mantine's colors. */
 .japaneseCalendar :global(.mantine-Schedule-monthViewWeekday:nth-child(6)),
 .japaneseCalendar :global(.mantine-MonthView-monthViewWeekday:nth-child(6)),
-.japaneseCalendar :global(.mantine-Month-weekday:nth-child(6)) {
+.japaneseCalendar th:nth-child(6) {
   color: var(--mantine-color-blue-6);
 }
 
 .japaneseCalendar :global(.mantine-Schedule-monthViewWeekday:nth-child(7)),
 .japaneseCalendar :global(.mantine-MonthView-monthViewWeekday:nth-child(7)),
-.japaneseCalendar :global(.mantine-Month-weekday:nth-child(7)) {
+.japaneseCalendar th:nth-child(7) {
   color: var(--mantine-color-red-6);
 }
 
@@ -22,7 +26,7 @@
 .japaneseCalendar
   :global(.mantine-MonthView-monthViewDay).saturdayDay
   :global(.mantine-MonthView-monthViewDayLabel),
-.japaneseCalendar :global(.mantine-Day-day).saturdayDay {
+.japaneseCalendar td .saturdayDay:not([data-outside], [data-selected], [data-disabled]) {
   color: var(--mantine-color-blue-6);
 }
 
@@ -38,7 +42,7 @@
 .japaneseCalendar
   :global(.mantine-MonthView-monthViewDay).holidayDay
   :global(.mantine-MonthView-monthViewDayLabel),
-.japaneseCalendar :global(.mantine-Day-day).sundayDay,
-.japaneseCalendar :global(.mantine-Day-day).holidayDay {
+.japaneseCalendar td .sundayDay:not([data-outside], [data-selected], [data-disabled]),
+.japaneseCalendar td .holidayDay:not([data-outside], [data-selected], [data-disabled]) {
   color: var(--mantine-color-red-6);
 }
