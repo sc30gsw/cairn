@@ -158,7 +158,7 @@ export default defineConfig({
       {
         extends: true,
         test: {
-          environment: "jsdom",
+          environment: "happy-dom",
           include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
           name: "frontend",
         },

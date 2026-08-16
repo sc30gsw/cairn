@@ -34,6 +34,6 @@ test("記録がある週があればチャートを描画する", () => {
       ]}
     />,
   );
-  //? jsdom はレイアウトしないため recharts の内側 svg は 0x0 判定で描画されない。Mantine 側のチャートルートまでは描画されることを確認する
+  //? happy-dom はレイアウトしないため recharts の内側 svg は 0x0 判定で描画されない。Mantine 側のチャートルートまでは描画されることを確認する
   expect(container.querySelector(".mantine-BarChart-root")).not.toBeNull();
 });
