@@ -258,6 +258,16 @@ export const historyMonthValidator = v.object({
 
 export type HistoryMonthDto = Infer<typeof historyMonthValidator>;
 
+export const weeklyTrendWeekValidator = v.object({
+  achieved: v.boolean(),
+  goalMinutes: v.union(v.number(), v.null()),
+  volumeMinutes: v.number(),
+  weekEnd: v.string(),
+  weekStart: v.string(),
+});
+
+export type WeeklyTrendWeek = Infer<typeof weeklyTrendWeekValidator>;
+
 export type RowDto = Infer<typeof rowDtoValidator>;
 export type DayDto = Infer<typeof dayDtoValidator>;
 export type ItemDto = Infer<typeof itemDtoValidator>;
