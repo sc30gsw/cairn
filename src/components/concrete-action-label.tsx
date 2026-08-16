@@ -15,7 +15,9 @@ export function ConcreteActionLabel({
 }: ConcreteActionLabelProps) {
   return (
     <Group gap={4} wrap="nowrap">
-      <Text span>{label}</Text>
+      <Text size="sm" span>
+        {label}
+      </Text>
       <Tooltip label={tooltipExample} multiline w={280}>
         <ActionIcon aria-label={infoAriaLabel} size="xs" tabIndex={-1} variant="subtle">
           <IconInfoCircle aria-hidden size={14} />

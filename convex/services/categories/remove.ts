@@ -13,7 +13,7 @@ export async function remove(
   //? 残存有無だけ知りたいので先頭1件で判定する(CVX-11)
   const itemInCategory = await ctx.db
     .query("items")
-    .withIndex("by_category", (q) => q.eq("categoryId", args.categoryId))
+    .withIndex("by_category_and_sortOrder", (q) => q.eq("categoryId", args.categoryId))
     .first();
   if (itemInCategory !== null) {
     throwDomain(new ConflictError({ message: "項目が残っているカテゴリは消せません" }));

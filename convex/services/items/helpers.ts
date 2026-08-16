@@ -22,7 +22,7 @@ export async function nextSortOrder(
 ): Promise<number> {
   const items = await ctx.db
     .query("items")
-    .withIndex("by_category", (q) => q.eq("categoryId", categoryId))
+    .withIndex("by_category_and_sortOrder", (q) => q.eq("categoryId", categoryId))
     .collect();
   const owned = items.filter((item) => item.ownerId === ownerId);
   if (owned.length === 0) {
