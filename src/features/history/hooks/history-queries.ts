@@ -14,7 +14,9 @@ export function useHistoryWeek(dateJst: string) {
 }
 
 export function useHistoryWeekBreakdown(dateJst: string) {
-  return useSuspenseQuery(convexQuery(api.queries.history.weekBreakdown.weekBreakdown, { dateJst }));
+  return useSuspenseQuery(
+    convexQuery(api.queries.history.weekBreakdown.weekBreakdown, { dateJst }),
+  );
 }
 
 export function useHistoryDayBreakdown(dateJst: string) {

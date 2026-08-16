@@ -31,7 +31,11 @@ export function useApplyItemOrder() {
     if (current === undefined) {
       return;
     }
-    localStore.setQuery(api.queries.items.list.list, {}, applyItemOrderToList(current, args.updates));
+    localStore.setQuery(
+      api.queries.items.list.list,
+      {},
+      applyItemOrderToList(current, args.updates),
+    );
   });
 }
 
