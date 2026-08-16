@@ -2,7 +2,6 @@ import type { FunctionReturnType } from "convex/server";
 
 import type { api } from "~/../convex/_generated/api";
 
-export type MonthDay = FunctionReturnType<typeof api.queries.history.month.month>["days"][number];
 export type MonthEvent = FunctionReturnType<
   typeof api.queries.history.monthBreakdown.monthBreakdown
 >["events"][number];

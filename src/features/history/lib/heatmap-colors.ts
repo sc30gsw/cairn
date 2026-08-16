@@ -3,11 +3,9 @@ import { addDaysJst, type DateJst } from "~domain/jst";
 
 import type { HeatmapDay } from "~/features/history/types/history";
 
-export const YEAR_HEATMAP_DAYS = 365;
+const YEAR_HEATMAP_DAYS = 365;
 
-export type { HeatmapDay };
-
-export type HeatmapLegendEntry = {
+type HeatmapLegendEntry = {
   backgroundColor: string;
   label: string;
 };

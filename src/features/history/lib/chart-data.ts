@@ -8,7 +8,7 @@ import type {
   WeekBreakdown,
 } from "~/features/history/types/history";
 
-export type DonutCell = {
+type DonutCell = {
   color: string;
   name: string;
   value: number;

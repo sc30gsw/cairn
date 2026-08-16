@@ -5,5 +5,3 @@ export const ExamSchema = v.object({
   maxScore: v.pipe(v.number(), v.minValue(0)),
   minScore: v.pipe(v.number(), v.minValue(0)),
 });
-
-export type ExamInput = v.InferOutput<typeof ExamSchema>;

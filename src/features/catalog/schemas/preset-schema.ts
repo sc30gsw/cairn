@@ -1,6 +1,6 @@
 import * as v from "valibot";
 
-export const PresetLineSchema = v.object({
+const PresetLineSchema = v.object({
   content: v.string(),
   itemId: v.pipe(v.string(), v.minLength(1, "項目を選んでください")),
   minutes: v.pipe(v.number(), v.minValue(0)),
@@ -21,5 +21,3 @@ export const PresetSchema = v.object({
 });
 
 export type PresetLineInput = v.InferOutput<typeof PresetLineSchema>;
-export type CreatePresetFormInput = v.InferOutput<typeof CreatePresetSchema>;
-export type PresetFormInput = v.InferOutput<typeof PresetSchema>;

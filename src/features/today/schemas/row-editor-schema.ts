@@ -4,5 +4,3 @@ export const RowEditorSchema = v.object({
   content: v.string(),
   minutes: v.pipe(v.number(), v.minValue(0, "分数は0以上です")),
 });
-
-export type RowEditorInput = v.InferOutput<typeof RowEditorSchema>;

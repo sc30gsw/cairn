@@ -9,10 +9,6 @@ export type AddRowInput = Omit<
   "dateJst" | "todayJst"
 >;
 export type RemoveRowInput = Pick<FunctionArgs<typeof api.mutations.rows.remove.remove>, "rowId">;
-export type SwitchPresetInput = Omit<
-  FunctionArgs<typeof api.mutations.rows.switchPreset.switchPreset>,
-  "dateJst" | "todayJst"
->;
 export type SetConditionInput = Pick<
   FunctionArgs<typeof api.mutations.days.setCondition.setCondition>,
   "condition"
@@ -21,7 +17,3 @@ export type SetMemoInput = Pick<
   FunctionArgs<typeof api.mutations.days.setMemo.setMemo>,
   "memo"
 >["memo"];
-export type RemoveDayInput = Pick<
-  FunctionArgs<typeof api.mutations.trash.removeDay.removeDay>,
-  "dateJst"
->;

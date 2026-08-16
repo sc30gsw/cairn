@@ -8,11 +8,11 @@ import type { HistorySearch, HistoryTab } from "~/features/history/schemas/histo
 /** `/history` 専用 — HistoryPage 配下からのみ import すること */
 const historyRoute = getRouteApi("/history");
 
-export function yearMonthFromDateJst(dateJst: DateJst): string {
+function yearMonthFromDateJst(dateJst: DateJst): string {
   return dateJst.slice(0, 7);
 }
 
-export function monthDateFromYearMonth(yearMonth: string): Date {
+function monthDateFromYearMonth(yearMonth: string): Date {
   return new Date(`${yearMonth}-01T12:00:00+09:00`);
 }
 

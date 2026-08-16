@@ -9,7 +9,7 @@ const pendingStatus = STATUSES[1];
 const shimmerItemId = "shimmer-item" as ItemDto["_id"];
 const shimmerCategoryId = "shimmer-category" as ItemDto["categoryId"];
 
-export const dayBoardShimmerRow = {
+const dayBoardShimmerRow = {
   _id: "shimmer-row-1" as DayRow["_id"],
   category: "多聴",
   categorySortOrder: 1,
@@ -21,7 +21,7 @@ export const dayBoardShimmerRow = {
   status: pendingStatus,
 } satisfies DayRow;
 
-export const dayBoardShimmerRow2 = {
+const dayBoardShimmerRow2 = {
   ...dayBoardShimmerRow,
   _id: "shimmer-row-2" as DayRow["_id"],
   content: "Unit 1",
