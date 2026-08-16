@@ -2,9 +2,12 @@
 import { ConvexBetterAuthProvider, type AuthClient } from "@convex-dev/better-auth/react";
 import type { ConvexQueryClient } from "@convex-dev/react-query";
 import {
+  Button,
+  Card,
+  Center,
   ColorSchemeScript,
-  Container,
   MantineProvider,
+  Stack,
   Text,
   Title,
   mantineHtmlProps,
@@ -17,6 +20,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import {
   HeadContent,
+  Link,
   Outlet,
   Scripts,
   createRootRouteWithContext,
@@ -26,10 +30,11 @@ import "dayjs/locale/ja";
 import { createServerFn } from "@tanstack/react-start";
 import { Suspense, lazy, type ReactNode } from "react";
 
+import { FullPageErrorState } from "~/components/error-state";
 import { PendingComponent } from "~/components/pending-component";
 import { authClient } from "~/lib/auth-client";
 import { getToken } from "~/lib/auth-server";
-import { cssVariablesResolver, theme } from "~/lib/theme";
+import { DISPLAY_FONT, cssVariablesResolver, theme } from "~/lib/theme";
 
 import appCss from "~/styles.css?url";
 
@@ -160,20 +165,26 @@ function RootPendingComponent() {
 
 function NotFoundComponent() {
   return (
-    <Container py="xl">
-      <Title order={1}>404</Title>
-      <Text mt="sm">ページが見つかりませんでした。</Text>
-    </Container>
+    <Center h="100dvh" p="md">
+      <Card maw={420} padding="xl" shadow="sm" w="100%">
+        <Stack gap="md">
+          <Text c="dimmed" fw={600} size="xs" tt="uppercase">
+            学習ログ
+          </Text>
+          <Title ff={DISPLAY_FONT} fw={500} order={1}>
+            ページが見つかりません
+          </Title>
+          <Text>アドレスが変わったか、削除された可能性があります。</Text>
+          <Button component={Link} to="/">
+            今日の記録へ戻る
+          </Button>
+        </Stack>
+      </Card>
+    </Center>
   );
 }
 
-function ErrorComponent({ error }: ErrorComponentProps) {
-  return (
-    <Container py="xl">
-      <Title c="red" order={1}>
-        エラー
-      </Title>
-      <Text mt="sm">{error.message}</Text>
-    </Container>
-  );
+//? 生の error.message は Convex の内部ログやスタックを含むため描画しない(FullPageErrorState が文言を決める)
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
+  return <FullPageErrorState error={error} onRetry={reset} />;
 }
