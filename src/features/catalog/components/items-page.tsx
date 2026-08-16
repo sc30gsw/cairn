@@ -12,6 +12,7 @@ import {
   useRenameItem,
 } from "~/features/catalog/hooks/catalog-mutations";
 import { useCategoriesList, useItemsList } from "~/features/catalog/hooks/catalog-queries";
+import { runMutation } from "~/lib/run-mutation";
 
 export function ItemsPage() {
   return (
@@ -37,25 +38,35 @@ function ItemsReady() {
       categories={categories}
       items={items}
       onApplyItemOrder={(input) => {
-        void applyItemOrder(input);
+        void runMutation(() => applyItemOrder(input), { successMessage: "並び順を更新しました" });
       }}
       onCreateCategory={(input) => {
-        void createCategory.mutateAsync(input);
+        void runMutation(() => createCategory.mutateAsync(input), {
+          successMessage: "カテゴリーを追加しました",
+        });
       }}
       onCreateItem={(input) => {
-        void createItem.mutateAsync(input);
+        void runMutation(() => createItem.mutateAsync(input), {
+          successMessage: "項目を追加しました",
+        });
       }}
       onRemoveCategory={(categoryId) => {
-        void removeCategory.mutateAsync({ categoryId });
+        void runMutation(() => removeCategory.mutateAsync({ categoryId }), {
+          successMessage: "カテゴリーを削除しました",
+        });
       }}
       onRemoveItem={(itemId) => {
-        void removeItem.mutateAsync({ itemId });
+        void runMutation(() => removeItem.mutateAsync({ itemId }), {
+          successMessage: "項目を削除しました",
+        });
       }}
       onRenameCategory={(input) => {
-        void renameCategory.mutateAsync(input);
+        void runMutation(() => renameCategory.mutateAsync(input), {
+          successMessage: "カテゴリー名を変更しました",
+        });
       }}
       onRenameItem={(input) => {
-        void renameItem(input);
+        void runMutation(() => renameItem(input), { successMessage: "項目名を変更しました" });
       }}
     />
   );

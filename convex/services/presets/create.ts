@@ -1,5 +1,6 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
+import { assertConcreteActionLines } from "../../lib/concreteAction";
 import { ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { assertOwnedLines, assertWeekdayFree } from "./helpers";
@@ -13,14 +14,21 @@ export async function create(
     weekday: number;
   },
 ): Promise<Id<"presets">> {
+  const name = args.name.trim();
+  if (name === "") {
+    throwDomain(new ValidationFailedError({ message: "プリセット名は必須です" }));
+  }
   if (args.weekday < 0 || args.weekday > 6) {
     throwDomain(new ValidationFailedError({ message: "曜日が不正です" }));
   }
+  //? rows/confirm.ts と同じく trim 後の内容を検証し、検証した値をそのまま保存する
+  const lines = args.lines.map((line) => ({ ...line, content: line.content.trim() }));
   await assertWeekdayFree(ctx, ownerId, args.weekday);
-  await assertOwnedLines(ctx, ownerId, args.lines);
+  await assertOwnedLines(ctx, ownerId, lines);
+  assertConcreteActionLines(lines);
   return await ctx.db.insert("presets", {
-    lines: args.lines,
-    name: args.name,
+    lines,
+    name,
     ownerId,
     weekday: args.weekday,
   });

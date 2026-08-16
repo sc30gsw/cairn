@@ -11,3 +11,7 @@ export function useExamGoal(todayJst: DateJst) {
 export function useObstaclesList() {
   return useSuspenseQuery(convexQuery(api.queries.goals.listObstacles.listObstacles, {}));
 }
+
+export function useWeeklyTrend(todayJst: DateJst) {
+  return useSuspenseQuery(convexQuery(api.queries.goals.weeklyTrend.weeklyTrend, { todayJst }));
+}

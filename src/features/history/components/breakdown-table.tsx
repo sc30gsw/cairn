@@ -18,8 +18,10 @@ export function BreakdownTable({ confirmedMinutes, rows }: BreakdownTableProps) 
 
   return (
     <Table captionSide="top" highlightOnHover striped withTableBorder>
-      <Table.Caption>
-        完了項目のみ。同一項目は合算。確定比は、選択範囲の確定合計（{confirmedMinutes}
+      <Table.Caption className="text-left lg:text-center">
+        完了項目のみ。同一項目は合算。
+        <br />
+        確定比は、選択範囲の確定合計（{confirmedMinutes}
         分）に占める割合です。
       </Table.Caption>
       <Table.Thead>

@@ -19,6 +19,7 @@ import { useApplyPresetFromSearch } from "~/features/today/hooks/use-apply-prese
 import { useOpenAndLoadDay } from "~/features/today/hooks/use-open-and-load-day";
 import { datedDayRoute, indexDayRoute } from "~/features/today/lib/day-route-api";
 import type { DaySearch } from "~/features/today/schemas/day-search-schema";
+import { runMutation } from "~/lib/run-mutation";
 
 /** `/` 専用 entry。`indexDayRoute` はこのコンポーネントからのみ使う。 */
 export function TodayDayPage() {
@@ -75,29 +76,45 @@ function DayPageCore({ dateJst, presetFromSearch }: DayPageCoreProps) {
       isToday={isToday}
       items={items}
       onAddRow={(input) => {
-        void add.mutateAsync({ ...input, dateJst, todayJst: today });
+        void runMutation(() => add.mutateAsync({ ...input, dateJst, todayJst: today }), {
+          successMessage: "記録を追加しました",
+        });
       }}
       onConfirm={(input) => {
-        void confirm.mutateAsync(input);
+        void runMutation(() => confirm.mutateAsync(input), {
+          successMessage: "記録を確定しました",
+        });
       }}
       onRemoveDay={() => {
-        void removeDay.mutateAsync({ dateJst });
+        void runMutation(() => removeDay.mutateAsync({ dateJst }), {
+          successMessage: "この日をゴミ箱へ移動しました",
+        });
       }}
       onRemoveRow={(rowId) => {
-        void removeRow.mutateAsync({ rowId });
+        void runMutation(() => removeRow.mutateAsync({ rowId }), {
+          successMessage: "記録をゴミ箱へ移動しました",
+        });
       }}
       onSaveCondition={(condition) => {
-        void setCondition.mutateAsync({ condition, dateJst, todayJst: today });
+        void runMutation(() => setCondition.mutateAsync({ condition, dateJst, todayJst: today }), {
+          successMessage: "コンディションを保存しました",
+        });
       }}
       onSaveMemo={(memo) => {
-        void setMemo.mutateAsync({ dateJst, memo, todayJst: today });
+        void runMutation(() => setMemo.mutateAsync({ dateJst, memo, todayJst: today }), {
+          successMessage: "メモを保存しました",
+        });
       }}
       onSkip={(rowId) => {
-        void skip.mutateAsync({ rowId });
+        void runMutation(() => skip.mutateAsync({ rowId }), {
+          successMessage: "記録を見送りにしました",
+        });
       }}
       onSwitchPreset={(presetId: PresetId) => {
         appliedPresetRef.current = presetId;
-        void switchPreset.mutateAsync({ dateJst, presetId, todayJst: today });
+        void runMutation(() => switchPreset.mutateAsync({ dateJst, presetId, todayJst: today }), {
+          successMessage: "プリセットを切り替えました",
+        });
       }}
       presets={presets}
       selectedPresetId={selectedPresetId}

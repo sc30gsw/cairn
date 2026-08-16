@@ -10,8 +10,13 @@ import {
   useSaveWeeklyGoal,
   useUpdateObstacle,
 } from "~/features/goals/hooks/goals-mutations";
-import { useExamGoal, useObstaclesList } from "~/features/goals/hooks/goals-queries";
+import {
+  useExamGoal,
+  useObstaclesList,
+  useWeeklyTrend,
+} from "~/features/goals/hooks/goals-queries";
 import { useHistoryWeek } from "~/features/history/hooks/history-queries";
+import { runMutation } from "~/lib/run-mutation";
 
 export function GoalsPage() {
   return (
@@ -27,6 +32,7 @@ function GoalsReady() {
   const { data: exam } = useExamGoal(today);
   const { data: week } = useHistoryWeek(today);
   const { data: obstacles } = useObstaclesList();
+  const { data: trendWeeks } = useWeeklyTrend(today);
   const saveExam = useSaveExamGoal();
   const saveWeekly = useSaveWeeklyGoal();
   const createObstacle = useCreateObstacle();
@@ -38,21 +44,32 @@ function GoalsReady() {
       exam={exam}
       obstacles={obstacles}
       onCreateObstacle={(input) => {
-        void createObstacle.mutateAsync(input);
+        void runMutation(() => createObstacle.mutateAsync(input), {
+          successMessage: "障害プランを追加しました",
+        });
       }}
       onRemoveObstacle={(planId) => {
-        void removeObstacle.mutateAsync({ planId });
+        void runMutation(() => removeObstacle.mutateAsync({ planId }), {
+          successMessage: "障害プランを削除しました",
+        });
       }}
       onSaveExam={(input) => {
-        void saveExam.mutateAsync(input);
+        void runMutation(() => saveExam.mutateAsync(input), {
+          successMessage: "本番目標を保存しました",
+        });
       }}
       onSaveWeekly={(minutes) => {
-        void saveWeekly.mutateAsync({ minutes, weekStartJst: weekStart });
+        void runMutation(() => saveWeekly.mutateAsync({ minutes, weekStartJst: weekStart }), {
+          successMessage: "週間ゴールを保存しました",
+        });
       }}
       onUpdateObstacle={(input) => {
-        void updateObstacle.mutateAsync(input);
+        void runMutation(() => updateObstacle.mutateAsync(input), {
+          successMessage: "障害プランを更新しました",
+        });
       }}
       todayJst={today}
+      trendWeeks={trendWeeks}
       volumeMinutes={week.volumeMinutes}
       weekEndJst={week.weekEnd}
       weeklyGoalMinutes={week.weeklyGoalMinutes}

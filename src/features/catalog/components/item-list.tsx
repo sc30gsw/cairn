@@ -6,6 +6,7 @@ import {
   Card,
   Grid,
   Group,
+  Input,
   Menu,
   Paper,
   ScrollArea,
@@ -156,7 +157,7 @@ function AddCategoryForm({ onCreate }: { onCreate: ItemListProps["onCreateCatego
           onCreate(output);
         }}
       >
-        <Grid align="flex-end" gap="sm">
+        <Grid align="flex-start" gap="sm">
           <Grid.Col span={{ base: 12, sm: 8 }}>
             <Field of={form} path={["name"]}>
               {(field) => (
@@ -171,9 +172,11 @@ function AddCategoryForm({ onCreate }: { onCreate: ItemListProps["onCreateCatego
             </Field>
           </Grid.Col>
           <Grid.Col span={{ base: 12, sm: 4 }}>
-            <Button aria-label="カテゴリーを追加" fullWidth type="submit">
-              追加
-            </Button>
+            <Input.Wrapper label=" ">
+              <Button aria-label="カテゴリーを追加" fullWidth type="submit">
+                追加
+              </Button>
+            </Input.Wrapper>
           </Grid.Col>
         </Grid>
       </Form>

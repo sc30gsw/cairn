@@ -1,7 +1,9 @@
 @import "tailwind-preset-mantine";
+@import "@gfazioli/mantine-onboarding-tour/styles.layer.css";
 @import "@mantine/dates/styles.layer.css";
 @import "@mantine/schedule/styles.layer.css";
 @import "@mantine/charts/styles.layer.css";
+@import "@mantine/notifications/styles.layer.css";
 
 html {
   background: var(--cairn-paper-2, #f2f0e5);

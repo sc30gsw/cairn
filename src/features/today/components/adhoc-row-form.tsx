@@ -1,6 +1,8 @@
-import { Field, Form, useForm } from "@formisch/react";
-import { Button, Grid, NumberInput, Select, TextInput } from "@mantine/core";
+import { Field, Form, useField, useForm } from "@formisch/react";
+import { Button, Grid, NumberInput, Select } from "@mantine/core";
 
+import { ConcreteActionField } from "~/components/concrete-action-field";
+import { LabelAlignedCell } from "~/components/label-aligned-cell";
 import type { ItemDto } from "~/features/catalog/types/item";
 import { parseItemId } from "~/features/catalog/types/item";
 import { AdhocRowSchema } from "~/features/today/schemas/adhoc-row-schema";
@@ -22,6 +24,9 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
     },
     schema: AdhocRowSchema,
   });
+  //? 選択中の項目名はフォーム状態(SSoT)から導出する。useState で二重管理しない(formisch.md)
+  const itemIdField = useField(form, { path: ["itemId"] });
+  const selectedItemName = items.find((item) => item._id === itemIdField.input)?.name;
 
   return (
     <Form
@@ -34,7 +39,7 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
         });
       }}
     >
-      <Grid align="flex-end" gap="sm">
+      <Grid align="flex-start" gap="sm">
         <Grid.Col span={{ base: 12, sm: 4 }}>
           <Field of={form} path={["itemId"]}>
             {(field) => (
@@ -43,7 +48,9 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
                 data={items.map((item) => ({ label: item.name, value: item._id }))}
                 error={field.errors?.[0]}
                 label="その日限りの項目"
-                onChange={onRequiredSelect(field.onChange)}
+                onChange={onRequiredSelect((value) => {
+                  field.onChange(value);
+                })}
                 searchable
                 value={field.input}
               />
@@ -53,11 +60,11 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
         <Grid.Col span={{ base: 12, sm: 4 }}>
           <Field of={form} path={["content"]}>
             {(field) => (
-              <TextInput
+              <ConcreteActionField
                 {...field.props}
+                aria-label="その日限りの具体的手順"
                 error={field.errors?.[0]}
-                label="内容"
-                placeholder="学習内容を入力"
+                itemName={selectedItemName}
                 value={field.input}
               />
             )}
@@ -78,9 +85,11 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
           </Field>
         </Grid.Col>
         <Grid.Col span={{ base: 6, sm: 2 }}>
-          <Button disabled={first === undefined} fullWidth type="submit">
-            記録を足す
-          </Button>
+          <LabelAlignedCell>
+            <Button disabled={first === undefined} fullWidth type="submit">
+              記録を足す
+            </Button>
+          </LabelAlignedCell>
         </Grid.Col>
       </Grid>
     </Form>

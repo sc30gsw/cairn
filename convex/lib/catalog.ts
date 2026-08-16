@@ -28,6 +28,17 @@ export const SEED_MINUTES = {
   "英文法（解く）": 20,
 } as const satisfies Record<(typeof SEED_ITEMS)[number]["name"], number>;
 
+export const SEED_CONTENT = {
+  "Distinction 2000": "Track 12 を1周聞いて、聞き取れなかった語を3つメモする",
+  その他: "机の上の紙を1枚だけ片付ける",
+  出る文特急: "今日の1 Unit を音読して、わからない語を2つ調べる",
+  多読: "Chapter 2 を1ページ読んで、わからない語を2つ調べる",
+  英会話: "アプリを開いて単語カードを10枚めくる",
+  金のフレーズ: "Unit 3 の例文を声に出して5文読む",
+  "英文法（復習）": "間違えた1問だけ解説を読む",
+  "英文法（解く）": "問題1〜5を解いて、間違えた1問だけ解説を読む",
+} as const satisfies Record<(typeof SEED_ITEMS)[number]["name"], string>;
+
 export type SeedItemName = (typeof SEED_ITEMS)[number]["name"];
 
 export const WEEKDAY_LINE_NAMES = [

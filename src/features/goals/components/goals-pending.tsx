@@ -5,6 +5,7 @@ import {
   goalsShimmerExam,
   goalsShimmerObstacles,
   goalsShimmerTodayJst,
+  goalsShimmerTrendWeeks,
   goalsShimmerVolumeMinutes,
   goalsShimmerWeekEndJst,
   goalsShimmerWeeklyGoalMinutes,
@@ -23,6 +24,7 @@ export function GoalsPending() {
         onSaveWeekly={shimmerNoop}
         onUpdateObstacle={shimmerNoop}
         todayJst={goalsShimmerTodayJst}
+        trendWeeks={goalsShimmerTrendWeeks}
         volumeMinutes={goalsShimmerVolumeMinutes}
         weekEndJst={goalsShimmerWeekEndJst}
         weeklyGoalMinutes={goalsShimmerWeeklyGoalMinutes}

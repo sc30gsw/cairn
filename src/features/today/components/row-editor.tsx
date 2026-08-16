@@ -1,20 +1,13 @@
-import { Field, Form, reset, useForm, validate } from "@formisch/react";
-import {
-  ActionIcon,
-  Badge,
-  Grid,
-  Group,
-  Input,
-  NumberInput,
-  Switch,
-  TextInput,
-  Tooltip,
-} from "@mantine/core";
+import { Field, Form, reset, useForm } from "@formisch/react";
+import { ActionIcon, Badge, Grid, Group, Input, NumberInput, Switch, Tooltip } from "@mantine/core";
 import { useFocusWithin } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
 import { IconTrash } from "@tabler/icons-react";
 import { useEffect, type ChangeEvent } from "react";
+import { concreteActionPlaceholder } from "~domain/concreteActionCore";
 
+import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action-field-with-suggestions";
+import { validateConfirmRow } from "~/features/today/lib/validate-confirm-row";
 import { RowEditorSchema } from "~/features/today/schemas/row-editor-schema";
 import type { DayRow } from "~/features/today/types/day";
 import type {
@@ -104,21 +97,20 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
   });
   const isDone = row.status === "確定";
   const badge = RECORD_STATUS_UI[row.status];
-  const contentLabel = `${row.itemName} 内容`;
 
   async function saveIfConfirmedDirty() {
     if (row.status !== "確定") {
       return;
     }
-    const result = await validate(form);
-    if (!result.success) {
+    const output = await validateConfirmRow(form);
+    if (output === null) {
       return;
     }
-    if (result.output.content === row.content && result.output.minutes === row.minutes) {
+    if (output.content === row.content && output.minutes === row.minutes) {
       return;
     }
-    onConfirm({ content: result.output.content, minutes: result.output.minutes, rowId: row._id });
-    reset(form, { initialInput: result.output, keepInput: true });
+    onConfirm({ content: output.content, minutes: output.minutes, rowId: row._id });
+    reset(form, { initialInput: output, keepInput: true });
   }
 
   const { ref: rowRef } = useFocusWithin({
@@ -138,25 +130,33 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
     <Form
       aria-label={`${row.itemName}の記録`}
       of={form}
-      onSubmit={(output) => {
+      onSubmit={async () => {
+        const output = await validateConfirmRow(form);
+        if (output === null) {
+          return;
+        }
         onConfirm({ content: output.content, minutes: output.minutes, rowId: row._id });
       }}
     >
       <div ref={rowRef}>
-        <Grid align="flex-end" gap="sm">
+        <Grid align="flex-start" gap="sm">
           <Grid.Col span={{ base: 12, sm: 5 }}>
             <Field of={form} path={["content"]}>
               {(field) => (
-                <TextInput
+                <ConcreteActionFieldWithSuggestions
                   {...field.props}
+                  aria-label={`${row.itemName}の具体的手順`}
                   disabled={disabled}
                   error={field.errors?.[0]}
-                  label={contentLabel}
+                  itemId={row.itemId}
+                  itemName={row.itemName}
+                  label={row.itemName}
                   onBlur={(event) => {
                     field.props.onBlur?.(event);
                     void saveIfConfirmedDirty();
                   }}
-                  placeholder="学習内容を入力"
+                  onValueChange={(value) => field.onChange(value)}
+                  placeholder={concreteActionPlaceholder(row.itemName)}
                   value={field.input}
                 />
               )}

@@ -8,6 +8,7 @@ import {
   useUpdatePreset,
 } from "~/features/catalog/hooks/catalog-mutations";
 import { useItemsList, usePresetsList } from "~/features/catalog/hooks/catalog-queries";
+import { runMutation } from "~/lib/run-mutation";
 
 export function PresetsPage() {
   return (
@@ -28,13 +29,19 @@ function PresetsReady() {
     <PresetList
       items={items}
       onCreate={(input) => {
-        void createPreset.mutateAsync(input);
+        void runMutation(() => createPreset.mutateAsync(input), {
+          successMessage: "プリセットを追加しました",
+        });
       }}
       onRemove={(presetId) => {
-        void removePreset.mutateAsync({ presetId });
+        void runMutation(() => removePreset.mutateAsync({ presetId }), {
+          successMessage: "プリセットを削除しました",
+        });
       }}
       onUpdate={(input) => {
-        void updatePreset.mutateAsync(input);
+        void runMutation(() => updatePreset.mutateAsync(input), {
+          successMessage: "プリセットを更新しました",
+        });
       }}
       presets={presets}
     />

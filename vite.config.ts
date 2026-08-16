@@ -135,11 +135,30 @@ export default defineConfig({
     noExternal: ["@convex-dev/better-auth"],
   },
   test: {
+    coverage: {
+      exclude: ["**/_generated/**", "**/*.test.ts"],
+      include: [
+        "convex/lib/concreteActionCore.ts",
+        "convex/lib/concreteAction.ts",
+        "convex/lib/catalog.ts",
+        "src/lib/validation/**/*.ts",
+        "src/features/**/schemas/**/*.ts",
+        "src/features/today/lib/validate-confirm-row.ts",
+      ],
+      provider: "v8",
+      reporter: ["text", "html"],
+      thresholds: {
+        branches: 80,
+        functions: 80,
+        lines: 80,
+        statements: 80,
+      },
+    },
     projects: [
       {
         extends: true,
         test: {
-          environment: "jsdom",
+          environment: "happy-dom",
           include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
           name: "frontend",
         },

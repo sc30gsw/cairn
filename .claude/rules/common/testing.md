@@ -96,24 +96,35 @@ test("elapsed derives minutes from session start to now", () => {
 
 `@testing-library/react` + `@testing-library/user-event` + `happy-dom` are installed. `@testing-library/jest-dom` is **not** installed (its entry point imports `vitest` directly, which conflicts with this project's `vite-plus/test`-only rule) — assert with `toBeDefined()` / `toHaveBeenCalledWith(...)` / plain DOM properties instead of `toBeInTheDocument()` etc.
 
-### Environment: per-file docblock
+### Environment: chosen by the Vitest project, not a docblock
 
-The project's default Vitest environment is Node (convex-test needs it). Opt a component test file into a DOM environment with a docblock at the top of the file — do not change the global `test.environment`:
+`vite.config.ts` splits the suite into three Vitest **projects**, each pinning its own environment by file location. A test file gets the right environment from where it lives — do **not** add a `@vitest-environment` docblock, and do not change a project's `environment`:
+
+| Project | Files | Environment |
+| ------------------- | ------------------------------- | -------------- |
+| `frontend` | `src/**/*.test.ts(x)` | `happy-dom` |
+| `convex-lib` | `convex/lib/**/*.test.ts` | `node` |
+| `convex-integration` | `convex/**/*.test.ts` (lib 除く) | `edge-runtime` |
+
+So a UI component test just needs to live under `src/` — it gets `happy-dom` automatically:
 
 ```typescript
+// CORRECT: src/features/auth/components/user-menu.test.tsx — no docblock needed
+import { expect, test } from "vite-plus/test";
+
+// WRONG: redundant, and drifts from vite.config.ts if the project environment changes
 // @vitest-environment happy-dom
 ```
 
 ### Rendering: `renderWithMantine`
 
-Use `renderWithMantine` from `~/test-utils` instead of Testing Library's `render` directly — it wraps the tree in the project's `MantineProvider`/theme, which most components require. Importing `~/test-utils` also registers a shared `afterEach(cleanup)` (this project disables Vitest's `globals`, so `@testing-library/react`'s automatic cleanup never fires on its own):
+Use `renderWithMantine` from `~/test-utils/render` instead of Testing Library's `render` directly — it wraps the tree in the project's `MantineProvider`/theme, which most components require. Importing it also registers a shared `afterEach(cleanup)` (this project disables Vitest's `globals`, so `@testing-library/react`'s automatic cleanup never fires on its own):
 
 ```typescript
-// @vitest-environment happy-dom
 import { expect, test } from "vite-plus/test";
 
 import { UserMenu } from "~/features/auth/components/user-menu";
-import { renderWithMantine } from "~/test-utils";
+import { renderWithMantine } from "~/test-utils/render";
 
 test("shows the viewer's display name", () => {
   const { getByText } = renderWithMantine(<UserMenu />);

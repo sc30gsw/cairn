@@ -21,6 +21,9 @@ dist
 .fallow
 *.tsbuildinfo
 
+# `vp test --coverage` の出力。再生成できるのでコミットしない。
+coverage
+
 # IntelliJ based IDEs
 .idea
 

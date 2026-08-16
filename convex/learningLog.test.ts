@@ -15,6 +15,10 @@ const modules = import.meta.glob([
   "!./http.ts",
 ]);
 
+const CONCRETE_ACTION = "Unit 1 を音読する";
+const CONCRETE_ACTION_2 = "Unit 2 を音読する";
+const THEN_ACTION = "Unit 3 の例文を声に出して5文読む";
+const THEN_ACTION_UPDATED = "金フレを10分だけ声に出して読む";
 const ALLOWED_EMAIL = "owner@example.com";
 const OWNER = { email: ALLOWED_EMAIL, subject: "owner-subject" };
 const MONDAY = "2026-08-17";
@@ -100,14 +104,14 @@ test("確定とスキップで学習量が変わる。未認証は throw", async
     throw new Error("シード行がない");
   }
   await t.mutation(api.mutations.rows.confirm.confirm, {
-    content: "Unit 1",
+    content: CONCRETE_ACTION,
     minutes: 30,
     rowId: distinction._id,
   });
   await t.mutation(api.mutations.rows.skip.skip, { rowId: kaiwa._id });
   const after = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   expect(after.volumeMinutes).toBe(30);
-  expect(after.shareMarkdown).toBe("- Distinction 2000: Unit 1 30分");
+  expect(after.shareMarkdown).toBe(`- Distinction 2000: ${CONCRETE_ACTION} 30分`);
   expect(after.rows.find((row) => row.itemName === "英会話")?.status).toBe("スキップ");
   await expect(
     raw().mutation(api.mutations.rows.confirm.confirm, {
@@ -145,7 +149,7 @@ test("月と週の学習量が所有者に読める", async () => {
     throw new Error("行がない");
   }
   await t.mutation(api.mutations.rows.confirm.confirm, {
-    content: "Unit 1",
+    content: CONCRETE_ACTION,
     minutes: 70,
     rowId: distinction._id,
   });
@@ -202,7 +206,7 @@ test("項目 CRUD・使用中削除失敗・プリセット切替", async () => 
     throw new Error("切替の材料がない");
   }
   await t.mutation(api.mutations.rows.confirm.confirm, {
-    content: "残す",
+    content: "確定した行を残す手順",
     minutes: 30,
     rowId: first._id,
   });
@@ -212,7 +216,9 @@ test("項目 CRUD・使用中削除失敗・プリセット切替", async () => 
     todayJst: MONDAY,
   });
   const after = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
-  expect(after.rows.some((row) => row.content === "残す" && row.status === "確定")).toBe(true);
+  expect(
+    after.rows.some((row) => row.content === "確定した行を残す手順" && row.status === "確定"),
+  ).toBe(true);
   expect(after.rows.filter((row) => row.status === "未着手")).toEqual([]);
   await expect(raw().query(api.queries.items.list.list, {})).rejects.toThrow();
 });
@@ -253,19 +259,19 @@ test("その日限りの行を足せる。未来には足さない", async () =>
     throw new Error("その他がない");
   }
   await t.mutation(api.mutations.rows.add.add, {
-    content: "臨時",
+    content: "臨時で追加した学習手順",
     dateJst: MONDAY,
     itemId: other._id,
     minutes: 15,
     todayJst: MONDAY,
   });
   const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
-  const added = day.rows.find((row) => row.content === "臨時");
+  const added = day.rows.find((row) => row.content === "臨時で追加した学習手順");
   if (added === undefined) {
     throw new Error("追加行がない");
   }
   await t.mutation(api.mutations.rows.confirm.confirm, {
-    content: "臨時",
+    content: "臨時で追加した学習手順",
     minutes: 15,
     rowId: added._id,
   });
@@ -308,12 +314,12 @@ test("本番目標・週間ゴール・障害プラン。行の状態は変え�
   });
   const planId = await t.mutation(api.mutations.goals.createObstacle.createObstacle, {
     ifText: "眠い",
-    thenText: "金フレだけ",
+    thenText: THEN_ACTION,
   });
   const after = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   expect(after.rows.map((row) => row.status)).toEqual(before.rows.map((row) => row.status));
   const plans = await t.query(api.queries.goals.listObstacles.listObstacles, {});
-  expect(plans).toEqual([{ _id: planId, ifText: "眠い", thenText: "金フレだけ" }]);
+  expect(plans).toEqual([{ _id: planId, ifText: "眠い", thenText: THEN_ACTION }]);
   await t.mutation(api.mutations.goals.removeObstacle.removeObstacle, { planId });
   expect(await t.query(api.queries.goals.listObstacles.listObstacles, {})).toEqual([]);
   await expect(
@@ -468,7 +474,7 @@ test("分析クエリと年ヒートマップが学習量を返す", async () =>
     throw new Error("シード行がない");
   }
   await t.mutation(api.mutations.rows.confirm.confirm, {
-    content: "Unit 1",
+    content: CONCRETE_ACTION,
     minutes: 45,
     rowId: distinction._id,
   });
@@ -513,24 +519,24 @@ test("分析内訳は同一項目の確定を合算し、未着手を載せな�
     throw new Error("Distinction がない");
   }
   await t.mutation(api.mutations.rows.confirm.confirm, {
-    content: "Unit 1",
+    content: CONCRETE_ACTION,
     minutes: 30,
     rowId: distinction._id,
   });
   await t.mutation(api.mutations.rows.add.add, {
-    content: "Unit 2",
+    content: CONCRETE_ACTION_2,
     dateJst: MONDAY,
     itemId: distinction.itemId,
     minutes: 15,
     todayJst: MONDAY,
   });
   const afterAdd = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
-  const second = afterAdd.rows.find((row) => row.content === "Unit 2");
+  const second = afterAdd.rows.find((row) => row.content === CONCRETE_ACTION_2);
   if (second === undefined) {
     throw new Error("追加の Distinction 行がない");
   }
   await t.mutation(api.mutations.rows.confirm.confirm, {
-    content: "Unit 2",
+    content: CONCRETE_ACTION_2,
     minutes: 15,
     rowId: second._id,
   });
@@ -587,12 +593,12 @@ test("プリセット CRUD と曜日重複は失敗", async () => {
   }
   await t.mutation(api.mutations.presets.remove.remove, { presetId: seededSunday._id });
   const presetId = await t.mutation(api.mutations.presets.create.create, {
-    lines: [{ content: "日曜だけ", itemId: distinction._id, minutes: 20 }],
+    lines: [{ content: "日曜日のTrackを1周聞く", itemId: distinction._id, minutes: 20 }],
     name: "日曜",
     weekday: 0,
   });
   await t.mutation(api.mutations.presets.update.update, {
-    lines: [{ content: "日曜更新", itemId: distinction._id, minutes: 25 }],
+    lines: [{ content: "日曜日のTrackを2周聞く", itemId: distinction._id, minutes: 25 }],
     name: "日曜改",
     presetId,
     weekday: 0,
@@ -600,7 +606,7 @@ test("プリセット CRUD と曜日重複は失敗", async () => {
   const presets = await t.query(api.queries.presets.list.list, {});
   const sunday = presets.find((preset) => preset._id === presetId);
   expect(sunday?.name).toBe("日曜改");
-  expect(sunday?.lines[0]?.content).toBe("日曜更新");
+  expect(sunday?.lines[0]?.content).toBe("日曜日のTrackを2周聞く");
   await t.mutation(api.mutations.presets.remove.remove, { presetId });
   expect((await t.query(api.queries.presets.list.list, {})).some((p) => p._id === presetId)).toBe(
     false,
@@ -669,15 +675,15 @@ test("試験目標の保存と障害プラン更新", async () => {
   });
   const planId = await t.mutation(api.mutations.goals.createObstacle.createObstacle, {
     ifText: "眠い",
-    thenText: "金フレだけ",
+    thenText: THEN_ACTION,
   });
   await t.mutation(api.mutations.goals.updateObstacle.updateObstacle, {
     ifText: "眠い朝",
     planId,
-    thenText: "金フレ10分",
+    thenText: THEN_ACTION_UPDATED,
   });
   const plans = await t.query(api.queries.goals.listObstacles.listObstacles, {});
-  expect(plans).toEqual([{ _id: planId, ifText: "眠い朝", thenText: "金フレ10分" }]);
+  expect(plans).toEqual([{ _id: planId, ifText: "眠い朝", thenText: THEN_ACTION_UPDATED }]);
   await expect(
     t.mutation(api.mutations.goals.createObstacle.createObstacle, { ifText: " ", thenText: "x" }),
   ).rejects.toThrow();

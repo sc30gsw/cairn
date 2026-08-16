@@ -3,14 +3,15 @@ import type { DateJst } from "~domain/jst";
 
 import type { ItemDto, PresetDto } from "~/features/catalog/types/item";
 import type { DayPage, DayRow } from "~/features/today/types/day";
+import { shimmerId } from "~/lib/shimmer-id";
 
 const pendingStatus = STATUSES[1];
 
-const shimmerItemId = "shimmer-item" as ItemDto["_id"];
-const shimmerCategoryId = "shimmer-category" as ItemDto["categoryId"];
+const shimmerItemId = shimmerId<ItemDto["_id"]>("item");
+const shimmerCategoryId = shimmerId<ItemDto["categoryId"]>("category");
 
 const dayBoardShimmerRow = {
-  _id: "shimmer-row-1" as DayRow["_id"],
+  _id: shimmerId<DayRow["_id"]>("row-1"),
   category: "多聴",
   categorySortOrder: 1,
   content: "",
@@ -23,7 +24,7 @@ const dayBoardShimmerRow = {
 
 const dayBoardShimmerRow2 = {
   ...dayBoardShimmerRow,
-  _id: "shimmer-row-2" as DayRow["_id"],
+  _id: shimmerId<DayRow["_id"]>("row-2"),
   content: "Unit 1",
   sortOrder: 1,
 } satisfies DayRow;
@@ -32,7 +33,7 @@ export function dayBoardShimmerDay(dateJst: DateJst): DayPage {
   return {
     dateJst,
     day: {
-      _id: "shimmer-day" as NonNullable<DayPage["day"]>["_id"],
+      _id: shimmerId<NonNullable<DayPage["day"]>["_id"]>("day"),
       condition: null,
       dateJst,
       memo: null,
@@ -55,7 +56,7 @@ export const dayBoardShimmerItems = [
 
 export const dayBoardShimmerPresets = [
   {
-    _id: "shimmer-preset" as PresetDto["_id"],
+    _id: shimmerId<PresetDto["_id"]>("preset"),
     lines: [
       {
         content: dayBoardShimmerRow.content,

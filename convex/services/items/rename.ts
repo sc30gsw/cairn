@@ -1,18 +1,15 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
-import { ConflictError, NotFoundError, ValidationFailedError } from "../../lib/errors";
+import { ConflictError, ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
-import { nextSortOrder, requireOwnedCategory } from "./helpers";
+import { nextSortOrder, requireOwnedCategory, requireOwnedItem } from "./helpers";
 
 export async function rename(
   ctx: MutationCtx,
   ownerId: string,
   args: { categoryId: Id<"categories">; itemId: Id<"items">; name: string },
 ): Promise<null> {
-  const item = await ctx.db.get("items", args.itemId);
-  if (item === null || item.ownerId !== ownerId) {
-    throwDomain(new NotFoundError({ message: "項目が見つかりません", resource: "項目" }));
-  }
+  const item = await requireOwnedItem(ctx, ownerId, args.itemId);
   await requireOwnedCategory(ctx, ownerId, args.categoryId);
   if (args.name.trim() === "") {
     throwDomain(new ValidationFailedError({ message: "項目名は必須です" }));
