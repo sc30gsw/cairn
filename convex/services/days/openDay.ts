@@ -1,5 +1,7 @@
 import type { MutationCtx } from "../../_generated/server";
-import { collapseExtraLiveDays, getDayByDate, liveRowsForDay } from "../../ensureCatalog";
+import { collapseExtraLiveDays } from "./collapseExtraLiveDays";
+import { getDayByDate } from "./getDayByDate";
+import { liveRowsForDay } from "./liveRowsForDay";
 import { isFutureDateJst, weekdayFromDateJst } from "../../lib/jst";
 
 export async function openDay(

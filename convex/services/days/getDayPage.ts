@@ -1,5 +1,6 @@
 import type { QueryCtx } from "../../_generated/server";
-import { getLiveDay, liveRowsForDay } from "../../ensureCatalog";
+import { getLiveDay } from "./getLiveDay";
+import { liveRowsForDay } from "./liveRowsForDay";
 import { isFutureDateJst } from "../../lib/jst";
 import { formatShareMarkdown } from "../../lib/share";
 import type { DayPageDto } from "../../lib/validators";
