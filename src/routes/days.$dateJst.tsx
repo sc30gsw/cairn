@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import * as v from "valibot";
 import { todayJst } from "~domain/jst";
 
 import { OwnerGate } from "~/features/auth/components/owner-gate";
@@ -10,20 +11,24 @@ import {
 } from "~/features/today/lib/day-route-search";
 
 export const Route = createFileRoute("/days/$dateJst")({
-  beforeLoad: ({ location, params }) => {
-    if (shouldStripDatedDayPreset(params.dateJst, location.search.preset, todayJst())) {
-      throw redirect({
-        params,
-        replace: true,
-        search: { ...location.search, preset: undefined },
-        to: "/days/$dateJst",
-      });
-    }
-  },
   search: {
     middlewares: daySearchMiddlewares,
   },
   validateSearch: DaySearchSchema,
+  beforeLoad: ({ location, params }) => {
+    const parsedSearch = v.safeParse(DaySearchSchema, location.search);
+    if (
+      parsedSearch.success &&
+      shouldStripDatedDayPreset(params.dateJst, parsedSearch.output.preset, todayJst())
+    ) {
+      throw redirect({
+        params,
+        replace: true,
+        search: { ...parsedSearch.output, preset: undefined },
+        to: "/days/$dateJst",
+      });
+    }
+  },
   component: DayRoute,
 });
 

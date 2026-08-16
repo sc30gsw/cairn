@@ -87,13 +87,13 @@ export function GoalsBoard({
                   <Field of={examForm} path={["examDate"]}>
                     {(field) => (
                       <DatePickerInput
-                        {...field.props}
                         classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
                         error={field.errors?.[0]}
                         firstDayOfWeek={1}
                         getDayProps={(date) => calendarDayProps(date, todayJst)}
                         label="本番日"
                         locale="ja"
+                        name={field.props.name}
                         onChange={(value) => field.onChange(value ?? "")}
                         popoverProps={{ withinPortal: true }}
                         value={field.input}
