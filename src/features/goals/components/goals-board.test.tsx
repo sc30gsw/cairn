@@ -20,7 +20,7 @@ test("カウントダウンと週間ゴールと障害プランが見える", ()
       weeklyGoalMinutes={300}
     />,
   );
-  expect(getByText(/2026-09-27/)).toBeDefined();
+  expect(getByText(/2026-09-27 まであと 43 日/)).toBeDefined();
   expect(getByText(/730/)).toBeDefined();
   expect(getByText(/週間ゴール 10%/)).toBeDefined();
   expect(getByText(/もし 眠い なら 金フレだけ/)).toBeDefined();

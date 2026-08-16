@@ -1,0 +1,44 @@
+.saturdayDay,
+.sundayDay,
+.holidayDay {
+  /* Marker classes applied via getDayProps. */
+}
+
+.japaneseCalendar :global(.mantine-Schedule-monthViewWeekday:nth-child(6)),
+.japaneseCalendar :global(.mantine-MonthView-monthViewWeekday:nth-child(6)),
+.japaneseCalendar :global(.mantine-Month-weekday:nth-child(6)) {
+  color: var(--mantine-color-blue-6);
+}
+
+.japaneseCalendar :global(.mantine-Schedule-monthViewWeekday:nth-child(7)),
+.japaneseCalendar :global(.mantine-MonthView-monthViewWeekday:nth-child(7)),
+.japaneseCalendar :global(.mantine-Month-weekday:nth-child(7)) {
+  color: var(--mantine-color-red-6);
+}
+
+.japaneseCalendar
+  :global(.mantine-Schedule-monthViewDay).saturdayDay
+  :global(.mantine-Schedule-monthViewDayLabel),
+.japaneseCalendar
+  :global(.mantine-MonthView-monthViewDay).saturdayDay
+  :global(.mantine-MonthView-monthViewDayLabel),
+.japaneseCalendar :global(.mantine-Day-day).saturdayDay {
+  color: var(--mantine-color-blue-6);
+}
+
+.japaneseCalendar
+  :global(.mantine-Schedule-monthViewDay).sundayDay
+  :global(.mantine-Schedule-monthViewDayLabel),
+.japaneseCalendar
+  :global(.mantine-MonthView-monthViewDay).sundayDay
+  :global(.mantine-MonthView-monthViewDayLabel),
+.japaneseCalendar
+  :global(.mantine-Schedule-monthViewDay).holidayDay
+  :global(.mantine-Schedule-monthViewDayLabel),
+.japaneseCalendar
+  :global(.mantine-MonthView-monthViewDay).holidayDay
+  :global(.mantine-MonthView-monthViewDayLabel),
+.japaneseCalendar :global(.mantine-Day-day).sundayDay,
+.japaneseCalendar :global(.mantine-Day-day).holidayDay {
+  color: var(--mantine-color-red-6);
+}

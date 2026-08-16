@@ -1,4 +1,5 @@
 import { stripSearchParams, type SearchMiddleware } from "@tanstack/react-router";
+import type { DateJst } from "~domain/jst";
 
 import {
   DaySearchSchema,
@@ -15,9 +16,12 @@ export const daySearchMiddlewares: SearchMiddleware<DaySearch>[] = [
   stripSearchParams(daySearchDefaults),
 ];
 
-/** `/days/$dateJst` では preset 切替 UI がないため、常に strip する。 */
-export const datedDaySearchMiddlewares: SearchMiddleware<DaySearch>[] = [
-  ({ next, search }) => next({ ...search, preset: undefined }),
-];
+export function shouldStripDatedDayPreset(
+  dateJst: DateJst,
+  preset: DaySearch["preset"],
+  today: DateJst,
+): boolean {
+  return dateJst !== today && preset !== undefined;
+}
 
 export { DaySearchSchema };

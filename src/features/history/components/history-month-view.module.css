@@ -2,12 +2,6 @@
   --month-view-max-events: 2;
 }
 
-.saturdayDay,
-.sundayDay,
-.holidayDay {
-  /* Marker classes applied via getDayProps. */
-}
-
 .compactMonthView :global(.mantine-Schedule-monthViewScrollArea),
 .compactMonthView :global(.mantine-MonthView-monthViewScrollArea) {
   overflow: visible;
@@ -39,40 +33,6 @@
 .compactMonthView :global(.mantine-Schedule-monthViewWeek),
 .compactMonthView :global(.mantine-MonthView-monthViewWeek) {
   min-height: 0;
-}
-
-.compactMonthView :global(.mantine-Schedule-monthViewWeekday:nth-child(6)),
-.compactMonthView :global(.mantine-MonthView-monthViewWeekday:nth-child(6)) {
-  color: var(--mantine-color-blue-6);
-}
-
-.compactMonthView :global(.mantine-Schedule-monthViewWeekday:nth-child(7)),
-.compactMonthView :global(.mantine-MonthView-monthViewWeekday:nth-child(7)) {
-  color: var(--mantine-color-red-6);
-}
-
-.compactMonthView
-  :global(.mantine-Schedule-monthViewDay).saturdayDay
-  :global(.mantine-Schedule-monthViewDayLabel),
-.compactMonthView
-  :global(.mantine-MonthView-monthViewDay).saturdayDay
-  :global(.mantine-MonthView-monthViewDayLabel) {
-  color: var(--mantine-color-blue-6);
-}
-
-.compactMonthView
-  :global(.mantine-Schedule-monthViewDay).sundayDay
-  :global(.mantine-Schedule-monthViewDayLabel),
-.compactMonthView
-  :global(.mantine-MonthView-monthViewDay).sundayDay
-  :global(.mantine-MonthView-monthViewDayLabel),
-.compactMonthView
-  :global(.mantine-Schedule-monthViewDay).holidayDay
-  :global(.mantine-Schedule-monthViewDayLabel),
-.compactMonthView
-  :global(.mantine-MonthView-monthViewDay).holidayDay
-  :global(.mantine-MonthView-monthViewDayLabel) {
-  color: var(--mantine-color-red-6);
 }
 
 .compactMonthView :global(.mantine-MoreEvents-moreEventsButton) {

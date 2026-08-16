@@ -1,6 +1,6 @@
 import { Field, Form, reset, useForm } from "@formisch/react";
 import { Button, Card, Grid, NumberInput, Stack, Text, TextInput, Title } from "@mantine/core";
-import { DateInput } from "@mantine/dates";
+import { DatePickerInput } from "@mantine/dates";
 import type { DateJst } from "~domain/jst";
 
 import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
@@ -16,6 +16,7 @@ import type {
   UpdateObstacleInput,
 } from "~/features/goals/types/mutations";
 import type { WeekPage } from "~/features/history/types/history";
+import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-style";
 import { BODY_FONT, DISPLAY_FONT } from "~/lib/theme";
 
 type GoalsBoardProps = {
@@ -85,11 +86,16 @@ export function GoalsBoard({
                 <Grid.Col span={12}>
                   <Field of={examForm} path={["examDate"]}>
                     {(field) => (
-                      <DateInput
+                      <DatePickerInput
                         {...field.props}
+                        classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
                         error={field.errors?.[0]}
+                        firstDayOfWeek={1}
+                        getDayProps={(date) => calendarDayProps(date, todayJst)}
                         label="本番日"
+                        locale="ja"
                         onChange={(value) => field.onChange(value ?? "")}
+                        popoverProps={{ withinPortal: true }}
                         value={field.input}
                         valueFormat="YYYY-MM-DD"
                       />

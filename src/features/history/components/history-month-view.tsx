@@ -5,6 +5,7 @@ import {
   type DateStringValue,
   type ScheduleEventData,
 } from "@mantine/schedule";
+import { cn } from "cnfast";
 import dayjs from "dayjs";
 import type { DateJst } from "~domain/jst";
 
@@ -16,7 +17,7 @@ import {
 } from "~/features/history/lib/month-schedule-events";
 import { SCHEDULE_LABELS_JA } from "~/features/history/lib/schedule-labels";
 import type { MonthEvent } from "~/features/history/types/history";
-import { holidayName } from "~/lib/holiday";
+import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-style";
 
 import classes from "~/features/history/components/history-month-view.module.css";
 
@@ -34,23 +35,6 @@ function toDateString(month: Date): DateStringValue {
 
 function toMonthDate(value: string): Date {
   return new Date(`${value}T12:00:00+09:00`);
-}
-
-function dayCellClassName(day: DateJst, todayJst?: DateJst): string | undefined {
-  if (todayJst !== undefined && day === todayJst) {
-    return undefined;
-  }
-  if (holidayName(day)) {
-    return classes.holidayDay;
-  }
-  const weekday = dayjs(day).day();
-  if (weekday === 0) {
-    return classes.sundayDay;
-  }
-  if (weekday === 6) {
-    return classes.saturdayDay;
-  }
-  return undefined;
 }
 
 export function HistoryMonthView({
@@ -109,19 +93,12 @@ export function HistoryMonthView({
             確定した学習内容と分数です。2件を超える日は「+N件」で省略します。
           </Text>
           <MonthView
-            className={classes.compactMonthView}
+            className={cn(classes.compactMonthView, calendarDayStyleClasses.japaneseCalendar)}
             consistentWeeks={false}
             date={date}
             events={scheduleEvents}
             firstDayOfWeek={1}
-            getDayProps={(day) => {
-              const holiday = holidayName(day);
-              const className = dayCellClassName(day, todayJst);
-              return {
-                ...(className ? { className } : {}),
-                ...(holiday ? { title: holiday } : {}),
-              };
-            }}
+            getDayProps={(day) => calendarDayProps(day, todayJst)}
             labels={SCHEDULE_LABELS_JA}
             locale="ja"
             maxEventsPerDay={2}

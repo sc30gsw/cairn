@@ -1,5 +1,12 @@
+import type { DateJst } from "~domain/jst";
+
 import { chartCategoryColor } from "~/features/history/lib/chart-category-colors";
-import type { CategoryBreakdown, HeatmapDay } from "~/features/history/types/history";
+import type {
+  CategoryBreakdown,
+  HeatmapDay,
+  MonthBreakdown,
+  WeekBreakdown,
+} from "~/features/history/types/history";
 
 export type DonutCell = {
   color: string;
@@ -27,7 +34,7 @@ export function buildDonutCells(
 }
 
 export type PaceChartPoint = {
-  dateJst: string;
+  dateJst: DateJst;
   label: string;
   完了: number;
   均: number;
@@ -39,16 +46,16 @@ export const PACE_CHART_SERIES = [
 ];
 
 /** X軸ラベル（例: 08/17） */
-export function paceChartDayLabel(dateJst: string): string {
+export function paceChartDayLabel(dateJst: DateJst): string {
   return `${dateJst.slice(5, 7)}/${dateJst.slice(8)}`;
 }
 
-function weekOfMonthIndex(dateJst: string): number {
+function weekOfMonthIndex(dateJst: DateJst): number {
   return Math.ceil(Number(dateJst.slice(8)) / 7);
 }
 
 /** 週チャートの見出し（例: 8月第3週） */
-export function paceChartWeekTitle(weekStart: string, weekEnd: string): string {
+export function paceChartWeekTitle(weekStart: DateJst, weekEnd: DateJst): string {
   const startMonth = Number(weekStart.slice(5, 7));
   const endMonth = Number(weekEnd.slice(5, 7));
   if (startMonth === endMonth) {
@@ -64,7 +71,7 @@ export function paceChartMonthTitle(yearMonth: string): string {
 }
 
 export function buildMonthPaceChartData(
-  days: readonly { dateJst: string; minutes: number; movingAverage: number }[],
+  days: readonly Pick<MonthBreakdown["days"][number], "dateJst" | "minutes" | "movingAverage">[],
 ): PaceChartPoint[] {
   return days.map((day) => ({
     dateJst: day.dateJst,
@@ -75,7 +82,7 @@ export function buildMonthPaceChartData(
 }
 
 export function buildWeekPaceChartData(
-  byDay: readonly { confirmedMinutes: number; dateJst: string }[],
+  byDay: readonly Pick<WeekBreakdown["byDay"][number], "confirmedMinutes" | "dateJst">[],
   heatmapDays: readonly Pick<HeatmapDay, "dateJst" | "movingAverage">[],
 ): PaceChartPoint[] {
   const avgByDate = new Map(heatmapDays.map((day) => [day.dateJst, day.movingAverage]));

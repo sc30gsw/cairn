@@ -26,12 +26,12 @@ const WEEK_RANGE_END_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
   timeZone: "Asia/Tokyo",
 });
 
-function formatDateHeader(dateJst: string): string {
+function formatDateHeader(dateJst: DateJst): string {
   const date = new Date(`${dateJst}T12:00:00+09:00`);
   return DATE_HEADER_FORMATTER.format(date);
 }
 
-function formatWeekRange(weekStart: string, weekEnd: string): string {
+function formatWeekRange(weekStart: DateJst, weekEnd: DateJst): string {
   const start = new Date(`${weekStart}T12:00:00+09:00`);
   const end = new Date(`${weekEnd}T12:00:00+09:00`);
   const startLabel = WEEK_RANGE_START_FORMATTER.format(start);
@@ -39,8 +39,8 @@ function formatWeekRange(weekStart: string, weekEnd: string): string {
   return `${startLabel} 〜 ${endLabel}`;
 }
 
-function weekDates(weekStart: string): string[] {
-  const dates: string[] = [];
+function weekDates(weekStart: DateJst): DateJst[] {
+  const dates: DateJst[] = [];
   for (let offset = 0; offset < 7; offset += 1) {
     dates.push(addDaysJst(weekStart, offset));
   }
