@@ -28,11 +28,13 @@ export async function update(
   if (args.weekday < 0 || args.weekday > 6) {
     throwDomain(new ValidationFailedError({ message: "曜日が不正です" }));
   }
+  //? rows/confirm.ts と同じく trim 後の内容を検証し、検証した値をそのまま保存する
+  const lines = args.lines.map((line) => ({ ...line, content: line.content.trim() }));
   await assertWeekdayFree(ctx, ownerId, args.weekday, args.presetId);
-  await assertOwnedLines(ctx, ownerId, args.lines);
-  assertConcreteActionLines(args.lines);
+  await assertOwnedLines(ctx, ownerId, lines);
+  assertConcreteActionLines(lines);
   await ctx.db.patch("presets", args.presetId, {
-    lines: args.lines,
+    lines,
     name,
     weekday: args.weekday,
   });

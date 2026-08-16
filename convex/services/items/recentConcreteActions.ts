@@ -1,4 +1,4 @@
-import type { Id } from "../../_generated/dataModel";
+import type { Doc, Id } from "../../_generated/dataModel";
 import type { QueryCtx } from "../../_generated/server";
 import { requireOwnedItem } from "./helpers";
 
@@ -17,15 +17,27 @@ export async function recentConcreteActions(
     .order("desc")
     .take(ROWS_SCAN_LIMIT);
 
+  //? 日単位のゴミ箱(removeDay)は day.deletedAt のみ更新するため、行の deletedAt だけでは不足
+  const dayCache = new Map<Id<"days">, Doc<"days"> | null>();
+  async function isLiveDay(dayId: Id<"days">): Promise<boolean> {
+    const cached = dayCache.get(dayId);
+    const day = cached !== undefined ? cached : await ctx.db.get("days", dayId);
+    dayCache.set(dayId, day);
+    return day !== null && day.deletedAt === undefined;
+  }
+
   const seen = new Set<string>();
   const suggestions: string[] = [];
   for (const row of rows) {
-    //? ゴミ箱の行は提案対象にしない(liveRowsForDay.ts と同じ削除済み判定)
-    if (row.deletedAt !== undefined || row.status !== "確定") {
+    //? ゴミ箱の行・ゴミ箱の日の行は提案対象にしない(history/shared.ts の liveRows と同じ判定)
+    if (row.deletedAt !== undefined || row.status !== "確定" || row.ownerId !== ownerId) {
       continue;
     }
     const content = row.content.trim();
     if (content === "" || seen.has(content)) {
+      continue;
+    }
+    if (!(await isLiveDay(row.dayId))) {
       continue;
     }
     seen.add(content);

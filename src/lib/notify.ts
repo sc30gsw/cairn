@@ -1,5 +1,6 @@
 import { notifications } from "@mantine/notifications";
 import { ConvexError } from "convex/values";
+import type { DomainError } from "~domain/errors";
 
 const DOMAIN_ERROR_TITLES = {
   Conflict: "競合エラー",
@@ -7,7 +8,11 @@ const DOMAIN_ERROR_TITLES = {
   NotFound: "見つかりません",
   Unauthenticated: "認証エラー",
   ValidationFailed: "入力エラー",
-} as const satisfies Record<string, string>;
+} as const satisfies Record<DomainError["_tag"], string>;
+
+function isDomainErrorTag(tag: string): tag is DomainError["_tag"] {
+  return tag in DOMAIN_ERROR_TITLES;
+}
 
 function isDomainErrorData(data: unknown): data is { message: string; tag: string } {
   return (
@@ -26,8 +31,7 @@ export function notifySuccess(message: string) {
 
 export function notifyError(error: unknown, fallbackMessage = "操作に失敗しました") {
   if (error instanceof ConvexError && isDomainErrorData(error.data)) {
-    const title =
-      DOMAIN_ERROR_TITLES[error.data.tag as keyof typeof DOMAIN_ERROR_TITLES] ?? "エラー";
+    const title = isDomainErrorTag(error.data.tag) ? DOMAIN_ERROR_TITLES[error.data.tag] : "エラー";
     notifications.show({ color: "red", message: error.data.message, title });
     return;
   }

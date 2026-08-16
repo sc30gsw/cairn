@@ -6,6 +6,51 @@ import { renderWithMantine } from "~/test-utils/render";
 
 const THEN_ACTION = "Unit 3 の例文を声に出して5文読む";
 
+function makeTrendWeek(weekIndex: number, goalMinutes: number | null, achieved: boolean) {
+  return {
+    achieved,
+    goalMinutes,
+    volumeMinutes: achieved ? 320 : 0,
+    weekEnd: `2026-07-${String(10 + weekIndex).padStart(2, "0")}`,
+    weekStart: `2026-07-${String(4 + weekIndex).padStart(2, "0")}`,
+  };
+}
+
+function goalsBoardProps(trendWeeks: ReturnType<typeof makeTrendWeek>[]) {
+  return {
+    exam: { daysRemaining: 43, examDate: "2026-09-27", maxScore: 850, minScore: 730 },
+    obstacles: [],
+    onCreateObstacle: vi.fn(),
+    onRemoveObstacle: vi.fn(),
+    onSaveExam: vi.fn(),
+    onSaveWeekly: vi.fn(),
+    onUpdateObstacle: vi.fn(),
+    todayJst: "2026-08-17" as const,
+    trendWeeks,
+    volumeMinutes: 30,
+    weekEndJst: "2026-08-23",
+    weeklyGoalMinutes: 300,
+  };
+}
+
+test("2週連続達成でストリークバッジが出る", () => {
+  const trendWeeks = [makeTrendWeek(1, 300, true), makeTrendWeek(0, 300, true)];
+  const { getByText } = renderWithMantine(<GoalsBoard {...goalsBoardProps(trendWeeks)} />);
+  expect(getByText("2週連続達成中")).toBeDefined();
+});
+
+test("1週だけの達成ではストリークバッジを出さない", () => {
+  const trendWeeks = [makeTrendWeek(0, 300, true)];
+  const { queryByText } = renderWithMantine(<GoalsBoard {...goalsBoardProps(trendWeeks)} />);
+  expect(queryByText(/週連続達成中/)).toBeNull();
+});
+
+test("遡れる12週すべて達成なら「12週+」表記になる(#24)", () => {
+  const trendWeeks = Array.from({ length: 12 }, (_, index) => makeTrendWeek(11 - index, 300, true));
+  const { getByText } = renderWithMantine(<GoalsBoard {...goalsBoardProps(trendWeeks)} />);
+  expect(getByText("12週+連続達成中")).toBeDefined();
+});
+
 test("カウントダウンと週間ゴールと障害プランが見える", () => {
   const { getByText, getByRole, getAllByLabelText } = renderWithMantine(
     <GoalsBoard

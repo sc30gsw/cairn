@@ -5,7 +5,6 @@ import {
   Card,
   Grid,
   Group,
-  Input,
   NumberInput,
   Stack,
   Text,
@@ -16,12 +15,14 @@ import {
 import { DatePickerInput } from "@mantine/dates";
 import { useRef } from "react";
 import { OBSTACLE_THEN_PLACEHOLDER } from "~domain/concreteActionCore";
+import { WEEKLY_TREND_WEEKS } from "~domain/domain";
 import type { DateJst } from "~domain/jst";
 
 import { ConcreteActionField } from "~/components/concrete-action-field";
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
 import { ConcreteThenFieldLabel } from "~/components/concrete-then-field-label";
+import { LabelAlignedCell } from "~/components/label-aligned-cell";
 import { MissedWeekBanner } from "~/features/goals/components/missed-week-banner";
 import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
 import { WeeklyTrendChart } from "~/features/goals/components/weekly-trend-chart";
@@ -118,8 +119,8 @@ export function GoalsBoard({
               <WeeklyGoalForm onSaveWeekly={onSaveWeekly} weeklyGoalMinutes={weeklyGoalMinutes} />
               {showMissedBanner && (
                 <MissedWeekBanner
+                  hasObstacles={obstacles.length > 0}
                   lastWeek={lastWeek}
-                  obstacles={obstacles.length > 0 ? obstacles : undefined}
                   onShowObstacles={() =>
                     obstacleSectionRef.current?.scrollIntoView({
                       behavior: "smooth",
@@ -133,8 +134,8 @@ export function GoalsBoard({
                   <Title order={3}>達成履歴</Title>
                   {streak >= 2 && (
                     <Badge color="blue" variant="light">
-                      {streak}
-                      {streak === trendWeeks.length ? "+" : ""}週連続達成中
+                      {/*? 遡れる範囲(WEEKLY_TREND_WEEKS)を使い切ったら「12週+」表記(#24) */}
+                      {streak}週{streak >= WEEKLY_TREND_WEEKS ? "+" : ""}連続達成中
                     </Badge>
                   )}
                 </Group>
@@ -171,7 +172,7 @@ export function GoalsBoard({
                             error={field.errors?.[0]}
                             label={<ConcreteThenFieldLabel />}
                             placeholder={OBSTACLE_THEN_PLACEHOLDER}
-                            showLabel={false}
+                            wrapLabel={false}
                             value={field.input}
                           />
                         )}
@@ -179,11 +180,11 @@ export function GoalsBoard({
                     </Box>
                   </Grid.Col>
                   <Grid.Col span={{ base: 12, sm: 2 }}>
-                    <Input.Wrapper label=" ">
+                    <LabelAlignedCell>
                       <Button fullWidth type="submit">
                         障害プランを追加
                       </Button>
-                    </Input.Wrapper>
+                    </LabelAlignedCell>
                   </Grid.Col>
                 </Grid>
               </Form>
@@ -309,11 +310,11 @@ function WeeklyGoalForm({ onSaveWeekly, weeklyGoalMinutes }: WeeklyGoalFormProps
           </Field>
         </Grid.Col>
         <Grid.Col span={{ base: 12, sm: 4 }}>
-          <Input.Wrapper label=" ">
+          <LabelAlignedCell>
             <Button fullWidth type="submit">
               週間ゴールを保存
             </Button>
-          </Input.Wrapper>
+          </LabelAlignedCell>
         </Grid.Col>
       </Grid>
     </Form>
@@ -383,21 +384,21 @@ function ObstacleEditor({
                     error={field.errors?.[0]}
                     label={<ConcreteThenFieldLabel />}
                     placeholder={OBSTACLE_THEN_PLACEHOLDER}
-                    showLabel={false}
+                    wrapLabel={false}
                     value={field.input}
                   />
                 )}
               </Field>
             </Grid.Col>
             <Grid.Col span={{ base: 6, sm: 2 }}>
-              <Input.Wrapper label=" ">
+              <LabelAlignedCell>
                 <Button fullWidth type="submit">
                   {plan.ifText}を保存
                 </Button>
-              </Input.Wrapper>
+              </LabelAlignedCell>
             </Grid.Col>
             <Grid.Col span={{ base: 6, sm: 2 }}>
-              <Input.Wrapper label=" ">
+              <LabelAlignedCell>
                 <Button
                   color="red"
                   fullWidth
@@ -407,7 +408,7 @@ function ObstacleEditor({
                 >
                   削除
                 </Button>
-              </Input.Wrapper>
+              </LabelAlignedCell>
             </Grid.Col>
           </Grid>
         </Stack>

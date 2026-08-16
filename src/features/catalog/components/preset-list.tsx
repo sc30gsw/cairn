@@ -1,4 +1,4 @@
-import { Field, Form, useForm } from "@formisch/react";
+import { Field, FieldArray, Form, insert, remove, useField, useForm } from "@formisch/react";
 import {
   Accordion,
   ActionIcon,
@@ -17,18 +17,13 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { IconTrash } from "@tabler/icons-react";
-import { useState } from "react";
-import * as v from "valibot";
 import { WEEKDAY_NAMES } from "~domain/catalog";
 
 import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action-field-with-suggestions";
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
-import {
-  CreatePresetSchema,
-  PresetMetaSchema,
-  PresetSchema,
-} from "~/features/catalog/schemas/preset-schema";
+import { LabelAlignedCell } from "~/components/label-aligned-cell";
+import { CreatePresetSchema, PresetSchema } from "~/features/catalog/schemas/preset-schema";
 import type { PresetLineInput } from "~/features/catalog/schemas/preset-schema";
 import type { ItemDto, ItemId, PresetDto } from "~/features/catalog/types/item";
 import { parseItemId } from "~/features/catalog/types/item";
@@ -66,17 +61,22 @@ function itemOptions(items: ItemDto[]) {
   return items.map((item) => ({ label: item.name, value: item._id }));
 }
 
-function availableItemOptions(items: ItemDto[], lines: PresetLineInput[], currentIndex: number) {
+//? lines はフォーム状態(PartialValues)から渡されるため、各フィールドは undefined になりうる
+function availableItemOptions(
+  items: ItemDto[],
+  lines: readonly Partial<PresetLineInput>[],
+  currentIndex: number,
+) {
   const taken = new Set<string>();
   for (const [index, line] of lines.entries()) {
-    if (index !== currentIndex) {
+    if (index !== currentIndex && line.itemId !== undefined) {
       taken.add(line.itemId);
     }
   }
   return itemOptions(items.filter((item) => !taken.has(item._id)));
 }
 
-function firstAvailableItem(items: ItemDto[], lines: PresetLineInput[]) {
+function firstAvailableItem(items: ItemDto[], lines: readonly Partial<PresetLineInput>[]) {
   const taken = new Set(lines.map((line) => line.itemId));
   return items.find((item) => !taken.has(item._id));
 }
@@ -86,31 +86,7 @@ function availableWeekdayOptions(presets: PresetDto[]) {
   return WEEKDAY_OPTIONS.filter((option) => !taken.has(Number(option.value)));
 }
 
-function pathSegmentKey(segment: v.IssuePathItem | undefined): string | number | undefined {
-  if (segment === undefined) {
-    return undefined;
-  }
-  if (typeof segment === "object" && segment !== null && "key" in segment) {
-    return segment.key as string | number;
-  }
-  return segment;
-}
-
-function lineContentErrorsFromParse(issues: v.BaseIssue<unknown>[]): Record<number, string> {
-  const errors: Record<number, string> = {};
-  for (const issue of issues) {
-    const path = issue.path ?? [];
-    const root = pathSegmentKey(path[0]);
-    const index = path[1];
-    const field = pathSegmentKey(path[2]);
-    if (root === "lines" && typeof index === "number" && field === "content") {
-      errors[index] = issue.message;
-    }
-  }
-  return errors;
-}
-
-function removeLineLabel(items: ItemDto[], itemId: string) {
+function removeLineLabel(items: ItemDto[], itemId: string | undefined) {
   const name = items.find((item) => item._id === itemId)?.name ?? "項目";
   return `「${name}」を外す`;
 }
@@ -247,11 +223,11 @@ function PresetCreateForm({
             </Field>
           </Grid.Col>
           <Grid.Col span={{ base: 12, sm: 2 }}>
-            <Input.Wrapper label=" ">
+            <LabelAlignedCell>
               <Button fullWidth type="submit">
                 プリセットを追加
               </Button>
-            </Input.Wrapper>
+            </LabelAlignedCell>
           </Grid.Col>
         </Grid>
       </Form>
@@ -270,38 +246,32 @@ function PresetEditor({
   onUpdate: PresetListProps["onUpdate"];
   preset: PresetDto;
 }) {
-  const [lines, setLines] = useState<PresetLineInput[]>(() =>
-    preset.lines.map((line: PresetLineDto) => ({
-      content: line.content,
-      itemId: line.itemId,
-      minutes: line.minutes,
-    })),
-  );
-  const [lineContentErrors, setLineContentErrors] = useState<Record<number, string>>({});
+  //? 雛形行もフォーム状態(PresetSchema)が SSoT。行単位のエラーは Field の errors で表示する(formisch.md)
   const form = useForm({
     initialInput: {
+      lines: preset.lines.map((line: PresetLineDto) => ({
+        content: line.content,
+        itemId: line.itemId as string,
+        minutes: line.minutes,
+      })),
       name: preset.name,
       weekday: preset.weekday,
     },
-    schema: PresetMetaSchema,
+    schema: PresetSchema,
   });
+  const linesField = useField(form, { path: ["lines"] });
+  const lines = linesField.input;
 
   return (
     <Card p="md" withBorder={false}>
       <Form
         of={form}
         onSubmit={(output) => {
-          const parsed = v.safeParse(PresetSchema, { ...output, lines });
-          if (!parsed.success) {
-            setLineContentErrors(lineContentErrorsFromParse(parsed.issues));
-            return;
-          }
-          setLineContentErrors({});
           onUpdate({
-            lines: parsedLines(parsed.output.lines),
-            name: parsed.output.name,
+            lines: parsedLines(output.lines),
+            name: output.name,
             presetId: preset._id,
-            weekday: parsed.output.weekday,
+            weekday: output.weekday,
           });
         }}
       >
@@ -338,14 +308,14 @@ function PresetEditor({
               </Field>
             </Grid.Col>
             <Grid.Col span={{ base: 6, sm: 3 }}>
-              <Input.Wrapper label=" ">
+              <LabelAlignedCell>
                 <Button fullWidth type="submit">
                   {preset.name}を保存
                 </Button>
-              </Input.Wrapper>
+              </LabelAlignedCell>
             </Grid.Col>
             <Grid.Col span={{ base: 6, sm: 2 }}>
-              <Input.Wrapper label=" ">
+              <LabelAlignedCell>
                 <Button
                   color="red"
                   fullWidth
@@ -355,104 +325,105 @@ function PresetEditor({
                 >
                   {preset.name}を削除
                 </Button>
-              </Input.Wrapper>
+              </LabelAlignedCell>
             </Grid.Col>
           </Grid>
-          {lines.map((line, index) => {
-            const removeLabel = removeLineLabel(items, line.itemId);
-            const itemName = items.find((item) => item._id === line.itemId)?.name;
-            return (
-              <Grid key={`${preset._id}-${index}`} align="flex-start" gap="sm">
-                <Grid.Col span={{ base: 12, sm: 4 }}>
-                  <Select
-                    aria-label={`${preset.name}の雛形${index + 1}の項目`}
-                    data={availableItemOptions(items, lines, index)}
-                    label={index === 0 ? "項目" : undefined}
-                    onChange={onRequiredSelect((value) => {
-                      setLines((current) =>
-                        current.map((entry, entryIndex) =>
-                          entryIndex === index ? { ...entry, itemId: value } : entry,
-                        ),
-                      );
-                    })}
-                    searchable
-                    value={line.itemId}
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ base: 12, sm: 4 }}>
-                  <ConcreteActionFieldWithSuggestions
-                    aria-label={`${preset.name}の雛形${index + 1}の具体的手順`}
-                    error={lineContentErrors[index]}
-                    //? line.itemId は Select の選択肢由来で常に有効な項目 id(firstAvailableItem で補充)。parseItemId の実行時ガードは submit 時のみ必要
-                    itemId={line.itemId as ItemId}
-                    itemName={itemName}
-                    onChange={(event) => {
-                      const content = event.currentTarget.value;
-                      setLineContentErrors((current) => {
-                        if (current[index] === undefined) {
-                          return current;
-                        }
-                        const next = { ...current };
-                        delete next[index];
-                        return next;
-                      });
-                      setLines((current) =>
-                        current.map((entry, entryIndex) =>
-                          entryIndex === index ? { ...entry, content } : entry,
-                        ),
-                      );
-                    }}
-                    showLabel={index === 0}
-                    value={line.content}
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ base: 6, sm: 2 }}>
-                  <NumberInput
-                    aria-label={`${preset.name}の雛形${index + 1}の分数`}
-                    label={index === 0 ? "分数" : undefined}
-                    min={0}
-                    onChange={(value) => {
-                      const minutes = typeof value === "number" ? value : 0;
-                      setLines((current) =>
-                        current.map((entry, entryIndex) =>
-                          entryIndex === index ? { ...entry, minutes } : entry,
-                        ),
-                      );
-                    }}
-                    value={line.minutes}
-                  />
-                </Grid.Col>
-                <Grid.Col span={{ base: 6, sm: 2 }}>
-                  <Input.Wrapper label={index === 0 ? " " : undefined}>
-                    <Tooltip label={removeLabel}>
-                      <ActionIcon
-                        aria-label={removeLabel}
-                        color="red"
-                        onClick={() => {
-                          setLines((current) =>
-                            current.filter((_, entryIndex) => entryIndex !== index),
-                          );
-                        }}
-                        size="lg"
-                        type="button"
-                        variant="white"
-                      >
-                        <IconTrash aria-hidden size={16} stroke={1.5} />
-                      </ActionIcon>
-                    </Tooltip>
-                  </Input.Wrapper>
-                </Grid.Col>
-              </Grid>
-            );
-          })}
+          <FieldArray of={form} path={["lines"]}>
+            {(fieldArray) => (
+              <Stack gap="sm">
+                {fieldArray.items.map((itemKey, index) => {
+                  const lineItemId = lines?.[index]?.itemId;
+                  const removeLabel = removeLineLabel(items, lineItemId);
+                  const itemName = items.find((item) => item._id === lineItemId)?.name;
+                  return (
+                    <Grid key={itemKey} align="flex-start" gap="sm">
+                      <Grid.Col span={{ base: 12, sm: 4 }}>
+                        <Field of={form} path={["lines", index, "itemId"]}>
+                          {(field) => (
+                            <Select
+                              {...field.props}
+                              aria-label={`${preset.name}の雛形${index + 1}の項目`}
+                              data={availableItemOptions(items, lines ?? [], index)}
+                              error={field.errors?.[0]}
+                              label={index === 0 ? "項目" : undefined}
+                              onChange={onRequiredSelect((value) => {
+                                field.onChange(value);
+                              })}
+                              searchable
+                              value={field.input}
+                            />
+                          )}
+                        </Field>
+                      </Grid.Col>
+                      <Grid.Col span={{ base: 12, sm: 4 }}>
+                        <Field of={form} path={["lines", index, "content"]}>
+                          {(field) => (
+                            <ConcreteActionFieldWithSuggestions
+                              {...field.props}
+                              aria-label={`${preset.name}の雛形${index + 1}の具体的手順`}
+                              error={field.errors?.[0]}
+                              //? itemId は Select の選択肢由来で常に有効な項目 id(firstAvailableItem で補充)。parseItemId の実行時ガードは submit 時のみ必要
+                              itemId={lineItemId as ItemId}
+                              itemName={itemName}
+                              onValueChange={(value) => field.onChange(value)}
+                              value={field.input}
+                              wrapLabel={index === 0}
+                            />
+                          )}
+                        </Field>
+                      </Grid.Col>
+                      <Grid.Col span={{ base: 6, sm: 2 }}>
+                        <Field of={form} path={["lines", index, "minutes"]}>
+                          {(field) => (
+                            <NumberInput
+                              {...field.props}
+                              aria-label={`${preset.name}の雛形${index + 1}の分数`}
+                              error={field.errors?.[0]}
+                              label={index === 0 ? "分数" : undefined}
+                              min={0}
+                              onChange={(value) =>
+                                field.onChange(typeof value === "number" ? value : 0)
+                              }
+                              value={field.input}
+                            />
+                          )}
+                        </Field>
+                      </Grid.Col>
+                      <Grid.Col span={{ base: 6, sm: 2 }}>
+                        <Input.Wrapper label={index === 0 ? " " : undefined}>
+                          <Tooltip label={removeLabel}>
+                            <ActionIcon
+                              aria-label={removeLabel}
+                              color="red"
+                              onClick={() => {
+                                remove(form, { at: index, path: ["lines"] });
+                              }}
+                              size="lg"
+                              type="button"
+                              variant="white"
+                            >
+                              <IconTrash aria-hidden size={16} stroke={1.5} />
+                            </ActionIcon>
+                          </Tooltip>
+                        </Input.Wrapper>
+                      </Grid.Col>
+                    </Grid>
+                  );
+                })}
+              </Stack>
+            )}
+          </FieldArray>
           <Button
-            disabled={firstAvailableItem(items, lines) === undefined}
+            disabled={firstAvailableItem(items, lines ?? []) === undefined}
             onClick={() => {
-              const next = firstAvailableItem(items, lines);
+              const next = firstAvailableItem(items, lines ?? []);
               if (next === undefined) {
                 return;
               }
-              setLines((current) => [...current, { content: "", itemId: next._id, minutes: 20 }]);
+              insert(form, {
+                initialInput: { content: "", itemId: next._id, minutes: 20 },
+                path: ["lines"],
+              });
             }}
             type="button"
             variant="light"

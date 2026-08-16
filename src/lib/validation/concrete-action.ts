@@ -1,11 +1,8 @@
 import * as v from "valibot";
 import {
-  CONCRETE_ACTION_MIN_LENGTH,
   CONCRETE_ACTION_VALIDATION_MESSAGE,
   validateConcreteAction,
 } from "~domain/concreteActionCore";
-
-export { CONCRETE_ACTION_MIN_LENGTH, CONCRETE_ACTION_VALIDATION_MESSAGE };
 
 export const ConcreteActionSchema = v.pipe(
   v.string(),

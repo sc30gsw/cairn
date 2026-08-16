@@ -1,8 +1,8 @@
-import { Field, Form, useForm } from "@formisch/react";
-import { Button, Grid, Input, NumberInput, Select } from "@mantine/core";
-import { useState } from "react";
+import { Field, Form, useField, useForm } from "@formisch/react";
+import { Button, Grid, NumberInput, Select } from "@mantine/core";
 
 import { ConcreteActionField } from "~/components/concrete-action-field";
+import { LabelAlignedCell } from "~/components/label-aligned-cell";
 import type { ItemDto } from "~/features/catalog/types/item";
 import { parseItemId } from "~/features/catalog/types/item";
 import { AdhocRowSchema } from "~/features/today/schemas/adhoc-row-schema";
@@ -16,7 +16,6 @@ type AdhocRowFormProps = {
 
 export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
   const first = items[0];
-  const [selectedItemId, setSelectedItemId] = useState(first?._id ?? "");
   const form = useForm({
     initialInput: {
       content: "",
@@ -25,7 +24,9 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
     },
     schema: AdhocRowSchema,
   });
-  const selectedItemName = items.find((item) => item._id === selectedItemId)?.name;
+  //? 選択中の項目名はフォーム状態(SSoT)から導出する。useState で二重管理しない(formisch.md)
+  const itemIdField = useField(form, { path: ["itemId"] });
+  const selectedItemName = items.find((item) => item._id === itemIdField.input)?.name;
 
   return (
     <Form
@@ -48,7 +49,6 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
                 error={field.errors?.[0]}
                 label="その日限りの項目"
                 onChange={onRequiredSelect((value) => {
-                  setSelectedItemId(value);
                   field.onChange(value);
                 })}
                 searchable
@@ -85,11 +85,11 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
           </Field>
         </Grid.Col>
         <Grid.Col span={{ base: 6, sm: 2 }}>
-          <Input.Wrapper label=" ">
+          <LabelAlignedCell>
             <Button disabled={first === undefined} fullWidth type="submit">
               記録を足す
             </Button>
-          </Input.Wrapper>
+          </LabelAlignedCell>
         </Grid.Col>
       </Grid>
     </Form>

@@ -155,7 +155,7 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
                     field.props.onBlur?.(event);
                     void saveIfConfirmedDirty();
                   }}
-                  onChange={(event) => field.onChange(event.currentTarget.value)}
+                  onValueChange={(value) => field.onChange(value)}
                   placeholder={concreteActionPlaceholder(row.itemName)}
                   value={field.input}
                 />

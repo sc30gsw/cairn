@@ -105,6 +105,29 @@ test("存在しない項目には NotFound を投げる", async () => {
   ).rejects.toThrow();
 });
 
+test("ゴミ箱の日に属する行はサジェストに出さない", async () => {
+  const t = newTest();
+  const itemId = await seedItemWithRows(t, [{ content: "確定済みの内容", status: "確定" }]);
+  //? removeDay と同じく day の deletedAt だけを立てる(行は生きたまま)
+  await t.run(async (ctx) => {
+    const days = await ctx.db
+      .query("days")
+      .withIndex("by_owner_and_date", (q) =>
+        q.eq("ownerId", OWNER.subject).eq("dateJst", "2026-08-10"),
+      )
+      .collect();
+    for (const day of days) {
+      await ctx.db.patch("days", day._id, { deletedAt: Date.now() });
+    }
+  });
+
+  const suggestions = await t
+    .withIdentity(OWNER)
+    .query(api.queries.items.recentConcreteActions.recentConcreteActions, { itemId });
+
+  expect(suggestions).toEqual([]);
+});
+
 test("ゴミ箱の行はサジェストに出さない", async () => {
   const t = newTest();
   const itemId = await seedItemWithRows(t, [{ content: "確定済みの内容", status: "確定" }]);

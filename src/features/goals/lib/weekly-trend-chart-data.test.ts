@@ -57,8 +57,13 @@ test("直近の完了週のゴール分数を目安線として返す", () => {
   expect(weeklyTrendGoalReferenceLine(weeks)).toBe(300);
 });
 
-test("直近の完了週がゴール未設定なら null", () => {
+test("直近の完了週がゴール未設定なら、直近でゴールがあった週に遡る", () => {
   const weeks = [makeWeek({ goalMinutes: null }), makeWeek({ goalMinutes: 200 })];
+  expect(weeklyTrendGoalReferenceLine(weeks)).toBe(200);
+});
+
+test("どの週にもゴールがなければ null", () => {
+  const weeks = [makeWeek({ goalMinutes: null }), makeWeek({ goalMinutes: null })];
   expect(weeklyTrendGoalReferenceLine(weeks)).toBeNull();
 });
 

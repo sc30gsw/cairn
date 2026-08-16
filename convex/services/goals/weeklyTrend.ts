@@ -1,11 +1,11 @@
 import type { QueryCtx } from "../../_generated/server";
+import { WEEKLY_TREND_WEEKS } from "../../lib/domain";
 import { addDaysJst, mondayOfWeek } from "../../lib/jst";
 import type { WeeklyTrendWeek } from "../../lib/validators";
 import { confirmedVolumeMinutes } from "../../lib/volume";
 import { liveDayDatesFrom, liveRows } from "../history/shared";
 
 //* 週間ゴールの達成履歴。今日を含む週の直前から過去 N 週分を新しい順で返す。
-export const WEEKLY_TREND_WEEKS = 12;
 
 export async function weeklyTrend(
   ctx: QueryCtx,

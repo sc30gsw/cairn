@@ -1,12 +1,7 @@
 import { Badge, Group, Stack, Text } from "@mantine/core";
 
+import { recordedWeeks, shortDateLabel } from "~/features/goals/lib/weekly-trend-format";
 import type { WeeklyTrendWeeks } from "~/features/goals/types/goal";
-
-//? "2026-08-04" → "8/4" 。週ラベルは月/日で十分読める
-function shortDateLabel(dateJst: string) {
-  const [, month, day] = dateJst.split("-");
-  return `${Number(month)}/${Number(day)}`;
-}
 
 function trendBadge(week: WeeklyTrendWeeks[number]) {
   if (week.goalMinutes === null) {
@@ -18,8 +13,7 @@ function trendBadge(week: WeeklyTrendWeeks[number]) {
 }
 
 export function WeeklyTrendList({ weeks }: Record<"weeks", WeeklyTrendWeeks>) {
-  //? 記録もゴールもない週は表示しない(未記録の休養週で一覧を埋めない)
-  const recorded = weeks.filter((week) => week.goalMinutes !== null || week.volumeMinutes > 0);
+  const recorded = recordedWeeks(weeks);
 
   if (recorded.length === 0) {
     return (
