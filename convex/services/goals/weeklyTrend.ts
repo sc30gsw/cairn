@@ -1,8 +1,9 @@
 import { groupBy, mapValues, prop } from "remeda";
 
 import type { QueryCtx } from "../../_generated/server";
+import { requireWeekStartJst } from "../../lib/dateArgs";
 import { WEEKLY_TREND_WEEKS } from "../../lib/domain";
-import { addDaysJst, mondayOfWeek } from "../../lib/jst";
+import { addDaysJst } from "../../lib/jst";
 import type { WeeklyTrendWeek } from "../../lib/validators";
 import { confirmedVolumeMinutes } from "../../lib/volume";
 import { liveDayDatesFrom, liveRows } from "../history/shared";
@@ -16,7 +17,7 @@ export async function weeklyTrend(
   ownerId: string,
   args: { todayJst: string },
 ): Promise<WeeklyTrendWeek[]> {
-  const currentWeekStart = mondayOfWeek(args.todayJst);
+  const currentWeekStart = requireWeekStartJst(args.todayJst);
   const rangeStart = addDaysJst(currentWeekStart, -7 * WEEKLY_TREND_WEEKS);
   //? 進行中の今週は WeeklyProgressCard が担うので、直前の日曜までで区切る
   const rangeEnd = addDaysJst(currentWeekStart, -1);

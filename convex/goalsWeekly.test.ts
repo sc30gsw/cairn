@@ -128,6 +128,65 @@ test("saveWeekly は実施日数・最低分数が範囲外なら拒否される
   ).rejects.toThrow();
 });
 
+test("非月曜の weekStartJst は月曜キーに正規化される", async () => {
+  const t = owner();
+  const wednesday = "2026-08-19";
+  await t.mutation(api.mutations.goals.saveWeekly.saveWeekly, {
+    dailyFloorMinutes: 20,
+    days: 2,
+    weekStartJst: wednesday,
+  });
+  //? 水曜キーの行が別に生えるのではなく、その週の月曜として1行だけ立つ
+  expect(await weeklyGoalFor(t, MONDAY)).toEqual({ dailyFloorMinutes: 20, days: 2 });
+  expect(await weeklyGoalFor(t, NEXT_MONDAY)).toBeNull();
+
+  await t.mutation(api.mutations.goals.saveWeekly.saveWeekly, {
+    dailyFloorMinutes: 45,
+    days: 5,
+    weekStartJst: wednesday,
+  });
+  expect(await weeklyGoalFor(t, MONDAY)).toEqual({ dailyFloorMinutes: 45, days: 5 });
+});
+
+test("非月曜を渡しても ensureWeekSnapshot は同じ週を1行に保つ", async () => {
+  const t = owner();
+  await t.mutation(api.mutations.goals.create.create, {
+    goal: { content: "毎日机に向かう", dailyFloorMinutes: 30, daysPerWeek: 4, type: "pace" },
+    weekStartJst: MONDAY,
+  });
+  //? 既に MONDAY の行があるので、同じ週の日曜を渡しても新しい行は作られない
+  await t.mutation(api.mutations.goals.ensureWeekSnapshot.ensureWeekSnapshot, {
+    weekStartJst: "2026-08-23",
+  });
+  const rows = await t.run(async (ctx) =>
+    ctx.db
+      .query("weeklyGoals")
+      .withIndex("by_owner_and_week", (q) => q.eq("ownerId", OWNER.subject))
+      .collect(),
+  );
+  expect(rows).toHaveLength(1);
+  expect(rows[0]?.weekStartJst).toBe(MONDAY);
+});
+
+test("週の指定が日付形式でなければ拒否される", async () => {
+  const t = owner();
+  await expect(
+    t.mutation(api.mutations.goals.saveWeekly.saveWeekly, {
+      dailyFloorMinutes: 20,
+      days: 2,
+      weekStartJst: "2026/08/17",
+    }),
+  ).rejects.toThrow();
+  await expect(
+    t.mutation(api.mutations.goals.ensureWeekSnapshot.ensureWeekSnapshot, {
+      weekStartJst: "いつか",
+    }),
+  ).rejects.toThrow();
+  await expect(
+    t.query(api.queries.goals.weeklyTrend.weeklyTrend, { todayJst: "2026-02-31" }),
+  ).rejects.toThrow();
+});
+
 test("weeklyTrend: スナップショットの無い週は goalDays が null", async () => {
   const t = owner();
   const trend = await t.query(api.queries.goals.weeklyTrend.weeklyTrend, { todayJst: MONDAY });

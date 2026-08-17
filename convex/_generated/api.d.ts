@@ -18,6 +18,7 @@ import type * as lib_categoryFields from "../lib/categoryFields.js";
 import type * as lib_concreteAction from "../lib/concreteAction.js";
 import type * as lib_concreteActionCore from "../lib/concreteActionCore.js";
 import type * as lib_conditions from "../lib/conditions.js";
+import type * as lib_dateArgs from "../lib/dateArgs.js";
 import type * as lib_domain from "../lib/domain.js";
 import type * as lib_env from "../lib/env.js";
 import type * as lib_errors from "../lib/errors.js";
@@ -112,6 +113,7 @@ import type * as services_goals_listObstacles from "../services/goals/listObstac
 import type * as services_goals_qualifyingDays from "../services/goals/qualifyingDays.js";
 import type * as services_goals_remove from "../services/goals/remove.js";
 import type * as services_goals_removeObstacle from "../services/goals/removeObstacle.js";
+import type * as services_goals_requireGoalItem from "../services/goals/requireGoalItem.js";
 import type * as services_goals_requireOwnedGoal from "../services/goals/requireOwnedGoal.js";
 import type * as services_goals_saveWeekly from "../services/goals/saveWeekly.js";
 import type * as services_goals_setVolumeProgress from "../services/goals/setVolumeProgress.js";
@@ -177,6 +179,7 @@ declare const fullApi: ApiFromModules<{
   "lib/concreteAction": typeof lib_concreteAction;
   "lib/concreteActionCore": typeof lib_concreteActionCore;
   "lib/conditions": typeof lib_conditions;
+  "lib/dateArgs": typeof lib_dateArgs;
   "lib/domain": typeof lib_domain;
   "lib/env": typeof lib_env;
   "lib/errors": typeof lib_errors;
@@ -271,6 +274,7 @@ declare const fullApi: ApiFromModules<{
   "services/goals/qualifyingDays": typeof services_goals_qualifyingDays;
   "services/goals/remove": typeof services_goals_remove;
   "services/goals/removeObstacle": typeof services_goals_removeObstacle;
+  "services/goals/requireGoalItem": typeof services_goals_requireGoalItem;
   "services/goals/requireOwnedGoal": typeof services_goals_requireOwnedGoal;
   "services/goals/saveWeekly": typeof services_goals_saveWeekly;
   "services/goals/setVolumeProgress": typeof services_goals_setVolumeProgress;

@@ -16,7 +16,8 @@ export async function setVolumeProgress(
   if (goal.type !== "volume") {
     throwDomain(new ValidationFailedError({ message: NOT_VOLUME_GOAL_MESSAGE }));
   }
-  if (args.currentAmount < 0) {
+  //? NaN は `< 0` を素通りするので、整数判定で先に落とす。
+  if (!Number.isInteger(args.currentAmount) || args.currentAmount < 0) {
     throwDomain(new ValidationFailedError({ message: VOLUME_AMOUNT_MESSAGE }));
   }
   await ctx.db.patch("goals", goal._id, { currentAmount: args.currentAmount });

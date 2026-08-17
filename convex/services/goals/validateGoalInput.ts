@@ -1,5 +1,6 @@
 import { validateConcreteAction } from "../../lib/concreteActionCore";
-import { DATE_JST_PATTERN, PACE_LIMITS, TOEIC_SCORE } from "../../lib/domain";
+import { PACE_LIMITS, TOEIC_SCORE } from "../../lib/domain";
+import { isDateJst } from "../../lib/jst";
 import type { GoalInput } from "../../lib/validators";
 
 export const GOAL_DATE_MESSAGE = "日付は YYYY-MM-DD で入力してください";
@@ -14,9 +15,11 @@ export const PACE_DAYS_MESSAGE = `週の実施日数は${PACE_LIMITS.minDays}〜
 
 export const PACE_FLOOR_MESSAGE = `1日あたりの最低分数は${PACE_LIMITS.minFloorMinutes}分以上です`;
 
-export const VOLUME_TARGET_MESSAGE = "目標量は1以上で入力してください";
+export const VOLUME_TARGET_MESSAGE = "目標量は1以上の整数で入力してください";
 
-export const VOLUME_AMOUNT_MESSAGE = "現在量は0以上です";
+export const VOLUME_AMOUNT_MESSAGE = "現在量は0以上の整数です";
+
+export const VOLUME_START_MESSAGE = "開始量は目標量より小さい値で入力してください";
 
 export const MASTERY_CRITERION_MESSAGE = "達成の基準を入力してください";
 
@@ -31,7 +34,7 @@ function scoreMessage(score: number): string | null {
 }
 
 function optionalDateMessage(deadline: string | undefined): string | null {
-  if (deadline !== undefined && !DATE_JST_PATTERN.test(deadline)) {
+  if (deadline !== undefined && !isDateJst(deadline)) {
     return GOAL_DATE_MESSAGE;
   }
   return null;
@@ -45,7 +48,7 @@ export function validateGoalInput(input: GoalInput): string | null {
   }
   switch (input.type) {
     case "exam": {
-      if (!DATE_JST_PATTERN.test(input.examDate)) {
+      if (!isDateJst(input.examDate)) {
         return GOAL_DATE_MESSAGE;
       }
       const minMessage = scoreMessage(input.minScore);
@@ -75,16 +78,21 @@ export function validateGoalInput(input: GoalInput): string | null {
       return null;
     }
     case "volume": {
-      if (!DATE_JST_PATTERN.test(input.deadline)) {
+      if (!isDateJst(input.deadline)) {
         return GOAL_DATE_MESSAGE;
       }
-      if (input.targetAmount <= 0) {
+      //? NaN は比較演算子を素通りするので、整数判定で先に落とす。
+      if (!Number.isInteger(input.targetAmount) || input.targetAmount <= 0) {
         return VOLUME_TARGET_MESSAGE;
       }
-      if (input.startAmount !== undefined && input.startAmount < 0) {
+      if (input.startAmount === undefined) {
+        return null;
+      }
+      if (!Number.isInteger(input.startAmount) || input.startAmount < 0) {
         return VOLUME_AMOUNT_MESSAGE;
       }
-      return null;
+      //? 開始量が目標量以上だと「生まれつき達成済み」や負の進捗率になる。
+      return input.startAmount >= input.targetAmount ? VOLUME_START_MESSAGE : null;
     }
     case "mastery": {
       if (input.criterion.trim().length === 0) {

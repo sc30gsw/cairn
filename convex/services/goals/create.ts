@@ -1,8 +1,10 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
+import { requireWeekStartJst } from "../../lib/dateArgs";
 import { ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import type { GoalInput } from "../../lib/validators";
+import { requireGoalItem } from "./requireGoalItem";
 import { toGoalDocument } from "./toGoalDocument";
 import { upsertWeekSnapshot } from "./upsertWeekSnapshot";
 import { validateGoalInput } from "./validateGoalInput";
@@ -23,10 +25,13 @@ export async function create(
   args: CreateGoalArgs,
 ): Promise<Id<"goals">> {
   const { goal } = args;
+  //? タイプに関わらず引数の形は同じ基準で弾く。ペース以外でも契約を揺らさない。
+  const weekStartJst = requireWeekStartJst(args.weekStartJst);
   const message = validateGoalInput(goal);
   if (message !== null) {
     throwDomain(new ValidationFailedError({ message }));
   }
+  await requireGoalItem(ctx, ownerId, goal);
   if (goal.type === "exam" || goal.type === "pace") {
     const goalType = goal.type;
     const existing = await ctx.db
@@ -43,7 +48,7 @@ export async function create(
     await upsertWeekSnapshot(ctx, ownerId, {
       dailyFloorMinutes: goal.dailyFloorMinutes,
       days: goal.daysPerWeek,
-      weekStartJst: args.weekStartJst,
+      weekStartJst,
     });
   }
   return goalId;

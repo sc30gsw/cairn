@@ -168,6 +168,34 @@ test("前週の日曜と翌週の月曜の記録は今週に混ざらない", as
   expect(targets[0]).toMatchObject({ achieved: true, current: 40 });
 });
 
+test("週の途中の日を渡してもその週の月曜〜日曜で集計する", async () => {
+  const t = owner();
+  const categoryId = await seedCategory(t, "TOEIC対策", 0, [
+    { dateJst: "2026-08-16", minutes: 100, status: "確定" },
+    { dateJst: "2026-08-17", minutes: 20, status: "確定" },
+    { dateJst: "2026-08-23", minutes: 20, status: "確定" },
+    { dateJst: "2026-08-24", minutes: 100, status: "確定" },
+  ]);
+  await t.mutation(api.mutations.targets.save.save, {
+    categoryId,
+    metric: "minutes",
+    targetValue: 40,
+  });
+
+  //? 木曜を渡しても 8/17〜8/23 の窓のまま。2週にまたがった 7日窓にはならない
+  const targets = await t.query(api.queries.targets.listWithProgress.listWithProgress, {
+    weekStartJst: "2026-08-20",
+  });
+  expect(targets[0]).toMatchObject({ achieved: true, current: 40 });
+});
+
+test("週の指定が日付形式でなければ拒否される", async () => {
+  const t = owner();
+  await expect(
+    t.query(api.queries.targets.listWithProgress.listWithProgress, { weekStartJst: "今週" }),
+  ).rejects.toThrow();
+});
+
 test("未着手とスキップは進捗に数えない", async () => {
   const t = owner();
   const categoryId = await seedCategory(t, "TOEIC対策", 0, [

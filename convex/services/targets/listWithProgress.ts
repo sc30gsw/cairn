@@ -1,19 +1,20 @@
 import type { Id } from "../../_generated/dataModel";
 import type { QueryCtx } from "../../_generated/server";
 import { loadCatalog } from "../../lib/catalogLoader";
+import { requireWeekStartJst } from "../../lib/dateArgs";
 import { addDaysJst } from "../../lib/jst";
 import type { TargetProgressDto } from "../../lib/validators";
 import { liveDayDatesFrom, liveRows } from "../history/shared";
 import { aggregateByCategory, currentForMetric } from "./aggregateByCategory";
 
 //* 今週(weekStartJst 〜 +6日)のカテゴリ別実績をターゲットに突き合わせる。
-//? 週は引数で受け取る(CVX-14)。過去週・トレンド・ストリークには一切出さない。
+//? 週は引数で受け取る(CVX-14)が、月曜への正規化はサーバが担う。過去週・トレンド・ストリークには一切出さない。
 export async function listWithProgress(
   ctx: QueryCtx,
   ownerId: string,
   args: { weekStartJst: string },
 ): Promise<TargetProgressDto[]> {
-  const weekStart = args.weekStartJst;
+  const weekStart = requireWeekStartJst(args.weekStartJst);
   const weekEnd = addDaysJst(weekStart, 6);
   const [targets, rows, days, catalog] = await Promise.all([
     ctx.db

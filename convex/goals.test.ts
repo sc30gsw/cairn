@@ -308,6 +308,199 @@ test("達成量の目標量が0以下・現在量が負なら拒否される", a
   ).rejects.toThrow();
 });
 
+test("達成量の目標量・開始量が非整数なら拒否される", async () => {
+  const t = owner();
+  await expect(
+    t.mutation(api.mutations.goals.create.create, {
+      goal: {
+        content: "問題集をやる",
+        deadline: "2026-09-30",
+        targetAmount: 10.5,
+        type: "volume",
+        unit: "ページ",
+      },
+      weekStartJst: MONDAY,
+    }),
+  ).rejects.toThrow();
+  await expect(
+    t.mutation(api.mutations.goals.create.create, {
+      goal: {
+        content: "問題集をやる",
+        deadline: "2026-09-30",
+        startAmount: Number.NaN,
+        targetAmount: 100,
+        type: "volume",
+        unit: "ページ",
+      },
+      weekStartJst: MONDAY,
+    }),
+  ).rejects.toThrow();
+  expect(await t.query(api.queries.goals.list.list, {})).toEqual([]);
+});
+
+test("開始量が目標量以上なら拒否される", async () => {
+  const t = owner();
+  await expect(
+    t.mutation(api.mutations.goals.create.create, {
+      goal: {
+        content: "問題集をやる",
+        deadline: "2026-09-30",
+        startAmount: 100,
+        targetAmount: 100,
+        type: "volume",
+        unit: "ページ",
+      },
+      weekStartJst: MONDAY,
+    }),
+  ).rejects.toThrow();
+});
+
+test("実在しない暦日は拒否される", async () => {
+  const t = owner();
+  await expect(
+    t.mutation(api.mutations.goals.create.create, {
+      goal: {
+        content: "問題集をやる",
+        deadline: "2026-02-31",
+        targetAmount: 100,
+        type: "volume",
+        unit: "ページ",
+      },
+      weekStartJst: MONDAY,
+    }),
+  ).rejects.toThrow();
+});
+
+test("他人の項目や実在しない項目に紐づけた達成量目標は拒否される", async () => {
+  const shared = raw();
+  const t = shared.withIdentity(OWNER);
+  const stranger = shared.withIdentity(OTHER_OWNER);
+  const strangerItemId = await shared.run(async (ctx) => {
+    const categoryId = await ctx.db.insert("categories", {
+      name: "他人のカテゴリ",
+      ownerId: OTHER_OWNER.subject,
+      sortOrder: 0,
+    });
+    return ctx.db.insert("items", {
+      categoryId,
+      name: "他人の項目",
+      ownerId: OTHER_OWNER.subject,
+      sortOrder: 0,
+    });
+  });
+
+  await expect(
+    t.mutation(api.mutations.goals.create.create, {
+      goal: {
+        content: "問題集をやる",
+        deadline: "2026-09-30",
+        itemId: strangerItemId,
+        targetAmount: 100,
+        type: "volume",
+        unit: "ページ",
+      },
+      weekStartJst: MONDAY,
+    }),
+  ).rejects.toThrow();
+  expect(await t.query(api.queries.goals.list.list, {})).toEqual([]);
+
+  //? 既に消えている項目 ID も同じく通さない
+  const deletedItemId = await shared.run(async (ctx) => {
+    const categoryId = await ctx.db.insert("categories", {
+      name: "消えるカテゴリ",
+      ownerId: OWNER.subject,
+      sortOrder: 1,
+    });
+    const itemId = await ctx.db.insert("items", {
+      categoryId,
+      name: "消える項目",
+      ownerId: OWNER.subject,
+      sortOrder: 0,
+    });
+    await ctx.db.delete("items", itemId);
+    return itemId;
+  });
+  await expect(
+    t.mutation(api.mutations.goals.create.create, {
+      goal: {
+        content: "問題集をやる",
+        deadline: "2026-09-30",
+        itemId: deletedItemId,
+        targetAmount: 100,
+        type: "volume",
+        unit: "ページ",
+      },
+      weekStartJst: MONDAY,
+    }),
+  ).rejects.toThrow();
+
+  //? 逆向きも同じ。他人からは所有者の項目に紐づけられない
+  const ownerItemId = await shared.run(async (ctx) => {
+    const categoryId = await ctx.db.insert("categories", {
+      name: "TOEIC対策",
+      ownerId: OWNER.subject,
+      sortOrder: 0,
+    });
+    return ctx.db.insert("items", {
+      categoryId,
+      name: "金のフレーズ",
+      ownerId: OWNER.subject,
+      sortOrder: 0,
+    });
+  });
+  await expect(
+    stranger.mutation(api.mutations.goals.create.create, {
+      goal: {
+        content: "問題集をやる",
+        deadline: "2026-09-30",
+        itemId: ownerItemId,
+        targetAmount: 100,
+        type: "volume",
+        unit: "ページ",
+      },
+      weekStartJst: MONDAY,
+    }),
+  ).rejects.toThrow();
+});
+
+test("自分の項目に紐づけた達成量目標は保存でき、項目を消すとリンクだけ外れる", async () => {
+  const t = owner();
+  const itemId = await t.run(async (ctx) => {
+    const categoryId = await ctx.db.insert("categories", {
+      name: "TOEIC対策",
+      ownerId: OWNER.subject,
+      sortOrder: 0,
+    });
+    return ctx.db.insert("items", {
+      categoryId,
+      name: "金のフレーズ",
+      ownerId: OWNER.subject,
+      sortOrder: 0,
+    });
+  });
+  const volumeId = await t.mutation(api.mutations.goals.create.create, {
+    goal: {
+      content: "金のフレーズを1周する",
+      deadline: "2026-09-30",
+      itemId,
+      targetAmount: 100,
+      type: "volume",
+      unit: "ページ",
+    },
+    weekStartJst: MONDAY,
+  });
+  const before = await t.query(api.queries.goals.list.list, {});
+  expect(before.find((goal) => goal._id === volumeId)).toMatchObject({ itemId });
+
+  await t.mutation(api.mutations.items.remove.remove, { itemId });
+
+  //? 目標そのものは残り、宙吊りの項目リンクだけが外れる
+  const after = await t.query(api.queries.goals.list.list, {});
+  const goal = after.find((entry) => entry._id === volumeId);
+  expect(goal?.type === "volume" && goal.itemId).toBeUndefined();
+  expect(goal?.type === "volume" && goal.targetAmount).toBe(100);
+});
+
 test("達成の基準が空白なら拒否される", async () => {
   const t = owner();
   await expect(
@@ -506,6 +699,28 @@ test("達成量の進捗更新に負値は拒否される", async () => {
       goalId: volumeId,
     }),
   ).rejects.toThrow();
+});
+
+test("達成量の進捗更新に非整数は拒否される", async () => {
+  const t = owner();
+  const volumeId = await t.mutation(api.mutations.goals.create.create, {
+    goal: {
+      content: "公式問題集を1冊やり切る",
+      deadline: "2026-09-30",
+      targetAmount: 300,
+      type: "volume",
+      unit: "ページ",
+    },
+    weekStartJst: MONDAY,
+  });
+  for (const currentAmount of [1.5, Number.NaN]) {
+    await expect(
+      t.mutation(api.mutations.goals.setVolumeProgress.setVolumeProgress, {
+        currentAmount,
+        goalId: volumeId,
+      }),
+    ).rejects.toThrow();
+  }
 });
 
 test("達成量以外の目標への進捗更新は拒否される", async () => {

@@ -1,15 +1,18 @@
 import type { MutationCtx } from "../../_generated/server";
+import { requireWeekStartJst } from "../../lib/dateArgs";
 
 //* 冪等。その週のスナップショットが無く、ペース目標があるときだけ写す。既存行は上書きしない。
+//? キーは必ず月曜に正規化する(upsertWeekSnapshot と同じ不変条件)。
 export async function ensureWeekSnapshot(
   ctx: MutationCtx,
   ownerId: string,
   args: { weekStartJst: string },
 ): Promise<null> {
+  const weekStartJst = requireWeekStartJst(args.weekStartJst);
   const existing = await ctx.db
     .query("weeklyGoals")
     .withIndex("by_owner_and_week", (q) =>
-      q.eq("ownerId", ownerId).eq("weekStartJst", args.weekStartJst),
+      q.eq("ownerId", ownerId).eq("weekStartJst", weekStartJst),
     )
     .unique();
   if (existing !== null) {
@@ -26,7 +29,7 @@ export async function ensureWeekSnapshot(
     dailyFloorMinutes: pace.dailyFloorMinutes,
     days: pace.daysPerWeek,
     ownerId,
-    weekStartJst: args.weekStartJst,
+    weekStartJst,
   });
   return null;
 }
