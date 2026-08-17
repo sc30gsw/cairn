@@ -179,11 +179,16 @@ export function GoalsBoard({
                       onCancel={closeEditor}
                       onSubmit={submitGoal}
                       todayJst={todayJst}
-                      typeSelectable={false}
+                      variant="checkpoint"
                     />
                   ) : undefined
                 }
-                onAddCheckpoint={examGoal === undefined ? undefined : () => openCreate("mastery")}
+                //? 本番目標が無い間と、フォームを開いている間は追加導線を出さない
+                onAddCheckpoint={
+                  examGoal === undefined || checkpointFormOpen
+                    ? undefined
+                    : () => openCreate("mastery")
+                }
                 onEditGoal={openEdit}
                 onRemoveGoal={onRemoveGoal}
                 onSetAchieved={onSetAchieved}

@@ -253,7 +253,7 @@ test("本番目標があれば上部の「目標を追加」は出ず、追加�
   expect(getByRole("button", { name: "チェックポイントを追加" })).toBeDefined();
 });
 
-test("「チェックポイントを追加」のフォームはチェックポイント区画の中に開く", async () => {
+test("「チェックポイントを追加」のフォームはチェックポイント区画の中にチェックポイントの語で開く", async () => {
   const { getByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />);
   getByRole("button", { name: "チェックポイントを追加" }).click();
 
@@ -261,7 +261,10 @@ test("「チェックポイントを追加」のフォームはチェックポ�
     expect(getByRole("textbox", { name: "達成の基準" })).toBeDefined();
   });
   const section = within(getByRole("region", { name: CHECKPOINT_SECTION_TITLE }));
+  expect(section.getByRole("textbox", { name: "チェックポイントの内容" })).toBeDefined();
   expect(section.getByRole("textbox", { name: "達成の基準" })).toBeDefined();
+  expect(section.getByRole("button", { name: "チェックポイントを追加" })).toBeDefined();
+  expect(section.queryByRole("textbox", { name: "目標の内容" })).toBeNull();
   //? タイプは習得に固定。選択欄は出さない
   expect(section.queryByRole("combobox", { name: /目標タイプ/ })).toBeNull();
 });
@@ -277,13 +280,13 @@ test("「チェックポイントを追加」から作ると期限が次の日�
   });
   expect(queryByRole("combobox", { name: /目標タイプ/ })).toBeNull();
 
-  fireEvent.change(getByRole("textbox", { name: "目標の内容" }), {
+  fireEvent.change(getByRole("textbox", { name: "チェックポイントの内容" }), {
     target: { value: SOON_CHECKPOINT.content },
   });
   fireEvent.change(getByRole("textbox", { name: "達成の基準" }), {
     target: { value: SOON_CHECKPOINT.criterion },
   });
-  getByRole("button", { name: "保存" }).click();
+  getByRole("button", { name: "チェックポイントを追加" }).click();
 
   await waitFor(() => {
     expect(onCreateGoal).toHaveBeenCalledWith({

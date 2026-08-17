@@ -141,6 +141,32 @@ test("編集時は目標タイプを変更できない", () => {
   expect(getByRole("combobox", { name: /目標タイプ/ }).hasAttribute("disabled")).toBe(true);
 });
 
+test("チェックポイントとして開くと文言がチェックポイントに揃い、タイプ選択は出ない", async () => {
+  const onSubmit = vi.fn();
+  const { getByRole, queryByRole } = renderWithMantine(
+    <GoalForm {...formProps({ onSubmit, variant: "checkpoint" })} />,
+  );
+  expect(queryByRole("combobox", { name: /目標タイプ/ })).toBeNull();
+  expect(queryByRole("textbox", { name: "目標の内容" })).toBeNull();
+
+  fireEvent.change(getByRole("textbox", { name: "チェックポイントの内容" }), {
+    target: { value: "Unit 1-10 を音読する" },
+  });
+  fireEvent.change(getByRole("textbox", { name: "達成の基準" }), {
+    target: { value: "止まらずに音読できる" },
+  });
+  getByRole("button", { name: "チェックポイントを追加" }).click();
+
+  await waitFor(() => {
+    expect(onSubmit).toHaveBeenCalledWith({
+      content: "Unit 1-10 を音読する",
+      criterion: "止まらずに音読できる",
+      deadline: NEXT_SUNDAY,
+      type: "mastery",
+    });
+  });
+});
+
 test("追いかけ中が2件以上のときだけ、新規作成に助言が出る", () => {
   const { getByText } = renderWithMantine(
     <GoalForm {...formProps({ activeCheckpointCount: 2 })} />,

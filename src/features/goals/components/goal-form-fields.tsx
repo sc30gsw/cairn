@@ -6,6 +6,7 @@ import type { DateJst } from "~domain/jst";
 
 import { ConcreteActionField } from "~/components/concrete-action-field";
 import { nextSundayJst } from "~/features/goals/lib/checkpoint-deadline";
+import type { GoalFormCopy } from "~/features/goals/lib/goal-form-copy";
 import {
   ExamGoalFieldsSchema,
   MasteryGoalFieldsSchema,
@@ -14,7 +15,6 @@ import {
 import type { Goal } from "~/features/goals/types/goal";
 import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-style";
 
-const CONTENT_LABEL = "目標の内容";
 const CONTENT_PLACEHOLDER = "例: 金のフレーズを1 Unit 音読する";
 
 //* 同時に追いかけるチェックポイントの目安。超えても止めない非ブロッキングの助言(docs/adr/0006)。
@@ -25,6 +25,8 @@ export const CHECKPOINT_CROWDED_MESSAGE = "同時に追いかけるチェック�
 export type GoalFieldsProps = {
   //? 期限つき・未達成の習得の件数。3件目を作るときだけ助言を出す
   activeCheckpointCount: number;
+  //? 「目標」として開くか「チェックポイント」として開くかで替わる語。GoalForm が variant から引いて渡す
+  copy: GoalFormCopy;
   //? 編集対象。undefined なら新規作成
   goal: Goal | undefined;
   onCancel: () => void;
@@ -44,12 +46,17 @@ type GoalDateFieldProps = {
   todayJst: DateJst;
 };
 
-function GoalContentField({ field }: Record<"field", GoalTextFieldStore>) {
+type GoalContentFieldProps = {
+  contentLabel: GoalFormCopy["contentLabel"];
+  field: GoalTextFieldStore;
+};
+
+function GoalContentField({ contentLabel, field }: GoalContentFieldProps) {
   return (
     <ConcreteActionField
       {...field.props}
       error={field.errors?.[0]}
-      label={CONTENT_LABEL}
+      label={contentLabel}
       placeholder={CONTENT_PLACEHOLDER}
       value={field.input}
     />
@@ -75,10 +82,15 @@ function GoalDateField({ clearable = false, field, label, todayJst }: GoalDateFi
   );
 }
 
-function GoalFormActions({ onCancel }: Record<"onCancel", () => void>) {
+type GoalFormActionsProps = {
+  onCancel: () => void;
+  submitLabel: GoalFormCopy["submitLabel"];
+};
+
+function GoalFormActions({ onCancel, submitLabel }: GoalFormActionsProps) {
   return (
     <Group gap="sm">
-      <Button type="submit">保存</Button>
+      <Button type="submit">{submitLabel}</Button>
       <Button onClick={onCancel} type="button" variant="subtle">
         キャンセル
       </Button>
@@ -86,7 +98,7 @@ function GoalFormActions({ onCancel }: Record<"onCancel", () => void>) {
   );
 }
 
-export function ExamGoalFields({ goal, onCancel, onSubmit, todayJst }: GoalFieldsProps) {
+export function ExamGoalFields({ copy, goal, onCancel, onSubmit, todayJst }: GoalFieldsProps) {
   const examGoal = goal?.type === "exam" ? goal : undefined;
   const form = useForm({
     initialInput: {
@@ -103,7 +115,7 @@ export function ExamGoalFields({ goal, onCancel, onSubmit, todayJst }: GoalField
       <Grid align="flex-start" gap="sm">
         <Grid.Col span={12}>
           <Field of={form} path={["content"]}>
-            {(field) => <GoalContentField field={field} />}
+            {(field) => <GoalContentField contentLabel={copy.contentLabel} field={field} />}
           </Field>
         </Grid.Col>
         <Grid.Col span={12}>
@@ -144,7 +156,7 @@ export function ExamGoalFields({ goal, onCancel, onSubmit, todayJst }: GoalField
           </Field>
         </Grid.Col>
         <Grid.Col span={12}>
-          <GoalFormActions onCancel={onCancel} />
+          <GoalFormActions onCancel={onCancel} submitLabel={copy.submitLabel} />
         </Grid.Col>
       </Grid>
     </Form>
@@ -153,6 +165,7 @@ export function ExamGoalFields({ goal, onCancel, onSubmit, todayJst }: GoalField
 
 export function MasteryGoalFields({
   activeCheckpointCount,
+  copy,
   goal,
   onCancel,
   onSubmit,
@@ -184,7 +197,7 @@ export function MasteryGoalFields({
         )}
         <Grid.Col span={12}>
           <Field of={form} path={["content"]}>
-            {(field) => <GoalContentField field={field} />}
+            {(field) => <GoalContentField contentLabel={copy.contentLabel} field={field} />}
           </Field>
         </Grid.Col>
         <Grid.Col span={12}>
@@ -208,7 +221,7 @@ export function MasteryGoalFields({
           </Field>
         </Grid.Col>
         <Grid.Col span={12}>
-          <GoalFormActions onCancel={onCancel} />
+          <GoalFormActions onCancel={onCancel} submitLabel={copy.submitLabel} />
         </Grid.Col>
       </Grid>
     </Form>

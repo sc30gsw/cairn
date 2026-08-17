@@ -7,6 +7,7 @@ import {
   MasteryGoalFields,
   type GoalFieldsProps,
 } from "~/features/goals/components/goal-form-fields";
+import { GOAL_FORM_COPY, type GoalFormVariant } from "~/features/goals/lib/goal-form-copy";
 import { isGoalType } from "~/features/goals/lib/goal-guards";
 import {
   GOAL_TYPE_DESCRIPTIONS,
@@ -14,10 +15,10 @@ import {
 } from "~/features/goals/lib/goal-type-labels";
 import { onRequiredSelect } from "~/lib/select";
 
-type GoalFormProps = GoalFieldsProps &
+//? copy は variant から引くので受け取らない。チェックポイントとして開くとタイプは習得に固定される
+type GoalFormProps = Omit<GoalFieldsProps, "copy"> &
   Record<"initialType", GoalType> &
-  //? タイプが文脈で決まっている場所(チェックポイントの追加)では選択欄を出さない
-  Partial<Record<"typeSelectable", boolean>>;
+  Partial<Record<"variant", GoalFormVariant>>;
 
 //? 値の SSoT は ~domain/domain。ここが持つのは「タイプ→入力欄」の対応だけ
 const GOAL_TYPE_FIELDS = {
@@ -34,16 +35,19 @@ export function GoalForm({
   onCancel,
   onSubmit,
   todayJst,
-  typeSelectable = true,
+  variant = "goal",
 }: GoalFormProps) {
   const [selectedType, setSelectedType] = useState<GoalType>(goal?.type ?? initialType);
   const type = goal?.type ?? selectedType;
   const GoalTypeFields = GOAL_TYPE_FIELDS[type];
+  const copy = GOAL_FORM_COPY[variant];
+  //? チェックポイントは習得と決まっている。目標として開くときだけタイプを選ばせる
+  const typeSelectable = variant === "goal";
 
   return (
     <Card padding="md">
       <Stack gap="md">
-        <Title order={3}>{goal === undefined ? "目標を追加" : "目標を編集"}</Title>
+        <Title order={3}>{goal === undefined ? copy.createTitle : copy.editTitle}</Title>
         {/*? 編集では選択欄を残したまま無効化する。変えられないことを見せるため */}
         {typeSelectable && (
           <Select
@@ -68,6 +72,7 @@ export function GoalForm({
         )}
         <GoalTypeFields
           activeCheckpointCount={activeCheckpointCount}
+          copy={copy}
           goal={goal}
           onCancel={onCancel}
           onSubmit={onSubmit}
