@@ -14,7 +14,10 @@ import {
 } from "~/features/goals/lib/goal-type-labels";
 import { onRequiredSelect } from "~/lib/select";
 
-type GoalFormProps = GoalFieldsProps & Record<"initialType", GoalType>;
+type GoalFormProps = GoalFieldsProps &
+  Record<"initialType", GoalType> &
+  //? タイプが文脈で決まっている場所(チェックポイントの追加)では選択欄を出さない
+  Partial<Record<"typeSelectable", boolean>>;
 
 //? 値の SSoT は ~domain/domain。ここが持つのは「タイプ→入力欄」の対応だけ
 const GOAL_TYPE_FIELDS = {
@@ -31,6 +34,7 @@ export function GoalForm({
   onCancel,
   onSubmit,
   todayJst,
+  typeSelectable = true,
 }: GoalFormProps) {
   const [selectedType, setSelectedType] = useState<GoalType>(goal?.type ?? initialType);
   const type = goal?.type ?? selectedType;
@@ -40,21 +44,24 @@ export function GoalForm({
     <Card padding="md">
       <Stack gap="md">
         <Title order={3}>{goal === undefined ? "目標を追加" : "目標を編集"}</Title>
-        <Select
-          allowDeselect={false}
-          data={GOAL_TYPE_SELECT_DATA}
-          description={GOAL_TYPE_DESCRIPTIONS[type]}
-          //? タイプは目標の骨格。あとから変えない(CONTEXT.md 目標タイプ)
-          disabled={goal !== undefined}
-          label="目標タイプ"
-          onChange={onRequiredSelect((value) => {
-            if (isGoalType(value)) {
-              setSelectedType(value);
-            }
-          })}
-          value={type}
-        />
-        {goal !== undefined && (
+        {/*? 編集では選択欄を残したまま無効化する。変えられないことを見せるため */}
+        {typeSelectable && (
+          <Select
+            allowDeselect={false}
+            data={GOAL_TYPE_SELECT_DATA}
+            description={GOAL_TYPE_DESCRIPTIONS[type]}
+            //? タイプは目標の骨格。あとから変えない(CONTEXT.md 目標タイプ)
+            disabled={goal !== undefined}
+            label="目標タイプ"
+            onChange={onRequiredSelect((value) => {
+              if (isGoalType(value)) {
+                setSelectedType(value);
+              }
+            })}
+            value={type}
+          />
+        )}
+        {typeSelectable && goal !== undefined && (
           <Text c="dimmed" size="xs">
             目標タイプは変更できません。別のタイプにするときは、削除して作り直します。
           </Text>

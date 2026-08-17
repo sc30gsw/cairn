@@ -75,6 +75,15 @@ export function GoalsBoard({
   const weeklyTargetsRef = useRef<HTMLDivElement>(null);
   const examGoal = findGoalOfType(goals, "exam");
   const mastery = groupMasteryGoals(goals);
+  //? チェックポイントの追加はセクション内で完結させる。上部のフォーム枠には出さない
+  const checkpointFormOpen = editor.kind === "create" && editor.type === "mastery";
+  //? チェックポイントは本番目標に従属する。本番目標が無い間は追加導線を出さない(docs/adr/0006)
+  const showCheckpointSection =
+    examGoal !== undefined || mastery.checkpoints.length > 0 || mastery.achieved.length > 0;
+
+  function closeEditor() {
+    setEditor({ kind: "closed" });
+  }
 
   function openCreate(type: GoalType) {
     setEditor({ kind: "create", type });
@@ -90,7 +99,7 @@ export function GoalsBoard({
     } else {
       onCreateGoal(goal);
     }
-    setEditor({ kind: "closed" });
+    closeEditor();
   }
 
   function showWeeklyTargets() {
@@ -103,22 +112,22 @@ export function GoalsBoard({
         <Grid.Col span={12}>
           <Group gap="sm" justify="space-between" wrap="nowrap">
             <Title order={1}>目標</Title>
-            <Button
-              onClick={() => openCreate(examGoal === undefined ? "exam" : "mastery")}
-              type="button"
-            >
-              目標を追加
-            </Button>
+            {/*? 本番目標があるなら追加導線はチェックポイントに一本化する */}
+            {examGoal === undefined && (
+              <Button onClick={() => openCreate("exam")} type="button">
+                目標を追加
+              </Button>
+            )}
           </Group>
         </Grid.Col>
-        {editor.kind !== "closed" && (
+        {editor.kind !== "closed" && !checkpointFormOpen && (
           <Grid.Col span={12}>
             <GoalForm
               activeCheckpointCount={mastery.checkpoints.length}
               goal={editor.kind === "edit" ? editor.goal : undefined}
               initialType={editor.kind === "create" ? editor.type : "exam"}
               key={editorKey(editor)}
-              onCancel={() => setEditor({ kind: "closed" })}
+              onCancel={closeEditor}
               onSubmit={submitGoal}
               todayJst={todayJst}
             />
@@ -150,19 +159,34 @@ export function GoalsBoard({
             />
           )}
         </Grid.Col>
-        <Grid.Col span={12}>
-          <Card>
-            <CheckpointSection
-              achieved={mastery.achieved}
-              checkpoints={mastery.checkpoints}
-              onAddCheckpoint={() => openCreate("mastery")}
-              onEditGoal={openEdit}
-              onRemoveGoal={onRemoveGoal}
-              onSetAchieved={onSetAchieved}
-              todayJst={todayJst}
-            />
-          </Card>
-        </Grid.Col>
+        {showCheckpointSection && (
+          <Grid.Col span={12}>
+            <Card>
+              <CheckpointSection
+                achieved={mastery.achieved}
+                checkpoints={mastery.checkpoints}
+                form={
+                  checkpointFormOpen ? (
+                    <GoalForm
+                      activeCheckpointCount={mastery.checkpoints.length}
+                      goal={undefined}
+                      initialType="mastery"
+                      onCancel={closeEditor}
+                      onSubmit={submitGoal}
+                      todayJst={todayJst}
+                      typeSelectable={false}
+                    />
+                  ) : undefined
+                }
+                onAddCheckpoint={examGoal === undefined ? undefined : () => openCreate("mastery")}
+                onEditGoal={openEdit}
+                onRemoveGoal={onRemoveGoal}
+                onSetAchieved={onSetAchieved}
+                todayJst={todayJst}
+              />
+            </Card>
+          </Grid.Col>
+        )}
         <Grid.Col span={12}>
           <Card ref={weeklyTargetsRef}>
             <WeeklyTargetsSection {...weeklyTargets} />

@@ -1,7 +1,10 @@
-import { fireEvent, waitFor } from "@testing-library/react";
+import { fireEvent, waitFor, within } from "@testing-library/react";
 import { expect, test, vi } from "vite-plus/test";
 
-import { CHECKPOINT_EMPTY_MESSAGE } from "~/features/goals/components/checkpoint-section";
+import {
+  CHECKPOINT_EMPTY_MESSAGE,
+  CHECKPOINT_SECTION_TITLE,
+} from "~/features/goals/components/checkpoint-section";
 import { EXAM_GOAL_INCOMPLETE_TITLE } from "~/features/goals/components/exam-goal-card";
 import { CHECKPOINT_CROWDED_MESSAGE } from "~/features/goals/components/goal-form-fields";
 import {
@@ -212,6 +215,41 @@ test("本番目標が無ければ空状態から作成できる", async () => {
   });
 });
 
+test("本番目標が無ければ上部の「目標を追加」が本番目標の導線として出る", async () => {
+  const { getByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([])} />);
+  getByRole("button", { name: "目標を追加" }).click();
+  await waitFor(() => {
+    expect(getByRole("textbox", { name: "目標スコア下限" })).toBeDefined();
+  });
+});
+
+test("本番目標が無ければチェックポイントの追加エリアは出ない", () => {
+  const { queryByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([])} />);
+  expect(queryByRole("region", { name: CHECKPOINT_SECTION_TITLE })).toBeNull();
+  expect(queryByRole("button", { name: "チェックポイントを追加" })).toBeNull();
+});
+
+test("本番目標があれば上部の「目標を追加」は出ず、追加はチェックポイントだけになる", () => {
+  const { getByRole, queryByRole } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />,
+  );
+  expect(queryByRole("button", { name: "目標を追加" })).toBeNull();
+  expect(getByRole("button", { name: "チェックポイントを追加" })).toBeDefined();
+});
+
+test("「チェックポイントを追加」のフォームはチェックポイント区画の中に開く", async () => {
+  const { getByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />);
+  getByRole("button", { name: "チェックポイントを追加" }).click();
+
+  await waitFor(() => {
+    expect(getByRole("textbox", { name: "達成の基準" })).toBeDefined();
+  });
+  const section = within(getByRole("region", { name: CHECKPOINT_SECTION_TITLE }));
+  expect(section.getByRole("textbox", { name: "達成の基準" })).toBeDefined();
+  //? タイプは習得に固定。選択欄は出さない
+  expect(section.queryByRole("combobox", { name: /目標タイプ/ })).toBeNull();
+});
+
 test("「チェックポイントを追加」から作ると期限が次の日曜で埋まる", async () => {
   const onCreateGoal = vi.fn();
   const { getByRole, queryByRole } = renderWithMantine(
@@ -221,6 +259,7 @@ test("「チェックポイントを追加」から作ると期限が次の日�
   await waitFor(() => {
     expect(getByRole("textbox", { name: "達成の基準" })).toBeDefined();
   });
+  expect(queryByRole("combobox", { name: /目標タイプ/ })).toBeNull();
 
   fireEvent.change(getByRole("textbox", { name: "目標の内容" }), {
     target: { value: SOON_CHECKPOINT.content },
@@ -284,15 +323,14 @@ test("削除アイコンを押すと onRemoveGoal が目標IDで呼ばれる", (
   expect(onRemoveGoal).toHaveBeenCalledWith(SOON_CHECKPOINT._id);
 });
 
-test("「目標を追加」は本番目標があれば習得の作成フォームを開き、キャンセルで閉じる", async () => {
+test("チェックポイントの追加フォームはキャンセルで閉じる", async () => {
   const { getByRole, queryByRole } = renderWithMantine(
     <GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />,
   );
-  getByRole("button", { name: "目標を追加" }).click();
+  getByRole("button", { name: "チェックポイントを追加" }).click();
   await waitFor(() => {
     expect(getByRole("textbox", { name: "達成の基準" })).toBeDefined();
   });
-  expect(getByRole("combobox", { name: /目標タイプ/ }).hasAttribute("disabled")).toBe(false);
 
   getByRole("button", { name: "キャンセル" }).click();
   await waitFor(() => {

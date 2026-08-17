@@ -21,6 +21,7 @@ const modules = import.meta.glob([
 const ALLOWED_EMAIL = "owner@example.com";
 const OWNER = { email: ALLOWED_EMAIL, subject: "owner-subject" };
 const TODAY = "2026-08-17";
+const YESTERDAY = "2026-08-16";
 
 //? 習得の学習量実績は目標の作成日を起点にするので、サーバが見る現在時刻を固定する。
 beforeEach(() => {
@@ -265,6 +266,27 @@ test("内部の再計算ミューテーションは漂流したカウンタを�
 
   await repair(t);
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
+});
+
+test("再計算は作成日の違う複数の習得目標をそれぞれの起点で数え直す", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  //? 作成日が違う2件を用意する(rows は一度だけ読み、起点ごとに絞られるのが正しい)
+  vi.setSystemTime(new Date(`${YESTERDAY}T12:00:00+09:00`));
+  const olderId = await createMasteryGoal(t);
+  vi.setSystemTime(new Date(`${TODAY}T12:00:00+09:00`));
+  const newerId = await createMasteryGoal(t);
+  await addConfirmedRow(t, itemId, { dateJst: YESTERDAY, minutes: 90 });
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+
+  await t.run(async (ctx) => {
+    await ctx.db.patch("goals", olderId, { activeDays: 9, confirmedMinutes: 999 });
+    await ctx.db.patch("goals", newerId, { activeDays: 9, confirmedMinutes: 999 });
+  });
+
+  await repair(t);
+  expect(await progressOf(t, olderId)).toEqual({ activeDays: 2, confirmedMinutes: 120 });
+  expect(await progressOf(t, newerId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
 });
 
 test("再計算は達成済みの目標を凍結したままにする", async () => {
