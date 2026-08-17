@@ -270,11 +270,12 @@ test("内部の再計算ミューテーションは漂流したカウンタを�
 
 test("再計算は作成日の違う複数の習得目標をそれぞれの起点で数え直す", async () => {
   const t = owner();
-  const itemId = await seedItemId(t);
-  //? 作成日が違う2件を用意する(rows は一度だけ読み、起点ごとに絞られるのが正しい)
+  //? 作成日が違う2件を用意する(rows は一度だけ読み、起点ごとに絞られるのが正しい)。
+  //? convex-test の _creationTime は単調増加なので、古い方をいちばん最初に作る。
   vi.setSystemTime(new Date(`${YESTERDAY}T12:00:00+09:00`));
   const olderId = await createMasteryGoal(t);
   vi.setSystemTime(new Date(`${TODAY}T12:00:00+09:00`));
+  const itemId = await seedItemId(t);
   const newerId = await createMasteryGoal(t);
   await addConfirmedRow(t, itemId, { dateJst: YESTERDAY, minutes: 90 });
   await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });

@@ -223,6 +223,22 @@ test("本番目標が無ければ上部の「目標を追加」が本番目標�
   });
 });
 
+test("フォームを開いている間は本番目標の空状態カードを出さず、閉じると戻る", async () => {
+  const { getByRole, getByText, queryByText } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([])} />,
+  );
+  getByRole("button", { name: "目標を追加" }).click();
+  await waitFor(() => {
+    expect(getByRole("textbox", { name: "目標スコア下限" })).toBeDefined();
+  });
+  expect(queryByText(EXAM_GOAL_EMPTY_TITLE)).toBeNull();
+
+  getByRole("button", { name: "キャンセル" }).click();
+  await waitFor(() => {
+    expect(getByText(EXAM_GOAL_EMPTY_TITLE)).toBeDefined();
+  });
+});
+
 test("本番目標が無ければチェックポイントの追加エリアは出ない", () => {
   const { queryByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([])} />);
   expect(queryByRole("region", { name: CHECKPOINT_SECTION_TITLE })).toBeNull();

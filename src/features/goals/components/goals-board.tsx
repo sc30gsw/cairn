@@ -77,6 +77,7 @@ export function GoalsBoard({
   const mastery = groupMasteryGoals(goals);
   //? チェックポイントの追加はセクション内で完結させる。上部のフォーム枠には出さない
   const checkpointFormOpen = editor.kind === "create" && editor.type === "mastery";
+  const topFormOpen = editor.kind !== "closed" && !checkpointFormOpen;
   //? チェックポイントは本番目標に従属する。本番目標が無い間は追加導線を出さない(docs/adr/0006)
   const showCheckpointSection =
     examGoal !== undefined || mastery.checkpoints.length > 0 || mastery.achieved.length > 0;
@@ -120,7 +121,7 @@ export function GoalsBoard({
             )}
           </Group>
         </Grid.Col>
-        {editor.kind !== "closed" && !checkpointFormOpen && (
+        {topFormOpen && (
           <Grid.Col span={12}>
             <GoalForm
               activeCheckpointCount={mastery.checkpoints.length}
@@ -133,8 +134,21 @@ export function GoalsBoard({
             />
           </Grid.Col>
         )}
-        <Grid.Col span={12}>
-          {examGoal === undefined ? (
+        {examGoal !== undefined && (
+          <Grid.Col span={12}>
+            <ExamGoalCard
+              goal={examGoal}
+              hasWeeklyTargets={weeklyTargets.targets.length > 0}
+              onEdit={() => openEdit(examGoal)}
+              onRemove={() => onRemoveGoal(examGoal._id)}
+              onShowWeeklyTargets={showWeeklyTargets}
+              todayJst={todayJst}
+            />
+          </Grid.Col>
+        )}
+        {/*? フォームを開いている間は空状態を下げる。同じ「作る」導線を二重に見せない */}
+        {examGoal === undefined && !topFormOpen && (
+          <Grid.Col span={12}>
             <Card>
               <EmptyState
                 description="本番日とスコア帯を決めると、残り日数の軸ができます。"
@@ -148,17 +162,8 @@ export function GoalsBoard({
                 </EmptyState.Actions>
               </EmptyState>
             </Card>
-          ) : (
-            <ExamGoalCard
-              goal={examGoal}
-              hasWeeklyTargets={weeklyTargets.targets.length > 0}
-              onEdit={() => openEdit(examGoal)}
-              onRemove={() => onRemoveGoal(examGoal._id)}
-              onShowWeeklyTargets={showWeeklyTargets}
-              todayJst={todayJst}
-            />
-          )}
-        </Grid.Col>
+          </Grid.Col>
+        )}
         {showCheckpointSection && (
           <Grid.Col span={12}>
             <Card>
