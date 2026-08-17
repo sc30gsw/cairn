@@ -52,6 +52,14 @@ test("ゴール未設定週でストリークは途切れる", () => {
   });
 });
 
+test("直近が未達で連続が0なら予備を使ったことにしない", () => {
+  expect(currentStreak([missedWeek()])).toEqual({ length: 0, reserveUsed: false });
+  expect(currentStreak([missedWeek(), missedWeek(), achievedWeek()])).toEqual({
+    length: 0,
+    reserveUsed: false,
+  });
+});
+
 test("空配列は 0", () => {
   expect(currentStreak([])).toEqual({ length: 0, reserveUsed: false });
 });

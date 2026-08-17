@@ -1,4 +1,4 @@
-import { Field, Form, useForm } from "@formisch/react";
+import { Field, Form, useForm, type FieldStore } from "@formisch/react";
 import { Button, Grid, Group, NumberInput, Select, Textarea, TextInput } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { PACE_LIMITS, TOEIC_SCORE, VOLUME_UNITS } from "~domain/domain";
@@ -14,25 +14,69 @@ import {
   VolumeGoalFieldsSchema,
   type GoalFormOutput,
 } from "~/features/goals/schemas/goal-schema";
-import type {
-  ExamGoal,
-  MasteryGoal,
-  OtherGoal,
-  PaceGoal,
-  VolumeGoal,
-} from "~/features/goals/types/goal";
+import type { Goal } from "~/features/goals/types/goal";
 import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-style";
 import { onRequiredSelect } from "~/lib/select";
 
 const CONTENT_LABEL = "目標の内容";
 const CONTENT_PLACEHOLDER = "例: 金のフレーズを1 Unit 音読する";
 
-export type GoalFieldsProps<TGoal> = {
-  goal: TGoal | undefined;
+//? タイプごとにフォームは総取り替えだが、props は共通。GoalForm 側でタイプ→部品を引けるようにする
+export type GoalFieldsProps = {
+  //? 編集対象。undefined なら新規作成
+  goal: Goal | undefined;
   onCancel: () => void;
   onSubmit: (goal: GoalFormOutput) => void;
   todayJst: DateJst;
 };
+
+type GoalFieldsSchema =
+  | typeof ExamGoalFieldsSchema
+  | typeof MasteryGoalFieldsSchema
+  | typeof OtherGoalFieldsSchema
+  | typeof PaceGoalFieldsSchema
+  | typeof VolumeGoalFieldsSchema;
+
+//? 5タイプとも文字列フィールドの FieldStore は同じ形。path だけ違うので落として使い回す
+type GoalTextFieldStore = Omit<FieldStore<GoalFieldsSchema, ["content"]>, "path">;
+
+type GoalDateFieldProps = {
+  clearable?: boolean;
+  field: GoalTextFieldStore;
+  label: string;
+  todayJst: DateJst;
+};
+
+function GoalContentField({ field }: Record<"field", GoalTextFieldStore>) {
+  return (
+    <ConcreteActionField
+      {...field.props}
+      error={field.errors?.[0]}
+      label={CONTENT_LABEL}
+      placeholder={CONTENT_PLACEHOLDER}
+      value={field.input}
+    />
+  );
+}
+
+function GoalDateField({ clearable = false, field, label, todayJst }: GoalDateFieldProps) {
+  return (
+    <DatePickerInput
+      classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
+      clearable={clearable}
+      error={field.errors?.[0]}
+      firstDayOfWeek={1}
+      getDayProps={(date) => calendarDayProps(date, todayJst)}
+      label={label}
+      locale="ja"
+      name={field.props.name}
+      onChange={(value) => field.onChange(value ?? "")}
+      popoverProps={{ withinPortal: true }}
+      value={field.input ?? ""}
+      valueFormat="YYYY-MM-DD"
+    />
+  );
+}
 
 function GoalFormActions({ onCancel }: Record<"onCancel", () => void>) {
   return (
@@ -45,13 +89,14 @@ function GoalFormActions({ onCancel }: Record<"onCancel", () => void>) {
   );
 }
 
-export function ExamGoalFields({ goal, onCancel, onSubmit, todayJst }: GoalFieldsProps<ExamGoal>) {
+export function ExamGoalFields({ goal, onCancel, onSubmit, todayJst }: GoalFieldsProps) {
+  const examGoal = goal?.type === "exam" ? goal : undefined;
   const form = useForm({
     initialInput: {
-      content: goal?.content ?? "",
-      examDate: goal?.examDate ?? "",
-      maxScore: goal?.maxScore,
-      minScore: goal?.minScore,
+      content: examGoal?.content ?? "",
+      examDate: examGoal?.examDate ?? "",
+      maxScore: examGoal?.maxScore,
+      minScore: examGoal?.minScore,
     },
     schema: ExamGoalFieldsSchema,
   });
@@ -61,34 +106,12 @@ export function ExamGoalFields({ goal, onCancel, onSubmit, todayJst }: GoalField
       <Grid align="flex-start" gap="sm">
         <Grid.Col span={12}>
           <Field of={form} path={["content"]}>
-            {(field) => (
-              <ConcreteActionField
-                {...field.props}
-                error={field.errors?.[0]}
-                label={CONTENT_LABEL}
-                placeholder={CONTENT_PLACEHOLDER}
-                value={field.input}
-              />
-            )}
+            {(field) => <GoalContentField field={field} />}
           </Field>
         </Grid.Col>
         <Grid.Col span={12}>
           <Field of={form} path={["examDate"]}>
-            {(field) => (
-              <DatePickerInput
-                classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
-                error={field.errors?.[0]}
-                firstDayOfWeek={1}
-                getDayProps={(date) => calendarDayProps(date, todayJst)}
-                label="本番日"
-                locale="ja"
-                name={field.props.name}
-                onChange={(value) => field.onChange(value ?? "")}
-                popoverProps={{ withinPortal: true }}
-                value={field.input}
-                valueFormat="YYYY-MM-DD"
-              />
-            )}
+            {(field) => <GoalDateField field={field} label="本番日" todayJst={todayJst} />}
           </Field>
         </Grid.Col>
         <Grid.Col span={6}>
@@ -131,12 +154,13 @@ export function ExamGoalFields({ goal, onCancel, onSubmit, todayJst }: GoalField
   );
 }
 
-export function PaceGoalFields({ goal, onCancel, onSubmit }: GoalFieldsProps<PaceGoal>) {
+export function PaceGoalFields({ goal, onCancel, onSubmit }: GoalFieldsProps) {
+  const paceGoal = goal?.type === "pace" ? goal : undefined;
   const form = useForm({
     initialInput: {
-      content: goal?.content ?? "",
-      dailyFloorMinutes: goal?.dailyFloorMinutes,
-      daysPerWeek: goal?.daysPerWeek,
+      content: paceGoal?.content ?? "",
+      dailyFloorMinutes: paceGoal?.dailyFloorMinutes,
+      daysPerWeek: paceGoal?.daysPerWeek,
     },
     schema: PaceGoalFieldsSchema,
   });
@@ -146,15 +170,7 @@ export function PaceGoalFields({ goal, onCancel, onSubmit }: GoalFieldsProps<Pac
       <Grid align="flex-start" gap="sm">
         <Grid.Col span={12}>
           <Field of={form} path={["content"]}>
-            {(field) => (
-              <ConcreteActionField
-                {...field.props}
-                error={field.errors?.[0]}
-                label={CONTENT_LABEL}
-                placeholder={CONTENT_PLACEHOLDER}
-                value={field.input}
-              />
-            )}
+            {(field) => <GoalContentField field={field} />}
           </Field>
         </Grid.Col>
         <Grid.Col span={6}>
@@ -196,19 +212,15 @@ export function PaceGoalFields({ goal, onCancel, onSubmit }: GoalFieldsProps<Pac
   );
 }
 
-export function VolumeGoalFields({
-  goal,
-  onCancel,
-  onSubmit,
-  todayJst,
-}: GoalFieldsProps<VolumeGoal>) {
+export function VolumeGoalFields({ goal, onCancel, onSubmit, todayJst }: GoalFieldsProps) {
+  const volumeGoal = goal?.type === "volume" ? goal : undefined;
   const form = useForm({
     initialInput: {
-      content: goal?.content ?? "",
-      deadline: goal?.deadline ?? "",
-      startAmount: goal?.startAmount ?? 0,
-      targetAmount: goal?.targetAmount,
-      unit: goal?.unit ?? VOLUME_UNITS[0],
+      content: volumeGoal?.content ?? "",
+      deadline: volumeGoal?.deadline ?? "",
+      startAmount: volumeGoal?.startAmount ?? 0,
+      targetAmount: volumeGoal?.targetAmount,
+      unit: volumeGoal?.unit ?? VOLUME_UNITS[0],
     },
     schema: VolumeGoalFieldsSchema,
   });
@@ -218,15 +230,7 @@ export function VolumeGoalFields({
       <Grid align="flex-start" gap="sm">
         <Grid.Col span={12}>
           <Field of={form} path={["content"]}>
-            {(field) => (
-              <ConcreteActionField
-                {...field.props}
-                error={field.errors?.[0]}
-                label={CONTENT_LABEL}
-                placeholder={CONTENT_PLACEHOLDER}
-                value={field.input}
-              />
-            )}
+            {(field) => <GoalContentField field={field} />}
           </Field>
         </Grid.Col>
         <Grid.Col span={{ base: 6, sm: 4 }}>
@@ -278,21 +282,7 @@ export function VolumeGoalFields({
         </Grid.Col>
         <Grid.Col span={12}>
           <Field of={form} path={["deadline"]}>
-            {(field) => (
-              <DatePickerInput
-                classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
-                error={field.errors?.[0]}
-                firstDayOfWeek={1}
-                getDayProps={(date) => calendarDayProps(date, todayJst)}
-                label="期限"
-                locale="ja"
-                name={field.props.name}
-                onChange={(value) => field.onChange(value ?? "")}
-                popoverProps={{ withinPortal: true }}
-                value={field.input}
-                valueFormat="YYYY-MM-DD"
-              />
-            )}
+            {(field) => <GoalDateField field={field} label="期限" todayJst={todayJst} />}
           </Field>
         </Grid.Col>
         <Grid.Col span={12}>
@@ -303,17 +293,13 @@ export function VolumeGoalFields({
   );
 }
 
-export function MasteryGoalFields({
-  goal,
-  onCancel,
-  onSubmit,
-  todayJst,
-}: GoalFieldsProps<MasteryGoal>) {
+export function MasteryGoalFields({ goal, onCancel, onSubmit, todayJst }: GoalFieldsProps) {
+  const masteryGoal = goal?.type === "mastery" ? goal : undefined;
   const form = useForm({
     initialInput: {
-      content: goal?.content ?? "",
-      criterion: goal?.criterion ?? "",
-      deadline: goal?.deadline ?? "",
+      content: masteryGoal?.content ?? "",
+      criterion: masteryGoal?.criterion ?? "",
+      deadline: masteryGoal?.deadline ?? "",
     },
     schema: MasteryGoalFieldsSchema,
   });
@@ -323,15 +309,7 @@ export function MasteryGoalFields({
       <Grid align="flex-start" gap="sm">
         <Grid.Col span={12}>
           <Field of={form} path={["content"]}>
-            {(field) => (
-              <ConcreteActionField
-                {...field.props}
-                error={field.errors?.[0]}
-                label={CONTENT_LABEL}
-                placeholder={CONTENT_PLACEHOLDER}
-                value={field.input}
-              />
-            )}
+            {(field) => <GoalContentField field={field} />}
           </Field>
         </Grid.Col>
         <Grid.Col span={12}>
@@ -350,20 +328,7 @@ export function MasteryGoalFields({
         <Grid.Col span={12}>
           <Field of={form} path={["deadline"]}>
             {(field) => (
-              <DatePickerInput
-                classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
-                clearable
-                error={field.errors?.[0]}
-                firstDayOfWeek={1}
-                getDayProps={(date) => calendarDayProps(date, todayJst)}
-                label="期限（任意）"
-                locale="ja"
-                name={field.props.name}
-                onChange={(value) => field.onChange(value ?? "")}
-                popoverProps={{ withinPortal: true }}
-                value={field.input ?? ""}
-                valueFormat="YYYY-MM-DD"
-              />
+              <GoalDateField clearable field={field} label="期限（任意）" todayJst={todayJst} />
             )}
           </Field>
         </Grid.Col>
@@ -375,17 +340,13 @@ export function MasteryGoalFields({
   );
 }
 
-export function OtherGoalFields({
-  goal,
-  onCancel,
-  onSubmit,
-  todayJst,
-}: GoalFieldsProps<OtherGoal>) {
+export function OtherGoalFields({ goal, onCancel, onSubmit, todayJst }: GoalFieldsProps) {
+  const otherGoal = goal?.type === "other" ? goal : undefined;
   const form = useForm({
     initialInput: {
-      content: goal?.content ?? "",
-      deadline: goal?.deadline ?? "",
-      memo: goal?.memo ?? "",
+      content: otherGoal?.content ?? "",
+      deadline: otherGoal?.deadline ?? "",
+      memo: otherGoal?.memo ?? "",
     },
     schema: OtherGoalFieldsSchema,
   });
@@ -395,34 +356,13 @@ export function OtherGoalFields({
       <Grid align="flex-start" gap="sm">
         <Grid.Col span={12}>
           <Field of={form} path={["content"]}>
-            {(field) => (
-              <ConcreteActionField
-                {...field.props}
-                error={field.errors?.[0]}
-                label={CONTENT_LABEL}
-                placeholder={CONTENT_PLACEHOLDER}
-                value={field.input}
-              />
-            )}
+            {(field) => <GoalContentField field={field} />}
           </Field>
         </Grid.Col>
         <Grid.Col span={12}>
           <Field of={form} path={["deadline"]}>
             {(field) => (
-              <DatePickerInput
-                classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
-                clearable
-                error={field.errors?.[0]}
-                firstDayOfWeek={1}
-                getDayProps={(date) => calendarDayProps(date, todayJst)}
-                label="期限（任意）"
-                locale="ja"
-                name={field.props.name}
-                onChange={(value) => field.onChange(value ?? "")}
-                popoverProps={{ withinPortal: true }}
-                value={field.input ?? ""}
-                valueFormat="YYYY-MM-DD"
-              />
+              <GoalDateField clearable field={field} label="期限（任意）" todayJst={todayJst} />
             )}
           </Field>
         </Grid.Col>

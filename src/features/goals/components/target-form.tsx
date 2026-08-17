@@ -13,7 +13,6 @@ import { useState } from "react";
 import { TARGET_METRICS, TARGET_VALUE_LIMITS, type TargetMetric } from "~domain/domain";
 
 import { LabelAlignedCell } from "~/components/label-aligned-cell";
-import type { CategoryDto } from "~/features/catalog/types/item";
 import { isTargetMetric } from "~/features/goals/lib/goal-guards";
 import {
   TARGET_METRIC_SEGMENTS,
@@ -23,6 +22,7 @@ import { TargetSchema } from "~/features/goals/schemas/target-schema";
 import type { SaveTargetInput } from "~/features/goals/types/mutations";
 import type { TargetProgress } from "~/features/goals/types/target";
 import { onRequiredSelect } from "~/lib/select";
+import type { CategoryDto } from "~/types/category";
 
 const [defaultMetric] = TARGET_METRICS;
 
@@ -35,7 +35,7 @@ type TargetFormProps = {
 //? 1カテゴリ1件なので、カテゴリ選択がそのまま「新規/編集」の切り替えになる。
 //? 選ばれたカテゴリの既存値を初期値にするため、値のフォームはカテゴリごとに貼り替える。
 export function TargetForm({ categories, onSave, targets }: TargetFormProps) {
-  const [categoryId, setCategoryId] = useState(categories[0]?._id ?? "");
+  const [categoryId, setCategoryId] = useState<CategoryDto["_id"] | undefined>(categories[0]?._id);
   const selectedCategory = categories.find((category) => category._id === categoryId);
 
   if (selectedCategory === undefined) {
@@ -59,7 +59,10 @@ export function TargetForm({ categories, onSave, targets }: TargetFormProps) {
             : "このカテゴリーには既にターゲットがあります。保存すると置き換わります。"
         }
         label="カテゴリー"
-        onChange={onRequiredSelect(setCategoryId)}
+        //? Select が返すのはただの文字列。一覧から引き当てて Id のブランドを取り戻す
+        onChange={onRequiredSelect((value) => {
+          setCategoryId(categories.find((category) => category._id === value)?._id);
+        })}
         value={selectedCategory._id}
       />
       <TargetValueForm

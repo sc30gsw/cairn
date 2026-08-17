@@ -1,10 +1,13 @@
 import * as v from "valibot";
-import { TARGET_METRICS, TARGET_VALUE_LIMITS } from "~domain/domain";
+import {
+  TARGET_DAYS_MESSAGE,
+  TARGET_METRICS,
+  TARGET_VALUE_LIMITS,
+  TARGET_VALUE_MESSAGE,
+} from "~domain/domain";
 
-//? メッセージはドメイン定数から組み立てる。数値そのものを文言に手書きしない(CVX-16)。
+//? 検証メッセージはサーバと共有のドメイン定数を使う。文言も数値もここで手書きしない(CVX-16)。
 const TARGET_METRIC_MESSAGE = "計測方法を選んでください";
-export const TARGET_VALUE_MESSAGE = `目標値は${TARGET_VALUE_LIMITS.min}以上の整数で入力してください`;
-export const TARGET_DAYS_MESSAGE = `実施日の目標は${TARGET_VALUE_LIMITS.maxDays}日までです`;
 
 //* 週間ターゲットの1件。カテゴリは Select 側が持つので、フォームは計器と目標値だけを扱う。
 export const TargetSchema = v.pipe(

@@ -11,7 +11,8 @@ import {
   useRenameCategory,
   useRenameItem,
 } from "~/features/catalog/hooks/catalog-mutations";
-import { useCategoriesList, useItemsList } from "~/features/catalog/hooks/catalog-queries";
+import { useItemsList } from "~/features/catalog/hooks/catalog-queries";
+import { useCategoriesList } from "~/hooks/use-categories-list";
 import { runMutation } from "~/lib/run-mutation";
 
 export function ItemsPage() {

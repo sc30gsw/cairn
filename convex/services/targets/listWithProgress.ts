@@ -35,6 +35,7 @@ export async function listWithProgress(
       .collect(),
     loadCatalog(ctx, ownerId),
   ]);
+  //? categoryId はバックフィル済みが前提。移行前の古い項目だけが undefined で、実績に加算されず0扱いになる。
   const categoryIdByItemId = new Map<Id<"items">, Id<"categories">>(
     [...catalog.itemById.values()].flatMap((item) =>
       item.categoryId === undefined ? [] : [[item._id, item.categoryId] as const],

@@ -3,10 +3,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { api } from "~/../convex/_generated/api";
 
-export function useCategoriesList() {
-  return useSuspenseQuery(convexQuery(api.queries.categories.list.list, {}));
-}
-
 export function useItemsList() {
   return useSuspenseQuery(convexQuery(api.queries.items.list.list, {}));
 }

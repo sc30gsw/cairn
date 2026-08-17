@@ -151,6 +151,8 @@ export default defineConfig({
         "convex/lib/concreteAction.ts",
         "convex/lib/catalog.ts",
         "convex/lib/domain.ts",
+        "convex/lib/minutesByDate.ts",
+        "convex/lib/qualifyingDays.ts",
         "convex/lib/validators.ts",
         "convex/services/goals/**/*.ts",
         "convex/queries/goals/**/*.ts",

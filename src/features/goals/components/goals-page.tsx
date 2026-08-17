@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { mondayOfWeek, todayJst } from "~domain/jst";
 
-import { useCategoriesList } from "~/features/catalog/hooks/catalog-queries";
 import { GoalsBoard } from "~/features/goals/components/goals-board";
 import { GoalsPending } from "~/features/goals/components/goals-pending";
 import {
@@ -23,6 +22,7 @@ import { useRemoveTarget, useSaveTarget } from "~/features/goals/hooks/targets-m
 import { useTargetsWithProgress } from "~/features/goals/hooks/targets-queries";
 import { useWeekSnapshot } from "~/features/goals/hooks/use-week-snapshot";
 import { useHistoryWeek } from "~/features/history/hooks/history-queries";
+import { useCategoriesList } from "~/hooks/use-categories-list";
 import { runMutation } from "~/lib/run-mutation";
 import { minutesByDateFromRows } from "~/lib/weekly-progress";
 
@@ -58,7 +58,6 @@ function GoalsReady() {
 
   return (
     <GoalsBoard
-      categories={categories}
       goals={goals}
       minutesByDate={minutesByDateFromRows(week.events)}
       obstacles={obstacles}
@@ -82,16 +81,6 @@ function GoalsReady() {
           successMessage: "障害プランを削除しました",
         });
       }}
-      onRemoveTarget={(targetId) => {
-        void runMutation(() => removeTarget.mutateAsync({ targetId }), {
-          successMessage: "週間ターゲットを削除しました",
-        });
-      }}
-      onSaveTarget={(input) => {
-        void runMutation(() => saveTarget.mutateAsync(input), {
-          successMessage: "週間ターゲットを保存しました",
-        });
-      }}
       onSaveWeekly={(input) => {
         void runMutation(() => saveWeekly.mutateAsync({ ...input, weekStartJst: weekStart }), {
           successMessage: "週間ゴールを保存しました",
@@ -112,11 +101,24 @@ function GoalsReady() {
           successMessage: "障害プランを更新しました",
         });
       }}
-      targets={targets}
       todayJst={today}
       trendWeeks={trendWeeks}
       weekEndJst={week.weekEnd}
       weeklyGoal={week.weeklyGoal}
+      weeklyTargets={{
+        categories,
+        onRemoveTarget: (targetId) => {
+          void runMutation(() => removeTarget.mutateAsync({ targetId }), {
+            successMessage: "週間ターゲットを削除しました",
+          });
+        },
+        onSaveTarget: (input) => {
+          void runMutation(() => saveTarget.mutateAsync(input), {
+            successMessage: "週間ターゲットを保存しました",
+          });
+        },
+        targets,
+      }}
     />
   );
 }

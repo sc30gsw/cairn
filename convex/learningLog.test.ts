@@ -1,5 +1,5 @@
 import { convexTest } from "convex-test";
-import { expect, test } from "vite-plus/test";
+import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
@@ -24,6 +24,16 @@ const OWNER = { email: ALLOWED_EMAIL, subject: "owner-subject" };
 const MONDAY = "2026-08-17";
 const SATURDAY = "2026-08-15";
 const FUTURE = "2026-08-20";
+
+//? 目標・週間ゴールの書き込みは「今週」に閉じているので、現在時刻を MONDAY の週に固定する。
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(`${MONDAY}T12:00:00+09:00`));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 function owner() {
   process.env.ALLOWED_EMAIL = ALLOWED_EMAIL;

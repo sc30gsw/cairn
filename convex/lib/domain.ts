@@ -29,6 +29,12 @@ export const VOLUME_UNITS = [
 
 export type VolumeUnit = (typeof VOLUME_UNITS)[number];
 
+//* 達成量目標の量の下限。目標量は1以上、開始量・現在量は0以上。
+export const VOLUME_AMOUNT_LIMITS = {
+  minStart: 0,
+  minTarget: 1,
+} as const satisfies Record<string, number>;
+
 //* 本番目標(TOEIC)のスコア制約。
 export const TOEIC_SCORE = { max: 990, min: 10, step: 5 } as const satisfies Record<string, number>;
 
@@ -38,6 +44,28 @@ export const PACE_LIMITS = {
   minDays: 1,
   minFloorMinutes: 5,
 } as const satisfies Record<string, number>;
+
+//* 目標入力の検証メッセージ。サーバ(services)と Valibot スキーマが同じ文言を共有する(CVX-16)。
+//? 文言に数値を手書きせず、上のドメイン定数から組み立てる。
+export const GOAL_DATE_MESSAGE = "日付は YYYY-MM-DD で入力してください";
+
+export const TOEIC_SCORE_RANGE_MESSAGE = `スコアは${TOEIC_SCORE.min}〜${TOEIC_SCORE.max}で入力してください`;
+
+export const TOEIC_SCORE_STEP_MESSAGE = `スコアは${TOEIC_SCORE.step}点刻みで入力してください`;
+
+export const TOEIC_SCORE_ORDER_MESSAGE = "目標点の下限が上限を超えています";
+
+export const PACE_DAYS_MESSAGE = `週の実施日数は${PACE_LIMITS.minDays}〜${PACE_LIMITS.maxDays}日で入力してください`;
+
+export const PACE_FLOOR_MESSAGE = `1日あたりの最低分数は${PACE_LIMITS.minFloorMinutes}分以上です`;
+
+export const VOLUME_TARGET_MESSAGE = `目標量は${VOLUME_AMOUNT_LIMITS.minTarget}以上の整数で入力してください`;
+
+export const VOLUME_AMOUNT_MESSAGE = `現在量は${VOLUME_AMOUNT_LIMITS.minStart}以上の整数です`;
+
+export const VOLUME_START_MESSAGE = "開始量は目標量より小さい値で入力してください";
+
+export const MASTERY_CRITERION_MESSAGE = "達成の基準を入力してください";
 
 //* 控えめな初期ペース(Duolingo の知見: 低い床から始めるほど続く)。
 export const DEFAULT_PACE = {
@@ -58,6 +86,10 @@ export const TARGET_VALUE_LIMITS = {
   maxDays: 7,
   min: 1,
 } as const satisfies Record<string, number>;
+
+export const TARGET_VALUE_MESSAGE = `目標値は${TARGET_VALUE_LIMITS.min}以上の整数で入力してください`;
+
+export const TARGET_DAYS_MESSAGE = `実施日の目標は${TARGET_VALUE_LIMITS.maxDays}日までです`;
 
 //* JST 暦日 `YYYY-MM-DD`。Convex validator / Valibot / UI が共有する唯一の形式。
 export const DATE_JST_PATTERN = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;

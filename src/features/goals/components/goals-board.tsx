@@ -5,7 +5,6 @@ import type { GoalType } from "~domain/domain";
 import type { DateJst } from "~domain/jst";
 
 import { ConcreteActionTour } from "~/components/concrete-action-tour";
-import type { CategoryDto } from "~/features/catalog/types/item";
 import { ExamGoalCard } from "~/features/goals/components/exam-goal-card";
 import { GoalForm } from "~/features/goals/components/goal-form";
 import { ObstacleSection } from "~/features/goals/components/obstacle-section";
@@ -13,7 +12,10 @@ import { PaceGoalCard } from "~/features/goals/components/pace-goal-card";
 import { SimpleGoalCard } from "~/features/goals/components/simple-goal-card";
 import { VolumeGoalCard } from "~/features/goals/components/volume-goal-card";
 import { WeeklyGoalPanel } from "~/features/goals/components/weekly-goal-panel";
-import { WeeklyTargetsSection } from "~/features/goals/components/weekly-targets-section";
+import {
+  WeeklyTargetsSection,
+  type WeeklyTargetsSectionProps,
+} from "~/features/goals/components/weekly-targets-section";
 import { filterGoalsOfType, findGoalOfType } from "~/features/goals/lib/goal-selectors";
 import type { GoalFormOutput } from "~/features/goals/schemas/goal-schema";
 import type {
@@ -27,13 +29,11 @@ import type {
 import type {
   CreateObstacleInput,
   RemoveObstacleInput,
-  SaveTargetInput,
   SaveWeeklyInput,
   SetVolumeProgressInput,
   UpdateGoalInput,
   UpdateObstacleInput,
 } from "~/features/goals/types/mutations";
-import type { TargetId, TargetProgress } from "~/features/goals/types/target";
 import type { WeekPage } from "~/features/history/types/history";
 import type { MinutesByDate } from "~/lib/weekly-progress";
 
@@ -43,7 +43,6 @@ type GoalEditor =
   | { kind: "create"; type: GoalType };
 
 type GoalsBoardProps = {
-  categories: CategoryDto[];
   goals: Goal[];
   minutesByDate: MinutesByDate;
   obstacles: Obstacle[];
@@ -51,21 +50,19 @@ type GoalsBoardProps = {
   onCreateObstacle: (input: CreateObstacleInput) => void;
   onRemoveGoal: (goalId: GoalId) => void;
   onRemoveObstacle: (planId: RemoveObstacleInput["planId"]) => void;
-  onRemoveTarget: (targetId: TargetId) => void;
-  onSaveTarget: (input: SaveTargetInput) => void;
   onSaveWeekly: (input: SaveWeeklyInput) => void;
   onSetVolumeProgress: (input: SetVolumeProgressInput) => void;
   onUpdateGoal: (input: Omit<UpdateGoalInput, "weekStartJst">) => void;
   onUpdateObstacle: (input: UpdateObstacleInput) => void;
-  targets: TargetProgress[];
   todayJst: DateJst;
   trendWeeks: WeeklyTrendWeeks;
   weekEndJst: WeekPage["weekEnd"];
+  //? 週間ターゲットはこの板では素通し。区画ごと渡して props の数を抑える
   weeklyGoal: WeekPage["weeklyGoal"];
+  weeklyTargets: WeeklyTargetsSectionProps;
 };
 
 export function GoalsBoard({
-  categories,
   goals,
   minutesByDate,
   obstacles,
@@ -73,17 +70,15 @@ export function GoalsBoard({
   onCreateObstacle,
   onRemoveGoal,
   onRemoveObstacle,
-  onRemoveTarget,
-  onSaveTarget,
   onSaveWeekly,
   onSetVolumeProgress,
   onUpdateGoal,
   onUpdateObstacle,
-  targets,
   todayJst,
   trendWeeks,
   weekEndJst,
   weeklyGoal,
+  weeklyTargets,
 }: GoalsBoardProps) {
   const [editor, setEditor] = useState<GoalEditor>({ kind: "closed" });
   const obstacleSectionRef = useRef<HTMLDivElement>(null);
@@ -218,12 +213,7 @@ export function GoalsBoard({
         ))}
         <Grid.Col span={12}>
           <Card>
-            <WeeklyTargetsSection
-              categories={categories}
-              onRemoveTarget={onRemoveTarget}
-              onSaveTarget={onSaveTarget}
-              targets={targets}
-            />
+            <WeeklyTargetsSection {...weeklyTargets} />
           </Card>
         </Grid.Col>
         <Grid.Col span={12}>

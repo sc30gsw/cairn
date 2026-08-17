@@ -18,7 +18,6 @@ export function GoalsPending() {
   return (
     <Shimmer loading>
       <GoalsBoard
-        categories={goalsShimmerCategories}
         goals={goalsShimmerGoals}
         minutesByDate={goalsShimmerMinutesByDate}
         obstacles={goalsShimmerObstacles}
@@ -26,17 +25,20 @@ export function GoalsPending() {
         onCreateObstacle={shimmerNoop}
         onRemoveGoal={shimmerNoop}
         onRemoveObstacle={shimmerNoop}
-        onRemoveTarget={shimmerNoop}
-        onSaveTarget={shimmerNoop}
         onSaveWeekly={shimmerNoop}
         onSetVolumeProgress={shimmerNoop}
         onUpdateGoal={shimmerNoop}
         onUpdateObstacle={shimmerNoop}
-        targets={goalsShimmerTargets}
         todayJst={goalsShimmerTodayJst}
         trendWeeks={goalsShimmerTrendWeeks}
         weekEndJst={goalsShimmerWeekEndJst}
         weeklyGoal={goalsShimmerWeeklyGoal}
+        weeklyTargets={{
+          categories: goalsShimmerCategories,
+          onRemoveTarget: shimmerNoop,
+          onSaveTarget: shimmerNoop,
+          targets: goalsShimmerTargets,
+        }}
       />
     </Shimmer>
   );

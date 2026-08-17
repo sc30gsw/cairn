@@ -1,7 +1,6 @@
 import { Card, Select, Stack, Text, Title } from "@mantine/core";
-import { useState } from "react";
+import { useState, type ReactElement } from "react";
 import type { GoalType } from "~domain/domain";
-import type { DateJst } from "~domain/jst";
 
 import {
   ExamGoalFields,
@@ -9,31 +8,32 @@ import {
   OtherGoalFields,
   PaceGoalFields,
   VolumeGoalFields,
+  type GoalFieldsProps,
 } from "~/features/goals/components/goal-form-fields";
 import { isGoalType } from "~/features/goals/lib/goal-guards";
 import {
   GOAL_TYPE_DESCRIPTIONS,
   GOAL_TYPE_SELECT_DATA,
 } from "~/features/goals/lib/goal-type-labels";
-import type { GoalFormOutput } from "~/features/goals/schemas/goal-schema";
-import type { Goal } from "~/features/goals/types/goal";
 import { onRequiredSelect } from "~/lib/select";
 
-type GoalFormProps = {
-  //? 編集対象。undefined なら新規作成
-  goal: Goal | undefined;
-  initialType: GoalType;
-  onCancel: () => void;
-  onSubmit: (goal: GoalFormOutput) => void;
-  todayJst: DateJst;
-};
+type GoalFormProps = GoalFieldsProps & Record<"initialType", GoalType>;
+
+//? 値の SSoT は ~domain/domain。ここが持つのは「タイプ→入力欄」の対応だけ
+const GOAL_TYPE_FIELDS = {
+  exam: ExamGoalFields,
+  mastery: MasteryGoalFields,
+  other: OtherGoalFields,
+  pace: PaceGoalFields,
+  volume: VolumeGoalFields,
+} as const satisfies Record<GoalType, (props: GoalFieldsProps) => ReactElement>;
 
 //? タイプごとに入力欄が総取り替えになるので、タイプ選択はフォームの外に置き、
 //? 選ばれたタイプの専用フォーム(1タイプ1スキーマ)をマウントする。
 export function GoalForm({ goal, initialType, onCancel, onSubmit, todayJst }: GoalFormProps) {
   const [selectedType, setSelectedType] = useState<GoalType>(goal?.type ?? initialType);
   const type = goal?.type ?? selectedType;
-  const fieldsProps = { onCancel, onSubmit, todayJst };
+  const GoalTypeFields = GOAL_TYPE_FIELDS[type];
 
   return (
     <Card padding="md">
@@ -58,21 +58,7 @@ export function GoalForm({ goal, initialType, onCancel, onSubmit, todayJst }: Go
             目標タイプは変更できません。別のタイプにするときは、削除して作り直します。
           </Text>
         )}
-        {type === "exam" && (
-          <ExamGoalFields {...fieldsProps} goal={goal?.type === "exam" ? goal : undefined} />
-        )}
-        {type === "pace" && (
-          <PaceGoalFields {...fieldsProps} goal={goal?.type === "pace" ? goal : undefined} />
-        )}
-        {type === "volume" && (
-          <VolumeGoalFields {...fieldsProps} goal={goal?.type === "volume" ? goal : undefined} />
-        )}
-        {type === "mastery" && (
-          <MasteryGoalFields {...fieldsProps} goal={goal?.type === "mastery" ? goal : undefined} />
-        )}
-        {type === "other" && (
-          <OtherGoalFields {...fieldsProps} goal={goal?.type === "other" ? goal : undefined} />
-        )}
+        <GoalTypeFields goal={goal} onCancel={onCancel} onSubmit={onSubmit} todayJst={todayJst} />
       </Stack>
     </Card>
   );

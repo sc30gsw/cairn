@@ -1,5 +1,5 @@
 import { convexTest } from "convex-test";
-import { expect, test } from "vite-plus/test";
+import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { api } from "./_generated/api";
 import schema from "./schema";
@@ -19,6 +19,16 @@ const ALLOWED_EMAIL = "owner@example.com";
 const OWNER = { email: ALLOWED_EMAIL, subject: "owner-subject" };
 const OTHER_OWNER = { email: ALLOWED_EMAIL, subject: "other-owner-subject" };
 const MONDAY = "2026-08-17";
+
+//? 目標の書き込みは「今週」に閉じているので、サーバが見る現在時刻を MONDAY の週に固定する。
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(`${MONDAY}T12:00:00+09:00`));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 function raw() {
   process.env.ALLOWED_EMAIL = ALLOWED_EMAIL;
@@ -597,6 +607,41 @@ test("達成量の編集は現在値を巻き戻さない", async () => {
   const updated = goals.find((goal) => goal._id === volumeId);
   expect(updated?.type === "volume" && updated.currentAmount).toBe(120);
   expect(updated?.type === "volume" && updated.targetAmount).toBe(350);
+});
+
+test("開始量を現在値より上に編集すると現在値は開始量まで引き上がる", async () => {
+  const t = owner();
+  const volumeId = await t.mutation(api.mutations.goals.create.create, {
+    goal: {
+      content: "公式問題集を1冊やり切る",
+      deadline: "2026-09-30",
+      startAmount: 10,
+      targetAmount: 300,
+      type: "volume",
+      unit: "ページ",
+    },
+    weekStartJst: MONDAY,
+  });
+  await t.mutation(api.mutations.goals.setVolumeProgress.setVolumeProgress, {
+    currentAmount: 20,
+    goalId: volumeId,
+  });
+  await t.mutation(api.mutations.goals.update.update, {
+    goal: {
+      content: "公式問題集を1冊やり切る",
+      deadline: "2026-09-30",
+      startAmount: 100,
+      targetAmount: 300,
+      type: "volume",
+      unit: "ページ",
+    },
+    goalId: volumeId,
+    weekStartJst: MONDAY,
+  });
+  const goals = await t.query(api.queries.goals.list.list, {});
+  const updated = goals.find((goal) => goal._id === volumeId);
+  //? 現在量が [開始量, 目標量] の外に落ちると進捗率が負になる
+  expect(updated?.type === "volume" && updated.currentAmount).toBe(100);
 });
 
 test("目標を削除できる", async () => {

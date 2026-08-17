@@ -1,13 +1,14 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
-import { TARGET_VALUE_LIMITS, type TargetMetric } from "../../lib/domain";
+import {
+  TARGET_DAYS_MESSAGE,
+  TARGET_VALUE_LIMITS,
+  TARGET_VALUE_MESSAGE,
+  type TargetMetric,
+} from "../../lib/domain";
 import { ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { requireOwnedCategory } from "../items/helpers";
-
-export const TARGET_VALUE_MESSAGE = `目標値は${TARGET_VALUE_LIMITS.min}以上の整数で入力してください`;
-
-export const TARGET_DAYS_MESSAGE = `実施日の目標は${TARGET_VALUE_LIMITS.maxDays}日までです`;
 
 export type SaveTargetArgs = {
   categoryId: Id<"categories">;

@@ -1,23 +1,17 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
-import { requireWeekStartJst } from "../../lib/dateArgs";
 import { ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
-import type { GoalInput } from "../../lib/validators";
-import { requireGoalItem } from "./requireGoalItem";
+import { prepareGoalWrite, type GoalWriteArgs } from "./prepareGoalWrite";
+import { syncPaceSnapshot } from "./syncPaceSnapshot";
 import { toGoalDocument } from "./toGoalDocument";
-import { upsertWeekSnapshot } from "./upsertWeekSnapshot";
-import { validateGoalInput } from "./validateGoalInput";
 
 export const SINGLE_GOAL_MESSAGE = {
   exam: "本番目標は1件までです",
   pace: "ペース目標は1件までです",
 } as const satisfies Record<"exam" | "pace", string>;
 
-export type CreateGoalArgs = {
-  goal: GoalInput;
-  weekStartJst: string;
-};
+export type CreateGoalArgs = GoalWriteArgs;
 
 export async function create(
   ctx: MutationCtx,
@@ -25,13 +19,7 @@ export async function create(
   args: CreateGoalArgs,
 ): Promise<Id<"goals">> {
   const { goal } = args;
-  //? タイプに関わらず引数の形は同じ基準で弾く。ペース以外でも契約を揺らさない。
-  const weekStartJst = requireWeekStartJst(args.weekStartJst);
-  const message = validateGoalInput(goal);
-  if (message !== null) {
-    throwDomain(new ValidationFailedError({ message }));
-  }
-  await requireGoalItem(ctx, ownerId, goal);
+  const weekStartJst = await prepareGoalWrite(ctx, ownerId, args);
   if (goal.type === "exam" || goal.type === "pace") {
     const goalType = goal.type;
     const existing = await ctx.db
@@ -43,13 +31,6 @@ export async function create(
     }
   }
   const goalId = await ctx.db.insert("goals", toGoalDocument(goal, ownerId));
-  if (goal.type === "pace") {
-    //? 週間ゴールは作成時点の週から効かせる。
-    await upsertWeekSnapshot(ctx, ownerId, {
-      dailyFloorMinutes: goal.dailyFloorMinutes,
-      days: goal.daysPerWeek,
-      weekStartJst,
-    });
-  }
+  await syncPaceSnapshot(ctx, ownerId, goal, weekStartJst);
   return goalId;
 }

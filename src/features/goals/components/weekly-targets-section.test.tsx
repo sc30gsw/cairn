@@ -1,10 +1,10 @@
 import { fireEvent, waitFor } from "@testing-library/react";
 import { expect, test, vi } from "vite-plus/test";
 
-import type { CategoryDto } from "~/features/catalog/types/item";
 import { WeeklyTargetsSection } from "~/features/goals/components/weekly-targets-section";
 import type { TargetProgress } from "~/features/goals/types/target";
 import { renderWithMantine } from "~/test-utils/render";
+import type { CategoryDto } from "~/types/category";
 
 const INPUT_CATEGORY = {
   _id: "category-input" as CategoryDto["_id"],

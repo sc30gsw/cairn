@@ -1,8 +1,10 @@
-import type { CategoryDto } from "~/features/catalog/types/item";
+import type { DateJst } from "~domain/jst";
+
 import type { Goal, Obstacle, WeeklyTrendWeeks } from "~/features/goals/types/goal";
 import type { TargetProgress } from "~/features/goals/types/target";
 import type { WeekPage } from "~/features/history/types/history";
 import type { MinutesByDate } from "~/lib/weekly-progress";
+import type { CategoryDto } from "~/types/category";
 
 export const goalsShimmerGoals = [
   {
@@ -88,8 +90,8 @@ export const goalsShimmerTargets = [
   },
 ] satisfies TargetProgress[];
 
-export const goalsShimmerTodayJst = "2026-08-17";
-export const goalsShimmerWeekEndJst = "2026-08-23";
+export const goalsShimmerTodayJst = "2026-08-17" satisfies DateJst;
+export const goalsShimmerWeekEndJst = "2026-08-23" satisfies WeekPage["weekEnd"];
 export const goalsShimmerWeeklyGoal = {
   dailyFloorMinutes: 20,
   days: 3,

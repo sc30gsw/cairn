@@ -22,7 +22,7 @@ import { groupBy, mapValues, prop, sortBy } from "remeda";
 import { useDnd } from "~/features/catalog/hooks/use-dnd";
 import { CategorySchema } from "~/features/catalog/schemas/category-schema";
 import { ItemNameSchema } from "~/features/catalog/schemas/item-schema";
-import type { CategoryDto, ItemDto } from "~/features/catalog/types/item";
+import type { ItemDto } from "~/features/catalog/types/item";
 import { parseCategoryId } from "~/features/catalog/types/item";
 import type {
   ApplyItemOrderInput,
@@ -33,6 +33,7 @@ import type {
   RenameCategoryInput,
   RenameItemInput,
 } from "~/features/catalog/types/mutations";
+import type { CategoryDto } from "~/types/category";
 
 type ItemListProps = {
   categories: CategoryDto[];

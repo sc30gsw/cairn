@@ -1,12 +1,13 @@
-import { groupBy, mapValues, prop, sum } from "remeda";
+import { sum } from "remeda";
 import { daysUntil, type DateJst } from "~domain/jst";
-import type { VolumeRow } from "~domain/volume";
-import { confirmedVolumeMinutes } from "~domain/volume";
+import type { MinutesByDate } from "~domain/minutesByDate";
+import { qualifyingDays } from "~domain/qualifyingDays";
 
-import { qualifyingDays } from "~/../convex/services/goals/qualifyingDays";
 import type { WeekBreakdown } from "~/features/history/types/history";
 
-export type MinutesByDate = Readonly<Record<string, number>>;
+//? 実施日の集計はサーバと同じ純関数を使う(convex/lib が唯一の実装 — CVX-16)。
+export { minutesByDateFromRows } from "~domain/minutesByDate";
+export type { MinutesByDate } from "~domain/minutesByDate";
 
 export type WeeklyProgressInput = Pick<WeekBreakdown, "weeklyGoal"> & {
   minutesByDate: MinutesByDate;
@@ -24,13 +25,6 @@ export type WeeklyProgressResult = {
   todayReached: boolean;
   weekMinutes: number;
 };
-
-//? 確定行だけを暦日ごとに合計する。実施日の判定はここで集めた分数に対して行う(CONTEXT.md 実施日)
-export function minutesByDateFromRows(
-  rows: readonly (Record<"dateJst", string> & VolumeRow)[],
-): MinutesByDate {
-  return mapValues(groupBy(rows, prop("dateJst")), confirmedVolumeMinutes);
-}
 
 export function minutesByDateFromDays(
   days: readonly (Record<"confirmedMinutes", number> & Record<"dateJst", string>)[],

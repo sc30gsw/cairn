@@ -1,5 +1,10 @@
 import * as v from "valibot";
 import { expect, test } from "vite-plus/test";
+import {
+  TOEIC_SCORE_ORDER_MESSAGE,
+  TOEIC_SCORE_RANGE_MESSAGE,
+  TOEIC_SCORE_STEP_MESSAGE,
+} from "~domain/domain";
 
 import {
   ExamGoalFieldsSchema,
@@ -7,9 +12,6 @@ import {
   MasteryGoalFieldsSchema,
   OtherGoalFieldsSchema,
   PaceGoalFieldsSchema,
-  TOEIC_SCORE_ORDER_MESSAGE,
-  TOEIC_SCORE_RANGE_MESSAGE,
-  TOEIC_SCORE_STEP_MESSAGE,
   VolumeGoalFieldsSchema,
 } from "~/features/goals/schemas/goal-schema";
 

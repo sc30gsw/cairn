@@ -1,9 +1,20 @@
 import * as v from "valibot";
 import {
   DATE_JST_PATTERN,
+  GOAL_DATE_MESSAGE,
   GOAL_TYPES,
+  MASTERY_CRITERION_MESSAGE,
+  PACE_DAYS_MESSAGE,
+  PACE_FLOOR_MESSAGE,
   PACE_LIMITS,
   TOEIC_SCORE,
+  TOEIC_SCORE_ORDER_MESSAGE,
+  TOEIC_SCORE_RANGE_MESSAGE,
+  TOEIC_SCORE_STEP_MESSAGE,
+  VOLUME_AMOUNT_LIMITS,
+  VOLUME_AMOUNT_MESSAGE,
+  VOLUME_START_MESSAGE,
+  VOLUME_TARGET_MESSAGE,
   VOLUME_UNITS,
 } from "~domain/domain";
 
@@ -11,18 +22,8 @@ import { ConcreteActionSchema } from "~/lib/validation/concrete-action";
 
 const [examType, paceType, volumeType, masteryType, otherType] = GOAL_TYPES;
 
-//? メッセージはドメイン定数から組み立てる。数値そのものを文言に手書きしない(CVX-16)。
-const GOAL_DATE_MESSAGE = "日付は YYYY-MM-DD で入力してください";
-export const TOEIC_SCORE_RANGE_MESSAGE = `スコアは${TOEIC_SCORE.min}〜${TOEIC_SCORE.max}で入力してください`;
-export const TOEIC_SCORE_STEP_MESSAGE = `スコアは${TOEIC_SCORE.step}点刻みで入力してください`;
-export const TOEIC_SCORE_ORDER_MESSAGE = "目標点の下限が上限を超えています";
-const PACE_DAYS_MESSAGE = `週の実施日数は${PACE_LIMITS.minDays}〜${PACE_LIMITS.maxDays}日で入力してください`;
-const PACE_FLOOR_MESSAGE = `1日あたりの最低分数は${PACE_LIMITS.minFloorMinutes}分以上です`;
-const VOLUME_TARGET_MESSAGE = "目標量は1以上の整数で入力してください";
-const VOLUME_AMOUNT_MESSAGE = "現在量は0以上の整数です";
-const VOLUME_START_MESSAGE = "開始量は目標量より小さい値で入力してください";
+//? 検証メッセージはサーバと共有のドメイン定数を使う。文言も数値もここで手書きしない(CVX-16)。
 const VOLUME_UNIT_MESSAGE = "単位を選んでください";
-const MASTERY_CRITERION_MESSAGE = "達成の基準を入力してください";
 
 const DateJstSchema = v.pipe(
   v.string(GOAL_DATE_MESSAGE),
@@ -66,7 +67,7 @@ export const PaceFloorMinutesSchema = v.pipe(
 export const VolumeAmountSchema = v.pipe(
   v.number(VOLUME_AMOUNT_MESSAGE),
   v.integer(VOLUME_AMOUNT_MESSAGE),
-  v.minValue(0, VOLUME_AMOUNT_MESSAGE),
+  v.minValue(VOLUME_AMOUNT_LIMITS.minStart, VOLUME_AMOUNT_MESSAGE),
 );
 
 //* タイプごとの入力欄。フォームは1タイプ1ストアなので、`type` は送信時に付ける。
@@ -101,7 +102,7 @@ export const VolumeGoalFieldsSchema = v.pipe(
     targetAmount: v.pipe(
       v.number(VOLUME_TARGET_MESSAGE),
       v.integer(VOLUME_TARGET_MESSAGE),
-      v.minValue(1, VOLUME_TARGET_MESSAGE),
+      v.minValue(VOLUME_AMOUNT_LIMITS.minTarget, VOLUME_TARGET_MESSAGE),
     ),
     unit: v.picklist(VOLUME_UNITS, VOLUME_UNIT_MESSAGE),
   }),

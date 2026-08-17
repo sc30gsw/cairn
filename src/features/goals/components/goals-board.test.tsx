@@ -65,7 +65,6 @@ function makeTrendWeek(weekIndex: number, achieved: boolean): WeeklyTrendWeek {
 
 function goalsBoardProps(goals: Goal[], trendWeeks: WeeklyTrendWeek[]) {
   return {
-    categories: [],
     goals,
     minutesByDate: { "2026-08-17": 30 },
     obstacles: [],
@@ -73,17 +72,20 @@ function goalsBoardProps(goals: Goal[], trendWeeks: WeeklyTrendWeek[]) {
     onCreateObstacle: vi.fn(),
     onRemoveGoal: vi.fn(),
     onRemoveObstacle: vi.fn(),
-    onRemoveTarget: vi.fn(),
-    onSaveTarget: vi.fn(),
     onSaveWeekly: vi.fn(),
     onSetVolumeProgress: vi.fn(),
     onUpdateGoal: vi.fn(),
     onUpdateObstacle: vi.fn(),
-    targets: [],
     todayJst: "2026-08-17",
     trendWeeks,
     weekEndJst: "2026-08-23",
     weeklyGoal: { dailyFloorMinutes: 20, days: 3 },
+    weeklyTargets: {
+      categories: [],
+      onRemoveTarget: vi.fn(),
+      onSaveTarget: vi.fn(),
+      targets: [],
+    },
   };
 }
 

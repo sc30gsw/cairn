@@ -1,27 +1,24 @@
+import { Result } from "better-result";
+
 import { validateConcreteAction } from "../../lib/concreteActionCore";
-import { PACE_LIMITS, TOEIC_SCORE } from "../../lib/domain";
+import {
+  GOAL_DATE_MESSAGE,
+  MASTERY_CRITERION_MESSAGE,
+  PACE_FLOOR_MESSAGE,
+  PACE_LIMITS,
+  PACE_DAYS_MESSAGE,
+  TOEIC_SCORE,
+  TOEIC_SCORE_ORDER_MESSAGE,
+  TOEIC_SCORE_RANGE_MESSAGE,
+  TOEIC_SCORE_STEP_MESSAGE,
+  VOLUME_AMOUNT_LIMITS,
+  VOLUME_AMOUNT_MESSAGE,
+  VOLUME_START_MESSAGE,
+  VOLUME_TARGET_MESSAGE,
+} from "../../lib/domain";
+import { ValidationFailedError } from "../../lib/errors";
 import { isDateJst } from "../../lib/jst";
 import type { GoalInput } from "../../lib/validators";
-
-export const GOAL_DATE_MESSAGE = "日付は YYYY-MM-DD で入力してください";
-
-export const TOEIC_SCORE_RANGE_MESSAGE = `スコアは${TOEIC_SCORE.min}〜${TOEIC_SCORE.max}で入力してください`;
-
-export const TOEIC_SCORE_STEP_MESSAGE = `スコアは${TOEIC_SCORE.step}点刻みで入力してください`;
-
-export const TOEIC_SCORE_ORDER_MESSAGE = "目標点の下限が上限を超えています";
-
-export const PACE_DAYS_MESSAGE = `週の実施日数は${PACE_LIMITS.minDays}〜${PACE_LIMITS.maxDays}日で入力してください`;
-
-export const PACE_FLOOR_MESSAGE = `1日あたりの最低分数は${PACE_LIMITS.minFloorMinutes}分以上です`;
-
-export const VOLUME_TARGET_MESSAGE = "目標量は1以上の整数で入力してください";
-
-export const VOLUME_AMOUNT_MESSAGE = "現在量は0以上の整数です";
-
-export const VOLUME_START_MESSAGE = "開始量は目標量より小さい値で入力してください";
-
-export const MASTERY_CRITERION_MESSAGE = "達成の基準を入力してください";
 
 function scoreMessage(score: number): string | null {
   if (!Number.isInteger(score) || score < TOEIC_SCORE.min || score > TOEIC_SCORE.max) {
@@ -40,8 +37,8 @@ function optionalDateMessage(deadline: string | undefined): string | null {
   return null;
 }
 
-//* タイプごとの値制約。副作用なしの純関数(CVX-09)。違反なら日本語メッセージ、問題なければ null。
-export function validateGoalInput(input: GoalInput): string | null {
+//? タイプごとの値制約。違反した最初の1件だけを日本語メッセージで返す(CVX-09: 純関数)。
+function goalInputMessage(input: GoalInput): string | null {
   const contentMessage = validateConcreteAction(input.content);
   if (contentMessage !== null) {
     return contentMessage;
@@ -82,13 +79,19 @@ export function validateGoalInput(input: GoalInput): string | null {
         return GOAL_DATE_MESSAGE;
       }
       //? NaN は比較演算子を素通りするので、整数判定で先に落とす。
-      if (!Number.isInteger(input.targetAmount) || input.targetAmount <= 0) {
+      if (
+        !Number.isInteger(input.targetAmount) ||
+        input.targetAmount < VOLUME_AMOUNT_LIMITS.minTarget
+      ) {
         return VOLUME_TARGET_MESSAGE;
       }
       if (input.startAmount === undefined) {
         return null;
       }
-      if (!Number.isInteger(input.startAmount) || input.startAmount < 0) {
+      if (
+        !Number.isInteger(input.startAmount) ||
+        input.startAmount < VOLUME_AMOUNT_LIMITS.minStart
+      ) {
         return VOLUME_AMOUNT_MESSAGE;
       }
       //? 開始量が目標量以上だと「生まれつき達成済み」や負の進捗率になる。
@@ -103,4 +106,10 @@ export function validateGoalInput(input: GoalInput): string | null {
     default:
       return optionalDateMessage(input.deadline);
   }
+}
+
+//* 目標入力の検証。想定内の失敗なので型付きエラーを Result で返し、投げるのは mutation の境界に任せる。
+export function validateGoalInput(input: GoalInput): Result<null, ValidationFailedError> {
+  const message = goalInputMessage(input);
+  return message === null ? Result.ok(null) : Result.err(new ValidationFailedError({ message }));
 }

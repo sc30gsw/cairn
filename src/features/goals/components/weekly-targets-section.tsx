@@ -1,12 +1,13 @@
 import { Badge, Group, Stack, Text, Title } from "@mantine/core";
 
-import type { CategoryDto } from "~/features/catalog/types/item";
 import { TargetForm } from "~/features/goals/components/target-form";
 import { TargetList } from "~/features/goals/components/target-list";
 import type { SaveTargetInput } from "~/features/goals/types/mutations";
 import type { TargetId, TargetProgress } from "~/features/goals/types/target";
+import type { CategoryDto } from "~/types/category";
 
-type WeeklyTargetsSectionProps = {
+//? GoalsBoard からはこの塊ごと渡ってくる(props の受け渡しを1つにまとめる)
+export type WeeklyTargetsSectionProps = {
   categories: CategoryDto[];
   onRemoveTarget: (targetId: TargetId) => void;
   onSaveTarget: (input: SaveTargetInput) => void;

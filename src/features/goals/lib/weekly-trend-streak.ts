@@ -31,5 +31,6 @@ export function currentStreak(weeks: WeeklyTrendWeeks): StreakResult {
     reserveUsed = true;
   }
 
-  return { length, reserveUsed };
+  //? 連続が0なら予備で守られたものが無い。直近が未達なだけの状態を「予備を使った」と言わない。
+  return { length, reserveUsed: length > 0 && reserveUsed };
 }
