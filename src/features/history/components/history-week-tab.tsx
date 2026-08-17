@@ -5,12 +5,12 @@ import { useHistoryWeek } from "~/features/history/hooks/history-queries";
 import { useHistoryView } from "~/features/history/hooks/use-history-view";
 
 export function HistoryWeekTab() {
-  const { today, weekAnchor } = useHistoryView();
+  const { weekAnchor } = useHistoryView();
   const { data: week } = useHistoryWeek(weekAnchor);
 
   return (
     <ScrollArea.Autosize mah={640} offsetScrollbars type="auto">
-      <WeekAgenda todayJst={today} week={week} />
+      <WeekAgenda week={week} />
     </ScrollArea.Autosize>
   );
 }

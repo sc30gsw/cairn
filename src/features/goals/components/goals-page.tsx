@@ -4,18 +4,18 @@ import { mondayOfWeek, todayJst } from "~domain/jst";
 import { GoalsBoard } from "~/features/goals/components/goals-board";
 import { GoalsPending } from "~/features/goals/components/goals-pending";
 import {
+  useCreateGoal,
   useCreateObstacle,
+  useRemoveGoal,
   useRemoveObstacle,
-  useSaveExamGoal,
-  useSaveWeeklyGoal,
+  useSetGoalAchieved,
+  useUpdateGoal,
   useUpdateObstacle,
 } from "~/features/goals/hooks/goals-mutations";
-import {
-  useExamGoal,
-  useObstaclesList,
-  useWeeklyTrend,
-} from "~/features/goals/hooks/goals-queries";
-import { useHistoryWeek } from "~/features/history/hooks/history-queries";
+import { useGoalsList, useObstaclesList } from "~/features/goals/hooks/goals-queries";
+import { useRemoveTarget, useSaveTarget } from "~/features/goals/hooks/targets-mutations";
+import { useTargetsWithProgress } from "~/features/goals/hooks/targets-queries";
+import { useCategoriesList } from "~/hooks/use-categories-list";
 import { runMutation } from "~/lib/run-mutation";
 
 export function GoalsPage() {
@@ -29,23 +29,37 @@ export function GoalsPage() {
 function GoalsReady() {
   const today = todayJst();
   const weekStart = mondayOfWeek(today);
-  const { data: exam } = useExamGoal(today);
-  const { data: week } = useHistoryWeek(today);
+  const { data: categories } = useCategoriesList();
+  const { data: goals } = useGoalsList();
   const { data: obstacles } = useObstaclesList();
-  const { data: trendWeeks } = useWeeklyTrend(today);
-  const saveExam = useSaveExamGoal();
-  const saveWeekly = useSaveWeeklyGoal();
+  const { data: targets } = useTargetsWithProgress(weekStart);
+  const createGoal = useCreateGoal();
+  const updateGoal = useUpdateGoal();
+  const removeGoal = useRemoveGoal();
+  const setAchieved = useSetGoalAchieved();
   const createObstacle = useCreateObstacle();
   const updateObstacle = useUpdateObstacle();
   const removeObstacle = useRemoveObstacle();
+  const saveTarget = useSaveTarget();
+  const removeTarget = useRemoveTarget();
 
   return (
     <GoalsBoard
-      exam={exam}
+      goals={goals}
       obstacles={obstacles}
+      onCreateGoal={(goal) => {
+        void runMutation(() => createGoal.mutateAsync({ goal }), {
+          successMessage: "目標を追加しました",
+        });
+      }}
       onCreateObstacle={(input) => {
         void runMutation(() => createObstacle.mutateAsync(input), {
           successMessage: "障害プランを追加しました",
+        });
+      }}
+      onRemoveGoal={(goalId) => {
+        void runMutation(() => removeGoal.mutateAsync({ goalId }), {
+          successMessage: "目標を削除しました",
         });
       }}
       onRemoveObstacle={(planId) => {
@@ -53,14 +67,15 @@ function GoalsReady() {
           successMessage: "障害プランを削除しました",
         });
       }}
-      onSaveExam={(input) => {
-        void runMutation(() => saveExam.mutateAsync(input), {
-          successMessage: "本番目標を保存しました",
+      onSetAchieved={(input) => {
+        void runMutation(() => setAchieved.mutateAsync(input), {
+          successMessage:
+            input.achievedAt === undefined ? "達成を取り消しました" : "達成にしました",
         });
       }}
-      onSaveWeekly={(minutes) => {
-        void runMutation(() => saveWeekly.mutateAsync({ minutes, weekStartJst: weekStart }), {
-          successMessage: "週間ゴールを保存しました",
+      onUpdateGoal={(input) => {
+        void runMutation(() => updateGoal.mutateAsync(input), {
+          successMessage: "目標を更新しました",
         });
       }}
       onUpdateObstacle={(input) => {
@@ -69,10 +84,20 @@ function GoalsReady() {
         });
       }}
       todayJst={today}
-      trendWeeks={trendWeeks}
-      volumeMinutes={week.volumeMinutes}
-      weekEndJst={week.weekEnd}
-      weeklyGoalMinutes={week.weeklyGoalMinutes}
+      weeklyTargets={{
+        categories,
+        onRemoveTarget: (targetId) => {
+          void runMutation(() => removeTarget.mutateAsync({ targetId }), {
+            successMessage: "週間ターゲットを削除しました",
+          });
+        },
+        onSaveTarget: (input) => {
+          void runMutation(() => saveTarget.mutateAsync(input), {
+            successMessage: "週間ターゲットを保存しました",
+          });
+        },
+        targets,
+      }}
     />
   );
 }

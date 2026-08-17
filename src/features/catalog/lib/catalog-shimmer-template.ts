@@ -1,5 +1,6 @@
-import type { CategoryDto, ItemDto, PresetDto } from "~/features/catalog/types/item";
+import type { ItemDto, PresetDto } from "~/features/catalog/types/item";
 import { shimmerId } from "~/lib/shimmer-id";
+import type { CategoryDto } from "~/types/category";
 
 const categoryId = shimmerId<CategoryDto["_id"]>("category");
 const itemId = shimmerId<ItemDto["_id"]>("item");

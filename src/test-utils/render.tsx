@@ -40,6 +40,13 @@ HTMLElement.prototype.releasePointerCapture ??= () => undefined;
 HTMLElement.prototype.scrollIntoView ??= () => undefined;
 HTMLElement.prototype.setPointerCapture ??= () => undefined;
 
+//? happy-dom has no FontFaceSet. Mantine's autosizing Textarea (react-textarea-autosize)
+//? listens for `document.fonts.loadingdone` unconditionally, which otherwise throws on mount.
+(document as unknown as { fonts: Document["fonts"] }).fonts ??= {
+  addEventListener: () => undefined,
+  removeEventListener: () => undefined,
+} as unknown as Document["fonts"];
+
 afterEach(() => {
   cleanup();
 });

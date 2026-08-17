@@ -44,7 +44,6 @@ export const historyShimmerWeek = {
   volumeMinutes: 30,
   weekEnd: "2026-08-23",
   weekStart: "2026-08-17",
-  weeklyGoalMinutes: 300,
 } satisfies WeekPage;
 
 export const historyShimmerHeatmapDays = [
@@ -78,7 +77,6 @@ export const historyShimmerWeekBreakdown = {
   volumeMinutes: 0,
   weekEnd: "2026-08-23",
   weekStart: "2026-08-17",
-  weeklyGoalMinutes: 300,
 } satisfies WeekBreakdown;
 
 export const historyShimmerYearMonth = "2026-08";

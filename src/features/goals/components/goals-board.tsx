@@ -1,418 +1,234 @@
-import { Field, Form, reset, useForm, type FormStore } from "@formisch/react";
-import {
-  Badge,
-  Button,
-  Card,
-  Grid,
-  Group,
-  NumberInput,
-  Stack,
-  Text,
-  TextInput,
-  Title,
-  Box,
-} from "@mantine/core";
-import { DatePickerInput } from "@mantine/dates";
-import { useRef } from "react";
-import { OBSTACLE_THEN_PLACEHOLDER } from "~domain/concreteActionCore";
-import { WEEKLY_TREND_WEEKS } from "~domain/domain";
+import { Button, Card, EmptyState, Grid, Group, Title } from "@mantine/core";
+import { IconTarget } from "@tabler/icons-react";
+import { useRef, useState } from "react";
+import type { GoalType } from "~domain/domain";
 import type { DateJst } from "~domain/jst";
 
-import { ConcreteActionField } from "~/components/concrete-action-field";
-import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
-import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
-import { ConcreteThenFieldLabel } from "~/components/concrete-then-field-label";
-import { LabelAlignedCell } from "~/components/label-aligned-cell";
-import { MissedWeekBanner } from "~/features/goals/components/missed-week-banner";
-import { WeeklyProgressCard } from "~/features/goals/components/weekly-progress-card";
-import { WeeklyTrendChart } from "~/features/goals/components/weekly-trend-chart";
-import { WeeklyTrendList } from "~/features/goals/components/weekly-trend-list";
-import { currentStreak } from "~/features/goals/lib/weekly-trend-streak";
-import { ExamSchema } from "~/features/goals/schemas/exam-schema";
-import { ObstacleSchema } from "~/features/goals/schemas/obstacle-schema";
-import { WeeklySchema } from "~/features/goals/schemas/weekly-schema";
-import type { ExamGoal, Obstacle, WeeklyTrendWeeks } from "~/features/goals/types/goal";
+import { ConcreteActionTour } from "~/components/concrete-action-tour";
+import { CheckpointSection } from "~/features/goals/components/checkpoint-section";
+import { ExamGoalCard } from "~/features/goals/components/exam-goal-card";
+import { GoalForm } from "~/features/goals/components/goal-form";
+import { MasteryGoalCard } from "~/features/goals/components/mastery-goal-card";
+import { ObstacleSection } from "~/features/goals/components/obstacle-section";
+import {
+  WeeklyTargetsSection,
+  type WeeklyTargetsSectionProps,
+} from "~/features/goals/components/weekly-targets-section";
+import { findGoalOfType } from "~/features/goals/lib/goal-selectors";
+import { groupMasteryGoals } from "~/features/goals/lib/mastery-goals";
+import type { GoalFormOutput } from "~/features/goals/schemas/goal-schema";
+import type { Goal, GoalId, Obstacle } from "~/features/goals/types/goal";
 import type {
   CreateObstacleInput,
   RemoveObstacleInput,
-  SaveExamInput,
-  SaveWeeklyInput,
+  SetAchievedInput,
+  UpdateGoalInput,
   UpdateObstacleInput,
 } from "~/features/goals/types/mutations";
-import type { WeekPage } from "~/features/history/types/history";
-import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-style";
-import { BODY_FONT, DISPLAY_FONT } from "~/lib/theme";
+
+export const EXAM_GOAL_EMPTY_TITLE = "本番目標がまだありません";
+export const OPEN_MASTERY_SECTION_TITLE = "期限なしの習得";
+
+type GoalEditor =
+  | { goal: Goal; kind: "edit" }
+  | { kind: "closed" }
+  | { kind: "create"; type: GoalType };
 
 type GoalsBoardProps = {
-  exam: ExamGoal;
+  goals: Goal[];
   obstacles: Obstacle[];
+  onCreateGoal: (goal: GoalFormOutput) => void;
   onCreateObstacle: (input: CreateObstacleInput) => void;
+  onRemoveGoal: (goalId: GoalId) => void;
   onRemoveObstacle: (planId: RemoveObstacleInput["planId"]) => void;
-  onSaveExam: (input: SaveExamInput) => void;
-  onSaveWeekly: (minutes: SaveWeeklyInput) => void;
+  onSetAchieved: (input: SetAchievedInput) => void;
+  onUpdateGoal: (input: UpdateGoalInput) => void;
   onUpdateObstacle: (input: UpdateObstacleInput) => void;
   todayJst: DateJst;
-  trendWeeks: WeeklyTrendWeeks;
-  volumeMinutes: WeekPage["volumeMinutes"];
-  weekEndJst: WeekPage["weekEnd"];
-  weeklyGoalMinutes: WeekPage["weeklyGoalMinutes"];
+  //? 週間ターゲットはこの板では素通し。区画ごと渡して props の数を抑える
+  weeklyTargets: WeeklyTargetsSectionProps;
 };
 
+//? フォームはタイプごとに別ストア。編集対象が変わったら作り直す
+function editorKey(editor: GoalEditor): string {
+  if (editor.kind === "create") {
+    return `create-${editor.type}`;
+  }
+
+  return editor.kind === "edit" ? `edit-${editor.goal._id}` : "closed";
+}
+
 export function GoalsBoard({
-  exam,
+  goals,
   obstacles,
+  onCreateGoal,
   onCreateObstacle,
+  onRemoveGoal,
   onRemoveObstacle,
-  onSaveExam,
-  onSaveWeekly,
+  onSetAchieved,
+  onUpdateGoal,
   onUpdateObstacle,
   todayJst,
-  trendWeeks,
-  volumeMinutes,
-  weekEndJst,
-  weeklyGoalMinutes,
+  weeklyTargets,
 }: GoalsBoardProps) {
-  const obstacleForm = useForm({
-    initialInput: { ifText: "", thenText: "" },
-    schema: ObstacleSchema,
-  });
-  const obstacleSectionRef = useRef<HTMLDivElement>(null);
-  //? trendWeeks は新しい順。先頭 = 直近の完了週
-  const lastWeek = trendWeeks[0];
-  const showMissedBanner =
-    lastWeek !== undefined && lastWeek.goalMinutes !== null && !lastWeek.achieved;
-  const streak = currentStreak(trendWeeks);
+  const [editor, setEditor] = useState<GoalEditor>({ kind: "closed" });
+  const weeklyTargetsRef = useRef<HTMLDivElement>(null);
+  const examGoal = findGoalOfType(goals, "exam");
+  const mastery = groupMasteryGoals(goals);
+  //? チェックポイントの追加はセクション内で完結させる。上部のフォーム枠には出さない
+  const checkpointFormOpen = editor.kind === "create" && editor.type === "mastery";
+  const topFormOpen = editor.kind !== "closed" && !checkpointFormOpen;
+  //? チェックポイントは本番目標に従属する。本番目標が無い間は追加導線を出さない(docs/adr/0006)
+  const showCheckpointSection =
+    examGoal !== undefined || mastery.checkpoints.length > 0 || mastery.achieved.length > 0;
+
+  function closeEditor() {
+    setEditor({ kind: "closed" });
+  }
+
+  function openCreate(type: GoalType) {
+    setEditor({ kind: "create", type });
+  }
+
+  function openEdit(goal: Goal) {
+    setEditor({ goal, kind: "edit" });
+  }
+
+  function submitGoal(goal: GoalFormOutput) {
+    if (editor.kind === "edit") {
+      onUpdateGoal({ goal, goalId: editor.goal._id });
+    } else {
+      onCreateGoal(goal);
+    }
+    closeEditor();
+  }
+
+  function showWeeklyTargets() {
+    weeklyTargetsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   return (
     <ConcreteActionTour screen="obstacles">
       <Grid gap="md">
         <Grid.Col span={12}>
-          <Title order={1}>本番目標</Title>
+          <Group gap="sm" justify="space-between" wrap="nowrap">
+            <Title order={1}>目標</Title>
+            {/*? 本番目標があるなら追加導線はチェックポイントに一本化する */}
+            {examGoal === undefined && (
+              <Button onClick={() => openCreate("exam")} type="button">
+                目標を追加
+              </Button>
+            )}
+          </Group>
         </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <Card h="100%">
-            <Stack gap="md">
-              <Text>
-                {exam.examDate} まであと {exam.daysRemaining} 日。目標 {exam.minScore}〜
-                {exam.maxScore}。
-              </Text>
-              <Title ff={DISPLAY_FONT} fw={500} order={2}>
-                {exam.daysRemaining}
-                <Text c="dimmed" ff={BODY_FONT} fz="md" span>
-                  日
-                </Text>
-              </Title>
-              <ExamGoalForm exam={exam} onSaveExam={onSaveExam} todayJst={todayJst} />
-            </Stack>
-          </Card>
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, md: 6 }}>
-          <Card h="100%">
-            <Stack gap="md">
-              <Title order={2}>週間ゴール</Title>
-              <WeeklyProgressCard
-                todayJst={todayJst}
-                volumeMinutes={volumeMinutes}
-                weekEndJst={weekEndJst}
-                weeklyGoalMinutes={weeklyGoalMinutes}
-              />
-              <WeeklyGoalForm onSaveWeekly={onSaveWeekly} weeklyGoalMinutes={weeklyGoalMinutes} />
-              {showMissedBanner && (
-                <MissedWeekBanner
-                  hasObstacles={obstacles.length > 0}
-                  lastWeek={lastWeek}
-                  onShowObstacles={() =>
-                    obstacleSectionRef.current?.scrollIntoView({
-                      behavior: "smooth",
-                      block: "start",
-                    })
-                  }
-                />
-              )}
-              <Stack gap="xs">
-                <Group gap="xs" wrap="nowrap">
-                  <Title order={3}>達成履歴</Title>
-                  {streak >= 2 && (
-                    <Badge color="blue" variant="light">
-                      {/*? 遡れる範囲(WEEKLY_TREND_WEEKS)を使い切ったら「12週+」表記(#24) */}
-                      {streak}週{streak >= WEEKLY_TREND_WEEKS ? "+" : ""}連続達成中
-                    </Badge>
-                  )}
-                </Group>
-                <WeeklyTrendList weeks={trendWeeks} />
-                <WeeklyTrendChart weeks={trendWeeks} />
-              </Stack>
-            </Stack>
-          </Card>
-        </Grid.Col>
-        <Grid.Col span={12}>
-          <Card ref={obstacleSectionRef}>
-            <Stack gap="md">
-              <Group gap="xs" wrap="nowrap">
-                <Title order={2}>障害プラン</Title>
-                <ConcreteActionTourTrigger />
-              </Group>
-              <Form
-                of={obstacleForm}
-                onSubmit={(output) => {
-                  onCreateObstacle(output);
-                  reset(obstacleForm);
-                }}
+        {topFormOpen && (
+          <Grid.Col span={12}>
+            <GoalForm
+              activeCheckpointCount={mastery.checkpoints.length}
+              goal={editor.kind === "edit" ? editor.goal : undefined}
+              initialType={editor.kind === "create" ? editor.type : "exam"}
+              key={editorKey(editor)}
+              onCancel={closeEditor}
+              onSubmit={submitGoal}
+              todayJst={todayJst}
+            />
+          </Grid.Col>
+        )}
+        {examGoal !== undefined && (
+          <Grid.Col span={12}>
+            <ExamGoalCard
+              goal={examGoal}
+              hasWeeklyTargets={weeklyTargets.targets.length > 0}
+              onEdit={() => openEdit(examGoal)}
+              onRemove={() => onRemoveGoal(examGoal._id)}
+              onShowWeeklyTargets={showWeeklyTargets}
+              todayJst={todayJst}
+            />
+          </Grid.Col>
+        )}
+        {/*? フォームを開いている間は空状態を下げる。同じ「作る」導線を二重に見せない */}
+        {examGoal === undefined && !topFormOpen && (
+          <Grid.Col span={12}>
+            <Card>
+              <EmptyState
+                description="本番日とスコア帯を決めると、残り日数の軸ができます。"
+                icon={<IconTarget aria-hidden />}
+                title={EXAM_GOAL_EMPTY_TITLE}
               >
-                <Grid align="flex-start" gap="sm">
-                  <Grid.Col span={{ base: 12, sm: 5 }}>
-                    <ObstacleIfField form={obstacleForm} />
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 5 }}>
-                    <Box data-onboarding-tour-id={CONCRETE_ACTION_TOUR_TARGETS.obstacles}>
-                      <Field of={obstacleForm} path={["thenText"]}>
-                        {(field) => (
-                          <ConcreteActionField
-                            {...field.props}
-                            error={field.errors?.[0]}
-                            label={<ConcreteThenFieldLabel />}
-                            placeholder={OBSTACLE_THEN_PLACEHOLDER}
-                            wrapLabel={false}
-                            value={field.input}
-                          />
-                        )}
-                      </Field>
-                    </Box>
-                  </Grid.Col>
-                  <Grid.Col span={{ base: 12, sm: 2 }}>
-                    <LabelAlignedCell>
-                      <Button fullWidth type="submit">
-                        障害プランを追加
-                      </Button>
-                    </LabelAlignedCell>
-                  </Grid.Col>
-                </Grid>
-              </Form>
-              {obstacles.map((plan) => (
-                <ObstacleEditor
-                  key={plan._id}
-                  onRemove={onRemoveObstacle}
-                  onUpdate={onUpdateObstacle}
-                  plan={plan}
-                />
-              ))}
-            </Stack>
+                <EmptyState.Actions>
+                  <Button onClick={() => openCreate("exam")} type="button">
+                    本番目標を作成する
+                  </Button>
+                </EmptyState.Actions>
+              </EmptyState>
+            </Card>
+          </Grid.Col>
+        )}
+        {showCheckpointSection && (
+          <Grid.Col span={12}>
+            <Card>
+              <CheckpointSection
+                achieved={mastery.achieved}
+                checkpoints={mastery.checkpoints}
+                form={
+                  checkpointFormOpen ? (
+                    <GoalForm
+                      activeCheckpointCount={mastery.checkpoints.length}
+                      goal={undefined}
+                      initialType="mastery"
+                      onCancel={closeEditor}
+                      onSubmit={submitGoal}
+                      todayJst={todayJst}
+                      variant="checkpoint"
+                    />
+                  ) : undefined
+                }
+                //? 本番目標が無い間と、フォームを開いている間は追加導線を出さない
+                onAddCheckpoint={
+                  examGoal === undefined || checkpointFormOpen
+                    ? undefined
+                    : () => openCreate("mastery")
+                }
+                onEditGoal={openEdit}
+                onRemoveGoal={onRemoveGoal}
+                onSetAchieved={onSetAchieved}
+                todayJst={todayJst}
+              />
+            </Card>
+          </Grid.Col>
+        )}
+        <Grid.Col span={12}>
+          <Card ref={weeklyTargetsRef}>
+            <WeeklyTargetsSection {...weeklyTargets} />
+          </Card>
+        </Grid.Col>
+        {mastery.open.length > 0 && (
+          <Grid.Col span={12}>
+            <Title order={2}>{OPEN_MASTERY_SECTION_TITLE}</Title>
+          </Grid.Col>
+        )}
+        {mastery.open.map((goal) => (
+          <Grid.Col key={goal._id} span={{ base: 12, md: 6 }}>
+            <MasteryGoalCard
+              goal={goal}
+              onEdit={() => openEdit(goal)}
+              onRemove={() => onRemoveGoal(goal._id)}
+              onSetAchieved={onSetAchieved}
+              todayJst={todayJst}
+            />
+          </Grid.Col>
+        ))}
+        <Grid.Col span={12}>
+          <Card>
+            <ObstacleSection
+              obstacles={obstacles}
+              onCreateObstacle={onCreateObstacle}
+              onRemoveObstacle={onRemoveObstacle}
+              onUpdateObstacle={onUpdateObstacle}
+            />
           </Card>
         </Grid.Col>
       </Grid>
     </ConcreteActionTour>
-  );
-}
-
-type ExamGoalFormProps = {
-  exam: ExamGoal;
-  onSaveExam: (input: SaveExamInput) => void;
-  todayJst: DateJst;
-};
-
-function ExamGoalForm({ exam, onSaveExam, todayJst }: ExamGoalFormProps) {
-  const examForm = useForm({
-    initialInput: {
-      examDate: exam.examDate,
-      maxScore: exam.maxScore,
-      minScore: exam.minScore,
-    },
-    schema: ExamSchema,
-  });
-
-  return (
-    <Form of={examForm} onSubmit={onSaveExam}>
-      <Grid align="flex-start" gap="sm">
-        <Grid.Col span={12}>
-          <Field of={examForm} path={["examDate"]}>
-            {(field) => (
-              <DatePickerInput
-                classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
-                error={field.errors?.[0]}
-                firstDayOfWeek={1}
-                getDayProps={(date) => calendarDayProps(date, todayJst)}
-                label="本番日"
-                locale="ja"
-                name={field.props.name}
-                onChange={(value) => field.onChange(value ?? "")}
-                popoverProps={{ withinPortal: true }}
-                value={field.input}
-                valueFormat="YYYY-MM-DD"
-              />
-            )}
-          </Field>
-        </Grid.Col>
-        <Grid.Col span={6}>
-          <Field of={examForm} path={["minScore"]}>
-            {(field) => (
-              <NumberInput
-                {...field.props}
-                error={field.errors?.[0]}
-                label="下限"
-                onChange={(value) => field.onChange(value === "" ? undefined : Number(value))}
-                value={field.input}
-              />
-            )}
-          </Field>
-        </Grid.Col>
-        <Grid.Col span={6}>
-          <Field of={examForm} path={["maxScore"]}>
-            {(field) => (
-              <NumberInput
-                {...field.props}
-                error={field.errors?.[0]}
-                label="上限"
-                onChange={(value) => field.onChange(value === "" ? undefined : Number(value))}
-                value={field.input}
-              />
-            )}
-          </Field>
-        </Grid.Col>
-        <Grid.Col span={12}>
-          <Button type="submit">本番目標を保存</Button>
-        </Grid.Col>
-      </Grid>
-    </Form>
-  );
-}
-
-type WeeklyGoalFormProps = {
-  onSaveWeekly: (minutes: SaveWeeklyInput) => void;
-  weeklyGoalMinutes: WeekPage["weeklyGoalMinutes"];
-};
-
-function WeeklyGoalForm({ onSaveWeekly, weeklyGoalMinutes }: WeeklyGoalFormProps) {
-  const weeklyForm = useForm({
-    initialInput: { minutes: weeklyGoalMinutes ?? 0 },
-    schema: WeeklySchema,
-  });
-
-  return (
-    <Form
-      of={weeklyForm}
-      onSubmit={(output) => {
-        onSaveWeekly(output.minutes);
-      }}
-    >
-      <Grid align="flex-start" gap="sm">
-        <Grid.Col span={{ base: 12, sm: 8 }}>
-          <Field of={weeklyForm} path={["minutes"]}>
-            {(field) => (
-              <NumberInput
-                {...field.props}
-                error={field.errors?.[0]}
-                label="今週の分数ゴール"
-                min={0}
-                onChange={(value) => field.onChange(value === "" ? undefined : Number(value))}
-                value={field.input}
-              />
-            )}
-          </Field>
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, sm: 4 }}>
-          <LabelAlignedCell>
-            <Button fullWidth type="submit">
-              週間ゴールを保存
-            </Button>
-          </LabelAlignedCell>
-        </Grid.Col>
-      </Grid>
-    </Form>
-  );
-}
-
-type ObstacleIfFieldProps = {
-  form: FormStore<typeof ObstacleSchema>;
-};
-
-function ObstacleIfField({ form }: ObstacleIfFieldProps) {
-  return (
-    <Field of={form} path={["ifText"]}>
-      {(field) => (
-        <TextInput {...field.props} error={field.errors?.[0]} label="もし" value={field.input} />
-      )}
-    </Field>
-  );
-}
-
-function ObstacleEditor({
-  onRemove,
-  onUpdate,
-  plan,
-}: {
-  onRemove: GoalsBoardProps["onRemoveObstacle"];
-  onUpdate: GoalsBoardProps["onUpdateObstacle"];
-  plan: Obstacle;
-}) {
-  const form = useForm({
-    initialInput: { ifText: plan.ifText, thenText: plan.thenText },
-    schema: ObstacleSchema,
-  });
-
-  return (
-    <Card padding="md">
-      <Form
-        of={form}
-        onSubmit={(output) => {
-          onUpdate({ ...output, planId: plan._id });
-        }}
-      >
-        <Stack gap="sm">
-          <Text>
-            もし {plan.ifText} なら {plan.thenText}
-          </Text>
-          <Grid align="flex-start" gap="sm">
-            <Grid.Col span={{ base: 12, sm: 4 }}>
-              <Field of={form} path={["ifText"]}>
-                {(field) => (
-                  <TextInput
-                    {...field.props}
-                    aria-label={`${plan.ifText}のもし`}
-                    error={field.errors?.[0]}
-                    label=" "
-                    value={field.input}
-                  />
-                )}
-              </Field>
-            </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 4 }}>
-              <Field of={form} path={["thenText"]}>
-                {(field) => (
-                  <ConcreteActionField
-                    {...field.props}
-                    aria-label={`${plan.ifText}のなら`}
-                    error={field.errors?.[0]}
-                    label={<ConcreteThenFieldLabel />}
-                    placeholder={OBSTACLE_THEN_PLACEHOLDER}
-                    wrapLabel={false}
-                    value={field.input}
-                  />
-                )}
-              </Field>
-            </Grid.Col>
-            <Grid.Col span={{ base: 6, sm: 2 }}>
-              <LabelAlignedCell>
-                <Button fullWidth type="submit">
-                  {plan.ifText}を保存
-                </Button>
-              </LabelAlignedCell>
-            </Grid.Col>
-            <Grid.Col span={{ base: 6, sm: 2 }}>
-              <LabelAlignedCell>
-                <Button
-                  color="red"
-                  fullWidth
-                  onClick={() => onRemove(plan._id)}
-                  type="button"
-                  variant="subtle"
-                >
-                  削除
-                </Button>
-              </LabelAlignedCell>
-            </Grid.Col>
-          </Grid>
-        </Stack>
-      </Form>
-    </Card>
   );
 }

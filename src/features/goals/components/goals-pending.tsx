@@ -2,13 +2,11 @@ import { Shimmer } from "@shimmer-from-structure/react";
 
 import { GoalsBoard } from "~/features/goals/components/goals-board";
 import {
-  goalsShimmerExam,
+  goalsShimmerCategories,
+  goalsShimmerGoals,
   goalsShimmerObstacles,
+  goalsShimmerTargets,
   goalsShimmerTodayJst,
-  goalsShimmerTrendWeeks,
-  goalsShimmerVolumeMinutes,
-  goalsShimmerWeekEndJst,
-  goalsShimmerWeeklyGoalMinutes,
 } from "~/features/goals/lib/goals-shimmer-template";
 import { shimmerNoop } from "~/lib/shimmer-noop";
 
@@ -16,18 +14,22 @@ export function GoalsPending() {
   return (
     <Shimmer loading>
       <GoalsBoard
-        exam={goalsShimmerExam}
+        goals={goalsShimmerGoals}
         obstacles={goalsShimmerObstacles}
+        onCreateGoal={shimmerNoop}
         onCreateObstacle={shimmerNoop}
+        onRemoveGoal={shimmerNoop}
         onRemoveObstacle={shimmerNoop}
-        onSaveExam={shimmerNoop}
-        onSaveWeekly={shimmerNoop}
+        onSetAchieved={shimmerNoop}
+        onUpdateGoal={shimmerNoop}
         onUpdateObstacle={shimmerNoop}
         todayJst={goalsShimmerTodayJst}
-        trendWeeks={goalsShimmerTrendWeeks}
-        volumeMinutes={goalsShimmerVolumeMinutes}
-        weekEndJst={goalsShimmerWeekEndJst}
-        weeklyGoalMinutes={goalsShimmerWeeklyGoalMinutes}
+        weeklyTargets={{
+          categories: goalsShimmerCategories,
+          onRemoveTarget: shimmerNoop,
+          onSaveTarget: shimmerNoop,
+          targets: goalsShimmerTargets,
+        }}
       />
     </Shimmer>
   );

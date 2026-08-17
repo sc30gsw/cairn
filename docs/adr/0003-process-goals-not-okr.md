@@ -1,3 +1,11 @@
 # 目標は本番・週間学習量・障害の if-then。OKR ツリーは作らない
 
 成果目標（本番のスコアと日付）は具体的で期限がある。TOEIC Reading は未習の複雑課題なので、アプリ内のフィードバックは学習量（プロセス）にする。実行の科学的根拠は if-then（実装意図）で、曜日プリセットがすでにその形。WOOP の想像プロトコルや OKR 風の目標ツリーは、この1人の学習ログでは過剰で効果が薄い。
+
+## 改訂（2026-08-17）
+
+学習量は「週の合計分数」ではなく「週 n 日 × 1日あたり最低 m 分」（頻度）で判定する。総分数は表示のみ。研究上のプロセスゴールは投入時間ではなく実行手順の質を指し、投入時間と成果の相関は小さい（Credé & Kuncel 2008; Macnamara et al. 2014）。分散練習は最高評価の学習方略であり（Dunlosky et al. 2013）、頻度判定はそれを直接誘導する。1週の未達で連続達成をゼロにしない（Lally et al. 2010; Sharif & Shu 2021）。WOOP を採らないのは「効果がない」からではなく、文書型 MCII の効果量が g = 0.277 と小さいため。成果目標不使用・if-then・目標ツリー不採用の判断は維持する。根拠: [docs/research/weekly-goal-redesign.md](../research/weekly-goal-redesign.md)
+
+## 再改訂（2026-08-17 同日）
+
+プロセス優先の核は維持したまま（Williamson et al. 2022: process d = 1.36 / outcome d = 0.09）、頻度判定の専用機構（週 n 日 × 最低 m 分、週次スナップショット、ストリーク）は廃止し、プロセス目標の役割はカテゴリ別の週間ターゲットへ移管した。あわせて Zimmerman & Kitsantas (1997, 1999) の shifting goals に基づき、非数値・自己判定の到達チェックポイント（期限つき習得）を併置する。置換ではなく併置であり、成果目標だけで運用しない判断は変わらない。詳細と意図的逸脱の記録は [ADR-0006](0006-checkpoints-replace-weekly-goals.md) と [docs/research/short-term-outcome-goals.md](../research/short-term-outcome-goals.md)。

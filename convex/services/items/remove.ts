@@ -29,6 +29,7 @@ export async function remove(
   if (itemIdIsInUse(args.itemId, holders)) {
     throwDomain(new ConflictError({ message: "使っている行または雛形がある項目は消せません" }));
   }
+  //? 目標は項目を参照しない(本番目標・習得とも項目リンクを持たない)ので、掃除は要らない
   await ctx.db.delete("items", args.itemId);
   return null;
 }

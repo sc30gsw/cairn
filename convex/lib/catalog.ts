@@ -71,18 +71,6 @@ export const WEEKDAY_NAMES = [
 
 export type WeekdayName = (typeof WEEKDAY_NAMES)[number];
 
-export type DefaultExamGoal = {
-  examDate: string;
-  maxScore: number;
-  minScore: number;
-};
-
-export const DEFAULT_EXAM_GOAL = {
-  examDate: "2026-09-27",
-  maxScore: 850,
-  minScore: 730,
-} as const satisfies DefaultExamGoal;
-
 export function seedLineNamesForWeekday(weekday: number): readonly string[] {
   if (weekday === 0 || weekday === 6) {
     return [];

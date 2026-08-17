@@ -3,7 +3,6 @@ import { Alert, Button, Card, Grid, SegmentedControl, Stack, Text, Title } from 
 import { Link } from "@tanstack/react-router";
 import type { DateJst } from "~domain/jst";
 
-import { WeeklyProgressCard } from "~/components/weekly-progress-card";
 import { BreakdownTable } from "~/features/history/components/breakdown-table";
 import { HeatmapLegend } from "~/features/history/components/heatmap-legend";
 import { HistoryLearningHeatmap } from "~/features/history/components/history-learning-heatmap";
@@ -172,15 +171,6 @@ export function HistoryAnalysisPanel({
         {scope === "week" && `${week.weekStart} 〜 ${week.weekEnd}`}
         {scope === "month" && formatYearMonth(yearMonth)}
       </Text>
-
-      {scope === "week" ? (
-        <WeeklyProgressCard
-          todayJst={todayJst}
-          volumeMinutes={week.volumeMinutes}
-          weekEndJst={week.weekEnd}
-          weeklyGoalMinutes={week.weeklyGoalMinutes}
-        />
-      ) : null}
 
       {scope === "month" ? (
         <Stack gap="xs">

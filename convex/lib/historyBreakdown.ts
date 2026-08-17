@@ -111,7 +111,6 @@ export function buildWeekBreakdown(
   liveDayDates: ReadonlySet<string>,
   itemById: Map<Id<"items">, Doc<"items">>,
   categoryById: Map<Id<"categories">, Doc<"categories">>,
-  weeklyGoalMinutes: null | number,
 ): WeekBreakdown {
   const aggregated = aggregateBreakdownRows(rows, itemById, categoryById);
   const rowsByDate = groupBy(rows, prop("dateJst"));
@@ -135,6 +134,5 @@ export function buildWeekBreakdown(
     volumeMinutes: aggregated.confirmedMinutes,
     weekEnd,
     weekStart,
-    weeklyGoalMinutes,
   };
 }

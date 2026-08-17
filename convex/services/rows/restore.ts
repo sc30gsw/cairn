@@ -2,6 +2,8 @@ import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { ConflictError, NotFoundError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
+import { withMasteryProgressDelta } from "../goals/withMasteryProgressDelta";
+import { rowDayLiveness } from "./rowDayLiveness";
 
 export async function restore(
   ctx: MutationCtx,
@@ -12,10 +14,13 @@ export async function restore(
   if (row === null || row.ownerId !== ownerId || row.deletedAt === undefined) {
     throwDomain(new NotFoundError({ message: "ゴミ箱にその記録はありません", resource: "記録" }));
   }
-  const day = await ctx.db.get("days", row.dayId);
-  if (day !== null && day.deletedAt !== undefined) {
+  //? 生存判定は暦日で引く共通規則(rowDayLiveness)。confirm / skip と同じ規則。
+  if ((await rowDayLiveness(ctx, ownerId, row)) === "trashed") {
     throwDomain(new ConflictError({ message: "日がゴミ箱にあります。先に日を戻してください" }));
   }
-  await ctx.db.patch("rows", args.rowId, { deletedAt: undefined });
+  //? 確定記録が実績に戻るぶんは、書き込みの前後を実測して出す(ADR-0007)。
+  await withMasteryProgressDelta(ctx, ownerId, row, async () => {
+    await ctx.db.patch("rows", args.rowId, { deletedAt: undefined });
+  });
   return null;
 }

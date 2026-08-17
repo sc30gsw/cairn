@@ -1,10 +1,10 @@
 import * as v from "valibot";
+import { DATE_JST_PATTERN } from "~domain/domain";
 
 import { AnalysisScopeSchema } from "~/features/history/schemas/analysis-scope-schema";
 
 const HistoryTabSchema = v.picklist(["month", "week", "analysis"]);
 
-const DATE_JST_PATTERN = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
 const YEAR_MONTH_PATTERN = /^\d{4}-(?:0[1-9]|1[0-2])$/;
 
 function isCalendarDate(value: string): boolean {

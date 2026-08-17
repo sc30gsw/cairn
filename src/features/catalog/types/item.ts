@@ -1,12 +1,11 @@
 import type { FunctionReturnType } from "convex/server";
 
 import type { api } from "~/../convex/_generated/api";
+import type { CategoryId } from "~/types/category";
 
 export type ItemDto = FunctionReturnType<typeof api.queries.items.list.list>[number];
-export type CategoryDto = FunctionReturnType<typeof api.queries.categories.list.list>[number];
 export type PresetDto = FunctionReturnType<typeof api.queries.presets.list.list>[number];
 export type ItemId = ItemDto["_id"];
-export type CategoryId = CategoryDto["_id"];
 export type PresetId = PresetDto["_id"];
 
 export function parseItemId(itemId: string): ItemId {

@@ -3,7 +3,6 @@ import { indexBy, prop } from "remeda";
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import {
-  DEFAULT_EXAM_GOAL,
   SEED_CONTENT,
   SEED_ITEMS,
   SEED_MINUTES,
@@ -139,18 +138,5 @@ export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<
         });
       }),
     );
-  }
-
-  const examGoal = await ctx.db
-    .query("examGoals")
-    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
-    .unique();
-  if (examGoal === null) {
-    await ctx.db.insert("examGoals", {
-      examDate: DEFAULT_EXAM_GOAL.examDate,
-      maxScore: DEFAULT_EXAM_GOAL.maxScore,
-      minScore: DEFAULT_EXAM_GOAL.minScore,
-      ownerId,
-    });
   }
 }

@@ -1,5 +1,5 @@
 import { convexTest } from "convex-test";
-import { expect, test } from "vite-plus/test";
+import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
@@ -24,6 +24,16 @@ const OWNER = { email: ALLOWED_EMAIL, subject: "owner-subject" };
 const MONDAY = "2026-08-17";
 const SATURDAY = "2026-08-15";
 const FUTURE = "2026-08-20";
+
+//? 週間ターゲットの集計窓は「今週」に閉じているので、現在時刻を MONDAY の週に固定する。
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(`${MONDAY}T12:00:00+09:00`));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 function owner() {
   process.env.ALLOWED_EMAIL = ALLOWED_EMAIL;
@@ -297,20 +307,18 @@ test("その日限りの行を足せる。未来には足さない", async () =>
   ).rejects.toThrow();
 });
 
-test("本番目標・週間ゴール・障害プラン。行の状態は変えない", async () => {
+test("目標・障害プラン。行の状態は変えない", async () => {
   const t = owner();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const before = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
-  const exam = await t.query(api.queries.goals.getExam.getExam, { todayJst: MONDAY });
-  expect(exam).toEqual({
-    daysRemaining: 41,
-    examDate: "2026-09-27",
-    maxScore: 850,
-    minScore: 730,
-  });
-  await t.mutation(api.mutations.goals.saveWeekly.saveWeekly, {
-    minutes: 300,
-    weekStartJst: MONDAY,
+  expect(await t.query(api.queries.goals.list.list, {})).toEqual([]);
+  //? 目標は記録と独立。作っても行の状態には波及しない
+  await t.mutation(api.mutations.goals.create.create, {
+    goal: {
+      content: "音読を止まらずにできる",
+      criterion: "1分間で120語",
+      type: "mastery",
+    },
   });
   const planId = await t.mutation(api.mutations.goals.createObstacle.createObstacle, {
     ifText: "眠い",
@@ -322,9 +330,7 @@ test("本番目標・週間ゴール・障害プラン。行の状態は変え�
   expect(plans).toEqual([{ _id: planId, ifText: "眠い", thenText: THEN_ACTION }]);
   await t.mutation(api.mutations.goals.removeObstacle.removeObstacle, { planId });
   expect(await t.query(api.queries.goals.listObstacles.listObstacles, {})).toEqual([]);
-  await expect(
-    raw().query(api.queries.goals.getExam.getExam, { todayJst: MONDAY }),
-  ).rejects.toThrow();
+  await expect(raw().query(api.queries.goals.list.list, {})).rejects.toThrow();
 });
 
 test("行と日のゴミ箱。30日後に完全削除。未認証は throw", async () => {
@@ -661,18 +667,25 @@ test("applyOrder で項目順とカテゴリを更新", async () => {
 
 test("試験目標の保存と障害プラン更新", async () => {
   const t = owner();
-  await t.mutation(api.mutations.goals.saveExam.saveExam, {
-    examDate: "2026-10-01",
-    maxScore: 900,
-    minScore: 800,
+  const goalId = await t.mutation(api.mutations.goals.create.create, {
+    goal: {
+      content: "本番までに公式問題集を1冊やり切る",
+      examDate: "2026-10-01",
+      maxScore: 900,
+      minScore: 800,
+      type: "exam",
+    },
   });
-  const exam = await t.query(api.queries.goals.getExam.getExam, { todayJst: MONDAY });
-  expect(exam).toEqual({
-    daysRemaining: 45,
-    examDate: "2026-10-01",
-    maxScore: 900,
-    minScore: 800,
-  });
+  expect(await t.query(api.queries.goals.list.list, {})).toEqual([
+    {
+      _id: goalId,
+      content: "本番までに公式問題集を1冊やり切る",
+      examDate: "2026-10-01",
+      maxScore: 900,
+      minScore: 800,
+      type: "exam",
+    },
+  ]);
   const planId = await t.mutation(api.mutations.goals.createObstacle.createObstacle, {
     ifText: "眠い",
     thenText: THEN_ACTION,

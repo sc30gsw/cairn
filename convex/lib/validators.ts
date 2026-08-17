@@ -2,18 +2,20 @@ import { type Infer, v } from "convex/values";
 
 import { CATEGORIES } from "./categories";
 import { CONDITIONS } from "./conditions";
-import { STATUSES } from "./domain";
+import { GOAL_TYPES, STATUSES, TARGET_METRICS } from "./domain";
 
-const [toeic, listening, reading, conversation, other] = CATEGORIES;
+const [toeic, listening, reading, conversation, otherCategory] = CATEGORIES;
 const [good, ordinary, collapsed] = CONDITIONS;
 const [confirmed, pending, skipped] = STATUSES;
+const [examType, masteryType] = GOAL_TYPES;
+const [minutesMetric, daysMetric, countMetric] = TARGET_METRICS;
 
 export const categoryValidator = v.union(
   v.literal(toeic),
   v.literal(listening),
   v.literal(reading),
   v.literal(conversation),
-  v.literal(other),
+  v.literal(otherCategory),
 );
 
 export const statusValidator = v.union(
@@ -114,7 +116,6 @@ export const weekBreakdownValidator = v.object({
   volumeMinutes: v.number(),
   weekEnd: v.string(),
   weekStart: v.string(),
-  weeklyGoalMinutes: v.union(v.number(), v.null()),
 });
 
 export const monthBreakdownValidator = v.object({
@@ -181,14 +182,84 @@ export const presetDtoValidator = v.object({
   weekday: v.number(),
 });
 
-export const examGoalDtoValidator = v.object({
-  daysRemaining: v.number(),
+export const goalTypeValidator = v.union(v.literal(examType), v.literal(masteryType));
+
+export type GoalTypeDto = Infer<typeof goalTypeValidator>;
+
+//* 目標はタイプごとに入力欄が変わる discriminated union。共有フィールドは content と type だけ。
+const examGoalFields = v.object({
+  content: v.string(),
   examDate: v.string(),
   maxScore: v.number(),
   minScore: v.number(),
+  type: v.literal(examType),
 });
 
-export type ExamGoalDto = Infer<typeof examGoalDtoValidator>;
+//? achievedAt は setAchieved の担当なので、作成・更新の入力には含めない(編集で達成を消さない)。
+//? deadline を持つ習得が「チェックポイント」。別タイプではないので枝は増やさない。
+const masteryGoalInputFields = v.object({
+  content: v.string(),
+  criterion: v.string(),
+  deadline: v.optional(v.string()),
+  type: v.literal(masteryType),
+});
+
+const masteryGoalFields = masteryGoalInputFields.extend({ achievedAt: v.optional(v.string()) });
+
+//? 自己判定の較正のために併記する学習量の実績。目標ドキュメントに保存し、確定を動かす書き込みが
+//? 同じトランザクションで差分更新する(ADR-0007)。読み取りは保存値をそのまま返すだけ。
+const masteryProgressFields = {
+  activeDays: v.number(),
+  confirmedMinutes: v.number(),
+};
+
+const masteryProgressValidator = v.object(masteryProgressFields);
+
+//? 保存フィールドの形はここが SSoT。services 側で同じ2フィールドを書き直さない(CVX-16)。
+export type MasteryProgress = Infer<typeof masteryProgressValidator>;
+
+const masteryGoalDocumentFields = masteryGoalFields.extend(masteryProgressFields);
+
+const goalOwnerField = { ownerId: v.string() };
+
+export const goalDocumentValidator = v.union(
+  examGoalFields.extend(goalOwnerField),
+  masteryGoalDocumentFields.extend(goalOwnerField),
+);
+
+const goalIdField = { _id: v.id("goals") };
+
+export const goalDtoValidator = v.union(
+  examGoalFields.extend(goalIdField),
+  masteryGoalDocumentFields.extend(goalIdField),
+);
+
+export type GoalDto = Infer<typeof goalDtoValidator>;
+
+export const goalInputValidator = v.union(examGoalFields, masteryGoalInputFields);
+
+export type GoalInput = Infer<typeof goalInputValidator>;
+
+//* 週間ターゲット。常設定義・週次スナップショットなしの「今週専用の計器」。
+export const targetMetricValidator = v.union(
+  v.literal(minutesMetric),
+  v.literal(daysMetric),
+  v.literal(countMetric),
+);
+
+export type TargetMetricDto = Infer<typeof targetMetricValidator>;
+
+export const targetProgressDtoValidator = v.object({
+  _id: v.id("targets"),
+  achieved: v.boolean(),
+  categoryId: v.id("categories"),
+  categoryName: v.string(),
+  current: v.number(),
+  metric: targetMetricValidator,
+  targetValue: v.number(),
+});
+
+export type TargetProgressDto = Infer<typeof targetProgressDtoValidator>;
 
 export const obstacleDtoValidator = v.object({
   _id: v.id("obstaclePlans"),
@@ -247,7 +318,6 @@ export const historyWeekValidator = v.object({
   volumeMinutes: v.number(),
   weekEnd: v.string(),
   weekStart: v.string(),
-  weeklyGoalMinutes: v.union(v.number(), v.null()),
 });
 
 export type HistoryWeekDto = Infer<typeof historyWeekValidator>;
@@ -257,16 +327,6 @@ export const historyMonthValidator = v.object({
 });
 
 export type HistoryMonthDto = Infer<typeof historyMonthValidator>;
-
-export const weeklyTrendWeekValidator = v.object({
-  achieved: v.boolean(),
-  goalMinutes: v.union(v.number(), v.null()),
-  volumeMinutes: v.number(),
-  weekEnd: v.string(),
-  weekStart: v.string(),
-});
-
-export type WeeklyTrendWeek = Infer<typeof weeklyTrendWeekValidator>;
 
 export type RowDto = Infer<typeof rowDtoValidator>;
 export type DayDto = Infer<typeof dayDtoValidator>;
