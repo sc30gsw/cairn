@@ -18,8 +18,9 @@ export const TOEIC_SCORE_STEP_MESSAGE = `スコアは${TOEIC_SCORE.step}点刻�
 export const TOEIC_SCORE_ORDER_MESSAGE = "目標点の下限が上限を超えています";
 const PACE_DAYS_MESSAGE = `週の実施日数は${PACE_LIMITS.minDays}〜${PACE_LIMITS.maxDays}日で入力してください`;
 const PACE_FLOOR_MESSAGE = `1日あたりの最低分数は${PACE_LIMITS.minFloorMinutes}分以上です`;
-const VOLUME_TARGET_MESSAGE = "目標量は1以上で入力してください";
-const VOLUME_AMOUNT_MESSAGE = "現在量は0以上です";
+const VOLUME_TARGET_MESSAGE = "目標量は1以上の整数で入力してください";
+const VOLUME_AMOUNT_MESSAGE = "現在量は0以上の整数です";
+const VOLUME_START_MESSAGE = "開始量は目標量より小さい値で入力してください";
 const VOLUME_UNIT_MESSAGE = "単位を選んでください";
 const MASTERY_CRITERION_MESSAGE = "達成の基準を入力してください";
 
@@ -64,6 +65,7 @@ export const PaceFloorMinutesSchema = v.pipe(
 
 export const VolumeAmountSchema = v.pipe(
   v.number(VOLUME_AMOUNT_MESSAGE),
+  v.integer(VOLUME_AMOUNT_MESSAGE),
   v.minValue(0, VOLUME_AMOUNT_MESSAGE),
 );
 
@@ -91,13 +93,28 @@ export const PaceGoalFieldsSchema = v.object({
   daysPerWeek: PaceDaysSchema,
 });
 
-export const VolumeGoalFieldsSchema = v.object({
-  content: ConcreteActionSchema,
-  deadline: DateJstSchema,
-  startAmount: VolumeAmountSchema,
-  targetAmount: v.pipe(v.number(VOLUME_TARGET_MESSAGE), v.minValue(1, VOLUME_TARGET_MESSAGE)),
-  unit: v.picklist(VOLUME_UNITS, VOLUME_UNIT_MESSAGE),
-});
+export const VolumeGoalFieldsSchema = v.pipe(
+  v.object({
+    content: ConcreteActionSchema,
+    deadline: DateJstSchema,
+    startAmount: VolumeAmountSchema,
+    targetAmount: v.pipe(
+      v.number(VOLUME_TARGET_MESSAGE),
+      v.integer(VOLUME_TARGET_MESSAGE),
+      v.minValue(1, VOLUME_TARGET_MESSAGE),
+    ),
+    unit: v.picklist(VOLUME_UNITS, VOLUME_UNIT_MESSAGE),
+  }),
+  //? 開始量が目標量以上だと作った瞬間に達成済みになる。サーバ側の検証と同じ条件。
+  v.forward(
+    v.partialCheck(
+      [["startAmount"], ["targetAmount"]],
+      (input) => input.startAmount < input.targetAmount,
+      VOLUME_START_MESSAGE,
+    ),
+    ["startAmount"],
+  ),
+);
 
 export const MasteryGoalFieldsSchema = v.object({
   content: ConcreteActionSchema,
