@@ -39,5 +39,5 @@ test("完了行の項目・分数・確定比を表示する", () => {
 
 test("完了行がないときは空メッセージを出す", () => {
   const { getByText } = renderWithMantine(<BreakdownTable confirmedMinutes={0} rows={[]} />);
-  expect(getByText("完了した記録がありません。")).toBeDefined();
+  expect(getByText("完了した記録がありません")).toBeDefined();
 });

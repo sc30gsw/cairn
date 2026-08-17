@@ -1,4 +1,16 @@
-import { Button, Card, Grid, Group, Select, Stack, Text, Title, Box } from "@mantine/core";
+import {
+  Box,
+  Button,
+  Card,
+  EmptyState,
+  Grid,
+  Group,
+  Select,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
+import { IconNotes } from "@tabler/icons-react";
 import { useNavigate } from "@tanstack/react-router";
 import type { DateJst } from "~domain/jst";
 import { weekdayFromDateJst } from "~domain/jst";
@@ -167,7 +179,12 @@ export function DayBoard({
             )}
             {day.rows.length === 0 ? (
               <Box data-onboarding-tour-id={CONCRETE_ACTION_TOUR_TARGETS.today}>
-                <Text c="dimmed">この日の記録はありません。</Text>
+                {/*? 直下の AdhocRowForm が追加導線なので、ここに追加ボタンは置かない */}
+                <EmptyState
+                  description="下のフォームから、今日の具体的手順を追加できます。"
+                  icon={<IconNotes aria-hidden />}
+                  title="この日の記録はありません"
+                />
               </Box>
             ) : null}
             {canEdit ? <AdhocRowForm items={items} onAdd={onAddRow} /> : null}

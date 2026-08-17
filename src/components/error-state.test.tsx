@@ -52,11 +52,12 @@ test("ルーターのエラー境界に渡す形でも生のサーバーメッ�
   expect(reset).toHaveBeenCalledOnce();
 });
 
-test("全画面表示でも生のサーバーメッセージは出ない", () => {
+test("全画面表示では見出しとして読め、生のサーバーメッセージは出ない", () => {
   const { container, getByRole } = renderWithMantine(
     <FullPageErrorState error={new Error(RAW_SERVER_MESSAGE)} onRetry={vi.fn()} />,
   );
 
-  expect(getByRole("heading", { name: "うまく開けませんでした" })).toBeDefined();
+  expect(getByRole("heading", { name: "エラーが発生しました" })).toBeDefined();
   expect(container.textContent).not.toContain("CONVEX");
+  expect(container.textContent).not.toContain("throwDomain");
 });

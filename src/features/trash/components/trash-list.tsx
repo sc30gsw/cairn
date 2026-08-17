@@ -1,4 +1,5 @@
-import { Button, Card, Grid, Group, Modal, Stack, Text, Title } from "@mantine/core";
+import { Button, Card, EmptyState, Grid, Group, Modal, Stack, Text, Title } from "@mantine/core";
+import { IconCalendarEvent, IconNotes } from "@tabler/icons-react";
 import { useState } from "react";
 
 import type {
@@ -47,7 +48,13 @@ export function TrashList({
           <Card h="100%">
             <Stack gap="md">
               <Title order={2}>日</Title>
-              {trash.days.length === 0 ? <Text c="dimmed">ゴミ箱の日はありません。</Text> : null}
+              {trash.days.length === 0 ? (
+                <EmptyState
+                  description="見送りにした日はここに入ります。"
+                  icon={<IconCalendarEvent aria-hidden />}
+                  title="ゴミ箱の日はありません"
+                />
+              ) : null}
               {trash.days.map((day) => (
                 <Grid key={day._id} align="center" gap="sm">
                   <Grid.Col span="auto">
@@ -72,7 +79,13 @@ export function TrashList({
           <Card h="100%">
             <Stack gap="md">
               <Title order={2}>記録</Title>
-              {trash.rows.length === 0 ? <Text c="dimmed">ゴミ箱の記録はありません。</Text> : null}
+              {trash.rows.length === 0 ? (
+                <EmptyState
+                  description="見送りにした記録はここに入ります。"
+                  icon={<IconNotes aria-hidden />}
+                  title="ゴミ箱の記録はありません"
+                />
+              ) : null}
               {trash.rows.map((row) => (
                 <Grid key={row._id} align="center" gap="sm">
                   <Grid.Col span="auto">

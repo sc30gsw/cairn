@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Card,
+  EmptyState,
   Grid,
   Group,
   Input,
@@ -16,7 +17,7 @@ import {
   Title,
   Tooltip,
 } from "@mantine/core";
-import { IconTrash } from "@tabler/icons-react";
+import { IconTemplate, IconTrash } from "@tabler/icons-react";
 import { WEEKDAY_NAMES } from "~domain/catalog";
 
 import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action-field-with-suggestions";
@@ -106,7 +107,12 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
         </Group>
         <PresetCreateForm key={createFormKey} onCreate={onCreate} presets={presets} />
         {presets.length === 0 ? (
-          <Text c="dimmed">プリセットはまだありません。</Text>
+          //? 直上に PresetCreateForm があるので、ここに作成ボタンは置かない
+          <EmptyState
+            description="よく使う手順をプリセットにすると、記録から呼び出せます。"
+            icon={<IconTemplate aria-hidden />}
+            title="プリセットはまだありません"
+          />
         ) : (
           <Accordion defaultValue={presets[0]?._id} variant="separated">
             {presets.map((preset) => (

@@ -1,11 +1,16 @@
-import { Button, CopyButton, Stack, Text, Textarea, Title } from "@mantine/core";
+import { Button, CopyButton, EmptyState, Stack, Textarea, Title } from "@mantine/core";
+import { IconShare } from "@tabler/icons-react";
 
 export function ShareCopy({ markdown }: Record<"markdown", string>) {
   if (markdown === "") {
     return (
       <Stack gap="sm">
         <Title order={3}>共有文</Title>
-        <Text c="dimmed">確定した記録がまだないので共有文はありません。</Text>
+        <EmptyState
+          description="この日の記録を確定すると、共有文がここに生成されます。"
+          icon={<IconShare aria-hidden />}
+          title="共有文はまだありません"
+        />
       </Stack>
     );
   }

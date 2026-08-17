@@ -115,6 +115,13 @@ export const theme = createTheme({
         },
       },
     },
+    //? 空表示の見た目はここで一括して決める。呼び出し側は icon / title / description だけ渡す
+    EmptyState: {
+      defaultProps: {
+        size: "sm",
+        withIndicatorBackground: true,
+      },
+    },
     Select: {
       defaultProps: {
         allowDeselect: false,
