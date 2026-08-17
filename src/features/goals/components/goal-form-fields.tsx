@@ -1,28 +1,30 @@
 import { Field, Form, useForm, type FieldStore } from "@formisch/react";
-import { Button, Grid, Group, NumberInput, Select, Textarea, TextInput } from "@mantine/core";
+import { Alert, Button, Grid, Group, NumberInput, TextInput } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
-import { PACE_LIMITS, TOEIC_SCORE, VOLUME_UNITS } from "~domain/domain";
+import { TOEIC_SCORE } from "~domain/domain";
 import type { DateJst } from "~domain/jst";
 
 import { ConcreteActionField } from "~/components/concrete-action-field";
-import { isVolumeUnit } from "~/features/goals/lib/goal-guards";
+import { nextSundayJst } from "~/features/goals/lib/checkpoint-deadline";
 import {
   ExamGoalFieldsSchema,
   MasteryGoalFieldsSchema,
-  OtherGoalFieldsSchema,
-  PaceGoalFieldsSchema,
-  VolumeGoalFieldsSchema,
   type GoalFormOutput,
 } from "~/features/goals/schemas/goal-schema";
 import type { Goal } from "~/features/goals/types/goal";
 import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-style";
-import { onRequiredSelect } from "~/lib/select";
 
 const CONTENT_LABEL = "目標の内容";
 const CONTENT_PLACEHOLDER = "例: 金のフレーズを1 Unit 音読する";
 
+//* 同時に追いかけるチェックポイントの目安。超えても止めない非ブロッキングの助言(docs/adr/0006)。
+const CHECKPOINT_CROWDED_THRESHOLD = 2;
+export const CHECKPOINT_CROWDED_MESSAGE = "同時に追いかけるチェックポイントは1〜2件が目安です";
+
 //? タイプごとにフォームは総取り替えだが、props は共通。GoalForm 側でタイプ→部品を引けるようにする
 export type GoalFieldsProps = {
+  //? 期限つき・未達成の習得の件数。3件目を作るときだけ助言を出す
+  activeCheckpointCount: number;
   //? 編集対象。undefined なら新規作成
   goal: Goal | undefined;
   onCancel: () => void;
@@ -30,14 +32,9 @@ export type GoalFieldsProps = {
   todayJst: DateJst;
 };
 
-type GoalFieldsSchema =
-  | typeof ExamGoalFieldsSchema
-  | typeof MasteryGoalFieldsSchema
-  | typeof OtherGoalFieldsSchema
-  | typeof PaceGoalFieldsSchema
-  | typeof VolumeGoalFieldsSchema;
+type GoalFieldsSchema = typeof ExamGoalFieldsSchema | typeof MasteryGoalFieldsSchema;
 
-//? 5タイプとも文字列フィールドの FieldStore は同じ形。path だけ違うので落として使い回す
+//? どちらのタイプも文字列フィールドの FieldStore は同じ形。path だけ違うので落として使い回す
 type GoalTextFieldStore = Omit<FieldStore<GoalFieldsSchema, ["content"]>, "path">;
 
 type GoalDateFieldProps = {
@@ -154,159 +151,37 @@ export function ExamGoalFields({ goal, onCancel, onSubmit, todayJst }: GoalField
   );
 }
 
-export function PaceGoalFields({ goal, onCancel, onSubmit }: GoalFieldsProps) {
-  const paceGoal = goal?.type === "pace" ? goal : undefined;
-  const form = useForm({
-    initialInput: {
-      content: paceGoal?.content ?? "",
-      dailyFloorMinutes: paceGoal?.dailyFloorMinutes,
-      daysPerWeek: paceGoal?.daysPerWeek,
-    },
-    schema: PaceGoalFieldsSchema,
-  });
-
-  return (
-    <Form of={form} onSubmit={(output) => onSubmit({ ...output, type: "pace" })}>
-      <Grid align="flex-start" gap="sm">
-        <Grid.Col span={12}>
-          <Field of={form} path={["content"]}>
-            {(field) => <GoalContentField field={field} />}
-          </Field>
-        </Grid.Col>
-        <Grid.Col span={6}>
-          <Field of={form} path={["daysPerWeek"]}>
-            {(field) => (
-              <NumberInput
-                {...field.props}
-                error={field.errors?.[0]}
-                label="週の実施日数"
-                max={PACE_LIMITS.maxDays}
-                min={PACE_LIMITS.minDays}
-                onChange={(value) => field.onChange(value === "" ? undefined : Number(value))}
-                suffix=" 日"
-                value={field.input ?? ""}
-              />
-            )}
-          </Field>
-        </Grid.Col>
-        <Grid.Col span={6}>
-          <Field of={form} path={["dailyFloorMinutes"]}>
-            {(field) => (
-              <NumberInput
-                {...field.props}
-                error={field.errors?.[0]}
-                label="1日あたり最低分数"
-                min={PACE_LIMITS.minFloorMinutes}
-                onChange={(value) => field.onChange(value === "" ? undefined : Number(value))}
-                suffix=" 分"
-                value={field.input ?? ""}
-              />
-            )}
-          </Field>
-        </Grid.Col>
-        <Grid.Col span={12}>
-          <GoalFormActions onCancel={onCancel} />
-        </Grid.Col>
-      </Grid>
-    </Form>
-  );
-}
-
-export function VolumeGoalFields({ goal, onCancel, onSubmit, todayJst }: GoalFieldsProps) {
-  const volumeGoal = goal?.type === "volume" ? goal : undefined;
-  const form = useForm({
-    initialInput: {
-      content: volumeGoal?.content ?? "",
-      deadline: volumeGoal?.deadline ?? "",
-      startAmount: volumeGoal?.startAmount ?? 0,
-      targetAmount: volumeGoal?.targetAmount,
-      unit: volumeGoal?.unit ?? VOLUME_UNITS[0],
-    },
-    schema: VolumeGoalFieldsSchema,
-  });
-
-  return (
-    <Form of={form} onSubmit={(output) => onSubmit({ ...output, type: "volume" })}>
-      <Grid align="flex-start" gap="sm">
-        <Grid.Col span={12}>
-          <Field of={form} path={["content"]}>
-            {(field) => <GoalContentField field={field} />}
-          </Field>
-        </Grid.Col>
-        <Grid.Col span={{ base: 6, sm: 4 }}>
-          <Field of={form} path={["targetAmount"]}>
-            {(field) => (
-              <NumberInput
-                {...field.props}
-                error={field.errors?.[0]}
-                label="目標量"
-                min={1}
-                onChange={(value) => field.onChange(value === "" ? undefined : Number(value))}
-                value={field.input ?? ""}
-              />
-            )}
-          </Field>
-        </Grid.Col>
-        <Grid.Col span={{ base: 6, sm: 4 }}>
-          <Field of={form} path={["unit"]}>
-            {(field) => (
-              <Select
-                allowDeselect={false}
-                data={[...VOLUME_UNITS]}
-                error={field.errors?.[0]}
-                label="単位"
-                name={field.props.name}
-                onChange={onRequiredSelect((value) => {
-                  if (isVolumeUnit(value)) {
-                    field.onChange(value);
-                  }
-                })}
-                value={field.input}
-              />
-            )}
-          </Field>
-        </Grid.Col>
-        <Grid.Col span={{ base: 12, sm: 4 }}>
-          <Field of={form} path={["startAmount"]}>
-            {(field) => (
-              <NumberInput
-                {...field.props}
-                error={field.errors?.[0]}
-                label="開始時点の量"
-                min={0}
-                onChange={(value) => field.onChange(value === "" ? undefined : Number(value))}
-                value={field.input ?? ""}
-              />
-            )}
-          </Field>
-        </Grid.Col>
-        <Grid.Col span={12}>
-          <Field of={form} path={["deadline"]}>
-            {(field) => <GoalDateField field={field} label="期限" todayJst={todayJst} />}
-          </Field>
-        </Grid.Col>
-        <Grid.Col span={12}>
-          <GoalFormActions onCancel={onCancel} />
-        </Grid.Col>
-      </Grid>
-    </Form>
-  );
-}
-
-export function MasteryGoalFields({ goal, onCancel, onSubmit, todayJst }: GoalFieldsProps) {
+export function MasteryGoalFields({
+  activeCheckpointCount,
+  goal,
+  onCancel,
+  onSubmit,
+  todayJst,
+}: GoalFieldsProps) {
   const masteryGoal = goal?.type === "mastery" ? goal : undefined;
+  //? 期限の既定は次の日曜。週の切れ目に置くだけのナッジで、消せるし変えられる
   const form = useForm({
     initialInput: {
       content: masteryGoal?.content ?? "",
       criterion: masteryGoal?.criterion ?? "",
-      deadline: masteryGoal?.deadline ?? "",
+      deadline: masteryGoal?.deadline ?? (goal === undefined ? nextSundayJst(todayJst) : ""),
     },
     schema: MasteryGoalFieldsSchema,
   });
+  const crowded = goal === undefined && activeCheckpointCount >= CHECKPOINT_CROWDED_THRESHOLD;
 
   return (
     <Form of={form} onSubmit={(output) => onSubmit({ ...output, type: "mastery" })}>
       <Grid align="flex-start" gap="sm">
+        {crowded && (
+          <Grid.Col span={12}>
+            {/*? 止めない。列やチェーンにせず件数を絞るための助言だけ(Rai et al. 2023) */}
+            <Alert color="yellow" title={CHECKPOINT_CROWDED_MESSAGE} variant="light">
+              いま追いかけているチェックポイントが {activeCheckpointCount}{" "}
+              件あります。先に片づけてからでも遅くありません。
+            </Alert>
+          </Grid.Col>
+        )}
         <Grid.Col span={12}>
           <Field of={form} path={["content"]}>
             {(field) => <GoalContentField field={field} />}
@@ -329,54 +204,6 @@ export function MasteryGoalFields({ goal, onCancel, onSubmit, todayJst }: GoalFi
           <Field of={form} path={["deadline"]}>
             {(field) => (
               <GoalDateField clearable field={field} label="期限（任意）" todayJst={todayJst} />
-            )}
-          </Field>
-        </Grid.Col>
-        <Grid.Col span={12}>
-          <GoalFormActions onCancel={onCancel} />
-        </Grid.Col>
-      </Grid>
-    </Form>
-  );
-}
-
-export function OtherGoalFields({ goal, onCancel, onSubmit, todayJst }: GoalFieldsProps) {
-  const otherGoal = goal?.type === "other" ? goal : undefined;
-  const form = useForm({
-    initialInput: {
-      content: otherGoal?.content ?? "",
-      deadline: otherGoal?.deadline ?? "",
-      memo: otherGoal?.memo ?? "",
-    },
-    schema: OtherGoalFieldsSchema,
-  });
-
-  return (
-    <Form of={form} onSubmit={(output) => onSubmit({ ...output, type: "other" })}>
-      <Grid align="flex-start" gap="sm">
-        <Grid.Col span={12}>
-          <Field of={form} path={["content"]}>
-            {(field) => <GoalContentField field={field} />}
-          </Field>
-        </Grid.Col>
-        <Grid.Col span={12}>
-          <Field of={form} path={["deadline"]}>
-            {(field) => (
-              <GoalDateField clearable field={field} label="期限（任意）" todayJst={todayJst} />
-            )}
-          </Field>
-        </Grid.Col>
-        <Grid.Col span={12}>
-          <Field of={form} path={["memo"]}>
-            {(field) => (
-              <Textarea
-                {...field.props}
-                autosize
-                error={field.errors?.[0]}
-                label="メモ（任意）"
-                minRows={2}
-                value={field.input}
-              />
             )}
           </Field>
         </Grid.Col>

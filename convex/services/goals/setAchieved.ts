@@ -1,0 +1,31 @@
+import type { Id } from "../../_generated/dataModel";
+import type { MutationCtx } from "../../_generated/server";
+import { requireDateJst } from "../../lib/dateArgs";
+import { ValidationFailedError } from "../../lib/errors";
+import { throwDomain } from "../../lib/ownerFunctions";
+import { requireOwnedGoal } from "./requireOwnedGoal";
+
+export const NOT_MASTERY_GOAL_MESSAGE = "習得の目標ではありません";
+
+export type SetAchievedArgs = {
+  achievedAt?: string;
+  goalId: Id<"goals">;
+};
+
+//* 習得の達成は所有者の自己判定。達成日を残し、達成しても目標は消さない(CONTEXT.md「習得」)。
+//? achievedAt を省略すると達成を取り消す(patch は undefined でフィールドを落とす)。
+export async function setAchieved(
+  ctx: MutationCtx,
+  ownerId: string,
+  args: SetAchievedArgs,
+): Promise<null> {
+  const goal = await requireOwnedGoal(ctx, ownerId, args.goalId);
+  if (goal.type !== "mastery") {
+    throwDomain(new ValidationFailedError({ message: NOT_MASTERY_GOAL_MESSAGE }));
+  }
+  if (args.achievedAt !== undefined) {
+    requireDateJst(args.achievedAt);
+  }
+  await ctx.db.patch("goals", goal._id, { achievedAt: args.achievedAt });
+  return null;
+}

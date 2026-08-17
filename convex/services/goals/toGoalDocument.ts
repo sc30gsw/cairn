@@ -1,9 +1,7 @@
 import type { GoalInput } from "../../lib/validators";
 
-//* 入力 + 所有者から挿入用ドキュメントを作る。達成量の currentAmount は startAmount から導出(CVX-09: 純関数)。
+//* 入力 + 所有者から保存用ドキュメントを作る(CVX-09: 純関数)。
+//? 達成日(achievedAt)は入力に含まれない。setAchieved だけが書き、編集では触らない。
 export function toGoalDocument(input: GoalInput, ownerId: string) {
-  if (input.type === "volume") {
-    return { ...input, currentAmount: input.startAmount ?? 0, ownerId };
-  }
   return { ...input, ownerId };
 }

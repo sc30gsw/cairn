@@ -36,7 +36,7 @@ export async function save(
     )
     .unique();
   if (existing === null) {
-    return ctx.db.insert("targets", {
+    return await ctx.db.insert("targets", {
       categoryId: args.categoryId,
       metric: args.metric,
       ownerId,

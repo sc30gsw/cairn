@@ -2,10 +2,8 @@ import { Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { groupBy, prop } from "remeda";
 import { addDaysJst, type DateJst } from "~domain/jst";
 
-import { WeeklyProgressCard } from "~/components/weekly-progress-card";
 import { RECORD_STATUS_UI } from "~/features/history/lib/record-status-label";
 import type { WeekEvent, WeekPage } from "~/features/history/types/history";
-import { minutesByDateFromRows } from "~/lib/weekly-progress";
 
 const DATE_HEADER_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
   day: "numeric",
@@ -68,7 +66,7 @@ function WeekEventRow({ event }: { event: WeekEvent }) {
   );
 }
 
-export function WeekAgenda({ todayJst, week }: { todayJst: DateJst; week: WeekPage }) {
+export function WeekAgenda({ week }: { week: WeekPage }) {
   const eventsByDate = groupBy(week.events, prop("dateJst"));
 
   return (
@@ -78,12 +76,6 @@ export function WeekAgenda({ todayJst, week }: { todayJst: DateJst; week: WeekPa
         <Text c="dimmed" mt={4} size="sm">
           今日を含む週（{formatWeekRange(week.weekStart, week.weekEnd)}）
         </Text>
-        <WeeklyProgressCard
-          minutesByDate={minutesByDateFromRows(week.events)}
-          todayJst={todayJst}
-          weekEndJst={week.weekEnd}
-          weeklyGoal={week.weeklyGoal}
-        />
         <Stack gap="lg" mt="lg">
           {weekDates(week.weekStart).map((dateJst) => {
             const dayEvents = eventsByDate[dateJst] ?? [];

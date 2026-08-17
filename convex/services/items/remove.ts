@@ -29,18 +29,7 @@ export async function remove(
   if (itemIdIsInUse(args.itemId, holders)) {
     throwDomain(new ConflictError({ message: "使っている行または雛形がある項目は消せません" }));
   }
-  //? 達成量目標の項目リンクは任意のメタデータなので、削除を止めずに同じトランザクションで外す(CVX-15)
-  const volumeGoals = await ctx.db
-    .query("goals")
-    .withIndex("by_owner_and_type", (q) => q.eq("ownerId", ownerId).eq("type", "volume"))
-    .collect();
-  await Promise.all(
-    volumeGoals.flatMap((goal) =>
-      goal.type === "volume" && goal.itemId === args.itemId
-        ? [ctx.db.patch("goals", goal._id, { itemId: undefined })]
-        : [],
-    ),
-  );
+  //? 目標は項目を参照しない(本番目標・習得とも項目リンクを持たない)ので、掃除は要らない
   await ctx.db.delete("items", args.itemId);
   return null;
 }

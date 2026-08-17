@@ -11,7 +11,6 @@ import {
 } from "../../lib/historyBreakdown";
 import { addDaysJst, calendarDatesInMonth, mondayOfWeek } from "../../lib/jst";
 import { sevenDayMovingAverage } from "../../lib/movingAverage";
-import type { WeeklyGoal } from "../../lib/validators";
 import { confirmedVolumeMinutes } from "../../lib/volume";
 
 export const YEAR_HEATMAP_DAYS = 365;
@@ -151,7 +150,7 @@ export async function computeWeekPage(ctx: QueryCtx, ownerId: string, dateJst: s
   const weekStart = mondayOfWeek(dateJst);
   const weekEnd = addDaysJst(weekStart, 6);
   const weekDates = Array.from({ length: 7 }, (_, offset) => addDaysJst(weekStart, offset));
-  const [rows, days, catalog, weeklyGoal] = await Promise.all([
+  const [rows, days, catalog] = await Promise.all([
     ctx.db
       .query("rows")
       .withIndex("by_owner_and_date", (q) =>
@@ -165,17 +164,9 @@ export async function computeWeekPage(ctx: QueryCtx, ownerId: string, dateJst: s
       )
       .collect(),
     loadCatalog(ctx, ownerId),
-    ctx.db
-      .query("weeklyGoals")
-      .withIndex("by_owner_and_week", (q) => q.eq("ownerId", ownerId).eq("weekStartJst", weekStart))
-      .unique(),
   ]);
   const liveDayDates = liveDayDatesFrom(days);
   const liveWeekRows = liveRows(rows, liveDayDates);
-  const weeklyGoalSnapshot: WeeklyGoal =
-    weeklyGoal === null
-      ? null
-      : { dailyFloorMinutes: weeklyGoal.dailyFloorMinutes, days: weeklyGoal.days };
   const events = liveWeekRows.map((row) => {
     const item = catalog.itemById.get(row.itemId);
     const { category } = categoryFields(item, catalog.categoryById);
@@ -199,11 +190,9 @@ export async function computeWeekPage(ctx: QueryCtx, ownerId: string, dateJst: s
       liveDayDates,
       catalog.itemById,
       catalog.categoryById,
-      weeklyGoalSnapshot,
     ),
     weekEnd,
     weekStart,
-    weeklyGoal: weeklyGoalSnapshot,
   };
 }
 

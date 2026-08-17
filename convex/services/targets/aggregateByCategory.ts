@@ -22,7 +22,7 @@ export const EMPTY_CATEGORY_AGGREGATE = {
 } as const satisfies CategoryAggregate;
 
 //* 今週の行をカテゴリ別に集計する。rows→item→categoryId 経由で辿り、確定行だけを見る(CVX-09: 純関数)。
-//? days は「そのカテゴリの確定記録が1件以上ある暦日数」。週間ゴールのフロア(分数)とは無関係。
+//? days は「そのカテゴリの確定記録が1件以上ある暦日数」。最低分数のフロアは持たない(CONTEXT.md「週間ターゲット」)。
 export function aggregateByCategory(
   rows: readonly TargetRow[],
   categoryIdByItemId: ReadonlyMap<Id<"items">, Id<"categories">>,

@@ -2,6 +2,7 @@ import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { api } from "./_generated/api";
+import type { Doc, Id } from "./_generated/dataModel";
 import schema from "./schema";
 
 const modules = import.meta.glob([
@@ -18,12 +19,14 @@ const modules = import.meta.glob([
 const ALLOWED_EMAIL = "owner@example.com";
 const OWNER = { email: ALLOWED_EMAIL, subject: "owner-subject" };
 const OTHER_OWNER = { email: ALLOWED_EMAIL, subject: "other-owner-subject" };
-const MONDAY = "2026-08-17";
+const TODAY = "2026-08-17";
+const YESTERDAY = "2026-08-16";
+const TOMORROW = "2026-08-18";
 
-//? 目標の書き込みは「今週」に閉じているので、サーバが見る現在時刻を MONDAY の週に固定する。
+//? 習得の学習量実績は目標の作成日を起点にするので、サーバが見る現在時刻を固定する。
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
-  vi.setSystemTime(new Date(`${MONDAY}T12:00:00+09:00`));
+  vi.setSystemTime(new Date(`${TODAY}T12:00:00+09:00`));
 });
 
 afterEach(() => {
@@ -39,745 +42,320 @@ function owner() {
   return raw().withIdentity(OWNER);
 }
 
-test("5タイプの目標を作成でき、list に反映される", async () => {
+const EXAM_GOAL = {
+  content: "本番で900点を取る",
+  examDate: "2026-10-01",
+  maxScore: 900,
+  minScore: 800,
+  type: "exam",
+} as const;
+
+const MASTERY_GOAL = {
+  content: "音読を止まらずにできる",
+  criterion: "1分間で120語",
+  type: "mastery",
+} as const;
+
+type ConfirmedRow = {
+  dateJst: string;
+  minutes: number;
+  status?: Doc<"rows">["status"];
+};
+
+//? 確定記録を直接作る。学習量の実績は rows の集計なので、記録画面の経路は通さない。
+async function seedRows(t: ReturnType<typeof owner>, entries: readonly ConfirmedRow[]) {
+  await t.run(async (ctx) => {
+    const categoryId = await ctx.db.insert("categories", {
+      name: "TOEIC対策",
+      ownerId: OWNER.subject,
+      sortOrder: 0,
+    });
+    const itemId = await ctx.db.insert("items", {
+      categoryId,
+      name: "金のフレーズ",
+      ownerId: OWNER.subject,
+      sortOrder: 0,
+    });
+    const dayIdByDate = new Map<string, Id<"days">>();
+    for (const entry of entries) {
+      const existingDayId = dayIdByDate.get(entry.dateJst);
+      const dayId =
+        existingDayId ??
+        (await ctx.db.insert("days", { dateJst: entry.dateJst, ownerId: OWNER.subject }));
+      dayIdByDate.set(entry.dateJst, dayId);
+      await ctx.db.insert("rows", {
+        content: "Unit 1 を音読する",
+        dateJst: entry.dateJst,
+        dayId,
+        itemId,
+        minutes: entry.minutes,
+        ownerId: OWNER.subject,
+        sortOrder: 0,
+        status: entry.status ?? "確定",
+      });
+    }
+  });
+}
+
+test("試験・習得の2タイプを作成でき、list に反映される", async () => {
   const t = owner();
-  const examId = await t.mutation(api.mutations.goals.create.create, {
-    goal: {
-      content: "本番までに公式問題集を1冊やり切る",
-      examDate: "2026-10-01",
-      maxScore: 900,
-      minScore: 800,
-      type: "exam",
-    },
-    weekStartJst: MONDAY,
-  });
-  const paceId = await t.mutation(api.mutations.goals.create.create, {
-    goal: {
-      content: "毎日机に向かう",
-      dailyFloorMinutes: 30,
-      daysPerWeek: 4,
-      type: "pace",
-    },
-    weekStartJst: MONDAY,
-  });
-  const volumeId = await t.mutation(api.mutations.goals.create.create, {
-    goal: {
-      content: "公式問題集を1冊やり切る",
-      deadline: "2026-09-30",
-      startAmount: 10,
-      targetAmount: 300,
-      type: "volume",
-      unit: "ページ",
-    },
-    weekStartJst: MONDAY,
-  });
-  const masteryId = await t.mutation(api.mutations.goals.create.create, {
-    goal: { content: "音読を止まらずにできる", criterion: "1分間で120語", type: "mastery" },
-    weekStartJst: MONDAY,
-  });
-  const otherId = await t.mutation(api.mutations.goals.create.create, {
-    goal: { content: "机の上を片付ける", memo: "週末", type: "other" },
-    weekStartJst: MONDAY,
-  });
+  const examId = await t.mutation(api.mutations.goals.create.create, { goal: EXAM_GOAL });
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
 
   const goals = await t.query(api.queries.goals.list.list, {});
-  expect(goals).toHaveLength(5);
-  expect(goals).toContainEqual({
-    _id: examId,
-    content: "本番までに公式問題集を1冊やり切る",
-    examDate: "2026-10-01",
-    maxScore: 900,
-    minScore: 800,
-    type: "exam",
-  });
-  expect(goals).toContainEqual({
-    _id: paceId,
-    content: "毎日机に向かう",
-    dailyFloorMinutes: 30,
-    daysPerWeek: 4,
-    type: "pace",
-  });
-  //? startAmount が currentAmount の初期値として写る
-  expect(goals).toContainEqual({
-    _id: volumeId,
-    content: "公式問題集を1冊やり切る",
-    currentAmount: 10,
-    deadline: "2026-09-30",
-    itemId: undefined,
-    startAmount: 10,
-    targetAmount: 300,
-    type: "volume",
-    unit: "ページ",
-  });
+  expect(goals).toHaveLength(2);
+  expect(goals).toContainEqual({ _id: examId, ...EXAM_GOAL });
+  //? 習得には達成日(未達成なら undefined)と学習量の実績が載る
   expect(goals).toContainEqual({
     _id: masteryId,
-    content: "音読を止まらずにできる",
-    criterion: "1分間で120語",
+    achievedAt: undefined,
+    activeDays: 0,
+    confirmedMinutes: 0,
+    ...MASTERY_GOAL,
     deadline: undefined,
-    type: "mastery",
-  });
-  expect(goals).toContainEqual({
-    _id: otherId,
-    content: "机の上を片付ける",
-    deadline: undefined,
-    memo: "週末",
-    type: "other",
   });
 });
 
-test("startAmount 省略時、達成量の現在値は0から始まる", async () => {
+test("期限つきの習得(チェックポイント)は同じタイプとして保存される", async () => {
   const t = owner();
-  const volumeId = await t.mutation(api.mutations.goals.create.create, {
-    goal: {
-      content: "単語帳を1冊終える",
-      deadline: "2026-09-30",
-      targetAmount: 100,
-      type: "volume",
-      unit: "冊",
-    },
-    weekStartJst: MONDAY,
+  const goalId = await t.mutation(api.mutations.goals.create.create, {
+    goal: { ...MASTERY_GOAL, deadline: "2026-08-23" },
   });
   const goals = await t.query(api.queries.goals.list.list, {});
-  const volume = goals.find((goal) => goal._id === volumeId);
-  expect(volume?.type === "volume" && volume.currentAmount).toBe(0);
+  const goal = goals.find((entry) => entry._id === goalId);
+  expect(goal?.type).toBe("mastery");
+  expect(goal?.type === "mastery" && goal.deadline).toBe("2026-08-23");
 });
 
 test("本番目標は1件までで2件目は拒否される", async () => {
   const t = owner();
-  await t.mutation(api.mutations.goals.create.create, {
-    goal: {
-      content: "本番で900点を取る",
-      examDate: "2026-10-01",
-      maxScore: 900,
-      minScore: 800,
-      type: "exam",
-    },
-    weekStartJst: MONDAY,
-  });
+  await t.mutation(api.mutations.goals.create.create, { goal: EXAM_GOAL });
   await expect(
     t.mutation(api.mutations.goals.create.create, {
-      goal: {
-        content: "本番で950点を取る",
-        examDate: "2026-11-01",
-        maxScore: 990,
-        minScore: 850,
-        type: "exam",
-      },
-      weekStartJst: MONDAY,
+      goal: { ...EXAM_GOAL, content: "本番で950点を取る", maxScore: 990, minScore: 850 },
     }),
   ).rejects.toThrow();
   expect(await t.query(api.queries.goals.list.list, {})).toHaveLength(1);
 });
 
-test("ペース目標は1件までで2件目は拒否される", async () => {
+test("習得は複数件作成できる", async () => {
   const t = owner();
+  await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
   await t.mutation(api.mutations.goals.create.create, {
-    goal: { content: "毎日30分", dailyFloorMinutes: 30, daysPerWeek: 4, type: "pace" },
-    weekStartJst: MONDAY,
-  });
-  await expect(
-    t.mutation(api.mutations.goals.create.create, {
-      goal: { content: "もう1つのペース", dailyFloorMinutes: 10, daysPerWeek: 2, type: "pace" },
-      weekStartJst: MONDAY,
-    }),
-  ).rejects.toThrow();
-  expect(await t.query(api.queries.goals.list.list, {})).toHaveLength(1);
-});
-
-test("達成量・習得・その他タイプは複数件作成できる", async () => {
-  const t = owner();
-  await t.mutation(api.mutations.goals.create.create, {
-    goal: {
-      content: "問題集A",
-      deadline: "2026-09-30",
-      targetAmount: 100,
-      type: "volume",
-      unit: "ページ",
-    },
-    weekStartJst: MONDAY,
+    goal: { ...MASTERY_GOAL, content: "Part2 を聞き取れる", criterion: "正答率9割" },
   });
   await t.mutation(api.mutations.goals.create.create, {
-    goal: {
-      content: "問題集B",
-      deadline: "2026-10-31",
-      targetAmount: 200,
-      type: "volume",
-      unit: "問題",
-    },
-    weekStartJst: MONDAY,
+    goal: { ...MASTERY_GOAL, content: "長文を時間内に読み切れる", deadline: "2026-08-30" },
   });
-  expect(await t.query(api.queries.goals.list.list, {})).toHaveLength(2);
+  expect(await t.query(api.queries.goals.list.list, {})).toHaveLength(3);
 });
 
-test("TOEICスコアが範囲外なら拒否される", async () => {
+test("TOEICスコアが範囲外・5刻みでない・下限が上限超なら拒否される", async () => {
   const t = owner();
-  await expect(
-    t.mutation(api.mutations.goals.create.create, {
-      goal: {
-        content: "本番で高得点を取る",
-        examDate: "2026-10-01",
-        maxScore: 995,
-        minScore: 800,
-        type: "exam",
-      },
-      weekStartJst: MONDAY,
-    }),
-  ).rejects.toThrow();
-});
-
-test("TOEICスコアが5刻みでなければ拒否される", async () => {
-  const t = owner();
-  await expect(
-    t.mutation(api.mutations.goals.create.create, {
-      goal: {
-        content: "本番で高得点を取る",
-        examDate: "2026-10-01",
-        maxScore: 903,
-        minScore: 800,
-        type: "exam",
-      },
-      weekStartJst: MONDAY,
-    }),
-  ).rejects.toThrow();
-});
-
-test("TOEICスコアの下限が上限を超えていれば拒否される", async () => {
-  const t = owner();
-  await expect(
-    t.mutation(api.mutations.goals.create.create, {
-      goal: {
-        content: "本番で高得点を取る",
-        examDate: "2026-10-01",
-        maxScore: 800,
-        minScore: 900,
-        type: "exam",
-      },
-      weekStartJst: MONDAY,
-    }),
-  ).rejects.toThrow();
-});
-
-test("本番日の形式が不正なら拒否される", async () => {
-  const t = owner();
-  await expect(
-    t.mutation(api.mutations.goals.create.create, {
-      goal: {
-        content: "本番で高得点を取る",
-        examDate: "2026/10/01",
-        maxScore: 900,
-        minScore: 800,
-        type: "exam",
-      },
-      weekStartJst: MONDAY,
-    }),
-  ).rejects.toThrow();
-});
-
-test("ペースの実施日数・最低分数が範囲外なら拒否される", async () => {
-  const t = owner();
-  await expect(
-    t.mutation(api.mutations.goals.create.create, {
-      goal: { content: "毎日机に向かう", dailyFloorMinutes: 30, daysPerWeek: 8, type: "pace" },
-      weekStartJst: MONDAY,
-    }),
-  ).rejects.toThrow();
-  await expect(
-    t.mutation(api.mutations.goals.create.create, {
-      goal: { content: "毎日机に向かう", dailyFloorMinutes: 1, daysPerWeek: 3, type: "pace" },
-      weekStartJst: MONDAY,
-    }),
-  ).rejects.toThrow();
-});
-
-test("達成量の目標量が0以下・現在量が負なら拒否される", async () => {
-  const t = owner();
-  await expect(
-    t.mutation(api.mutations.goals.create.create, {
-      goal: {
-        content: "問題集をやる",
-        deadline: "2026-09-30",
-        targetAmount: 0,
-        type: "volume",
-        unit: "ページ",
-      },
-      weekStartJst: MONDAY,
-    }),
-  ).rejects.toThrow();
-  await expect(
-    t.mutation(api.mutations.goals.create.create, {
-      goal: {
-        content: "問題集をやる",
-        deadline: "2026-09-30",
-        startAmount: -1,
-        targetAmount: 100,
-        type: "volume",
-        unit: "ページ",
-      },
-      weekStartJst: MONDAY,
-    }),
-  ).rejects.toThrow();
-});
-
-test("達成量の目標量・開始量が非整数なら拒否される", async () => {
-  const t = owner();
-  await expect(
-    t.mutation(api.mutations.goals.create.create, {
-      goal: {
-        content: "問題集をやる",
-        deadline: "2026-09-30",
-        targetAmount: 10.5,
-        type: "volume",
-        unit: "ページ",
-      },
-      weekStartJst: MONDAY,
-    }),
-  ).rejects.toThrow();
-  await expect(
-    t.mutation(api.mutations.goals.create.create, {
-      goal: {
-        content: "問題集をやる",
-        deadline: "2026-09-30",
-        startAmount: Number.NaN,
-        targetAmount: 100,
-        type: "volume",
-        unit: "ページ",
-      },
-      weekStartJst: MONDAY,
-    }),
-  ).rejects.toThrow();
+  for (const scores of [
+    { maxScore: 995, minScore: 800 },
+    { maxScore: 903, minScore: 800 },
+    { maxScore: 800, minScore: 900 },
+  ]) {
+    await expect(
+      t.mutation(api.mutations.goals.create.create, { goal: { ...EXAM_GOAL, ...scores } }),
+    ).rejects.toThrow();
+  }
   expect(await t.query(api.queries.goals.list.list, {})).toEqual([]);
 });
 
-test("開始量が目標量以上なら拒否される", async () => {
+test("本番日の形式が不正・実在しない暦日なら拒否される", async () => {
+  const t = owner();
+  for (const examDate of ["2026/10/01", "2026-02-31"]) {
+    await expect(
+      t.mutation(api.mutations.goals.create.create, { goal: { ...EXAM_GOAL, examDate } }),
+    ).rejects.toThrow();
+  }
+});
+
+test("習得の期限が実在しない暦日なら拒否される", async () => {
   const t = owner();
   await expect(
     t.mutation(api.mutations.goals.create.create, {
-      goal: {
-        content: "問題集をやる",
-        deadline: "2026-09-30",
-        startAmount: 100,
-        targetAmount: 100,
-        type: "volume",
-        unit: "ページ",
-      },
-      weekStartJst: MONDAY,
+      goal: { ...MASTERY_GOAL, deadline: "2026-02-31" },
     }),
   ).rejects.toThrow();
 });
 
-test("実在しない暦日は拒否される", async () => {
+test("達成の基準・内容が空白なら拒否される", async () => {
   const t = owner();
   await expect(
-    t.mutation(api.mutations.goals.create.create, {
-      goal: {
-        content: "問題集をやる",
-        deadline: "2026-02-31",
-        targetAmount: 100,
-        type: "volume",
-        unit: "ページ",
-      },
-      weekStartJst: MONDAY,
-    }),
+    t.mutation(api.mutations.goals.create.create, { goal: { ...MASTERY_GOAL, criterion: "  " } }),
   ).rejects.toThrow();
-});
-
-test("他人の項目や実在しない項目に紐づけた達成量目標は拒否される", async () => {
-  const shared = raw();
-  const t = shared.withIdentity(OWNER);
-  const stranger = shared.withIdentity(OTHER_OWNER);
-  const strangerItemId = await shared.run(async (ctx) => {
-    const categoryId = await ctx.db.insert("categories", {
-      name: "他人のカテゴリ",
-      ownerId: OTHER_OWNER.subject,
-      sortOrder: 0,
-    });
-    return ctx.db.insert("items", {
-      categoryId,
-      name: "他人の項目",
-      ownerId: OTHER_OWNER.subject,
-      sortOrder: 0,
-    });
-  });
-
   await expect(
-    t.mutation(api.mutations.goals.create.create, {
-      goal: {
-        content: "問題集をやる",
-        deadline: "2026-09-30",
-        itemId: strangerItemId,
-        targetAmount: 100,
-        type: "volume",
-        unit: "ページ",
-      },
-      weekStartJst: MONDAY,
-    }),
-  ).rejects.toThrow();
-  expect(await t.query(api.queries.goals.list.list, {})).toEqual([]);
-
-  //? 既に消えている項目 ID も同じく通さない
-  const deletedItemId = await shared.run(async (ctx) => {
-    const categoryId = await ctx.db.insert("categories", {
-      name: "消えるカテゴリ",
-      ownerId: OWNER.subject,
-      sortOrder: 1,
-    });
-    const itemId = await ctx.db.insert("items", {
-      categoryId,
-      name: "消える項目",
-      ownerId: OWNER.subject,
-      sortOrder: 0,
-    });
-    await ctx.db.delete("items", itemId);
-    return itemId;
-  });
-  await expect(
-    t.mutation(api.mutations.goals.create.create, {
-      goal: {
-        content: "問題集をやる",
-        deadline: "2026-09-30",
-        itemId: deletedItemId,
-        targetAmount: 100,
-        type: "volume",
-        unit: "ページ",
-      },
-      weekStartJst: MONDAY,
-    }),
-  ).rejects.toThrow();
-
-  //? 逆向きも同じ。他人からは所有者の項目に紐づけられない
-  const ownerItemId = await shared.run(async (ctx) => {
-    const categoryId = await ctx.db.insert("categories", {
-      name: "TOEIC対策",
-      ownerId: OWNER.subject,
-      sortOrder: 0,
-    });
-    return ctx.db.insert("items", {
-      categoryId,
-      name: "金のフレーズ",
-      ownerId: OWNER.subject,
-      sortOrder: 0,
-    });
-  });
-  await expect(
-    stranger.mutation(api.mutations.goals.create.create, {
-      goal: {
-        content: "問題集をやる",
-        deadline: "2026-09-30",
-        itemId: ownerItemId,
-        targetAmount: 100,
-        type: "volume",
-        unit: "ページ",
-      },
-      weekStartJst: MONDAY,
-    }),
-  ).rejects.toThrow();
-});
-
-test("自分の項目に紐づけた達成量目標は保存でき、項目を消すとリンクだけ外れる", async () => {
-  const t = owner();
-  const itemId = await t.run(async (ctx) => {
-    const categoryId = await ctx.db.insert("categories", {
-      name: "TOEIC対策",
-      ownerId: OWNER.subject,
-      sortOrder: 0,
-    });
-    return ctx.db.insert("items", {
-      categoryId,
-      name: "金のフレーズ",
-      ownerId: OWNER.subject,
-      sortOrder: 0,
-    });
-  });
-  const volumeId = await t.mutation(api.mutations.goals.create.create, {
-    goal: {
-      content: "金のフレーズを1周する",
-      deadline: "2026-09-30",
-      itemId,
-      targetAmount: 100,
-      type: "volume",
-      unit: "ページ",
-    },
-    weekStartJst: MONDAY,
-  });
-  const before = await t.query(api.queries.goals.list.list, {});
-  expect(before.find((goal) => goal._id === volumeId)).toMatchObject({ itemId });
-
-  await t.mutation(api.mutations.items.remove.remove, { itemId });
-
-  //? 目標そのものは残り、宙吊りの項目リンクだけが外れる
-  const after = await t.query(api.queries.goals.list.list, {});
-  const goal = after.find((entry) => entry._id === volumeId);
-  expect(goal?.type === "volume" && goal.itemId).toBeUndefined();
-  expect(goal?.type === "volume" && goal.targetAmount).toBe(100);
-});
-
-test("達成の基準が空白なら拒否される", async () => {
-  const t = owner();
-  await expect(
-    t.mutation(api.mutations.goals.create.create, {
-      goal: { content: "音読を止まらずにできる", criterion: "  ", type: "mastery" },
-      weekStartJst: MONDAY,
-    }),
-  ).rejects.toThrow();
-});
-
-test("内容が空白なら拒否される", async () => {
-  const t = owner();
-  await expect(
-    t.mutation(api.mutations.goals.create.create, {
-      goal: { content: "  ", memo: undefined, type: "other" },
-      weekStartJst: MONDAY,
-    }),
+    t.mutation(api.mutations.goals.create.create, { goal: { ...MASTERY_GOAL, content: "  " } }),
   ).rejects.toThrow();
 });
 
 test("未認証では目標を作成できない", async () => {
   const t = raw();
   await expect(
-    t.mutation(api.mutations.goals.create.create, {
-      goal: { content: "机の上を片付ける", type: "other" },
-      weekStartJst: MONDAY,
-    }),
+    t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL }),
   ).rejects.toThrow();
 });
 
 test("目標タイプの変更は拒否される", async () => {
   const t = owner();
-  const masteryId = await t.mutation(api.mutations.goals.create.create, {
-    goal: { content: "音読を止まらずにできる", criterion: "1分間で120語", type: "mastery" },
-    weekStartJst: MONDAY,
-  });
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
   await expect(
-    t.mutation(api.mutations.goals.update.update, {
-      goal: { content: "机の上を片付ける", type: "other" },
-      goalId: masteryId,
-      weekStartJst: MONDAY,
-    }),
+    t.mutation(api.mutations.goals.update.update, { goal: EXAM_GOAL, goalId: masteryId }),
   ).rejects.toThrow();
   const goals = await t.query(api.queries.goals.list.list, {});
   expect(goals.find((goal) => goal._id === masteryId)?.type).toBe("mastery");
 });
 
-test("同タイプの更新は内容を書き換える", async () => {
+test("同タイプの更新は基準と期限を書き換える", async () => {
   const t = owner();
-  const masteryId = await t.mutation(api.mutations.goals.create.create, {
-    goal: { content: "音読を止まらずにできる", criterion: "1分間で120語", type: "mastery" },
-    weekStartJst: MONDAY,
-  });
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
   await t.mutation(api.mutations.goals.update.update, {
-    goal: { content: "音読を止まらずにできる", criterion: "1分間で150語", type: "mastery" },
+    goal: { ...MASTERY_GOAL, criterion: "1分間で150語", deadline: "2026-08-23" },
     goalId: masteryId,
-    weekStartJst: MONDAY,
   });
   const goals = await t.query(api.queries.goals.list.list, {});
   const updated = goals.find((goal) => goal._id === masteryId);
   expect(updated?.type === "mastery" && updated.criterion).toBe("1分間で150語");
+  expect(updated?.type === "mastery" && updated.deadline).toBe("2026-08-23");
 });
 
-test("達成量の編集は現在値を巻き戻さない", async () => {
+test("setAchieved は習得を達成にし、undefined で取り消せる", async () => {
   const t = owner();
-  const volumeId = await t.mutation(api.mutations.goals.create.create, {
-    goal: {
-      content: "公式問題集を1冊やり切る",
-      deadline: "2026-09-30",
-      startAmount: 10,
-      targetAmount: 300,
-      type: "volume",
-      unit: "ページ",
-    },
-    weekStartJst: MONDAY,
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+
+  await t.mutation(api.mutations.goals.setAchieved.setAchieved, {
+    achievedAt: TODAY,
+    goalId: masteryId,
   });
-  await t.mutation(api.mutations.goals.setVolumeProgress.setVolumeProgress, {
-    currentAmount: 120,
-    goalId: volumeId,
-  });
-  await t.mutation(api.mutations.goals.update.update, {
-    goal: {
-      content: "公式問題集を1冊やり切る（改訂版）",
-      deadline: "2026-10-31",
-      startAmount: 50,
-      targetAmount: 350,
-      type: "volume",
-      unit: "ページ",
-    },
-    goalId: volumeId,
-    weekStartJst: MONDAY,
-  });
-  const goals = await t.query(api.queries.goals.list.list, {});
-  const updated = goals.find((goal) => goal._id === volumeId);
-  expect(updated?.type === "volume" && updated.currentAmount).toBe(120);
-  expect(updated?.type === "volume" && updated.targetAmount).toBe(350);
+  const achieved = await t.query(api.queries.goals.list.list, {});
+  const achievedGoal = achieved.find((goal) => goal._id === masteryId);
+  expect(achievedGoal?.type === "mastery" && achievedGoal.achievedAt).toBe(TODAY);
+
+  //? 達成しても目標は消えない(達成済みの一覧が達成の履歴になる)
+  expect(achieved).toHaveLength(1);
+
+  await t.mutation(api.mutations.goals.setAchieved.setAchieved, { goalId: masteryId });
+  const cleared = await t.query(api.queries.goals.list.list, {});
+  const clearedGoal = cleared.find((goal) => goal._id === masteryId);
+  expect(clearedGoal?.type === "mastery" && clearedGoal.achievedAt).toBeUndefined();
 });
 
-test("開始量を現在値より上に編集すると現在値は開始量まで引き上がる", async () => {
+test("達成日は編集で消えない", async () => {
   const t = owner();
-  const volumeId = await t.mutation(api.mutations.goals.create.create, {
-    goal: {
-      content: "公式問題集を1冊やり切る",
-      deadline: "2026-09-30",
-      startAmount: 10,
-      targetAmount: 300,
-      type: "volume",
-      unit: "ページ",
-    },
-    weekStartJst: MONDAY,
-  });
-  await t.mutation(api.mutations.goals.setVolumeProgress.setVolumeProgress, {
-    currentAmount: 20,
-    goalId: volumeId,
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  await t.mutation(api.mutations.goals.setAchieved.setAchieved, {
+    achievedAt: TODAY,
+    goalId: masteryId,
   });
   await t.mutation(api.mutations.goals.update.update, {
-    goal: {
-      content: "公式問題集を1冊やり切る",
-      deadline: "2026-09-30",
-      startAmount: 100,
-      targetAmount: 300,
-      type: "volume",
-      unit: "ページ",
-    },
-    goalId: volumeId,
-    weekStartJst: MONDAY,
+    goal: { ...MASTERY_GOAL, deadline: "2026-08-30" },
+    goalId: masteryId,
   });
   const goals = await t.query(api.queries.goals.list.list, {});
-  const updated = goals.find((goal) => goal._id === volumeId);
-  //? 現在量が [開始量, 目標量] の外に落ちると進捗率が負になる
-  expect(updated?.type === "volume" && updated.currentAmount).toBe(100);
+  const updated = goals.find((goal) => goal._id === masteryId);
+  expect(updated?.type === "mastery" && updated.achievedAt).toBe(TODAY);
+});
+
+test("setAchieved は本番目標と不正な日付を拒否する", async () => {
+  const t = owner();
+  const examId = await t.mutation(api.mutations.goals.create.create, { goal: EXAM_GOAL });
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+
+  await expect(
+    t.mutation(api.mutations.goals.setAchieved.setAchieved, {
+      achievedAt: TODAY,
+      goalId: examId,
+    }),
+  ).rejects.toThrow();
+  for (const achievedAt of ["2026/08/17", "2026-02-31"]) {
+    await expect(
+      t.mutation(api.mutations.goals.setAchieved.setAchieved, { achievedAt, goalId: masteryId }),
+    ).rejects.toThrow();
+  }
+});
+
+test("習得には目標作成以降の確定分数と実施日数が併記される", async () => {
+  const t = owner();
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  await seedRows(t, [
+    //? 目標を作る前の記録は入らない
+    { dateJst: YESTERDAY, minutes: 90 },
+    { dateJst: TODAY, minutes: 30 },
+    //? 同じ日に何件あっても実施日は1日
+    { dateJst: TODAY, minutes: 20 },
+    { dateJst: TOMORROW, minutes: 45 },
+    //? 確定以外は学習量に入らない
+    { dateJst: TOMORROW, minutes: 999, status: "未着手" },
+    { dateJst: TOMORROW, minutes: 999, status: "スキップ" },
+  ]);
+
+  const goals = await t.query(api.queries.goals.list.list, {});
+  const goal = goals.find((entry) => entry._id === masteryId);
+  expect(goal?.type === "mastery" && goal.confirmedMinutes).toBe(95);
+  expect(goal?.type === "mastery" && goal.activeDays).toBe(2);
+});
+
+test("削除した日の記録は学習量の実績に入らない", async () => {
+  const t = owner();
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  await seedRows(t, [{ dateJst: TODAY, minutes: 30 }]);
+  await t.run(async (ctx) => {
+    const days = await ctx.db
+      .query("days")
+      .withIndex("by_owner_and_date", (q) => q.eq("ownerId", OWNER.subject))
+      .collect();
+    for (const day of days) {
+      await ctx.db.patch("days", day._id, { deletedAt: Date.now() });
+    }
+  });
+
+  const goals = await t.query(api.queries.goals.list.list, {});
+  const goal = goals.find((entry) => entry._id === masteryId);
+  expect(goal?.type === "mastery" && goal.confirmedMinutes).toBe(0);
+  expect(goal?.type === "mastery" && goal.activeDays).toBe(0);
 });
 
 test("目標を削除できる", async () => {
   const t = owner();
-  const otherId = await t.mutation(api.mutations.goals.create.create, {
-    goal: { content: "机の上を片付ける", type: "other" },
-    weekStartJst: MONDAY,
-  });
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
   expect(await t.query(api.queries.goals.list.list, {})).toHaveLength(1);
-  await t.mutation(api.mutations.goals.remove.remove, { goalId: otherId });
+  await t.mutation(api.mutations.goals.remove.remove, { goalId: masteryId });
   expect(await t.query(api.queries.goals.list.list, {})).toEqual([]);
 });
 
-test("他人の目標は取得できず、更新・削除・進捗更新も拒否される", async () => {
+test("他人の目標は取得できず、更新・削除・達成も拒否される", async () => {
   const t = raw();
   const asOwner = t.withIdentity(OWNER);
   const asOther = t.withIdentity(OTHER_OWNER);
 
-  const volumeId = await asOwner.mutation(api.mutations.goals.create.create, {
-    goal: {
-      content: "公式問題集を1冊やり切る",
-      deadline: "2026-09-30",
-      startAmount: 10,
-      targetAmount: 300,
-      type: "volume",
-      unit: "ページ",
-    },
-    weekStartJst: MONDAY,
+  const masteryId = await asOwner.mutation(api.mutations.goals.create.create, {
+    goal: MASTERY_GOAL,
   });
 
   expect(await asOther.query(api.queries.goals.list.list, {})).toEqual([]);
 
   await expect(
     asOther.mutation(api.mutations.goals.update.update, {
-      goal: {
-        content: "乗っ取り",
-        deadline: "2026-09-30",
-        targetAmount: 1,
-        type: "volume",
-        unit: "ページ",
-      },
-      goalId: volumeId,
-      weekStartJst: MONDAY,
+      goal: { ...MASTERY_GOAL, content: "乗っ取り" },
+      goalId: masteryId,
     }),
   ).rejects.toThrow();
-
   await expect(
-    asOther.mutation(api.mutations.goals.setVolumeProgress.setVolumeProgress, {
-      currentAmount: 999,
-      goalId: volumeId,
+    asOther.mutation(api.mutations.goals.setAchieved.setAchieved, {
+      achievedAt: TODAY,
+      goalId: masteryId,
     }),
   ).rejects.toThrow();
-
   await expect(
-    asOther.mutation(api.mutations.goals.remove.remove, { goalId: volumeId }),
+    asOther.mutation(api.mutations.goals.remove.remove, { goalId: masteryId }),
   ).rejects.toThrow();
 
   //? 所有者本人には影響していない
   const goals = await asOwner.query(api.queries.goals.list.list, {});
-  expect(goals.find((goal) => goal._id === volumeId)?.type === "volume").toBe(true);
-});
-
-test("達成量の進捗を更新できる", async () => {
-  const t = owner();
-  const volumeId = await t.mutation(api.mutations.goals.create.create, {
-    goal: {
-      content: "公式問題集を1冊やり切る",
-      deadline: "2026-09-30",
-      startAmount: 10,
-      targetAmount: 300,
-      type: "volume",
-      unit: "ページ",
-    },
-    weekStartJst: MONDAY,
-  });
-  await t.mutation(api.mutations.goals.setVolumeProgress.setVolumeProgress, {
-    currentAmount: 42,
-    goalId: volumeId,
-  });
-  const goals = await t.query(api.queries.goals.list.list, {});
-  const updated = goals.find((goal) => goal._id === volumeId);
-  expect(updated?.type === "volume" && updated.currentAmount).toBe(42);
-});
-
-test("達成量の進捗更新に負値は拒否される", async () => {
-  const t = owner();
-  const volumeId = await t.mutation(api.mutations.goals.create.create, {
-    goal: {
-      content: "公式問題集を1冊やり切る",
-      deadline: "2026-09-30",
-      targetAmount: 300,
-      type: "volume",
-      unit: "ページ",
-    },
-    weekStartJst: MONDAY,
-  });
-  await expect(
-    t.mutation(api.mutations.goals.setVolumeProgress.setVolumeProgress, {
-      currentAmount: -1,
-      goalId: volumeId,
-    }),
-  ).rejects.toThrow();
-});
-
-test("達成量の進捗更新に非整数は拒否される", async () => {
-  const t = owner();
-  const volumeId = await t.mutation(api.mutations.goals.create.create, {
-    goal: {
-      content: "公式問題集を1冊やり切る",
-      deadline: "2026-09-30",
-      targetAmount: 300,
-      type: "volume",
-      unit: "ページ",
-    },
-    weekStartJst: MONDAY,
-  });
-  for (const currentAmount of [1.5, Number.NaN]) {
-    await expect(
-      t.mutation(api.mutations.goals.setVolumeProgress.setVolumeProgress, {
-        currentAmount,
-        goalId: volumeId,
-      }),
-    ).rejects.toThrow();
-  }
-});
-
-test("達成量以外の目標への進捗更新は拒否される", async () => {
-  const t = owner();
-  const masteryId = await t.mutation(api.mutations.goals.create.create, {
-    goal: { content: "音読を止まらずにできる", criterion: "1分間で120語", type: "mastery" },
-    weekStartJst: MONDAY,
-  });
-  await expect(
-    t.mutation(api.mutations.goals.setVolumeProgress.setVolumeProgress, {
-      currentAmount: 10,
-      goalId: masteryId,
-    }),
-  ).rejects.toThrow();
+  const goal = goals.find((entry) => entry._id === masteryId);
+  expect(goal?.type === "mastery" && goal.content).toBe(MASTERY_GOAL.content);
+  expect(goal?.type === "mastery" && goal.achievedAt).toBeUndefined();
 });

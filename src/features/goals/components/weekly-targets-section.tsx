@@ -14,7 +14,7 @@ export type WeeklyTargetsSectionProps = {
   targets: TargetProgress[];
 };
 
-//? 今週専用の計器。週次スナップショットを取らないので、達成履歴・ストリークには一切出さない
+//? このアプリのプロセス目標の担い手。今週専用の計器で、週次スナップショットは取らない(docs/adr/0006)
 export function WeeklyTargetsSection({
   categories,
   onRemoveTarget,
@@ -34,7 +34,7 @@ export function WeeklyTargetsSection({
         )}
       </Group>
       <Text c="dimmed" size="sm">
-        今週のカテゴリー別の実績です。週間ゴールの判定や連続達成には影響しません。
+        今週のカテゴリー別の実績です。月曜始まりの今週の確定記録から自動で集計します。
       </Text>
       {targets.length === 0 ? (
         <Text c="dimmed" size="sm">

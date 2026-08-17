@@ -2,111 +2,48 @@ import { fireEvent, waitFor } from "@testing-library/react";
 import { expect, test, vi } from "vite-plus/test";
 
 import { GoalForm } from "~/features/goals/components/goal-form";
+import { CHECKPOINT_CROWDED_MESSAGE } from "~/features/goals/components/goal-form-fields";
 import { GOAL_TYPE_LABELS } from "~/features/goals/lib/goal-type-labels";
+import type { Goal } from "~/features/goals/types/goal";
 import { renderWithMantine } from "~/test-utils/render";
 
-test("ペースを選ぶと実施日数と最低分数の欄が出る", () => {
-  const { getByRole } = renderWithMantine(
-    <GoalForm
-      goal={undefined}
-      initialType="pace"
-      onCancel={vi.fn()}
-      onSubmit={vi.fn()}
-      todayJst="2026-08-17"
-    />,
-  );
-  expect(getByRole("textbox", { name: "週の実施日数" })).toBeDefined();
-  expect(getByRole("textbox", { name: "1日あたり最低分数" })).toBeDefined();
-});
+const TODAY = "2026-08-17";
+const NEXT_SUNDAY = "2026-08-23";
 
-test("ペース目標を送信するとタイプ付きのペイロードになる", async () => {
-  const onSubmit = vi.fn();
-  const { getByRole } = renderWithMantine(
-    <GoalForm
-      goal={undefined}
-      initialType="pace"
-      onCancel={vi.fn()}
-      onSubmit={onSubmit}
-      todayJst="2026-08-17"
-    />,
-  );
+const MASTERY_GOAL = {
+  _id: "goal-mastery" as Goal["_id"],
+  achievedAt: undefined,
+  activeDays: 4,
+  confirmedMinutes: 180,
+  content: "Unit 1-10 を音読する",
+  criterion: "止まらずに音読できる",
+  deadline: "2026-09-06",
+  type: "mastery",
+} satisfies Goal;
 
-  fireEvent.change(getByRole("textbox", { name: "目標の内容" }), {
-    target: { value: "帰宅後に Distinction を1セット解く" },
-  });
-  fireEvent.change(getByRole("textbox", { name: "週の実施日数" }), { target: { value: "3" } });
-  fireEvent.change(getByRole("textbox", { name: "1日あたり最低分数" }), {
-    target: { value: "20" },
-  });
-  getByRole("button", { name: "保存" }).click();
+function formProps(overrides: Partial<Parameters<typeof GoalForm>[0]> = {}) {
+  return {
+    activeCheckpointCount: 0,
+    goal: undefined,
+    initialType: "mastery",
+    onCancel: vi.fn(),
+    onSubmit: vi.fn(),
+    todayJst: TODAY,
+    ...overrides,
+  } satisfies Parameters<typeof GoalForm>[0];
+}
 
-  await waitFor(() => {
-    expect(onSubmit).toHaveBeenCalledWith({
-      content: "帰宅後に Distinction を1セット解く",
-      dailyFloorMinutes: 20,
-      daysPerWeek: 3,
-      type: "pace",
-    });
-  });
-});
-
-test("目標の内容が空なら保存できず、エラーが出る", async () => {
-  const onSubmit = vi.fn();
-  const { findByText, getByRole } = renderWithMantine(
-    <GoalForm
-      goal={undefined}
-      initialType="pace"
-      onCancel={vi.fn()}
-      onSubmit={onSubmit}
-      todayJst="2026-08-17"
-    />,
-  );
-
-  fireEvent.change(getByRole("textbox", { name: "週の実施日数" }), { target: { value: "3" } });
-  fireEvent.change(getByRole("textbox", { name: "1日あたり最低分数" }), {
-    target: { value: "20" },
-  });
-  getByRole("button", { name: "保存" }).click();
-
-  expect(await findByText("具体的手順を入力してください")).toBeDefined();
-  expect(onSubmit).not.toHaveBeenCalled();
-});
-
-test("編集時は目標タイプを変更できない", () => {
-  const { getByRole } = renderWithMantine(
-    <GoalForm
-      goal={{
-        _id: "goal-pace" as never,
-        content: "帰宅後に Distinction を1セット解く",
-        dailyFloorMinutes: 20,
-        daysPerWeek: 3,
-        type: "pace",
-      }}
-      initialType="pace"
-      onCancel={vi.fn()}
-      onSubmit={vi.fn()}
-      todayJst="2026-08-17"
-    />,
-  );
-  expect(getByRole("combobox", { name: /目標タイプ/ }).hasAttribute("disabled")).toBe(true);
+test("習得を選ぶと達成の基準と期限の欄が出る", () => {
+  const { getByRole } = renderWithMantine(<GoalForm {...formProps()} />);
+  expect(getByRole("textbox", { name: "達成の基準" })).toBeDefined();
+  expect(getByRole("textbox", { name: "目標の内容" })).toBeDefined();
 });
 
 test.each([
   ["exam", "目標スコア下限"],
-  ["pace", "週の実施日数"],
-  ["volume", "目標量"],
   ["mastery", "達成の基準"],
-  ["other", "メモ（任意）"],
 ] as const)("目標タイプ「%s」を選ぶと専用の入力欄に切り替わる", async (type, fieldLabel) => {
-  const { getByRole } = renderWithMantine(
-    <GoalForm
-      goal={undefined}
-      initialType="pace"
-      onCancel={vi.fn()}
-      onSubmit={vi.fn()}
-      todayJst="2026-08-17"
-    />,
-  );
+  const { getByRole } = renderWithMantine(<GoalForm {...formProps()} />);
 
   getByRole("combobox", { name: /目標タイプ/ }).click();
   getByRole("option", { hidden: true, name: GOAL_TYPE_LABELS[type] }).click();
@@ -116,16 +53,76 @@ test.each([
   });
 });
 
+test("習得を新規作成すると期限の既定値は次の日曜になる", async () => {
+  const onSubmit = vi.fn();
+  const { getByRole } = renderWithMantine(<GoalForm {...formProps({ onSubmit })} />);
+
+  fireEvent.change(getByRole("textbox", { name: "目標の内容" }), {
+    target: { value: "Unit 1-10 を音読する" },
+  });
+  fireEvent.change(getByRole("textbox", { name: "達成の基準" }), {
+    target: { value: "止まらずに音読できる" },
+  });
+  getByRole("button", { name: "保存" }).click();
+
+  await waitFor(() => {
+    expect(onSubmit).toHaveBeenCalledWith({
+      content: "Unit 1-10 を音読する",
+      criterion: "止まらずに音読できる",
+      deadline: NEXT_SUNDAY,
+      type: "mastery",
+    });
+  });
+});
+
+test("習得を編集すると既存の期限のまま送信できる", async () => {
+  const onSubmit = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <GoalForm {...formProps({ goal: MASTERY_GOAL, onSubmit })} />,
+  );
+
+  getByRole("button", { name: "保存" }).click();
+
+  await waitFor(() => {
+    expect(onSubmit).toHaveBeenCalledWith({
+      content: MASTERY_GOAL.content,
+      criterion: MASTERY_GOAL.criterion,
+      deadline: MASTERY_GOAL.deadline,
+      type: "mastery",
+    });
+  });
+});
+
+test("目標の内容が空なら保存できず、エラーが出る", async () => {
+  const onSubmit = vi.fn();
+  const { findByText, getByRole } = renderWithMantine(<GoalForm {...formProps({ onSubmit })} />);
+
+  fireEvent.change(getByRole("textbox", { name: "達成の基準" }), {
+    target: { value: "止まらずに音読できる" },
+  });
+  getByRole("button", { name: "保存" }).click();
+
+  expect(await findByText("具体的手順を入力してください")).toBeDefined();
+  expect(onSubmit).not.toHaveBeenCalled();
+});
+
+test("習得の達成の基準が空なら保存できず、エラーが出る", async () => {
+  const onSubmit = vi.fn();
+  const { findByText, getByRole } = renderWithMantine(<GoalForm {...formProps({ onSubmit })} />);
+
+  fireEvent.change(getByRole("textbox", { name: "目標の内容" }), {
+    target: { value: "Unit 1-10 を音読する" },
+  });
+  getByRole("button", { name: "保存" }).click();
+
+  expect(await findByText("達成の基準を入力してください")).toBeDefined();
+  expect(onSubmit).not.toHaveBeenCalled();
+});
+
 test("試験のスコア下限が上限を超えるとエラーが出て送信できない", async () => {
   const onSubmit = vi.fn();
   const { findByText, getByRole } = renderWithMantine(
-    <GoalForm
-      goal={undefined}
-      initialType="exam"
-      onCancel={vi.fn()}
-      onSubmit={onSubmit}
-      todayJst="2026-08-17"
-    />,
+    <GoalForm {...formProps({ initialType: "exam", onSubmit })} />,
   );
 
   fireEvent.change(getByRole("textbox", { name: "目標の内容" }), {
@@ -139,59 +136,21 @@ test("試験のスコア下限が上限を超えるとエラーが出て送信�
   expect(onSubmit).not.toHaveBeenCalled();
 });
 
-test("習得の達成の基準が空なら保存できず、エラーが出る", async () => {
-  const onSubmit = vi.fn();
-  const { findByText, getByRole } = renderWithMantine(
-    <GoalForm
-      goal={undefined}
-      initialType="mastery"
-      onCancel={vi.fn()}
-      onSubmit={onSubmit}
-      todayJst="2026-08-17"
-    />,
-  );
-
-  fireEvent.change(getByRole("textbox", { name: "目標の内容" }), {
-    target: { value: "Unit 1-10 を音読する" },
-  });
-  getByRole("button", { name: "保存" }).click();
-
-  expect(await findByText("達成の基準を入力してください")).toBeDefined();
-  expect(onSubmit).not.toHaveBeenCalled();
+test("編集時は目標タイプを変更できない", () => {
+  const { getByRole } = renderWithMantine(<GoalForm {...formProps({ goal: MASTERY_GOAL })} />);
+  expect(getByRole("combobox", { name: /目標タイプ/ }).hasAttribute("disabled")).toBe(true);
 });
 
-test("達成量目標を編集して送信するとタイプ付きのペイロードになる", async () => {
-  const onSubmit = vi.fn();
-  const { getByRole } = renderWithMantine(
-    <GoalForm
-      goal={{
-        _id: "goal-volume" as never,
-        content: "公式問題集を1回分ずつ解く",
-        currentAmount: 3,
-        deadline: "2026-09-20",
-        startAmount: 0,
-        targetAmount: 10,
-        type: "volume",
-        unit: "回",
-      }}
-      initialType="volume"
-      onCancel={vi.fn()}
-      onSubmit={onSubmit}
-      todayJst="2026-08-17"
-    />,
+test("追いかけ中が2件以上のときだけ、新規作成に助言が出る", () => {
+  const { getByText } = renderWithMantine(
+    <GoalForm {...formProps({ activeCheckpointCount: 2 })} />,
   );
+  expect(getByText(CHECKPOINT_CROWDED_MESSAGE)).toBeDefined();
+});
 
-  fireEvent.change(getByRole("textbox", { name: "目標量" }), { target: { value: "20" } });
-  getByRole("button", { name: "保存" }).click();
-
-  await waitFor(() => {
-    expect(onSubmit).toHaveBeenCalledWith({
-      content: "公式問題集を1回分ずつ解く",
-      deadline: "2026-09-20",
-      startAmount: 0,
-      targetAmount: 20,
-      type: "volume",
-      unit: "回",
-    });
-  });
+test("編集中は助言を出さない", () => {
+  const { queryByText } = renderWithMantine(
+    <GoalForm {...formProps({ activeCheckpointCount: 3, goal: MASTERY_GOAL })} />,
+  );
+  expect(queryByText(CHECKPOINT_CROWDED_MESSAGE)).toBeNull();
 });

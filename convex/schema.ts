@@ -80,12 +80,4 @@ export default defineSchema({
     ownerId: v.string(),
     targetValue: v.number(),
   }).index("by_owner_and_category", ["ownerId", "categoryId"]),
-
-  //? ペース目標から週の開始時に写すスナップショット。その週だけ上書きできる。
-  weeklyGoals: defineTable({
-    dailyFloorMinutes: v.number(),
-    days: v.number(),
-    ownerId: v.string(),
-    weekStartJst: v.string(),
-  }).index("by_owner_and_week", ["ownerId", "weekStartJst"]),
 });

@@ -5,9 +5,6 @@ import type { GoalType } from "~domain/domain";
 import {
   ExamGoalFields,
   MasteryGoalFields,
-  OtherGoalFields,
-  PaceGoalFields,
-  VolumeGoalFields,
   type GoalFieldsProps,
 } from "~/features/goals/components/goal-form-fields";
 import { isGoalType } from "~/features/goals/lib/goal-guards";
@@ -23,14 +20,18 @@ type GoalFormProps = GoalFieldsProps & Record<"initialType", GoalType>;
 const GOAL_TYPE_FIELDS = {
   exam: ExamGoalFields,
   mastery: MasteryGoalFields,
-  other: OtherGoalFields,
-  pace: PaceGoalFields,
-  volume: VolumeGoalFields,
 } as const satisfies Record<GoalType, (props: GoalFieldsProps) => ReactElement>;
 
 //? タイプごとに入力欄が総取り替えになるので、タイプ選択はフォームの外に置き、
 //? 選ばれたタイプの専用フォーム(1タイプ1スキーマ)をマウントする。
-export function GoalForm({ goal, initialType, onCancel, onSubmit, todayJst }: GoalFormProps) {
+export function GoalForm({
+  activeCheckpointCount,
+  goal,
+  initialType,
+  onCancel,
+  onSubmit,
+  todayJst,
+}: GoalFormProps) {
   const [selectedType, setSelectedType] = useState<GoalType>(goal?.type ?? initialType);
   const type = goal?.type ?? selectedType;
   const GoalTypeFields = GOAL_TYPE_FIELDS[type];
@@ -58,7 +59,13 @@ export function GoalForm({ goal, initialType, onCancel, onSubmit, todayJst }: Go
             目標タイプは変更できません。別のタイプにするときは、削除して作り直します。
           </Text>
         )}
-        <GoalTypeFields goal={goal} onCancel={onCancel} onSubmit={onSubmit} todayJst={todayJst} />
+        <GoalTypeFields
+          activeCheckpointCount={activeCheckpointCount}
+          goal={goal}
+          onCancel={onCancel}
+          onSubmit={onSubmit}
+          todayJst={todayJst}
+        />
       </Stack>
     </Card>
   );

@@ -1,16 +1,16 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
-import { VOLUME_AMOUNT_LIMITS } from "../../lib/domain";
 import { ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
-import { prepareGoalWrite, type GoalWriteArgs } from "./prepareGoalWrite";
+import type { GoalInput } from "../../lib/validators";
+import { assertGoalInput } from "./assertGoalInput";
 import { requireOwnedGoal } from "./requireOwnedGoal";
-import { syncPaceSnapshot } from "./syncPaceSnapshot";
 import { toGoalDocument } from "./toGoalDocument";
 
 export const GOAL_TYPE_IMMUTABLE_MESSAGE = "目標タイプは変更できません";
 
-export type UpdateGoalArgs = GoalWriteArgs & {
+export type UpdateGoalArgs = {
+  goal: GoalInput;
   goalId: Id<"goals">;
 };
 
@@ -24,22 +24,13 @@ export async function update(
   if (existing.type !== goal.type) {
     throwDomain(new ValidationFailedError({ message: GOAL_TYPE_IMMUTABLE_MESSAGE }));
   }
-  const weekStartJst = await prepareGoalWrite(ctx, ownerId, args);
+  assertGoalInput(goal);
   const document = toGoalDocument(goal, ownerId);
-  if (document.type === "volume" && existing.type === "volume") {
-    //? 現在量は setVolumeProgress の担当。編集で巻き戻さない。
-    //? ただし開始量を引き上げた編集で現在量が [開始量, 目標量] の外に落ちるので、下端だけ揃える。
-    //? 上端は締めない(超過達成はそのまま残す)。
-    await ctx.db.replace("goals", existing._id, {
-      ...document,
-      currentAmount: Math.max(
-        existing.currentAmount,
-        document.startAmount ?? VOLUME_AMOUNT_LIMITS.minStart,
-      ),
-    });
-  } else {
-    await ctx.db.replace("goals", existing._id, document);
+  if (document.type === "mastery" && existing.type === "mastery") {
+    //? 達成日は setAchieved の担当。期限や基準を編集しても達成の履歴は消さない。
+    await ctx.db.replace("goals", existing._id, { ...document, achievedAt: existing.achievedAt });
+    return null;
   }
-  await syncPaceSnapshot(ctx, ownerId, goal, weekStartJst);
+  await ctx.db.replace("goals", existing._id, document);
   return null;
 }

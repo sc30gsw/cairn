@@ -5,7 +5,7 @@ import { goalInputValidator } from "../../lib/validators";
 import { update as updateGoal } from "../../services/goals/update";
 
 export const update = ownerMutation({
-  args: { goal: goalInputValidator, goalId: v.id("goals"), weekStartJst: v.string() },
+  args: { goal: goalInputValidator, goalId: v.id("goals") },
   handler: async (ctx, args) => updateGoal(ctx, ctx.ownerId, args),
   returns: v.null(),
 });

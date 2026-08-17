@@ -25,7 +25,7 @@ const MONDAY = "2026-08-17";
 const SATURDAY = "2026-08-15";
 const FUTURE = "2026-08-20";
 
-//? 目標・週間ゴールの書き込みは「今週」に閉じているので、現在時刻を MONDAY の週に固定する。
+//? 週間ターゲットの集計窓は「今週」に閉じているので、現在時刻を MONDAY の週に固定する。
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(`${MONDAY}T12:00:00+09:00`));
@@ -307,15 +307,18 @@ test("その日限りの行を足せる。未来には足さない", async () =>
   ).rejects.toThrow();
 });
 
-test("本番目標・週間ゴール・障害プラン。行の状態は変えない", async () => {
+test("目標・障害プラン。行の状態は変えない", async () => {
   const t = owner();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const before = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   expect(await t.query(api.queries.goals.list.list, {})).toEqual([]);
-  await t.mutation(api.mutations.goals.saveWeekly.saveWeekly, {
-    dailyFloorMinutes: 30,
-    days: 3,
-    weekStartJst: MONDAY,
+  //? 目標は記録と独立。作っても行の状態には波及しない
+  await t.mutation(api.mutations.goals.create.create, {
+    goal: {
+      content: "音読を止まらずにできる",
+      criterion: "1分間で120語",
+      type: "mastery",
+    },
   });
   const planId = await t.mutation(api.mutations.goals.createObstacle.createObstacle, {
     ifText: "眠い",
@@ -672,7 +675,6 @@ test("試験目標の保存と障害プラン更新", async () => {
       minScore: 800,
       type: "exam",
     },
-    weekStartJst: MONDAY,
   });
   expect(await t.query(api.queries.goals.list.list, {})).toEqual([
     {

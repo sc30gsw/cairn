@@ -1,25 +1,25 @@
 import { expect, test } from "vite-plus/test";
 
-import { isGoalType, isVolumeUnit } from "~/features/goals/lib/goal-guards";
+import { isGoalType, isTargetMetric } from "~/features/goals/lib/goal-guards";
 
-test.each(["exam", "pace", "volume", "mastery", "other"])(
-  "isGoalType は %s をドメイン値として認める",
-  (value) => {
-    expect(isGoalType(value)).toBe(true);
-  },
-);
-
-test("isGoalType はドメイン外の文字列を弾く", () => {
-  expect(isGoalType("okr")).toBe(false);
+test.each(["exam", "mastery"])("isGoalType は %s をドメイン値として認める", (value) => {
+  expect(isGoalType(value)).toBe(true);
 });
 
-test.each(["分", "ページ", "問題", "回", "冊"])(
-  "isVolumeUnit は %s をドメイン値として認める",
+test.each(["pace", "volume", "other", "okr"])(
+  "isGoalType は廃止・ドメイン外の %s を弾く",
   (value) => {
-    expect(isVolumeUnit(value)).toBe(true);
+    expect(isGoalType(value)).toBe(false);
   },
 );
 
-test("isVolumeUnit はドメイン外の文字列を弾く", () => {
-  expect(isVolumeUnit("キロ")).toBe(false);
+test.each(["minutes", "days", "count"])(
+  "isTargetMetric は %s をドメイン値として認める",
+  (value) => {
+    expect(isTargetMetric(value)).toBe(true);
+  },
+);
+
+test("isTargetMetric はドメイン外の文字列を弾く", () => {
+  expect(isTargetMetric("hours")).toBe(false);
 });

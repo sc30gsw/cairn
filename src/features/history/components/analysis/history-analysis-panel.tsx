@@ -3,7 +3,6 @@ import { Alert, Button, Card, Grid, SegmentedControl, Stack, Text, Title } from 
 import { Link } from "@tanstack/react-router";
 import type { DateJst } from "~domain/jst";
 
-import { WeeklyProgressCard } from "~/components/weekly-progress-card";
 import { BreakdownTable } from "~/features/history/components/breakdown-table";
 import { HeatmapLegend } from "~/features/history/components/heatmap-legend";
 import { HistoryLearningHeatmap } from "~/features/history/components/history-learning-heatmap";
@@ -23,7 +22,6 @@ import type {
   MonthBreakdown,
   WeekBreakdown,
 } from "~/features/history/types/history";
-import { minutesByDateFromDays } from "~/lib/weekly-progress";
 
 import tabBarClasses from "~/features/history/components/history-tab-bar.module.css";
 
@@ -173,15 +171,6 @@ export function HistoryAnalysisPanel({
         {scope === "week" && `${week.weekStart} 〜 ${week.weekEnd}`}
         {scope === "month" && formatYearMonth(yearMonth)}
       </Text>
-
-      {scope === "week" ? (
-        <WeeklyProgressCard
-          minutesByDate={minutesByDateFromDays(week.byDay)}
-          todayJst={todayJst}
-          weekEndJst={week.weekEnd}
-          weeklyGoal={week.weeklyGoal}
-        />
-      ) : null}
 
       {scope === "month" ? (
         <Stack gap="xs">

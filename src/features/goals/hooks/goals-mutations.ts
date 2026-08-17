@@ -13,16 +13,9 @@ export function useRemoveGoal() {
   return useConvexMutation(api.mutations.goals.remove.remove);
 }
 
-export function useSetVolumeProgress() {
-  return useConvexMutation(api.mutations.goals.setVolumeProgress.setVolumeProgress);
-}
-
-export function useEnsureWeekSnapshot() {
-  return useConvexMutation(api.mutations.goals.ensureWeekSnapshot.ensureWeekSnapshot);
-}
-
-export function useSaveWeeklyGoal() {
-  return useConvexMutation(api.mutations.goals.saveWeekly.saveWeekly);
+//? 習得の達成は所有者の自己判定。学習量からは自動判定しない(CONTEXT.md「習得」)
+export function useSetGoalAchieved() {
+  return useConvexMutation(api.mutations.goals.setAchieved.setAchieved);
 }
 
 export function useCreateObstacle() {

@@ -1,11 +1,12 @@
 import type { DateJst } from "~domain/jst";
 
-import type { Goal, Obstacle, WeeklyTrendWeeks } from "~/features/goals/types/goal";
+import type { Goal, Obstacle } from "~/features/goals/types/goal";
 import type { TargetProgress } from "~/features/goals/types/target";
-import type { WeekPage } from "~/features/history/types/history";
-import type { MinutesByDate } from "~/lib/weekly-progress";
 import type { CategoryDto } from "~/types/category";
 
+export const goalsShimmerTodayJst = "2026-08-17" satisfies DateJst;
+
+//? 実データと同じ件数・同じ形にして、読み込み後のガタつきをなくす
 export const goalsShimmerGoals = [
   {
     _id: "shimmer-goal-exam" as Goal["_id"],
@@ -16,21 +17,24 @@ export const goalsShimmerGoals = [
     type: "exam",
   },
   {
-    _id: "shimmer-goal-pace" as Goal["_id"],
-    content: "帰宅後に Distinction を1セット解く",
-    dailyFloorMinutes: 20,
-    daysPerWeek: 3,
-    type: "pace",
+    _id: "shimmer-goal-checkpoint" as Goal["_id"],
+    achievedAt: undefined,
+    activeDays: 4,
+    confirmedMinutes: 180,
+    content: "Unit 1-10 を音読する",
+    criterion: "Unit 1-10 を止まらずに音読できる",
+    deadline: "2026-08-23",
+    type: "mastery",
   },
   {
-    _id: "shimmer-goal-volume" as Goal["_id"],
-    content: "公式問題集を1回分ずつ解く",
-    currentAmount: 3,
-    deadline: "2026-09-20",
-    startAmount: 0,
-    targetAmount: 10,
-    type: "volume",
-    unit: "回",
+    _id: "shimmer-goal-mastery" as Goal["_id"],
+    achievedAt: undefined,
+    activeDays: 2,
+    confirmedMinutes: 90,
+    content: "Distinction の例文を口頭で言い切る",
+    criterion: "3秒以内に例文を口に出せる",
+    deadline: undefined,
+    type: "mastery",
   },
 ] satisfies Goal[];
 
@@ -42,33 +46,11 @@ export const goalsShimmerObstacles = [
   },
 ] satisfies Obstacle[];
 
-export const goalsShimmerTrendWeeks = [
-  {
-    achieved: true,
-    dailyFloorMinutes: 20,
-    goalDays: 3,
-    qualifyingDays: 4,
-    volumeMinutes: 320,
-    weekEnd: "2026-08-16",
-    weekStart: "2026-08-10",
-  },
-  {
-    achieved: false,
-    dailyFloorMinutes: 20,
-    goalDays: 3,
-    qualifyingDays: 1,
-    volumeMinutes: 180,
-    weekEnd: "2026-08-09",
-    weekStart: "2026-08-03",
-  },
-] satisfies WeeklyTrendWeeks;
-
 export const goalsShimmerCategories = [
   { _id: "shimmer-category-input" as CategoryDto["_id"], name: "インプット", sortOrder: 0 },
   { _id: "shimmer-category-output" as CategoryDto["_id"], name: "アウトプット", sortOrder: 1 },
 ] satisfies CategoryDto[];
 
-//? 実データと同じ件数・同じ形にして、読み込み後のガタつきをなくす
 export const goalsShimmerTargets = [
   {
     _id: "shimmer-target-input" as TargetProgress["_id"],
@@ -89,11 +71,3 @@ export const goalsShimmerTargets = [
     targetValue: 3,
   },
 ] satisfies TargetProgress[];
-
-export const goalsShimmerTodayJst = "2026-08-17" satisfies DateJst;
-export const goalsShimmerWeekEndJst = "2026-08-23" satisfies WeekPage["weekEnd"];
-export const goalsShimmerWeeklyGoal = {
-  dailyFloorMinutes: 20,
-  days: 3,
-} satisfies WeekPage["weeklyGoal"];
-export const goalsShimmerMinutesByDate = { "2026-08-17": 30 } satisfies MinutesByDate;

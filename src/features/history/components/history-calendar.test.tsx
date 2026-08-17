@@ -131,7 +131,6 @@ test("分析パネルの月スコープに学習量ヒートマップが見え�
         volumeMinutes: 0,
         weekEnd: "2026-08-23",
         weekStart: "2026-08-17",
-        weeklyGoal: null,
       }}
       yearMonth="2026-08"
     />,
@@ -161,7 +160,6 @@ test("年・月選択で onMonthChange が呼ばれる", () => {
 test("週の行がタイトルとステータスで見える", () => {
   const { getAllByText, getByText } = renderWithMantine(
     <WeekAgenda
-      todayJst="2026-08-17"
       week={
         {
           events: [
@@ -177,7 +175,6 @@ test("週の行がタイトルとステータスで見える", () => {
           volumeMinutes: 30,
           weekEnd: "2026-08-23",
           weekStart: "2026-08-17",
-          weeklyGoal: { dailyFloorMinutes: 20, days: 3 },
         } satisfies WeekPage
       }
     />,

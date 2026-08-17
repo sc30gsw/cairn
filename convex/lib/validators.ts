@@ -2,13 +2,12 @@ import { type Infer, v } from "convex/values";
 
 import { CATEGORIES } from "./categories";
 import { CONDITIONS } from "./conditions";
-import { GOAL_TYPES, STATUSES, TARGET_METRICS, VOLUME_UNITS } from "./domain";
+import { GOAL_TYPES, STATUSES, TARGET_METRICS } from "./domain";
 
 const [toeic, listening, reading, conversation, otherCategory] = CATEGORIES;
 const [good, ordinary, collapsed] = CONDITIONS;
 const [confirmed, pending, skipped] = STATUSES;
-const [examType, paceType, volumeType, masteryType, otherType] = GOAL_TYPES;
-const [minutesUnit, pagesUnit, questionsUnit, timesUnit, booksUnit] = VOLUME_UNITS;
+const [examType, masteryType] = GOAL_TYPES;
 const [minutesMetric, daysMetric, countMetric] = TARGET_METRICS;
 
 export const categoryValidator = v.union(
@@ -62,18 +61,6 @@ export const conditionValidator = v.union(
   v.literal(ordinary),
   v.literal(collapsed),
 );
-
-//* 週間ゴールのスナップショット。「週 n 日 × 1日あたり最低 m 分」。総分数は判定に使わない。
-export const weeklyGoalSnapshotValidator = v.object({
-  dailyFloorMinutes: v.number(),
-  days: v.number(),
-});
-
-export type WeeklyGoalSnapshot = Infer<typeof weeklyGoalSnapshotValidator>;
-
-export const weeklyGoalValidator = v.union(weeklyGoalSnapshotValidator, v.null());
-
-export type WeeklyGoal = Infer<typeof weeklyGoalValidator>;
 
 export const breakdownRowValidator = v.object({
   category: v.string(),
@@ -129,7 +116,6 @@ export const weekBreakdownValidator = v.object({
   volumeMinutes: v.number(),
   weekEnd: v.string(),
   weekStart: v.string(),
-  weeklyGoal: weeklyGoalValidator,
 });
 
 export const monthBreakdownValidator = v.object({
@@ -196,25 +182,9 @@ export const presetDtoValidator = v.object({
   weekday: v.number(),
 });
 
-export const goalTypeValidator = v.union(
-  v.literal(examType),
-  v.literal(paceType),
-  v.literal(volumeType),
-  v.literal(masteryType),
-  v.literal(otherType),
-);
+export const goalTypeValidator = v.union(v.literal(examType), v.literal(masteryType));
 
 export type GoalTypeDto = Infer<typeof goalTypeValidator>;
-
-export const volumeUnitValidator = v.union(
-  v.literal(minutesUnit),
-  v.literal(pagesUnit),
-  v.literal(questionsUnit),
-  v.literal(timesUnit),
-  v.literal(booksUnit),
-);
-
-export type VolumeUnitDto = Infer<typeof volumeUnitValidator>;
 
 //* 目標はタイプごとに入力欄が変わる discriminated union。共有フィールドは content と type だけ。
 const examGoalFields = v.object({
@@ -225,69 +195,40 @@ const examGoalFields = v.object({
   type: v.literal(examType),
 });
 
-const paceGoalFields = v.object({
-  content: v.string(),
-  dailyFloorMinutes: v.number(),
-  daysPerWeek: v.number(),
-  type: v.literal(paceType),
-});
-
-//? currentAmount は保存側が startAmount から導出するので、入力には含めない。
-const volumeGoalInputFields = v.object({
-  content: v.string(),
-  deadline: v.string(),
-  itemId: v.optional(v.id("items")),
-  startAmount: v.optional(v.number()),
-  targetAmount: v.number(),
-  type: v.literal(volumeType),
-  unit: volumeUnitValidator,
-});
-
-const volumeGoalFields = volumeGoalInputFields.extend({ currentAmount: v.number() });
-
-const masteryGoalFields = v.object({
+//? achievedAt は setAchieved の担当なので、作成・更新の入力には含めない(編集で達成を消さない)。
+//? deadline を持つ習得が「チェックポイント」。別タイプではないので枝は増やさない。
+const masteryGoalInputFields = v.object({
   content: v.string(),
   criterion: v.string(),
   deadline: v.optional(v.string()),
   type: v.literal(masteryType),
 });
 
-const otherGoalFields = v.object({
-  content: v.string(),
-  deadline: v.optional(v.string()),
-  memo: v.optional(v.string()),
-  type: v.literal(otherType),
-});
+const masteryGoalFields = masteryGoalInputFields.extend({ achievedAt: v.optional(v.string()) });
+
+//? 自己判定の較正のために併記する学習量の実績。保存はせず list が毎回導出する。
+const masteryProgressFields = {
+  activeDays: v.number(),
+  confirmedMinutes: v.number(),
+};
 
 const goalOwnerField = { ownerId: v.string() };
 
 export const goalDocumentValidator = v.union(
   examGoalFields.extend(goalOwnerField),
-  paceGoalFields.extend(goalOwnerField),
-  volumeGoalFields.extend(goalOwnerField),
   masteryGoalFields.extend(goalOwnerField),
-  otherGoalFields.extend(goalOwnerField),
 );
 
 const goalIdField = { _id: v.id("goals") };
 
 export const goalDtoValidator = v.union(
   examGoalFields.extend(goalIdField),
-  paceGoalFields.extend(goalIdField),
-  volumeGoalFields.extend(goalIdField),
-  masteryGoalFields.extend(goalIdField),
-  otherGoalFields.extend(goalIdField),
+  masteryGoalFields.extend({ ...goalIdField, ...masteryProgressFields }),
 );
 
 export type GoalDto = Infer<typeof goalDtoValidator>;
 
-export const goalInputValidator = v.union(
-  examGoalFields,
-  paceGoalFields,
-  volumeGoalInputFields,
-  masteryGoalFields,
-  otherGoalFields,
-);
+export const goalInputValidator = v.union(examGoalFields, masteryGoalInputFields);
 
 export type GoalInput = Infer<typeof goalInputValidator>;
 
@@ -369,7 +310,6 @@ export const historyWeekValidator = v.object({
   volumeMinutes: v.number(),
   weekEnd: v.string(),
   weekStart: v.string(),
-  weeklyGoal: weeklyGoalValidator,
 });
 
 export type HistoryWeekDto = Infer<typeof historyWeekValidator>;
@@ -379,19 +319,6 @@ export const historyMonthValidator = v.object({
 });
 
 export type HistoryMonthDto = Infer<typeof historyMonthValidator>;
-
-//* 判定は頻度ベース。volumeMinutes はチャート表示専用で、achieved には効かない。
-export const weeklyTrendWeekValidator = v.object({
-  achieved: v.boolean(),
-  dailyFloorMinutes: v.union(v.number(), v.null()),
-  goalDays: v.union(v.number(), v.null()),
-  qualifyingDays: v.number(),
-  volumeMinutes: v.number(),
-  weekEnd: v.string(),
-  weekStart: v.string(),
-});
-
-export type WeeklyTrendWeek = Infer<typeof weeklyTrendWeekValidator>;
 
 export type RowDto = Infer<typeof rowDtoValidator>;
 export type DayDto = Infer<typeof dayDtoValidator>;

@@ -2,13 +2,7 @@ import { groupBy, prop, sumBy } from "remeda";
 
 import type { Doc, Id } from "../_generated/dataModel";
 import { categoryFields } from "./categoryFields";
-import type {
-  BreakdownRow,
-  CategoryBreakdown,
-  DayBreakdown,
-  WeekBreakdown,
-  WeeklyGoal,
-} from "./validators";
+import type { BreakdownRow, CategoryBreakdown, DayBreakdown, WeekBreakdown } from "./validators";
 import { confirmedVolumeMinutes, type VolumeRow } from "./volume";
 
 export type { BreakdownRow, CategoryBreakdown, DayBreakdown, WeekBreakdown } from "./validators";
@@ -117,7 +111,6 @@ export function buildWeekBreakdown(
   liveDayDates: ReadonlySet<string>,
   itemById: Map<Id<"items">, Doc<"items">>,
   categoryById: Map<Id<"categories">, Doc<"categories">>,
-  weeklyGoal: WeeklyGoal,
 ): WeekBreakdown {
   const aggregated = aggregateBreakdownRows(rows, itemById, categoryById);
   const rowsByDate = groupBy(rows, prop("dateJst"));
@@ -141,6 +134,5 @@ export function buildWeekBreakdown(
     volumeMinutes: aggregated.confirmedMinutes,
     weekEnd,
     weekStart,
-    weeklyGoal,
   };
 }

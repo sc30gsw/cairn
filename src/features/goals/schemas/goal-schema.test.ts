@@ -1,6 +1,7 @@
 import * as v from "valibot";
 import { expect, test } from "vite-plus/test";
 import {
+  MASTERY_CRITERION_MESSAGE,
   TOEIC_SCORE_ORDER_MESSAGE,
   TOEIC_SCORE_RANGE_MESSAGE,
   TOEIC_SCORE_STEP_MESSAGE,
@@ -10,9 +11,6 @@ import {
   ExamGoalFieldsSchema,
   GoalSchema,
   MasteryGoalFieldsSchema,
-  OtherGoalFieldsSchema,
-  PaceGoalFieldsSchema,
-  VolumeGoalFieldsSchema,
 } from "~/features/goals/schemas/goal-schema";
 
 function firstIssue(result: v.SafeParseResult<v.GenericSchema>) {
@@ -50,33 +48,24 @@ test("試験: スコアは5点刻み", () => {
   expect(firstIssue(result)).toBe(TOEIC_SCORE_STEP_MESSAGE);
 });
 
-test("ペース: 週の実施日数と最低分数を通す", () => {
-  const result = v.safeParse(PaceGoalFieldsSchema, {
-    content: "帰宅後に Distinction を1セット解く",
-    dailyFloorMinutes: 20,
-    daysPerWeek: 3,
-  });
-  expect(result.success).toBe(true);
-});
-
-test("ペース: 実施日数が8日以上ならエラー", () => {
-  const result = v.safeParse(PaceGoalFieldsSchema, {
-    content: "帰宅後に Distinction を1セット解く",
-    dailyFloorMinutes: 20,
-    daysPerWeek: 8,
+test("試験: 本番日は YYYY-MM-DD 以外を弾く", () => {
+  const result = v.safeParse(ExamGoalFieldsSchema, {
+    content: "公式問題集を1回分解く",
+    examDate: "2026/09/27",
+    maxScore: 850,
+    minScore: 730,
   });
   expect(result.success).toBe(false);
 });
 
-test("達成量: 目標量は1以上", () => {
-  const result = v.safeParse(VolumeGoalFieldsSchema, {
-    content: "公式問題集を1回分ずつ解く",
-    deadline: "2026-09-20",
-    startAmount: 0,
-    targetAmount: 0,
-    unit: "回",
+test("習得: 達成の基準が空ならエラー", () => {
+  const result = v.safeParse(MasteryGoalFieldsSchema, {
+    content: "Unit 1-10 を音読する",
+    criterion: "   ",
+    deadline: "",
   });
   expect(result.success).toBe(false);
+  expect(firstIssue(result)).toBe(MASTERY_CRITERION_MESSAGE);
 });
 
 test("習得: 期限は空欄なら undefined に畳む", () => {
@@ -88,24 +77,13 @@ test("習得: 期限は空欄なら undefined に畳む", () => {
   expect(output.deadline).toBeUndefined();
 });
 
-test("その他: メモは空欄なら undefined に畳む", () => {
-  const output = v.parse(OtherGoalFieldsSchema, {
-    content: "毎朝の英字ニュースを1本読む",
-    deadline: "",
-    memo: "   ",
+test("習得: 期限があればチェックポイントとしてそのまま残す", () => {
+  const output = v.parse(MasteryGoalFieldsSchema, {
+    content: "Unit 1-10 を音読する",
+    criterion: "止まらずに音読できる",
+    deadline: "2026-08-23",
   });
-  expect(output.memo).toBeUndefined();
-  expect(output.deadline).toBeUndefined();
-});
-
-test("その他: メモに内容があればそのまま残す", () => {
-  const output = v.parse(OtherGoalFieldsSchema, {
-    content: "毎朝の英字ニュースを1本読む",
-    deadline: "2026-09-20",
-    memo: "5分で十分",
-  });
-  expect(output.memo).toBe("5分で十分");
-  expect(output.deadline).toBe("2026-09-20");
+  expect(output.deadline).toBe("2026-08-23");
 });
 
 test("習得: 期限は空欄以外なら日付形式を検証する", () => {
@@ -117,29 +95,28 @@ test("習得: 期限は空欄以外なら日付形式を検証する", () => {
   expect(result.success).toBe(false);
 });
 
-test("送信ペイロードは type で分岐する union になる", () => {
+test("送信ペイロードは type で分岐する2枝の union になる", () => {
   const result = v.safeParse(GoalSchema, {
-    content: "帰宅後に Distinction を1セット解く",
-    dailyFloorMinutes: 20,
-    daysPerWeek: 3,
-    type: "pace",
+    content: "Unit 1-10 を音読する",
+    criterion: "止まらずに音読できる",
+    deadline: "2026-08-23",
+    type: "mastery",
   });
   expect(result.success).toBe(true);
   expect(result.output).toEqual({
-    content: "帰宅後に Distinction を1セット解く",
-    dailyFloorMinutes: 20,
-    daysPerWeek: 3,
-    type: "pace",
+    content: "Unit 1-10 を音読する",
+    criterion: "止まらずに音読できる",
+    deadline: "2026-08-23",
+    type: "mastery",
   });
 });
 
-test("日付は YYYY-MM-DD 以外を弾く", () => {
-  const result = v.safeParse(VolumeGoalFieldsSchema, {
-    content: "公式問題集を1回分ずつ解く",
-    deadline: "2026/09/20",
-    startAmount: 0,
-    targetAmount: 10,
-    unit: "回",
+test.each(["pace", "volume", "other"])("廃止した目標タイプ %s は union に無い", (type) => {
+  const result = v.safeParse(GoalSchema, {
+    content: "帰宅後に Distinction を1セット解く",
+    criterion: "止まらずに音読できる",
+    deadline: "",
+    type,
   });
   expect(result.success).toBe(false);
 });

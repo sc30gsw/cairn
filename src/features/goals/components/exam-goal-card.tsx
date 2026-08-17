@@ -6,22 +6,25 @@ import { GOAL_TYPE_LABELS } from "~/features/goals/lib/goal-type-labels";
 import type { ExamGoal } from "~/features/goals/types/goal";
 import { BODY_FONT, DISPLAY_FONT } from "~/lib/theme";
 
+export const EXAM_GOAL_INCOMPLETE_TITLE = "未完成 — 週間ターゲットを設定してください";
+
 type ExamGoalCardProps = {
   goal: ExamGoal;
-  hasPaceGoal: boolean;
-  onAddPace: () => void;
+  //? プロセス目標の担い手は週間ターゲット。1件も無い本番目標は未完成(docs/adr/0006)
+  hasWeeklyTargets: boolean;
   onEdit: () => void;
   onRemove: () => void;
+  onShowWeeklyTargets: () => void;
   todayJst: DateJst;
 };
 
 //? カウントダウンはクライアント計算。クエリで Date.now() を読まない(CVX-14)
 export function ExamGoalCard({
   goal,
-  hasPaceGoal,
-  onAddPace,
+  hasWeeklyTargets,
   onEdit,
   onRemove,
+  onShowWeeklyTargets,
   todayJst,
 }: ExamGoalCardProps) {
   const remainingDays = daysUntil(todayJst, goal.examDate);
@@ -30,7 +33,7 @@ export function ExamGoalCard({
     <Card h="100%">
       <Stack gap="md">
         <Group gap="xs" justify="space-between" wrap="nowrap">
-          <Title order={2}>{GOAL_TYPE_LABELS.exam}</Title>
+          <Title order={2}>本番目標</Title>
           <GoalCardActions goalName={goal.content} onEdit={onEdit} onRemove={onRemove} />
         </Group>
         <Text>{goal.content}</Text>
@@ -46,18 +49,18 @@ export function ExamGoalCard({
         )}
         <Text>
           {goal.examDate}
-          {remainingDays >= 0 ? ` まであと ${remainingDays} 日` : ""}。目標 {goal.minScore}〜
-          {goal.maxScore}。
+          {remainingDays >= 0 ? ` まであと ${remainingDays} 日` : ""}。{GOAL_TYPE_LABELS.exam}の目標{" "}
+          {goal.minScore}〜{goal.maxScore}。
         </Text>
-        {!hasPaceGoal && (
-          //? 本番日だけの目標は行動に落ちない。週の頻度とセットにする(docs/adr/0003)
-          <Alert color="yellow" title="ペースを設定してください" variant="light">
+        {!hasWeeklyTargets && (
+          //? 本番日だけの目標は行動に落ちない。週のノルマとセットにする(docs/adr/0006)
+          <Alert color="yellow" title={EXAM_GOAL_INCOMPLETE_TITLE} variant="light">
             <Stack align="flex-start" gap="xs">
               <Text size="sm">
-                本番目標だけでは日々の行動が決まりません。週に何日・1日何分やるかを決めましょう。
+                本番目標だけでは日々の行動が決まりません。カテゴリーごとに「何をどれくらい」を置きましょう。
               </Text>
-              <Button color="yellow" onClick={onAddPace} size="xs" type="button">
-                ペース目標を作成する
+              <Button color="yellow" onClick={onShowWeeklyTargets} size="xs" type="button">
+                週間ターゲットを設定する
               </Button>
             </Stack>
           </Alert>
