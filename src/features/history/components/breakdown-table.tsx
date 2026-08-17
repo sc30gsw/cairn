@@ -1,4 +1,5 @@
-import { Group, Progress, Table, Text } from "@mantine/core";
+import { EmptyState, Group, Progress, Table, Text } from "@mantine/core";
+import { IconListCheck } from "@tabler/icons-react";
 
 import type { BreakdownRow } from "~/features/history/types/history";
 
@@ -10,9 +11,11 @@ type BreakdownTableProps = {
 export function BreakdownTable({ confirmedMinutes, rows }: BreakdownTableProps) {
   if (rows.length === 0) {
     return (
-      <Text c="dimmed" size="sm">
-        完了した記録がありません。
-      </Text>
+      <EmptyState
+        description="記録を確定すると、項目ごとの内訳がここに出ます。"
+        icon={<IconListCheck aria-hidden />}
+        title="完了した記録がありません"
+      />
     );
   }
 

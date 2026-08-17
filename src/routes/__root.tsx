@@ -1,14 +1,7 @@
 /// <reference types="vite-plus/client" />
 import { ConvexBetterAuthProvider, type AuthClient } from "@convex-dev/better-auth/react";
 import type { ConvexQueryClient } from "@convex-dev/react-query";
-import {
-  ColorSchemeScript,
-  Container,
-  MantineProvider,
-  Text,
-  Title,
-  mantineHtmlProps,
-} from "@mantine/core";
+import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from "@mantine/core";
 import { DatesProvider } from "@mantine/dates";
 import { ModalsProvider } from "@mantine/modals";
 import { Notifications } from "@mantine/notifications";
@@ -26,6 +19,8 @@ import "dayjs/locale/ja";
 import { createServerFn } from "@tanstack/react-start";
 import { Suspense, lazy, type ReactNode } from "react";
 
+import { FullPageErrorState } from "~/components/error-state";
+import { NotFoundState } from "~/components/not-found-state";
 import { PendingComponent } from "~/components/pending-component";
 import { authClient } from "~/lib/auth-client";
 import { getToken } from "~/lib/auth-server";
@@ -134,10 +129,11 @@ function RootComponent() {
   );
 }
 
-function RootErrorComponent(props: ErrorComponentProps) {
+//? 生の error.message は Convex の内部ログやスタックを含むため描画しない(FullPageErrorState が文言を決める)
+function RootErrorComponent({ error, reset }: ErrorComponentProps) {
   return (
     <RootDocument>
-      <ErrorComponent {...props} />
+      <FullPageErrorState error={error} onRetry={reset} />
     </RootDocument>
   );
 }
@@ -145,7 +141,7 @@ function RootErrorComponent(props: ErrorComponentProps) {
 function RootNotFoundComponent() {
   return (
     <RootDocument>
-      <NotFoundComponent />
+      <NotFoundState />
     </RootDocument>
   );
 }
@@ -155,25 +151,5 @@ function RootPendingComponent() {
     <RootDocument>
       <PendingComponent />
     </RootDocument>
-  );
-}
-
-function NotFoundComponent() {
-  return (
-    <Container py="xl">
-      <Title order={1}>404</Title>
-      <Text mt="sm">ページが見つかりませんでした。</Text>
-    </Container>
-  );
-}
-
-function ErrorComponent({ error }: ErrorComponentProps) {
-  return (
-    <Container py="xl">
-      <Title c="red" order={1}>
-        エラー
-      </Title>
-      <Text mt="sm">{error.message}</Text>
-    </Container>
   );
 }

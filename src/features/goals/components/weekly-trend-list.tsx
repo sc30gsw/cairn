@@ -1,4 +1,5 @@
-import { Badge, Group, Stack, Text } from "@mantine/core";
+import { Badge, EmptyState, Group, Stack, Text } from "@mantine/core";
+import { IconChartBar } from "@tabler/icons-react";
 
 import { recordedWeeks, shortDateLabel } from "~/features/goals/lib/weekly-trend-format";
 import type { WeeklyTrendWeeks } from "~/features/goals/types/goal";
@@ -17,9 +18,11 @@ export function WeeklyTrendList({ weeks }: Record<"weeks", WeeklyTrendWeeks>) {
 
   if (recorded.length === 0) {
     return (
-      <Text c="dimmed" size="sm">
-        過去の週の実績はまだありません。
-      </Text>
+      <EmptyState
+        description="週の記録が貯まると、ここに達成状況が並びます。"
+        icon={<IconChartBar aria-hidden />}
+        title="過去の週の実績はまだありません"
+      />
     );
   }
 

@@ -21,9 +21,10 @@ import {
   IconTemplate,
   IconTrash,
 } from "@tabler/icons-react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { CatchBoundary, Link, useRouterState } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { RouteErrorComponent } from "~/components/error-state";
 import type { AppShellUser } from "~/features/auth/types/session";
 import { DISPLAY_FONT } from "~/lib/theme";
 
@@ -173,7 +174,10 @@ export function AppShell({ children, onSignOut, user }: AppShellProps) {
       </Drawer>
       <Shell.Main>
         <Container px={0} size="lg">
-          {children}
+          {/*? ページ内のエラーはヘッダーとナビを残したまま出す。別の画面へ移れば解除される */}
+          <CatchBoundary errorComponent={RouteErrorComponent} getResetKey={() => pathname}>
+            {children}
+          </CatchBoundary>
         </Container>
       </Shell.Main>
     </Shell>
