@@ -1,10 +1,6 @@
 import { todayJst } from "../../lib/jst";
+import type { MasteryProgress } from "../../lib/validators";
 import type { VolumeRow } from "../../lib/volume";
-
-export type MasteryProgress = {
-  activeDays: number;
-  confirmedMinutes: number;
-};
 
 export const EMPTY_MASTERY_PROGRESS = {
   activeDays: 0,

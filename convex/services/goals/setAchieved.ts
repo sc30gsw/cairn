@@ -3,6 +3,7 @@ import type { MutationCtx } from "../../_generated/server";
 import { requireDateJst } from "../../lib/dateArgs";
 import { ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
+import { recomputeMasteryProgress } from "./recomputeMasteryProgress";
 import { requireOwnedGoal } from "./requireOwnedGoal";
 
 export const NOT_MASTERY_GOAL_MESSAGE = "習得の目標ではありません";
@@ -25,6 +26,11 @@ export async function setAchieved(
   }
   if (args.achievedAt !== undefined) {
     requireDateJst(args.achievedAt);
+  }
+  //? 達成すると実績は凍結され、以後の確定では動かない。解除は現在進行形への復帰なので、
+  //? 凍結中に動いた確定を rows から数え直して保存値を上書きしてから達成日を消す(ADR-0007)。
+  if (args.achievedAt === undefined) {
+    await recomputeMasteryProgress(ctx, goal);
   }
   await ctx.db.patch("goals", goal._id, { achievedAt: args.achievedAt });
   return null;

@@ -37,6 +37,7 @@ export async function purgeExpired(ctx: MutationCtx, args: { now?: number } = {}
       rowIds.add(row._id);
     }
   }
+  //? 消えるのはゴミ箱の日とその配下・ゴミ箱の記録だけ。既に実績の外なので差分は出ない(ADR-0007)。
   const purgedDayIds = new Set(expiredDayIds);
   await deleteRowsByIds(ctx, rowIds);
   await Promise.all(

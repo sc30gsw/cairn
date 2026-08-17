@@ -4,6 +4,7 @@ import { assertConcreteAction } from "../../lib/concreteAction";
 import { MINUTES_MIN_MESSAGE } from "../../lib/domain";
 import { NotFoundError, ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
+import { applyMasteryProgressDelta } from "../goals/applyMasteryProgressDelta";
 import { requireOwnedRow } from "./requireOwnedRow";
 
 export async function confirm(
@@ -22,10 +23,18 @@ export async function confirm(
   if (args.minutes < 0) {
     throwDomain(new ValidationFailedError({ message: MINUTES_MIN_MESSAGE }));
   }
+  const wasConfirmed = row.status === "確定";
   await ctx.db.patch("rows", args.rowId, {
     content,
     minutes: args.minutes,
     status: "確定",
+  });
+  //? 確定分数を動かしたので習得目標のカウンタも同じトランザクションで動かす(CVX-15 / ADR-0007)。
+  //? 日が生きていることは上で確認済み。分数の編集(既に確定)は実施日を増やさない。
+  await applyMasteryProgressDelta(ctx, ownerId, {
+    confirmedCountDelta: wasConfirmed ? 0 : 1,
+    dateJst: row.dateJst,
+    minutesDelta: args.minutes - (wasConfirmed ? row.minutes : 0),
   });
   return null;
 }

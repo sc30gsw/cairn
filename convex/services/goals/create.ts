@@ -1,9 +1,13 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { ValidationFailedError } from "../../lib/errors";
+import { todayJst } from "../../lib/jst";
 import { throwDomain } from "../../lib/ownerFunctions";
 import type { GoalInput } from "../../lib/validators";
 import { assertGoalInput } from "./assertGoalInput";
+import { loadDayTotals } from "./loadDayTotals";
+import { initialMasteryProgress } from "./masteryDayTotals";
+import { EMPTY_MASTERY_PROGRESS } from "./masteryProgress";
 import { toGoalDocument } from "./toGoalDocument";
 
 export const SINGLE_EXAM_GOAL_MESSAGE = "本番目標は1件までです";
@@ -27,5 +31,11 @@ export async function create(
       throwDomain(new ValidationFailedError({ message: SINGLE_EXAM_GOAL_MESSAGE }));
     }
   }
-  return await ctx.db.insert("goals", toGoalDocument(goal, ownerId));
+  //? 学習量の実績は作成日を起点にする。作成と同じ暦日に既にある確定は実績に入る(ADR-0007)。
+  //? mutation なので Date.now() を読んでよい(CVX-14 は query だけの制約)。
+  const progress =
+    goal.type === "mastery"
+      ? initialMasteryProgress(await loadDayTotals(ctx, ownerId, todayJst()))
+      : EMPTY_MASTERY_PROGRESS;
+  return await ctx.db.insert("goals", toGoalDocument(goal, ownerId, progress));
 }

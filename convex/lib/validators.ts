@@ -206,24 +206,32 @@ const masteryGoalInputFields = v.object({
 
 const masteryGoalFields = masteryGoalInputFields.extend({ achievedAt: v.optional(v.string()) });
 
-//? 自己判定の較正のために併記する学習量の実績。保存はせず list が毎回導出する。
+//? 自己判定の較正のために併記する学習量の実績。目標ドキュメントに保存し、確定を動かす書き込みが
+//? 同じトランザクションで差分更新する(ADR-0007)。読み取りは保存値をそのまま返すだけ。
 const masteryProgressFields = {
   activeDays: v.number(),
   confirmedMinutes: v.number(),
 };
 
+const masteryProgressValidator = v.object(masteryProgressFields);
+
+//? 保存フィールドの形はここが SSoT。services 側で同じ2フィールドを書き直さない(CVX-16)。
+export type MasteryProgress = Infer<typeof masteryProgressValidator>;
+
+const masteryGoalDocumentFields = masteryGoalFields.extend(masteryProgressFields);
+
 const goalOwnerField = { ownerId: v.string() };
 
 export const goalDocumentValidator = v.union(
   examGoalFields.extend(goalOwnerField),
-  masteryGoalFields.extend(goalOwnerField),
+  masteryGoalDocumentFields.extend(goalOwnerField),
 );
 
 const goalIdField = { _id: v.id("goals") };
 
 export const goalDtoValidator = v.union(
   examGoalFields.extend(goalIdField),
-  masteryGoalFields.extend({ ...goalIdField, ...masteryProgressFields }),
+  masteryGoalDocumentFields.extend(goalIdField),
 );
 
 export type GoalDto = Infer<typeof goalDtoValidator>;

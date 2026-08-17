@@ -1,8 +1,9 @@
 import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
-import { api } from "./_generated/api";
-import type { Doc, Id } from "./_generated/dataModel";
+import { api, internal } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
+import { TRASH_TTL_MS } from "./lib/trash";
 import schema from "./schema";
 
 const modules = import.meta.glob([
@@ -21,7 +22,6 @@ const OWNER = { email: ALLOWED_EMAIL, subject: "owner-subject" };
 const OTHER_OWNER = { email: ALLOWED_EMAIL, subject: "other-owner-subject" };
 const TODAY = "2026-08-17";
 const YESTERDAY = "2026-08-16";
-const TOMORROW = "2026-08-18";
 
 //? 習得の学習量実績は目標の作成日を起点にするので、サーバが見る現在時刻を固定する。
 beforeEach(() => {
@@ -56,45 +56,70 @@ const MASTERY_GOAL = {
   type: "mastery",
 } as const;
 
-type ConfirmedRow = {
-  dateJst: string;
-  minutes: number;
-  status?: Doc<"rows">["status"];
-};
+const CONCRETE_ACTION = "Unit 1 を音読する";
 
-//? 確定記録を直接作る。学習量の実績は rows の集計なので、記録画面の経路は通さない。
-async function seedRows(t: ReturnType<typeof owner>, entries: readonly ConfirmedRow[]) {
-  await t.run(async (ctx) => {
+//? 学習量の実績は保存カウンタで、記録側の書き込み経路が差分更新する(ADR-0007)。
+//? したがってテストは rows を直接 insert せず、必ず本物の mutation を通す。
+async function seedItemId(t: ReturnType<typeof owner>, ownerId: string = OWNER.subject) {
+  return await t.run(async (ctx) => {
     const categoryId = await ctx.db.insert("categories", {
       name: "TOEIC対策",
-      ownerId: OWNER.subject,
+      ownerId,
       sortOrder: 0,
     });
-    const itemId = await ctx.db.insert("items", {
+    return await ctx.db.insert("items", {
       categoryId,
       name: "金のフレーズ",
-      ownerId: OWNER.subject,
+      ownerId,
       sortOrder: 0,
     });
-    const dayIdByDate = new Map<string, Id<"days">>();
-    for (const entry of entries) {
-      const existingDayId = dayIdByDate.get(entry.dateJst);
-      const dayId =
-        existingDayId ??
-        (await ctx.db.insert("days", { dateJst: entry.dateJst, ownerId: OWNER.subject }));
-      dayIdByDate.set(entry.dateJst, dayId);
-      await ctx.db.insert("rows", {
-        content: "Unit 1 を音読する",
-        dateJst: entry.dateJst,
-        dayId,
-        itemId,
-        minutes: entry.minutes,
-        ownerId: OWNER.subject,
-        sortOrder: 0,
-        status: entry.status ?? "確定",
-      });
-    }
   });
+}
+
+async function addRow(t: ReturnType<typeof owner>, itemId: Id<"items">, dateJst: string) {
+  return await t.mutation(api.mutations.rows.add.add, {
+    content: CONCRETE_ACTION,
+    dateJst,
+    itemId,
+    minutes: 0,
+    todayJst: TODAY,
+  });
+}
+
+async function confirmRow(t: ReturnType<typeof owner>, rowId: Id<"rows">, minutes: number) {
+  await t.mutation(api.mutations.rows.confirm.confirm, {
+    content: CONCRETE_ACTION,
+    minutes,
+    rowId,
+  });
+}
+
+async function addConfirmedRow(
+  t: ReturnType<typeof owner>,
+  itemId: Id<"items">,
+  entry: { dateJst: string; minutes: number },
+) {
+  const rowId = await addRow(t, itemId, entry.dateJst);
+  await confirmRow(t, rowId, entry.minutes);
+  return rowId;
+}
+
+async function progressOf(t: ReturnType<typeof owner>, goalId: Id<"goals">) {
+  const goals = await t.query(api.queries.goals.list.list, {});
+  const goal = goals.find((entry) => entry._id === goalId);
+  if (goal === undefined || goal.type !== "mastery") {
+    throw new Error("習得目標が見つからない");
+  }
+  return { activeDays: goal.activeDays, confirmedMinutes: goal.confirmedMinutes };
+}
+
+async function liveDayId(t: ReturnType<typeof owner>, dateJst: string) {
+  const page = await t.query(api.queries.days.get.get, { dateJst, todayJst: TODAY });
+  const dayId = page.day?._id;
+  if (dayId === undefined) {
+    throw new Error("日が見つからない");
+  }
+  return dayId;
 }
 
 test("試験・習得の2タイプを作成でき、list に反映される", async () => {
@@ -279,43 +304,329 @@ test("setAchieved は本番目標と不正な日付を拒否する", async () =>
 
 test("習得には目標作成以降の確定分数と実施日数が併記される", async () => {
   const t = owner();
+  const itemId = await seedItemId(t);
+  //? 目標を作る前の日の記録は入らない
+  await addConfirmedRow(t, itemId, { dateJst: YESTERDAY, minutes: 90 });
   const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
-  await seedRows(t, [
-    //? 目標を作る前の記録は入らない
-    { dateJst: YESTERDAY, minutes: 90 },
-    { dateJst: TODAY, minutes: 30 },
-    //? 同じ日に何件あっても実施日は1日
-    { dateJst: TODAY, minutes: 20 },
-    { dateJst: TOMORROW, minutes: 45 },
-    //? 確定以外は学習量に入らない
-    { dateJst: TOMORROW, minutes: 999, status: "未着手" },
-    { dateJst: TOMORROW, minutes: 999, status: "スキップ" },
-  ]);
+  //? 同じ日に何件あっても実施日は1日
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 20 });
+  //? 確定以外は学習量に入らない
+  await addRow(t, itemId, TODAY);
+  const skipped = await addRow(t, itemId, TODAY);
+  await t.mutation(api.mutations.rows.skip.skip, { rowId: skipped });
 
-  const goals = await t.query(api.queries.goals.list.list, {});
-  const goal = goals.find((entry) => entry._id === masteryId);
-  expect(goal?.type === "mastery" && goal.confirmedMinutes).toBe(95);
-  expect(goal?.type === "mastery" && goal.activeDays).toBe(2);
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 50 });
 });
 
-test("削除した日の記録は学習量の実績に入らない", async () => {
+test("記録の確定で学習量の実績が増え、分数の編集にも追従する", async () => {
   const t = owner();
+  const itemId = await seedItemId(t);
   const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
-  await seedRows(t, [{ dateJst: TODAY, minutes: 30 }]);
+
+  const rowId = await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
+
+  //? 確定済みの分数を直しても実施日は増えず、分数だけ差し替わる
+  await confirmRow(t, rowId, 45);
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 45 });
+});
+
+test("同じ日の2件目の確定では実施日数が増えない", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 20 });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 50 });
+});
+
+test("確定をスキップに戻すと実績が減る", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  const rowId = await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+
+  await t.mutation(api.mutations.rows.skip.skip, { rowId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
+});
+
+test("確定記録をゴミ箱に入れると実績が減り、戻すと実績も戻る", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  const rowId = await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+  //? 同じ日にもう1件残しておくと、実施日は減らずに分数だけ減る
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 20 });
+
+  await t.mutation(api.mutations.rows.remove.remove, { rowId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 20 });
+
+  await t.mutation(api.mutations.rows.restore.restore, { rowId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 50 });
+});
+
+test("最後の確定記録を消すと実施日数も減る", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  const rowId = await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+
+  await t.mutation(api.mutations.rows.remove.remove, { rowId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
+
+  await t.mutation(api.mutations.rows.restore.restore, { rowId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
+});
+
+test("日をゴミ箱に入れると配下の確定が実績から外れ、戻すと実績も戻る", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 20 });
+  const dayId = await liveDayId(t, TODAY);
+
+  await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: TODAY });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
+
+  await t.mutation(api.mutations.trash.restoreDay.restoreDay, { dayId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 50 });
+});
+
+test("達成すると実績が凍結され、達成後の確定では動かない", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+
+  await t.mutation(api.mutations.goals.setAchieved.setAchieved, {
+    achievedAt: TODAY,
+    goalId: masteryId,
+  });
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 20 });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
+});
+
+test("ゴミ箱の日に属する確定記録は、消しても実績を動かさず、日を戻すまで戻せない", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  const rowId = await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+  const dayId = await liveDayId(t, TODAY);
+
+  await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: TODAY });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
+
+  //? 日ごと実績から外れているので、配下の記録を消しても差分は出ない
+  await t.mutation(api.mutations.rows.remove.remove, { rowId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
+
+  await expect(t.mutation(api.mutations.rows.restore.restore, { rowId })).rejects.toThrow();
+
+  //? 日を戻しても記録はゴミ箱のままなので実績はまだ0
+  await t.mutation(api.mutations.trash.restoreDay.restoreDay, { dayId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
+
+  await t.mutation(api.mutations.rows.restore.restore, { rowId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
+});
+
+test("達成を解除すると凍結中に動いた確定を取り込んで再計算される", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+  await t.mutation(api.mutations.goals.setAchieved.setAchieved, {
+    achievedAt: TODAY,
+    goalId: masteryId,
+  });
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 20 });
+
+  await t.mutation(api.mutations.goals.setAchieved.setAchieved, { goalId: masteryId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 50 });
+});
+
+test("日ドキュメントが入れ替わった記録でも、実績は暦日の生存で数え直される", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  const rowId = await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+  const staleDayId = await liveDayId(t, TODAY);
+
+  //? collapseExtraLiveDays は余剰の日を配下の記録ごと消さずに落とす。その結果あり得る
+  //? 「記録の dayId だけが消え、暦日には別の生きた日がある」状態を作って再現する。
   await t.run(async (ctx) => {
-    const days = await ctx.db
-      .query("days")
-      .withIndex("by_owner_and_date", (q) => q.eq("ownerId", OWNER.subject))
-      .collect();
-    for (const day of days) {
-      await ctx.db.patch("days", day._id, { deletedAt: Date.now() });
-    }
+    await ctx.db.insert("days", { dateJst: TODAY, ownerId: OWNER.subject });
+    await ctx.db.delete("days", staleDayId);
   });
 
-  const goals = await t.query(api.queries.goals.list.list, {});
-  const goal = goals.find((entry) => entry._id === masteryId);
-  expect(goal?.type === "mastery" && goal.confirmedMinutes).toBe(0);
-  expect(goal?.type === "mastery" && goal.activeDays).toBe(0);
+  //? 実測(暦日に生きた日がある = 確定は実績に入る)と保存カウンタは一致したまま
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
+
+  await t.mutation(api.mutations.rows.remove.remove, { rowId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
+
+  await t.mutation(api.mutations.rows.restore.restore, { rowId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
+});
+
+test("凍結中に確定が減っていれば、解除の再計算で実績も減る", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+  const droppedId = await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 20 });
+  await t.mutation(api.mutations.goals.setAchieved.setAchieved, {
+    achievedAt: TODAY,
+    goalId: masteryId,
+  });
+
+  //? 凍結中はゴミ箱に入れても動かない
+  await t.mutation(api.mutations.rows.remove.remove, { rowId: droppedId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 50 });
+
+  await t.mutation(api.mutations.goals.setAchieved.setAchieved, { goalId: masteryId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
+});
+
+test("未着手だけを入れ替えるプリセット切替では実績が動かない", async () => {
+  const t = owner();
+  //? 既定のカタログとプリセットを用意するために先に日を開く
+  await t.mutation(api.mutations.days.open.open, { dateJst: TODAY, todayJst: TODAY });
+  const itemId = await seedItemId(t);
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+  await addRow(t, itemId, TODAY);
+
+  const presets = await t.query(api.queries.presets.list.list, {});
+  const target = presets.find((preset) => preset.lines.length > 0);
+  if (target === undefined) {
+    throw new Error("切替先のプリセットがない");
+  }
+  await t.mutation(api.mutations.rows.switchPreset.switchPreset, {
+    dateJst: TODAY,
+    presetId: target._id,
+    todayJst: TODAY,
+  });
+
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
+});
+
+test("ゴミ箱の完全削除では実績が動かない", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+  const purgedId = await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 20 });
+
+  await t.mutation(api.mutations.rows.remove.remove, { rowId: purgedId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
+
+  //? ゴミ箱の記録は既に実績の外。完全削除では差分が出ない
+  await t.mutation(api.mutations.trash.purgeRow.purgeRow, { rowId: purgedId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
+
+  await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: TODAY });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
+
+  const trashedDay = (await t.query(api.queries.trash.list.list, {})).days.find(
+    (day) => day.dateJst === TODAY,
+  );
+  if (trashedDay === undefined) {
+    throw new Error("ゴミ箱の日がない");
+  }
+  await t.mutation(api.mutations.trash.purgeDay.purgeDay, { dayId: trashedDay._id });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
+});
+
+test("期限切れの自動完全削除では実績が動かない", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+  const expiredId = await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 20 });
+  await t.mutation(api.mutations.rows.remove.remove, { rowId: expiredId });
+
+  const trashedRow = (await t.query(api.queries.trash.list.list, {})).rows.find(
+    (row) => row._id === expiredId,
+  );
+  if (trashedRow === undefined) {
+    throw new Error("ゴミ箱の記録がない");
+  }
+  await t.mutation(internal.mutations.trash.purgeExpired.purgeExpired, {
+    now: trashedRow.deletedAt + TRASH_TTL_MS,
+  });
+
+  expect((await t.query(api.queries.trash.list.list, {})).rows).toEqual([]);
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
+});
+
+test("目標を作った日に既にある確定は実績の初期値に入る", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
+});
+
+test("目標を作る前の日の確定は、あとから消しても実績を動かさない", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  const rowId = await addConfirmedRow(t, itemId, { dateJst: YESTERDAY, minutes: 90 });
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
+
+  await t.mutation(api.mutations.rows.remove.remove, { rowId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
+});
+
+test("目標の編集では学習量の実績を持ち越す", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+
+  await t.mutation(api.mutations.goals.update.update, {
+    goal: { ...MASTERY_GOAL, criterion: "1分間で150語" },
+    goalId: masteryId,
+  });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
+});
+
+test("他人の確定は自分の習得目標の実績を動かさない", async () => {
+  const t = raw();
+  const asOwner = t.withIdentity(OWNER);
+  const asOther = t.withIdentity(OTHER_OWNER);
+  const masteryId = await asOwner.mutation(api.mutations.goals.create.create, {
+    goal: MASTERY_GOAL,
+  });
+
+  const otherItemId = await seedItemId(asOther, OTHER_OWNER.subject);
+  await addConfirmedRow(asOther, otherItemId, { dateJst: TODAY, minutes: 120 });
+
+  expect(await progressOf(asOwner, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
+});
+
+test("未認証では記録を確定できず、実績も動かない", async () => {
+  const t = raw();
+  const asOwner = t.withIdentity(OWNER);
+  const itemId = await seedItemId(asOwner);
+  const masteryId = await asOwner.mutation(api.mutations.goals.create.create, {
+    goal: MASTERY_GOAL,
+  });
+  const rowId = await addRow(asOwner, itemId, TODAY);
+
+  await expect(
+    t.mutation(api.mutations.rows.confirm.confirm, {
+      content: CONCRETE_ACTION,
+      minutes: 30,
+      rowId,
+    }),
+  ).rejects.toThrow();
+  expect(await progressOf(asOwner, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
 });
 
 test("目標を削除できる", async () => {

@@ -2,6 +2,8 @@ import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { NotFoundError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
+import { applyMasteryProgressDelta } from "../goals/applyMasteryProgressDelta";
+import { loadDayTotals } from "../goals/loadDayTotals";
 
 export async function restoreDay(
   ctx: MutationCtx,
@@ -13,5 +15,12 @@ export async function restoreDay(
     throwDomain(new NotFoundError({ message: "ゴミ箱にその日はありません", resource: "日" }));
   }
   await ctx.db.patch("days", args.dayId, { deletedAt: undefined });
+  //? 日が戻ると配下の確定記録も実績に戻る。戻った後の合計がそのまま増分(ADR-0007)。
+  const after = await loadDayTotals(ctx, ownerId, day.dateJst);
+  await applyMasteryProgressDelta(ctx, ownerId, {
+    confirmedCountDelta: after.confirmedCount,
+    dateJst: day.dateJst,
+    minutesDelta: after.confirmedMinutes,
+  });
   return null;
 }
