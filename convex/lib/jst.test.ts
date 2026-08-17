@@ -1,6 +1,24 @@
 import { expect, test } from "vite-plus/test";
 
-import { addDaysJst, daysUntil, isFutureDateJst, mondayOfWeek, weekdayFromDateJst } from "./jst";
+import {
+  addDaysJst,
+  daysUntil,
+  isDateJst,
+  isFutureDateJst,
+  mondayOfWeek,
+  weekdayFromDateJst,
+} from "./jst";
+
+test("isDateJst は YYYY-MM-DD の実在する暦日だけを通す", () => {
+  expect(isDateJst("2026-08-17")).toBe(true);
+  expect(isDateJst("2026-02-28")).toBe(true);
+  //? 形式だけ正しく実在しない日は 3/3 に転がるので弾く
+  expect(isDateJst("2026-02-31")).toBe(false);
+  expect(isDateJst("2026/08/17")).toBe(false);
+  expect(isDateJst("2026-8-17")).toBe(false);
+  expect(isDateJst("いつか")).toBe(false);
+  expect(isDateJst("")).toBe(false);
+});
 
 test("2026-08-15 は土曜", () => {
   expect(weekdayFromDateJst("2026-08-15")).toBe(6);
