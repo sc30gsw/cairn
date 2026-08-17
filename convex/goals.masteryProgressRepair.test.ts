@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import schema from "./schema";
+import { creationDateJst } from "./services/goals/masteryProgress";
 
 //? 達成時の凍結・解除時の再計算・カウンタ漂流の修復(ADR-0007)。差分更新そのものの経路別テストは
 //? goals.masteryProgress.test.ts に置く。
@@ -107,6 +108,18 @@ async function liveDayId(t: ReturnType<typeof owner>, dateJst: string) {
     throw new Error("日が見つからない");
   }
   return dayId;
+}
+
+//? 実績の起点は目標の作成日なので、起点を作り分けるテストはまずこれで前提を確かめる。
+//? convex-test の _creationTime は挿入順に単調増加するため、作成順を崩すと起点が黙って今日に寄る。
+async function creationDateOf(t: ReturnType<typeof owner>, goalId: Id<"goals">) {
+  return await t.run(async (ctx) => {
+    const goal = await ctx.db.get("goals", goalId);
+    if (goal === null) {
+      throw new Error("目標が見つからない");
+    }
+    return creationDateJst(goal._creationTime);
+  });
 }
 
 //? カウンタ漂流時の修復手段(ADR-0007)。保存値が実測と一致しているかの確認にも使う。
@@ -277,6 +290,8 @@ test("再計算は作成日の違う複数の習得目標をそれぞれの起�
   vi.setSystemTime(new Date(`${TODAY}T12:00:00+09:00`));
   const itemId = await seedItemId(t);
   const newerId = await createMasteryGoal(t);
+  expect(await creationDateOf(t, olderId)).toBe(YESTERDAY);
+  expect(await creationDateOf(t, newerId)).toBe(TODAY);
   await addConfirmedRow(t, itemId, { dateJst: YESTERDAY, minutes: 90 });
   await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
 

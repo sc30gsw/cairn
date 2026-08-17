@@ -35,8 +35,11 @@ type TargetFormProps = {
 //? 1カテゴリ1件なので、カテゴリ選択がそのまま「新規/編集」の切り替えになる。
 //? 選ばれたカテゴリの既存値を初期値にするため、値のフォームはカテゴリごとに貼り替える。
 export function TargetForm({ categories, onSave, targets }: TargetFormProps) {
-  const [categoryId, setCategoryId] = useState<CategoryDto["_id"] | undefined>(categories[0]?._id);
-  const selectedCategory = categories.find((category) => category._id === categoryId);
+  //? 状態はユーザーが選んだカテゴリーだけを持つ。未選択とカテゴリー一覧の入れ替わりは先頭に寄せる
+  const [categoryId, setCategoryId] = useState<CategoryDto["_id"]>();
+  const [firstCategory] = categories;
+  const selectedCategory =
+    categories.find((category) => category._id === categoryId) ?? firstCategory;
 
   if (selectedCategory === undefined) {
     return (
