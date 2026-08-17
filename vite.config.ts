@@ -136,14 +136,41 @@ export default defineConfig({
   },
   test: {
     coverage: {
-      exclude: ["**/_generated/**", "**/*.test.ts"],
+      exclude: [
+        "**/_generated/**",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        //? 薄い composition/wiring 層(hooks 経由の呼び出しのみ)。他フィーチャの
+        //? *-page.tsx / *-pending.tsx / *-mutations.ts / *-queries.ts / *-shimmer-template.ts と同様、
+        //? リポジトリ全体でユニットテスト対象外の慣習(GoalsBoard 等の結合テストで間接的に確認)。
+        "src/features/goals/components/goals-page.tsx",
+        "src/features/goals/components/goals-pending.tsx",
+      ],
       include: [
         "convex/lib/concreteActionCore.ts",
         "convex/lib/concreteAction.ts",
         "convex/lib/catalog.ts",
+        "convex/lib/domain.ts",
+        "convex/lib/validators.ts",
+        "convex/services/goals/**/*.ts",
+        "convex/queries/goals/**/*.ts",
+        "convex/mutations/goals/**/*.ts",
+        "convex/services/targets/**/*.ts",
+        "convex/queries/targets/**/*.ts",
+        "convex/mutations/targets/**/*.ts",
         "src/lib/validation/**/*.ts",
         "src/features/**/schemas/**/*.ts",
         "src/features/today/lib/validate-confirm-row.ts",
+        "src/features/goals/components/**/*.tsx",
+        "src/features/goals/hooks/use-week-snapshot.ts",
+        "src/features/goals/lib/goal-guards.ts",
+        "src/features/goals/lib/goal-selectors.ts",
+        "src/features/goals/lib/goal-type-labels.ts",
+        "src/features/goals/lib/target-metric-labels.ts",
+        "src/features/goals/lib/weekly-trend-chart-data.ts",
+        "src/features/goals/lib/weekly-trend-format.ts",
+        "src/features/goals/lib/weekly-trend-streak.ts",
+        "src/components/weekly-progress-card.tsx",
       ],
       provider: "v8",
       reporter: ["text", "html"],

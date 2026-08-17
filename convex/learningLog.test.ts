@@ -301,15 +301,10 @@ test("本番目標・週間ゴール・障害プラン。行の状態は変え�
   const t = owner();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const before = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
-  const exam = await t.query(api.queries.goals.getExam.getExam, { todayJst: MONDAY });
-  expect(exam).toEqual({
-    daysRemaining: 41,
-    examDate: "2026-09-27",
-    maxScore: 850,
-    minScore: 730,
-  });
+  expect(await t.query(api.queries.goals.list.list, {})).toEqual([]);
   await t.mutation(api.mutations.goals.saveWeekly.saveWeekly, {
-    minutes: 300,
+    dailyFloorMinutes: 30,
+    days: 3,
     weekStartJst: MONDAY,
   });
   const planId = await t.mutation(api.mutations.goals.createObstacle.createObstacle, {
@@ -322,9 +317,7 @@ test("本番目標・週間ゴール・障害プラン。行の状態は変え�
   expect(plans).toEqual([{ _id: planId, ifText: "眠い", thenText: THEN_ACTION }]);
   await t.mutation(api.mutations.goals.removeObstacle.removeObstacle, { planId });
   expect(await t.query(api.queries.goals.listObstacles.listObstacles, {})).toEqual([]);
-  await expect(
-    raw().query(api.queries.goals.getExam.getExam, { todayJst: MONDAY }),
-  ).rejects.toThrow();
+  await expect(raw().query(api.queries.goals.list.list, {})).rejects.toThrow();
 });
 
 test("行と日のゴミ箱。30日後に完全削除。未認証は throw", async () => {
@@ -661,18 +654,26 @@ test("applyOrder で項目順とカテゴリを更新", async () => {
 
 test("試験目標の保存と障害プラン更新", async () => {
   const t = owner();
-  await t.mutation(api.mutations.goals.saveExam.saveExam, {
-    examDate: "2026-10-01",
-    maxScore: 900,
-    minScore: 800,
+  const goalId = await t.mutation(api.mutations.goals.create.create, {
+    goal: {
+      content: "本番までに公式問題集を1冊やり切る",
+      examDate: "2026-10-01",
+      maxScore: 900,
+      minScore: 800,
+      type: "exam",
+    },
+    weekStartJst: MONDAY,
   });
-  const exam = await t.query(api.queries.goals.getExam.getExam, { todayJst: MONDAY });
-  expect(exam).toEqual({
-    daysRemaining: 45,
-    examDate: "2026-10-01",
-    maxScore: 900,
-    minScore: 800,
-  });
+  expect(await t.query(api.queries.goals.list.list, {})).toEqual([
+    {
+      _id: goalId,
+      content: "本番までに公式問題集を1冊やり切る",
+      examDate: "2026-10-01",
+      maxScore: 900,
+      minScore: 800,
+      type: "exam",
+    },
+  ]);
   const planId = await t.mutation(api.mutations.goals.createObstacle.createObstacle, {
     ifText: "眠い",
     thenText: THEN_ACTION,

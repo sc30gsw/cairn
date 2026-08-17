@@ -131,7 +131,7 @@ test("分析パネルの月スコープに学習量ヒートマップが見え�
         volumeMinutes: 0,
         weekEnd: "2026-08-23",
         weekStart: "2026-08-17",
-        weeklyGoalMinutes: null,
+        weeklyGoal: null,
       }}
       yearMonth="2026-08"
     />,
@@ -177,7 +177,7 @@ test("週の行がタイトルとステータスで見える", () => {
           volumeMinutes: 30,
           weekEnd: "2026-08-23",
           weekStart: "2026-08-17",
-          weeklyGoalMinutes: 300,
+          weeklyGoal: { dailyFloorMinutes: 20, days: 3 },
         } satisfies WeekPage
       }
     />,

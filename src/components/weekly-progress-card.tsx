@@ -1,23 +1,18 @@
-import { Card, Progress, Stack, Text } from "@mantine/core";
+import { Card, Group, Progress, Stack, Text } from "@mantine/core";
 
 import { computeWeeklyProgress, type WeeklyProgressInput } from "~/lib/weekly-progress";
 
 type WeeklyProgressCardProps = WeeklyProgressInput;
 
 export function WeeklyProgressCard({
+  minutesByDate,
   todayJst,
-  volumeMinutes,
   weekEndJst,
-  weeklyGoalMinutes,
+  weeklyGoal,
 }: WeeklyProgressCardProps) {
-  const progress = computeWeeklyProgress({
-    todayJst,
-    volumeMinutes,
-    weekEndJst,
-    weeklyGoalMinutes,
-  });
+  const progress = computeWeeklyProgress({ minutesByDate, todayJst, weekEndJst, weeklyGoal });
 
-  if (weeklyGoalMinutes === null) {
+  if (weeklyGoal === null) {
     return (
       <Card padding="md">
         <Text c="dimmed" size="sm">
@@ -30,23 +25,34 @@ export function WeeklyProgressCard({
   return (
     <Card padding="md">
       <Stack gap="xs">
-        <Text fw={600} size="sm">
-          週間ゴール {progress.percent}%
-        </Text>
+        <Group gap="xs" justify="space-between" wrap="nowrap">
+          <Text fw={600} size="sm">
+            実施日 {progress.doneDays}/{progress.goalDays} 日
+          </Text>
+          <Text c="dimmed" size="sm">
+            1日 {weeklyGoal.dailyFloorMinutes}分以上
+          </Text>
+        </Group>
         <Progress aria-label="週間ゴール達成率" value={progress.percent} />
         <Text size="sm">
-          実績 {volumeMinutes}分 / ゴール {weeklyGoalMinutes}分
+          今日 {progress.todayMinutes}分
+          {progress.todayReached
+            ? "（実施日に到達）"
+            : `（あと ${weeklyGoal.dailyFloorMinutes - progress.todayMinutes}分で実施日）`}
         </Text>
-        {progress.remaining > 0 ? (
+        {progress.remainingDays > 0 ? (
           <Text c="dimmed" size="sm">
-            残り {progress.remaining}分 / あと {progress.daysLeft} 日 → 1日約 {progress.dailyNeeded}{" "}
-            分
+            残り {progress.remainingDays} 日 / 今週はあと {progress.daysLeft} 日
           </Text>
         ) : (
           <Text c="dimmed" size="sm">
             今週のゴールを達成しました。
           </Text>
         )}
+        <Text c="dimmed" size="xs">
+          {/*? 総分数は判定に使わない補助表示 */}
+          今週の合計 {progress.weekMinutes}分
+        </Text>
       </Stack>
     </Card>
   );

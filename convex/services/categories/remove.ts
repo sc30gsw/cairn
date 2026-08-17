@@ -18,6 +18,14 @@ export async function remove(
   if (itemInCategory !== null) {
     throwDomain(new ConflictError({ message: "項目が残っているカテゴリは消せません" }));
   }
+  //? 週間ターゲットはカテゴリに紐づくので、孤児を残さず同じトランザクションで消す(CVX-15)
+  const orphanedTargets = await ctx.db
+    .query("targets")
+    .withIndex("by_owner_and_category", (q) =>
+      q.eq("ownerId", ownerId).eq("categoryId", args.categoryId),
+    )
+    .collect();
+  await Promise.all(orphanedTargets.map((target) => ctx.db.delete("targets", target._id)));
   await ctx.db.delete("categories", args.categoryId);
   return null;
 }

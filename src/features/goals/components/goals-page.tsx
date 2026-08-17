@@ -1,22 +1,30 @@
 import { Suspense } from "react";
 import { mondayOfWeek, todayJst } from "~domain/jst";
 
+import { useCategoriesList } from "~/features/catalog/hooks/catalog-queries";
 import { GoalsBoard } from "~/features/goals/components/goals-board";
 import { GoalsPending } from "~/features/goals/components/goals-pending";
 import {
+  useCreateGoal,
   useCreateObstacle,
+  useRemoveGoal,
   useRemoveObstacle,
-  useSaveExamGoal,
   useSaveWeeklyGoal,
+  useSetVolumeProgress,
+  useUpdateGoal,
   useUpdateObstacle,
 } from "~/features/goals/hooks/goals-mutations";
 import {
-  useExamGoal,
+  useGoalsList,
   useObstaclesList,
   useWeeklyTrend,
 } from "~/features/goals/hooks/goals-queries";
+import { useRemoveTarget, useSaveTarget } from "~/features/goals/hooks/targets-mutations";
+import { useTargetsWithProgress } from "~/features/goals/hooks/targets-queries";
+import { useWeekSnapshot } from "~/features/goals/hooks/use-week-snapshot";
 import { useHistoryWeek } from "~/features/history/hooks/history-queries";
 import { runMutation } from "~/lib/run-mutation";
+import { minutesByDateFromRows } from "~/lib/weekly-progress";
 
 export function GoalsPage() {
   return (
@@ -29,23 +37,44 @@ export function GoalsPage() {
 function GoalsReady() {
   const today = todayJst();
   const weekStart = mondayOfWeek(today);
-  const { data: exam } = useExamGoal(today);
+  const { data: categories } = useCategoriesList();
+  const { data: goals } = useGoalsList();
   const { data: week } = useHistoryWeek(today);
   const { data: obstacles } = useObstaclesList();
+  const { data: targets } = useTargetsWithProgress(weekStart);
   const { data: trendWeeks } = useWeeklyTrend(today);
-  const saveExam = useSaveExamGoal();
+  const createGoal = useCreateGoal();
+  const updateGoal = useUpdateGoal();
+  const removeGoal = useRemoveGoal();
+  const setVolumeProgress = useSetVolumeProgress();
   const saveWeekly = useSaveWeeklyGoal();
   const createObstacle = useCreateObstacle();
   const updateObstacle = useUpdateObstacle();
   const removeObstacle = useRemoveObstacle();
+  const saveTarget = useSaveTarget();
+  const removeTarget = useRemoveTarget();
+
+  useWeekSnapshot(weekStart);
 
   return (
     <GoalsBoard
-      exam={exam}
+      categories={categories}
+      goals={goals}
+      minutesByDate={minutesByDateFromRows(week.events)}
       obstacles={obstacles}
+      onCreateGoal={(goal) => {
+        void runMutation(() => createGoal.mutateAsync({ goal, weekStartJst: weekStart }), {
+          successMessage: "目標を追加しました",
+        });
+      }}
       onCreateObstacle={(input) => {
         void runMutation(() => createObstacle.mutateAsync(input), {
           successMessage: "障害プランを追加しました",
+        });
+      }}
+      onRemoveGoal={(goalId) => {
+        void runMutation(() => removeGoal.mutateAsync({ goalId }), {
+          successMessage: "目標を削除しました",
         });
       }}
       onRemoveObstacle={(planId) => {
@@ -53,14 +82,29 @@ function GoalsReady() {
           successMessage: "障害プランを削除しました",
         });
       }}
-      onSaveExam={(input) => {
-        void runMutation(() => saveExam.mutateAsync(input), {
-          successMessage: "本番目標を保存しました",
+      onRemoveTarget={(targetId) => {
+        void runMutation(() => removeTarget.mutateAsync({ targetId }), {
+          successMessage: "週間ターゲットを削除しました",
         });
       }}
-      onSaveWeekly={(minutes) => {
-        void runMutation(() => saveWeekly.mutateAsync({ minutes, weekStartJst: weekStart }), {
+      onSaveTarget={(input) => {
+        void runMutation(() => saveTarget.mutateAsync(input), {
+          successMessage: "週間ターゲットを保存しました",
+        });
+      }}
+      onSaveWeekly={(input) => {
+        void runMutation(() => saveWeekly.mutateAsync({ ...input, weekStartJst: weekStart }), {
           successMessage: "週間ゴールを保存しました",
+        });
+      }}
+      onSetVolumeProgress={(input) => {
+        void runMutation(() => setVolumeProgress.mutateAsync(input), {
+          successMessage: "進捗を更新しました",
+        });
+      }}
+      onUpdateGoal={(input) => {
+        void runMutation(() => updateGoal.mutateAsync({ ...input, weekStartJst: weekStart }), {
+          successMessage: "目標を更新しました",
         });
       }}
       onUpdateObstacle={(input) => {
@@ -68,11 +112,11 @@ function GoalsReady() {
           successMessage: "障害プランを更新しました",
         });
       }}
+      targets={targets}
       todayJst={today}
       trendWeeks={trendWeeks}
-      volumeMinutes={week.volumeMinutes}
       weekEndJst={week.weekEnd}
-      weeklyGoalMinutes={week.weeklyGoalMinutes}
+      weeklyGoal={week.weeklyGoal}
     />
   );
 }

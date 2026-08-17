@@ -11,6 +11,7 @@ import {
 } from "../../lib/historyBreakdown";
 import { addDaysJst, calendarDatesInMonth, mondayOfWeek } from "../../lib/jst";
 import { sevenDayMovingAverage } from "../../lib/movingAverage";
+import type { WeeklyGoal } from "../../lib/validators";
 import { confirmedVolumeMinutes } from "../../lib/volume";
 
 export const YEAR_HEATMAP_DAYS = 365;
@@ -171,6 +172,10 @@ export async function computeWeekPage(ctx: QueryCtx, ownerId: string, dateJst: s
   ]);
   const liveDayDates = liveDayDatesFrom(days);
   const liveWeekRows = liveRows(rows, liveDayDates);
+  const weeklyGoalSnapshot: WeeklyGoal =
+    weeklyGoal === null
+      ? null
+      : { dailyFloorMinutes: weeklyGoal.dailyFloorMinutes, days: weeklyGoal.days };
   const events = liveWeekRows.map((row) => {
     const item = catalog.itemById.get(row.itemId);
     const { category } = categoryFields(item, catalog.categoryById);
@@ -194,11 +199,11 @@ export async function computeWeekPage(ctx: QueryCtx, ownerId: string, dateJst: s
       liveDayDates,
       catalog.itemById,
       catalog.categoryById,
-      weeklyGoal?.minutes ?? null,
+      weeklyGoalSnapshot,
     ),
     weekEnd,
     weekStart,
-    weeklyGoalMinutes: weeklyGoal?.minutes ?? null,
+    weeklyGoal: weeklyGoalSnapshot,
   };
 }
 

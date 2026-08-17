@@ -4,8 +4,8 @@ import type { DateJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
 
-export function useExamGoal(todayJst: DateJst) {
-  return useSuspenseQuery(convexQuery(api.queries.goals.getExam.getExam, { todayJst }));
+export function useGoalsList() {
+  return useSuspenseQuery(convexQuery(api.queries.goals.list.list, {}));
 }
 
 export function useObstaclesList() {

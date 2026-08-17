@@ -1,8 +1,24 @@
 import { api } from "~/../convex/_generated/api";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
-export function useSaveExamGoal() {
-  return useConvexMutation(api.mutations.goals.saveExam.saveExam);
+export function useCreateGoal() {
+  return useConvexMutation(api.mutations.goals.create.create);
+}
+
+export function useUpdateGoal() {
+  return useConvexMutation(api.mutations.goals.update.update);
+}
+
+export function useRemoveGoal() {
+  return useConvexMutation(api.mutations.goals.remove.remove);
+}
+
+export function useSetVolumeProgress() {
+  return useConvexMutation(api.mutations.goals.setVolumeProgress.setVolumeProgress);
+}
+
+export function useEnsureWeekSnapshot() {
+  return useConvexMutation(api.mutations.goals.ensureWeekSnapshot.ensureWeekSnapshot);
 }
 
 export function useSaveWeeklyGoal() {

@@ -23,6 +23,7 @@ import type {
   MonthBreakdown,
   WeekBreakdown,
 } from "~/features/history/types/history";
+import { minutesByDateFromDays } from "~/lib/weekly-progress";
 
 import tabBarClasses from "~/features/history/components/history-tab-bar.module.css";
 
@@ -175,10 +176,10 @@ export function HistoryAnalysisPanel({
 
       {scope === "week" ? (
         <WeeklyProgressCard
+          minutesByDate={minutesByDateFromDays(week.byDay)}
           todayJst={todayJst}
-          volumeMinutes={week.volumeMinutes}
           weekEndJst={week.weekEnd}
-          weeklyGoalMinutes={week.weeklyGoalMinutes}
+          weeklyGoal={week.weeklyGoal}
         />
       ) : null}
 

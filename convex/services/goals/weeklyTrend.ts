@@ -1,11 +1,15 @@
+import { groupBy, mapValues, prop } from "remeda";
+
 import type { QueryCtx } from "../../_generated/server";
 import { WEEKLY_TREND_WEEKS } from "../../lib/domain";
 import { addDaysJst, mondayOfWeek } from "../../lib/jst";
 import type { WeeklyTrendWeek } from "../../lib/validators";
 import { confirmedVolumeMinutes } from "../../lib/volume";
 import { liveDayDatesFrom, liveRows } from "../history/shared";
+import { qualifyingDays } from "./qualifyingDays";
 
 //* 週間ゴールの達成履歴。今日を含む週の直前から過去 N 週分を新しい順で返す。
+//? 判定は「実施日の数 >= 目標日数」。総分数は表示専用で判定に使わない。
 
 export async function weeklyTrend(
   ctx: QueryCtx,
@@ -38,17 +42,32 @@ export async function weeklyTrend(
   ]);
   const liveDayDates = liveDayDatesFrom(days);
   const weekRows = liveRows(rows, liveDayDates);
-  const goalByWeekStart = new Map(goals.map((goal) => [goal.weekStartJst, goal.minutes]));
+  const snapshotByWeekStart = new Map(goals.map((goal) => [goal.weekStartJst, goal]));
   return Array.from({ length: WEEKLY_TREND_WEEKS }, (_, index) => {
     const weekStart = addDaysJst(currentWeekStart, -7 * (index + 1));
     const weekEnd = addDaysJst(weekStart, 6);
-    const volumeMinutes = confirmedVolumeMinutes(
-      weekRows.filter((row) => row.dateJst >= weekStart && row.dateJst <= weekEnd),
-    );
-    const goalMinutes = goalByWeekStart.get(weekStart) ?? null;
+    const rowsInWeek = weekRows.filter((row) => row.dateJst >= weekStart && row.dateJst <= weekEnd);
+    const volumeMinutes = confirmedVolumeMinutes(rowsInWeek);
+    const snapshot = snapshotByWeekStart.get(weekStart);
+    if (snapshot === undefined) {
+      //? スナップショットの無い週は判定対象外。
+      return {
+        achieved: false,
+        dailyFloorMinutes: null,
+        goalDays: null,
+        qualifyingDays: 0,
+        volumeMinutes,
+        weekEnd,
+        weekStart,
+      };
+    }
+    const minutesByDate = mapValues(groupBy(rowsInWeek, prop("dateJst")), confirmedVolumeMinutes);
+    const doneDays = qualifyingDays(minutesByDate, snapshot.dailyFloorMinutes);
     return {
-      achieved: goalMinutes !== null && volumeMinutes >= goalMinutes,
-      goalMinutes,
+      achieved: doneDays >= snapshot.days,
+      dailyFloorMinutes: snapshot.dailyFloorMinutes,
+      goalDays: snapshot.days,
+      qualifyingDays: doneDays,
       volumeMinutes,
       weekEnd,
       weekStart,

@@ -1,11 +1,15 @@
 import { Badge, EmptyState, Group, Stack, Text } from "@mantine/core";
 import { IconChartBar } from "@tabler/icons-react";
 
-import { recordedWeeks, shortDateLabel } from "~/features/goals/lib/weekly-trend-format";
-import type { WeeklyTrendWeeks } from "~/features/goals/types/goal";
+import {
+  qualifyingDaysLabel,
+  recordedWeeks,
+  shortDateLabel,
+} from "~/features/goals/lib/weekly-trend-format";
+import type { WeeklyTrendWeek, WeeklyTrendWeeks } from "~/features/goals/types/goal";
 
-function trendBadge(week: WeeklyTrendWeeks[number]) {
-  if (week.goalMinutes === null) {
+function trendBadge(week: WeeklyTrendWeek) {
+  if (week.goalDays === null) {
     return { color: "gray", label: "ゴールなし" } as const;
   }
   return week.achieved
@@ -36,8 +40,9 @@ export function WeeklyTrendList({ weeks }: Record<"weeks", WeeklyTrendWeeks>) {
               {shortDateLabel(week.weekStart)}〜{shortDateLabel(week.weekEnd)}
             </Text>
             <Group gap="xs" wrap="nowrap">
-              <Text size="sm">
-                {week.volumeMinutes}分{week.goalMinutes === null ? "" : ` / ${week.goalMinutes}分`}
+              <Text size="sm">{qualifyingDaysLabel(week)}</Text>
+              <Text c="dimmed" size="sm">
+                {week.volumeMinutes}分
               </Text>
               <Badge color={badge.color} variant="light">
                 {badge.label}

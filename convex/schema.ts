@@ -4,8 +4,10 @@ import { v } from "convex/values";
 import {
   categoryValidator,
   conditionValidator,
+  goalDocumentValidator,
   presetLineValidator,
   statusValidator,
+  targetMetricValidator,
 } from "./lib/validators";
 
 export default defineSchema({
@@ -28,12 +30,8 @@ export default defineSchema({
     .index("by_owner_and_deletedAt", ["ownerId", "deletedAt"])
     .index("by_deletedAt", ["deletedAt"]),
 
-  examGoals: defineTable({
-    examDate: v.string(),
-    maxScore: v.number(),
-    minScore: v.number(),
-    ownerId: v.string(),
-  }).index("by_owner", ["ownerId"]),
+  //? by_owner は by_owner_and_type のプレフィックスなので張らない(CVX-12)
+  goals: defineTable(goalDocumentValidator).index("by_owner_and_type", ["ownerId", "type"]),
 
   items: defineTable({
     category: v.optional(categoryValidator),
@@ -75,8 +73,18 @@ export default defineSchema({
     .index("by_owner_and_deletedAt", ["ownerId", "deletedAt"])
     .index("by_deletedAt", ["deletedAt"]),
 
+  //? 今週専用の計器。1カテゴリ1件は services 側で upsert して守る。週次スナップショットは持たない。
+  targets: defineTable({
+    categoryId: v.id("categories"),
+    metric: targetMetricValidator,
+    ownerId: v.string(),
+    targetValue: v.number(),
+  }).index("by_owner_and_category", ["ownerId", "categoryId"]),
+
+  //? ペース目標から週の開始時に写すスナップショット。その週だけ上書きできる。
   weeklyGoals: defineTable({
-    minutes: v.number(),
+    dailyFloorMinutes: v.number(),
+    days: v.number(),
     ownerId: v.string(),
     weekStartJst: v.string(),
   }).index("by_owner_and_week", ["ownerId", "weekStartJst"]),

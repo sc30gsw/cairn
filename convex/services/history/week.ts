@@ -8,6 +8,6 @@ export async function week(ctx: QueryCtx, ownerId: string, args: { dateJst: stri
     volumeMinutes: page.volumeMinutes,
     weekEnd: page.weekEnd,
     weekStart: page.weekStart,
-    weeklyGoalMinutes: page.weeklyGoalMinutes,
+    weeklyGoal: page.weeklyGoal,
   };
 }

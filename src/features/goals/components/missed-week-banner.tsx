@@ -1,10 +1,11 @@
 import { Alert, Button, Stack, Text } from "@mantine/core";
 
-import type { WeeklyTrendWeeks } from "~/features/goals/types/goal";
+import { qualifyingDaysLabel } from "~/features/goals/lib/weekly-trend-format";
+import type { WeeklyTrendWeek } from "~/features/goals/types/goal";
 
 type MissedWeekBannerProps = {
   hasObstacles: boolean;
-  lastWeek: WeeklyTrendWeeks[number];
+  lastWeek: WeeklyTrendWeek;
   onShowObstacles: () => void;
 };
 
@@ -18,8 +19,8 @@ export function MissedWeekBanner({
     <Alert color="yellow" title="先週は週間ゴール未達でした" variant="light">
       <Stack align="flex-start" gap="xs">
         <Text size="sm">
-          {lastWeek.volumeMinutes}分 / {lastWeek.goalMinutes}
-          分。つまずきに備えるなら、障害プランを見直せます。
+          先週は{qualifyingDaysLabel(lastWeek)}
+          でした。つまずきに備えるなら、障害プランを見直せます。
         </Text>
         <Button color="yellow" onClick={onShowObstacles} size="xs" type="button">
           {hasObstacles ? "障害プランを見る" : "障害プランを作成する"}

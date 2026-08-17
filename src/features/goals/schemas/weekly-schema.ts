@@ -1,5 +1,9 @@
 import * as v from "valibot";
 
+import { PaceDaysSchema, PaceFloorMinutesSchema } from "~/features/goals/schemas/goal-schema";
+
+//* 「この週だけ変える」週間ゴール。ペース目標と同じ値制約を共有する。
 export const WeeklySchema = v.object({
-  minutes: v.pipe(v.number(), v.minValue(0, "週間ゴールは0分以上です")),
+  dailyFloorMinutes: PaceFloorMinutesSchema,
+  days: PaceDaysSchema,
 });
