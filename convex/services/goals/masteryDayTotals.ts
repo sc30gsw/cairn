@@ -3,10 +3,9 @@ import type { MasteryProgress } from "../../lib/validators";
 
 //* 1暦日の確定実績。実施日は「確定記録が1件でもある暦日」なので分数だけでは足りず、件数も数える。
 //? 0分の確定記録があると合計は0のままでも実施日は1日 — masteryProgressSince と同じ数え方に揃える。
-export type ConfirmedDayTotals = {
-  confirmedCount: number;
-  confirmedMinutes: number;
-};
+//? 分数の形は保存カウンタから導出する(CVX-16: validators の MasteryProgress が SSoT)。
+export type ConfirmedDayTotals = Pick<MasteryProgress, "confirmedMinutes"> &
+  Record<"confirmedCount", number>;
 
 export const EMPTY_DAY_TOTALS = {
   confirmedCount: 0,
@@ -45,6 +44,29 @@ export function activeDayDelta(beforeCount: number, afterCount: number): number 
     return -1;
   }
   return 0;
+}
+
+//* 書き込みの前後で実測した日合計から、カウンタに足す差分を出す(CVX-09: 純関数)。
+//? 「想定した増減」ではなく「実測の後 − 前」なので、書き込みの効果を読み違えても漂流しない。
+export function masteryProgressDelta(
+  before: ConfirmedDayTotals,
+  after: ConfirmedDayTotals,
+): MasteryProgress {
+  return {
+    activeDays: activeDayDelta(before.confirmedCount, after.confirmedCount),
+    confirmedMinutes: after.confirmedMinutes - before.confirmedMinutes,
+  };
+}
+
+//* 保存カウンタに差分を足した次の値(CVX-09: 純関数)。2フィールドを呼び出し側で組み立てない。
+export function shiftMasteryProgress(
+  progress: MasteryProgress,
+  delta: MasteryProgress,
+): MasteryProgress {
+  return {
+    activeDays: progress.activeDays + delta.activeDays,
+    confirmedMinutes: progress.confirmedMinutes + delta.confirmedMinutes,
+  };
 }
 
 //* 習得目標を作った日の実績を初期値にする。作成日と同じ暦日の確定は実績に入る(現仕様)。

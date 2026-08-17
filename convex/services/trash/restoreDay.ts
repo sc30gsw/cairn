@@ -2,8 +2,7 @@ import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { NotFoundError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
-import { applyMasteryProgressDelta } from "../goals/applyMasteryProgressDelta";
-import { loadDayTotals } from "../goals/loadDayTotals";
+import { withMasteryProgressDelta } from "../goals/withMasteryProgressDelta";
 
 export async function restoreDay(
   ctx: MutationCtx,
@@ -14,13 +13,10 @@ export async function restoreDay(
   if (day === null || day.ownerId !== ownerId || day.deletedAt === undefined) {
     throwDomain(new NotFoundError({ message: "ゴミ箱にその日はありません", resource: "日" }));
   }
-  await ctx.db.patch("days", args.dayId, { deletedAt: undefined });
-  //? 日が戻ると配下の確定記録も実績に戻る。戻った後の合計がそのまま増分(ADR-0007)。
-  const after = await loadDayTotals(ctx, ownerId, day.dateJst);
-  await applyMasteryProgressDelta(ctx, ownerId, {
-    confirmedCountDelta: after.confirmedCount,
-    dateJst: day.dateJst,
-    minutesDelta: after.confirmedMinutes,
+  //? 日が戻ると配下の確定記録も実績に戻る。増える量は書き込みの前後を実測して出す — 同じ暦日に
+  //? 別の生きた日が残っていれば実績は既に入っているので二重計上しない(ADR-0007)。
+  await withMasteryProgressDelta(ctx, ownerId, day, async () => {
+    await ctx.db.patch("days", args.dayId, { deletedAt: undefined });
   });
   return null;
 }

@@ -2,11 +2,6 @@ import { todayJst } from "../../lib/jst";
 import type { MasteryProgress } from "../../lib/validators";
 import type { VolumeRow } from "../../lib/volume";
 
-export const EMPTY_MASTERY_PROGRESS = {
-  activeDays: 0,
-  confirmedMinutes: 0,
-} as const satisfies MasteryProgress;
-
 type DatedRow = Record<"dateJst", string> & VolumeRow;
 
 //* 習得目標に併記する学習量の実績。目標を作った日以降の確定分数と実施日数(CONTEXT.md「習得」)。

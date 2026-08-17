@@ -12,7 +12,8 @@ export async function purgeRow(
   if (row === null || row.ownerId !== ownerId || row.deletedAt === undefined) {
     throwDomain(new NotFoundError({ message: "ゴミ箱にその記録はありません", resource: "記録" }));
   }
-  //? ゴミ箱の記録は既に実績から外れている。完全削除で確定分数は動かない(ADR-0007)。
+  //? ここで消せるのは deletedAt 付きの記録だけで、confirmedDayTotals はそれを数えない。前後どちらも
+  //? 実績の外なので差分ゼロが証明でき、実測(withMasteryProgressDelta)を挟む必要がない(ADR-0007)。
   await ctx.db.delete("rows", args.rowId);
   return null;
 }

@@ -2,8 +2,9 @@ import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { NotFoundError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
-import { applyMasteryProgressDelta } from "../goals/applyMasteryProgressDelta";
+import { withMasteryProgressDelta } from "../goals/withMasteryProgressDelta";
 import { requireOwnedRow } from "./requireOwnedRow";
+import { rowDayLiveness } from "./rowDayLiveness";
 
 export async function skip(
   ctx: MutationCtx,
@@ -11,17 +12,13 @@ export async function skip(
   args: { rowId: Id<"rows"> },
 ): Promise<null> {
   const row = await requireOwnedRow(ctx, ownerId, args.rowId);
-  const day = await ctx.db.get("days", row.dayId);
-  if (day === null || day.deletedAt !== undefined) {
+  //? 日の生存判定は暦日で引く共通規則(rowDayLiveness)。confirm と同じ規則・同じエラー。
+  if ((await rowDayLiveness(ctx, ownerId, row)) !== "live") {
     throwDomain(new NotFoundError({ message: "日が見つかりません", resource: "日" }));
   }
-  const wasConfirmed = row.status === "確定";
-  await ctx.db.patch("rows", args.rowId, { status: "スキップ" });
-  //? 確定をスキップに戻すと確定分数が減る。未着手からのスキップは実績を動かさない(ADR-0007)。
-  await applyMasteryProgressDelta(ctx, ownerId, {
-    confirmedCountDelta: wasConfirmed ? -1 : 0,
-    dateJst: row.dateJst,
-    minutesDelta: wasConfirmed ? -row.minutes : 0,
+  //? 確定をスキップに戻すと確定分数が減る。差分は書き込みの前後を実測して出す(ADR-0007)。
+  await withMasteryProgressDelta(ctx, ownerId, row, async () => {
+    await ctx.db.patch("rows", args.rowId, { status: "スキップ" });
   });
   return null;
 }
