@@ -1,9 +1,7 @@
 import * as v from "valibot";
 
-import { ConcreteActionSchema } from "~/lib/validation/concrete-action";
-
 const PresetLineSchema = v.object({
-  content: ConcreteActionSchema,
+  content: v.pipe(v.string(), v.trim()),
   itemId: v.pipe(v.string(), v.minLength(1, "項目を選んでください")),
   minutes: v.pipe(v.number(), v.minValue(0)),
 });

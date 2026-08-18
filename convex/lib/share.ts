@@ -33,20 +33,23 @@ export function formatShareMarkdown(rows: readonly ShareRow[]): string {
   }
 
   const byCategory = groupBy(confirmed, prop("category"));
-
   const names = usedCategories(confirmed);
-  if (names.length === 1) {
-    const only = names[0];
-    if (only === undefined) {
-      return "";
-    }
-    return (byCategory[only] ?? []).map((row) => `- ${lineText(row)}`).join("\n");
-  }
 
   return pipe(
     names,
     flatMap((category) => {
-      const lines = (byCategory[category] ?? []).map((row) => `  - ${lineText(row)}`);
+      const categoryRows = byCategory[category] ?? [];
+      const [only] = categoryRows;
+      //? ひとこと空 かつ 項目名がカテゴリ名と一致 かつ その1件だけ、のときだけ親+子の重複を畳む
+      if (
+        categoryRows.length === 1 &&
+        only !== undefined &&
+        only.content === "" &&
+        only.itemName === category
+      ) {
+        return [`- ${category} ${only.minutes}分`];
+      }
+      const lines = categoryRows.map((row) => `  - ${lineText(row)}`);
       return [`- ${category}`, ...lines];
     }),
   ).join("\n");

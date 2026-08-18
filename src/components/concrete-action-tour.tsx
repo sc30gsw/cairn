@@ -20,16 +20,17 @@ const TOUR_STEPS = {
   presets: [
     {
       content:
-        "プリセットの各行も、実行できる一歩を書きます。項目名ではなく、今日の最初の動作を書いてください。",
+        "項目名だけで足りるなら空でかまいません。点数や単元名など、書く価値があるときだけ埋めてください。",
       id: CONCRETE_ACTION_TOUR_TARGETS.presets,
-      title: "具体的手順",
+      title: "ひとこと",
     },
   ],
   today: [
     {
-      content: "「〜を勉強する」ではなく、今日の最初の一歩を、声に出して実行できる粒度で書きます。",
+      content:
+        "項目名だけで足りるなら空でかまいません。点数や単元名など、書く価値があるときだけ埋めてください。",
       id: CONCRETE_ACTION_TOUR_TARGETS.today,
-      title: "具体的手順",
+      title: "ひとこと",
     },
   ],
 } as const satisfies Record<TourScreen, OnboardingTourStep[]>;

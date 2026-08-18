@@ -145,7 +145,7 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
               {(field) => (
                 <ConcreteActionFieldWithSuggestions
                   {...field.props}
-                  aria-label={`${row.itemName}の具体的手順`}
+                  aria-label={`${row.itemName}のひとこと`}
                   disabled={disabled}
                   error={field.errors?.[0]}
                   itemId={row.itemId}
@@ -158,6 +158,7 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
                   onValueChange={(value) => field.onChange(value)}
                   placeholder={concreteActionPlaceholder(row.itemName)}
                   value={field.input}
+                  wrapLabel={false}
                 />
               )}
             </Field>

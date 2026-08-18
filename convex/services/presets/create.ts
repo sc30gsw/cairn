@@ -1,6 +1,5 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
-import { assertConcreteActionLines } from "../../lib/concreteAction";
 import { ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { assertOwnedLines, assertWeekdayFree } from "./helpers";
@@ -25,7 +24,6 @@ export async function create(
   const lines = args.lines.map((line) => ({ ...line, content: line.content.trim() }));
   await assertWeekdayFree(ctx, ownerId, args.weekday);
   await assertOwnedLines(ctx, ownerId, lines);
-  assertConcreteActionLines(lines);
   return await ctx.db.insert("presets", {
     lines,
     name,

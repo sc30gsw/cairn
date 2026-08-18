@@ -1,6 +1,5 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
-import { assertConcreteAction } from "../../lib/concreteAction";
 import { MINUTES_MIN_MESSAGE } from "../../lib/domain";
 import { NotFoundError, ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
@@ -20,7 +19,6 @@ export async function confirm(
     throwDomain(new NotFoundError({ message: "日が見つかりません", resource: "日" }));
   }
   const content = args.content.trim();
-  assertConcreteAction(content);
   if (args.minutes < 0) {
     throwDomain(new ValidationFailedError({ message: MINUTES_MIN_MESSAGE }));
   }

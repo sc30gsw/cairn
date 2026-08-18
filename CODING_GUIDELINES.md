@@ -1,6 +1,6 @@
 # コーディング規約（概要）
 
-このドキュメントは本プロジェクト（Life Pulse — 家庭ライブハブ / パーソナル OS。要件は [docs/requirements.md](./docs/requirements.md)、技術仕様は [docs/spec.md](./docs/spec.md) を参照）の規約の**人間向け概説**です。
+このドキュメントは本プロジェクト（cairn — 学習ログ。用語は [CONTEXT.md](./CONTEXT.md)、仕様は [docs/spec.md](./docs/spec.md) を参照）の規約の**人間向け概説**です。
 
 > **Single Source of Truth は `.claude/rules/**`。** 各規約の正本はそちらにあり、セッション開始時に自動ロードされます。本ファイルは全体像と設計思想だけを示し、詳細は再掲しません。記述が食い違う場合は `.claude/rules/\*\*` を優先してください。
 

@@ -62,10 +62,12 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
             {(field) => (
               <ConcreteActionField
                 {...field.props}
-                aria-label="その日限りの具体的手順"
+                aria-label="その日限りのひとこと"
                 error={field.errors?.[0]}
                 itemName={selectedItemName}
+                label="ひとこと"
                 value={field.input}
+                wrapLabel={false}
               />
             )}
           </Field>

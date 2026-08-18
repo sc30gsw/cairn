@@ -76,7 +76,7 @@ test("ログイン済みなら今日の未着手の記録が見える", () => {
       {...idleHandlers}
     />,
   );
-  expect(getByRole("combobox", { name: "Distinction 2000の具体的手順" })).toBeDefined();
+  expect(getByRole("combobox", { name: "Distinction 2000のひとこと" })).toBeDefined();
   expect(getByText("未着手")).toBeDefined();
 });
 
@@ -101,7 +101,7 @@ test("記録を確定スイッチで確定、オフでスキップできる", as
       selectedPresetId={null}
     />,
   );
-  const input = getByRole("combobox", { name: "Distinction 2000の具体的手順" });
+  const input = getByRole("combobox", { name: "Distinction 2000のひとこと" });
   fireEvent.change(input, { target: { value: CONCRETE_ACTION } });
   getByRole("switch", { name: "記録を確定" }).click();
   await waitFor(() => {
@@ -113,7 +113,7 @@ test("記録を確定スイッチで確定、オフでスキップできる", as
   });
 });
 
-test("空の具体的手順では確定できない", async () => {
+test("空のひとことでも確定できる", async () => {
   const onConfirm = vi.fn();
   const { getByRole } = renderWithMantine(
     <DayBoard
@@ -133,11 +133,15 @@ test("空の具体的手順では確定できない", async () => {
       selectedPresetId={null}
     />,
   );
-  const input = getByRole("combobox", { name: "Distinction 2000の具体的手順" });
+  const input = getByRole("combobox", { name: "Distinction 2000のひとこと" });
   fireEvent.change(input, { target: { value: "   " } });
   getByRole("switch", { name: "記録を確定" }).click();
   await waitFor(() => {
-    expect(onConfirm).not.toHaveBeenCalled();
+    expect(onConfirm).toHaveBeenCalledWith({
+      content: "",
+      minutes: 30,
+      rowId: row._id,
+    });
   });
 });
 
@@ -165,7 +169,7 @@ test("確定済みの記録は行外へフォーカスすると更新できる",
       selectedPresetId={null}
     />,
   );
-  const input = getByRole("combobox", { name: "Distinction 2000の具体的手順" });
+  const input = getByRole("combobox", { name: "Distinction 2000のひとこと" });
   fireEvent.change(input, { target: { value: CONCRETE_ACTION_2 } });
   fireEvent.blur(input);
   await waitFor(() => {

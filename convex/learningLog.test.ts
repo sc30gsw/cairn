@@ -121,7 +121,9 @@ test("確定とスキップで学習量が変わる。未認証は throw", async
   await t.mutation(api.mutations.rows.skip.skip, { rowId: kaiwa._id });
   const after = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   expect(after.volumeMinutes).toBe(30);
-  expect(after.shareMarkdown).toBe(`- Distinction 2000: ${CONCRETE_ACTION} 30分`);
+  expect(after.shareMarkdown).toBe(
+    ["- 多聴", `  - Distinction 2000: ${CONCRETE_ACTION} 30分`].join("\n"),
+  );
   expect(after.rows.find((row) => row.itemName === "英会話")?.status).toBe("スキップ");
   await expect(
     raw().mutation(api.mutations.rows.confirm.confirm, {

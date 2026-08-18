@@ -1,7 +1,7 @@
 # Convex Implementation Rules (convex-rules.md)
 
 - Version: v1.0 (2026-07-05)
-- Status: This is the **required coding standard** for this project (Life Pulse), and it is the canonical, authoritative copy — `docs/convex-rules.md` is now only a short pointer to this file, not a separate source of truth. It is handed to implementation agents together with `requirements.md` / `spec.md`. The implementation of `spec.md` must always conform to the rules in this document (this file also serves as a review checklist).
+- Status: This is the **required coding standard** for this project (cairn), and it is the canonical, authoritative copy — `docs/convex-rules.md` is now only a short pointer to this file, not a separate source of truth. It is handed to implementation agents together with `CONTEXT.md` / `spec.md`. The implementation of `spec.md` must always conform to the rules in this document (this file also serves as a review checklist).
 - Sources: Convex official Best Practices / the official TypeScript guide / the Zenn article "Convexの設計思想と実装パターンの解説" (by taroosg). Each rule cites its source.
 
 ## 0. Reconciling the Sources (Important)

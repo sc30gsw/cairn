@@ -10,7 +10,6 @@ import {
   seedLineNamesForWeekday,
 } from "../../lib/catalog";
 import { SEED_CATEGORIES } from "../../lib/categories";
-import { assertConcreteActionLines } from "../../lib/concreteAction";
 import { backfillItemSortOrders } from "./backfillItemSortOrders";
 
 async function categoriesByName(
@@ -129,7 +128,6 @@ export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<
             },
           ];
         });
-        assertConcreteActionLines(lines);
         return ctx.db.insert("presets", {
           lines,
           name,

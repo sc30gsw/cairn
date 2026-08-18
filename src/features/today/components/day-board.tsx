@@ -181,7 +181,7 @@ export function DayBoard({
               <Box data-onboarding-tour-id={CONCRETE_ACTION_TOUR_TARGETS.today}>
                 {/*? 直下の AdhocRowForm が追加導線なので、ここに追加ボタンは置かない */}
                 <EmptyState
-                  description="下のフォームから、今日の具体的手順を追加できます。"
+                  description="下のフォームから、今日の記録を追加できます。"
                   icon={<IconNotes aria-hidden />}
                   title="この日の記録はありません"
                 />

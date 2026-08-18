@@ -366,14 +366,15 @@ function PresetEditor({
                           {(field) => (
                             <ConcreteActionFieldWithSuggestions
                               {...field.props}
-                              aria-label={`${preset.name}の雛形${index + 1}の具体的手順`}
+                              aria-label={`${preset.name}の雛形${index + 1}のひとこと`}
                               error={field.errors?.[0]}
                               //? itemId は Select の選択肢由来で常に有効な項目 id(firstAvailableItem で補充)。parseItemId の実行時ガードは submit 時のみ必要
                               itemId={lineItemId as ItemId}
                               itemName={itemName}
+                              label={index === 0 ? "ひとこと" : undefined}
                               onValueChange={(value) => field.onChange(value)}
                               value={field.input}
-                              wrapLabel={index === 0}
+                              wrapLabel={false}
                             />
                           )}
                         </Field>
