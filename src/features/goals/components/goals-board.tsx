@@ -5,6 +5,7 @@ import type { GoalType } from "~domain/domain";
 import type { DateJst } from "~domain/jst";
 
 import { ConcreteActionTour } from "~/components/concrete-action-tour";
+import { PageTitle } from "~/components/page-title";
 import { CheckpointSection } from "~/features/goals/components/checkpoint-section";
 import { ExamGoalCard } from "~/features/goals/components/exam-goal-card";
 import { GoalForm } from "~/features/goals/components/goal-form";
@@ -112,7 +113,7 @@ export function GoalsBoard({
       <Grid gap="md">
         <Grid.Col span={12}>
           <Group gap="sm" justify="space-between" wrap="nowrap">
-            <Title order={1}>目標</Title>
+            <PageTitle>目標</PageTitle>
             {/*? 本番目標があるなら追加導線はチェックポイントに一本化する */}
             {examGoal === undefined && (
               <Button onClick={() => openCreate("exam")} type="button">

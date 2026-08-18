@@ -4,7 +4,7 @@ import { daysUntil, type DateJst } from "~domain/jst";
 import { GoalCardActions } from "~/features/goals/components/goal-card-actions";
 import { GOAL_TYPE_LABELS } from "~/features/goals/lib/goal-type-labels";
 import type { ExamGoal } from "~/features/goals/types/goal";
-import { BODY_FONT, DISPLAY_FONT } from "~/lib/theme";
+import { BODY_FONT, NUMERAL_FONT } from "~/lib/theme";
 
 export const EXAM_GOAL_INCOMPLETE_TITLE = "未完成 — 週間ターゲットを設定してください";
 
@@ -38,7 +38,7 @@ export function ExamGoalCard({
         </Group>
         <Text>{goal.content}</Text>
         {remainingDays >= 0 ? (
-          <Title ff={DISPLAY_FONT} fw={500} order={2}>
+          <Title ff={NUMERAL_FONT} fw={700} order={2}>
             {remainingDays}
             <Text c="dimmed" ff={BODY_FONT} fz="md" span>
               日

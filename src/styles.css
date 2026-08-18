@@ -6,18 +6,31 @@
 @import "@mantine/notifications/styles.layer.css";
 
 html {
-  background: var(--cairn-paper-2, #f2f0e5);
+  background: var(--cairn-desk, #dad8ce);
 }
 
 body {
-  background-color: var(--cairn-paper-2, #f2f0e5);
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent 31px,
-    var(--cairn-rule, #e6e4d9) 32px
-  );
+  background-color: var(--cairn-desk, #dad8ce);
   color: var(--mantine-color-black);
+}
+
+/*? 「机の上に置かれた紙」の質感。罫線+左に赤い綴じ線を敷いたシートで各画面を包む(app-shell.tsx) */
+.cairn-paper-sheet {
+  background-color: var(--mantine-color-white);
+  background-image:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 35px,
+      var(--cairn-rule, #e6e4d9) 36px
+    ),
+    linear-gradient(
+      to right,
+      transparent 30px,
+      var(--mantine-color-red-6) 30px,
+      var(--mantine-color-red-6) 31px,
+      transparent 31px
+    );
 }
 
 @media (prefers-reduced-motion: reduce) {

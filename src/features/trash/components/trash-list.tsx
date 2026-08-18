@@ -2,6 +2,7 @@ import { Button, Card, EmptyState, Grid, Group, Modal, Stack, Text, Title } from
 import { IconCalendarEvent, IconNotes } from "@tabler/icons-react";
 import { useState } from "react";
 
+import { PageTitle } from "~/components/page-title";
 import type {
   PurgeDayInput,
   PurgeRowInput,
@@ -39,7 +40,7 @@ export function TrashList({
     <>
       <Grid gap="md">
         <Grid.Col span={12}>
-          <Title order={1}>ゴミ箱</Title>
+          <PageTitle>ゴミ箱</PageTitle>
           <Text c="dimmed" mt="xs" size="sm">
             30日経過すると自動で完全削除されます。
           </Text>
@@ -58,7 +59,9 @@ export function TrashList({
               {trash.days.map((day) => (
                 <Grid key={day._id} align="center" gap="sm">
                   <Grid.Col span="auto">
-                    <Text>{day.dateJst}</Text>
+                    <Text c="var(--cairn-muted)" td="line-through">
+                      {day.dateJst}
+                    </Text>
                   </Grid.Col>
                   <Grid.Col span="content">
                     <Group gap="xs">
@@ -89,7 +92,9 @@ export function TrashList({
               {trash.rows.map((row) => (
                 <Grid key={row._id} align="center" gap="sm">
                   <Grid.Col span="auto">
-                    <Text>{rowSummary(row)}</Text>
+                    <Text c="var(--cairn-muted)" td="line-through">
+                      {rowSummary(row)}
+                    </Text>
                   </Grid.Col>
                   <Grid.Col span="content">
                     <Group gap="xs">

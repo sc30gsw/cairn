@@ -36,21 +36,21 @@
 }
 
 .compactMonthView :global(.mantine-MoreEvents-moreEventsButton) {
-  color: var(--mantine-color-blue-6);
+  color: var(--mantine-color-orange-6);
   font-weight: 600;
 }
 
 .compactMonthView :global(.mantine-MoreEvents-moreEventsButton:hover) {
-  background-color: var(--mantine-color-blue-0);
-  color: var(--mantine-color-blue-7);
+  background-color: var(--mantine-color-orange-0);
+  color: var(--mantine-color-orange-7);
 }
 
 .compactMonthView :global(.mantine-ScheduleEvent-root) {
-  --schedule-event-color: var(--mantine-color-blue-6);
+  --schedule-event-color: var(--mantine-color-orange-6);
 }
 
 .compactMonthView :global(.mantine-ScheduleEvent-body) {
-  color: var(--mantine-color-blue-9);
+  color: var(--mantine-color-orange-9);
 }
 
 .compactMonthView :global([data-today] .mantine-Schedule-monthViewDayLabel),

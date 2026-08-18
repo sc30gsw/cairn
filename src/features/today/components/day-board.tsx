@@ -33,7 +33,7 @@ import type {
   SkipRowInput,
 } from "~/features/today/types/mutations";
 import { onRequiredSelect } from "~/lib/select";
-import { BODY_FONT, DISPLAY_FONT } from "~/lib/theme";
+import { BODY_FONT, NUMERAL_FONT } from "~/lib/theme";
 
 type DayBoardProps = {
   dateJst: DateJst;
@@ -121,13 +121,22 @@ export function DayBoard({
               <Text c="dimmed" fw={600} size="xs" tt="uppercase">
                 {isToday ? "今日" : "日"}
               </Text>
-              <Title order={1}>{dateJst}</Title>
+              <Title
+                order={1}
+                style={{
+                  textDecoration: "underline wavy var(--mantine-color-orange-4)",
+                  textDecorationThickness: 2,
+                  textUnderlineOffset: 10,
+                }}
+              >
+                {dateJst}
+              </Title>
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 5 }}>
               <Text c="dimmed" size="sm">
                 学習量
               </Text>
-              <Title ff={DISPLAY_FONT} fw={500} lh={1} order={1}>
+              <Title ff={NUMERAL_FONT} fw={700} lh={1} order={1}>
                 {day.volumeMinutes}
                 <Text c="dimmed" ff={BODY_FONT} fz="lg" span>
                   分

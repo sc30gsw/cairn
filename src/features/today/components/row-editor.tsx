@@ -69,7 +69,7 @@ function RowStatusSwitch({
       <Switch
         aria-label="記録を確定"
         checked={checked}
-        color="blue"
+        color="green"
         disabled={disabled}
         offLabel={<XIcon />}
         onChange={onChange}
@@ -203,7 +203,11 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
                   }}
                   status={row.status}
                 />
-                <Badge color={badge.color} variant="light">
+                <Badge
+                  color={badge.color}
+                  style={{ transform: isDone ? "rotate(-3deg)" : "rotate(2deg)" }}
+                  variant="outline"
+                >
                   {badge.label}
                 </Badge>
                 <Tooltip label="ゴミ箱へ">
