@@ -24,11 +24,11 @@ Exports: `Shimmer` (`ShimmerProps`), `ShimmerProvider` (`{ config?: ShimmerConfi
 
 ## Global config lives in one `ShimmerProvider` at the router root
 
-Colors are set once, from the Live Board design tokens, on a single `ShimmerProvider` inside `src/routes/__root.tsx` (inside `MantineProvider`). Every `<Shimmer>` inherits them, so components never repeat color props and never hardcode hex — this is what keeps the skeletons on-theme and light/dark-aware (see [design-live-board.md](design-live-board.md)).
+Colors are set once, from the Paper Redesign tokens, on a single `ShimmerProvider` inside `src/routes/__root.tsx` (inside `MantineProvider`). Every `<Shimmer>` inherits them, so components never repeat color props and never hardcode hex — this is what keeps the skeletons on-theme (see [design-live-board.md](design-live-board.md)).
 
 ```tsx
 // CORRECT: src/routes/__root.tsx — one provider, token-driven, theme-aware
-<MantineProvider defaultColorScheme="dark" theme={theme}>
+<MantineProvider defaultColorScheme="light" forceColorScheme="light" theme={theme}>
   <ShimmerProvider
     config={{
       backgroundColor: "var(--inset)",
@@ -41,7 +41,7 @@ Colors are set once, from the Live Board design tokens, on a single `ShimmerProv
   </ShimmerProvider>
 </MantineProvider>
 
-// WRONG: hardcoded hex bypasses the design tokens and breaks the light theme
+// WRONG: hardcoded hex bypasses the design tokens (app is light-only, see design-live-board.md)
 <Shimmer loading shimmerColor="#38bdf8" backgroundColor="#0e1016">...</Shimmer>
 ```
 

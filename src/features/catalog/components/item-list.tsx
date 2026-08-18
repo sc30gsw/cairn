@@ -13,12 +13,12 @@ import {
   Stack,
   Text,
   TextInput,
-  Title,
   Tooltip,
 } from "@mantine/core";
 import { IconGripVertical, IconTrash } from "@tabler/icons-react";
 import { groupBy, mapValues, prop, sortBy } from "remeda";
 
+import { PageTitle } from "~/components/page-title";
 import { useDnd } from "~/features/catalog/hooks/use-dnd";
 import { CategorySchema } from "~/features/catalog/schemas/category-schema";
 import { ItemNameSchema } from "~/features/catalog/schemas/item-schema";
@@ -115,7 +115,7 @@ export function ItemList({
   return (
     <Stack gap="md">
       <Stack gap={4}>
-        <Title order={1}>項目</Title>
+        <PageTitle>項目</PageTitle>
         <Text c="dimmed" size="sm">
           カードをドラッグして並べ替え・カテゴリー移動。キーボード操作は各カードの「移動」メニューから。
         </Text>

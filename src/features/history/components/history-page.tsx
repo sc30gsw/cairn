@@ -1,6 +1,7 @@
-import { Tabs, Title } from "@mantine/core";
+import { Tabs } from "@mantine/core";
 import { Suspense } from "react";
 
+import { PageTitle } from "~/components/page-title";
 import { HistoryAnalysisTab } from "~/features/history/components/history-analysis-tab";
 import { HistoryAnalysisTabPending } from "~/features/history/components/history-analysis-tab-pending";
 import { HistoryMonthTab } from "~/features/history/components/history-month-tab";
@@ -26,9 +27,7 @@ function HistoryReady() {
 
   return (
     <>
-      <Title mb="md" order={1}>
-        履歴
-      </Title>
+      <PageTitle mb="md">履歴</PageTitle>
       <Tabs
         onChange={(value) => {
           if (value === "month" || value === "week" || value === "analysis") {

@@ -8,7 +8,7 @@ type StatusUi = {
 export const RECORD_STATUS_UI = {
   スキップ: { color: "yellow", label: "見送り" },
   未着手: { color: "gray", label: "未着手" },
-  確定: { color: "blue", label: "完了" },
+  確定: { color: "green", label: "完了" },
 } as const satisfies Record<Status, StatusUi>;
 
 const TRASH_STATUS_LABEL = {

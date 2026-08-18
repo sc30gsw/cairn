@@ -63,7 +63,7 @@ function TargetRow({ onRemove, target }: TargetRowProps) {
         </Group>
         <Progress
           aria-label={`${target.categoryName}の進捗`}
-          color={target.achieved ? "green" : "blue"}
+          color={target.achieved ? "green" : "orange"}
           value={percent}
         />
         <Text size="sm">

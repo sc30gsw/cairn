@@ -45,7 +45,7 @@ export function HistoryAnalysisTab() {
         <Link
           params={{ dateJst: selectedDateJst }}
           to="/days/$dateJst"
-          className="text-blue-400 hover:underline"
+          className="text-primary-6 hover:underline"
         >
           選択中の日 ({selectedDateJst}) を編集
         </Link>

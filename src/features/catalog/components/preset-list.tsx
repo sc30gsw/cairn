@@ -14,7 +14,6 @@ import {
   Stack,
   Text,
   TextInput,
-  Title,
   Tooltip,
 } from "@mantine/core";
 import { IconTemplate, IconTrash } from "@tabler/icons-react";
@@ -24,6 +23,7 @@ import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
 import { LabelAlignedCell } from "~/components/label-aligned-cell";
+import { PageTitle } from "~/components/page-title";
 import { CreatePresetSchema, PresetSchema } from "~/features/catalog/schemas/preset-schema";
 import type { PresetLineInput } from "~/features/catalog/schemas/preset-schema";
 import type { ItemDto, ItemId, PresetDto } from "~/features/catalog/types/item";
@@ -102,7 +102,7 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
     <ConcreteActionTour screen="presets">
       <Stack gap="md">
         <Group gap="xs" wrap="nowrap">
-          <Title order={1}>プリセット</Title>
+          <PageTitle>プリセット</PageTitle>
           <ConcreteActionTourTrigger />
         </Group>
         <PresetCreateForm key={createFormKey} onCreate={onCreate} presets={presets} />

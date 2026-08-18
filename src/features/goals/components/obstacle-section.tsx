@@ -119,7 +119,20 @@ function ObstacleEditor({ onRemove, onUpdate, plan }: ObstacleEditorProps) {
       >
         <Stack gap="sm">
           <Text>
-            もし {plan.ifText} なら {plan.thenText}
+            もし{" "}
+            <Text
+              component="span"
+              style={{ borderBottom: "2px solid var(--mantine-color-orange-4)" }}
+            >
+              {plan.ifText}
+            </Text>{" "}
+            なら{" "}
+            <Text
+              component="span"
+              style={{ borderBottom: "2px solid var(--mantine-color-green-6)" }}
+            >
+              {plan.thenText}
+            </Text>
           </Text>
           <Grid align="flex-start" gap="sm">
             <Grid.Col span={{ base: 12, sm: 4 }}>

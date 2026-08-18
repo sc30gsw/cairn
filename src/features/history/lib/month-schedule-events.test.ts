@@ -23,7 +23,7 @@ test("ステータス色付きの schedule events に変換", () => {
 
   const events = toMonthScheduleEvents([...input]);
   expect(events[0]).toMatchObject({
-    color: "blue",
+    color: "green",
     id: "r1",
     start: "2026-08-17 00:00:00",
     title: "Distinction 2000",
