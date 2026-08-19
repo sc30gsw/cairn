@@ -303,6 +303,7 @@ export const presetApplyResultValidator = v.object({
 export type PresetApplyResult = Infer<typeof presetApplyResultValidator>;
 
 export const dayPageValidator = v.object({
+  canCopyYesterday: v.boolean(),
   dateJst: v.string(),
   day: v.union(dayDtoValidator, v.null()),
   isFuture: v.boolean(),

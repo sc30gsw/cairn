@@ -5,7 +5,7 @@ import { weekBreakdownValidator } from "../../lib/validators";
 import { weekBreakdown as getWeekBreakdown } from "../../services/history/weekBreakdown";
 
 export const weekBreakdown = ownerQuery({
-  args: { dateJst: v.string() },
+  args: { dateJst: v.string(), todayJst: v.string() },
   handler: async (ctx, args) => getWeekBreakdown(ctx, ctx.ownerId, args),
   returns: weekBreakdownValidator,
 });

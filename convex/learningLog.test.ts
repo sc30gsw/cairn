@@ -175,7 +175,7 @@ test("月と週の学習量が所有者に読める", async () => {
   const rest = month.days.find((entry) => entry.dateJst === SATURDAY);
   expect(rest?.isRest).toBe(true);
   expect(rest?.minutes).toBe(0);
-  const week = await t.query(api.queries.history.week.week, { dateJst: MONDAY });
+  const week = await t.query(api.queries.history.week.week, { dateJst: MONDAY, todayJst: MONDAY });
   expect(week.volumeMinutes).toBe(70);
   expect(week.weekStart).toBe(MONDAY);
   await expect(
@@ -489,6 +489,7 @@ test("分析クエリと年ヒートマップが学習量を返す", async () =>
   await t.mutation(api.mutations.rows.skip.skip, { rowId: kaiwa._id });
   const dayBreakdown = await t.query(api.queries.history.dayBreakdown.dayBreakdown, {
     dateJst: MONDAY,
+    todayJst: MONDAY,
   });
   expect(dayBreakdown.confirmedMinutes).toBe(45);
   expect(dayBreakdown.skippedMinutes).toBeGreaterThan(0);
@@ -502,6 +503,7 @@ test("分析クエリと年ヒートマップが学習量を返す", async () =>
   expect(dayBreakdown.rows.every((row) => row.status === "確定")).toBe(true);
   const weekBreakdown = await t.query(api.queries.history.weekBreakdown.weekBreakdown, {
     dateJst: MONDAY,
+    todayJst: MONDAY,
   });
   expect(weekBreakdown.volumeMinutes).toBe(45);
   expect(weekBreakdown.rows.every((row) => row.status === "確定")).toBe(true);
@@ -551,6 +553,7 @@ test("分析内訳は同一項目の確定を合算し、未着手を載せな�
 
   const dayBreakdown = await t.query(api.queries.history.dayBreakdown.dayBreakdown, {
     dateJst: MONDAY,
+    todayJst: MONDAY,
   });
   expect(dayBreakdown.confirmedMinutes).toBe(45);
   expect(dayBreakdown.rows).toEqual([
@@ -564,6 +567,7 @@ test("分析内訳は同一項目の確定を合算し、未着手を載せな�
 
   const weekBreakdown = await t.query(api.queries.history.weekBreakdown.weekBreakdown, {
     dateJst: MONDAY,
+    todayJst: MONDAY,
   });
   expect(weekBreakdown.rows).toEqual([
     expect.objectContaining({ itemName: "Distinction 2000", minutes: 45 }),
@@ -702,4 +706,117 @@ test("試験目標の保存と障害プラン更新", async () => {
   await expect(
     t.mutation(api.mutations.goals.createObstacle.createObstacle, { ifText: " ", thenText: "x" }),
   ).rejects.toThrow();
+});
+
+test("空の過去を open しても日もプリセットも作らない", async () => {
+  const t = owner();
+  const opened = await t.mutation(api.mutations.days.open.open, {
+    dateJst: SATURDAY,
+    todayJst: MONDAY,
+  });
+  expect(opened).toEqual({ applied: false });
+  const day = await t.query(api.queries.days.get.get, { dateJst: SATURDAY, todayJst: MONDAY });
+  expect(day.day).toBeNull();
+  expect(day.rows).toEqual([]);
+  expect(day.canCopyYesterday).toBe(false);
+});
+
+test("過去の日でもプリセットを切り替えられる。未来は切り替えられない", async () => {
+  const t = owner();
+  await t.mutation(api.mutations.days.open.open, { dateJst: SATURDAY, todayJst: SATURDAY });
+  const presets = await t.query(api.queries.presets.list.list, {});
+  const mondayPreset = presets.find((preset) => preset.weekday === 1);
+  if (mondayPreset === undefined) {
+    throw new Error("月曜日のプリセットがない");
+  }
+  await t.mutation(api.mutations.rows.switchPreset.switchPreset, {
+    dateJst: SATURDAY,
+    presetId: mondayPreset._id,
+    todayJst: MONDAY,
+  });
+  const switched = await t.query(api.queries.days.get.get, {
+    dateJst: SATURDAY,
+    todayJst: MONDAY,
+  });
+  expect(switched.rows.map((row) => row.itemName)[0]).toBe("Distinction 2000");
+  await expect(
+    t.mutation(api.mutations.rows.switchPreset.switchPreset, {
+      dateJst: FUTURE,
+      presetId: mondayPreset._id,
+      todayJst: MONDAY,
+    }),
+  ).rejects.toThrow();
+});
+
+test("昨日の確定だけを未着手として足し、空の過去に日を作る", async () => {
+  const t = owner();
+  await t.mutation(api.mutations.days.open.open, { dateJst: SATURDAY, todayJst: SATURDAY });
+  const items = await t.query(api.queries.items.list.list, {});
+  const other = items.find((item) => item.name === "その他");
+  if (other === undefined) {
+    throw new Error("その他がない");
+  }
+  const addedId = await t.mutation(api.mutations.rows.add.add, {
+    content: "土曜に確定した手順",
+    dateJst: SATURDAY,
+    itemId: other._id,
+    minutes: 20,
+    todayJst: SATURDAY,
+  });
+  await t.mutation(api.mutations.rows.confirm.confirm, {
+    content: "土曜に確定した手順",
+    minutes: 20,
+    rowId: addedId,
+  });
+  const sunday = "2026-08-16";
+  const copied = await t.mutation(api.mutations.rows.copyYesterdayConfirmed.copyYesterdayConfirmed, {
+    dateJst: sunday,
+    todayJst: MONDAY,
+  });
+  expect(copied).toBe(1);
+  const sundayPage = await t.query(api.queries.days.get.get, {
+    dateJst: sunday,
+    todayJst: MONDAY,
+  });
+  expect(sundayPage.day).not.toBeNull();
+  expect(sundayPage.canCopyYesterday).toBe(true);
+  expect(sundayPage.rows).toEqual([
+    expect.objectContaining({
+      content: "土曜に確定した手順",
+      minutes: 20,
+      status: "未着手",
+    }),
+  ]);
+  const copiedAgain = await t.mutation(
+    api.mutations.rows.copyYesterdayConfirmed.copyYesterdayConfirmed,
+    {
+      dateJst: sunday,
+      todayJst: MONDAY,
+    },
+  );
+  expect(copiedAgain).toBe(1);
+  expect(
+    (await t.query(api.queries.days.get.get, { dateJst: sunday, todayJst: MONDAY })).rows,
+  ).toHaveLength(2);
+  await expect(
+    t.mutation(api.mutations.rows.copyYesterdayConfirmed.copyYesterdayConfirmed, {
+      dateJst: FUTURE,
+      todayJst: MONDAY,
+    }),
+  ).rejects.toThrow();
+});
+
+test("今月の未来のマスは休養ではない", async () => {
+  const t = owner();
+  const month = await t.query(api.queries.history.month.month, {
+    todayJst: MONDAY,
+    yearMonth: "2026-08",
+  });
+  expect(month.days.find((entry) => entry.dateJst === FUTURE)?.isRest).toBe(false);
+  expect(month.days.find((entry) => entry.dateJst === SATURDAY)?.isRest).toBe(true);
+  const weekBreakdown = await t.query(api.queries.history.weekBreakdown.weekBreakdown, {
+    dateJst: MONDAY,
+    todayJst: MONDAY,
+  });
+  expect(weekBreakdown.byDay.find((entry) => entry.dateJst === FUTURE)?.isRest).toBe(false);
 });
