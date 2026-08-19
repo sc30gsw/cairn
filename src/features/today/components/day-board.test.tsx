@@ -490,3 +490,70 @@ test("昨日の確定をコピーできるときは押せる", () => {
   getByRole("button", { name: "昨日の確定をコピー" }).click();
   expect(onCopyYesterday).toHaveBeenCalledTimes(1);
 });
+
+const SATURDAY_PRESET = { _id: "pSat" as never, lines: [], name: "土曜日", weekday: 6 };
+const MONDAY_PRESET = { _id: "pMon" as never, lines: [], name: "月曜日", weekday: 1 };
+
+test("過去の休養でその曜日の雛形を選ぶと切り替わる", async () => {
+  const onSwitchPreset = vi.fn();
+  const restDay = {
+    ...day,
+    dateJst: "2026-08-15",
+    day: null,
+    kind: "rest",
+    rows: [],
+  } satisfies DayPage;
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-15"
+      day={restDay}
+      items={items}
+      presets={[SATURDAY_PRESET, MONDAY_PRESET]}
+      selectedPresetId={null}
+      todayJst="2026-08-17"
+      {...{ ...idleHandlers, onSwitchPreset }}
+    />,
+  );
+  getByRole("combobox", { name: "プリセット切替" }).click();
+  getByRole("option", { hidden: true, name: "土曜日" }).click();
+  await waitFor(() => {
+    expect(onSwitchPreset).toHaveBeenCalledWith("pSat");
+  });
+});
+
+test("過去日で別の雛形に切り替えても表示は戻らない", async () => {
+  const onSwitchPreset = vi.fn();
+  const pastLive = {
+    ...day,
+    dateJst: "2026-08-15",
+    day: {
+      _id: "day-past" as NonNullable<DayPage["day"]>["_id"],
+      condition: null,
+      dateJst: "2026-08-15",
+      memo: null,
+    },
+    kind: "live",
+  } satisfies DayPage;
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-15"
+      day={pastLive}
+      items={items}
+      presets={[SATURDAY_PRESET, MONDAY_PRESET]}
+      selectedPresetId={null}
+      todayJst="2026-08-17"
+      {...{ ...idleHandlers, onSwitchPreset }}
+    />,
+  );
+  expect((getByRole("combobox", { name: "プリセット切替" }) as HTMLInputElement).value).toBe(
+    "土曜日",
+  );
+  getByRole("combobox", { name: "プリセット切替" }).click();
+  getByRole("option", { hidden: true, name: "月曜日" }).click();
+  await waitFor(() => {
+    expect(onSwitchPreset).toHaveBeenCalledWith("pMon");
+  });
+  expect((getByRole("combobox", { name: "プリセット切替" }) as HTMLInputElement).value).toBe(
+    "月曜日",
+  );
+});
