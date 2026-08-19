@@ -29,7 +29,7 @@ test("今日を開くミューテーションはサスペンドを挟んでも 1
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        queryFn: () => Promise.resolve({ dateJst, isFuture: false, rows: [] }),
+        queryFn: () => Promise.resolve({ dateJst, kind: "live", rows: [] }),
         retry: false,
       },
     },
@@ -52,7 +52,7 @@ test("過去の日は open しない", async () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        queryFn: () => Promise.resolve({ dateJst, isFuture: false, rows: [] }),
+        queryFn: () => Promise.resolve({ dateJst, kind: "live", rows: [] }),
         retry: false,
       },
     },

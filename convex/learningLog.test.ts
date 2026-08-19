@@ -849,7 +849,7 @@ test("昨日に確定が無いコピーは0件", async () => {
   expect(copied).toBe(0);
 });
 
-test("他人のプリセットと空の雛形では切り替えられない", async () => {
+test("他人のプリセットでは切り替えられない", async () => {
   const t = owner();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const otherPresetId = await t.run(async (ctx) => {
@@ -867,6 +867,11 @@ test("他人のプリセットと空の雛形では切り替えられない", as
       todayJst: MONDAY,
     }),
   ).rejects.toThrow();
+});
+
+test("空の雛形でも休養の日を作れる", async () => {
+  const t = owner();
+  await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const emptyPresetId = await t.run(async (ctx) => {
     return await ctx.db.insert("presets", {
       lines: [],
@@ -875,11 +880,16 @@ test("他人のプリセットと空の雛形では切り替えられない", as
       weekday: 8,
     });
   });
-  await expect(
-    t.mutation(api.mutations.rows.switchPreset.switchPreset, {
-      dateJst: SATURDAY,
-      presetId: emptyPresetId,
-      todayJst: MONDAY,
-    }),
-  ).rejects.toThrow();
+  await t.mutation(api.mutations.rows.switchPreset.switchPreset, {
+    dateJst: SATURDAY,
+    presetId: emptyPresetId,
+    todayJst: MONDAY,
+  });
+  const created = await t.query(api.queries.days.get.get, {
+    dateJst: SATURDAY,
+    todayJst: MONDAY,
+  });
+  expect(created.kind).toBe("live");
+  expect(created.day).not.toBeNull();
+  expect(created.rows).toEqual([]);
 });

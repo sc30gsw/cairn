@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { expect, test, vi } from "vite-plus/test";
 import { STATUSES } from "~domain/domain";
 
@@ -12,6 +13,10 @@ import {
 } from "~/features/history/lib/heatmap-colors";
 import type { MonthEvent, WeekPage } from "~/features/history/types/history";
 import { renderWithMantine } from "~/test-utils/render";
+
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({ children }: { children?: ReactNode }) => <a href="/days/rest">{children}</a>,
+}));
 
 const [confirmed, pending] = [STATUSES[0], STATUSES[1]] as const;
 
@@ -218,4 +223,46 @@ test("週の行がタイトルとステータスで見える", () => {
   expect(getByText(/Distinction 2000/)).toBeDefined();
   expect(getByText("完了")).toBeDefined();
   expect(getAllByText("30分").length).toBeGreaterThan(0);
+});
+
+test("休養の日でもこの日を開くがある", () => {
+  const { getByRole, getByText } = renderWithMantine(
+    <HistoryAnalysisPanel
+      day={{
+        byCategory: [],
+        confirmedMinutes: 0,
+        dateJst: "2026-08-15",
+        isRest: true,
+        rows: [],
+        skippedMinutes: 0,
+      }}
+      heatmapDays={[{ dateJst: "2026-08-15", isRest: true, minutes: 0, movingAverage: 0 }]}
+      month={{
+        byCategory: [],
+        confirmedMinutes: 0,
+        days: [{ dateJst: "2026-08-15", isRest: true, minutes: 0, movingAverage: 0 }],
+        events: [],
+        rows: [],
+        skippedMinutes: 0,
+      }}
+      onDayClick={vi.fn()}
+      onScopeChange={vi.fn()}
+      scope="day"
+      selectedDateJst="2026-08-15"
+      todayJst="2026-08-17"
+      week={{
+        byCategory: [],
+        byDay: [],
+        confirmedMinutes: 0,
+        rows: [],
+        skippedMinutes: 0,
+        volumeMinutes: 0,
+        weekEnd: "2026-08-16",
+        weekStart: "2026-08-10",
+      }}
+      yearMonth="2026-08"
+    />,
+  );
+  expect(getByText("この日は記録がありません。")).toBeDefined();
+  expect(getByRole("link", { name: "この日を開く" })).toBeDefined();
 });

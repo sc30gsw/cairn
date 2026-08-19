@@ -65,19 +65,6 @@ type DayBoardProps = {
   todayJst: DateJst;
 };
 
-type TodayPresetSelectProps = {
-  dateJst: DateJst;
-  onSwitchPreset: (presetId: PresetDto["_id"]) => void;
-  presets: PresetDto[];
-  selectedPresetId: null | PresetId;
-};
-
-type PastPresetSelectProps = {
-  dateJst: DateJst;
-  onSwitchPreset: (presetId: PresetDto["_id"]) => void;
-  presets: PresetDto[];
-};
-
 export function weekdayPresetId(dateJst: DateJst, presets: PresetDto[]) {
   return presets.find((preset) => preset.weekday === weekdayFromDateJst(dateJst))?._id ?? null;
 }
@@ -86,106 +73,51 @@ function presetSelectData(presets: PresetDto[]): ComboboxItem[] {
   return presets.map((preset) => ({ label: preset.name, value: preset._id }));
 }
 
-function TodayPresetSelect({
+function DayPresetSelect({
   dateJst,
-  onSwitchPreset,
-  presets,
-  selectedPresetId,
-}: TodayPresetSelectProps) {
-  const navigate = useNavigate();
-  const defaultPresetId = weekdayPresetId(dateJst, presets);
-
-  return (
-    <Select
-      aria-label="プリセット切替"
-      data={presetSelectData(presets)}
-      label="この日の雛形"
-      onChange={onRequiredSelect((value) => {
-        const presetId = parsePresetId(value);
-        void navigate({
-          to: ".",
-          search: (current) => ({
-            ...current,
-            preset: presetId === defaultPresetId ? undefined : presetId,
-          }),
-        });
-        onSwitchPreset(presetId);
-      })}
-      placeholder="切り替える"
-      value={selectedPresetId ?? defaultPresetId}
-    />
-  );
-}
-
-function PastLivePresetSelect({ dateJst, onSwitchPreset, presets }: PastPresetSelectProps) {
-  const defaultPresetId = weekdayPresetId(dateJst, presets);
-  const [appliedPresetId, setAppliedPresetId] = useState<null | PresetId>(null);
-
-  return (
-    <Select
-      aria-label="プリセット切替"
-      data={presetSelectData(presets)}
-      label="この日の雛形"
-      onChange={onRequiredSelect((value) => {
-        const presetId = parsePresetId(value);
-        setAppliedPresetId(presetId);
-        onSwitchPreset(presetId);
-      })}
-      placeholder="切り替える"
-      value={appliedPresetId ?? defaultPresetId}
-    />
-  );
-}
-
-function PastRestPresetSelect({ onSwitchPreset, presets }: Omit<PastPresetSelectProps, "dateJst">) {
-  const [appliedPresetId, setAppliedPresetId] = useState<null | PresetId>(null);
-
-  return (
-    <Select
-      aria-label="プリセット切替"
-      data={presetSelectData(presets)}
-      label="この日の雛形"
-      onChange={onRequiredSelect((value) => {
-        const presetId = parsePresetId(value);
-        setAppliedPresetId(presetId);
-        onSwitchPreset(presetId);
-      })}
-      placeholder="切り替える"
-      value={appliedPresetId}
-    />
-  );
-}
-
-function DayPresetSwitcher({
-  dateJst,
+  isRest,
   isToday,
-  kind,
   onSwitchPreset,
   presets,
   selectedPresetId,
 }: {
   dateJst: DateJst;
+  isRest: boolean;
   isToday: boolean;
-  kind: DayPage["kind"];
   onSwitchPreset: (presetId: PresetDto["_id"]) => void;
   presets: PresetDto[];
   selectedPresetId: null | PresetId;
 }) {
-  if (isToday) {
-    return (
-      <TodayPresetSelect
-        dateJst={dateJst}
-        onSwitchPreset={onSwitchPreset}
-        presets={presets}
-        selectedPresetId={selectedPresetId}
-      />
-    );
-  }
-  if (kind === "rest") {
-    return <PastRestPresetSelect onSwitchPreset={onSwitchPreset} presets={presets} />;
-  }
+  const navigate = useNavigate();
+  const defaultPresetId = weekdayPresetId(dateJst, presets);
+  const [appliedPresetId, setAppliedPresetId] = useState<null | PresetId>(null);
+  const value = isToday
+    ? (selectedPresetId ?? defaultPresetId)
+    : (appliedPresetId ?? (isRest ? null : defaultPresetId));
+
   return (
-    <PastLivePresetSelect dateJst={dateJst} onSwitchPreset={onSwitchPreset} presets={presets} />
+    <Select
+      aria-label="プリセット切替"
+      data={presetSelectData(presets)}
+      label="この日の雛形"
+      onChange={onRequiredSelect((raw) => {
+        const presetId = parsePresetId(raw);
+        if (isToday) {
+          void navigate({
+            to: ".",
+            search: (current) => ({
+              ...current,
+              preset: presetId === defaultPresetId ? undefined : presetId,
+            }),
+          });
+        } else {
+          setAppliedPresetId(presetId);
+        }
+        onSwitchPreset(presetId);
+      })}
+      placeholder="切り替える"
+      value={value}
+    />
   );
 }
 
@@ -212,7 +144,7 @@ export function DayBoard({
   const emptyCopy = emptyDayCopy(day.kind);
 
   const goToDate = (next: string) => {
-    if (!isDateJst(next) || isFutureDateJst(next, todayJst)) {
+    if (!isDateJst(next)) {
       return;
     }
     if (next === todayJst) {
@@ -220,6 +152,13 @@ export function DayBoard({
       return;
     }
     void navigate({ params: { dateJst: next }, to: "/days/$dateJst" });
+  };
+
+  const pickLearningDate = (next: string) => {
+    if (isFutureDateJst(next, todayJst)) {
+      return;
+    }
+    goToDate(next);
   };
 
   return (
@@ -254,7 +193,7 @@ export function DayBoard({
                   maxDate={todayJst}
                   onChange={(value) => {
                     if (typeof value === "string") {
-                      goToDate(value);
+                      pickLearningDate(value);
                     }
                   }}
                   popoverProps={{ withinPortal: true }}
@@ -293,10 +232,11 @@ export function DayBoard({
           <Card>
             <Stack gap="sm">
               <Title order={3}>プリセット</Title>
-              <DayPresetSwitcher
+              <DayPresetSelect
+                key={dateJst}
                 dateJst={dateJst}
+                isRest={day.kind === "rest"}
                 isToday={isToday}
-                kind={day.kind}
                 onSwitchPreset={onSwitchPreset}
                 presets={presets}
                 selectedPresetId={selectedPresetId}

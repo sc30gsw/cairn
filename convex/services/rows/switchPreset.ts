@@ -19,12 +19,7 @@ export async function switchPreset(
       new NotFoundError({ message: "プリセットが見つかりません", resource: "プリセット" }),
     );
   }
-  const day =
-    existing ??
-    (preset.lines.length === 0 ? null : await requireLiveDay(ctx, ownerId, args.dateJst));
-  if (day === null) {
-    throwDomain(new NotFoundError({ message: "日がありません", resource: "日" }));
-  }
+  const day = existing ?? (await requireLiveDay(ctx, ownerId, args.dateJst));
   const rows = await liveRowsForDay(ctx, day._id);
   const kept = keptRowsAfterSwitch(rows);
   const startOrder = kept.reduce((max, row) => Math.max(max, row.sortOrder), -1);

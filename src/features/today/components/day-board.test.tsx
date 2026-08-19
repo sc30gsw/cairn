@@ -8,11 +8,15 @@ import { renderWithMantine } from "~/test-utils/render";
 
 const [confirmed, pending] = [STATUSES[0], STATUSES[1]] as const;
 
+const { navigate } = vi.hoisted(() => ({
+  navigate: vi.fn(),
+}));
+
 vi.mock("@tanstack/react-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-router")>();
   return {
     ...actual,
-    useNavigate: () => vi.fn(),
+    useNavigate: () => navigate,
   };
 });
 
@@ -492,6 +496,36 @@ test("未来の空日は未記録で足せない", () => {
   expect(getByText("未記録")).toBeDefined();
   expect(queryByRole("button", { name: "昨日の確定をコピー" })).toBeNull();
   expect(queryByRole("button", { name: "記録を足す" })).toBeNull();
+});
+
+test("未記録の前の日はさらに前の未記録へ進む", () => {
+  navigate.mockClear();
+  const future = {
+    ...day,
+    dateJst: "2026-08-20",
+    day: null,
+    kind: "unrecorded",
+    rows: [],
+  } satisfies DayPage;
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-20"
+      day={future}
+      items={items}
+      presets={[]}
+      selectedPresetId={null}
+      todayJst="2026-08-17"
+      {...idleHandlers}
+    />,
+  );
+  const prev = getByRole("button", { name: "前の日" });
+  expect((prev as HTMLButtonElement).disabled).toBe(false);
+  expect((getByRole("button", { name: "次の日" }) as HTMLButtonElement).disabled).toBe(true);
+  prev.click();
+  expect(navigate).toHaveBeenCalledWith({
+    params: { dateJst: "2026-08-19" },
+    to: "/days/$dateJst",
+  });
 });
 
 test("昨日の確定をコピーできるときは押せる", () => {
