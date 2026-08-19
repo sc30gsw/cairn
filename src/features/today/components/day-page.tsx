@@ -87,10 +87,9 @@ function DayPageCore({ dateJst, presetFromSearch }: DayPageCoreProps) {
         });
       }}
       onCopyYesterday={() => {
-        void runMutation(
-          () => copyYesterday.mutateAsync({ dateJst, todayJst: today }),
-          { successMessage: "昨日の確定をコピーしました" },
-        );
+        void runMutation(() => copyYesterday.mutateAsync({ dateJst, todayJst: today }), {
+          successMessage: "昨日の確定をコピーしました",
+        });
       }}
       onRemoveDay={() => {
         void runMutation(() => removeDay.mutateAsync({ dateJst }), {

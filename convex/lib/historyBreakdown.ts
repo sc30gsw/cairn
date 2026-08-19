@@ -2,8 +2,9 @@ import { groupBy, prop, sumBy } from "remeda";
 
 import type { Doc, Id } from "../_generated/dataModel";
 import { categoryFields } from "./categoryFields";
-import type { BreakdownRow, CategoryBreakdown, DayBreakdown, WeekBreakdown } from "./validators";
 import { isRestCalendarDate } from "./dayView";
+import type { BreakdownRow, CategoryBreakdown, DayBreakdown, WeekBreakdown } from "./validators";
+import { confirmedVolumeMinutes, type VolumeRow } from "./volume";
 
 export type { BreakdownRow, CategoryBreakdown, DayBreakdown, WeekBreakdown } from "./validators";
 

@@ -57,8 +57,7 @@ export function HistoryMonthView({
   const confirmedEvents = confirmedMonthEvents(events);
   const scheduleEvents = toMonthScheduleEvents(confirmedEvents);
   const minutesByEventId = monthEventMinutesById(confirmedEvents);
-  const nextDisabled =
-    todayJst !== undefined && yearMonthOf(date) >= yearMonthOf(todayJst);
+  const nextDisabled = todayJst !== undefined && yearMonthOf(date) >= yearMonthOf(todayJst);
 
   const setDate = (value: string) => {
     if (todayJst !== undefined && yearMonthOf(value) > yearMonthOf(todayJst)) {

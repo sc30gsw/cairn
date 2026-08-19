@@ -769,10 +769,13 @@ test("昨日の確定だけを未着手として足し、空の過去に日を�
     rowId: addedId,
   });
   const sunday = "2026-08-16";
-  const copied = await t.mutation(api.mutations.rows.copyYesterdayConfirmed.copyYesterdayConfirmed, {
-    dateJst: sunday,
-    todayJst: MONDAY,
-  });
+  const copied = await t.mutation(
+    api.mutations.rows.copyYesterdayConfirmed.copyYesterdayConfirmed,
+    {
+      dateJst: sunday,
+      todayJst: MONDAY,
+    },
+  );
   expect(copied).toBe(1);
   const sundayPage = await t.query(api.queries.days.get.get, {
     dateJst: sunday,

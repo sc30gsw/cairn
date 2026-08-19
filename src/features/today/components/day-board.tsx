@@ -126,9 +126,7 @@ export function DayBoard({
   const navigate = useNavigate();
   const canEdit = !day.isFuture;
   const isToday = dateJst === todayJst;
-  const emptyCopy = emptyDayCopy(
-    dayViewKind({ dateJst, hasLiveDay: day.day !== null, todayJst }),
-  );
+  const emptyCopy = emptyDayCopy(dayViewKind({ dateJst, hasLiveDay: day.day !== null, todayJst }));
 
   const goToDate = (next: string) => {
     if (!isDateJst(next) || isFutureDateJst(next, todayJst)) {
