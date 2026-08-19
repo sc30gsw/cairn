@@ -6,5 +6,5 @@ export async function monthBreakdown(
   ownerId: string,
   args: { todayJst: string; yearMonth: string },
 ) {
-  return await computeMonthBreakdown(ctx, ownerId, args.yearMonth);
+  return await computeMonthBreakdown(ctx, ownerId, args);
 }

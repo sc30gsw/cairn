@@ -4,6 +4,15 @@
   /* Marker classes applied via getDayProps. */
 }
 
+.unrecordedDay::after {
+  color: var(--mantine-color-dimmed);
+  content: "未記録";
+  display: block;
+  font-size: 0.55rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
 /* @mantine/schedule exposes stable `mantine-MonthView-*` classes, but @mantine/dates names its
    day/weekday classes after the root component (`mantine-DatePickerInput-day`, …), so the dates
    calendar is matched by table structure instead. Its own `[data-weekend]` rule is beaten by

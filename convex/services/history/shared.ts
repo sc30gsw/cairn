@@ -4,6 +4,7 @@ import type { Doc } from "../../_generated/dataModel";
 import type { QueryCtx } from "../../_generated/server";
 import { loadCatalog } from "../../lib/catalogLoader";
 import { categoryFields } from "../../lib/categoryFields";
+import { isRestCalendarDate } from "../../lib/dayView";
 import {
   aggregateBreakdownRows,
   buildDayBreakdown,
@@ -42,12 +43,13 @@ export function buildMinutesByDate(
 
 export function buildHeatmapDays(
   dates: readonly string[],
+  todayJst: string,
   liveDayDates: ReadonlySet<string>,
   minutesByDate: Readonly<Record<string, number>>,
 ) {
   return dates.map((dateJst) => ({
     dateJst,
-    isRest: !liveDayDates.has(dateJst),
+    isRest: isRestCalendarDate(dateJst, todayJst, liveDayDates.has(dateJst)),
     minutes: minutesByDate[dateJst] ?? 0,
     movingAverage: sevenDayMovingAverage(minutesByDate, dateJst),
   }));
@@ -74,14 +76,18 @@ export async function computeYearHeatmap(ctx: QueryCtx, ownerId: string, todayJs
   const liveDayDates = liveDayDatesFrom(days);
   const minutesByDate = buildMinutesByDate(rows, liveDayDates);
   return {
-    days: buildHeatmapDays(calendarDatesFromTo(start, end), liveDayDates, minutesByDate),
+    days: buildHeatmapDays(calendarDatesFromTo(start, end), todayJst, liveDayDates, minutesByDate),
     endDate: end,
     startDate: start,
   };
 }
 
-export async function computeMonthBreakdown(ctx: QueryCtx, ownerId: string, yearMonth: string) {
-  const dates = calendarDatesInMonth(yearMonth);
+export async function computeMonthBreakdown(
+  ctx: QueryCtx,
+  ownerId: string,
+  args: { todayJst: string; yearMonth: string },
+) {
+  const dates = calendarDatesInMonth(args.yearMonth);
   const start = dates[0];
   const end = dates[dates.length - 1];
   if (start === undefined || end === undefined) {
@@ -139,15 +145,19 @@ export async function computeMonthBreakdown(ctx: QueryCtx, ownerId: string, year
   return {
     byCategory: aggregated.byCategory,
     confirmedMinutes: aggregated.confirmedMinutes,
-    days: buildHeatmapDays(dates, liveDayDates, minutesByDate),
+    days: buildHeatmapDays(dates, args.todayJst, liveDayDates, minutesByDate),
     events,
     rows: aggregated.rows,
     skippedMinutes: aggregated.skippedMinutes,
   };
 }
 
-export async function computeWeekPage(ctx: QueryCtx, ownerId: string, dateJst: string) {
-  const weekStart = mondayOfWeek(dateJst);
+export async function computeWeekPage(
+  ctx: QueryCtx,
+  ownerId: string,
+  args: { dateJst: string; todayJst: string },
+) {
+  const weekStart = mondayOfWeek(args.dateJst);
   const weekEnd = addDaysJst(weekStart, 6);
   const weekDates = Array.from({ length: 7 }, (_, offset) => addDaysJst(weekStart, offset));
   const [rows, days, catalog] = await Promise.all([
@@ -186,6 +196,7 @@ export async function computeWeekPage(ctx: QueryCtx, ownerId: string, dateJst: s
       weekStart,
       weekEnd,
       weekDates,
+      args.todayJst,
       liveWeekRows,
       liveDayDates,
       catalog.itemById,

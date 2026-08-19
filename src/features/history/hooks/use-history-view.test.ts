@@ -31,5 +31,12 @@ test("deriveHistoryView は search を優先する", () => {
 
 test("deriveHistoryView の week 省略時は date の月曜", () => {
   const view = deriveHistoryView({ date: "2026-08-20" }, "2026-08-17");
+  expect(view.selectedDateJst).toBe("2026-08-17");
   expect(view.weekAnchor).toBe("2026-08-17");
+});
+
+test("deriveHistoryView は未来の date と month を today に戻す", () => {
+  const view = deriveHistoryView({ date: "2026-09-01", month: "2026-09" }, "2026-08-17");
+  expect(view.selectedDateJst).toBe("2026-08-17");
+  expect(view.yearMonth).toBe("2026-08");
 });

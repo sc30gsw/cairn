@@ -8,11 +8,15 @@ import { renderWithMantine } from "~/test-utils/render";
 
 const [confirmed, pending] = [STATUSES[0], STATUSES[1]] as const;
 
+const { navigate } = vi.hoisted(() => ({
+  navigate: vi.fn(),
+}));
+
 vi.mock("@tanstack/react-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-router")>();
   return {
     ...actual,
-    useNavigate: () => vi.fn(),
+    useNavigate: () => navigate,
   };
 });
 
@@ -36,6 +40,7 @@ const row = {
 } satisfies DayRow;
 
 const day = {
+  canCopyYesterday: false,
   dateJst: "2026-08-17",
   day: {
     _id: "day1" as NonNullable<DayPage["day"]>["_id"],
@@ -43,7 +48,7 @@ const day = {
     dateJst: "2026-08-17",
     memo: null,
   },
-  isFuture: false,
+  kind: "live",
   rows: [row],
   shareMarkdown: "",
   volumeMinutes: 0,
@@ -56,6 +61,7 @@ const items = [
 const idleHandlers = {
   onAddRow: vi.fn(),
   onConfirm: vi.fn(),
+  onCopyYesterday: vi.fn(),
   onRemoveDay: vi.fn(),
   onRemoveRow: vi.fn(),
   onSaveCondition: vi.fn(),
@@ -69,7 +75,7 @@ test("ログイン済みなら今日の未着手の記録が見える", () => {
     <DayBoard
       dateJst="2026-08-17"
       day={day}
-      isToday
+      todayJst="2026-08-17"
       items={items}
       presets={[]}
       selectedPresetId={null}
@@ -87,10 +93,11 @@ test("記録を確定スイッチで確定、オフでスキップできる", as
     <DayBoard
       dateJst="2026-08-17"
       day={day}
-      isToday
+      todayJst="2026-08-17"
       items={items}
       onAddRow={vi.fn()}
       onConfirm={onConfirm}
+      onCopyYesterday={vi.fn()}
       onRemoveDay={vi.fn()}
       onRemoveRow={vi.fn()}
       onSaveCondition={vi.fn()}
@@ -119,10 +126,11 @@ test("空のひとことでも確定できる", async () => {
     <DayBoard
       dateJst="2026-08-17"
       day={day}
-      isToday
+      todayJst="2026-08-17"
       items={items}
       onAddRow={vi.fn()}
       onConfirm={onConfirm}
+      onCopyYesterday={vi.fn()}
       onRemoveDay={vi.fn()}
       onRemoveRow={vi.fn()}
       onSaveCondition={vi.fn()}
@@ -155,10 +163,11 @@ test("確定済みの記録は行外へフォーカスすると更新できる",
     <DayBoard
       dateJst="2026-08-17"
       day={confirmedDay}
-      isToday
+      todayJst="2026-08-17"
       items={items}
       onAddRow={vi.fn()}
       onConfirm={onConfirm}
+      onCopyYesterday={vi.fn()}
       onRemoveDay={vi.fn()}
       onRemoveRow={vi.fn()}
       onSaveCondition={vi.fn()}
@@ -191,10 +200,11 @@ test("確定済みの記録をスイッチオフで見送り確認後にスキ�
     <DayBoard
       dateJst="2026-08-17"
       day={confirmedDay}
-      isToday
+      todayJst="2026-08-17"
       items={items}
       onAddRow={vi.fn()}
       onConfirm={vi.fn()}
+      onCopyYesterday={vi.fn()}
       onRemoveDay={vi.fn()}
       onRemoveRow={vi.fn()}
       onSaveCondition={vi.fn()}
@@ -224,10 +234,11 @@ test("確定済みの見送り確認をキャンセルするとスキップし�
     <DayBoard
       dateJst="2026-08-17"
       day={confirmedDay}
-      isToday
+      todayJst="2026-08-17"
       items={items}
       onAddRow={vi.fn()}
       onConfirm={vi.fn()}
+      onCopyYesterday={vi.fn()}
       onRemoveDay={vi.fn()}
       onRemoveRow={vi.fn()}
       onSaveCondition={vi.fn()}
@@ -251,7 +262,7 @@ test("未着手はスイッチがオフで未着手バッジが出る", () => {
     <DayBoard
       dateJst="2026-08-17"
       day={day}
-      isToday
+      todayJst="2026-08-17"
       items={items}
       presets={[]}
       selectedPresetId={null}
@@ -272,7 +283,7 @@ test("共有文のコピー操作が見える", () => {
     <DayBoard
       dateJst="2026-08-17"
       day={withShare}
-      isToday
+      todayJst="2026-08-17"
       items={items}
       presets={[]}
       selectedPresetId={null}
@@ -288,10 +299,11 @@ test("セクションはプリセット、記録、コンディションの順�
     <DayBoard
       dateJst="2026-08-17"
       day={day}
-      isToday
+      todayJst="2026-08-17"
       items={items}
       onAddRow={vi.fn()}
       onConfirm={vi.fn()}
+      onCopyYesterday={vi.fn()}
       onRemoveDay={vi.fn()}
       onRemoveRow={vi.fn()}
       onSaveCondition={onSaveCondition}
@@ -306,7 +318,7 @@ test("セクションはプリセット、記録、コンディションの順�
     .map((heading) => heading.textContent)
     .filter((text) => text === "プリセット" || text === "記録" || text === "コンディション");
   expect(sectionTitles).toEqual(["プリセット", "記録", "コンディション"]);
-  expect((getByRole("combobox", { name: "今日のプリセット切替" }) as HTMLInputElement).value).toBe(
+  expect((getByRole("combobox", { name: "プリセット切替" }) as HTMLInputElement).value).toBe(
     "月曜日",
   );
   expect((getByRole("radio", { name: "好調" }) as HTMLInputElement).checked).toBe(false);
@@ -321,7 +333,7 @@ test("プリセットを選ぶと表示名が変わる", async () => {
     <DayBoard
       dateJst="2026-08-17"
       day={day}
-      isToday
+      todayJst="2026-08-17"
       items={items}
       presets={[
         { _id: "p1" as never, lines: [], name: "月曜日", weekday: 1 },
@@ -331,7 +343,7 @@ test("プリセットを選ぶと表示名が変わる", async () => {
       {...{ ...idleHandlers, onSwitchPreset }}
     />,
   );
-  getByRole("combobox", { name: "今日のプリセット切替" }).click();
+  getByRole("combobox", { name: "プリセット切替" }).click();
   getByRole("option", { hidden: true, name: "火の雛形" }).click();
   await waitFor(() => {
     expect(onSwitchPreset).toHaveBeenCalledWith("p2");
@@ -339,12 +351,12 @@ test("プリセットを選ぶと表示名が変わる", async () => {
 });
 
 test("未来の日は記録を足せない", () => {
-  const future = { ...day, isFuture: true } satisfies DayPage;
+  const future = { ...day, kind: "unrecorded" } satisfies DayPage;
   const { queryByRole } = renderWithMantine(
     <DayBoard
       dateJst="2026-08-20"
       day={future}
-      isToday={false}
+      todayJst="2026-08-17"
       items={items}
       presets={[]}
       selectedPresetId={null}
@@ -359,7 +371,7 @@ test("その日に記録を足せる", () => {
     <DayBoard
       dateJst="2026-08-17"
       day={day}
-      isToday
+      todayJst="2026-08-17"
       items={items}
       presets={[]}
       selectedPresetId={null}
@@ -376,10 +388,11 @@ test("記録のゴミ箱はアイコンボタン", () => {
     <DayBoard
       dateJst="2026-08-17"
       day={day}
-      isToday
+      todayJst="2026-08-17"
       items={items}
       onAddRow={vi.fn()}
       onConfirm={vi.fn()}
+      onCopyYesterday={vi.fn()}
       onRemoveDay={vi.fn()}
       onRemoveRow={onRemoveRow}
       onSaveCondition={vi.fn()}
@@ -392,4 +405,210 @@ test("記録のゴミ箱はアイコンボタン", () => {
   );
   getByRole("button", { name: "ゴミ箱へ" }).click();
   expect(onRemoveRow).toHaveBeenCalledWith(row._id);
+});
+
+test("今日は学習日ピッカーと前の日があり、次の日と今日へ戻るは出ない", () => {
+  const { getByLabelText, getByRole, queryByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={day}
+      items={items}
+      presets={[]}
+      selectedPresetId={null}
+      todayJst="2026-08-17"
+      {...idleHandlers}
+    />,
+  );
+  expect(getByLabelText("学習日")).toBeDefined();
+  expect(getByRole("button", { name: "前の日" })).toBeDefined();
+  expect((getByRole("button", { name: "次の日" }) as HTMLButtonElement).disabled).toBe(true);
+  expect(queryByRole("button", { name: "今日へ戻る" })).toBeNull();
+});
+
+test("今日で日が無いとこの日の記録はありません", () => {
+  const todayEmpty = {
+    ...day,
+    day: null,
+    kind: "todayEmpty",
+    rows: [],
+  } satisfies DayPage;
+  const { getByText } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={todayEmpty}
+      items={items}
+      presets={[]}
+      selectedPresetId={null}
+      todayJst="2026-08-17"
+      {...idleHandlers}
+    />,
+  );
+  expect(getByText("この日の記録はありません")).toBeDefined();
+});
+
+test("過去の空日は休養で、プリセット切替とコピーがある", () => {
+  const restDay = {
+    ...day,
+    dateJst: "2026-08-15",
+    day: null,
+    kind: "rest",
+    rows: [],
+  } satisfies DayPage;
+  const { getByRole, getByText } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-15"
+      day={restDay}
+      items={items}
+      presets={[{ _id: "p1" as never, lines: [], name: "土曜日", weekday: 6 }]}
+      selectedPresetId={null}
+      todayJst="2026-08-17"
+      {...idleHandlers}
+    />,
+  );
+  expect(getByText("休養")).toBeDefined();
+  expect(getByRole("combobox", { name: "プリセット切替" })).toBeDefined();
+  expect((getByRole("button", { name: "昨日の確定をコピー" }) as HTMLButtonElement).disabled).toBe(
+    true,
+  );
+  expect(getByRole("button", { name: "今日へ戻る" })).toBeDefined();
+  expect(getByRole("button", { name: "記録を足す" })).toBeDefined();
+});
+
+test("未来の空日は未記録で足せない", () => {
+  const future = {
+    ...day,
+    dateJst: "2026-08-20",
+    day: null,
+    kind: "unrecorded",
+    rows: [],
+  } satisfies DayPage;
+  const { getByText, queryByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-20"
+      day={future}
+      items={items}
+      presets={[]}
+      selectedPresetId={null}
+      todayJst="2026-08-17"
+      {...idleHandlers}
+    />,
+  );
+  expect(getByText("未記録")).toBeDefined();
+  expect(queryByRole("button", { name: "昨日の確定をコピー" })).toBeNull();
+  expect(queryByRole("button", { name: "記録を足す" })).toBeNull();
+});
+
+test("未記録の前の日はさらに前の未記録へ進む", () => {
+  navigate.mockClear();
+  const future = {
+    ...day,
+    dateJst: "2026-08-20",
+    day: null,
+    kind: "unrecorded",
+    rows: [],
+  } satisfies DayPage;
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-20"
+      day={future}
+      items={items}
+      presets={[]}
+      selectedPresetId={null}
+      todayJst="2026-08-17"
+      {...idleHandlers}
+    />,
+  );
+  const prev = getByRole("button", { name: "前の日" });
+  expect((prev as HTMLButtonElement).disabled).toBe(false);
+  expect((getByRole("button", { name: "次の日" }) as HTMLButtonElement).disabled).toBe(true);
+  prev.click();
+  expect(navigate).toHaveBeenCalledWith({
+    params: { dateJst: "2026-08-19" },
+    to: "/days/$dateJst",
+  });
+});
+
+test("昨日の確定をコピーできるときは押せる", () => {
+  const onCopyYesterday = vi.fn();
+  const copyable = { ...day, canCopyYesterday: true } satisfies DayPage;
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={copyable}
+      items={items}
+      presets={[]}
+      selectedPresetId={null}
+      todayJst="2026-08-17"
+      {...{ ...idleHandlers, onCopyYesterday }}
+    />,
+  );
+  getByRole("button", { name: "昨日の確定をコピー" }).click();
+  expect(onCopyYesterday).toHaveBeenCalledTimes(1);
+});
+
+const SATURDAY_PRESET = { _id: "pSat" as never, lines: [], name: "土曜日", weekday: 6 };
+const MONDAY_PRESET = { _id: "pMon" as never, lines: [], name: "月曜日", weekday: 1 };
+
+test("過去の休養でその曜日の雛形を選ぶと切り替わる", async () => {
+  const onSwitchPreset = vi.fn();
+  const restDay = {
+    ...day,
+    dateJst: "2026-08-15",
+    day: null,
+    kind: "rest",
+    rows: [],
+  } satisfies DayPage;
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-15"
+      day={restDay}
+      items={items}
+      presets={[SATURDAY_PRESET, MONDAY_PRESET]}
+      selectedPresetId={null}
+      todayJst="2026-08-17"
+      {...{ ...idleHandlers, onSwitchPreset }}
+    />,
+  );
+  getByRole("combobox", { name: "プリセット切替" }).click();
+  getByRole("option", { hidden: true, name: "土曜日" }).click();
+  await waitFor(() => {
+    expect(onSwitchPreset).toHaveBeenCalledWith("pSat");
+  });
+});
+
+test("過去日で別の雛形に切り替えても表示は戻らない", async () => {
+  const onSwitchPreset = vi.fn();
+  const pastLive = {
+    ...day,
+    dateJst: "2026-08-15",
+    day: {
+      _id: "day-past" as NonNullable<DayPage["day"]>["_id"],
+      condition: null,
+      dateJst: "2026-08-15",
+      memo: null,
+    },
+    kind: "live",
+  } satisfies DayPage;
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-15"
+      day={pastLive}
+      items={items}
+      presets={[SATURDAY_PRESET, MONDAY_PRESET]}
+      selectedPresetId={null}
+      todayJst="2026-08-17"
+      {...{ ...idleHandlers, onSwitchPreset }}
+    />,
+  );
+  expect((getByRole("combobox", { name: "プリセット切替" }) as HTMLInputElement).value).toBe(
+    "土曜日",
+  );
+  getByRole("combobox", { name: "プリセット切替" }).click();
+  getByRole("option", { hidden: true, name: "月曜日" }).click();
+  await waitFor(() => {
+    expect(onSwitchPreset).toHaveBeenCalledWith("pMon");
+  });
+  expect((getByRole("combobox", { name: "プリセット切替" }) as HTMLInputElement).value).toBe(
+    "月曜日",
+  );
 });

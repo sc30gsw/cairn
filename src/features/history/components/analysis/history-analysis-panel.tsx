@@ -233,7 +233,7 @@ export function HistoryAnalysisPanel({
         />
       </Stack>
 
-      {scope === "day" && !day.isRest ? (
+      {scope === "day" ? (
         <Button
           renderRoot={(props) => (
             <Link {...props} params={{ dateJst: selectedDateJst }} to="/days/$dateJst" />

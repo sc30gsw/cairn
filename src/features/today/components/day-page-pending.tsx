@@ -18,10 +18,10 @@ export function DayPagePending({ dateJst }: Record<"dateJst", DateJst>) {
       <DayBoard
         dateJst={dateJst}
         day={dayBoardShimmerDay(dateJst)}
-        isToday={dateJst === today}
         items={dayBoardShimmerItems}
         onAddRow={shimmerNoop}
         onConfirm={shimmerNoop}
+        onCopyYesterday={shimmerNoop}
         onRemoveDay={shimmerNoop}
         onRemoveRow={shimmerNoop}
         onSaveCondition={shimmerNoop}
@@ -30,6 +30,7 @@ export function DayPagePending({ dateJst }: Record<"dateJst", DateJst>) {
         onSwitchPreset={shimmerNoop}
         presets={dayBoardShimmerPresets}
         selectedPresetId={null}
+        todayJst={today}
       />
     </Shimmer>
   );

@@ -4,6 +4,7 @@ import {
   calendarDayClassName,
   calendarDayProps,
   calendarDayStyleClasses,
+  historyCalendarDayProps,
 } from "~/lib/calendar-day-style";
 
 test("平日は className なし", () => {
@@ -30,4 +31,15 @@ test("祝日は赤マーカーと title", () => {
 test("今日は週末でも className を付けない", () => {
   expect(calendarDayClassName("2026-08-15", "2026-08-15")).toBeUndefined();
   expect(calendarDayProps("2026-08-15", "2026-08-15")).toEqual({});
+});
+
+test("履歴の未来マスは未記録で選べない", () => {
+  expect(historyCalendarDayProps("2026-08-20", "2026-08-17")).toEqual({
+    className: calendarDayStyleClasses.unrecordedDay,
+    disabled: true,
+    title: "未記録",
+  });
+  expect(historyCalendarDayProps("2026-08-15", "2026-08-17")).toEqual({
+    className: calendarDayStyleClasses.saturdayDay,
+  });
 });

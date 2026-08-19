@@ -8,6 +8,7 @@ import {
 import { cn } from "cnfast";
 import dayjs from "dayjs";
 import type { DateJst } from "~domain/jst";
+import { isFutureDateJst } from "~domain/jst";
 
 import {
   confirmedMonthEvents,
@@ -17,7 +18,7 @@ import {
 } from "~/features/history/lib/month-schedule-events";
 import { SCHEDULE_LABELS_JA } from "~/features/history/lib/schedule-labels";
 import type { MonthEvent } from "~/features/history/types/history";
-import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-style";
+import { calendarDayStyleClasses, historyCalendarDayProps } from "~/lib/calendar-day-style";
 
 import classes from "~/features/history/components/history-month-view.module.css";
 
@@ -26,7 +27,7 @@ type HistoryMonthViewProps = {
   month: Date;
   onDayClick: (dateJst: DateJst) => void;
   onMonthChange: (month: Date) => void;
-  todayJst?: DateJst;
+  todayJst: DateJst;
 };
 
 function toDateString(month: Date): DateStringValue {
@@ -35,6 +36,10 @@ function toDateString(month: Date): DateStringValue {
 
 function toMonthDate(value: string): Date {
   return new Date(`${value}T12:00:00+09:00`);
+}
+
+function yearMonthOf(value: string): string {
+  return value.slice(0, 7);
 }
 
 export function HistoryMonthView({
@@ -48,8 +53,12 @@ export function HistoryMonthView({
   const confirmedEvents = confirmedMonthEvents(events);
   const scheduleEvents = toMonthScheduleEvents(confirmedEvents);
   const minutesByEventId = monthEventMinutesById(confirmedEvents);
+  const nextDisabled = yearMonthOf(date) >= yearMonthOf(todayJst);
 
   const setDate = (value: string) => {
+    if (yearMonthOf(value) > yearMonthOf(todayJst)) {
+      return;
+    }
     onMonthChange(toMonthDate(value));
   };
 
@@ -57,8 +66,15 @@ export function HistoryMonthView({
     setDate(dayjs(date).add(offset, "month").startOf("month").format("YYYY-MM-DD"));
   };
 
+  const handleDayClick = (day: DateStringValue) => {
+    if (isFutureDateJst(day, todayJst)) {
+      return;
+    }
+    onDayClick(day);
+  };
+
   const handleEventClick = (event: ScheduleEventData) => {
-    onDayClick(scheduleEventDateJst(event));
+    handleDayClick(scheduleEventDateJst(event));
   };
 
   return (
@@ -80,10 +96,19 @@ export function HistoryMonthView({
             popoverProps={{ withinPortal: true }}
             yearValue={dayjs(date).year()}
           />
-          <ScheduleHeader.Next aria-label={SCHEDULE_LABELS_JA.next} onClick={() => shiftMonth(1)} />
+          <ScheduleHeader.Next
+            aria-label={SCHEDULE_LABELS_JA.next}
+            disabled={nextDisabled}
+            interactive={!nextDisabled}
+            onClick={() => {
+              if (!nextDisabled) {
+                shiftMonth(1);
+              }
+            }}
+          />
           <ScheduleHeader.Today
             aria-label={SCHEDULE_LABELS_JA.today}
-            onClick={() => setDate(dayjs().format("YYYY-MM-DD"))}
+            onClick={() => setDate(todayJst)}
           />
         </ScheduleHeader>
 
@@ -98,7 +123,7 @@ export function HistoryMonthView({
             date={date}
             events={scheduleEvents}
             firstDayOfWeek={1}
-            getDayProps={(day) => calendarDayProps(day, todayJst)}
+            getDayProps={(day) => historyCalendarDayProps(day, todayJst)}
             labels={SCHEDULE_LABELS_JA}
             locale="ja"
             maxEventsPerDay={2}
@@ -109,7 +134,7 @@ export function HistoryMonthView({
               mode: "static",
             }}
             onDateChange={setDate}
-            onDayClick={(day) => onDayClick(day)}
+            onDayClick={handleDayClick}
             onEventClick={handleEventClick}
             renderEventBody={(event) => {
               const minutes = minutesByEventId.get(String(event.id));

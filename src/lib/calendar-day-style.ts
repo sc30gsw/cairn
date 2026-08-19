@@ -1,5 +1,6 @@
+import type { DateStringValue, DayProps } from "@mantine/dates";
 import dayjs from "dayjs";
-import type { DateJst } from "~domain/jst";
+import { isFutureDateJst } from "~domain/jst";
 
 import { holidayName } from "~/lib/holiday";
 
@@ -7,9 +8,11 @@ import classes from "~/lib/calendar-day-style.module.css";
 
 export { classes as calendarDayStyleClasses };
 
+type CalendarDayButtonProps = Pick<Partial<DayProps>, "className" | "disabled" | "title">;
+
 export function calendarDayClassName(
-  dateJst: DateJst | string,
-  todayJst?: DateJst | string,
+  dateJst: DateStringValue,
+  todayJst?: DateStringValue,
 ): string | undefined {
   if (todayJst !== undefined && dateJst === todayJst) {
     return undefined;
@@ -28,13 +31,30 @@ export function calendarDayClassName(
 }
 
 export function calendarDayProps(
-  dateJst: DateJst | string,
-  todayJst?: DateJst | string,
-): { className?: string; title?: string } {
+  dateJst: DateStringValue,
+  todayJst?: DateStringValue,
+): CalendarDayButtonProps {
   const holiday = holidayName(dateJst);
   const className = calendarDayClassName(dateJst, todayJst);
   return {
     ...(className ? { className } : {}),
     ...(holiday ? { title: holiday } : {}),
+  };
+}
+
+export function historyCalendarDayProps(
+  dateJst: DateStringValue,
+  todayJst: DateStringValue,
+): CalendarDayButtonProps {
+  const dateKey = dateJst.slice(0, 10);
+  const todayKey = todayJst.slice(0, 10);
+  const base = calendarDayProps(dateKey, todayKey);
+  if (!isFutureDateJst(dateKey, todayKey)) {
+    return base;
+  }
+  return {
+    className: [base.className, classes.unrecordedDay].filter(Boolean).join(" "),
+    disabled: true,
+    title: "未記録",
   };
 }

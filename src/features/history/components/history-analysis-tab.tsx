@@ -22,8 +22,8 @@ export function HistoryAnalysisTab() {
   } = useHistoryView();
   const { data: monthBreakdown } = useHistoryMonthBreakdown(today, yearMonth);
   const { data: yearHeatmap } = useHistoryYearHeatmap(today);
-  const { data: weekBreakdown } = useHistoryWeekBreakdown(weekAnchor);
-  const { data: dayBreakdown } = useHistoryDayBreakdown(selectedDateJst);
+  const { data: weekBreakdown } = useHistoryWeekBreakdown(weekAnchor, today);
+  const { data: dayBreakdown } = useHistoryDayBreakdown(selectedDateJst, today);
 
   return (
     <>

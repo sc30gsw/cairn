@@ -2,6 +2,7 @@ import { groupBy, prop, sumBy } from "remeda";
 
 import type { Doc, Id } from "../_generated/dataModel";
 import { categoryFields } from "./categoryFields";
+import { isRestCalendarDate } from "./dayView";
 import type { BreakdownRow, CategoryBreakdown, DayBreakdown, WeekBreakdown } from "./validators";
 import { confirmedVolumeMinutes, type VolumeRow } from "./volume";
 
@@ -93,12 +94,13 @@ export function aggregateBreakdownRows(
 
 export function buildDayBreakdown(
   dateJst: string,
+  todayJst: string,
   rows: readonly Doc<"rows">[],
   liveDayDates: ReadonlySet<string>,
   itemById: Map<Id<"items">, Doc<"items">>,
   categoryById: Map<Id<"categories">, Doc<"categories">>,
 ): DayBreakdown {
-  const isRest = !liveDayDates.has(dateJst);
+  const isRest = isRestCalendarDate(dateJst, todayJst, liveDayDates.has(dateJst));
   const aggregated = aggregateBreakdownRows(rows, itemById, categoryById);
   return { dateJst, isRest, ...aggregated };
 }
@@ -107,6 +109,7 @@ export function buildWeekBreakdown(
   weekStart: string,
   weekEnd: string,
   weekDates: readonly string[],
+  todayJst: string,
   rows: readonly Doc<"rows">[],
   liveDayDates: ReadonlySet<string>,
   itemById: Map<Id<"items">, Doc<"items">>,
@@ -120,7 +123,7 @@ export function buildWeekBreakdown(
     return {
       confirmedMinutes: confirmedVolumeMinutes(dayRows),
       dateJst,
-      isRest: !liveDayDates.has(dateJst),
+      isRest: isRestCalendarDate(dateJst, todayJst, liveDayDates.has(dateJst)),
       skippedMinutes: skippedVolumeMinutes(dayRows),
     };
   });

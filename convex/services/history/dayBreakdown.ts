@@ -2,7 +2,11 @@ import type { QueryCtx } from "../../_generated/server";
 import { loadCatalog } from "../../lib/catalogLoader";
 import { buildDayBreakdown, liveDayDatesFrom, liveRows } from "./shared";
 
-export async function dayBreakdown(ctx: QueryCtx, ownerId: string, args: { dateJst: string }) {
+export async function dayBreakdown(
+  ctx: QueryCtx,
+  ownerId: string,
+  args: { dateJst: string; todayJst: string },
+) {
   const [rows, days, catalog] = await Promise.all([
     ctx.db
       .query("rows")
@@ -17,6 +21,7 @@ export async function dayBreakdown(ctx: QueryCtx, ownerId: string, args: { dateJ
   const liveDayDates = liveDayDatesFrom(days);
   return buildDayBreakdown(
     args.dateJst,
+    args.todayJst,
     liveRows(rows, liveDayDates),
     liveDayDates,
     catalog.itemById,

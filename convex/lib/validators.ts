@@ -2,6 +2,7 @@ import { type Infer, v } from "convex/values";
 
 import { CATEGORIES } from "./categories";
 import { CONDITIONS } from "./conditions";
+import { DAY_VIEW_KINDS } from "./dayView";
 import { GOAL_TYPES, STATUSES, TARGET_METRICS } from "./domain";
 
 const [toeic, listening, reading, conversation, otherCategory] = CATEGORIES;
@@ -9,6 +10,7 @@ const [good, ordinary, collapsed] = CONDITIONS;
 const [confirmed, pending, skipped] = STATUSES;
 const [examType, masteryType] = GOAL_TYPES;
 const [minutesMetric, daysMetric, countMetric] = TARGET_METRICS;
+const [liveKind, todayEmptyKind, restKind, unrecordedKind] = DAY_VIEW_KINDS;
 
 export const categoryValidator = v.union(
   v.literal(toeic),
@@ -302,10 +304,18 @@ export const presetApplyResultValidator = v.object({
 
 export type PresetApplyResult = Infer<typeof presetApplyResultValidator>;
 
+export const dayViewKindValidator = v.union(
+  v.literal(liveKind),
+  v.literal(todayEmptyKind),
+  v.literal(restKind),
+  v.literal(unrecordedKind),
+);
+
 export const dayPageValidator = v.object({
+  canCopyYesterday: v.boolean(),
   dateJst: v.string(),
   day: v.union(dayDtoValidator, v.null()),
-  isFuture: v.boolean(),
+  kind: dayViewKindValidator,
   rows: v.array(rowDtoValidator),
   shareMarkdown: v.string(),
   volumeMinutes: v.number(),

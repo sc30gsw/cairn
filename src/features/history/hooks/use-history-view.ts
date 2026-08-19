@@ -1,6 +1,6 @@
 import { getRouteApi } from "@tanstack/react-router";
 import type { DateJst } from "~domain/jst";
-import { mondayOfWeek, todayJst } from "~domain/jst";
+import { isFutureDateJst, mondayOfWeek, todayJst } from "~domain/jst";
 
 import type { AnalysisScope } from "~/features/history/schemas/analysis-scope-schema";
 import type { HistorySearch, HistoryTab } from "~/features/history/schemas/history-search-schema";
@@ -18,10 +18,16 @@ function monthDateFromYearMonth(yearMonth: string): Date {
 
 export function deriveHistoryView(search: HistorySearch, today: DateJst) {
   const tab: HistoryTab = search.tab ?? "month";
-  const selectedDateJst: DateJst = search.date ?? today;
+  const requestedDate = search.date ?? today;
+  const selectedDateJst: DateJst = isFutureDateJst(requestedDate, today) ? today : requestedDate;
   const analysisScope: AnalysisScope = search.scope ?? "day";
-  const yearMonth = search.month ?? yearMonthFromDateJst(selectedDateJst);
-  const weekAnchor: DateJst = search.week ?? mondayOfWeek(selectedDateJst);
+  const todayYearMonth = yearMonthFromDateJst(today);
+  const requestedMonth = search.month ?? yearMonthFromDateJst(selectedDateJst);
+  const yearMonth = requestedMonth > todayYearMonth ? todayYearMonth : requestedMonth;
+  const requestedWeek = search.week ?? mondayOfWeek(selectedDateJst);
+  const weekAnchor: DateJst = isFutureDateJst(requestedWeek, today)
+    ? mondayOfWeek(today)
+    : requestedWeek;
 
   return {
     analysisScope,

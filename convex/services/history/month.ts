@@ -6,6 +6,6 @@ export async function month(
   ownerId: string,
   args: { todayJst: string; yearMonth: string },
 ) {
-  const breakdown = await computeMonthBreakdown(ctx, ownerId, args.yearMonth);
+  const breakdown = await computeMonthBreakdown(ctx, ownerId, args);
   return { days: breakdown.days };
 }

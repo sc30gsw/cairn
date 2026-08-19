@@ -10,18 +10,20 @@ export function useHistoryMonthBreakdown(todayJst: DateJst, yearMonth: string) {
   );
 }
 
-export function useHistoryWeek(dateJst: DateJst) {
-  return useSuspenseQuery(convexQuery(api.queries.history.week.week, { dateJst }));
+export function useHistoryWeek(dateJst: DateJst, todayJst: DateJst) {
+  return useSuspenseQuery(convexQuery(api.queries.history.week.week, { dateJst, todayJst }));
 }
 
-export function useHistoryWeekBreakdown(dateJst: DateJst) {
+export function useHistoryWeekBreakdown(dateJst: DateJst, todayJst: DateJst) {
   return useSuspenseQuery(
-    convexQuery(api.queries.history.weekBreakdown.weekBreakdown, { dateJst }),
+    convexQuery(api.queries.history.weekBreakdown.weekBreakdown, { dateJst, todayJst }),
   );
 }
 
-export function useHistoryDayBreakdown(dateJst: DateJst) {
-  return useSuspenseQuery(convexQuery(api.queries.history.dayBreakdown.dayBreakdown, { dateJst }));
+export function useHistoryDayBreakdown(dateJst: DateJst, todayJst: DateJst) {
+  return useSuspenseQuery(
+    convexQuery(api.queries.history.dayBreakdown.dayBreakdown, { dateJst, todayJst }),
+  );
 }
 
 export function useHistoryYearHeatmap(todayJst: DateJst) {

@@ -31,6 +31,7 @@ const dayBoardShimmerRow2 = {
 
 export function dayBoardShimmerDay(dateJst: DateJst): DayPage {
   return {
+    canCopyYesterday: false,
     dateJst,
     day: {
       _id: shimmerId<NonNullable<DayPage["day"]>["_id"]>("day"),
@@ -38,7 +39,7 @@ export function dayBoardShimmerDay(dateJst: DateJst): DayPage {
       dateJst,
       memo: null,
     },
-    isFuture: false,
+    kind: "live",
     rows: [dayBoardShimmerRow, dayBoardShimmerRow2],
     shareMarkdown: "",
     volumeMinutes: 30,

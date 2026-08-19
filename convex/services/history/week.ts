@@ -1,8 +1,12 @@
 import type { QueryCtx } from "../../_generated/server";
 import { computeWeekPage } from "./shared";
 
-export async function week(ctx: QueryCtx, ownerId: string, args: { dateJst: string }) {
-  const page = await computeWeekPage(ctx, ownerId, args.dateJst);
+export async function week(
+  ctx: QueryCtx,
+  ownerId: string,
+  args: { dateJst: string; todayJst: string },
+) {
+  const page = await computeWeekPage(ctx, ownerId, args);
   return {
     events: page.events,
     volumeMinutes: page.volumeMinutes,

@@ -1,5 +1,7 @@
 import type { QueryCtx } from "../../_generated/server";
-import { isFutureDateJst } from "../../lib/jst";
+import { dayViewKind } from "../../lib/dayView";
+import { STATUSES } from "../../lib/domain";
+import { addDaysJst, isFutureDateJst } from "../../lib/jst";
 import { formatShareMarkdown } from "../../lib/share";
 import type { DayPageDto } from "../../lib/validators";
 import { confirmedVolumeMinutes } from "../../lib/volume";
@@ -12,10 +14,20 @@ export async function getDayPage(
   ownerId: string,
   args: { dateJst: string; todayJst: string },
 ): Promise<DayPageDto> {
-  const day = await getLiveDay(ctx, ownerId, args.dateJst);
-  const rows = day === null ? [] : await liveRowsForDay(ctx, day._id);
+  const [confirmedStatus] = STATUSES;
+  const unrecorded = isFutureDateJst(args.dateJst, args.todayJst);
+  const yesterday = addDaysJst(args.dateJst, -1);
+  const [day, sourceDay] = await Promise.all([
+    getLiveDay(ctx, ownerId, args.dateJst),
+    unrecorded ? Promise.resolve(null) : getLiveDay(ctx, ownerId, yesterday),
+  ]);
+  const [rows, sourceRows] = await Promise.all([
+    day === null ? Promise.resolve([]) : liveRowsForDay(ctx, day._id),
+    sourceDay === null ? Promise.resolve([]) : liveRowsForDay(ctx, sourceDay._id),
+  ]);
   const rowDtos = await toRowDtos(ctx, ownerId, rows);
   return {
+    canCopyYesterday: sourceRows.some((row) => row.status === confirmedStatus),
     dateJst: args.dateJst,
     day:
       day === null
@@ -26,7 +38,11 @@ export async function getDayPage(
             dateJst: day.dateJst,
             memo: day.memo ?? null,
           },
-    isFuture: isFutureDateJst(args.dateJst, args.todayJst),
+    kind: dayViewKind({
+      dateJst: args.dateJst,
+      hasLiveDay: day !== null,
+      todayJst: args.todayJst,
+    }),
     rows: rowDtos,
     shareMarkdown: formatShareMarkdown(rowDtos),
     volumeMinutes: confirmedVolumeMinutes(rowDtos),
