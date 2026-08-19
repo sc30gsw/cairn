@@ -188,6 +188,21 @@ test("確定記録をゴミ箱に入れると実績が減り、戻すと実績�
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 50 });
 });
 
+test("昨日の確定コピーで上書きした確定は実績から外れる", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  await addConfirmedRow(t, itemId, { dateJst: YESTERDAY, minutes: 25 });
+  await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
+
+  await t.mutation(api.mutations.rows.copyYesterdayConfirmed.copyYesterdayConfirmed, {
+    dateJst: TODAY,
+    todayJst: TODAY,
+  });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
+});
+
 test("最後の確定記録を消すと実施日数も減る", async () => {
   const t = owner();
   const itemId = await seedItemId(t);

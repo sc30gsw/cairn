@@ -853,6 +853,9 @@ test("コピーで上書きした確定は学習量から外れる", async () =>
   });
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const monday = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  const keptNames = monday.rows
+    .filter((row) => row.itemName !== "Distinction 2000")
+    .map((row) => row.itemName);
   const mondayDistinction = monday.rows.find((row) => row.itemName === "Distinction 2000");
   if (mondayDistinction === undefined) {
     throw new Error("月曜の Distinction がない");
@@ -871,51 +874,6 @@ test("コピーで上書きした確定は学習量から外れる", async () =>
   });
   const after = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   expect(after.volumeMinutes).toBe(0);
-  expect(after.rows.filter((row) => row.itemName === "Distinction 2000")).toEqual([
-    expect.objectContaining({
-      content: "昨日の Distinction",
-      minutes: 25,
-      status: "未着手",
-    }),
-  ]);
-});
-
-test("昨日の確定と同じ項目は消してコピーで上書きする", async () => {
-  const t = owner();
-  const sunday = "2026-08-16";
-  await t.mutation(api.mutations.days.open.open, { dateJst: sunday, todayJst: sunday });
-  const items = await t.query(api.queries.items.list.list, {});
-  const distinction = items.find((item) => item.name === "Distinction 2000");
-  if (distinction === undefined) {
-    throw new Error("Distinction 2000 がない");
-  }
-  const addedId = await t.mutation(api.mutations.rows.add.add, {
-    content: "昨日の Distinction",
-    dateJst: sunday,
-    itemId: distinction._id,
-    minutes: 25,
-    todayJst: sunday,
-  });
-  await t.mutation(api.mutations.rows.confirm.confirm, {
-    content: "昨日の Distinction",
-    minutes: 25,
-    rowId: addedId,
-  });
-  await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
-  const before = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
-  const keptNames = before.rows
-    .filter((row) => row.itemName !== "Distinction 2000")
-    .map((row) => row.itemName);
-  expect(before.rows.some((row) => row.itemName === "Distinction 2000")).toBe(true);
-  const copied = await t.mutation(
-    api.mutations.rows.copyYesterdayConfirmed.copyYesterdayConfirmed,
-    {
-      dateJst: MONDAY,
-      todayJst: MONDAY,
-    },
-  );
-  expect(copied).toBe(1);
-  const after = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   expect(after.rows.filter((row) => row.itemName === "Distinction 2000")).toEqual([
     expect.objectContaining({
       content: "昨日の Distinction",

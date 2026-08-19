@@ -32,6 +32,8 @@ export async function copyYesterdayConfirmed(
   const copiedItemIds = new Set(confirmed.map((row) => row.itemId));
   const overlapping = liveRows.filter((row) => copiedItemIds.has(row.itemId));
   if (overlapping.length > 0) {
+    //? 重ねた確定を消すので、書き込みの前後を実測して習得目標のカウンタを動かす(ADR-0007)。
+    //? 足すコピーは未着手なので、この包みの外に置く。
     await withMasteryProgressDelta(ctx, ownerId, { dateJst: args.dateJst }, async () => {
       await Promise.all(
         overlapping.map((row) => ctx.db.patch("rows", row._id, { deletedAt: Date.now() })),
