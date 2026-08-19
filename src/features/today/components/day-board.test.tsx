@@ -421,6 +421,27 @@ test("今日は学習日ピッカーと前の日があり、次の日と今日�
   expect(queryByRole("button", { name: "今日へ戻る" })).toBeNull();
 });
 
+test("今日で日が無いとこの日の記録はありません", () => {
+  const todayEmpty = {
+    ...day,
+    day: null,
+    kind: "todayEmpty",
+    rows: [],
+  } satisfies DayPage;
+  const { getByText } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={todayEmpty}
+      items={items}
+      presets={[]}
+      selectedPresetId={null}
+      todayJst="2026-08-17"
+      {...idleHandlers}
+    />,
+  );
+  expect(getByText("この日の記録はありません")).toBeDefined();
+});
+
 test("過去の空日は休養で、プリセット切替とコピーがある", () => {
   const restDay = {
     ...day,

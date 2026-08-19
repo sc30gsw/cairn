@@ -823,3 +823,63 @@ test("今月の未来のマスは休養ではない", async () => {
   });
   expect(weekBreakdown.byDay.find((entry) => entry.dateJst === FUTURE)?.isRest).toBe(false);
 });
+
+test("昨日に日が無いコピーは0件", async () => {
+  const t = owner();
+  const copied = await t.mutation(
+    api.mutations.rows.copyYesterdayConfirmed.copyYesterdayConfirmed,
+    {
+      dateJst: SATURDAY,
+      todayJst: MONDAY,
+    },
+  );
+  expect(copied).toBe(0);
+});
+
+test("昨日に確定が無いコピーは0件", async () => {
+  const t = owner();
+  await t.mutation(api.mutations.days.open.open, { dateJst: SATURDAY, todayJst: SATURDAY });
+  const copied = await t.mutation(
+    api.mutations.rows.copyYesterdayConfirmed.copyYesterdayConfirmed,
+    {
+      dateJst: "2026-08-16",
+      todayJst: MONDAY,
+    },
+  );
+  expect(copied).toBe(0);
+});
+
+test("他人のプリセットと空の雛形では切り替えられない", async () => {
+  const t = owner();
+  await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
+  const otherPresetId = await t.run(async (ctx) => {
+    return await ctx.db.insert("presets", {
+      lines: [],
+      name: "他人",
+      ownerId: "other-subject",
+      weekday: 9,
+    });
+  });
+  await expect(
+    t.mutation(api.mutations.rows.switchPreset.switchPreset, {
+      dateJst: SATURDAY,
+      presetId: otherPresetId,
+      todayJst: MONDAY,
+    }),
+  ).rejects.toThrow();
+  const emptyPresetId = await t.run(async (ctx) => {
+    return await ctx.db.insert("presets", {
+      lines: [],
+      name: "空",
+      ownerId: OWNER.subject,
+      weekday: 8,
+    });
+  });
+  await expect(
+    t.mutation(api.mutations.rows.switchPreset.switchPreset, {
+      dateJst: SATURDAY,
+      presetId: emptyPresetId,
+      todayJst: MONDAY,
+    }),
+  ).rejects.toThrow();
+});

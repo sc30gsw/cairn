@@ -9,6 +9,7 @@ import {
   Stack,
   Text,
   Title,
+  type ComboboxItem,
 } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { IconNotes } from "@tabler/icons-react";
@@ -73,7 +74,6 @@ type TodayPresetSelectProps = {
 
 type PastPresetSelectProps = {
   dateJst: DateJst;
-  isRest: boolean;
   onSwitchPreset: (presetId: PresetDto["_id"]) => void;
   presets: PresetDto[];
 };
@@ -82,7 +82,7 @@ export function weekdayPresetId(dateJst: DateJst, presets: PresetDto[]) {
   return presets.find((preset) => preset.weekday === weekdayFromDateJst(dateJst))?._id ?? null;
 }
 
-function presetSelectData(presets: PresetDto[]) {
+function presetSelectData(presets: PresetDto[]): ComboboxItem[] {
   return presets.map((preset) => ({ label: preset.name, value: preset._id }));
 }
 
@@ -117,7 +117,7 @@ function TodayPresetSelect({
   );
 }
 
-function PastPresetSelect({ dateJst, isRest, onSwitchPreset, presets }: PastPresetSelectProps) {
+function PastLivePresetSelect({ dateJst, onSwitchPreset, presets }: PastPresetSelectProps) {
   const defaultPresetId = weekdayPresetId(dateJst, presets);
   const [appliedPresetId, setAppliedPresetId] = useState<null | PresetId>(null);
 
@@ -132,8 +132,60 @@ function PastPresetSelect({ dateJst, isRest, onSwitchPreset, presets }: PastPres
         onSwitchPreset(presetId);
       })}
       placeholder="切り替える"
-      value={appliedPresetId ?? (isRest ? null : defaultPresetId)}
+      value={appliedPresetId ?? defaultPresetId}
     />
+  );
+}
+
+function PastRestPresetSelect({ onSwitchPreset, presets }: Omit<PastPresetSelectProps, "dateJst">) {
+  const [appliedPresetId, setAppliedPresetId] = useState<null | PresetId>(null);
+
+  return (
+    <Select
+      aria-label="プリセット切替"
+      data={presetSelectData(presets)}
+      label="この日の雛形"
+      onChange={onRequiredSelect((value) => {
+        const presetId = parsePresetId(value);
+        setAppliedPresetId(presetId);
+        onSwitchPreset(presetId);
+      })}
+      placeholder="切り替える"
+      value={appliedPresetId}
+    />
+  );
+}
+
+function DayPresetSwitcher({
+  dateJst,
+  isToday,
+  kind,
+  onSwitchPreset,
+  presets,
+  selectedPresetId,
+}: {
+  dateJst: DateJst;
+  isToday: boolean;
+  kind: DayPage["kind"];
+  onSwitchPreset: (presetId: PresetDto["_id"]) => void;
+  presets: PresetDto[];
+  selectedPresetId: null | PresetId;
+}) {
+  if (isToday) {
+    return (
+      <TodayPresetSelect
+        dateJst={dateJst}
+        onSwitchPreset={onSwitchPreset}
+        presets={presets}
+        selectedPresetId={selectedPresetId}
+      />
+    );
+  }
+  if (kind === "rest") {
+    return <PastRestPresetSelect onSwitchPreset={onSwitchPreset} presets={presets} />;
+  }
+  return (
+    <PastLivePresetSelect dateJst={dateJst} onSwitchPreset={onSwitchPreset} presets={presets} />
   );
 }
 
@@ -241,21 +293,14 @@ export function DayBoard({
           <Card>
             <Stack gap="sm">
               <Title order={3}>プリセット</Title>
-              {isToday ? (
-                <TodayPresetSelect
-                  dateJst={dateJst}
-                  onSwitchPreset={onSwitchPreset}
-                  presets={presets}
-                  selectedPresetId={selectedPresetId}
-                />
-              ) : (
-                <PastPresetSelect
-                  dateJst={dateJst}
-                  isRest={day.kind === "rest"}
-                  onSwitchPreset={onSwitchPreset}
-                  presets={presets}
-                />
-              )}
+              <DayPresetSwitcher
+                dateJst={dateJst}
+                isToday={isToday}
+                kind={day.kind}
+                onSwitchPreset={onSwitchPreset}
+                presets={presets}
+                selectedPresetId={selectedPresetId}
+              />
             </Stack>
           </Card>
         ) : null}

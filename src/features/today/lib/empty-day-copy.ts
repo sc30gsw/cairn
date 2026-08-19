@@ -1,6 +1,6 @@
-import type { DayViewKind } from "~domain/dayView";
+import type { DayPage } from "~/features/today/types/day";
 
-export function emptyDayCopy(kind: DayViewKind): { description: string; title: string } {
+export function emptyDayCopy(kind: DayPage["kind"]): { description: string; title: string } {
   if (kind === "unrecorded") {
     return {
       description: "まだ来ていない日です。記録は作れません。",

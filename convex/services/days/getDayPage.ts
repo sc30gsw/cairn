@@ -1,5 +1,6 @@
 import type { QueryCtx } from "../../_generated/server";
 import { dayViewKind } from "../../lib/dayView";
+import { STATUSES } from "../../lib/domain";
 import { addDaysJst, isFutureDateJst } from "../../lib/jst";
 import { formatShareMarkdown } from "../../lib/share";
 import type { DayPageDto } from "../../lib/validators";
@@ -13,6 +14,7 @@ export async function getDayPage(
   ownerId: string,
   args: { dateJst: string; todayJst: string },
 ): Promise<DayPageDto> {
+  const [confirmedStatus] = STATUSES;
   const unrecorded = isFutureDateJst(args.dateJst, args.todayJst);
   const yesterday = addDaysJst(args.dateJst, -1);
   const [day, sourceDay] = await Promise.all([
@@ -25,7 +27,7 @@ export async function getDayPage(
   ]);
   const rowDtos = await toRowDtos(ctx, ownerId, rows);
   return {
-    canCopyYesterday: sourceRows.some((row) => row.status === "確定"),
+    canCopyYesterday: sourceRows.some((row) => row.status === confirmedStatus),
     dateJst: args.dateJst,
     day:
       day === null

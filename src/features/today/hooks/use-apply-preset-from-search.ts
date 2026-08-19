@@ -42,8 +42,7 @@ export function useApplyPresetFromSearch(
   return {
     appliedPresetRef,
     defaultPresetId,
-    selectedPresetId:
-      presetFromSearch === undefined ? null : (parsePresetId(presetFromSearch) as PresetId),
+    selectedPresetId: presetFromSearch === undefined ? null : parsePresetId(presetFromSearch),
     switchPreset,
   };
 }

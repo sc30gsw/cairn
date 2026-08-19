@@ -1,4 +1,5 @@
 import type { MutationCtx } from "../../_generated/server";
+import { STATUSES } from "../../lib/domain";
 import { addDaysJst } from "../../lib/jst";
 import { getLiveDay } from "../days/getLiveDay";
 import { liveRowsForDay } from "../days/liveRowsForDay";
@@ -18,8 +19,9 @@ export async function copyYesterdayConfirmed(
   if (sourceDay === null) {
     return 0;
   }
+  const [confirmedStatus, pendingStatus] = STATUSES;
   const confirmed = (await liveRowsForDay(ctx, sourceDay._id)).filter(
-    (row) => row.status === "確定",
+    (row) => row.status === confirmedStatus,
   );
   if (confirmed.length === 0) {
     return 0;
@@ -37,7 +39,7 @@ export async function copyYesterdayConfirmed(
         minutes: row.minutes,
         ownerId,
         sortOrder: startOrder + 1 + index,
-        status: "未着手",
+        status: pendingStatus,
       }),
     ),
   );

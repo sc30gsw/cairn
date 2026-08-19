@@ -25,3 +25,7 @@ test("日がある過去は休養ではない", () => {
   expect(isRestCalendarDate("2026-08-15", TODAY, true)).toBe(false);
   expect(dayViewKind({ dateJst: "2026-08-15", hasLiveDay: true, todayJst: TODAY })).toBe("live");
 });
+
+test("日がある今日は live", () => {
+  expect(dayViewKind({ dateJst: TODAY, hasLiveDay: true, todayJst: TODAY })).toBe("live");
+});
