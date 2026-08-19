@@ -10,10 +10,10 @@ export async function openDay(
   ownerId: string,
   args: { dateJst: string; todayJst: string },
 ): Promise<{ applied: boolean }> {
-  await ensureCatalog(ctx, ownerId);
   if (args.dateJst !== args.todayJst) {
     return { applied: false };
   }
+  await ensureCatalog(ctx, ownerId);
   const existing = await getDayByDate(ctx, ownerId, args.dateJst);
   if (existing !== null && existing.deletedAt !== undefined) {
     return { applied: false };

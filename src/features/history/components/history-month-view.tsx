@@ -112,7 +112,7 @@ export function HistoryMonthView({
           />
           <ScheduleHeader.Today
             aria-label={SCHEDULE_LABELS_JA.today}
-            onClick={() => setDate(dayjs().format("YYYY-MM-DD"))}
+            onClick={() => setDate(todayJst ?? dayjs().format("YYYY-MM-DD"))}
           />
         </ScheduleHeader>
 
