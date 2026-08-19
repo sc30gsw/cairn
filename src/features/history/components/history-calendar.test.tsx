@@ -89,6 +89,7 @@ test("MonthView に確定した学習内容と分数が見える", () => {
       month={new Date("2026-08-17T12:00:00+09:00")}
       onDayClick={vi.fn()}
       onMonthChange={vi.fn()}
+      todayJst="2026-08-17"
     />,
   );
   expect(getByText("Distinction 2000")).toBeDefined();

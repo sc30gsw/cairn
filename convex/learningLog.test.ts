@@ -101,7 +101,7 @@ test("未来の日を開けても行は作られない", async () => {
   expect(opened).toEqual({ applied: false });
   const day = await t.query(api.queries.days.get.get, { dateJst: FUTURE, todayJst: SATURDAY });
   expect(day.rows).toEqual([]);
-  expect(day.isFuture).toBe(true);
+  expect(day.kind).toBe("unrecorded");
 });
 
 test("確定とスキップで学習量が変わる。未認証は throw", async () => {

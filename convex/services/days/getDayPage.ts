@@ -1,4 +1,5 @@
 import type { QueryCtx } from "../../_generated/server";
+import { dayViewKind } from "../../lib/dayView";
 import { addDaysJst, isFutureDateJst } from "../../lib/jst";
 import { formatShareMarkdown } from "../../lib/share";
 import type { DayPageDto } from "../../lib/validators";
@@ -12,11 +13,11 @@ export async function getDayPage(
   ownerId: string,
   args: { dateJst: string; todayJst: string },
 ): Promise<DayPageDto> {
-  const isFuture = isFutureDateJst(args.dateJst, args.todayJst);
+  const unrecorded = isFutureDateJst(args.dateJst, args.todayJst);
   const yesterday = addDaysJst(args.dateJst, -1);
   const [day, sourceDay] = await Promise.all([
     getLiveDay(ctx, ownerId, args.dateJst),
-    isFuture ? Promise.resolve(null) : getLiveDay(ctx, ownerId, yesterday),
+    unrecorded ? Promise.resolve(null) : getLiveDay(ctx, ownerId, yesterday),
   ]);
   const [rows, sourceRows] = await Promise.all([
     day === null ? Promise.resolve([]) : liveRowsForDay(ctx, day._id),
@@ -35,7 +36,11 @@ export async function getDayPage(
             dateJst: day.dateJst,
             memo: day.memo ?? null,
           },
-    isFuture,
+    kind: dayViewKind({
+      dateJst: args.dateJst,
+      hasLiveDay: day !== null,
+      todayJst: args.todayJst,
+    }),
     rows: rowDtos,
     shareMarkdown: formatShareMarkdown(rowDtos),
     volumeMinutes: confirmedVolumeMinutes(rowDtos),

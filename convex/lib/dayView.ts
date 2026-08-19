@@ -1,16 +1,8 @@
-import { compareDateJst, isFutureDateJst } from "./jst";
+import { isFutureDateJst } from "./jst";
 
 export const DAY_VIEW_KINDS = ["live", "todayEmpty", "rest", "unrecorded"] as const;
 
 export type DayViewKind = (typeof DAY_VIEW_KINDS)[number];
-
-export function isRestCalendarDate(
-  dateJst: string,
-  todayJst: string,
-  hasLiveDay: boolean,
-): boolean {
-  return !hasLiveDay && compareDateJst(dateJst, todayJst) < 0;
-}
 
 export function dayViewKind(args: {
   dateJst: string;
@@ -27,4 +19,12 @@ export function dayViewKind(args: {
     return "todayEmpty";
   }
   return "rest";
+}
+
+export function isRestCalendarDate(
+  dateJst: string,
+  todayJst: string,
+  hasLiveDay: boolean,
+): boolean {
+  return dayViewKind({ dateJst, hasLiveDay, todayJst }) === "rest";
 }

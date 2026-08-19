@@ -44,7 +44,7 @@ const day = {
     dateJst: "2026-08-17",
     memo: null,
   },
-  isFuture: false,
+  kind: "live",
   rows: [row],
   shareMarkdown: "",
   volumeMinutes: 0,
@@ -347,7 +347,7 @@ test("プリセットを選ぶと表示名が変わる", async () => {
 });
 
 test("未来の日は記録を足せない", () => {
-  const future = { ...day, isFuture: true } satisfies DayPage;
+  const future = { ...day, kind: "unrecorded" } satisfies DayPage;
   const { queryByRole } = renderWithMantine(
     <DayBoard
       dateJst="2026-08-20"
@@ -426,6 +426,7 @@ test("過去の空日は休養で、プリセット切替とコピーがある",
     ...day,
     dateJst: "2026-08-15",
     day: null,
+    kind: "rest",
     rows: [],
   } satisfies DayPage;
   const { getByRole, getByText } = renderWithMantine(
@@ -453,7 +454,7 @@ test("未来の空日は未記録で足せない", () => {
     ...day,
     dateJst: "2026-08-20",
     day: null,
-    isFuture: true,
+    kind: "unrecorded",
     rows: [],
   } satisfies DayPage;
   const { getByText, queryByRole } = renderWithMantine(

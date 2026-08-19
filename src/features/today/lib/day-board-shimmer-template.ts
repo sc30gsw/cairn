@@ -39,7 +39,7 @@ export function dayBoardShimmerDay(dateJst: DateJst): DayPage {
       dateJst,
       memo: null,
     },
-    isFuture: false,
+    kind: "live",
     rows: [dayBoardShimmerRow, dayBoardShimmerRow2],
     shareMarkdown: "",
     volumeMinutes: 30,

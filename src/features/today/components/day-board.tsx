@@ -13,7 +13,6 @@ import {
 import { DatePickerInput } from "@mantine/dates";
 import { IconNotes } from "@tabler/icons-react";
 import { useNavigate } from "@tanstack/react-router";
-import { dayViewKind } from "~domain/dayView";
 import {
   addDaysJst,
   isDateJst,
@@ -124,9 +123,9 @@ export function DayBoard({
   todayJst,
 }: DayBoardProps) {
   const navigate = useNavigate();
-  const canEdit = !day.isFuture;
+  const canEdit = day.kind !== "unrecorded";
   const isToday = dateJst === todayJst;
-  const emptyCopy = emptyDayCopy(dayViewKind({ dateJst, hasLiveDay: day.day !== null, todayJst }));
+  const emptyCopy = emptyDayCopy(day.kind);
 
   const goToDate = (next: string) => {
     if (!isDateJst(next) || isFutureDateJst(next, todayJst)) {

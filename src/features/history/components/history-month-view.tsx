@@ -18,11 +18,7 @@ import {
 } from "~/features/history/lib/month-schedule-events";
 import { SCHEDULE_LABELS_JA } from "~/features/history/lib/schedule-labels";
 import type { MonthEvent } from "~/features/history/types/history";
-import {
-  calendarDayProps,
-  calendarDayStyleClasses,
-  historyCalendarDayProps,
-} from "~/lib/calendar-day-style";
+import { calendarDayStyleClasses, historyCalendarDayProps } from "~/lib/calendar-day-style";
 
 import classes from "~/features/history/components/history-month-view.module.css";
 
@@ -31,7 +27,7 @@ type HistoryMonthViewProps = {
   month: Date;
   onDayClick: (dateJst: DateJst) => void;
   onMonthChange: (month: Date) => void;
-  todayJst?: DateJst;
+  todayJst: DateJst;
 };
 
 function toDateString(month: Date): DateStringValue {
@@ -57,10 +53,10 @@ export function HistoryMonthView({
   const confirmedEvents = confirmedMonthEvents(events);
   const scheduleEvents = toMonthScheduleEvents(confirmedEvents);
   const minutesByEventId = monthEventMinutesById(confirmedEvents);
-  const nextDisabled = todayJst !== undefined && yearMonthOf(date) >= yearMonthOf(todayJst);
+  const nextDisabled = yearMonthOf(date) >= yearMonthOf(todayJst);
 
   const setDate = (value: string) => {
-    if (todayJst !== undefined && yearMonthOf(value) > yearMonthOf(todayJst)) {
+    if (yearMonthOf(value) > yearMonthOf(todayJst)) {
       return;
     }
     onMonthChange(toMonthDate(value));
@@ -71,7 +67,7 @@ export function HistoryMonthView({
   };
 
   const handleDayClick = (day: DateStringValue) => {
-    if (todayJst !== undefined && isFutureDateJst(day, todayJst)) {
+    if (isFutureDateJst(day, todayJst)) {
       return;
     }
     onDayClick(day);
@@ -112,7 +108,7 @@ export function HistoryMonthView({
           />
           <ScheduleHeader.Today
             aria-label={SCHEDULE_LABELS_JA.today}
-            onClick={() => setDate(todayJst ?? dayjs().format("YYYY-MM-DD"))}
+            onClick={() => setDate(todayJst)}
           />
         </ScheduleHeader>
 
@@ -127,11 +123,7 @@ export function HistoryMonthView({
             date={date}
             events={scheduleEvents}
             firstDayOfWeek={1}
-            getDayProps={(day) =>
-              todayJst === undefined
-                ? calendarDayProps(day)
-                : historyCalendarDayProps(day, todayJst)
-            }
+            getDayProps={(day) => historyCalendarDayProps(day, todayJst)}
             labels={SCHEDULE_LABELS_JA}
             locale="ja"
             maxEventsPerDay={2}
