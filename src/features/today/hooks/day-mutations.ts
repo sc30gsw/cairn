@@ -17,6 +17,10 @@ export function useRemoveRow() {
   return useConvexMutation(api.mutations.rows.remove.remove);
 }
 
+export function useCopyYesterdayConfirmed() {
+  return useConvexMutation(api.mutations.rows.copyYesterdayConfirmed.copyYesterdayConfirmed);
+}
+
 export function useSwitchPreset() {
   return useConvexMutation(api.mutations.rows.switchPreset.switchPreset);
 }

@@ -1,13 +1,11 @@
 import { convexQuery } from "@convex-dev/react-query";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import type { DateJst } from "~domain/jst";
-import { todayJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
-export function useOpenAndLoadDay(dateJst: DateJst) {
-  const today = todayJst();
+export function useOpenAndLoadDay(dateJst: DateJst, today: DateJst) {
   const open = useConvexMutation(api.mutations.days.open.open);
 
   // React throws away hook state when a component suspends before it mounts, so useState
@@ -15,7 +13,9 @@ export function useOpenAndLoadDay(dateJst: DateJst) {
   useSuspenseQuery({
     gcTime: Number.POSITIVE_INFINITY,
     queryFn: async () => {
-      await open.mutateAsync({ dateJst, todayJst: today });
+      if (dateJst === today) {
+        await open.mutateAsync({ dateJst, todayJst: today });
+      }
       return null;
     },
     queryKey: ["days.open", dateJst, today],

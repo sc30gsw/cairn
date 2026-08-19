@@ -1,0 +1,12 @@
+.learningDateInput {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: var(--mantine-h1-font-size);
+  font-weight: 700;
+  min-height: auto;
+  padding-inline: 0;
+  text-decoration: underline wavy var(--mantine-color-orange-4);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 10px;
+}

@@ -149,12 +149,47 @@ test("年・月選択で onMonthChange が呼ばれる", () => {
       month={new Date("2026-08-17T12:00:00+09:00")}
       onDayClick={vi.fn()}
       onMonthChange={onMonthChange}
+      todayJst="2026-09-01"
     />,
   );
 
   getByRole("button", { name: "次" }).click();
   expect(onMonthChange).toHaveBeenCalledTimes(1);
   expect(onMonthChange.mock.calls[0]?.[0]?.getMonth()).toBe(8);
+});
+
+test("閲覧月が今日の月なら次へは押せない", () => {
+  const onMonthChange = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <HistoryMonthView
+      events={[]}
+      month={new Date("2026-08-17T12:00:00+09:00")}
+      onDayClick={vi.fn()}
+      onMonthChange={onMonthChange}
+      todayJst="2026-08-17"
+    />,
+  );
+
+  const next = getByRole("button", { name: "次" });
+  expect((next as HTMLButtonElement).disabled).toBe(true);
+  next.click();
+  expect(onMonthChange).not.toHaveBeenCalled();
+});
+
+test("未来の日をクリックしても分析へ進まない", () => {
+  const onDayClick = vi.fn();
+  const { getByText } = renderWithMantine(
+    <HistoryMonthView
+      events={[]}
+      month={new Date("2026-08-17T12:00:00+09:00")}
+      onDayClick={onDayClick}
+      onMonthChange={vi.fn()}
+      todayJst="2026-08-17"
+    />,
+  );
+
+  getByText("20").click();
+  expect(onDayClick).not.toHaveBeenCalled();
 });
 
 test("週の行がタイトルとステータスで見える", () => {

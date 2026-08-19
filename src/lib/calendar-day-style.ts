@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import type { DateJst } from "~domain/jst";
+import { isFutureDateJst } from "~domain/jst";
 
 import { holidayName } from "~/lib/holiday";
 
@@ -36,5 +37,22 @@ export function calendarDayProps(
   return {
     ...(className ? { className } : {}),
     ...(holiday ? { title: holiday } : {}),
+  };
+}
+
+export function historyCalendarDayProps(
+  dateJst: DateJst | string,
+  todayJst: DateJst | string,
+): { className?: string; disabled?: boolean; title?: string } {
+  const dateKey = dateJst.slice(0, 10);
+  const todayKey = todayJst.slice(0, 10);
+  const base = calendarDayProps(dateKey, todayKey);
+  if (!isFutureDateJst(dateKey, todayKey)) {
+    return base;
+  }
+  return {
+    className: [base.className, classes.unrecordedDay].filter(Boolean).join(" "),
+    disabled: true,
+    title: "未記録",
   };
 }

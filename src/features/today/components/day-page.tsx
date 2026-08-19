@@ -8,6 +8,7 @@ import { DayPagePending } from "~/features/today/components/day-page-pending";
 import {
   useAddRow,
   useConfirmRow,
+  useCopyYesterdayConfirmed,
   useRemoveDay,
   useRemoveRow,
   useSetDayCondition,
@@ -53,7 +54,7 @@ type DayPageCoreProps = {
 function DayPageCore({ dateJst, presetFromSearch }: DayPageCoreProps) {
   const today = todayJst();
   const isToday = dateJst === today;
-  const { data: day } = useOpenAndLoadDay(dateJst);
+  const { data: day } = useOpenAndLoadDay(dateJst, today);
   const { data: items } = useItemsList();
   const { data: presets } = usePresetsList();
   const confirm = useConfirmRow();
@@ -63,6 +64,7 @@ function DayPageCore({ dateJst, presetFromSearch }: DayPageCoreProps) {
   const setCondition = useSetDayCondition();
   const setMemo = useSetDayMemo();
   const removeDay = useRemoveDay();
+  const copyYesterday = useCopyYesterdayConfirmed();
   const { appliedPresetRef, selectedPresetId, switchPreset } = useApplyPresetFromSearch(
     dateJst,
     presetFromSearch,
@@ -73,7 +75,6 @@ function DayPageCore({ dateJst, presetFromSearch }: DayPageCoreProps) {
     <DayBoard
       dateJst={dateJst}
       day={day}
-      isToday={isToday}
       items={items}
       onAddRow={(input) => {
         void runMutation(() => add.mutateAsync({ ...input, dateJst, todayJst: today }), {
@@ -84,6 +85,12 @@ function DayPageCore({ dateJst, presetFromSearch }: DayPageCoreProps) {
         void runMutation(() => confirm.mutateAsync(input), {
           successMessage: "記録を確定しました",
         });
+      }}
+      onCopyYesterday={() => {
+        void runMutation(
+          () => copyYesterday.mutateAsync({ dateJst, todayJst: today }),
+          { successMessage: "昨日の確定をコピーしました" },
+        );
       }}
       onRemoveDay={() => {
         void runMutation(() => removeDay.mutateAsync({ dateJst }), {
@@ -118,6 +125,7 @@ function DayPageCore({ dateJst, presetFromSearch }: DayPageCoreProps) {
       }}
       presets={presets}
       selectedPresetId={selectedPresetId}
+      todayJst={today}
     />
   );
 }
