@@ -5,6 +5,7 @@ import { getLiveDay } from "../days/getLiveDay";
 import { liveRowsForDay } from "../days/liveRowsForDay";
 import { requireEditableDay } from "../days/requireEditableDay";
 import { requireLiveDay } from "../days/requireLiveDay";
+import { withMasteryProgressDelta } from "../goals/withMasteryProgressDelta";
 
 export async function copyYesterdayConfirmed(
   ctx: MutationCtx,
@@ -28,7 +29,17 @@ export async function copyYesterdayConfirmed(
   }
   const day = existing ?? (await requireLiveDay(ctx, ownerId, args.dateJst));
   const liveRows = await liveRowsForDay(ctx, day._id);
-  const startOrder = liveRows.reduce((max, row) => Math.max(max, row.sortOrder), -1);
+  const copiedItemIds = new Set(confirmed.map((row) => row.itemId));
+  const overlapping = liveRows.filter((row) => copiedItemIds.has(row.itemId));
+  if (overlapping.length > 0) {
+    await withMasteryProgressDelta(ctx, ownerId, { dateJst: args.dateJst }, async () => {
+      await Promise.all(
+        overlapping.map((row) => ctx.db.patch("rows", row._id, { deletedAt: Date.now() })),
+      );
+    });
+  }
+  const kept = liveRows.filter((row) => !copiedItemIds.has(row.itemId));
+  const startOrder = kept.reduce((max, row) => Math.max(max, row.sortOrder), -1);
   await Promise.all(
     confirmed.map((row, index) =>
       ctx.db.insert("rows", {
