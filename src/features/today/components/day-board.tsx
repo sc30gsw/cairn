@@ -1,4 +1,5 @@
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -61,6 +62,7 @@ type DayBoardProps = {
   onSkip: (rowId: SkipRowInput["rowId"]) => void;
   onSwitchPreset: (presetId: PresetDto["_id"]) => void;
   presets: PresetDto[];
+  remainderMessage?: string | null;
   selectedPresetId: null | PresetId;
   todayJst: DateJst;
 };
@@ -135,6 +137,7 @@ export function DayBoard({
   onSkip,
   onSwitchPreset,
   presets,
+  remainderMessage = null,
   selectedPresetId,
   todayJst,
 }: DayBoardProps) {
@@ -281,6 +284,11 @@ export function DayBoard({
                 />
               </Box>
             ) : null}
+            {remainderMessage === null ? null : (
+              <Alert color="blue" title="週間ターゲット">
+                {remainderMessage}
+              </Alert>
+            )}
             {canEdit ? (
               <Button disabled={!day.canCopyYesterday} onClick={onCopyYesterday} variant="light">
                 昨日の確定をコピー

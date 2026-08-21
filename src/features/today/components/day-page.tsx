@@ -1,6 +1,6 @@
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import type { DateJst } from "~domain/jst";
-import { todayJst } from "~domain/jst";
+import { mondayOfWeek, todayJst } from "~domain/jst";
 
 import type { PresetId } from "~/features/catalog/types/item";
 import { DayBoard } from "~/features/today/components/day-board";
@@ -15,10 +15,15 @@ import {
   useSetDayMemo,
   useSkipRow,
 } from "~/features/today/hooks/day-mutations";
-import { useItemsList, usePresetsList } from "~/features/today/hooks/day-queries";
+import {
+  useItemsList,
+  usePresetsList,
+  useTargetsWithProgress,
+} from "~/features/today/hooks/day-queries";
 import { useApplyPresetFromSearch } from "~/features/today/hooks/use-apply-preset-from-search";
 import { useOpenAndLoadDay } from "~/features/today/hooks/use-open-and-load-day";
 import { datedDayRoute, indexDayRoute } from "~/features/today/lib/day-route-api";
+import { targetRemainder, targetRemainderMessage } from "~/features/today/lib/target-remainder";
 import type { DaySearch } from "~/features/today/schemas/day-search-schema";
 import { runMutation } from "~/lib/run-mutation";
 
@@ -57,6 +62,8 @@ function DayPageCore({ dateJst, presetFromSearch }: DayPageCoreProps) {
   const { data: day } = useOpenAndLoadDay(dateJst, today);
   const { data: items } = useItemsList();
   const { data: presets } = usePresetsList();
+  const { data: targets } = useTargetsWithProgress(mondayOfWeek(today));
+  const [confirmedCategory, setConfirmedCategory] = useState<string | null>(null);
   const confirm = useConfirmRow();
   const skip = useSkipRow();
   const add = useAddRow();
@@ -71,6 +78,11 @@ function DayPageCore({ dateJst, presetFromSearch }: DayPageCoreProps) {
     isToday,
   );
 
+  const remainder =
+    confirmedCategory === null || mondayOfWeek(dateJst) !== mondayOfWeek(today)
+      ? null
+      : targetRemainder(targets, confirmedCategory);
+
   return (
     <DayBoard
       dateJst={dateJst}
@@ -82,9 +94,18 @@ function DayPageCore({ dateJst, presetFromSearch }: DayPageCoreProps) {
         });
       }}
       onConfirm={(input) => {
-        void runMutation(() => confirm.mutateAsync(input), {
-          successMessage: "記録を確定しました",
-        });
+        const row = day.rows.find((entry) => entry._id === input.rowId);
+        void runMutation(
+          async () => {
+            await confirm.mutateAsync(input);
+            if (row !== undefined) {
+              setConfirmedCategory(row.category);
+            }
+          },
+          {
+            successMessage: "記録を確定しました",
+          },
+        );
       }}
       onCopyYesterday={() => {
         void runMutation(() => copyYesterday.mutateAsync({ dateJst, todayJst: today }), {
@@ -123,6 +144,7 @@ function DayPageCore({ dateJst, presetFromSearch }: DayPageCoreProps) {
         });
       }}
       presets={presets}
+      remainderMessage={remainder === null ? null : targetRemainderMessage(remainder)}
       selectedPresetId={selectedPresetId}
       todayJst={today}
     />

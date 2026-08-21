@@ -10,3 +10,9 @@ export function usePresetsList() {
 export function useItemsList() {
   return useSuspenseQuery(convexQuery(api.queries.items.list.list, {}));
 }
+
+export function useTargetsWithProgress(weekStartJst: string) {
+  return useSuspenseQuery(
+    convexQuery(api.queries.targets.listWithProgress.listWithProgress, { weekStartJst }),
+  );
+}
