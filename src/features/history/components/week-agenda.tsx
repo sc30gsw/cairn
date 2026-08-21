@@ -1,9 +1,16 @@
 import { Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { groupBy, prop } from "remeda";
+import type { Condition } from "~domain/conditions";
 import { addDaysJst, type DateJst } from "~domain/jst";
 
 import { RECORD_STATUS_UI } from "~/features/history/lib/record-status-label";
 import type { WeekEvent, WeekPage } from "~/features/history/types/history";
+
+const CONDITION_BADGE_COLOR = {
+  崩れた: "red",
+  普通: "blue",
+  好調: "teal",
+} as const satisfies Record<Condition, string>;
 
 const DATE_HEADER_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
   day: "numeric",
@@ -68,6 +75,7 @@ function WeekEventRow({ event }: { event: WeekEvent }) {
 
 export function WeekAgenda({ week }: { week: WeekPage }) {
   const eventsByDate = groupBy(week.events, prop("dateJst"));
+  const conditionByDate = new Map(week.days.map((day) => [day.dateJst, day.condition] as const));
 
   return (
     <Card>
@@ -79,11 +87,19 @@ export function WeekAgenda({ week }: { week: WeekPage }) {
         <Stack gap="lg" mt="lg">
           {weekDates(week.weekStart).map((dateJst) => {
             const dayEvents = eventsByDate[dateJst] ?? [];
+            const condition = conditionByDate.get(dateJst);
             return (
               <Stack gap="xs" key={dateJst}>
-                <Text fw={600} size="sm">
-                  {formatDateHeader(dateJst)}
-                </Text>
+                <Group gap="xs">
+                  <Text fw={600} size="sm">
+                    {formatDateHeader(dateJst)}
+                  </Text>
+                  {condition === null || condition === undefined ? null : (
+                    <Badge color={CONDITION_BADGE_COLOR[condition]} size="sm" variant="light">
+                      {condition}
+                    </Badge>
+                  )}
+                </Group>
                 {dayEvents.length === 0 ? (
                   <Text c="dimmed" pl="sm" size="sm">
                     記録なし

@@ -4,9 +4,11 @@ import type { Doc } from "../../_generated/dataModel";
 import type { QueryCtx } from "../../_generated/server";
 import { loadCatalog } from "../../lib/catalogLoader";
 import { categoryFields } from "../../lib/categoryFields";
+import type { Condition } from "../../lib/conditions";
 import { isRestCalendarDate } from "../../lib/dayView";
 import {
   aggregateBreakdownRows,
+  aggregateByCondition,
   buildDayBreakdown,
   buildWeekBreakdown,
 } from "../../lib/historyBreakdown";
@@ -41,13 +43,26 @@ export function buildMinutesByDate(
   return mapValues(groupBy(liveRows(rows, liveDayDates), prop("dateJst")), confirmedVolumeMinutes);
 }
 
+export function buildConditionByDate(days: Doc<"days">[]): Record<string, Condition | null> {
+  const map: Record<string, Condition | null> = {};
+  for (const day of days) {
+    if (day.deletedAt !== undefined) {
+      continue;
+    }
+    map[day.dateJst] = day.condition ?? null;
+  }
+  return map;
+}
+
 export function buildHeatmapDays(
   dates: readonly string[],
   todayJst: string,
   liveDayDates: ReadonlySet<string>,
   minutesByDate: Readonly<Record<string, number>>,
+  conditionByDate: Readonly<Record<string, Condition | null>>,
 ) {
   return dates.map((dateJst) => ({
+    condition: conditionByDate[dateJst] ?? null,
     dateJst,
     isRest: isRestCalendarDate(dateJst, todayJst, liveDayDates.has(dateJst)),
     minutes: minutesByDate[dateJst] ?? 0,
@@ -75,8 +90,15 @@ export async function computeYearHeatmap(ctx: QueryCtx, ownerId: string, todayJs
   ]);
   const liveDayDates = liveDayDatesFrom(days);
   const minutesByDate = buildMinutesByDate(rows, liveDayDates);
+  const conditionByDate = buildConditionByDate(days);
   return {
-    days: buildHeatmapDays(calendarDatesFromTo(start, end), todayJst, liveDayDates, minutesByDate),
+    days: buildHeatmapDays(
+      calendarDatesFromTo(start, end),
+      todayJst,
+      liveDayDates,
+      minutesByDate,
+      conditionByDate,
+    ),
     endDate: end,
     startDate: start,
   };
@@ -93,6 +115,7 @@ export async function computeMonthBreakdown(
   if (start === undefined || end === undefined) {
     return {
       byCategory: [],
+      byCondition: [],
       confirmedMinutes: 0,
       days: [],
       events: [],
@@ -142,10 +165,12 @@ export async function computeMonthBreakdown(
     };
   });
   const minutesByDate = buildMinutesByDate(rows, liveDayDates);
+  const conditionByDate = buildConditionByDate(days);
   return {
     byCategory: aggregated.byCategory,
+    byCondition: aggregateByCondition(liveRowsInMonth, conditionByDate),
     confirmedMinutes: aggregated.confirmedMinutes,
-    days: buildHeatmapDays(dates, args.todayJst, liveDayDates, minutesByDate),
+    days: buildHeatmapDays(dates, args.todayJst, liveDayDates, minutesByDate, conditionByDate),
     events,
     rows: aggregated.rows,
     skippedMinutes: aggregated.skippedMinutes,
@@ -160,23 +185,27 @@ export async function computeWeekPage(
   const weekStart = mondayOfWeek(args.dateJst);
   const weekEnd = addDaysJst(weekStart, 6);
   const weekDates = Array.from({ length: 7 }, (_, offset) => addDaysJst(weekStart, offset));
+  const lookbackStart = addDaysJst(weekStart, -6);
   const [rows, days, catalog] = await Promise.all([
     ctx.db
       .query("rows")
       .withIndex("by_owner_and_date", (q) =>
-        q.eq("ownerId", ownerId).gte("dateJst", weekStart).lte("dateJst", weekEnd),
+        q.eq("ownerId", ownerId).gte("dateJst", lookbackStart).lte("dateJst", weekEnd),
       )
       .collect(),
     ctx.db
       .query("days")
       .withIndex("by_owner_and_date", (q) =>
-        q.eq("ownerId", ownerId).gte("dateJst", weekStart).lte("dateJst", weekEnd),
+        q.eq("ownerId", ownerId).gte("dateJst", lookbackStart).lte("dateJst", weekEnd),
       )
       .collect(),
     loadCatalog(ctx, ownerId),
   ]);
   const liveDayDates = liveDayDatesFrom(days);
-  const liveWeekRows = liveRows(rows, liveDayDates);
+  const liveWeekRows = liveRows(
+    rows.filter((row) => row.dateJst >= weekStart && row.dateJst <= weekEnd),
+    liveDayDates,
+  );
   const events = liveWeekRows.map((row) => {
     const item = catalog.itemById.get(row.itemId);
     const { category } = categoryFields(item, catalog.categoryById);
@@ -189,7 +218,10 @@ export async function computeWeekPage(
       title: item?.name ?? "不明",
     };
   });
+  const minutesByDate = buildMinutesByDate(rows, liveDayDates);
+  const conditionByDate = buildConditionByDate(days);
   return {
+    days: buildHeatmapDays(weekDates, args.todayJst, liveDayDates, minutesByDate, conditionByDate),
     events,
     volumeMinutes: confirmedVolumeMinutes(liveWeekRows),
     weekBreakdown: buildWeekBreakdown(
@@ -201,6 +233,7 @@ export async function computeWeekPage(
       liveDayDates,
       catalog.itemById,
       catalog.categoryById,
+      conditionByDate,
     ),
     weekEnd,
     weekStart,

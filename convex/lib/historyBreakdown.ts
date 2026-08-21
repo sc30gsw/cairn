@@ -2,8 +2,17 @@ import { groupBy, prop, sumBy } from "remeda";
 
 import type { Doc, Id } from "../_generated/dataModel";
 import { categoryFields } from "./categoryFields";
+import type { Condition } from "./conditions";
+import { CONDITIONS } from "./conditions";
 import { isRestCalendarDate } from "./dayView";
-import type { BreakdownRow, CategoryBreakdown, DayBreakdown, WeekBreakdown } from "./validators";
+import type {
+  BreakdownRow,
+  CategoryBreakdown,
+  ConditionVolume,
+  ConditionVolumeKey,
+  DayBreakdown,
+  WeekBreakdown,
+} from "./validators";
 import { confirmedVolumeMinutes, type VolumeRow } from "./volume";
 
 export type { BreakdownRow, CategoryBreakdown, DayBreakdown, WeekBreakdown } from "./validators";
@@ -74,6 +83,38 @@ function aggregateByCategory(
     );
 }
 
+const CONDITION_VOLUME_ORDER = [
+  ...CONDITIONS,
+  "未設定",
+] as const satisfies readonly ConditionVolumeKey[];
+
+type ConditionVolumeRow = Pick<VolumeRow, "minutes" | "status"> & { dateJst: string };
+
+export function aggregateByCondition(
+  rows: readonly ConditionVolumeRow[],
+  conditionByDate: Readonly<Record<string, Condition | null | undefined>>,
+): ConditionVolume[] {
+  const buckets: Record<ConditionVolumeKey, number> = {
+    未設定: 0,
+    崩れた: 0,
+    普通: 0,
+    好調: 0,
+  };
+
+  for (const row of rows) {
+    if (row.status !== "確定") {
+      continue;
+    }
+    const key: ConditionVolumeKey = conditionByDate[row.dateJst] ?? "未設定";
+    buckets[key] += row.minutes;
+  }
+
+  return CONDITION_VOLUME_ORDER.flatMap((condition) => {
+    const minutes = buckets[condition];
+    return minutes > 0 ? [{ condition, minutes }] : [];
+  });
+}
+
 export function aggregateBreakdownRows(
   rows: readonly Doc<"rows">[],
   itemById: Map<Id<"items">, Doc<"items">>,
@@ -99,10 +140,16 @@ export function buildDayBreakdown(
   liveDayDates: ReadonlySet<string>,
   itemById: Map<Id<"items">, Doc<"items">>,
   categoryById: Map<Id<"categories">, Doc<"categories">>,
+  conditionByDate: Readonly<Record<string, Condition | null | undefined>>,
 ): DayBreakdown {
   const isRest = isRestCalendarDate(dateJst, todayJst, liveDayDates.has(dateJst));
   const aggregated = aggregateBreakdownRows(rows, itemById, categoryById);
-  return { dateJst, isRest, ...aggregated };
+  return {
+    ...aggregated,
+    byCondition: aggregateByCondition(rows, conditionByDate),
+    dateJst,
+    isRest,
+  };
 }
 
 export function buildWeekBreakdown(
@@ -114,6 +161,7 @@ export function buildWeekBreakdown(
   liveDayDates: ReadonlySet<string>,
   itemById: Map<Id<"items">, Doc<"items">>,
   categoryById: Map<Id<"categories">, Doc<"categories">>,
+  conditionByDate: Readonly<Record<string, Condition | null | undefined>>,
 ): WeekBreakdown {
   const aggregated = aggregateBreakdownRows(rows, itemById, categoryById);
   const rowsByDate = groupBy(rows, prop("dateJst"));
@@ -130,6 +178,7 @@ export function buildWeekBreakdown(
 
   return {
     byCategory: aggregated.byCategory,
+    byCondition: aggregateByCondition(rows, conditionByDate),
     byDay,
     confirmedMinutes: aggregated.confirmedMinutes,
     rows: aggregated.rows,

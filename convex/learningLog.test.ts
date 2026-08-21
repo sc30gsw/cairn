@@ -501,23 +501,27 @@ test("分析クエリと年ヒートマップが学習量を返す", async () =>
     }),
   ]);
   expect(dayBreakdown.rows.every((row) => row.status === "確定")).toBe(true);
+  expect(dayBreakdown.byCondition).toEqual([{ condition: "未設定", minutes: 45 }]);
   const weekBreakdown = await t.query(api.queries.history.weekBreakdown.weekBreakdown, {
     dateJst: MONDAY,
     todayJst: MONDAY,
   });
   expect(weekBreakdown.volumeMinutes).toBe(45);
   expect(weekBreakdown.rows.every((row) => row.status === "確定")).toBe(true);
+  expect(weekBreakdown.byCondition).toEqual([{ condition: "未設定", minutes: 45 }]);
   const monthBreakdown = await t.query(api.queries.history.monthBreakdown.monthBreakdown, {
     todayJst: MONDAY,
     yearMonth: "2026-08",
   });
   expect(monthBreakdown.confirmedMinutes).toBe(45);
   expect(monthBreakdown.rows.every((row) => row.status === "確定")).toBe(true);
+  expect(monthBreakdown.byCondition).toEqual([{ condition: "未設定", minutes: 45 }]);
   const heatmap = await t.query(api.queries.history.yearHeatmap.yearHeatmap, {
     todayJst: MONDAY,
   });
   const mondayHeat = heatmap.days.find((entry) => entry.dateJst === MONDAY);
   expect(mondayHeat?.minutes).toBe(45);
+  expect(mondayHeat?.condition).toBeNull();
 });
 
 test("分析内訳は同一項目の確定を合算し、未着手を載せない", async () => {

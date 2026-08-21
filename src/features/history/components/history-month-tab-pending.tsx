@@ -2,7 +2,10 @@ import { Shimmer } from "@shimmer-from-structure/react";
 import { todayJst } from "~domain/jst";
 
 import { HistoryMonthView } from "~/features/history/components/history-month-view";
-import { historyShimmerMonthEvents } from "~/features/history/lib/history-shimmer-template";
+import {
+  historyShimmerHeatmapDays,
+  historyShimmerMonthEvents,
+} from "~/features/history/lib/history-shimmer-template";
 import { shimmerNoop } from "~/lib/shimmer-noop";
 
 export function HistoryMonthTabPending() {
@@ -12,6 +15,7 @@ export function HistoryMonthTabPending() {
   return (
     <Shimmer loading>
       <HistoryMonthView
+        days={historyShimmerHeatmapDays}
         events={historyShimmerMonthEvents}
         month={month}
         onDayClick={shimmerNoop}

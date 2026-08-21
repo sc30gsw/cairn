@@ -57,3 +57,30 @@
 .compactMonthView :global([data-today] .mantine-MonthView-monthViewDayLabel) {
   color: var(--mantine-primary-color-contrast);
 }
+
+/* マス上に学習量と均。MonthView は children を上書きするので data 属性経由 */
+.compactMonthView :global(.mantine-Schedule-monthViewDay[data-volume])::after,
+.compactMonthView :global(.mantine-MonthView-monthViewDay[data-volume])::after {
+  color: var(--mantine-color-dimmed);
+  content: attr(data-volume) "分 均" attr(data-avg);
+  display: block;
+  font-size: 0.625rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  margin-top: 0.125rem;
+}
+
+.compactMonthView :global(.mantine-Schedule-monthViewDay[data-condition="好調"]),
+.compactMonthView :global(.mantine-MonthView-monthViewDay[data-condition="好調"]) {
+  box-shadow: inset 0 -2px 0 var(--mantine-color-teal-5);
+}
+
+.compactMonthView :global(.mantine-Schedule-monthViewDay[data-condition="普通"]),
+.compactMonthView :global(.mantine-MonthView-monthViewDay[data-condition="普通"]) {
+  box-shadow: inset 0 -2px 0 var(--mantine-color-blue-5);
+}
+
+.compactMonthView :global(.mantine-Schedule-monthViewDay[data-condition="崩れた"]),
+.compactMonthView :global(.mantine-MonthView-monthViewDay[data-condition="崩れた"]) {
+  box-shadow: inset 0 -2px 0 var(--mantine-color-red-5);
+}

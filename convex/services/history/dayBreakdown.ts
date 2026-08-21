@@ -19,6 +19,7 @@ export async function dayBreakdown(
     loadCatalog(ctx, ownerId),
   ]);
   const liveDayDates = liveDayDatesFrom(days);
+  const liveDay = days.find((day) => day.deletedAt === undefined);
   return buildDayBreakdown(
     args.dateJst,
     args.todayJst,
@@ -26,5 +27,6 @@ export async function dayBreakdown(
     liveDayDates,
     catalog.itemById,
     catalog.categoryById,
+    { [args.dateJst]: liveDay?.condition ?? null },
   );
 }
