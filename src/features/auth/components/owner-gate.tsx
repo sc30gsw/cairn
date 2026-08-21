@@ -3,9 +3,10 @@ import type { ReactNode } from "react";
 import { AppShell } from "~/components/app-shell";
 import { PendingComponent } from "~/components/pending-component";
 import { LoginScreen } from "~/features/auth/components/login-screen";
-import type { AppShellUser } from "~/features/auth/types/session";
 import { authClient } from "~/lib/auth-client";
 import { devEmailAuthEnabled } from "~/lib/dev-auth";
+import { notionOAuthConfigured } from "~/lib/notion-auth";
+import type { AppShellUser } from "~/types/session";
 
 export function OwnerGate({ children }: Record<"children", ReactNode>) {
   const session = authClient.useSession();
@@ -22,7 +23,7 @@ export function OwnerGate({ children }: Record<"children", ReactNode>) {
           void authClient.signIn.social({ provider: "notion" });
         }}
         showDevEmailAuth={showDevEmailAuth}
-        showNotionSignIn
+        showNotionSignIn={notionOAuthConfigured}
       />
     );
   }
