@@ -33,7 +33,7 @@ test("カンバンは未着手・確定・スキップと次の一手を並べ�
     thenText: "金フレを1ページだけ開く",
   } satisfies BoardObstacle;
 
-  const { getByRole, getByText } = renderWithMantine(
+  const { getAllByText, getByRole, getByText } = renderWithMantine(
     <BoardKanban
       checkpointLabel="Part 2 を聞き取る（2026-08-20）"
       obstacles={[obstacle]}
@@ -45,7 +45,7 @@ test("カンバンは未着手・確定・スキップと次の一手を並べ�
     />,
   );
 
-  expect(getByText("未着手")).toBeDefined();
+  expect(getAllByText("未着手").length).toBeGreaterThanOrEqual(2);
   expect(getByText("確定")).toBeDefined();
   expect(getByText("スキップ")).toBeDefined();
   expect(getByText("次の一手")).toBeDefined();
