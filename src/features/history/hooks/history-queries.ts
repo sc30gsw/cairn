@@ -29,3 +29,7 @@ export function useHistoryDayBreakdown(dateJst: DateJst, todayJst: DateJst) {
 export function useHistoryYearHeatmap(todayJst: DateJst) {
   return useSuspenseQuery(convexQuery(api.queries.history.yearHeatmap.yearHeatmap, { todayJst }));
 }
+
+export function useHistoryPresetReview(todayJst: DateJst) {
+  return useSuspenseQuery(convexQuery(api.queries.history.presetReview.presetReview, { todayJst }));
+}

@@ -1,10 +1,12 @@
 import { STATUSES } from "~domain/domain";
+import { WEEKDAY_DISPLAY_ORDER } from "~domain/presetDigest";
 
 import type {
   DayBreakdown,
   HeatmapDay,
   MonthBreakdown,
   MonthEvent,
+  PresetReview,
   WeekBreakdown,
   WeekPage,
 } from "~/features/history/types/history";
@@ -82,3 +84,16 @@ export const historyShimmerWeekBreakdown = {
 export const historyShimmerYearMonth = "2026-08";
 export const historyShimmerTodayJst = "2026-08-17";
 export const historyShimmerSelectedDateJst = "2026-08-17";
+
+export const historyShimmerPresetReview = {
+  suggestions: [],
+  weekdays: WEEKDAY_DISPLAY_ORDER.map((weekday) => ({
+    confirmed: 0,
+    leftover: 0,
+    planned: 0,
+    skipped: 0,
+    weekday,
+  })),
+  windowEnd: "2026-08-16",
+  windowStart: "2026-07-20",
+} satisfies PresetReview;

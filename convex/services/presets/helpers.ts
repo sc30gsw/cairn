@@ -1,5 +1,6 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
+import type { Weekday } from "../../lib/catalog";
 import { ConflictError, NotFoundError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 
@@ -21,7 +22,7 @@ export async function assertOwnedLines(
 export async function assertWeekdayFree(
   ctx: MutationCtx,
   ownerId: string,
-  weekday: number,
+  weekday: Weekday,
   ignoreId?: Id<"presets">,
 ) {
   const existing = await ctx.db

@@ -71,7 +71,23 @@ export const WEEKDAY_NAMES = [
 
 export type WeekdayName = (typeof WEEKDAY_NAMES)[number];
 
-export function seedLineNamesForWeekday(weekday: number): readonly string[] {
+type TupleIndex<T extends readonly unknown[]> = {
+  [K in keyof T]: K extends `${infer N extends number}` ? N : never;
+}[number];
+
+export type Weekday = TupleIndex<typeof WEEKDAY_NAMES>;
+
+export const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6] as const satisfies readonly Weekday[] & {
+  length: (typeof WEEKDAY_NAMES)["length"];
+};
+
+export const WEEKDAY_RANGE_MESSAGE = `曜日は 0〜${String(WEEKDAY_NAMES.length - 1)} です`;
+
+export function isWeekday(value: number): value is Weekday {
+  return Number.isInteger(value) && value >= 0 && value < WEEKDAY_NAMES.length;
+}
+
+export function seedLineNamesForWeekday(weekday: Weekday): readonly SeedItemName[] {
   if (weekday === 0 || weekday === 6) {
     return [];
   }

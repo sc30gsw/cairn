@@ -31,6 +31,7 @@ import type * as lib_movingAverage from "../lib/movingAverage.js";
 import type * as lib_owner from "../lib/owner.js";
 import type * as lib_ownerFunctions from "../lib/ownerFunctions.js";
 import type * as lib_preset from "../lib/preset.js";
+import type * as lib_presetDigest from "../lib/presetDigest.js";
 import type * as lib_share from "../lib/share.js";
 import type * as lib_trash from "../lib/trash.js";
 import type * as lib_validators from "../lib/validators.js";
@@ -78,6 +79,7 @@ import type * as queries_goals_listObstacles from "../queries/goals/listObstacle
 import type * as queries_history_dayBreakdown from "../queries/history/dayBreakdown.js";
 import type * as queries_history_month from "../queries/history/month.js";
 import type * as queries_history_monthBreakdown from "../queries/history/monthBreakdown.js";
+import type * as queries_history_presetReview from "../queries/history/presetReview.js";
 import type * as queries_history_week from "../queries/history/week.js";
 import type * as queries_history_weekBreakdown from "../queries/history/weekBreakdown.js";
 import type * as queries_history_yearHeatmap from "../queries/history/yearHeatmap.js";
@@ -130,6 +132,7 @@ import type * as services_goals_withMasteryProgressDelta from "../services/goals
 import type * as services_history_dayBreakdown from "../services/history/dayBreakdown.js";
 import type * as services_history_month from "../services/history/month.js";
 import type * as services_history_monthBreakdown from "../services/history/monthBreakdown.js";
+import type * as services_history_presetReview from "../services/history/presetReview.js";
 import type * as services_history_shared from "../services/history/shared.js";
 import type * as services_history_week from "../services/history/week.js";
 import type * as services_history_weekBreakdown from "../services/history/weekBreakdown.js";
@@ -198,6 +201,7 @@ declare const fullApi: ApiFromModules<{
   "lib/owner": typeof lib_owner;
   "lib/ownerFunctions": typeof lib_ownerFunctions;
   "lib/preset": typeof lib_preset;
+  "lib/presetDigest": typeof lib_presetDigest;
   "lib/share": typeof lib_share;
   "lib/trash": typeof lib_trash;
   "lib/validators": typeof lib_validators;
@@ -245,6 +249,7 @@ declare const fullApi: ApiFromModules<{
   "queries/history/dayBreakdown": typeof queries_history_dayBreakdown;
   "queries/history/month": typeof queries_history_month;
   "queries/history/monthBreakdown": typeof queries_history_monthBreakdown;
+  "queries/history/presetReview": typeof queries_history_presetReview;
   "queries/history/week": typeof queries_history_week;
   "queries/history/weekBreakdown": typeof queries_history_weekBreakdown;
   "queries/history/yearHeatmap": typeof queries_history_yearHeatmap;
@@ -297,6 +302,7 @@ declare const fullApi: ApiFromModules<{
   "services/history/dayBreakdown": typeof services_history_dayBreakdown;
   "services/history/month": typeof services_history_month;
   "services/history/monthBreakdown": typeof services_history_monthBreakdown;
+  "services/history/presetReview": typeof services_history_presetReview;
   "services/history/shared": typeof services_history_shared;
   "services/history/week": typeof services_history_week;
   "services/history/weekBreakdown": typeof services_history_weekBreakdown;

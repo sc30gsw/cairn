@@ -1,9 +1,11 @@
 import { type Infer, v } from "convex/values";
 
+import { WEEKDAYS } from "./catalog";
 import { CATEGORIES } from "./categories";
 import { CONDITIONS } from "./conditions";
 import { DAY_VIEW_KINDS } from "./dayView";
 import { GOAL_TYPES, STATUSES, TARGET_METRICS } from "./domain";
+import { PRESET_REVIEW_REASONS } from "./presetDigest";
 
 const [toeic, listening, reading, conversation, otherCategory] = CATEGORIES;
 const [good, ordinary, collapsed] = CONDITIONS;
@@ -11,6 +13,7 @@ const [confirmed, pending, skipped] = STATUSES;
 const [examType, masteryType] = GOAL_TYPES;
 const [minutesMetric, daysMetric, countMetric] = TARGET_METRICS;
 const [liveKind, todayEmptyKind, restKind, unrecordedKind] = DAY_VIEW_KINDS;
+const [sunday, monday, tuesday, wednesday, thursday, friday, saturday] = WEEKDAYS;
 
 export const categoryValidator = v.union(
   v.literal(toeic),
@@ -26,8 +29,19 @@ export const statusValidator = v.union(
   v.literal(skipped),
 );
 
+export const weekdayValidator = v.union(
+  v.literal(sunday),
+  v.literal(monday),
+  v.literal(tuesday),
+  v.literal(wednesday),
+  v.literal(thursday),
+  v.literal(friday),
+  v.literal(saturday),
+);
+
 export type StatusDto = Infer<typeof statusValidator>;
 export type RowStatus = StatusDto;
+export type WeekdayDto = Infer<typeof weekdayValidator>;
 
 export const presetLineValidator = v.object({
   content: v.string(),
@@ -360,3 +374,34 @@ export type ApplyItemOrderInput = Infer<typeof applyItemOrderArgsValidator>;
 export const recentConcreteActionsValidator = v.array(v.string());
 
 export type RecentConcreteActions = Infer<typeof recentConcreteActionsValidator>;
+
+const [leftoverHeavyReason, skipHeavyReason] = PRESET_REVIEW_REASONS;
+
+export const presetReviewReasonValidator = v.union(
+  v.literal(leftoverHeavyReason),
+  v.literal(skipHeavyReason),
+);
+
+export const presetReviewWeekdayValidator = v.object({
+  confirmed: v.number(),
+  leftover: v.number(),
+  planned: v.number(),
+  skipped: v.number(),
+  weekday: weekdayValidator,
+});
+
+export const presetReviewSuggestionValidator = v.object({
+  reason: presetReviewReasonValidator,
+  weekday: weekdayValidator,
+});
+
+export const presetReviewValidator = v.object({
+  suggestions: v.array(presetReviewSuggestionValidator),
+  weekdays: v.array(presetReviewWeekdayValidator),
+  windowEnd: v.string(),
+  windowStart: v.string(),
+});
+
+export type PresetReviewDto = Infer<typeof presetReviewValidator>;
+export type PresetReviewWeekdayDto = Infer<typeof presetReviewWeekdayValidator>;
+export type PresetReviewSuggestionDto = Infer<typeof presetReviewSuggestionValidator>;

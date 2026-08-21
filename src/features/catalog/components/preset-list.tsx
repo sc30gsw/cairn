@@ -17,15 +17,17 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { IconTemplate, IconTrash } from "@tabler/icons-react";
-import { WEEKDAY_NAMES } from "~domain/catalog";
+import { WEEKDAYS, WEEKDAY_NAMES, isWeekday, type Weekday } from "~domain/catalog";
 
 import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action-field-with-suggestions";
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
 import { LabelAlignedCell } from "~/components/label-aligned-cell";
 import { PageTitle } from "~/components/page-title";
+import { presetsRoute } from "~/features/catalog/lib/preset-route-api";
 import { CreatePresetSchema, PresetSchema } from "~/features/catalog/schemas/preset-schema";
 import type { PresetLineInput } from "~/features/catalog/schemas/preset-schema";
+import { weekdayFromSelect } from "~/features/catalog/schemas/weekday-schema";
 import type { ItemDto, ItemId, PresetDto } from "~/features/catalog/types/item";
 import { parseItemId } from "~/features/catalog/types/item";
 import type {
@@ -33,6 +35,7 @@ import type {
   RemovePresetInput,
   UpdatePresetInput,
 } from "~/features/catalog/types/mutations";
+import { presetWeekdayHash } from "~/lib/preset-weekday-hash";
 import { onRequiredSelect } from "~/lib/select";
 
 type PresetLineDto = PresetDto["lines"][number];
@@ -45,10 +48,14 @@ type PresetListProps = {
   presets: PresetDto[];
 };
 
-const WEEKDAY_OPTIONS = WEEKDAY_NAMES.map((label, value) => ({
-  label,
-  value: String(value),
-}));
+function weekdaySelectOptions(weekdays: readonly Weekday[]) {
+  return weekdays.map((value) => ({
+    label: WEEKDAY_NAMES[value],
+    value: String(value),
+  }));
+}
+
+const WEEKDAY_OPTIONS = weekdaySelectOptions(WEEKDAYS);
 
 function parsedLines(lines: PresetLineInput[]) {
   return lines.map((line) => ({
@@ -82,9 +89,9 @@ function firstAvailableItem(items: ItemDto[], lines: readonly Partial<PresetLine
   return items.find((item) => !taken.has(item._id));
 }
 
-function availableWeekdayOptions(presets: PresetDto[]) {
+function availableWeekdays(presets: PresetDto[]): Weekday[] {
   const taken = new Set(presets.map((preset) => preset.weekday));
-  return WEEKDAY_OPTIONS.filter((option) => !taken.has(Number(option.value)));
+  return WEEKDAYS.filter((weekday) => !taken.has(weekday));
 }
 
 function removeLineLabel(items: ItemDto[], itemId: string | undefined) {
@@ -93,10 +100,15 @@ function removeLineLabel(items: ItemDto[], itemId: string | undefined) {
 }
 
 export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: PresetListProps) {
+  const { weekday: focusWeekday } = presetsRoute.useSearch();
   const createFormKey = [...presets]
     .map((preset) => preset.weekday)
     .sort((left, right) => left - right)
     .join(",");
+  const focusedPresetId =
+    focusWeekday === undefined
+      ? presets[0]?._id
+      : presets.find((preset) => preset.weekday === focusWeekday)?._id;
 
   return (
     <ConcreteActionTour screen="presets">
@@ -114,17 +126,22 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
             title="プリセットはまだありません"
           />
         ) : (
-          <Accordion defaultValue={presets[0]?._id} variant="separated">
+          <Accordion
+            defaultValue={focusedPresetId}
+            key={focusWeekday === undefined ? "default" : String(focusWeekday)}
+            variant="separated"
+          >
             {presets.map((preset) => (
-              <Accordion.Item key={preset._id} value={preset._id}>
+              <Accordion.Item
+                id={isWeekday(preset.weekday) ? presetWeekdayHash(preset.weekday) : undefined}
+                key={preset._id}
+                value={preset._id}
+              >
                 <Accordion.Control>
                   <Stack gap={2}>
                     <Text fw={600}>{preset.name}</Text>
                     <Text c="dimmed" size="sm">
-                      {
-                        WEEKDAY_OPTIONS.find((option) => option.value === String(preset.weekday))
-                          ?.label
-                      }
+                      {isWeekday(preset.weekday) ? WEEKDAY_NAMES[preset.weekday] : undefined}
                       {" · "}
                       {preset.lines.length === 0
                         ? "記録なし"
@@ -164,17 +181,18 @@ function PresetCreateForm({
   onCreate: PresetListProps["onCreate"];
   presets: PresetDto[];
 }) {
-  const weekdayOptions = availableWeekdayOptions(presets);
-  const defaultWeekday = weekdayOptions.length === 1 ? Number(weekdayOptions[0]?.value) : null;
+  const remainingWeekdays = availableWeekdays(presets);
+  const weekdayOptions = weekdaySelectOptions(remainingWeekdays);
+  const onlyWeekday = remainingWeekdays.length === 1 ? remainingWeekdays[0] : undefined;
   const form = useForm({
     initialInput: {
       name: "",
-      weekday: defaultWeekday,
+      weekday: onlyWeekday,
     },
     schema: CreatePresetSchema,
   });
 
-  if (weekdayOptions.length === 0) {
+  if (remainingWeekdays.length === 0) {
     return (
       <Card>
         <Text c="dimmed">すべての曜日にプリセットがあります。</Text>
@@ -187,14 +205,10 @@ function PresetCreateForm({
       <Form
         of={form}
         onSubmit={(output) => {
-          const weekday = output.weekday;
-          if (weekday === null) {
-            return;
-          }
           onCreate({
             lines: [],
             name: output.name,
-            weekday,
+            weekday: output.weekday,
           });
         }}
       >
@@ -221,9 +235,12 @@ function PresetCreateForm({
                   label="曜日"
                   placeholder="曜日を選ぶ"
                   onChange={onRequiredSelect((value) => {
-                    field.onChange(Number(value));
+                    const weekday = weekdayFromSelect(value);
+                    if (weekday !== undefined) {
+                      field.onChange(weekday);
+                    }
                   })}
-                  value={field.input === null ? null : String(field.input)}
+                  value={field.input === undefined ? null : String(field.input)}
                 />
               )}
             </Field>
@@ -306,7 +323,10 @@ function PresetEditor({
                     error={field.errors?.[0]}
                     label=" "
                     onChange={onRequiredSelect((value) => {
-                      field.onChange(Number(value));
+                      const weekday = weekdayFromSelect(value);
+                      if (weekday !== undefined) {
+                        field.onChange(weekday);
+                      }
                     })}
                     value={String(field.input)}
                   />
