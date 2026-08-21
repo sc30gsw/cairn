@@ -12,6 +12,7 @@ import {
 import {
   IconCalendarEvent,
   IconChartBar,
+  IconColumns3,
   IconLayoutKanban,
   IconLogout,
   IconTarget,
@@ -44,6 +45,12 @@ const NAV: {
     label: "日",
     match: (path) => path === "/" || path.startsWith("/days/"),
     to: "/",
+  },
+  {
+    Icon: IconColumns3,
+    label: "ボード",
+    match: (path) => path.startsWith("/board"),
+    to: "/board",
   },
   {
     Icon: IconChartBar,
