@@ -22,8 +22,10 @@ const review = {
   windowStart: "2026-07-24",
 } satisfies PresetReview;
 
-test("曜日の件数と提案リンクを出す", () => {
-  const { getByRole, getByText } = renderWithMemoryRouter(<PresetReviewPanel review={review} />);
+test("曜日の件数と提案リンクを出す", async () => {
+  const { getByRole, getByText } = await renderWithMemoryRouter(
+    <PresetReviewPanel review={review} />,
+  );
 
   expect(getByText("曜日の計画")).toBeDefined();
   expect(getByRole("progressbar", { name: "月曜日の消化 1/6" })).toBeDefined();

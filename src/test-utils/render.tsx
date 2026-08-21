@@ -83,9 +83,9 @@ export function renderWithMantine(ui: ReactElement, options?: Omit<RenderOptions
   return render(ui, { wrapper: Wrapper, ...options });
 }
 
-export function renderWithMemoryRouter(
+export async function renderWithMemoryRouter(
   ui: ReactElement,
-  initialEntry = "/history",
+  initialEntry = "/",
   options?: Omit<RenderOptions, "wrapper">,
 ) {
   const rootRoute = createRootRoute({
@@ -93,23 +93,26 @@ export function renderWithMemoryRouter(
       return <Outlet />;
     },
   });
-  const historyRoute = createRoute({
-    component: function HistoryPage() {
+  const indexRoute = createRoute({
+    component: function IndexPage() {
       return ui;
     },
     getParentRoute: () => rootRoute,
-    path: "/history",
+    path: "/",
   });
   const presetsRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/presets",
     validateSearch: PresetSearchSchema,
   });
-  const routeTree = rootRoute.addChildren([historyRoute, presetsRoute]);
+  const routeTree = rootRoute.addChildren([indexRoute, presetsRoute]);
   const router = createRouter({
+    defaultPendingMinMs: 0,
+    defaultPendingMs: 0,
     history: createMemoryHistory({ initialEntries: [initialEntry] }),
     routeTree,
   });
+  await router.load();
 
   return render(<RouterProvider router={router} />, { wrapper: Wrapper, ...options });
 }
