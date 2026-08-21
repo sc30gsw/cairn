@@ -1,4 +1,5 @@
 import { STATUSES } from "~domain/domain";
+import { WEEKDAY_DISPLAY_ORDER } from "~domain/presetDigest";
 
 import type {
   DayBreakdown,
@@ -86,16 +87,13 @@ export const historyShimmerSelectedDateJst = "2026-08-17";
 
 export const historyShimmerPresetReview = {
   suggestions: [],
-  weekdays: [1, 2, 3, 4, 5, 6, 0].map((weekday) => ({
+  weekdays: WEEKDAY_DISPLAY_ORDER.map((weekday) => ({
     confirmed: 0,
     leftover: 0,
     planned: 0,
-    presetId: null,
-    presetName: null,
     skipped: 0,
     weekday,
   })),
-  weeklyTargets: { achieved: 0, total: 0 },
   windowEnd: "2026-08-16",
   windowStart: "2026-07-20",
 } satisfies PresetReview;

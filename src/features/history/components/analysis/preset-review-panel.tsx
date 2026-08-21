@@ -1,28 +1,16 @@
-import { Alert, Anchor, Button, Progress, Stack, Table, Text, Title } from "@mantine/core";
+import { Alert, Button, Progress, Stack, Table, Text, Title } from "@mantine/core";
+import { digestRate } from "~domain/presetDigest";
 
 import {
   presetReviewCaption,
   suggestionCopy,
   suggestionLinkLabel,
   weekdayLabel,
-  weeklyTargetCopy,
 } from "~/features/history/lib/preset-review-copy";
 import type { PresetReview } from "~/features/history/types/history";
 
-type PresetReviewPanelProps = {
-  review: PresetReview;
-};
-
-function digestPercent(confirmed: number, planned: number): number {
-  if (planned === 0) {
-    return 0;
-  }
-  return Math.round((confirmed / planned) * 100);
-}
-
-export function PresetReviewPanel({ review }: PresetReviewPanelProps) {
-  const plannedAny = review.weekdays.some((row) => row.planned > 0);
-  const weeklyTargets = review.weeklyTargets;
+export function PresetReviewPanel({ review }: { review: PresetReview }) {
+  const hasPlannedRows = review.weekdays.some((row) => row.planned > 0);
 
   return (
     <Stack gap="md">
@@ -35,17 +23,7 @@ export function PresetReviewPanel({ review }: PresetReviewPanelProps) {
         </Text>
       </div>
 
-      {weeklyTargets.total > 0 ? (
-        <Text size="sm">
-          {weeklyTargetCopy(weeklyTargets.achieved, weeklyTargets.total)}
-          {" · "}
-          <Anchor href="/goals" size="sm">
-            週間ターゲットを見る
-          </Anchor>
-        </Text>
-      ) : null}
-
-      {plannedAny ? (
+      {hasPlannedRows ? (
         <Table
           aria-labelledby="preset-review-heading"
           captionSide="top"
@@ -67,7 +45,7 @@ export function PresetReviewPanel({ review }: PresetReviewPanelProps) {
           </Table.Thead>
           <Table.Tbody>
             {review.weekdays.map((row) => {
-              const percent = digestPercent(row.confirmed, row.planned);
+              const percent = Math.round(digestRate(row) * 100);
               return (
                 <Table.Tr key={row.weekday}>
                   <Table.Td>{weekdayLabel(row.weekday)}</Table.Td>

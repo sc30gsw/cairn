@@ -15,7 +15,10 @@ export const PRESET_REVIEW_DIGEST_GAP = 0.15;
 
 export const PRESET_REVIEW_MAX_SUGGESTIONS = 2;
 
-export const PRESET_REVIEW_REASONS = ["leftoverHeavy", "skipHeavy"] as const;
+export const PRESET_REVIEW_REASONS = [
+  "leftoverHeavy",
+  "skipHeavy",
+] as const satisfies readonly string[];
 
 export type PresetReviewReason = (typeof PRESET_REVIEW_REASONS)[number];
 
@@ -97,9 +100,9 @@ export function suggestWeekdays(weekdays: readonly WeekdayCounts[]): PresetRevie
   return peers
     .filter((counts) => {
       const rate = digestRate(counts);
-      const collapsed = counts.leftover + counts.skipped > 0;
+      const hasLeftoverOrSkip = counts.leftover + counts.skipped > 0;
       const weak = rate < PRESET_REVIEW_DIGEST_FLOOR || rate <= mean - PRESET_REVIEW_DIGEST_GAP;
-      return collapsed && weak;
+      return hasLeftoverOrSkip && weak;
     })
     .toSorted((left, right) => digestRate(left) - digestRate(right))
     .slice(0, PRESET_REVIEW_MAX_SUGGESTIONS)

@@ -5,7 +5,6 @@ import {
   suggestionCopy,
   suggestionLinkLabel,
   weekdayLabel,
-  weeklyTargetCopy,
 } from "~/features/history/lib/preset-review-copy";
 
 test("提案文は断定せず件数を出す", () => {
@@ -16,8 +15,6 @@ test("提案文は断定せず件数を出す", () => {
         confirmed: 1,
         leftover: 4,
         planned: 6,
-        presetId: null,
-        presetName: "月曜日",
         skipped: 1,
         weekday: 1,
       },
@@ -35,8 +32,6 @@ test("見送りが多い提案は見送りと書く", () => {
         confirmed: 1,
         leftover: 1,
         planned: 6,
-        presetId: null,
-        presetName: null,
         skipped: 4,
         weekday: 3,
       },
@@ -44,7 +39,6 @@ test("見送りが多い提案は見送りと書く", () => {
   ).toContain("見送りが多い。");
 });
 
-test("窓と週間ターゲットの文言", () => {
+test("窓の文言は今日と休養を除く", () => {
   expect(presetReviewCaption("2026-07-24", "2026-08-20")).toContain("今日と休養は含めない");
-  expect(weeklyTargetCopy(1, 3)).toBe("今週の週間ターゲットは 1/3 達成");
 });

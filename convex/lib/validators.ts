@@ -373,8 +373,6 @@ export const presetReviewWeekdayValidator = v.object({
   confirmed: v.number(),
   leftover: v.number(),
   planned: v.number(),
-  presetId: v.union(v.id("presets"), v.null()),
-  presetName: v.union(v.string(), v.null()),
   skipped: v.number(),
   weekday: v.number(),
 });
@@ -387,10 +385,6 @@ export const presetReviewSuggestionValidator = v.object({
 export const presetReviewValidator = v.object({
   suggestions: v.array(presetReviewSuggestionValidator),
   weekdays: v.array(presetReviewWeekdayValidator),
-  weeklyTargets: v.object({
-    achieved: v.number(),
-    total: v.number(),
-  }),
   windowEnd: v.string(),
   windowStart: v.string(),
 });

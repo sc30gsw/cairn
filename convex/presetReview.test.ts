@@ -34,12 +34,6 @@ async function seedReviewRows(
       name: "Distinction 2000",
       ownerId: OWNER.subject,
     });
-    await ctx.db.insert("presets", {
-      lines: [{ content: "", itemId, minutes: 20 }],
-      name: "月曜日",
-      ownerId: OWNER.subject,
-      weekday: 1,
-    });
     for (const day of days) {
       const dayId = await ctx.db.insert("days", {
         dateJst: day.dateJst,
@@ -90,14 +84,11 @@ test("今日と休養は分母に入れず、消化の低い曜日を提案す�
     confirmed: 0,
     leftover: 3,
     planned: 5,
-    presetName: "月曜日",
     skipped: 2,
     weekday: 1,
   });
   expect(tuesday).toMatchObject({ confirmed: 5, leftover: 0, planned: 5, skipped: 0, weekday: 2 });
   expect(review.suggestions).toEqual([{ reason: "leftoverHeavy", weekday: 1 }]);
-  expect(monday?.presetId).not.toBeNull();
-  expect(review.weeklyTargets).toEqual({ achieved: 0, total: 0 });
 });
 
 test("ゴミ箱の日の記録は数えない", async () => {
@@ -130,4 +121,45 @@ test("ゴミ箱の日の記録は数えない", async () => {
   const monday = review.weekdays.find((row) => row.weekday === 1);
   expect(monday).toMatchObject({ confirmed: 0, leftover: 0, planned: 0, skipped: 0 });
   expect(review.suggestions).toEqual([]);
+});
+
+test("ゴミ箱の行は、日が残っていても数えない", async () => {
+  const t = newTest();
+  await t.run(async (ctx) => {
+    const itemId = (await ctx.db.insert("items", {
+      name: "Distinction 2000",
+      ownerId: OWNER.subject,
+    })) as Id<"items">;
+    const dayId = await ctx.db.insert("days", {
+      dateJst: "2026-08-17",
+      ownerId: OWNER.subject,
+    });
+    await ctx.db.insert("rows", {
+      content: "",
+      dateJst: "2026-08-17",
+      dayId,
+      deletedAt: Date.now(),
+      itemId,
+      minutes: 20,
+      ownerId: OWNER.subject,
+      sortOrder: 0,
+      status: "スキップ",
+    });
+    await ctx.db.insert("rows", {
+      content: "",
+      dateJst: "2026-08-17",
+      dayId,
+      itemId,
+      minutes: 20,
+      ownerId: OWNER.subject,
+      sortOrder: 1,
+      status: "確定",
+    });
+  });
+
+  const review = await t
+    .withIdentity(OWNER)
+    .query(api.queries.history.presetReview.presetReview, { todayJst: TODAY });
+  const monday = review.weekdays.find((row) => row.weekday === 1);
+  expect(monday).toMatchObject({ confirmed: 1, leftover: 0, planned: 1, skipped: 0 });
 });
