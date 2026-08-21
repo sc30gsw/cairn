@@ -3,7 +3,7 @@ import { expect, test, vi } from "vite-plus/test";
 
 import { ItemList } from "~/features/catalog/components/item-list";
 import { PresetList } from "~/features/catalog/components/preset-list";
-import { renderWithMantine } from "~/test-utils/render";
+import { renderWithMemoryRouter } from "~/test-utils/render";
 
 vi.mock("~/features/catalog/hooks/use-dnd", async () => {
   const dnd = await vi.importActual<typeof import("@hello-pangea/dnd")>("@hello-pangea/dnd");
@@ -16,8 +16,8 @@ vi.mock("~/hooks/use-recent-concrete-actions", () => ({
   useRecentConcreteActions: () => ({ data: [] }),
 }));
 
-test("カテゴリーの下に学習内容が並び、カテゴリーも編集できる", { timeout: 10_000 }, () => {
-  const { getByRole } = renderWithMantine(
+test("カテゴリーの下に学習内容が並び、カテゴリーも編集できる", { timeout: 10_000 }, async () => {
+  const { getByRole } = await renderWithMemoryRouter(
     <>
       <ItemList
         categories={[
@@ -60,6 +60,7 @@ test("カテゴリーの下に学習内容が並び、カテゴリーも編集�
         ]}
       />
     </>,
+    "/presets",
   );
   expect(getByRole("button", { name: "カテゴリーを追加" })).toBeDefined();
   expect(getByRole("button", { name: "多聴を保存" })).toBeDefined();
@@ -76,8 +77,8 @@ test("カテゴリーの下に学習内容が並び、カテゴリーも編集�
   expect(getByRole("button", { name: "雛形を足す" })).toBeDefined();
 });
 
-test("プリセット追加は未登録の曜日だけ選べ、1つだけならそれが初期値", () => {
-  const { getByRole } = renderWithMantine(
+test("プリセット追加は未登録の曜日だけ選べ、1つだけならそれが初期値", async () => {
+  const { getByRole } = await renderWithMemoryRouter(
     <PresetList
       items={[
         { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
@@ -124,14 +125,15 @@ test("プリセット追加は未登録の曜日だけ選べ、1つだけなら�
         },
       ]}
     />,
+    "/presets",
   );
 
   const weekday = getByRole("combobox", { name: "曜日" });
   expect((weekday as HTMLInputElement).value).toBe("日曜日");
 });
 
-test("プリセット追加は未登録曜日が2つ以上なら初期値は空", () => {
-  const { getByRole } = renderWithMantine(
+test("プリセット追加は未登録曜日が2つ以上なら初期値は空", async () => {
+  const { getByRole } = await renderWithMemoryRouter(
     <PresetList
       items={[
         { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
@@ -148,6 +150,7 @@ test("プリセット追加は未登録曜日が2つ以上なら初期値は空"
         },
       ]}
     />,
+    "/presets",
   );
 
   const weekday = getByRole("combobox", { name: "曜日" });
@@ -155,8 +158,8 @@ test("プリセット追加は未登録曜日が2つ以上なら初期値は空"
   expect(weekday.getAttribute("placeholder")).toBe("曜日を選ぶ");
 });
 
-test("プリセット雛形を足すと未使用の項目が選ばれる", () => {
-  const { getByRole } = renderWithMantine(
+test("プリセット雛形を足すと未使用の項目が選ばれる", async () => {
+  const { getByRole } = await renderWithMemoryRouter(
     <PresetList
       items={[
         { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
@@ -176,6 +179,7 @@ test("プリセット雛形を足すと未使用の項目が選ばれる", () =>
         },
       ]}
     />,
+    "/presets",
   );
 
   fireEvent.click(getByRole("button", { name: "雛形を足す" }));
@@ -184,8 +188,8 @@ test("プリセット雛形を足すと未使用の項目が選ばれる", () =>
   );
 });
 
-test("プリセット雛形ですべての項目を使うと雛形を足すは無効", () => {
-  const { getByRole } = renderWithMantine(
+test("プリセット雛形ですべての項目を使うと雛形を足すは無効", async () => {
+  const { getByRole } = await renderWithMemoryRouter(
     <PresetList
       items={[
         { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
@@ -206,6 +210,7 @@ test("プリセット雛形ですべての項目を使うと雛形を足すは�
         },
       ]}
     />,
+    "/presets",
   );
 
   const addLine = getByRole("button", { name: "雛形を足す" });

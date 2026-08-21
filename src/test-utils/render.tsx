@@ -93,14 +93,16 @@ export async function renderWithMemoryRouter(
       return <Outlet />;
     },
   });
+  function Page() {
+    return ui;
+  }
   const indexRoute = createRoute({
-    component: function IndexPage() {
-      return ui;
-    },
+    component: Page,
     getParentRoute: () => rootRoute,
     path: "/",
   });
   const presetsRoute = createRoute({
+    component: Page,
     getParentRoute: () => rootRoute,
     path: "/presets",
     validateSearch: PresetSearchSchema,
