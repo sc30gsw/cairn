@@ -8,29 +8,23 @@ import {
   suggestionReason,
 } from "./presetDigest";
 
-test("休養の日の記録は分母に入れない", () => {
-  const counted = countByWeekday(
-    [
-      { dateJst: "2026-08-17", status: "スキップ" },
-      { dateJst: "2026-08-18", status: "確定" },
-    ],
-    new Set(["2026-08-18"]),
-  );
+test("渡された記録だけを曜日ごとに数える", () => {
+  const counted = countByWeekday([
+    { dateJst: "2026-08-17", status: "スキップ" },
+    { dateJst: "2026-08-18", status: "確定" },
+  ]);
   const monday = counted.find((row) => row.weekday === 1);
   const tuesday = counted.find((row) => row.weekday === 2);
-  expect(monday).toEqual({ confirmed: 0, leftover: 0, skipped: 0, weekday: 1 });
+  expect(monday).toEqual({ confirmed: 0, leftover: 0, skipped: 1, weekday: 1 });
   expect(tuesday).toEqual({ confirmed: 1, leftover: 0, skipped: 0, weekday: 2 });
 });
 
 test("確定・見送り・未着手を曜日ごとに数える", () => {
-  const counted = countByWeekday(
-    [
-      { dateJst: "2026-08-17", status: "確定" },
-      { dateJst: "2026-08-17", status: "スキップ" },
-      { dateJst: "2026-08-24", status: "未着手" },
-    ],
-    new Set(["2026-08-17", "2026-08-24"]),
-  );
+  const counted = countByWeekday([
+    { dateJst: "2026-08-17", status: "確定" },
+    { dateJst: "2026-08-17", status: "スキップ" },
+    { dateJst: "2026-08-24", status: "未着手" },
+  ]);
   const monday = counted.find((row) => row.weekday === 1);
   expect(monday).toEqual({ confirmed: 1, leftover: 1, skipped: 1, weekday: 1 });
   expect(plannedCount(monday!)).toBe(3);

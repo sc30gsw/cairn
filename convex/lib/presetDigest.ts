@@ -59,19 +59,16 @@ export function digestRate(counts: WeekdayCounts): number {
   return counts.confirmed / planned;
 }
 
-export function countByWeekday(
-  rows: readonly StatusedRow[],
-  liveDayDates: ReadonlySet<string>,
-): WeekdayCounts[] {
+export function countByWeekday(rows: readonly StatusedRow[]): WeekdayCounts[] {
   const byWeekday = new Map<number, WeekdayCounts>(
     WEEKDAY_DISPLAY_ORDER.map((weekday) => [weekday, emptyCounts(weekday)]),
   );
   for (const row of rows) {
-    if (!liveDayDates.has(row.dateJst)) {
+    const weekday = weekdayFromDateJst(row.dateJst);
+    const current = byWeekday.get(weekday);
+    if (current === undefined) {
       continue;
     }
-    const weekday = weekdayFromDateJst(row.dateJst);
-    const current = byWeekday.get(weekday) ?? emptyCounts(weekday);
     if (row.status === confirmedStatus) {
       byWeekday.set(weekday, { ...current, confirmed: current.confirmed + 1 });
       continue;

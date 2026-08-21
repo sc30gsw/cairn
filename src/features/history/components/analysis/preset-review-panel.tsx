@@ -79,9 +79,12 @@ export function PresetReviewPanel({ review }: { review: PresetReview }) {
         </Alert>
       )}
 
-      {review.suggestions.map((suggestion) => {
+      {review.suggestions.flatMap((suggestion) => {
         const weekday = review.weekdays.find((row) => row.weekday === suggestion.weekday);
-        return (
+        if (weekday === undefined) {
+          return [];
+        }
+        return [
           <Alert
             color="yellow"
             key={suggestion.weekday}
@@ -93,15 +96,15 @@ export function PresetReviewPanel({ review }: { review: PresetReview }) {
               <Button
                 color="yellow"
                 component="a"
-                href={`/presets?weekday=${suggestion.weekday}`}
+                href={`/presets?weekday=${suggestion.weekday}#preset-weekday-${suggestion.weekday}`}
                 size="xs"
                 variant="light"
               >
                 {suggestionLinkLabel(suggestion.weekday)}
               </Button>
             </Stack>
-          </Alert>
-        );
+          </Alert>,
+        ];
       })}
     </Stack>
   );

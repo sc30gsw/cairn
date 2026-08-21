@@ -17,7 +17,6 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { IconTemplate, IconTrash } from "@tabler/icons-react";
-import { useEffect } from "react";
 import { WEEKDAY_NAMES } from "~domain/catalog";
 
 import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action-field-with-suggestions";
@@ -107,14 +106,9 @@ export function PresetList({
     .sort((left, right) => left - right)
     .join(",");
   const focusedPresetId =
-    presets.find((preset) => preset.weekday === focusWeekday)?._id ?? presets[0]?._id;
-
-  useEffect(() => {
-    if (focusWeekday === undefined) {
-      return;
-    }
-    document.getElementById(`preset-weekday-${focusWeekday}`)?.scrollIntoView({ block: "start" });
-  }, [focusWeekday]);
+    focusWeekday === undefined
+      ? presets[0]?._id
+      : presets.find((preset) => preset.weekday === focusWeekday)?._id;
 
   return (
     <ConcreteActionTour screen="presets">
@@ -132,7 +126,11 @@ export function PresetList({
             title="プリセットはまだありません"
           />
         ) : (
-          <Accordion defaultValue={focusedPresetId} variant="separated">
+          <Accordion
+            defaultValue={focusedPresetId}
+            key={focusWeekday === undefined ? "default" : String(focusWeekday)}
+            variant="separated"
+          >
             {presets.map((preset) => (
               <Accordion.Item
                 id={`preset-weekday-${preset.weekday}`}

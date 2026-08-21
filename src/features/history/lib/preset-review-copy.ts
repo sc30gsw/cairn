@@ -14,11 +14,8 @@ export function presetReviewCaption(windowStart: string, windowEnd: string) {
   return `${windowStart} 〜 ${windowEnd}（今日と休養は含めない。直近${PRESET_REVIEW_WINDOW_DAYS}日）`;
 }
 
-export function suggestionCopy(suggestion: Suggestion, weekday: WeekdayRow | undefined) {
+export function suggestionCopy(suggestion: Suggestion, weekday: WeekdayRow) {
   const label = weekdayLabel(suggestion.weekday);
-  if (weekday === undefined || weekday.planned === 0) {
-    return `${label}のプリセットを見る`;
-  }
   const counts = `並んだ${weekday.planned}件のうち確定${weekday.confirmed}・見送り${weekday.skipped}・未着手${weekday.leftover}`;
   if (suggestion.reason === "leftoverHeavy") {
     return `直近の${label}は、${counts}。未着手のまま残ることが多い。`;

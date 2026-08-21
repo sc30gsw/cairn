@@ -28,7 +28,9 @@ test("曜日の件数と提案リンクを出す", () => {
   expect(getByText("曜日の計画")).toBeDefined();
   expect(getByRole("progressbar", { name: "月曜日の消化 1/6" })).toBeDefined();
   expect(getByText(/未着手のまま残ることが多い/)).toBeDefined();
-  expect(getByRole("link", { name: "月曜日のプリセットを見る" })).toBeDefined();
+  expect(getByRole("link", { name: "月曜日のプリセットを見る" }).getAttribute("href")).toBe(
+    "/presets?weekday=1#preset-weekday-1",
+  );
 });
 
 test("記録が無い期間は空メッセージだけ出す", () => {

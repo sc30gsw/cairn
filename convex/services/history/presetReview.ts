@@ -33,7 +33,7 @@ export async function presetReview(
       .collect(),
   ]);
   const liveDayDates = liveDayDatesFrom(days);
-  const counted = countByWeekday(liveRows(rows, liveDayDates), liveDayDates);
+  const counted = countByWeekday(liveRows(rows, liveDayDates));
   return {
     suggestions: suggestWeekdays(counted),
     weekdays: counted.map((counts) => ({
