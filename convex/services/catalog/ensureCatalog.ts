@@ -6,6 +6,7 @@ import {
   SEED_CONTENT,
   SEED_ITEMS,
   SEED_MINUTES,
+  WEEKDAYS,
   WEEKDAY_NAMES,
   seedLineNamesForWeekday,
 } from "../../lib/catalog";
@@ -114,7 +115,8 @@ export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<
     .collect();
   if (existingPresets.length === 0) {
     await Promise.all(
-      WEEKDAY_NAMES.map((name, weekday) => {
+      WEEKDAYS.map((weekday) => {
+        const name = WEEKDAY_NAMES[weekday];
         const lines = seedLineNamesForWeekday(weekday).flatMap((itemName) => {
           const item = itemByName[itemName];
           if (item === undefined) {
@@ -122,9 +124,9 @@ export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<
           }
           return [
             {
-              content: SEED_CONTENT[itemName as keyof typeof SEED_CONTENT],
+              content: SEED_CONTENT[itemName],
               itemId: item._id,
-              minutes: SEED_MINUTES[itemName as keyof typeof SEED_MINUTES],
+              minutes: SEED_MINUTES[itemName],
             },
           ];
         });
