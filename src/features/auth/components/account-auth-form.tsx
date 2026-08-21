@@ -2,6 +2,7 @@ import { Field, Form, useForm } from "@formisch/react";
 import { Button, PasswordInput, SegmentedControl, Stack, Text, TextInput } from "@mantine/core";
 import { useState } from "react";
 
+import { useAuthPublicConfig } from "~/features/auth/hooks/use-auth-config";
 import { signInWithAccount, signUpWithAccount } from "~/features/auth/lib/auth-actions";
 import { submitAuthAction } from "~/features/auth/lib/submit-auth-action";
 import {
@@ -140,7 +141,13 @@ type AccountAuthPanelProps = {
 };
 
 export function AccountAuthPanel({ initialMode = "signIn" }: AccountAuthPanelProps) {
-  const [mode, setMode] = useState<AccountAuthMode>(initialMode);
+  const publicConfig = useAuthPublicConfig();
+  const signUpEnabled = publicConfig.data?.signUpEnabled ?? true;
+  const [mode, setMode] = useState<AccountAuthMode>(signUpEnabled ? initialMode : "signIn");
+
+  if (!signUpEnabled) {
+    return <AccountAuthForm mode="signIn" />;
+  }
 
   return (
     <Stack gap="sm">

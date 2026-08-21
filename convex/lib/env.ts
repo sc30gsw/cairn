@@ -6,6 +6,11 @@ export function requireEnv(name: string): string {
   return value;
 }
 
+export function signUpDisabledFromEnv(): boolean {
+  const value = process.env.AUTH_DISABLE_SIGNUP;
+  return value === "1" || value === "true";
+}
+
 export function notionOAuthConfigured(): boolean {
   const clientId = process.env.NOTION_CLIENT_ID;
   const clientSecret = process.env.NOTION_CLIENT_SECRET;

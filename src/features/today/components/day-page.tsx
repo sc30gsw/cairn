@@ -1,9 +1,11 @@
+import { Stack } from "@mantine/core";
 import { Suspense, useState } from "react";
 import type { DateJst } from "~domain/jst";
 import { mondayOfWeek, todayJst } from "~domain/jst";
 
 import { DayBoard } from "~/features/today/components/day-board";
 import { DayPagePending } from "~/features/today/components/day-page-pending";
+import { EmptyCatalogBanner } from "~/features/today/components/empty-catalog-banner";
 import {
   useAddRow,
   useConfirmRow,
@@ -84,69 +86,75 @@ function DayPageCore({ dateJst, presetFromSearch }: DayPageCoreProps) {
       : targetRemainder(targets, confirmedCategory);
 
   return (
-    <DayBoard
-      dateJst={dateJst}
-      day={day}
-      items={items}
-      onAddRow={(input) => {
-        void runMutation(() => add.mutateAsync({ ...input, dateJst, todayJst: today }), {
-          successMessage: "記録を追加しました",
-        });
-      }}
-      onConfirm={(input) => {
-        const row = day.rows.find((entry) => entry._id === input.rowId);
-        void runMutation(
-          async () => {
-            await confirm.mutateAsync(input);
-            if (row !== undefined) {
-              setConfirmedCategory(row.category);
-            }
-          },
-          {
-            successMessage: "記録を確定しました",
-          },
-        );
-      }}
-      onCopyYesterday={() => {
-        void runMutation(() => copyYesterday.mutateAsync({ dateJst, todayJst: today }), {
-          successMessage: "昨日の確定をコピーしました",
-        });
-      }}
-      onRemoveDay={() => {
-        void runMutation(() => removeDay.mutateAsync({ dateJst }), {
-          successMessage: "この日をゴミ箱へ移動しました",
-        });
-      }}
-      onRemoveRow={(rowId) => {
-        void runMutation(() => removeRow.mutateAsync({ rowId }), {
-          successMessage: "記録をゴミ箱へ移動しました",
-        });
-      }}
-      onSaveCondition={(condition) => {
-        void runMutation(() => setCondition.mutateAsync({ condition, dateJst, todayJst: today }), {
-          successMessage: "コンディションを保存しました",
-        });
-      }}
-      onSaveMemo={(memo) => {
-        void runMutation(() => setMemo.mutateAsync({ dateJst, memo, todayJst: today }), {
-          successMessage: "メモを保存しました",
-        });
-      }}
-      onSkip={(rowId) => {
-        void runMutation(() => skip.mutateAsync({ rowId }), {
-          successMessage: "記録を見送りにしました",
-        });
-      }}
-      onSwitchPreset={(presetId: PresetId) => {
-        appliedPresetRef.current = presetId;
-        void runMutation(() => switchPreset.mutateAsync({ dateJst, presetId, todayJst: today }), {
-          successMessage: "プリセットを切り替えました",
-        });
-      }}
-      presets={presets}
-      remainderMessage={remainder === null ? null : targetRemainderMessage(remainder)}
-      selectedPresetId={selectedPresetId}
-      todayJst={today}
-    />
+    <Stack gap="md">
+      {items.length === 0 ? <EmptyCatalogBanner /> : null}
+      <DayBoard
+        dateJst={dateJst}
+        day={day}
+        items={items}
+        onAddRow={(input) => {
+          void runMutation(() => add.mutateAsync({ ...input, dateJst, todayJst: today }), {
+            successMessage: "記録を追加しました",
+          });
+        }}
+        onConfirm={(input) => {
+          const row = day.rows.find((entry) => entry._id === input.rowId);
+          void runMutation(
+            async () => {
+              await confirm.mutateAsync(input);
+              if (row !== undefined) {
+                setConfirmedCategory(row.category);
+              }
+            },
+            {
+              successMessage: "記録を確定しました",
+            },
+          );
+        }}
+        onCopyYesterday={() => {
+          void runMutation(() => copyYesterday.mutateAsync({ dateJst, todayJst: today }), {
+            successMessage: "昨日の確定をコピーしました",
+          });
+        }}
+        onRemoveDay={() => {
+          void runMutation(() => removeDay.mutateAsync({ dateJst }), {
+            successMessage: "この日をゴミ箱へ移動しました",
+          });
+        }}
+        onRemoveRow={(rowId) => {
+          void runMutation(() => removeRow.mutateAsync({ rowId }), {
+            successMessage: "記録をゴミ箱へ移動しました",
+          });
+        }}
+        onSaveCondition={(condition) => {
+          void runMutation(
+            () => setCondition.mutateAsync({ condition, dateJst, todayJst: today }),
+            {
+              successMessage: "コンディションを保存しました",
+            },
+          );
+        }}
+        onSaveMemo={(memo) => {
+          void runMutation(() => setMemo.mutateAsync({ dateJst, memo, todayJst: today }), {
+            successMessage: "メモを保存しました",
+          });
+        }}
+        onSkip={(rowId) => {
+          void runMutation(() => skip.mutateAsync({ rowId }), {
+            successMessage: "記録を見送りにしました",
+          });
+        }}
+        onSwitchPreset={(presetId: PresetId) => {
+          appliedPresetRef.current = presetId;
+          void runMutation(() => switchPreset.mutateAsync({ dateJst, presetId, todayJst: today }), {
+            successMessage: "プリセットを切り替えました",
+          });
+        }}
+        presets={presets}
+        remainderMessage={remainder === null ? null : targetRemainderMessage(remainder)}
+        selectedPresetId={selectedPresetId}
+        todayJst={today}
+      />
+    </Stack>
   );
 }

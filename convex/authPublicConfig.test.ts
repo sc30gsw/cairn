@@ -32,7 +32,7 @@ test("Notion OAuth 未設定なら notionSignIn は false", async () => {
   const t = convexTest(schema, modules);
   const config = await t.query(api.queries.auth.publicConfig.publicConfig, {});
 
-  expect(config).toEqual({ notionSignIn: false });
+  expect(config).toEqual({ notionSignIn: false, signUpEnabled: true });
 });
 
 test("Notion OAuth 設定済みなら notionSignIn は true", async () => {
@@ -42,5 +42,14 @@ test("Notion OAuth 設定済みなら notionSignIn は true", async () => {
   const t = convexTest(schema, modules);
   const config = await t.query(api.queries.auth.publicConfig.publicConfig, {});
 
-  expect(config).toEqual({ notionSignIn: true });
+  expect(config).toEqual({ notionSignIn: true, signUpEnabled: true });
+});
+
+test("AUTH_DISABLE_SIGNUP なら signUpEnabled は false", async () => {
+  process.env.AUTH_DISABLE_SIGNUP = "true";
+
+  const t = convexTest(schema, modules);
+  const config = await t.query(api.queries.auth.publicConfig.publicConfig, {});
+
+  expect(config.signUpEnabled).toBe(false);
 });

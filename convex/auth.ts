@@ -9,7 +9,12 @@ import { components } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
 import authConfig from "./auth.config";
 import authSchema from "./betterAuth/schema";
-import { notionOAuthConfigured, requireEnv, trustedOriginsFromEnv } from "./lib/env";
+import {
+  notionOAuthConfigured,
+  requireEnv,
+  signUpDisabledFromEnv,
+  trustedOriginsFromEnv,
+} from "./lib/env";
 
 export const authComponent = createClient<DataModel, typeof authSchema>(components.betterAuth, {
   local: { schema: authSchema },
@@ -27,6 +32,7 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
     baseURL: siteUrl,
     database: authComponent.adapter(ctx),
     emailAndPassword: {
+      disableSignUp: signUpDisabledFromEnv(),
       enabled: true,
     },
     plugins: [convex({ authConfig }), username()],
