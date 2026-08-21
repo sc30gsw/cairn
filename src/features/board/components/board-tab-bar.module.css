@@ -1,0 +1,10 @@
+.tabBar {
+  margin-inline: auto;
+  max-width: 28rem;
+  width: 100%;
+}
+
+.tabBar :global(.mantine-Tabs-tab) {
+  flex: 1;
+  justify-content: center;
+}

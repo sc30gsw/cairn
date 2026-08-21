@@ -4,6 +4,7 @@ import { addDaysJst, type DateJst } from "~domain/jst";
 
 import { RECORD_STATUS_UI } from "~/features/history/lib/record-status-label";
 import type { WeekEvent, WeekPage } from "~/features/history/types/history";
+import { CONDITION_MANTINE_COLOR } from "~/lib/condition-colors";
 
 const DATE_HEADER_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
   day: "numeric",
@@ -68,6 +69,7 @@ function WeekEventRow({ event }: { event: WeekEvent }) {
 
 export function WeekAgenda({ week }: { week: WeekPage }) {
   const eventsByDate = groupBy(week.events, prop("dateJst"));
+  const conditionByDate = new Map(week.days.map((day) => [day.dateJst, day.condition] as const));
 
   return (
     <Card>
@@ -79,11 +81,19 @@ export function WeekAgenda({ week }: { week: WeekPage }) {
         <Stack gap="lg" mt="lg">
           {weekDates(week.weekStart).map((dateJst) => {
             const dayEvents = eventsByDate[dateJst] ?? [];
+            const condition = conditionByDate.get(dateJst);
             return (
               <Stack gap="xs" key={dateJst}>
-                <Text fw={600} size="sm">
-                  {formatDateHeader(dateJst)}
-                </Text>
+                <Group gap="xs">
+                  <Text fw={600} size="sm">
+                    {formatDateHeader(dateJst)}
+                  </Text>
+                  {condition === null || condition === undefined ? null : (
+                    <Badge color={CONDITION_MANTINE_COLOR[condition]} size="sm" variant="light">
+                      {condition}
+                    </Badge>
+                  )}
+                </Group>
                 {dayEvents.length === 0 ? (
                   <Text c="dimmed" pl="sm" size="sm">
                     記録なし

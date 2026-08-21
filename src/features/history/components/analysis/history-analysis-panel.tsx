@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import type { DateJst } from "~domain/jst";
 
 import { BreakdownTable } from "~/features/history/components/breakdown-table";
+import { ConditionVolumeTable } from "~/features/history/components/condition-volume-table";
 import { HeatmapLegend } from "~/features/history/components/heatmap-legend";
 import { HistoryLearningHeatmap } from "~/features/history/components/history-learning-heatmap";
 import {
@@ -230,6 +231,19 @@ export function HistoryAnalysisPanel({
                 : month.confirmedMinutes
           }
           rows={scope === "day" ? day.rows : scope === "week" ? week.rows : month.rows}
+        />
+      </Stack>
+
+      <Stack gap="xs">
+        <Title order={4}>コンディション別の学習量</Title>
+        <ConditionVolumeTable
+          rows={
+            scope === "day"
+              ? day.byCondition
+              : scope === "week"
+                ? week.byCondition
+                : month.byCondition
+          }
         />
       </Stack>
 

@@ -10,6 +10,7 @@ export function HistoryMonthTab() {
 
   return (
     <HistoryMonthView
+      days={monthBreakdown.days}
       events={monthBreakdown.events}
       month={monthDate}
       onDayClick={(dateJst: DateJst) => {

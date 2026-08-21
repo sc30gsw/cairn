@@ -23,7 +23,7 @@ import { useDnd } from "~/features/catalog/hooks/use-dnd";
 import { CategorySchema } from "~/features/catalog/schemas/category-schema";
 import { ItemNameSchema } from "~/features/catalog/schemas/item-schema";
 import type { ItemDto } from "~/features/catalog/types/item";
-import { parseCategoryId } from "~/features/catalog/types/item";
+import { parseCategoryId, unwrapCategoryId } from "~/features/catalog/types/item";
 import type {
   ApplyItemOrderInput,
   CreateCategoryInput,
@@ -69,8 +69,8 @@ export function ItemList({
     if (destination === null) {
       return;
     }
-    const sourceCategoryId = parseCategoryId(source.droppableId);
-    const destinationCategoryId = parseCategoryId(destination.droppableId);
+    const sourceCategoryId = unwrapCategoryId(parseCategoryId(source.droppableId));
+    const destinationCategoryId = unwrapCategoryId(parseCategoryId(destination.droppableId));
     const sourceItems = [...(itemsByCategory[sourceCategoryId] ?? [])];
     const movedIndex = sourceItems.findIndex((item) => item._id === draggableId);
     if (movedIndex === -1) {

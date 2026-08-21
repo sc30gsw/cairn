@@ -22,10 +22,13 @@ export const tables = {
     createdAt: v.number(),
     updatedAt: v.number(),
     userId: v.optional(v.union(v.null(), v.string())),
+    username: v.optional(v.union(v.null(), v.string())),
+    displayUsername: v.optional(v.union(v.null(), v.string())),
   })
-    .index("email_name", ["email","name"])
+    .index("email_name", ["email", "name"])
     .index("name", ["name"])
-    .index("userId", ["userId"]),
+    .index("userId", ["userId"])
+    .index("username", ["username"]),
   session: defineTable({
     expiresAt: v.number(),
     token: v.string(),
@@ -72,6 +75,11 @@ export const tables = {
     createdAt: v.number(),
     expiresAt: v.optional(v.union(v.null(), v.number())),
   }),
+  rateLimit: defineTable({
+    key: v.string(),
+    count: v.number(),
+    lastRequest: v.number(),
+  }).index("key", ["key"]),
 };
 
 const schema = defineSchema(tables);

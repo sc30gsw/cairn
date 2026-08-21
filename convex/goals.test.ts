@@ -17,9 +17,8 @@ const modules = import.meta.glob([
   "!./http.ts",
 ]);
 
-const ALLOWED_EMAIL = "owner@example.com";
-const OWNER = { email: ALLOWED_EMAIL, subject: "owner-subject" };
-const OTHER_OWNER = { email: ALLOWED_EMAIL, subject: "other-owner-subject" };
+const OWNER = { email: "owner@example.com", subject: "owner-subject" };
+const OTHER_OWNER = { email: "other@example.com", subject: "other-owner-subject" };
 const TODAY = "2026-08-17";
 
 //? 習得の学習量実績は目標の作成日を起点にするので、サーバが見る現在時刻を固定する。
@@ -33,7 +32,6 @@ afterEach(() => {
 });
 
 function raw() {
-  process.env.ALLOWED_EMAIL = ALLOWED_EMAIL;
   return convexTest(schema, modules);
 }
 

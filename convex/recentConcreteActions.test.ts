@@ -16,11 +16,9 @@ const modules = import.meta.glob([
   "!./http.ts",
 ]);
 
-const ALLOWED_EMAIL = "owner@example.com";
-const OWNER = { email: ALLOWED_EMAIL, subject: "owner-subject" };
+const OWNER = { email: "owner@example.com", subject: "owner-subject" };
 
 function newTest() {
-  process.env.ALLOWED_EMAIL = ALLOWED_EMAIL;
   return convexTest(schema, modules);
 }
 

@@ -68,6 +68,8 @@ import { UserSelect } from "~/features/users/components/user-select";
 import { UserSelect } from "~/components/user-select";
 ```
 
+Enforced in CI via `no-restricted-imports` overrides in `vite.config.ts` (per-feature regex + shared `src/{components,hooks,lib,types}` zones). Routes may import features; shared code may not import features.
+
 ## Routes exception
 
 Route files (`src/routes/**/*.tsx`) use `export const Route = createFileRoute(...)`. The oxlint `no-default-export` rule is overridden for this path in `vite.config.ts`.

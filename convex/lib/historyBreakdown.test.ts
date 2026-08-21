@@ -1,7 +1,7 @@
 import { expect, test } from "vite-plus/test";
 
 import { STATUSES } from "./domain";
-import { aggregateBreakdownRows } from "./historyBreakdown";
+import { aggregateBreakdownRows, aggregateByCondition } from "./historyBreakdown";
 
 const [confirmed, pending, skipped] = STATUSES;
 
@@ -129,5 +129,23 @@ test("内訳 rows はカテゴリ順・項目名順に並ぶ", () => {
     "Distinction 2000",
     "金のフレーズ",
     "英会話",
+  ]);
+});
+
+test("確定分数を日のコンディションで分け、未設定を残す", () => {
+  const rows = [
+    { ...row("r1", "i1", 30, confirmed), dateJst: "2026-08-17" },
+    { ...row("r2", "i2", 20, confirmed), dateJst: "2026-08-18" },
+    { ...row("r3", "i3", 10, skipped), dateJst: "2026-08-17" },
+  ];
+
+  expect(
+    aggregateByCondition(rows, {
+      "2026-08-17": "好調",
+      "2026-08-18": null,
+    }),
+  ).toEqual([
+    { condition: "好調", minutes: 30 },
+    { condition: "未設定", minutes: 20 },
   ]);
 });

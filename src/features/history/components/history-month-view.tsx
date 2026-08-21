@@ -10,19 +10,21 @@ import dayjs from "dayjs";
 import type { DateJst } from "~domain/jst";
 import { isFutureDateJst } from "~domain/jst";
 
+import { monthDayOverlayAttrs } from "~/features/history/lib/month-day-overlay";
 import {
   confirmedMonthEvents,
   monthEventMinutesById,
   scheduleEventDateJst,
   toMonthScheduleEvents,
 } from "~/features/history/lib/month-schedule-events";
-import { SCHEDULE_LABELS_JA } from "~/features/history/lib/schedule-labels";
-import type { MonthEvent } from "~/features/history/types/history";
+import type { MonthBreakdown, MonthEvent } from "~/features/history/types/history";
 import { calendarDayStyleClasses, historyCalendarDayProps } from "~/lib/calendar-day-style";
+import { SCHEDULE_LABELS_JA } from "~/lib/schedule-labels";
 
 import classes from "~/features/history/components/history-month-view.module.css";
 
 type HistoryMonthViewProps = {
+  days: MonthBreakdown["days"];
   events: MonthEvent[];
   month: Date;
   onDayClick: (dateJst: DateJst) => void;
@@ -43,6 +45,7 @@ function yearMonthOf(value: string): string {
 }
 
 export function HistoryMonthView({
+  days,
   events,
   month,
   onDayClick,
@@ -54,6 +57,7 @@ export function HistoryMonthView({
   const scheduleEvents = toMonthScheduleEvents(confirmedEvents);
   const minutesByEventId = monthEventMinutesById(confirmedEvents);
   const nextDisabled = yearMonthOf(date) >= yearMonthOf(todayJst);
+  const daysByDate = new Map(days.map((day) => [day.dateJst, day]));
 
   const setDate = (value: string) => {
     if (yearMonthOf(value) > yearMonthOf(todayJst)) {
@@ -123,7 +127,10 @@ export function HistoryMonthView({
             date={date}
             events={scheduleEvents}
             firstDayOfWeek={1}
-            getDayProps={(day) => historyCalendarDayProps(day, todayJst)}
+            getDayProps={(day) => ({
+              ...historyCalendarDayProps(day, todayJst),
+              ...monthDayOverlayAttrs(daysByDate.get(day.slice(0, 10))),
+            })}
             labels={SCHEDULE_LABELS_JA}
             locale="ja"
             maxEventsPerDay={2}

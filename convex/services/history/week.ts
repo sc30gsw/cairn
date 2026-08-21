@@ -8,6 +8,7 @@ export async function week(
 ) {
   const page = await computeWeekPage(ctx, ownerId, args);
   return {
+    days: page.days,
     events: page.events,
     volumeMinutes: page.volumeMinutes,
     weekEnd: page.weekEnd,

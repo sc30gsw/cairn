@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { waitFor } from "@testing-library/react";
 import { expect, test, vi } from "vite-plus/test";
 
-import { useOpenAndLoadDay } from "~/features/today/hooks/use-open-and-load-day";
+import { useOpenAndLoadDay } from "~/hooks/use-open-and-load-day";
 import { renderWithMantine } from "~/test-utils/render";
 
 const dateJst = "2026-08-17";

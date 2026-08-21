@@ -12,9 +12,9 @@
 | スタイル       | Tailwind CSS v4（`cn` は `cnfast`）。Mantine とは `tailwind-preset-mantine` で統合                         |
 | UI             | Mantine（`@mantine/core` + `@mantine/hooks` + `@mantine/dates`）                                           |
 | チャート       | `@tanstack/charts` + `@tanstack/charts-scales` + `@tanstack/react-charts` 0.7.2（SVG/SSR）                 |
-| バックエンド   | Convex（`convex` + `@convex-dev/react-query`。`convex/` ディレクトリは未実装）                             |
+| バックエンド   | Convex（`convex/` + `@convex-dev/react-query`）                                                            |
 | データ取得     | TanStack Query（`@tanstack/react-query`、SSR は `@tanstack/react-router-ssr-query`）                       |
-| 認証           | Convex Auth（`@convex-dev/auth` のクライアント側 `ConvexAuthProvider`。フォールバックは Clerk）            |
+| 認証           | Better Auth（`@convex-dev/better-auth` + `@convex-dev/better-auth/react`、Notion OAuth / メール・ユーザー名） |
 | 検証           | Valibot（単一）                                                                                            |
 | フォーム       | Formisch（`@formisch/react`、valibot ネイティブ。`useForm({ schema })` / `<Form of>` / `<Field of path>`） |
 | エラー処理     | better-result                                                                                              |

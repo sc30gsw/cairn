@@ -70,8 +70,24 @@ const idleHandlers = {
   onSwitchPreset: vi.fn(),
 };
 
+test("確定直後の残量を記録カードに出す", () => {
+  const { getByText } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={day}
+      todayJst="2026-08-17"
+      items={items}
+      presets={[]}
+      remainderMessage="多聴 今週の週間ターゲット あと30分"
+      selectedPresetId={null}
+      {...idleHandlers}
+    />,
+  );
+  expect(getByText("多聴 今週の週間ターゲット あと30分")).toBeDefined();
+});
+
 test("ログイン済みなら今日の未着手の記録が見える", () => {
-  const { getByRole, getByText } = renderWithMantine(
+  const { getByRole, getByText, queryByText } = renderWithMantine(
     <DayBoard
       dateJst="2026-08-17"
       day={day}
@@ -84,6 +100,7 @@ test("ログイン済みなら今日の未着手の記録が見える", () => {
   );
   expect(getByRole("combobox", { name: "Distinction 2000のひとこと" })).toBeDefined();
   expect(getByText("未着手")).toBeDefined();
+  expect(queryByText(/今週の週間ターゲット/)).toBeNull();
 });
 
 test("記録を確定スイッチで確定、オフでスキップできる", async () => {

@@ -19,8 +19,7 @@ const CONCRETE_ACTION = "Unit 1 を音読する";
 const CONCRETE_ACTION_2 = "Unit 2 を音読する";
 const THEN_ACTION = "Unit 3 の例文を声に出して5文読む";
 const THEN_ACTION_UPDATED = "金フレを10分だけ声に出して読む";
-const ALLOWED_EMAIL = "owner@example.com";
-const OWNER = { email: ALLOWED_EMAIL, subject: "owner-subject" };
+const OWNER = { email: "owner@example.com", subject: "owner-subject" };
 const MONDAY = "2026-08-17";
 const SATURDAY = "2026-08-15";
 const FUTURE = "2026-08-20";
@@ -36,13 +35,17 @@ afterEach(() => {
 });
 
 function owner() {
-  process.env.ALLOWED_EMAIL = ALLOWED_EMAIL;
   return convexTest(schema, modules).withIdentity(OWNER);
 }
 
 function raw() {
-  process.env.ALLOWED_EMAIL = ALLOWED_EMAIL;
   return convexTest(schema, modules);
+}
+
+async function ownerWithCatalog() {
+  const t = owner();
+  await t.mutation(api.mutations.catalog.ensure.ensure, {});
+  return t;
 }
 
 test("未認証の days.open は throw する", async () => {
@@ -52,15 +55,19 @@ test("未認証の days.open は throw する", async () => {
   ).rejects.toThrow();
 });
 
-test("allowlist 外の days.get は throw する", async () => {
-  const t = raw().withIdentity({ email: "other@example.com", subject: "other" });
-  await expect(
-    t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY }),
-  ).rejects.toThrow();
+test("空のカタログでは今日を開いても行は作られない", async () => {
+  const t = owner();
+  const opened = await t.mutation(api.mutations.days.open.open, {
+    dateJst: MONDAY,
+    todayJst: MONDAY,
+  });
+  expect(opened).toEqual({ applied: false });
+  const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  expect(day.rows).toEqual([]);
 });
 
-test("所有者なら今日を開いて未着手行が読める", async () => {
-  const t = owner();
+test("シード済みカタログなら今日を開いて未着手行が読める", async () => {
+  const t = await ownerWithCatalog();
   const opened = await t.mutation(api.mutations.days.open.open, {
     dateJst: MONDAY,
     todayJst: MONDAY,
@@ -105,7 +112,7 @@ test("未来の日を開けても行は作られない", async () => {
 });
 
 test("確定とスキップで学習量が変わる。未認証は throw", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const before = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   const distinction = before.rows.find((row) => row.itemName === "Distinction 2000");
@@ -135,7 +142,7 @@ test("確定とスキップで学習量が変わる。未認証は throw", async
 });
 
 test("コンディションとメモ", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   await t.mutation(api.mutations.days.setCondition.setCondition, {
     condition: "普通",
@@ -153,7 +160,7 @@ test("コンディションとメモ", async () => {
 });
 
 test("月と週の学習量が所有者に読める", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   const distinction = day.rows[0];
@@ -184,7 +191,7 @@ test("月と週の学習量が所有者に読める", async () => {
 });
 
 test("項目 CRUD・使用中削除失敗・プリセット切替", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const items = await t.query(api.queries.items.list.list, {});
   const distinction = items.find((item) => item.name === "Distinction 2000");
@@ -236,7 +243,7 @@ test("項目 CRUD・使用中削除失敗・プリセット切替", async () => 
 });
 
 test("カテゴリ CRUD・項目が残っていると削除失敗", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const categories = await t.query(api.queries.categories.list.list, {});
   expect(categories.map((category) => category.name)).toEqual([
@@ -263,7 +270,7 @@ test("カテゴリ CRUD・項目が残っていると削除失敗", async () => 
 });
 
 test("その日限りの行を足せる。未来には足さない", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const items = await t.query(api.queries.items.list.list, {});
   const other = items.find((item) => item.name === "その他");
@@ -310,7 +317,7 @@ test("その日限りの行を足せる。未来には足さない", async () =>
 });
 
 test("目標・障害プラン。行の状態は変えない", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const before = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   expect(await t.query(api.queries.goals.list.list, {})).toEqual([]);
@@ -336,7 +343,7 @@ test("目標・障害プラン。行の状態は変えない", async () => {
 });
 
 test("行と日のゴミ箱。30日後に完全削除。未認証は throw", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   const row = day.rows[0];
@@ -386,7 +393,7 @@ test("行と日のゴミ箱。30日後に完全削除。未認証は throw", asy
 });
 
 test("空のメモだけでは日を作らない。土日でも今日のプリセット切替は日を作る", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: SATURDAY, todayJst: SATURDAY });
   await t.mutation(api.mutations.days.setMemo.setMemo, {
     dateJst: SATURDAY,
@@ -414,7 +421,7 @@ test("空のメモだけでは日を作らない。土日でも今日のプリ�
 });
 
 test("ゴミ箱の日には行を足さず、open も日を増やさない", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const items = await t.query(api.queries.items.list.list, {});
   const other = items.find((item) => item.name === "その他");
@@ -440,7 +447,7 @@ test("ゴミ箱の日には行を足さず、open も日を増やさない", asy
 });
 
 test("コンディションだけの日を開くとプリセット行が載る", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.setCondition.setCondition, {
     condition: "普通",
     dateJst: MONDAY,
@@ -460,7 +467,7 @@ test("コンディションだけの日を開くとプリセット行が載る",
 });
 
 test("プリセット雛形だけの項目は消せない", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: SATURDAY, todayJst: SATURDAY });
   const items = await t.query(api.queries.items.list.list, {});
   const distinction = items.find((item) => item.name === "Distinction 2000");
@@ -473,7 +480,7 @@ test("プリセット雛形だけの項目は消せない", async () => {
 });
 
 test("分析クエリと年ヒートマップが学習量を返す", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   const distinction = day.rows.find((row) => row.itemName === "Distinction 2000");
@@ -501,27 +508,31 @@ test("分析クエリと年ヒートマップが学習量を返す", async () =>
     }),
   ]);
   expect(dayBreakdown.rows.every((row) => row.status === "確定")).toBe(true);
+  expect(dayBreakdown.byCondition).toEqual([{ condition: "未設定", minutes: 45 }]);
   const weekBreakdown = await t.query(api.queries.history.weekBreakdown.weekBreakdown, {
     dateJst: MONDAY,
     todayJst: MONDAY,
   });
   expect(weekBreakdown.volumeMinutes).toBe(45);
   expect(weekBreakdown.rows.every((row) => row.status === "確定")).toBe(true);
+  expect(weekBreakdown.byCondition).toEqual([{ condition: "未設定", minutes: 45 }]);
   const monthBreakdown = await t.query(api.queries.history.monthBreakdown.monthBreakdown, {
     todayJst: MONDAY,
     yearMonth: "2026-08",
   });
   expect(monthBreakdown.confirmedMinutes).toBe(45);
   expect(monthBreakdown.rows.every((row) => row.status === "確定")).toBe(true);
+  expect(monthBreakdown.byCondition).toEqual([{ condition: "未設定", minutes: 45 }]);
   const heatmap = await t.query(api.queries.history.yearHeatmap.yearHeatmap, {
     todayJst: MONDAY,
   });
   const mondayHeat = heatmap.days.find((entry) => entry.dateJst === MONDAY);
   expect(mondayHeat?.minutes).toBe(45);
+  expect(mondayHeat?.condition).toBeNull();
 });
 
 test("分析内訳は同一項目の確定を合算し、未着手を載せない", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   const distinction = day.rows.find((row) => row.itemName === "Distinction 2000");
@@ -583,7 +594,7 @@ test("分析内訳は同一項目の確定を合算し、未着手を載せな�
 });
 
 test("プリセット CRUD と曜日重複は失敗", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const items = await t.query(api.queries.items.list.list, {});
   const distinction = items.find((item) => item.name === "Distinction 2000");
@@ -626,7 +637,7 @@ test("プリセット CRUD と曜日重複は失敗", async () => {
 });
 
 test("applyOrder で項目順とカテゴリを更新", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const items = await t.query(api.queries.items.list.list, {});
   const categories = await t.query(api.queries.categories.list.list, {});
@@ -672,7 +683,7 @@ test("applyOrder で項目順とカテゴリを更新", async () => {
 });
 
 test("試験目標の保存と障害プラン更新", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   const goalId = await t.mutation(api.mutations.goals.create.create, {
     goal: {
       content: "本番までに公式問題集を1冊やり切る",
@@ -709,7 +720,7 @@ test("試験目標の保存と障害プラン更新", async () => {
 });
 
 test("空の過去を open しても日もプリセットも作らない", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   const opened = await t.mutation(api.mutations.days.open.open, {
     dateJst: SATURDAY,
     todayJst: MONDAY,
@@ -722,7 +733,7 @@ test("空の過去を open しても日もプリセットも作らない", async
 });
 
 test("過去の日でもプリセットを切り替えられる。未来は切り替えられない", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: SATURDAY, todayJst: SATURDAY });
   const presets = await t.query(api.queries.presets.list.list, {});
   const mondayPreset = presets.find((preset) => preset.weekday === 1);
@@ -749,7 +760,7 @@ test("過去の日でもプリセットを切り替えられる。未来は切�
 });
 
 test("昨日の確定だけを未着手として足し、空の過去に日を作る", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: SATURDAY, todayJst: SATURDAY });
   const items = await t.query(api.queries.items.list.list, {});
   const other = items.find((item) => item.name === "その他");
@@ -816,7 +827,7 @@ test("昨日の確定だけを未着手として足し、空の過去に日を�
 });
 
 test("今月の未来のマスは休養ではない", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   const month = await t.query(api.queries.history.month.month, {
     todayJst: MONDAY,
     yearMonth: "2026-08",
@@ -831,7 +842,7 @@ test("今月の未来のマスは休養ではない", async () => {
 });
 
 test("コピーで上書きした確定は学習量から外れる", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   const sunday = "2026-08-16";
   await t.mutation(api.mutations.days.open.open, { dateJst: sunday, todayJst: sunday });
   const items = await t.query(api.queries.items.list.list, {});
@@ -887,7 +898,7 @@ test("コピーで上書きした確定は学習量から外れる", async () =>
 });
 
 test("昨日に日が無いコピーは0件", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   const copied = await t.mutation(
     api.mutations.rows.copyYesterdayConfirmed.copyYesterdayConfirmed,
     {
@@ -899,7 +910,7 @@ test("昨日に日が無いコピーは0件", async () => {
 });
 
 test("昨日に確定が無いコピーは0件", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: SATURDAY, todayJst: SATURDAY });
   const copied = await t.mutation(
     api.mutations.rows.copyYesterdayConfirmed.copyYesterdayConfirmed,
@@ -912,7 +923,7 @@ test("昨日に確定が無いコピーは0件", async () => {
 });
 
 test("他人のプリセットでは切り替えられない", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const otherPresetId = await t.run(async (ctx) => {
     return await ctx.db.insert("presets", {
@@ -932,7 +943,7 @@ test("他人のプリセットでは切り替えられない", async () => {
 });
 
 test("空の雛形でも休養の日を作れる", async () => {
-  const t = owner();
+  const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const emptyPresetId = await t.run(async (ctx) => {
     return await ctx.db.insert("presets", {

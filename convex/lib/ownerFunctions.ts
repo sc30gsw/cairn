@@ -14,7 +14,6 @@ async function ownerCtx(ctx: MutationCtx | QueryCtx) {
   const identity = await ctx.auth.getUserIdentity();
   const result = ownerFromIdentity(
     identity === null ? null : { email: identity.email, subject: identity.subject },
-    process.env.ALLOWED_EMAIL,
   );
   if (Result.isError(result)) {
     throwDomain(result.error);
