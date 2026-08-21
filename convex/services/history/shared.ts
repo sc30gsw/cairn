@@ -45,12 +45,20 @@ export function buildMinutesByDate(
 
 export function buildConditionByDate(days: Doc<"days">[]): Record<string, Condition | null> {
   const map: Record<string, Condition | null> = {};
-  for (const day of days) {
-    if (day.deletedAt !== undefined) {
-      continue;
+  const liveByDate = groupBy(
+    days.filter((day) => day.deletedAt === undefined),
+    prop("dateJst"),
+  );
+
+  for (const [dateJst, liveDays] of Object.entries(liveByDate)) {
+    const canonical = liveDays.toSorted(
+      (left, right) => left._creationTime - right._creationTime,
+    )[0];
+    if (canonical !== undefined) {
+      map[dateJst] = canonical.condition ?? null;
     }
-    map[day.dateJst] = day.condition ?? null;
   }
+
   return map;
 }
 
