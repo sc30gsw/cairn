@@ -7,4 +7,26 @@
 .tabBar :global(.mantine-Tabs-tab) {
   flex: 1;
   justify-content: center;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.tabBar :global(.mantine-Tabs-tab[data-active]) {
+  background: var(--mantine-color-blue-light);
+  box-shadow: inset 0 0 0 1px var(--mantine-color-blue-outline);
+  color: var(--mantine-color-blue-light-color);
+  font-weight: 600;
+}
+
+.tabBar :global(.mantine-Tabs-tab:not([data-active]):hover) {
+  background: var(--mantine-color-gray-0);
+}
+
+.tabBar :global(.mantine-Tabs-list) {
+  background: var(--mantine-color-gray-1);
+  border-radius: var(--mantine-radius-md);
+  gap: 0.25rem;
+  padding: 0.25rem;
 }

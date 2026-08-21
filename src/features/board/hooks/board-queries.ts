@@ -15,3 +15,9 @@ export function useBoardGoals() {
 export function useBoardObstacles() {
   return useSuspenseQuery(convexQuery(api.queries.goals.listObstacles.listObstacles, {}));
 }
+
+export function useBoardScheduleBlocks(anchorDateJst: DateJst) {
+  return useSuspenseQuery(
+    convexQuery(api.queries.boardSchedule.listForWeek.listForWeek, { anchorDateJst }),
+  );
+}

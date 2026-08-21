@@ -12,6 +12,13 @@ vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, to }: { children?: ReactNode; to: string }) => <a href={to}>{children}</a>,
 }));
 
+vi.mock("~/features/catalog/hooks/use-dnd", async () => {
+  const dnd = await vi.importActual<typeof import("@hello-pangea/dnd")>("@hello-pangea/dnd");
+  return {
+    useDnd: () => dnd,
+  };
+});
+
 function row(id: string, status: BoardRow["status"], name: string): BoardRow {
   return {
     _id: id as BoardRow["_id"],
@@ -33,10 +40,15 @@ test("カンバンは未着手・確定・スキップと次の一手を並べ�
     thenText: "金フレを1ページだけ開く",
   } satisfies BoardObstacle;
 
+  const noop = vi.fn(async () => undefined);
+
   const { getAllByText, getByRole, getByText } = renderWithMantine(
     <BoardKanban
       checkpointLabel="Part 2 を聞き取る（2026-08-20）"
       obstacles={[obstacle]}
+      onConfirm={noop}
+      onSkip={noop}
+      onUnskip={noop}
       rows={[
         row("r1", pending, "Distinction 2000"),
         row("r2", confirmed, "金のフレーズ"),

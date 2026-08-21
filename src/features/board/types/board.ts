@@ -9,3 +9,6 @@ export type BoardObstacle = FunctionReturnType<
   typeof api.queries.goals.listObstacles.listObstacles
 >[number];
 export type BoardMastery = Extract<BoardGoal, { type: "mastery" }>;
+export type BoardScheduleBlock = FunctionReturnType<
+  typeof api.queries.boardSchedule.listForWeek.listForWeek
+>[number];

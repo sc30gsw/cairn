@@ -1,8 +1,17 @@
+import type { DropResult } from "@hello-pangea/dnd";
 import { Badge, Card, Stack, Text } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { STATUSES } from "~domain/domain";
 
+import { BoardConfirmRowModal } from "~/features/board/components/board-confirm-row-modal";
+import type {
+  BoardConfirmRowInput,
+  BoardSkipRowInput,
+  BoardUnskipRowInput,
+} from "~/features/board/hooks/board-mutations";
 import type { BoardObstacle, BoardRow } from "~/features/board/types/board";
+import { useDnd } from "~/features/catalog/hooks/use-dnd";
 import { RECORD_STATUS_UI } from "~/lib/record-status-ui";
 
 const KANBAN_COLUMNS = [
@@ -11,13 +20,18 @@ const KANBAN_COLUMNS = [
   "スキップ",
 ] as const satisfies readonly (typeof STATUSES)[number][];
 
+type KanbanColumn = (typeof KANBAN_COLUMNS)[number];
+
 type BoardKanbanProps = {
   checkpointLabel: string | null;
   obstacles: readonly BoardObstacle[];
+  onConfirm: (input: BoardConfirmRowInput) => Promise<void>;
+  onSkip: (input: BoardSkipRowInput) => Promise<void>;
+  onUnskip: (input: BoardUnskipRowInput) => Promise<void>;
   rows: readonly BoardRow[];
 };
 
-function groupRows(rows: readonly BoardRow[]): Record<(typeof KANBAN_COLUMNS)[number], BoardRow[]> {
+function groupRows(rows: readonly BoardRow[]): Record<KanbanColumn, BoardRow[]> {
   return {
     スキップ: rows.filter((row) => row.status === "スキップ"),
     未着手: rows.filter((row) => row.status === "未着手"),
@@ -57,44 +71,128 @@ function NextStepCard({ subtitle, title }: { subtitle: string; title: string }) 
   );
 }
 
-export function BoardKanban({ checkpointLabel, obstacles, rows }: BoardKanbanProps) {
+function resolveStatusMove(
+  sourceStatus: BoardRow["status"],
+  destinationStatus: KanbanColumn,
+): "confirm" | "noop" | "skip" | "unskip" {
+  if (sourceStatus === destinationStatus) {
+    return "noop";
+  }
+  if (destinationStatus === "確定") {
+    return "confirm";
+  }
+  if (destinationStatus === "スキップ") {
+    return "skip";
+  }
+  if (destinationStatus === "未着手" && sourceStatus === "スキップ") {
+    return "unskip";
+  }
+  return "noop";
+}
+
+export function BoardKanban({
+  checkpointLabel,
+  obstacles,
+  onConfirm,
+  onSkip,
+  onUnskip,
+  rows,
+}: BoardKanbanProps) {
+  const { DragDropContext, Draggable, Droppable } = useDnd();
   const grouped = groupRows(rows);
+  const [confirmRow, setConfirmRow] = useState<BoardRow | null>(null);
+
+  async function handleDragEnd(result: DropResult) {
+    const { destination, draggableId } = result;
+    if (destination === null) {
+      return;
+    }
+    const destinationStatus = destination.droppableId as KanbanColumn;
+    const row = rows.find((entry) => entry._id === draggableId);
+    if (row === undefined) {
+      return;
+    }
+    const action = resolveStatusMove(row.status, destinationStatus);
+    if (action === "noop") {
+      return;
+    }
+    if (action === "confirm") {
+      setConfirmRow(row);
+      return;
+    }
+    if (action === "skip") {
+      await onSkip({ rowId: row._id });
+      return;
+    }
+    await onUnskip({ rowId: row._id });
+  }
 
   return (
-    <div className="grid gap-3 md:grid-cols-4">
-      {KANBAN_COLUMNS.map((status) => {
-        const columnRows = grouped[status];
-        return (
-          <Stack gap="xs" key={status}>
+    <>
+      <DragDropContext onDragEnd={(result) => void handleDragEnd(result)}>
+        <div className="grid gap-3 md:grid-cols-4">
+          {KANBAN_COLUMNS.map((status) => {
+            const columnRows = grouped[status];
+            return (
+              <Droppable droppableId={status} key={status}>
+                {(provided) => (
+                  <Stack gap="xs" ref={provided.innerRef} {...provided.droppableProps}>
+                    <Text fw={600} size="sm">
+                      {status}
+                    </Text>
+                    {columnRows.length === 0 ? (
+                      <Text c="dimmed" size="sm">
+                        なし
+                      </Text>
+                    ) : (
+                      columnRows.map((row, index) => (
+                        <Draggable draggableId={row._id} index={index} key={row._id}>
+                          {(dragProvided) => (
+                            <div
+                              ref={dragProvided.innerRef}
+                              {...dragProvided.draggableProps}
+                              {...dragProvided.dragHandleProps}
+                            >
+                              <RecordCard row={row} />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))
+                    )}
+                    {provided.placeholder}
+                  </Stack>
+                )}
+              </Droppable>
+            );
+          })}
+          <Stack gap="xs">
             <Text fw={600} size="sm">
-              {status}
+              次の一手
             </Text>
-            {columnRows.length === 0 ? (
+            {obstacles.map((obstacle) => (
+              <NextStepCard
+                key={obstacle._id}
+                subtitle={obstacle.ifText}
+                title={obstacle.thenText}
+              />
+            ))}
+            {checkpointLabel === null ? null : (
+              <NextStepCard subtitle="チェックポイント" title={checkpointLabel} />
+            )}
+            {obstacles.length === 0 && checkpointLabel === null ? (
               <Text c="dimmed" size="sm">
                 なし
               </Text>
-            ) : (
-              columnRows.map((row) => <RecordCard key={row._id} row={row} />)
-            )}
+            ) : null}
           </Stack>
-        );
-      })}
-      <Stack gap="xs">
-        <Text fw={600} size="sm">
-          次の一手
-        </Text>
-        {obstacles.map((obstacle) => (
-          <NextStepCard key={obstacle._id} subtitle={obstacle.ifText} title={obstacle.thenText} />
-        ))}
-        {checkpointLabel === null ? null : (
-          <NextStepCard subtitle="チェックポイント" title={checkpointLabel} />
-        )}
-        {obstacles.length === 0 && checkpointLabel === null ? (
-          <Text c="dimmed" size="sm">
-            なし
-          </Text>
-        ) : null}
-      </Stack>
-    </div>
+        </div>
+      </DragDropContext>
+      <BoardConfirmRowModal
+        onClose={() => setConfirmRow(null)}
+        onConfirm={onConfirm}
+        opened={confirmRow !== null}
+        row={confirmRow}
+      />
+    </>
   );
 }
