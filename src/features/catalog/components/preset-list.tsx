@@ -29,7 +29,7 @@ import { CreatePresetSchema, PresetSchema } from "~/features/catalog/schemas/pre
 import type { PresetLineInput } from "~/features/catalog/schemas/preset-schema";
 import { weekdayFromSelect } from "~/features/catalog/schemas/weekday-schema";
 import type { ItemDto, ItemId, PresetDto } from "~/features/catalog/types/item";
-import { parseItemId } from "~/features/catalog/types/item";
+import { parseItemId, unwrapItemId } from "~/features/catalog/types/item";
 import type {
   CreatePresetInput,
   RemovePresetInput,
@@ -60,7 +60,7 @@ const WEEKDAY_OPTIONS = weekdaySelectOptions(WEEKDAYS);
 function parsedLines(lines: PresetLineInput[]) {
   return lines.map((line) => ({
     content: line.content,
-    itemId: parseItemId(line.itemId),
+    itemId: unwrapItemId(parseItemId(line.itemId)),
     minutes: line.minutes,
   }));
 }

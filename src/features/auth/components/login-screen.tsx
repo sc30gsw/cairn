@@ -1,15 +1,10 @@
 import { Button, Card, Center, Divider, Stack, Text, Title } from "@mantine/core";
 
 import { AccountAuthPanel } from "~/features/auth/components/account-auth-form";
-import { useAuthActions } from "~/features/auth/hooks/use-auth-actions";
-import { useAuthPublicConfig } from "~/features/auth/hooks/use-auth-config";
+import { signInWithNotion } from "~/features/auth/lib/auth-actions";
 import { DISPLAY_FONT } from "~/lib/theme";
 
 export function LoginScreen() {
-  const { signInWithNotion } = useAuthActions();
-  const publicConfig = useAuthPublicConfig();
-  const showNotionSignIn = publicConfig.data?.notionSignIn ?? false;
-
   return (
     <Center h="100dvh">
       <Card maw={420} padding="xl" shadow="sm" w="100%">
@@ -22,14 +17,10 @@ export function LoginScreen() {
           </Title>
           <Text>アカウントで入る。記録はアプリが正本です。</Text>
           <AccountAuthPanel />
-          {showNotionSignIn ? (
-            <>
-              <Divider label="または" labelPosition="center" />
-              <Button fullWidth onClick={signInWithNotion} size="md" variant="light">
-                Notion でログイン
-              </Button>
-            </>
-          ) : null}
+          <Divider label="または" labelPosition="center" />
+          <Button fullWidth onClick={signInWithNotion} size="md" variant="light">
+            Notion でログイン
+          </Button>
         </Stack>
       </Card>
     </Center>

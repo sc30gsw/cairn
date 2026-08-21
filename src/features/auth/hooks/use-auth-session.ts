@@ -1,5 +1,5 @@
-import type { AppShellUser } from "~/features/auth/types/session";
 import { authClient } from "~/lib/auth-client";
+import type { AppShellUser } from "~/types/session";
 
 export function useAuthSession() {
   return authClient.useSession();

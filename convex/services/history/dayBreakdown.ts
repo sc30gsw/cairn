@@ -1,25 +1,22 @@
 import type { QueryCtx } from "../../_generated/server";
 import { loadCatalog } from "../../lib/catalogLoader";
-import { buildDayBreakdown, liveDayDatesFrom, liveRows } from "./shared";
+import { getDayByDate } from "../days/getDayByDate";
+import { buildDayBreakdown, liveRows } from "./shared";
 
 export async function dayBreakdown(
   ctx: QueryCtx,
   ownerId: string,
   args: { dateJst: string; todayJst: string },
 ) {
-  const [rows, days, catalog] = await Promise.all([
+  const [rows, catalog, liveDay] = await Promise.all([
     ctx.db
       .query("rows")
       .withIndex("by_owner_and_date", (q) => q.eq("ownerId", ownerId).eq("dateJst", args.dateJst))
       .collect(),
-    ctx.db
-      .query("days")
-      .withIndex("by_owner_and_date", (q) => q.eq("ownerId", ownerId).eq("dateJst", args.dateJst))
-      .collect(),
     loadCatalog(ctx, ownerId),
+    getDayByDate(ctx, ownerId, args.dateJst),
   ]);
-  const liveDayDates = liveDayDatesFrom(days);
-  const liveDay = days.find((day) => day.deletedAt === undefined);
+  const liveDayDates = liveDay === null ? new Set<string>() : new Set([args.dateJst]);
   return buildDayBreakdown(
     args.dateJst,
     args.todayJst,

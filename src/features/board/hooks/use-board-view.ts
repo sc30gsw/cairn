@@ -5,7 +5,7 @@ import type { BoardSearch, BoardTab } from "~/features/board/schemas/board-searc
 /** `/board` 専用 — BoardPage 配下からのみ import すること */
 const boardRoute = getRouteApi("/board");
 
-export function deriveBoardView(search: BoardSearch) {
+function deriveBoardView(search: BoardSearch) {
   const tab: BoardTab = search.tab ?? "kanban";
   return { tab };
 }

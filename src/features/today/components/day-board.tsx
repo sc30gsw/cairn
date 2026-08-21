@@ -26,8 +26,6 @@ import {
 
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
-import type { ItemDto, PresetDto, PresetId } from "~/features/catalog/types/item";
-import { parsePresetId } from "~/features/catalog/types/item";
 import { AdhocRowForm } from "~/features/today/components/adhoc-row-form";
 import { DayMetaPanel } from "~/features/today/components/day-meta-panel";
 import { RowEditor } from "~/features/today/components/row-editor";
@@ -45,6 +43,8 @@ import type {
 import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-style";
 import { onRequiredSelect } from "~/lib/select";
 import { BODY_FONT, NUMERAL_FONT } from "~/lib/theme";
+import type { ItemDto, PresetDto, PresetId } from "~/types/item";
+import { parsePresetId, unwrapPresetId } from "~/types/item";
 
 import classes from "~/features/today/components/day-board.module.css";
 
@@ -103,7 +103,7 @@ function DayPresetSelect({
       data={presetSelectData(presets)}
       label="この日の雛形"
       onChange={onRequiredSelect((raw) => {
-        const presetId = parsePresetId(raw);
+        const presetId = unwrapPresetId(parsePresetId(raw));
         if (isToday) {
           void navigate({
             to: ".",

@@ -12,9 +12,9 @@ import {
   useUpdateGoal,
   useUpdateObstacle,
 } from "~/features/goals/hooks/goals-mutations";
-import { useGoalsList, useObstaclesList } from "~/features/goals/hooks/goals-queries";
 import { useRemoveTarget, useSaveTarget } from "~/features/goals/hooks/targets-mutations";
 import { useTargetsWithProgress } from "~/features/goals/hooks/targets-queries";
+import { useGoalsList, useObstaclesList } from "~/hooks/goals-queries";
 import { useCategoriesList } from "~/hooks/use-categories-list";
 import { runMutation } from "~/lib/run-mutation";
 

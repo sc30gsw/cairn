@@ -3,15 +3,15 @@ import { expect, test, vi } from "vite-plus/test";
 import { LoginScreen } from "~/features/auth/components/login-screen";
 import { renderWithMantine } from "~/test-utils/render";
 
-const signInWithNotion = vi.fn();
+const { signInWithNotion } = vi.hoisted(() => ({
+  signInWithNotion: vi.fn(),
+}));
 
-vi.mock("~/features/auth/hooks/use-auth-actions", () => ({
-  useAuthActions: () => ({
-    signInWithAccount: vi.fn(),
-    signInWithNotion,
-    signOutAndReload: vi.fn(),
-    signUpWithAccount: vi.fn(),
-  }),
+vi.mock("~/features/auth/lib/auth-actions", () => ({
+  signInWithNotion,
+  signInWithAccount: vi.fn(),
+  signOutAndReload: vi.fn(),
+  signUpWithAccount: vi.fn(),
 }));
 
 vi.mock("~/features/auth/hooks/use-auth-config", () => ({
@@ -20,9 +20,9 @@ vi.mock("~/features/auth/hooks/use-auth-config", () => ({
 
 import { useAuthPublicConfig } from "~/features/auth/hooks/use-auth-config";
 
-test("Notion ログインが有効なら Notion ボタンが見える", () => {
+test("Notion ボタンは常に見える", () => {
   vi.mocked(useAuthPublicConfig).mockReturnValue({
-    data: { notionSignIn: true },
+    data: { notionSignIn: false, signUpEnabled: true },
   } as ReturnType<typeof useAuthPublicConfig>);
 
   const { getByRole, queryByText } = renderWithMantine(<LoginScreen />);
@@ -33,11 +33,11 @@ test("Notion ログインが有効なら Notion ボタンが見える", () => {
 
 test("アカウントログインの入力欄が見える", () => {
   vi.mocked(useAuthPublicConfig).mockReturnValue({
-    data: { notionSignIn: false },
+    data: { notionSignIn: false, signUpEnabled: false },
   } as ReturnType<typeof useAuthPublicConfig>);
 
-  const { getByLabelText, queryByRole } = renderWithMantine(<LoginScreen />);
+  const { getByLabelText, getByRole } = renderWithMantine(<LoginScreen />);
   expect(getByLabelText("ユーザー名またはメールアドレス")).toBeDefined();
   expect(getByLabelText("パスワード")).toBeDefined();
-  expect(queryByRole("button", { name: "Notion でログイン" })).toBeNull();
+  expect(getByRole("button", { name: "Notion でログイン" })).toBeDefined();
 });

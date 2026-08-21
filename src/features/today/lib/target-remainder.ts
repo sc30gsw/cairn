@@ -1,11 +1,5 @@
 import type { TargetProgress } from "~/features/today/types/targets";
-
-//? 目標 feature のラベルは跨げない。単位の3語だけここで持つ
-const TARGET_METRIC_UNITS = {
-  count: "件",
-  days: "日",
-  minutes: "分",
-} as const;
+import { TARGET_METRIC_UNITS } from "~/lib/target-metric-units";
 
 export type TargetRemainder = {
   achieved: boolean;

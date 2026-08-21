@@ -11,6 +11,43 @@ const reactDoctorRules = {
   ...TANSTACK_START_RULES,
 };
 
+const FEATURE_NAMES = ["auth", "board", "catalog", "goals", "history", "today", "trash"] as const;
+
+const featureBoundaryLintOverrides = FEATURE_NAMES.map((feature) => ({
+  files: [`src/features/${feature}/**`],
+  rules: {
+    "no-restricted-imports": [
+      "error",
+      {
+        patterns: [
+          {
+            message:
+              "Feature modules cannot import from other features. Extract shared code to src/components, src/hooks, src/lib, or src/types.",
+            regex: `^~/features/(?!${feature}/)`,
+          },
+        ],
+      },
+    ],
+  },
+}));
+
+const sharedBoundaryLintOverride = {
+  files: ["src/components/**", "src/hooks/**", "src/lib/**", "src/types/**"],
+  rules: {
+    "no-restricted-imports": [
+      "error",
+      {
+        patterns: [
+          {
+            message: "Shared modules cannot import from features.",
+            regex: "^~/features/",
+          },
+        ],
+      },
+    ],
+  },
+};
+
 const isVitest = process.env.VITEST === "true";
 
 export default defineConfig({
@@ -98,6 +135,10 @@ export default defineConfig({
           "react-doctor/only-export-components": "off",
         },
       },
+      // @ts-expect-error vite-plus lint override typing is narrower than oxlint's no-restricted-imports patterns
+      ...featureBoundaryLintOverrides,
+      // @ts-expect-error vite-plus lint override typing is narrower than oxlint's no-restricted-imports patterns
+      sharedBoundaryLintOverride,
     ],
     plugins: ["react", "react-perf", "import", "jsx-a11y", "promise"],
     rules: {

@@ -67,9 +67,9 @@ Notion の日次ログと学習記録で英語学習を残している。行の�
 
 ## Implementation Decisions
 
-- TanStack Start と Convex と Better Auth（`@convex-dev/better-auth`）と Mantine 9（core / dates / hooks）と `tailwind-preset-mantine` を使う。Notion ログインは native の social provider。genericOAuth は使わない。email/password は有効にしない。
-- Better Auth の表はコンポーネント内に置く。アプリの schema に複製しない。ドメイン表はすべて所有者キーを持つ。未認証の公開 query は残さない。デモの tasks 表は捨てる。
-- 認証ラッパは convex-helpers の custom query / custom mutation。identity と email allowlist を通した所有者だけ ctx に載せる。Better Auth の user 行を認可のたびに引かない。
+- TanStack Start と Convex と Better Auth（`@convex-dev/better-auth`）と Mantine 9（core / dates / hooks）と `tailwind-preset-mantine` を使う。Notion ログインは native の social provider（設定時のみ）。email / username / password による一般アカウントも許可（[ADR 0009](./adr/0009-general-account-auth.md)）。genericOAuth は使わない。
+- Better Auth の表はコンポーネント内に置く。アプリの schema に複製しない。ドメイン表はすべて所有者キー（JWT `subject`）を持つ。未認証の公開 query は残さない。デモの tasks 表は捨てる。
+- 認証ラッパは convex-helpers の custom query / custom mutation。identity から `ownerId`（subject）を ctx に載せ、各 mutation/query がリソースの `ownerId` を検証する。Better Auth の user 行を認可のたびに引かない。
 - ドメインの不変条件は Convex ランタイムを import しない純関数に置く。公開 query / mutation は引数検証、所有者、純関数、DB 書きだけ。フロントは同じ純関数を表示に使ってよい。
 - 日は JST の暦日。行は日に属する。状態は確定 / 未着手 / スキップ。項目はカテゴリを1つ持つカタログ。プリセットは曜日フラグと雛形の列。睡眠は就寝と起床。今夜は日付なしの就寝だけ。本番目標は1件。週間ゴールは月曜始まりの分数1つ。障害プランは if-then の短文。ゴミ箱は行と日のみ。
 - 睡眠時間は起床日の起床から、直前の今夜または前日就寝を引く。7時間未満は警告フラグ。確定 mutation は警告でも成功する。
@@ -77,8 +77,8 @@ Notion の日次ログと学習記録で英語学習を残している。行の�
 - 学習量は確定行の分数合計。7日移動平均は対象の暦7日で、日が無い日は 0。週間ゴールの実績も同じ定義。
 - 共有文は確定行だけ。カテゴリ固定順（TOEIC対策、多聴、多読、英会話、その他）。1カテゴリは平坦、2カテゴリ以上は親+子。カテゴリ内は入力順。コピーは Mantine の CopyButton または useClipboard。
 - 履歴の月は `@mantine/dates` の Calendar。空マスは休養。週は `@mantine/schedule` の AgendaView。行は終日イベント。ResourcesDayView は使わない。ホームは今日。
-- 初期シード。項目は Distinction 2000、英会話、金のフレーズ、多読、英文法（解く）、英文法（復習）、出る文特急、その他。カテゴリ対応は Notion どおり（金フレ・英文法・出る文特急は TOEIC対策、Distinction 2000 は多聴、多読は多読、英会話は英会話、その他はその他）。本番目標は 730〜850 / 2026-09-27。プリセットは所有者が CRUD するので、初期の曜日割り当てと雛形分数はシードしてよい。
-- 秘密は Convex deployment の env。BETTER_AUTH_SECRET、SITE_URL、NOTION_CLIENT_ID / SECRET、ALLOWED_EMAIL。アプリ側は CONVEX_DEPLOYMENT、VITE_CONVEX_URL、VITE_CONVEX_SITE_URL、VITE_SITE_URL。Better Auth インスタンスは Convex HTTP 上。Start は `/api/auth/$` でプロキシ。
+- 新規ユーザーは空のカタログから始める（`days.open` は自動 seed しない）。`catalog.ensure` で Notion 由来の初期データを投入可能。
+- 秘密は Convex deployment の env。BETTER_AUTH_SECRET、SITE_URL、NOTION_CLIENT_ID / SECRET、AUTH_DISABLE_SIGNUP（任意）、BETTER_AUTH_TRUSTED_ORIGINS（任意）。アプリ側は CONVEX_DEPLOYMENT、VITE_CONVEX_URL、VITE_CONVEX_SITE_URL、VITE_SITE_URL。Better Auth インスタンスは Convex HTTP 上。Start は `/api/auth/$` でプロキシ。
 - フロントのフォームは Formisch と Valibot。Zod は使わない。結果型は better-result。クラス名は cnfast の `cn`。相対 import は禁止。`~/*` が `src/*`。
 - パッケージ追加は `vp add`。Vitest / Testing Library 系の本体を直接入れない。テスト runner は vite-plus。`convex-test` と `@edge-runtime/vm` と `convex-helpers` と `@testing-library/react`（および jsdom）と `@mantine/schedule` は足してよい。`vitest` 本体、`convex-helpers/testing`、Playwright は v1 に入れない。
 - `vp test` は Vitest project を分ける。フロント（jsdom、src の test）、Convex 純関数（Node、lib の test）、Convex 統合（edge-runtime、公開関数の test）。`test.include` が src だけな現状は、この分割で置き換える。
@@ -91,7 +91,7 @@ Notion の日次ログと学習記録で英語学習を残している。行の�
 
 フロントは Testing Trophy。静的解析は既存の `vp check`（警告も失敗）。unit は少なく、表示用の純関数や `cn` 程度。integration が本体で、Testing Library がルートと画面を叩く。Convex クライアントはフック境界で stub する。本物の `convex-test` をフロント integration に pant しない。e2e（ブラウザで Notion ログイン）は v1 の対象外。
 
-Convex は Testing Pyramid。底は純関数の unit を厚くする（睡眠時間、警告、学習量、7日移動平均、共有文 Markdown、プリセット適用と切替、曜日の排他、未来の日に行を作らない、allowlist、ゴミ箱 30 日、項目が使用中なら削除不可）。中は公開 query / mutation の統合を薄くする（`convex-test` と `withIdentity`）。未認証は throw、allowlist 外は throw、所有者なら公開 mutation が通り公開 query で読める。永続とゴミ箱のスケジュールはこの層。頂点の e2e は v1 に置かない。
+Convex は Testing Pyramid。底は純関数の unit を厚くする（睡眠時間、警告、学習量、7日移動平均、共有文 Markdown、プリセット適用と切替、曜日の排他、未来の日に行を作らない、ゴミ箱 30 日、項目が使用中なら削除不可）。中は公開 query / mutation の統合を薄くする（`convex-test` と `withIdentity`）。未認証は throw、所有者間の IDOR は throw、所有者なら公開 mutation が通り公開 query で読める。永続とゴミ箱のスケジュールはこの層。頂点の e2e は v1 に置かない。
 
 テストしないもの。生成コード、Better Auth コンポーネント内部、Notion OAuth の往復、`disableSignUp` のベンダー挙動、Mantine の描画、`ctx.db` を直接読む assert、薄い wrapper の同語反復。
 
@@ -103,10 +103,11 @@ Convex は Testing Pyramid。底は純関数の unit を厚くする（睡眠時
 - リラックス工程
 - JSON/CSV エクスポート
 - 8/14 以前の Notion データ移行、Notion API 同期
-- 複数ユーザー、共有、通知、AI 要約
+- ユーザー間のデータ共有、通知、AI 要約
+- Notion OAuth と email/password のアカウント連携（同一 subject への統合）
 - タスク・締切・時間割・計画の前提・判断の履歴（Notion に残す）
 - OKR ツリー、WOOP ウィザード、障害プランによる自動スキップ
-- WorkOS、Clerk、`@convex-dev/auth`、自前 JWT、genericOAuth、email/password
+- WorkOS、Clerk、`@convex-dev/auth`、自前 JWT、genericOAuth
 - Playwright / 本番 Notion を使う e2e
 - ResourcesDayView、オフライン対応
 

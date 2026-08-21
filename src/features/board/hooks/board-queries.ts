@@ -4,18 +4,6 @@ import type { DateJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
 
-export function useBoardDay(dateJst: DateJst, todayJst: DateJst) {
-  return useSuspenseQuery(convexQuery(api.queries.days.get.get, { dateJst, todayJst }));
-}
-
-export function useBoardGoals() {
-  return useSuspenseQuery(convexQuery(api.queries.goals.list.list, {}));
-}
-
-export function useBoardObstacles() {
-  return useSuspenseQuery(convexQuery(api.queries.goals.listObstacles.listObstacles, {}));
-}
-
 export function useBoardScheduleBlocks(anchorDateJst: DateJst) {
   return useSuspenseQuery(
     convexQuery(api.queries.boardSchedule.listForWeek.listForWeek, { anchorDateJst }),

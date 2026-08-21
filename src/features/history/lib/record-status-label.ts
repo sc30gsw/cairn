@@ -1,1 +1,1 @@
-export { RECORD_STATUS_UI, recordStatusLabel } from "~/lib/record-status-ui";
+export { RECORD_STATUS_UI } from "~/lib/record-status-ui";
