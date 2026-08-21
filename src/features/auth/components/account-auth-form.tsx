@@ -2,7 +2,8 @@ import { Field, Form, useForm } from "@formisch/react";
 import { Button, PasswordInput, SegmentedControl, Stack, Text, TextInput } from "@mantine/core";
 import { useState } from "react";
 
-import { useAuthActions } from "~/features/auth/hooks/use-auth-actions";
+import { signInWithAccount, signUpWithAccount } from "~/features/auth/lib/auth-actions";
+import { submitAuthAction } from "~/features/auth/lib/submit-auth-action";
 import {
   AccountLoginSchema,
   AccountSignUpSchema,
@@ -15,8 +16,6 @@ type AccountAuthFormProps = {
 
 export function AccountAuthForm({ mode }: AccountAuthFormProps) {
   const [errorMessage, setErrorMessage] = useState<null | string>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signInWithAccount, signUpWithAccount } = useAuthActions();
   const loginForm = useForm({ schema: AccountLoginSchema });
   const signUpForm = useForm({ schema: AccountSignUpSchema });
 
@@ -24,22 +23,7 @@ export function AccountAuthForm({ mode }: AccountAuthFormProps) {
     return (
       <Form
         of={signUpForm}
-        onSubmit={(output) => {
-          setErrorMessage(null);
-          setIsSubmitting(true);
-          void signUpWithAccount(output)
-            .then((result) => {
-              if (result.errorMessage !== null) {
-                setErrorMessage(result.errorMessage);
-              }
-            })
-            .catch((error: unknown) => {
-              setErrorMessage(error instanceof Error ? error.message : "登録に失敗しました");
-            })
-            .finally(() => {
-              setIsSubmitting(false);
-            });
-        }}
+        onSubmit={(output) => submitAuthAction(() => signUpWithAccount(output), setErrorMessage)}
       >
         <Stack gap="sm">
           <Field of={signUpForm} path={["username"]}>
@@ -92,7 +76,12 @@ export function AccountAuthForm({ mode }: AccountAuthFormProps) {
               {errorMessage}
             </Text>
           ) : null}
-          <Button disabled={isSubmitting} fullWidth loading={isSubmitting} type="submit">
+          <Button
+            disabled={signUpForm.isSubmitting}
+            fullWidth
+            loading={signUpForm.isSubmitting}
+            type="submit"
+          >
             アカウントを作成
           </Button>
         </Stack>
@@ -103,22 +92,7 @@ export function AccountAuthForm({ mode }: AccountAuthFormProps) {
   return (
     <Form
       of={loginForm}
-      onSubmit={(output) => {
-        setErrorMessage(null);
-        setIsSubmitting(true);
-        void signInWithAccount(output)
-          .then((result) => {
-            if (result.errorMessage !== null) {
-              setErrorMessage(result.errorMessage);
-            }
-          })
-          .catch((error: unknown) => {
-            setErrorMessage(error instanceof Error ? error.message : "ログインに失敗しました");
-          })
-          .finally(() => {
-            setIsSubmitting(false);
-          });
-      }}
+      onSubmit={(output) => submitAuthAction(() => signInWithAccount(output), setErrorMessage)}
     >
       <Stack gap="sm">
         <Field of={loginForm} path={["identifier"]}>
@@ -148,7 +122,12 @@ export function AccountAuthForm({ mode }: AccountAuthFormProps) {
             {errorMessage}
           </Text>
         ) : null}
-        <Button disabled={isSubmitting} fullWidth loading={isSubmitting} type="submit">
+        <Button
+          disabled={loginForm.isSubmitting}
+          fullWidth
+          loading={loginForm.isSubmitting}
+          type="submit"
+        >
           ログイン
         </Button>
       </Stack>

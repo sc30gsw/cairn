@@ -3,15 +3,15 @@ import { expect, test, vi } from "vite-plus/test";
 import { LoginScreen } from "~/features/auth/components/login-screen";
 import { renderWithMantine } from "~/test-utils/render";
 
-const signInWithNotion = vi.fn();
+const { signInWithNotion } = vi.hoisted(() => ({
+  signInWithNotion: vi.fn(),
+}));
 
-vi.mock("~/features/auth/hooks/use-auth-actions", () => ({
-  useAuthActions: () => ({
-    signInWithAccount: vi.fn(),
-    signInWithNotion,
-    signOutAndReload: vi.fn(),
-    signUpWithAccount: vi.fn(),
-  }),
+vi.mock("~/features/auth/lib/auth-actions", () => ({
+  signInWithNotion,
+  signInWithAccount: vi.fn(),
+  signOutAndReload: vi.fn(),
+  signUpWithAccount: vi.fn(),
 }));
 
 vi.mock("~/features/auth/hooks/use-auth-config", () => ({

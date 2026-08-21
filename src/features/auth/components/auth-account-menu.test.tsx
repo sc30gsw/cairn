@@ -3,13 +3,11 @@ import { expect, test, vi } from "vite-plus/test";
 import { AuthAccountMenu, userLabel } from "~/features/auth/components/auth-account-menu";
 import { renderWithMantine } from "~/test-utils/render";
 
-vi.mock("~/features/auth/hooks/use-auth-actions", () => ({
-  useAuthActions: () => ({
-    signInWithAccount: vi.fn(),
-    signInWithNotion: vi.fn(),
-    signOutAndReload: vi.fn(),
-    signUpWithAccount: vi.fn(),
-  }),
+vi.mock("~/features/auth/lib/auth-actions", () => ({
+  signInWithAccount: vi.fn(),
+  signInWithNotion: vi.fn(),
+  signOutAndReload: vi.fn(),
+  signUpWithAccount: vi.fn(),
 }));
 
 vi.mock("~/features/auth/hooks/use-auth-session", () => ({

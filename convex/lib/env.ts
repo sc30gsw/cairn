@@ -13,3 +13,20 @@ export function notionOAuthConfigured(): boolean {
     clientId !== undefined && clientId !== "" && clientSecret !== undefined && clientSecret !== ""
   );
 }
+
+export function trustedOriginsFromEnv(siteUrl: string | undefined): string[] {
+  const origins = new Set<string>();
+  if (siteUrl !== undefined && siteUrl !== "") {
+    origins.add(siteUrl);
+  }
+  const extra = process.env.BETTER_AUTH_TRUSTED_ORIGINS;
+  if (extra !== undefined && extra !== "") {
+    for (const origin of extra.split(",")) {
+      const trimmed = origin.trim();
+      if (trimmed !== "") {
+        origins.add(trimmed);
+      }
+    }
+  }
+  return [...origins];
+}

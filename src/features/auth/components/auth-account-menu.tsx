@@ -1,8 +1,8 @@
 import { Avatar, Menu } from "@mantine/core";
 import { IconLogout } from "@tabler/icons-react";
 
-import { useAuthActions } from "~/features/auth/hooks/use-auth-actions";
 import { useAppShellUser } from "~/features/auth/hooks/use-auth-session";
+import { signOutAndReload } from "~/features/auth/lib/auth-actions";
 import type { AppShellUser } from "~/features/auth/types/session";
 
 export function userLabel(user: AppShellUser): string {
@@ -17,7 +17,6 @@ export function userLabel(user: AppShellUser): string {
 
 export function AuthAccountMenu() {
   const user = useAppShellUser();
-  const { signOutAndReload } = useAuthActions();
 
   if (user === null) {
     return null;

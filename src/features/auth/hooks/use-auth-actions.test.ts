@@ -1,6 +1,6 @@
 import { expect, test, vi } from "vite-plus/test";
 
-import { signInWithAccount, signUpWithAccount } from "~/features/auth/hooks/use-auth-actions";
+import { signInWithAccount, signUpWithAccount } from "~/features/auth/lib/auth-actions";
 import { authClient } from "~/lib/auth-client";
 
 vi.mock("~/lib/auth-client", () => ({

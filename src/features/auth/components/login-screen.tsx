@@ -1,12 +1,11 @@
 import { Button, Card, Center, Divider, Stack, Text, Title } from "@mantine/core";
 
 import { AccountAuthPanel } from "~/features/auth/components/account-auth-form";
-import { useAuthActions } from "~/features/auth/hooks/use-auth-actions";
 import { useAuthPublicConfig } from "~/features/auth/hooks/use-auth-config";
+import { signInWithNotion } from "~/features/auth/lib/auth-actions";
 import { DISPLAY_FONT } from "~/lib/theme";
 
 export function LoginScreen() {
-  const { signInWithNotion } = useAuthActions();
   const publicConfig = useAuthPublicConfig();
   const showNotionSignIn = publicConfig.data?.notionSignIn ?? false;
 
