@@ -419,3 +419,13 @@ export const presetReviewValidator = v.object({
 export type PresetReviewDto = Infer<typeof presetReviewValidator>;
 export type PresetReviewWeekdayDto = Infer<typeof presetReviewWeekdayValidator>;
 export type PresetReviewSuggestionDto = Infer<typeof presetReviewSuggestionValidator>;
+
+export const boardScheduleEventDtoValidator = v.object({
+  _id: v.id("boardScheduleEvents"),
+  color: v.string(),
+  endAt: v.string(),
+  startAt: v.string(),
+  title: v.string(),
+});
+
+export type BoardScheduleEventDto = Infer<typeof boardScheduleEventDtoValidator>;

@@ -80,4 +80,12 @@ export default defineSchema({
     ownerId: v.string(),
     targetValue: v.number(),
   }).index("by_owner_and_category", ["ownerId", "categoryId"]),
+
+  boardScheduleEvents: defineTable({
+    color: v.optional(v.string()),
+    endAt: v.string(),
+    ownerId: v.string(),
+    startAt: v.string(),
+    title: v.string(),
+  }).index("by_owner", ["ownerId"]),
 });
