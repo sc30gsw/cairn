@@ -7,8 +7,9 @@ import { renderWithMantine } from "~/test-utils/render";
 
 vi.mock("~/lib/auth-client", () => ({
   authClient: {
-    signIn: { social: vi.fn() },
+    signIn: { email: vi.fn(), social: vi.fn(), username: vi.fn() },
     signOut: vi.fn(),
+    signUp: { email: vi.fn() },
     useSession: vi.fn(),
   },
 }));
@@ -33,7 +34,7 @@ test("未ログインならログイン画面が見える", () => {
       <p>記録</p>
     </OwnerGate>,
   );
-  expect(getByRole("button", { name: "Notion でログイン" })).toBeDefined();
+  expect(getByRole("button", { name: "ログイン" })).toBeDefined();
 });
 
 test("ログイン済みなら子が見える", () => {
