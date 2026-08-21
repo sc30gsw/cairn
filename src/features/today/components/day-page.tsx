@@ -2,7 +2,6 @@ import { Suspense, useState } from "react";
 import type { DateJst } from "~domain/jst";
 import { mondayOfWeek, todayJst } from "~domain/jst";
 
-import type { PresetId } from "~/features/catalog/types/item";
 import { DayBoard } from "~/features/today/components/day-board";
 import { DayPagePending } from "~/features/today/components/day-page-pending";
 import {
@@ -21,11 +20,12 @@ import {
   useTargetsWithProgress,
 } from "~/features/today/hooks/day-queries";
 import { useApplyPresetFromSearch } from "~/features/today/hooks/use-apply-preset-from-search";
-import { useOpenAndLoadDay } from "~/features/today/hooks/use-open-and-load-day";
 import { datedDayRoute, indexDayRoute } from "~/features/today/lib/day-route-api";
 import { targetRemainder, targetRemainderMessage } from "~/features/today/lib/target-remainder";
 import type { DaySearch } from "~/features/today/schemas/day-search-schema";
+import { useOpenAndLoadDay } from "~/hooks/use-open-and-load-day";
 import { runMutation } from "~/lib/run-mutation";
+import type { PresetId } from "~/types/item";
 
 /** `/` 専用 entry。`indexDayRoute` はこのコンポーネントからのみ使う。 */
 export function TodayDayPage() {

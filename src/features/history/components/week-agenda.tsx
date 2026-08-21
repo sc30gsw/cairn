@@ -1,16 +1,10 @@
 import { Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { groupBy, prop } from "remeda";
-import type { Condition } from "~domain/conditions";
 import { addDaysJst, type DateJst } from "~domain/jst";
 
 import { RECORD_STATUS_UI } from "~/features/history/lib/record-status-label";
 import type { WeekEvent, WeekPage } from "~/features/history/types/history";
-
-const CONDITION_BADGE_COLOR = {
-  崩れた: "red",
-  普通: "blue",
-  好調: "teal",
-} as const satisfies Record<Condition, string>;
+import { CONDITION_MANTINE_COLOR } from "~/lib/condition-colors";
 
 const DATE_HEADER_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
   day: "numeric",
@@ -95,7 +89,7 @@ export function WeekAgenda({ week }: { week: WeekPage }) {
                     {formatDateHeader(dateJst)}
                   </Text>
                   {condition === null || condition === undefined ? null : (
-                    <Badge color={CONDITION_BADGE_COLOR[condition]} size="sm" variant="light">
+                    <Badge color={CONDITION_MANTINE_COLOR[condition]} size="sm" variant="light">
                       {condition}
                     </Badge>
                   )}

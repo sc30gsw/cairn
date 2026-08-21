@@ -23,8 +23,8 @@ import { CatchBoundary, Link, useRouterState } from "@tanstack/react-router";
 import type { CSSProperties, ReactNode } from "react";
 
 import { RouteErrorComponent } from "~/components/error-state";
-import type { AppShellUser } from "~/features/auth/types/session";
 import { DISPLAY_FONT } from "~/lib/theme";
+import type { AppShellUser } from "~/types/session";
 
 type AppShellProps = {
   children: ReactNode;

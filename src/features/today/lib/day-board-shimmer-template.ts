@@ -1,9 +1,9 @@
 import { STATUSES } from "~domain/domain";
 import type { DateJst } from "~domain/jst";
 
-import type { ItemDto, PresetDto } from "~/features/catalog/types/item";
 import type { DayPage, DayRow } from "~/features/today/types/day";
 import { shimmerId } from "~/lib/shimmer-id";
+import type { ItemDto, PresetDto } from "~/types/item";
 
 const pendingStatus = STATUSES[1];
 

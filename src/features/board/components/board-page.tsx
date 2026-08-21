@@ -6,11 +6,7 @@ import { todayJst } from "~domain/jst";
 import { PageTitle } from "~/components/page-title";
 import { BoardKanban } from "~/features/board/components/board-kanban";
 import { BoardSchedule } from "~/features/board/components/board-schedule";
-import {
-  useBoardDay,
-  useBoardGoals,
-  useBoardObstacles,
-} from "~/features/board/hooks/board-queries";
+import { useBoardDay } from "~/features/board/hooks/board-queries";
 import { useBoardView } from "~/features/board/hooks/use-board-view";
 import {
   boardShimmerObstacle,
@@ -18,6 +14,7 @@ import {
 } from "~/features/board/lib/board-shimmer-template";
 import { nearestCheckpoint } from "~/features/board/lib/nearest-checkpoint";
 import type { BoardTab } from "~/features/board/schemas/board-search-schema";
+import { useGoalsList, useObstaclesList } from "~/hooks/goals-queries";
 
 import tabBarClasses from "~/features/board/components/board-tab-bar.module.css";
 
@@ -61,8 +58,8 @@ function BoardReady() {
   const today = todayJst();
   const { setTab, tab } = useBoardView();
   const { data: day } = useBoardDay(today, today);
-  const { data: goals } = useBoardGoals();
-  const { data: obstacles } = useBoardObstacles();
+  const { data: goals } = useGoalsList();
+  const { data: obstacles } = useObstaclesList();
   const checkpoint = nearestCheckpoint(goals, today);
   const checkpointLabel =
     checkpoint === null

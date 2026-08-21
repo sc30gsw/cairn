@@ -3,11 +3,11 @@ import { Button, Grid, NumberInput, Select } from "@mantine/core";
 
 import { ConcreteActionField } from "~/components/concrete-action-field";
 import { LabelAlignedCell } from "~/components/label-aligned-cell";
-import type { ItemDto } from "~/features/catalog/types/item";
-import { parseItemId } from "~/features/catalog/types/item";
 import { AdhocRowSchema } from "~/features/today/schemas/adhoc-row-schema";
 import type { AddRowInput } from "~/features/today/types/mutations";
 import { onRequiredSelect } from "~/lib/select";
+import type { ItemDto } from "~/types/item";
+import { parseItemId } from "~/types/item";
 
 type AdhocRowFormProps = {
   items: ItemDto[];
