@@ -5,6 +5,7 @@ import type {
   HeatmapDay,
   MonthBreakdown,
   MonthEvent,
+  PresetReview,
   WeekBreakdown,
   WeekPage,
 } from "~/features/history/types/history";
@@ -82,3 +83,19 @@ export const historyShimmerWeekBreakdown = {
 export const historyShimmerYearMonth = "2026-08";
 export const historyShimmerTodayJst = "2026-08-17";
 export const historyShimmerSelectedDateJst = "2026-08-17";
+
+export const historyShimmerPresetReview = {
+  suggestions: [],
+  weekdays: [1, 2, 3, 4, 5, 6, 0].map((weekday) => ({
+    confirmed: 0,
+    leftover: 0,
+    planned: 0,
+    presetId: null,
+    presetName: null,
+    skipped: 0,
+    weekday,
+  })),
+  weeklyTargets: { achieved: 0, total: 0 },
+  windowEnd: "2026-08-16",
+  windowStart: "2026-07-20",
+} satisfies PresetReview;

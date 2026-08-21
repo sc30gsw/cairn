@@ -2,9 +2,11 @@ import { Card } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
 
 import { HistoryAnalysisPanel } from "~/features/history/components/analysis/history-analysis-panel";
+import { PresetReviewPanel } from "~/features/history/components/analysis/preset-review-panel";
 import {
   useHistoryDayBreakdown,
   useHistoryMonthBreakdown,
+  useHistoryPresetReview,
   useHistoryWeekBreakdown,
   useHistoryYearHeatmap,
 } from "~/features/history/hooks/history-queries";
@@ -24,9 +26,13 @@ export function HistoryAnalysisTab() {
   const { data: yearHeatmap } = useHistoryYearHeatmap(today);
   const { data: weekBreakdown } = useHistoryWeekBreakdown(weekAnchor, today);
   const { data: dayBreakdown } = useHistoryDayBreakdown(selectedDateJst, today);
+  const { data: presetReview } = useHistoryPresetReview(today);
 
   return (
     <>
+      <Card mb="md" padding="md">
+        <PresetReviewPanel review={presetReview} />
+      </Card>
       <Card>
         <HistoryAnalysisPanel
           day={dayBreakdown}

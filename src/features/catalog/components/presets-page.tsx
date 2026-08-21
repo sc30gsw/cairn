@@ -10,15 +10,15 @@ import {
 import { useItemsList, usePresetsList } from "~/features/catalog/hooks/catalog-queries";
 import { runMutation } from "~/lib/run-mutation";
 
-export function PresetsPage() {
+export function PresetsPage({ focusWeekday }: { focusWeekday?: number }) {
   return (
     <Suspense fallback={<PresetListPending />}>
-      <PresetsReady />
+      <PresetsReady focusWeekday={focusWeekday} />
     </Suspense>
   );
 }
 
-function PresetsReady() {
+function PresetsReady({ focusWeekday }: { focusWeekday?: number }) {
   const { data: items } = useItemsList();
   const { data: presets } = usePresetsList();
   const createPreset = useCreatePreset();
@@ -27,6 +27,7 @@ function PresetsReady() {
 
   return (
     <PresetList
+      focusWeekday={focusWeekday}
       items={items}
       onCreate={(input) => {
         void runMutation(() => createPreset.mutateAsync(input), {

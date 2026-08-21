@@ -17,6 +17,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { IconTemplate, IconTrash } from "@tabler/icons-react";
+import { useEffect } from "react";
 import { WEEKDAY_NAMES } from "~domain/catalog";
 
 import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action-field-with-suggestions";
@@ -38,6 +39,7 @@ import { onRequiredSelect } from "~/lib/select";
 type PresetLineDto = PresetDto["lines"][number];
 
 type PresetListProps = {
+  focusWeekday?: number;
   items: ItemDto[];
   onCreate: (input: CreatePresetInput) => void;
   onRemove: (presetId: RemovePresetInput["presetId"]) => void;
@@ -92,11 +94,27 @@ function removeLineLabel(items: ItemDto[], itemId: string | undefined) {
   return `「${name}」を外す`;
 }
 
-export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: PresetListProps) {
+export function PresetList({
+  focusWeekday,
+  items,
+  onCreate,
+  onRemove,
+  onUpdate,
+  presets,
+}: PresetListProps) {
   const createFormKey = [...presets]
     .map((preset) => preset.weekday)
     .sort((left, right) => left - right)
     .join(",");
+  const focusedPresetId =
+    presets.find((preset) => preset.weekday === focusWeekday)?._id ?? presets[0]?._id;
+
+  useEffect(() => {
+    if (focusWeekday === undefined) {
+      return;
+    }
+    document.getElementById(`preset-weekday-${focusWeekday}`)?.scrollIntoView({ block: "start" });
+  }, [focusWeekday]);
 
   return (
     <ConcreteActionTour screen="presets">
@@ -114,9 +132,13 @@ export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: Pre
             title="プリセットはまだありません"
           />
         ) : (
-          <Accordion defaultValue={presets[0]?._id} variant="separated">
+          <Accordion defaultValue={focusedPresetId} variant="separated">
             {presets.map((preset) => (
-              <Accordion.Item key={preset._id} value={preset._id}>
+              <Accordion.Item
+                id={`preset-weekday-${preset.weekday}`}
+                key={preset._id}
+                value={preset._id}
+              >
                 <Accordion.Control>
                   <Stack gap={2}>
                     <Text fw={600}>{preset.name}</Text>
