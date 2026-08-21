@@ -1,4 +1,5 @@
 import { Tabs, Text } from "@mantine/core";
+import { Shimmer } from "@shimmer-from-structure/react";
 import { Suspense } from "react";
 import { todayJst } from "~domain/jst";
 
@@ -11,6 +12,10 @@ import {
   useBoardObstacles,
 } from "~/features/board/hooks/board-queries";
 import { useBoardView } from "~/features/board/hooks/use-board-view";
+import {
+  boardShimmerObstacle,
+  boardShimmerRows,
+} from "~/features/board/lib/board-shimmer-template";
 import { nearestCheckpoint } from "~/features/board/lib/nearest-checkpoint";
 import type { BoardTab } from "~/features/board/schemas/board-search-schema";
 
@@ -30,7 +35,24 @@ function BoardPending() {
       <PageTitle data-shimmer-ignore mb="md">
         ボード
       </PageTitle>
-      <Text c="dimmed">読み込み中</Text>
+      <Shimmer loading>
+        <Text c="dimmed" mb="md" size="sm">
+          今日の記録の状態と、次の一手。書く場所は日のままです。
+        </Text>
+        <Tabs value="kanban">
+          <Tabs.List className={tabBarClasses.tabBar} grow justify="center">
+            <Tabs.Tab value="kanban">カンバン</Tabs.Tab>
+            <Tabs.Tab value="schedule">スケジュール</Tabs.Tab>
+          </Tabs.List>
+          <Tabs.Panel pt="md" value="kanban">
+            <BoardKanban
+              checkpointLabel="Part 2 を聞き取る（2026-08-20）"
+              obstacles={[boardShimmerObstacle]}
+              rows={boardShimmerRows}
+            />
+          </Tabs.Panel>
+        </Tabs>
+      </Shimmer>
     </>
   );
 }
