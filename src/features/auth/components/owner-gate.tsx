@@ -5,9 +5,11 @@ import { PendingComponent } from "~/components/pending-component";
 import { LoginScreen } from "~/features/auth/components/login-screen";
 import type { AppShellUser } from "~/features/auth/types/session";
 import { authClient } from "~/lib/auth-client";
+import { devEmailAuthEnabled } from "~/lib/dev-auth";
 
 export function OwnerGate({ children }: Record<"children", ReactNode>) {
   const session = authClient.useSession();
+  const showDevEmailAuth = devEmailAuthEnabled;
 
   if (session.isPending) {
     return <PendingComponent />;
@@ -16,9 +18,11 @@ export function OwnerGate({ children }: Record<"children", ReactNode>) {
   if (!session.data) {
     return (
       <LoginScreen
-        onSignIn={() => {
+        onNotionSignIn={() => {
           void authClient.signIn.social({ provider: "notion" });
         }}
+        showDevEmailAuth={showDevEmailAuth}
+        showNotionSignIn
       />
     );
   }

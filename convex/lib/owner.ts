@@ -21,14 +21,14 @@ export function ownerFromIdentity(
   if (identity === null || identity === undefined) {
     return Result.err(
       new UnauthenticatedError({
-        message: "ログインが必要です。Notion で所有者として入り直してください。",
+        message: "ログインが必要です。所有者として入り直してください。",
       }),
     );
   }
   if (!emailsMatch(identity.email, allowedEmail)) {
     return Result.err(
       new ForbiddenError({
-        message: "許可されていないアカウントです。所有者の Notion だけが入れます。",
+        message: "許可されていないアカウントです。所有者だけが入れます。",
       }),
     );
   }

@@ -8,12 +8,12 @@ const RAW_SERVER_MESSAGE =
 
 test("ドメインエラーはタグごとの見出しとサーバの利用者向け文言を返す", () => {
   const error = new ConvexError({
-    message: "ログインが必要です。Notion で所有者として入り直してください。",
+    message: "ログインが必要です。所有者として入り直してください。",
     tag: "Unauthenticated",
   });
 
   expect(presentError(error)).toEqual({
-    message: "ログインが必要です。Notion で所有者として入り直してください。",
+    message: "ログインが必要です。所有者として入り直してください。",
     recovery: "signIn",
     title: "ログインが必要です",
   });

@@ -9,13 +9,13 @@ const RAW_SERVER_MESSAGE =
 
 test("認証エラーでは利用者向けの文言とログイン導線を出す", () => {
   const error = new ConvexError({
-    message: "ログインが必要です。Notion で所有者として入り直してください。",
+    message: "ログインが必要です。所有者として入り直してください。",
     tag: "Unauthenticated",
   });
 
   const { getByText, getByRole } = renderWithMantine(<ErrorState error={error} />);
 
-  expect(getByText("ログインが必要です。Notion で所有者として入り直してください。")).toBeDefined();
+  expect(getByText("ログインが必要です。所有者として入り直してください。")).toBeDefined();
   expect(getByRole("button", { name: "ログインし直す" })).toBeDefined();
 });
 

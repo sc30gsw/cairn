@@ -9,7 +9,7 @@ import { components } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
 import authConfig from "./auth.config";
 import authSchema from "./betterAuth/schema";
-import { requireEnv } from "./lib/env";
+import { devEmailAuthEnabled, notionOAuthConfigured, requireEnv } from "./lib/env";
 import { emailsMatch } from "./lib/owner";
 
 export const authComponent = createClient<DataModel, typeof authSchema>(components.betterAuth, {
@@ -45,6 +45,8 @@ async function ownerUserExists(ctx: GenericCtx<DataModel>): Promise<boolean> {
 
 export const createAuthOptions = (ctx: GenericCtx<DataModel>, disableSignUp = true) => {
   const siteUrl = process.env.SITE_URL;
+  const devEmailAuth = devEmailAuthEnabled();
+  const notionAuth = notionOAuthConfigured();
   return {
     baseURL: siteUrl,
     database: authComponent.adapter(ctx),
@@ -61,14 +63,22 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>, disableSignUp = tr
         },
       },
     },
+    emailAndPassword: devEmailAuth
+      ? {
+          enabled: true,
+          disableSignUp,
+        }
+      : undefined,
     plugins: [convex({ authConfig })],
-    socialProviders: {
-      notion: {
-        clientId: process.env.NOTION_CLIENT_ID ?? "",
-        clientSecret: process.env.NOTION_CLIENT_SECRET ?? "",
-        disableSignUp,
-      },
-    },
+    socialProviders: notionAuth
+      ? {
+          notion: {
+            clientId: process.env.NOTION_CLIENT_ID ?? "",
+            clientSecret: process.env.NOTION_CLIENT_SECRET ?? "",
+            disableSignUp,
+          },
+        }
+      : undefined,
     trustedOrigins: siteUrl === undefined ? [] : [siteUrl],
   } satisfies BetterAuthOptions;
 };
@@ -77,9 +87,14 @@ export const createAuth = (ctx: GenericCtx<DataModel>) => {
   if (isLiveConvexCtx(ctx)) {
     requireEnv("ALLOWED_EMAIL");
     requireEnv("BETTER_AUTH_SECRET");
-    requireEnv("NOTION_CLIENT_ID");
-    requireEnv("NOTION_CLIENT_SECRET");
     requireEnv("SITE_URL");
+    if (!devEmailAuthEnabled() && !notionOAuthConfigured()) {
+      throw new Error("ENABLE_DEV_EMAIL_AUTH or Notion OAuth credentials are required");
+    }
+    if (!devEmailAuthEnabled()) {
+      requireEnv("NOTION_CLIENT_ID");
+      requireEnv("NOTION_CLIENT_SECRET");
+    }
   }
   const auth = betterAuth(createAuthOptions(ctx, true));
   if (!("runQuery" in ctx)) {
