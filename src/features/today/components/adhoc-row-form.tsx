@@ -7,7 +7,7 @@ import { AdhocRowSchema } from "~/features/today/schemas/adhoc-row-schema";
 import type { AddRowInput } from "~/features/today/types/mutations";
 import { onRequiredSelect } from "~/lib/select";
 import type { ItemDto } from "~/types/item";
-import { parseItemId } from "~/types/item";
+import { parseItemId, unwrapItemId } from "~/types/item";
 
 type AdhocRowFormProps = {
   items: ItemDto[];
@@ -34,7 +34,7 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
       onSubmit={(output) => {
         onAdd({
           content: output.content,
-          itemId: parseItemId(output.itemId),
+          itemId: unwrapItemId(parseItemId(output.itemId)),
           minutes: output.minutes,
         });
       }}

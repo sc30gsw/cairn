@@ -8,7 +8,7 @@ import { usePresetsList } from "~/features/today/hooks/day-queries";
 import type { DaySearch } from "~/features/today/schemas/day-search-schema";
 import { runMutation } from "~/lib/run-mutation";
 import type { PresetId } from "~/types/item";
-import { parsePresetId } from "~/types/item";
+import { parsePresetId, unwrapPresetId } from "~/types/item";
 
 export function useApplyPresetFromSearch(
   dateJst: DateJst,
@@ -25,7 +25,7 @@ export function useApplyPresetFromSearch(
     if (!isToday || presetFromSearch === undefined) {
       return;
     }
-    const presetId = parsePresetId(presetFromSearch);
+    const presetId = unwrapPresetId(parsePresetId(presetFromSearch));
     if (appliedPresetRef.current === presetId) {
       return;
     }
@@ -42,7 +42,8 @@ export function useApplyPresetFromSearch(
   return {
     appliedPresetRef,
     defaultPresetId,
-    selectedPresetId: presetFromSearch === undefined ? null : parsePresetId(presetFromSearch),
+    selectedPresetId:
+      presetFromSearch === undefined ? null : unwrapPresetId(parsePresetId(presetFromSearch)),
     switchPreset,
   };
 }

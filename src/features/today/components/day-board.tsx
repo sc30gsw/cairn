@@ -44,7 +44,7 @@ import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-st
 import { onRequiredSelect } from "~/lib/select";
 import { BODY_FONT, NUMERAL_FONT } from "~/lib/theme";
 import type { ItemDto, PresetDto, PresetId } from "~/types/item";
-import { parsePresetId } from "~/types/item";
+import { parsePresetId, unwrapPresetId } from "~/types/item";
 
 import classes from "~/features/today/components/day-board.module.css";
 
@@ -103,7 +103,7 @@ function DayPresetSelect({
       data={presetSelectData(presets)}
       label="この日の雛形"
       onChange={onRequiredSelect((raw) => {
-        const presetId = parsePresetId(raw);
+        const presetId = unwrapPresetId(parsePresetId(raw));
         if (isToday) {
           void navigate({
             to: ".",
