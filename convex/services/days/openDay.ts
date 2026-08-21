@@ -1,6 +1,5 @@
 import type { MutationCtx } from "../../_generated/server";
 import { weekdayFromDateJst } from "../../lib/jst";
-import { ensureCatalog } from "../catalog/ensureCatalog";
 import { collapseExtraLiveDays } from "./collapseExtraLiveDays";
 import { getDayByDate } from "./getDayByDate";
 import { liveRowsForDay } from "./liveRowsForDay";
@@ -13,7 +12,6 @@ export async function openDay(
   if (args.dateJst !== args.todayJst) {
     return { applied: false };
   }
-  await ensureCatalog(ctx, ownerId);
   const existing = await getDayByDate(ctx, ownerId, args.dateJst);
   if (existing !== null && existing.deletedAt !== undefined) {
     return { applied: false };

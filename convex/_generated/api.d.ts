@@ -72,6 +72,7 @@ import type * as mutations_trash_purgeExpired from "../mutations/trash/purgeExpi
 import type * as mutations_trash_purgeRow from "../mutations/trash/purgeRow.js";
 import type * as mutations_trash_removeDay from "../mutations/trash/removeDay.js";
 import type * as mutations_trash_restoreDay from "../mutations/trash/restoreDay.js";
+import type * as queries_auth_publicConfig from "../queries/auth/publicConfig.js";
 import type * as queries_categories_list from "../queries/categories/list.js";
 import type * as queries_days_get from "../queries/days/get.js";
 import type * as queries_goals_list from "../queries/goals/list.js";
@@ -242,6 +243,7 @@ declare const fullApi: ApiFromModules<{
   "mutations/trash/purgeRow": typeof mutations_trash_purgeRow;
   "mutations/trash/removeDay": typeof mutations_trash_removeDay;
   "mutations/trash/restoreDay": typeof mutations_trash_restoreDay;
+  "queries/auth/publicConfig": typeof queries_auth_publicConfig;
   "queries/categories/list": typeof queries_categories_list;
   "queries/days/get": typeof queries_days_get;
   "queries/goals/list": typeof queries_goals_list;

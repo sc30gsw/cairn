@@ -15,24 +15,21 @@ const modules = import.meta.glob([
   "!./http.ts",
 ]);
 
-const ALLOWED_EMAIL = "owner@example.com";
-const OWNER = { email: ALLOWED_EMAIL, subject: "owner-subject" };
+const OWNER = { email: "owner@example.com", subject: "owner-subject" };
 
 test("未認証の session.get は throw する", async () => {
-  process.env.ALLOWED_EMAIL = ALLOWED_EMAIL;
   const t = convexTest(schema, modules);
   await expect(t.query(api.queries.session.get.get, {})).rejects.toThrow();
 });
 
-test("allowlist 外は throw する", async () => {
-  process.env.ALLOWED_EMAIL = ALLOWED_EMAIL;
+test("認証済みユーザーなら session.get が通る", async () => {
   const t = convexTest(schema, modules);
-  const asOther = t.withIdentity({ email: "other@example.com", subject: "other" });
-  await expect(asOther.query(api.queries.session.get.get, {})).rejects.toThrow();
+  const asUser = t.withIdentity({ email: "user@example.com", subject: "user-subject" });
+  const session = await asUser.query(api.queries.session.get.get, {});
+  expect(session).toEqual({ ownerId: "user-subject" });
 });
 
 test("所有者なら session.get が通る", async () => {
-  process.env.ALLOWED_EMAIL = ALLOWED_EMAIL;
   const t = convexTest(schema, modules);
   const asOwner = t.withIdentity(OWNER);
   const session = await asOwner.query(api.queries.session.get.get, {});

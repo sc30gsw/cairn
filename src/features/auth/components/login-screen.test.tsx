@@ -3,12 +3,41 @@ import { expect, test, vi } from "vite-plus/test";
 import { LoginScreen } from "~/features/auth/components/login-screen";
 import { renderWithMantine } from "~/test-utils/render";
 
-test("未ログインなら記録ではなくログインボタンが見える", () => {
-  const onNotionSignIn = vi.fn();
-  const { getByRole, queryByText } = renderWithMantine(
-    <LoginScreen onNotionSignIn={onNotionSignIn} showDevEmailAuth={false} showNotionSignIn />,
-  );
+const signInWithNotion = vi.fn();
+
+vi.mock("~/features/auth/hooks/use-auth-actions", () => ({
+  useAuthActions: () => ({
+    signInWithAccount: vi.fn(),
+    signInWithNotion,
+    signOutAndReload: vi.fn(),
+    signUpWithAccount: vi.fn(),
+  }),
+}));
+
+vi.mock("~/features/auth/hooks/use-auth-config", () => ({
+  useAuthPublicConfig: vi.fn(),
+}));
+
+import { useAuthPublicConfig } from "~/features/auth/hooks/use-auth-config";
+
+test("Notion ログインが有効なら Notion ボタンが見える", () => {
+  vi.mocked(useAuthPublicConfig).mockReturnValue({
+    data: { notionSignIn: true },
+  } as ReturnType<typeof useAuthPublicConfig>);
+
+  const { getByRole, queryByText } = renderWithMantine(<LoginScreen />);
   expect(queryByText("Distinction 2000")).toBeNull();
   getByRole("button", { name: "Notion でログイン" }).click();
-  expect(onNotionSignIn).toHaveBeenCalledTimes(1);
+  expect(signInWithNotion).toHaveBeenCalledTimes(1);
+});
+
+test("アカウントログインの入力欄が見える", () => {
+  vi.mocked(useAuthPublicConfig).mockReturnValue({
+    data: { notionSignIn: false },
+  } as ReturnType<typeof useAuthPublicConfig>);
+
+  const { getByLabelText, queryByRole } = renderWithMantine(<LoginScreen />);
+  expect(getByLabelText("ユーザー名またはメールアドレス")).toBeDefined();
+  expect(getByLabelText("パスワード")).toBeDefined();
+  expect(queryByRole("button", { name: "Notion でログイン" })).toBeNull();
 });

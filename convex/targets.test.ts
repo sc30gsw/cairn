@@ -16,14 +16,12 @@ const modules = import.meta.glob([
   "!./http.ts",
 ]);
 
-const ALLOWED_EMAIL = "owner@example.com";
-const OWNER = { email: ALLOWED_EMAIL, subject: "owner-subject" };
-const OTHER_OWNER = { email: ALLOWED_EMAIL, subject: "other-owner-subject" };
+const OWNER = { email: "owner@example.com", subject: "owner-subject" };
+const OTHER_OWNER = { email: "other@example.com", subject: "other-owner-subject" };
 const MONDAY = "2026-08-17";
 const CONTENT = "Unit 1 を音読する";
 
 function raw() {
-  process.env.ALLOWED_EMAIL = ALLOWED_EMAIL;
   return convexTest(schema, modules);
 }
 

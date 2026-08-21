@@ -22,8 +22,8 @@ const patterns = [
   {
     name: "重複 AppShellUser 定義",
     regex: /type\s+AppShellUser\s*=\s*\{/,
-    onlyOutside: "src/features/auth/types/session.ts",
-    hint: "AppShellUser は src/features/auth/types/session.ts から import してください。",
+    onlyOutside: "src/types/session.ts",
+    hint: "AppShellUser は src/types/session.ts から import してください。",
   },
   {
     name: "重複 AnalysisScope 定義",

@@ -7,24 +7,25 @@ import { renderWithMantine } from "~/test-utils/render";
 
 vi.mock("~/lib/auth-client", () => ({
   authClient: {
-    signIn: { social: vi.fn() },
+    signIn: { email: vi.fn(), social: vi.fn(), username: vi.fn() },
     signOut: vi.fn(),
+    signUp: { email: vi.fn() },
     useSession: vi.fn(),
   },
-}));
-
-vi.mock("~/lib/notion-auth", () => ({
-  notionOAuthConfigured: false,
 }));
 
 vi.mock("~/components/app-shell", () => ({
   AppShell: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
+vi.mock("~/features/auth/hooks/use-auth-config", () => ({
+  useAuthPublicConfig: () => ({ data: { notionSignIn: false } }),
+}));
+
 const refetch = vi.fn();
 const now = new Date();
 
-test("未ログインで Notion OAuth 未設定なら Notion ボタンは出ない", () => {
+test("未ログインならログイン画面が見える", () => {
   vi.mocked(authClient.useSession).mockReturnValue({
     data: null,
     error: null,
@@ -32,12 +33,12 @@ test("未ログインで Notion OAuth 未設定なら Notion ボタンは出な�
     isRefetching: false,
     refetch,
   });
-  const { queryByRole } = renderWithMantine(
+  const { getByRole } = renderWithMantine(
     <OwnerGate>
       <p>記録</p>
     </OwnerGate>,
   );
-  expect(queryByRole("button", { name: "Notion でログイン" })).toBeNull();
+  expect(getByRole("button", { name: "ログイン" })).toBeDefined();
 });
 
 test("ログイン済みなら子が見える", () => {

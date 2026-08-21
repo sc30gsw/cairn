@@ -1,20 +1,9 @@
-import {
-  AppShell as Shell,
-  Avatar,
-  Box,
-  Button,
-  Group,
-  Menu,
-  ScrollArea,
-  Stack,
-  Title,
-} from "@mantine/core";
+import { AppShell as Shell, Box, Button, Group, ScrollArea, Stack, Title } from "@mantine/core";
 import {
   IconCalendarEvent,
   IconChartBar,
   IconColumns3,
   IconLayoutKanban,
-  IconLogout,
   IconTarget,
   IconTemplate,
   IconTrash,
@@ -24,12 +13,10 @@ import type { CSSProperties, ReactNode } from "react";
 
 import { RouteErrorComponent } from "~/components/error-state";
 import { DISPLAY_FONT } from "~/lib/theme";
-import type { AppShellUser } from "~/types/session";
 
 type AppShellProps = {
+  accountMenu: ReactNode;
   children: ReactNode;
-  onSignOut: () => void;
-  user: AppShellUser;
 };
 
 type NavIcon = typeof IconCalendarEvent;
@@ -83,16 +70,6 @@ const NAV: {
     to: "/trash",
   },
 ];
-
-function userLabel(user: AppShellUser): string {
-  if (user.name !== null && user.name !== undefined && user.name !== "") {
-    return user.name;
-  }
-  if (user.email !== null && user.email !== undefined && user.email !== "") {
-    return user.email;
-  }
-  return "所有者";
-}
 
 //? 手帳のインデックスタブ。奇数/偶数で微妙に回転を振り、手で貼ったタブのような不揃い感を出す
 function tabStyle(active: boolean, index: number): CSSProperties {
@@ -154,7 +131,7 @@ function MobileTabs({ pathname }: Record<"pathname", string>) {
   );
 }
 
-export function AppShell({ children, onSignOut, user }: AppShellProps) {
+export function AppShell({ accountMenu, children }: AppShellProps) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   return (
@@ -170,7 +147,7 @@ export function AppShell({ children, onSignOut, user }: AppShellProps) {
               p={{ base: "md", sm: "xl" }}
               style={{
                 border: "1.5px solid var(--cairn-ink)",
-                borderRadius: "6px 14px 8px 16px/16px 8px 14px 6px",
+                borderRadius: "6px 14px 8px 16px/16px 6px",
                 boxShadow: "3px 4px 0 rgba(16,15,15,.14), 0 18px 32px -14px rgba(16,15,15,.3)",
                 minHeight: "82vh",
               }}
@@ -184,29 +161,7 @@ export function AppShell({ children, onSignOut, user }: AppShellProps) {
                     cairn — 紙の記録
                   </Box>
                 </Group>
-                <Menu position="bottom-end" withinPortal>
-                  <Menu.Target>
-                    <Avatar
-                      alt={userLabel(user)}
-                      aria-label="アカウントメニュー"
-                      color="orange"
-                      radius="xl"
-                      src={user.image ?? undefined}
-                      style={{ border: "1.5px solid var(--cairn-ink)" }}
-                    >
-                      {userLabel(user).slice(0, 1)}
-                    </Avatar>
-                  </Menu.Target>
-                  <Menu.Dropdown>
-                    <Menu.Item
-                      color="red"
-                      onClick={onSignOut}
-                      rightSection={<IconLogout aria-hidden size={16} stroke={1.5} />}
-                    >
-                      ログアウト
-                    </Menu.Item>
-                  </Menu.Dropdown>
-                </Menu>
+                {accountMenu}
               </Group>
               {/*? ページ内のエラーはヘッダーとナビを残したまま出す。別の画面へ移れば解除される */}
               <CatchBoundary errorComponent={RouteErrorComponent} getResetKey={() => pathname}>
