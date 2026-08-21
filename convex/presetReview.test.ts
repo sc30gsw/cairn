@@ -3,6 +3,7 @@ import { expect, test } from "vite-plus/test";
 
 import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import type { Status } from "./lib/domain";
 import schema from "./schema";
 
 const modules = import.meta.glob([
@@ -27,7 +28,7 @@ function newTest() {
 
 async function seedReviewRows(
   t: ReturnType<typeof newTest>,
-  days: { dateJst: string; statuses: ("確定" | "未着手" | "スキップ")[] }[],
+  days: { dateJst: string; statuses: Status[] }[],
 ): Promise<void> {
   await t.run(async (ctx) => {
     const itemId = await ctx.db.insert("items", {
