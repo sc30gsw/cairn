@@ -1,5 +1,6 @@
 import { type Infer, v } from "convex/values";
 
+import { WEEKDAYS } from "./catalog";
 import { CATEGORIES } from "./categories";
 import { CONDITIONS } from "./conditions";
 import { DAY_VIEW_KINDS } from "./dayView";
@@ -12,6 +13,7 @@ const [confirmed, pending, skipped] = STATUSES;
 const [examType, masteryType] = GOAL_TYPES;
 const [minutesMetric, daysMetric, countMetric] = TARGET_METRICS;
 const [liveKind, todayEmptyKind, restKind, unrecordedKind] = DAY_VIEW_KINDS;
+const [sunday, monday, tuesday, wednesday, thursday, friday, saturday] = WEEKDAYS;
 
 export const categoryValidator = v.union(
   v.literal(toeic),
@@ -27,8 +29,19 @@ export const statusValidator = v.union(
   v.literal(skipped),
 );
 
+export const weekdayValidator = v.union(
+  v.literal(sunday),
+  v.literal(monday),
+  v.literal(tuesday),
+  v.literal(wednesday),
+  v.literal(thursday),
+  v.literal(friday),
+  v.literal(saturday),
+);
+
 export type StatusDto = Infer<typeof statusValidator>;
 export type RowStatus = StatusDto;
+export type WeekdayDto = Infer<typeof weekdayValidator>;
 
 export const presetLineValidator = v.object({
   content: v.string(),
@@ -374,12 +387,12 @@ export const presetReviewWeekdayValidator = v.object({
   leftover: v.number(),
   planned: v.number(),
   skipped: v.number(),
-  weekday: v.number(),
+  weekday: weekdayValidator,
 });
 
 export const presetReviewSuggestionValidator = v.object({
   reason: presetReviewReasonValidator,
-  weekday: v.number(),
+  weekday: weekdayValidator,
 });
 
 export const presetReviewValidator = v.object({

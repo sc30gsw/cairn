@@ -1,4 +1,4 @@
-import { WEEKDAY_NAMES } from "~domain/catalog";
+import { WEEKDAY_NAMES, type Weekday } from "~domain/catalog";
 import { PRESET_REVIEW_WINDOW_DAYS } from "~domain/presetDigest";
 
 import type { PresetReview } from "~/features/history/types/history";
@@ -6,8 +6,8 @@ import type { PresetReview } from "~/features/history/types/history";
 type Suggestion = PresetReview["suggestions"][number];
 type WeekdayRow = PresetReview["weekdays"][number];
 
-export function weekdayLabel(weekday: number) {
-  return WEEKDAY_NAMES[weekday] ?? `${weekday}`;
+export function weekdayLabel(weekday: Weekday) {
+  return WEEKDAY_NAMES[weekday];
 }
 
 export function presetReviewCaption(windowStart: string, windowEnd: string) {
@@ -23,6 +23,6 @@ export function suggestionCopy(suggestion: Suggestion, weekday: WeekdayRow) {
   return `直近の${label}は、${counts}。見送りが多い。`;
 }
 
-export function suggestionLinkLabel(weekday: number) {
+export function suggestionLinkLabel(weekday: Weekday) {
   return `${weekdayLabel(weekday)}のプリセットを見る`;
 }

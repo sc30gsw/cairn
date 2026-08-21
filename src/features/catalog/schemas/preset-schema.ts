@@ -1,5 +1,7 @@
 import * as v from "valibot";
 
+import { WeekdaySchema } from "~/features/catalog/schemas/weekday-schema";
+
 const PresetLineSchema = v.object({
   content: v.pipe(v.string(), v.trim()),
   itemId: v.pipe(v.string(), v.minLength(1, "項目を選んでください")),
@@ -8,15 +10,12 @@ const PresetLineSchema = v.object({
 
 export const CreatePresetSchema = v.object({
   name: v.pipe(v.string(), v.minLength(1, "名前は必須です")),
-  weekday: v.pipe(
-    v.nullable(v.pipe(v.number(), v.minValue(0), v.maxValue(6))),
-    v.check((value) => value !== null, "曜日を選んでください"),
-  ),
+  weekday: v.nonOptional(v.optional(WeekdaySchema), "曜日を選んでください"),
 });
 
 const PresetMetaSchema = v.object({
   name: v.pipe(v.string(), v.minLength(1, "名前は必須です")),
-  weekday: v.pipe(v.number(), v.minValue(0), v.maxValue(6)),
+  weekday: WeekdaySchema,
 });
 
 export const PresetSchema = v.object({

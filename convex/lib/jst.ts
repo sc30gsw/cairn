@@ -1,5 +1,6 @@
 //* 日は JST の暦日。クエリ内では Date.now() を呼ばず、呼び出し側が dateJst を渡す。
 
+import { isWeekday, type Weekday } from "./catalog";
 import { DATE_JST_PATTERN } from "./domain";
 
 const JST_CALENDAR_DATE = new Intl.DateTimeFormat("en-CA", {
@@ -26,8 +27,12 @@ export function isDateJst(value: string): boolean {
   return !Number.isNaN(parsed.getTime()) && todayJst(parsed) === value;
 }
 
-export function weekdayFromDateJst(dateJst: string): number {
-  return new Date(`${dateJst}T12:00:00+09:00`).getUTCDay();
+export function weekdayFromDateJst(dateJst: string): Weekday {
+  const weekday = new Date(`${dateJst}T12:00:00+09:00`).getUTCDay();
+  if (!isWeekday(weekday)) {
+    throw new Error(`曜日が不正です: ${String(weekday)}`);
+  }
+  return weekday;
 }
 
 export function addDaysJst(dateJst: string, days: number): string {

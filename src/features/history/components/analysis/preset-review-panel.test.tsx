@@ -3,7 +3,7 @@ import { WEEKDAY_DISPLAY_ORDER } from "~domain/presetDigest";
 
 import { PresetReviewPanel } from "~/features/history/components/analysis/preset-review-panel";
 import type { PresetReview } from "~/features/history/types/history";
-import { renderWithMantine } from "~/test-utils/render";
+import { renderWithMemoryRouter, renderWithMantine } from "~/test-utils/render";
 
 const emptyWeekdays = WEEKDAY_DISPLAY_ORDER.map((weekday) => ({
   confirmed: 0,
@@ -23,7 +23,7 @@ const review = {
 } satisfies PresetReview;
 
 test("曜日の件数と提案リンクを出す", () => {
-  const { getByRole, getByText } = renderWithMantine(<PresetReviewPanel review={review} />);
+  const { getByRole, getByText } = renderWithMemoryRouter(<PresetReviewPanel review={review} />);
 
   expect(getByText("曜日の計画")).toBeDefined();
   expect(getByRole("progressbar", { name: "月曜日の消化 1/6" })).toBeDefined();

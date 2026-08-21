@@ -10,10 +10,9 @@ export const Route = createFileRoute("/presets")({
 });
 
 function PresetsRoute() {
-  const { weekday } = Route.useSearch();
   return (
     <OwnerGate>
-      <PresetsPage focusWeekday={weekday} />
+      <PresetsPage />
     </OwnerGate>
   );
 }

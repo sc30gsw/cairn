@@ -1,15 +1,9 @@
 import * as v from "valibot";
 
-const WeekdayFromSearch = v.pipe(
-  v.union([v.number(), v.pipe(v.string(), v.nonEmpty("曜日は 0〜6 の整数です"))]),
-  v.transform((value) => (typeof value === "number" ? value : Number(value))),
-  v.integer("曜日は 0〜6 の整数です"),
-  v.minValue(0, "曜日は 0〜6 です"),
-  v.maxValue(6, "曜日は 0〜6 です"),
-);
+import { WeekdayFromSearchSchema } from "~/features/catalog/schemas/weekday-schema";
 
 export const PresetSearchSchema = v.object({
-  weekday: v.optional(WeekdayFromSearch),
+  weekday: v.optional(WeekdayFromSearchSchema),
 });
 
 export type PresetSearch = v.InferOutput<typeof PresetSearchSchema>;

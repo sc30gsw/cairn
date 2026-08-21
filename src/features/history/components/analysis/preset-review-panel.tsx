@@ -1,4 +1,5 @@
 import { Alert, Button, Progress, Stack, Table, Text, Title } from "@mantine/core";
+import { Link } from "@tanstack/react-router";
 import { digestRate } from "~domain/presetDigest";
 
 import {
@@ -8,6 +9,7 @@ import {
   weekdayLabel,
 } from "~/features/history/lib/preset-review-copy";
 import type { PresetReview } from "~/features/history/types/history";
+import { presetWeekdayHash } from "~/lib/preset-weekday-hash";
 
 export function PresetReviewPanel({ review }: { review: PresetReview }) {
   const hasPlannedRows = review.weekdays.some((row) => row.planned > 0);
@@ -95,8 +97,14 @@ export function PresetReviewPanel({ review }: { review: PresetReview }) {
               <Text size="sm">{suggestionCopy(suggestion, weekday)}</Text>
               <Button
                 color="yellow"
-                component="a"
-                href={`/presets?weekday=${suggestion.weekday}#preset-weekday-${suggestion.weekday}`}
+                renderRoot={(props) => (
+                  <Link
+                    {...props}
+                    hash={presetWeekdayHash(suggestion.weekday)}
+                    search={{ weekday: suggestion.weekday }}
+                    to="/presets"
+                  />
+                )}
                 size="xs"
                 variant="light"
               >

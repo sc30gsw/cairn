@@ -1,5 +1,6 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
+import { isWeekday, type Weekday } from "../../lib/catalog";
 import { NotFoundError, ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { assertOwnedLines, assertWeekdayFree } from "./helpers";
@@ -11,7 +12,7 @@ export async function update(
     lines: { content: string; itemId: Id<"items">; minutes: number }[];
     name: string;
     presetId: Id<"presets">;
-    weekday: number;
+    weekday: Weekday;
   },
 ): Promise<null> {
   const preset = await ctx.db.get("presets", args.presetId);
@@ -24,7 +25,7 @@ export async function update(
   if (name === "") {
     throwDomain(new ValidationFailedError({ message: "プリセット名は必須です" }));
   }
-  if (args.weekday < 0 || args.weekday > 6) {
+  if (!isWeekday(args.weekday)) {
     throwDomain(new ValidationFailedError({ message: "曜日が不正です" }));
   }
   //? rows/confirm.ts と同じく trim 後の内容を検証し、検証した値をそのまま保存する

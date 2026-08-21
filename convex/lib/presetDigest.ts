@@ -1,4 +1,5 @@
-import { STATUSES, type Status } from "./domain";
+import type { Weekday } from "./catalog";
+import type { Status } from "./domain";
 import { weekdayFromDateJst } from "./jst";
 
 //? 今日を除く過去28暦日。今日の未着手は計画倒れではない。
@@ -22,18 +23,16 @@ export const PRESET_REVIEW_REASONS = [
 
 export type PresetReviewReason = (typeof PRESET_REVIEW_REASONS)[number];
 
-const [confirmedStatus, leftoverStatus, skippedStatus] = STATUSES;
-
 export type WeekdayCounts = {
   confirmed: number;
   leftover: number;
   skipped: number;
-  weekday: number;
+  weekday: Weekday;
 };
 
 export type PresetReviewSuggestion = {
   reason: PresetReviewReason;
-  weekday: number;
+  weekday: Weekday;
 };
 
 export type StatusedRow = {
@@ -41,9 +40,9 @@ export type StatusedRow = {
   status: Status;
 };
 
-export const WEEKDAY_DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 0] as const;
+export const WEEKDAY_DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 0] as const satisfies readonly Weekday[];
 
-function emptyCounts(weekday: number): WeekdayCounts {
+function emptyCounts(weekday: Weekday): WeekdayCounts {
   return { confirmed: 0, leftover: 0, skipped: 0, weekday };
 }
 
@@ -69,15 +68,15 @@ export function countByWeekday(rows: readonly StatusedRow[]): WeekdayCounts[] {
     if (current === undefined) {
       continue;
     }
-    if (row.status === confirmedStatus) {
+    if (row.status === "確定") {
       byWeekday.set(weekday, { ...current, confirmed: current.confirmed + 1 });
       continue;
     }
-    if (row.status === leftoverStatus) {
+    if (row.status === "未着手") {
       byWeekday.set(weekday, { ...current, leftover: current.leftover + 1 });
       continue;
     }
-    if (row.status === skippedStatus) {
+    if (row.status === "スキップ") {
       byWeekday.set(weekday, { ...current, skipped: current.skipped + 1 });
     }
   }

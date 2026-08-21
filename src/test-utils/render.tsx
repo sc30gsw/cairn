@@ -2,12 +2,21 @@ import { MantineProvider } from "@mantine/core";
 import { DatesProvider } from "@mantine/dates";
 import { ModalsProvider } from "@mantine/modals";
 import { ShimmerProvider } from "@shimmer-from-structure/react";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Outlet,
+  RouterProvider,
+} from "@tanstack/react-router";
 import { cleanup, render, type RenderOptions } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
 import { Suspense } from "react";
 import "dayjs/locale/ja";
 import { afterEach, vi } from "vite-plus/test";
 
+import { PresetSearchSchema } from "~/features/catalog/schemas/preset-search-schema";
 import { cssVariablesResolver, theme } from "~/lib/theme";
 
 Object.defineProperty(window, "matchMedia", {
@@ -72,4 +81,35 @@ function Wrapper({ children }: Record<"children", ReactNode>) {
 
 export function renderWithMantine(ui: ReactElement, options?: Omit<RenderOptions, "wrapper">) {
   return render(ui, { wrapper: Wrapper, ...options });
+}
+
+export function renderWithMemoryRouter(
+  ui: ReactElement,
+  initialEntry = "/history",
+  options?: Omit<RenderOptions, "wrapper">,
+) {
+  const rootRoute = createRootRoute({
+    component: function Root() {
+      return <Outlet />;
+    },
+  });
+  const historyRoute = createRoute({
+    component: function HistoryPage() {
+      return ui;
+    },
+    getParentRoute: () => rootRoute,
+    path: "/history",
+  });
+  const presetsRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/presets",
+    validateSearch: PresetSearchSchema,
+  });
+  const routeTree = rootRoute.addChildren([historyRoute, presetsRoute]);
+  const router = createRouter({
+    history: createMemoryHistory({ initialEntries: [initialEntry] }),
+    routeTree,
+  });
+
+  return render(<RouterProvider router={router} />, { wrapper: Wrapper, ...options });
 }
