@@ -17,21 +17,25 @@ export function DevEmailLoginForm({ allowedEmailHint }: DevEmailLoginFormProps) 
   async function submitEmailAuth(mode: "signIn" | "signUp", email: string, password: string) {
     setErrorMessage(null);
     setIsSubmitting(true);
+
+    let nextError: null | string = null;
     try {
       const result =
         mode === "signIn"
           ? await authClient.signIn.email({ email, password })
           : await authClient.signUp.email({ email, password, name: "Owner" });
       if (result.error) {
-        setErrorMessage(result.error.message ?? "ログインに失敗しました");
+        nextError = result.error.message ?? "ログインに失敗しました";
+      } else {
+        location.reload();
         return;
       }
-      location.reload();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "ログインに失敗しました");
-    } finally {
-      setIsSubmitting(false);
+      nextError = error instanceof Error ? error.message : "ログインに失敗しました";
     }
+
+    setErrorMessage(nextError);
+    setIsSubmitting(false);
   }
 
   return (
