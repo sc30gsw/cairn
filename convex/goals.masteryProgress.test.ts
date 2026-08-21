@@ -19,9 +19,8 @@ const modules = import.meta.glob([
   "!./http.ts",
 ]);
 
-const ALLOWED_EMAIL = "owner@example.com";
-const OWNER = { email: ALLOWED_EMAIL, subject: "owner-subject" };
-const OTHER_OWNER = { email: ALLOWED_EMAIL, subject: "other-owner-subject" };
+const OWNER = { email: "owner@example.com", subject: "owner-subject" };
+const OTHER_OWNER = { email: "other@example.com", subject: "other-owner-subject" };
 const TODAY = "2026-08-17";
 const YESTERDAY = "2026-08-16";
 
@@ -36,7 +35,6 @@ afterEach(() => {
 });
 
 function raw() {
-  process.env.ALLOWED_EMAIL = ALLOWED_EMAIL;
   return convexTest(schema, modules);
 }
 
@@ -257,6 +255,7 @@ test("ゴミ箱の日に属する確定記録は、消しても実績を動か�
 
 test("未着手だけを入れ替えるプリセット切替では実績が動かない", async () => {
   const t = owner();
+  await t.mutation(api.mutations.catalog.ensure.ensure, {});
   //? 既定のカタログとプリセットを用意するために先に日を開く
   await t.mutation(api.mutations.days.open.open, { dateJst: TODAY, todayJst: TODAY });
   const itemId = await seedItemId(t);
