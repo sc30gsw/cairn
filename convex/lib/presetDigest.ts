@@ -1,6 +1,8 @@
 import type { Weekday } from "./catalog";
-import type { Status } from "./domain";
+import { STATUSES, type Status } from "./domain";
 import { weekdayFromDateJst } from "./jst";
+
+const [confirmedStatus, leftoverStatus, skippedStatus] = STATUSES;
 
 //? 今日を除く過去28暦日。今日の未着手は計画倒れではない。
 export const PRESET_REVIEW_WINDOW_DAYS = 28;
@@ -59,7 +61,7 @@ export function digestRate(counts: WeekdayCounts): number {
 }
 
 export function countByWeekday(rows: readonly StatusedRow[]): WeekdayCounts[] {
-  const byWeekday = new Map<number, WeekdayCounts>(
+  const byWeekday = new Map<Weekday, WeekdayCounts>(
     WEEKDAY_DISPLAY_ORDER.map((weekday) => [weekday, emptyCounts(weekday)]),
   );
   for (const row of rows) {
@@ -68,15 +70,15 @@ export function countByWeekday(rows: readonly StatusedRow[]): WeekdayCounts[] {
     if (current === undefined) {
       continue;
     }
-    if (row.status === "確定") {
+    if (row.status === confirmedStatus) {
       byWeekday.set(weekday, { ...current, confirmed: current.confirmed + 1 });
       continue;
     }
-    if (row.status === "未着手") {
+    if (row.status === leftoverStatus) {
       byWeekday.set(weekday, { ...current, leftover: current.leftover + 1 });
       continue;
     }
-    if (row.status === "スキップ") {
+    if (row.status === skippedStatus) {
       byWeekday.set(weekday, { ...current, skipped: current.skipped + 1 });
     }
   }

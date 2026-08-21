@@ -87,7 +87,7 @@ export function isWeekday(value: number): value is Weekday {
   return Number.isInteger(value) && value >= 0 && value < WEEKDAY_NAMES.length;
 }
 
-export function seedLineNamesForWeekday(weekday: number): readonly string[] {
+export function seedLineNamesForWeekday(weekday: Weekday): readonly string[] {
   if (weekday === 0 || weekday === 6) {
     return [];
   }

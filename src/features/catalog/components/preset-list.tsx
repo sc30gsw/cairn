@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { IconTemplate, IconTrash } from "@tabler/icons-react";
-import { WEEKDAYS, WEEKDAY_NAMES, isWeekday } from "~domain/catalog";
+import { WEEKDAYS, WEEKDAY_NAMES, isWeekday, type Weekday } from "~domain/catalog";
 
 import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action-field-with-suggestions";
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
@@ -48,10 +48,14 @@ type PresetListProps = {
   presets: PresetDto[];
 };
 
-const WEEKDAY_OPTIONS = WEEKDAYS.map((value) => ({
-  label: WEEKDAY_NAMES[value],
-  value: String(value),
-}));
+function weekdaySelectOptions(weekdays: readonly Weekday[]) {
+  return weekdays.map((value) => ({
+    label: WEEKDAY_NAMES[value],
+    value: String(value),
+  }));
+}
+
+const WEEKDAY_OPTIONS = weekdaySelectOptions(WEEKDAYS);
 
 function parsedLines(lines: PresetLineInput[]) {
   return lines.map((line) => ({
@@ -85,12 +89,9 @@ function firstAvailableItem(items: ItemDto[], lines: readonly Partial<PresetLine
   return items.find((item) => !taken.has(item._id));
 }
 
-function availableWeekdayOptions(presets: PresetDto[]) {
+function availableWeekdays(presets: PresetDto[]): Weekday[] {
   const taken = new Set(presets.map((preset) => preset.weekday));
-  return WEEKDAY_OPTIONS.filter((option) => {
-    const weekday = weekdayFromSelect(option.value);
-    return weekday !== undefined && !taken.has(weekday);
-  });
+  return WEEKDAYS.filter((weekday) => !taken.has(weekday));
 }
 
 function removeLineLabel(items: ItemDto[], itemId: string | undefined) {
@@ -180,9 +181,9 @@ function PresetCreateForm({
   onCreate: PresetListProps["onCreate"];
   presets: PresetDto[];
 }) {
-  const weekdayOptions = availableWeekdayOptions(presets);
-  const onlyWeekday =
-    weekdayOptions.length === 1 ? weekdayFromSelect(weekdayOptions[0]?.value ?? "") : undefined;
+  const remainingWeekdays = availableWeekdays(presets);
+  const weekdayOptions = weekdaySelectOptions(remainingWeekdays);
+  const onlyWeekday = remainingWeekdays.length === 1 ? remainingWeekdays[0] : undefined;
   const form = useForm({
     initialInput: {
       name: "",
@@ -191,7 +192,7 @@ function PresetCreateForm({
     schema: CreatePresetSchema,
   });
 
-  if (weekdayOptions.length === 0) {
+  if (remainingWeekdays.length === 0) {
     return (
       <Card>
         <Text c="dimmed">すべての曜日にプリセットがあります。</Text>
