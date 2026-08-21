@@ -4,6 +4,7 @@ import { CATEGORIES } from "./categories";
 import { CONDITIONS } from "./conditions";
 import { DAY_VIEW_KINDS } from "./dayView";
 import { GOAL_TYPES, STATUSES, TARGET_METRICS } from "./domain";
+import { PRESET_REVIEW_REASONS } from "./presetDigest";
 
 const [toeic, listening, reading, conversation, otherCategory] = CATEGORIES;
 const [good, ordinary, collapsed] = CONDITIONS;
@@ -360,3 +361,40 @@ export type ApplyItemOrderInput = Infer<typeof applyItemOrderArgsValidator>;
 export const recentConcreteActionsValidator = v.array(v.string());
 
 export type RecentConcreteActions = Infer<typeof recentConcreteActionsValidator>;
+
+const [leftoverHeavyReason, skipHeavyReason] = PRESET_REVIEW_REASONS;
+
+export const presetReviewReasonValidator = v.union(
+  v.literal(leftoverHeavyReason),
+  v.literal(skipHeavyReason),
+);
+
+export const presetReviewWeekdayValidator = v.object({
+  confirmed: v.number(),
+  leftover: v.number(),
+  planned: v.number(),
+  presetId: v.union(v.id("presets"), v.null()),
+  presetName: v.union(v.string(), v.null()),
+  skipped: v.number(),
+  weekday: v.number(),
+});
+
+export const presetReviewSuggestionValidator = v.object({
+  reason: presetReviewReasonValidator,
+  weekday: v.number(),
+});
+
+export const presetReviewValidator = v.object({
+  suggestions: v.array(presetReviewSuggestionValidator),
+  weekdays: v.array(presetReviewWeekdayValidator),
+  weeklyTargets: v.object({
+    achieved: v.number(),
+    total: v.number(),
+  }),
+  windowEnd: v.string(),
+  windowStart: v.string(),
+});
+
+export type PresetReviewDto = Infer<typeof presetReviewValidator>;
+export type PresetReviewWeekdayDto = Infer<typeof presetReviewWeekdayValidator>;
+export type PresetReviewSuggestionDto = Infer<typeof presetReviewSuggestionValidator>;
