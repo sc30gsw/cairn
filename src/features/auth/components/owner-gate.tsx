@@ -2,48 +2,20 @@ import type { ReactNode } from "react";
 
 import { AppShell } from "~/components/app-shell";
 import { PendingComponent } from "~/components/pending-component";
+import { AuthAccountMenu } from "~/features/auth/components/auth-account-menu";
 import { LoginScreen } from "~/features/auth/components/login-screen";
-import type { AppShellUser } from "~/features/auth/types/session";
-import { authClient } from "~/lib/auth-client";
+import { useAuthSession } from "~/features/auth/hooks/use-auth-session";
 
 export function OwnerGate({ children }: Record<"children", ReactNode>) {
-  const session = authClient.useSession();
+  const session = useAuthSession();
 
   if (session.isPending) {
     return <PendingComponent />;
   }
 
   if (!session.data) {
-    return (
-      <LoginScreen
-        onNotionSignIn={() => {
-          void authClient.signIn.social({ provider: "notion" });
-        }}
-        showNotionSignIn
-      />
-    );
+    return <LoginScreen />;
   }
 
-  return (
-    <AppShell
-      onSignOut={() => {
-        void authClient.signOut({
-          fetchOptions: {
-            onSuccess: () => {
-              location.reload();
-            },
-          },
-        });
-      }}
-      user={
-        {
-          email: session.data.user.email,
-          image: session.data.user.image,
-          name: session.data.user.name,
-        } satisfies AppShellUser
-      }
-    >
-      {children}
-    </AppShell>
-  );
+  return <AppShell accountMenu={<AuthAccountMenu />}>{children}</AppShell>;
 }

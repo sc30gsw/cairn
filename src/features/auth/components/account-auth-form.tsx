@@ -2,70 +2,43 @@ import { Field, Form, useForm } from "@formisch/react";
 import { Button, PasswordInput, SegmentedControl, Stack, Text, TextInput } from "@mantine/core";
 import { useState } from "react";
 
+import { useAuthActions } from "~/features/auth/hooks/use-auth-actions";
 import {
   AccountLoginSchema,
   AccountSignUpSchema,
-  isEmailAddress,
+  type AccountAuthMode,
 } from "~/features/auth/schemas/account-auth-schema";
-import { authClient } from "~/lib/auth-client";
 
 type AccountAuthFormProps = {
-  mode: "signIn" | "signUp";
+  mode: AccountAuthMode;
 };
 
 export function AccountAuthForm({ mode }: AccountAuthFormProps) {
   const [errorMessage, setErrorMessage] = useState<null | string>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { signInWithAccount, signUpWithAccount } = useAuthActions();
   const loginForm = useForm({ schema: AccountLoginSchema });
   const signUpForm = useForm({ schema: AccountSignUpSchema });
-
-  async function submitSignIn(identifier: string, password: string) {
-    setErrorMessage(null);
-    setIsSubmitting(true);
-    try {
-      const result = isEmailAddress(identifier)
-        ? await authClient.signIn.email({ email: identifier, password })
-        : await authClient.signIn.username({ username: identifier, password });
-      if (result.error) {
-        setErrorMessage(result.error.message ?? "ログインに失敗しました");
-        return;
-      }
-      location.reload();
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "ログインに失敗しました");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  async function submitSignUp(email: string, name: string, password: string, username: string) {
-    setErrorMessage(null);
-    setIsSubmitting(true);
-    try {
-      const result = await authClient.signUp.email({
-        email,
-        name,
-        password,
-        username,
-      });
-      if (result.error) {
-        setErrorMessage(result.error.message ?? "登録に失敗しました");
-        return;
-      }
-      location.reload();
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "登録に失敗しました");
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
 
   if (mode === "signUp") {
     return (
       <Form
         of={signUpForm}
         onSubmit={(output) => {
-          void submitSignUp(output.email, output.name, output.password, output.username);
+          setErrorMessage(null);
+          setIsSubmitting(true);
+          void signUpWithAccount(output)
+            .then((result) => {
+              if (result.errorMessage !== null) {
+                setErrorMessage(result.errorMessage);
+              }
+            })
+            .catch((error: unknown) => {
+              setErrorMessage(error instanceof Error ? error.message : "登録に失敗しました");
+            })
+            .finally(() => {
+              setIsSubmitting(false);
+            });
         }}
       >
         <Stack gap="sm">
@@ -131,7 +104,20 @@ export function AccountAuthForm({ mode }: AccountAuthFormProps) {
     <Form
       of={loginForm}
       onSubmit={(output) => {
-        void submitSignIn(output.identifier, output.password);
+        setErrorMessage(null);
+        setIsSubmitting(true);
+        void signInWithAccount(output)
+          .then((result) => {
+            if (result.errorMessage !== null) {
+              setErrorMessage(result.errorMessage);
+            }
+          })
+          .catch((error: unknown) => {
+            setErrorMessage(error instanceof Error ? error.message : "ログインに失敗しました");
+          })
+          .finally(() => {
+            setIsSubmitting(false);
+          });
       }}
     >
       <Stack gap="sm">
@@ -171,11 +157,11 @@ export function AccountAuthForm({ mode }: AccountAuthFormProps) {
 }
 
 type AccountAuthPanelProps = {
-  initialMode?: "signIn" | "signUp";
+  initialMode?: AccountAuthMode;
 };
 
 export function AccountAuthPanel({ initialMode = "signIn" }: AccountAuthPanelProps) {
-  const [mode, setMode] = useState<"signIn" | "signUp">(initialMode);
+  const [mode, setMode] = useState<AccountAuthMode>(initialMode);
 
   return (
     <Stack gap="sm">
@@ -186,7 +172,7 @@ export function AccountAuthPanel({ initialMode = "signIn" }: AccountAuthPanelPro
         ]}
         fullWidth
         onChange={(value) => {
-          setMode(value as "signIn" | "signUp");
+          setMode(value as AccountAuthMode);
         }}
         value={mode}
       />

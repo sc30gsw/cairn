@@ -18,6 +18,10 @@ vi.mock("~/components/app-shell", () => ({
   AppShell: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
 
+vi.mock("~/features/auth/hooks/use-auth-config", () => ({
+  useAuthPublicConfig: () => ({ data: { notionSignIn: false } }),
+}));
+
 const refetch = vi.fn();
 const now = new Date();
 

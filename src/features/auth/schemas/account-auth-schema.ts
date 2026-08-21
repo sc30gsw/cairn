@@ -1,5 +1,9 @@
 import * as v from "valibot";
 
+export const ACCOUNT_AUTH_MODES = ["signIn", "signUp"] as const;
+
+export type AccountAuthMode = (typeof ACCOUNT_AUTH_MODES)[number];
+
 const usernamePattern = /^[\dA-Za-z_]+$/;
 
 export const AccountLoginSchema = v.object({
@@ -38,6 +42,9 @@ export const AccountSignUpSchema = v.object({
     v.regex(usernamePattern, "ユーザー名は英数字とアンダースコアだけ使えます"),
   ),
 });
+
+export type AccountLoginInput = v.InferOutput<typeof AccountLoginSchema>;
+export type AccountSignUpInput = v.InferOutput<typeof AccountSignUpSchema>;
 
 export function isEmailAddress(value: string): boolean {
   return v.safeParse(v.pipe(v.string(), v.email()), value).success;

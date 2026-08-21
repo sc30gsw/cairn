@@ -1,14 +1,15 @@
 import { Button, Card, Center, Divider, Stack, Text, Title } from "@mantine/core";
 
 import { AccountAuthPanel } from "~/features/auth/components/account-auth-form";
+import { useAuthActions } from "~/features/auth/hooks/use-auth-actions";
+import { useAuthPublicConfig } from "~/features/auth/hooks/use-auth-config";
 import { DISPLAY_FONT } from "~/lib/theme";
 
-type LoginScreenProps = {
-  onNotionSignIn: () => void;
-  showNotionSignIn: boolean;
-};
+export function LoginScreen() {
+  const { signInWithNotion } = useAuthActions();
+  const publicConfig = useAuthPublicConfig();
+  const showNotionSignIn = publicConfig.data?.notionSignIn ?? false;
 
-export function LoginScreen({ onNotionSignIn, showNotionSignIn }: LoginScreenProps) {
   return (
     <Center h="100dvh">
       <Card maw={420} padding="xl" shadow="sm" w="100%">
@@ -24,7 +25,7 @@ export function LoginScreen({ onNotionSignIn, showNotionSignIn }: LoginScreenPro
           {showNotionSignIn ? (
             <>
               <Divider label="または" labelPosition="center" />
-              <Button fullWidth onClick={onNotionSignIn} size="md" variant="light">
+              <Button fullWidth onClick={signInWithNotion} size="md" variant="light">
                 Notion でログイン
               </Button>
             </>
