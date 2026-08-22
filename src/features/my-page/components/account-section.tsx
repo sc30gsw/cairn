@@ -1,15 +1,14 @@
-import { Field, Form, reset, useForm } from "@formisch/react";
-import { Button, Card, PasswordInput, Stack, TextInput, Title } from "@mantine/core";
+import { Field, reset, useForm } from "@formisch/react";
+import { Card, PasswordInput, Stack, TextInput, Title } from "@mantine/core";
 import { Result } from "better-result";
 
-import { AuthActionFeedback } from "~/features/auth/components/auth-action-feedback";
-import { useAuthActionTransition } from "~/features/auth/hooks/use-auth-action-transition";
 import { useAppShellUser } from "~/features/auth/hooks/use-auth-session";
 import {
   updateProfileName,
   updateProfilePassword,
   updateProfileUsername,
 } from "~/features/auth/lib/profile-actions";
+import { ProfileAccountActionForm } from "~/features/my-page/components/profile-account-action-form";
 import {
   ProfileNameSchema,
   ProfilePasswordSchema,
@@ -19,125 +18,91 @@ import {
 const emptyPasswordInput = { currentPassword: "", newPassword: "" } as const;
 
 function ProfileNameForm({ name }: { name: string }) {
-  const { isPending, result, run } = useAuthActionTransition();
   const form = useForm({ initialInput: { name }, schema: ProfileNameSchema });
 
   return (
-    <Form
-      of={form}
-      onSubmit={async (output) => {
-        await run(() => updateProfileName(output));
-      }}
+    <ProfileAccountActionForm
+      form={form}
+      onSubmit={updateProfileName}
+      submitLabel="表示名を保存"
+      successMessage="表示名を保存しました"
     >
-      <Stack gap="sm">
-        <Field of={form} path={["name"]}>
-          {(field) => (
-            <TextInput
-              {...field.props}
-              error={field.errors?.[0]}
-              label="表示名"
-              value={field.input}
-            />
-          )}
-        </Field>
-        <AuthActionFeedback result={result} successMessage="表示名を保存しました" />
-        <Button
-          disabled={form.isSubmitting || isPending}
-          loading={form.isSubmitting || isPending}
-          size="xs"
-          type="submit"
-        >
-          表示名を保存
-        </Button>
-      </Stack>
-    </Form>
+      <Field of={form} path={["name"]}>
+        {(field) => (
+          <TextInput
+            {...field.props}
+            error={field.errors?.[0]}
+            label="表示名"
+            value={field.input}
+          />
+        )}
+      </Field>
+    </ProfileAccountActionForm>
   );
 }
 
 function ProfileUsernameForm({ username }: { username: string }) {
-  const { isPending, result, run } = useAuthActionTransition();
   const form = useForm({ initialInput: { username }, schema: ProfileUsernameSchema });
 
   return (
-    <Form
-      of={form}
-      onSubmit={async (output) => {
-        await run(() => updateProfileUsername(output));
-      }}
+    <ProfileAccountActionForm
+      form={form}
+      onSubmit={updateProfileUsername}
+      submitLabel="ユーザー名を保存"
+      successMessage="ユーザー名を保存しました"
     >
-      <Stack gap="sm">
-        <Field of={form} path={["username"]}>
-          {(field) => (
-            <TextInput
-              {...field.props}
-              error={field.errors?.[0]}
-              label="ユーザー名"
-              value={field.input}
-            />
-          )}
-        </Field>
-        <AuthActionFeedback result={result} successMessage="ユーザー名を保存しました" />
-        <Button
-          disabled={form.isSubmitting || isPending}
-          loading={form.isSubmitting || isPending}
-          size="xs"
-          type="submit"
-        >
-          ユーザー名を保存
-        </Button>
-      </Stack>
-    </Form>
+      <Field of={form} path={["username"]}>
+        {(field) => (
+          <TextInput
+            {...field.props}
+            error={field.errors?.[0]}
+            label="ユーザー名"
+            value={field.input}
+          />
+        )}
+      </Field>
+    </ProfileAccountActionForm>
   );
 }
 
 function ProfilePasswordForm() {
-  const { isPending, result, run } = useAuthActionTransition();
   const form = useForm({ initialInput: emptyPasswordInput, schema: ProfilePasswordSchema });
 
   return (
-    <Form
-      of={form}
-      onSubmit={async (output) => {
-        const next = await run(() => updateProfilePassword(output));
-        if (Result.isOk(next)) {
+    <ProfileAccountActionForm
+      form={form}
+      onSubmit={updateProfilePassword}
+      onSuccess={(result) => {
+        if (Result.isOk(result)) {
           reset(form, { initialInput: emptyPasswordInput, keepInput: false });
         }
       }}
+      submitLabel="パスワードを変更"
+      successMessage="パスワードを変更しました"
     >
-      <Stack gap="sm">
-        <Field of={form} path={["currentPassword"]}>
-          {(field) => (
-            <PasswordInput
-              {...field.props}
-              autoComplete="current-password"
-              error={field.errors?.[0]}
-              label="現在のパスワード"
-              value={field.input}
-            />
-          )}
-        </Field>
-        <Field of={form} path={["newPassword"]}>
-          {(field) => (
-            <PasswordInput
-              {...field.props}
-              autoComplete="new-password"
-              error={field.errors?.[0]}
-              label="新しいパスワード"
-              value={field.input}
-            />
-          )}
-        </Field>
-        <AuthActionFeedback result={result} successMessage="パスワードを変更しました" />
-        <Button
-          disabled={form.isSubmitting || isPending}
-          loading={form.isSubmitting || isPending}
-          size="xs"
-          type="submit"
-        >
-          パスワードを変更
-        </Button>
-      </Stack>
-    </Form>
+      <Field of={form} path={["currentPassword"]}>
+        {(field) => (
+          <PasswordInput
+            {...field.props}
+            autoComplete="current-password"
+            error={field.errors?.[0]}
+            label="現在のパスワード"
+            value={field.input}
+          />
+        )}
+      </Field>
+      <Field of={form} path={["newPassword"]}>
+        {(field) => (
+          <PasswordInput
+            {...field.props}
+            autoComplete="new-password"
+            error={field.errors?.[0]}
+            label="新しいパスワード"
+            value={field.input}
+          />
+        )}
+      </Field>
+    </ProfileAccountActionForm>
   );
 }
 
