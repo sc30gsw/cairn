@@ -89,8 +89,8 @@ function IndexTabs({ pathname }: Record<"pathname", string>) {
               style={{ "--tab-rotate": `${index % 2 === 0 ? 0.6 : -0.6}deg` }}
               to={to}
             >
-              <Group gap={6} justify="center" wrap="nowrap">
-                <Icon aria-hidden size={active ? 16 : 12} stroke={1.5} />
+              <Group gap={8} justify="center" wrap="nowrap">
+                <Icon aria-hidden size={16} stroke={1.5} />
                 {label}
               </Group>
             </Box>
