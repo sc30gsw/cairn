@@ -92,7 +92,8 @@ export const tables = {
     count: v.number(),
     lastRequest: v.number(),
   })
-    .index("key", ["key"]),
+    .index("key", ["key"])
+    .index("lastRequest", ["lastRequest"]),
 };
 
 const schema = defineSchema(tables);

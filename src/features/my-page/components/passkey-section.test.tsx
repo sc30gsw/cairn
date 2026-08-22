@@ -1,4 +1,5 @@
 import { waitFor } from "@testing-library/react";
+import { Result } from "better-result";
 import { expect, test, vi, beforeEach } from "vite-plus/test";
 
 import { PasskeySection } from "~/features/my-page/components/passkey-section";
@@ -12,10 +13,7 @@ vi.mock("~/lib/profile-actions", () => ({
 }));
 
 beforeEach(() => {
-  vi.mocked(profileActions.listPasskeys).mockResolvedValue({
-    errorMessage: null,
-    passkeys: [],
-  });
+  vi.mocked(profileActions.listPasskeys).mockResolvedValue(Result.ok([]));
 });
 
 test("PasskeySection はマウント時に listPasskeys を1回だけ呼ぶ", async () => {

@@ -24,7 +24,7 @@ function MyPageOnboardingExtras() {
 
   return (
     <>
-      <SetupChecklist status={status} />
+      <SetupChecklist />
       <CatalogSamplesPreview />
     </>
   );

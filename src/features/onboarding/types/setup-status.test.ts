@@ -9,15 +9,11 @@ type ValidatorSetupStatus = (typeof setupStatusValidator)["type"];
 
 test("SetupStatus は api.queries.setup.status.status の戻り値型と一致する", () => {
   const _queryReturn: FunctionReturnType<typeof api.queries.setup.status.status> = {
-    examGoalCount: 0,
     hasExamGoal: false,
     hasItems: false,
     hasPresets: false,
     hasWeeklyTargets: false,
     isComplete: false,
-    itemCount: 0,
-    presetCount: 0,
-    targetCount: 0,
   } satisfies SetupStatus;
 
   const _frontendStatus: SetupStatus = _queryReturn;

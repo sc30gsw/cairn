@@ -1,6 +1,8 @@
+import { Result } from "better-result";
 import { expect, test, vi, beforeEach } from "vite-plus/test";
 
 import type { Id } from "~/../convex/_generated/dataModel";
+import { authActionErrorMessage } from "~/lib/auth-action-result";
 import { authClient } from "~/lib/auth-client";
 import {
   addPasskey,
@@ -43,10 +45,25 @@ test("表示名の更新に成功すると errorMessage は null で reload せ�
 
   const result = await updateProfileName({ name: "新しい名前" });
 
-  expect(result).toEqual({ errorMessage: null });
+  expect(Result.isOk(result)).toBe(true);
+  expect(authActionErrorMessage(result)).toBeNull();
+  expect(authClient.updateUser).toHaveBeenCalledWith({ name: "新しい名前" });
   expect(authClient.getSession).toHaveBeenCalledTimes(1);
   expect(reload).not.toHaveBeenCalled();
   reload.mockRestore();
+});
+
+test("表示名の更新エラーは利用者向けの errorMessage を返す", async () => {
+  vi.mocked(authClient.updateUser).mockResolvedValue({
+    data: null,
+    error: { message: "Invalid name", status: 400, statusText: "Bad Request" },
+  });
+
+  const result = await updateProfileName({ name: "x" });
+
+  expect(authActionErrorMessage(result)).toBe(
+    "表示名を確認してください。50文字以内で入力してください。",
+  );
 });
 
 test("アイコン storageId 更新に成功すると convex-storage 参照を保存する", async () => {
@@ -54,7 +71,7 @@ test("アイコン storageId 更新に成功すると convex-storage 参照を�
 
   const result = await updateProfileImage("storage123" as Id<"_storage">);
 
-  expect(result).toEqual({ errorMessage: null });
+  expect(Result.isOk(result)).toBe(true);
   expect(authClient.updateUser).toHaveBeenCalledWith({
     image: "convex-storage:storage123",
   });
@@ -68,10 +85,13 @@ test("listPasskeys は成功時に passkeys を返す", async () => {
 
   const result = await listPasskeys();
 
-  expect(result).toEqual({ errorMessage: null, passkeys: [{ id: "pk_1" }] });
+  expect(Result.isOk(result)).toBe(true);
+  if (Result.isOk(result)) {
+    expect(result.value).toEqual([{ id: "pk_1" }]);
+  }
 });
 
-test("listPasskeys は API エラー時に errorMessage を返す", async () => {
+test("listPasskeys は API エラー時に AuthActionError を返す", async () => {
   vi.mocked(authClient.passkey.listUserPasskeys).mockResolvedValue({
     data: null,
     error: { message: "fail", status: 500, statusText: "Error" },
@@ -79,8 +99,10 @@ test("listPasskeys は API エラー時に errorMessage を返す", async () => 
 
   const result = await listPasskeys();
 
-  expect(result.errorMessage).toContain("パスキー一覧");
-  expect(result.passkeys).toEqual([]);
+  expect(Result.isError(result)).toBe(true);
+  if (Result.isError(result)) {
+    expect(result.error.message).toContain("パスキー一覧");
+  }
 });
 
 test("パスキー追加は成功時に reload も session 再取得もしない", async () => {
@@ -97,11 +119,15 @@ test("パスキー追加は成功時に reload も session 再取得もしない
     },
     error: null,
   });
+  const reload = vi.spyOn(location, "reload").mockImplementation(() => {});
 
   const result = await addPasskey({ name: "Cairn" });
 
-  expect(result).toEqual({ errorMessage: null });
+  expect(Result.isOk(result)).toBe(true);
+  expect(authClient.passkey.addPasskey).toHaveBeenCalledWith({ name: "Cairn" });
   expect(authClient.getSession).not.toHaveBeenCalled();
+  expect(reload).not.toHaveBeenCalled();
+  reload.mockRestore();
 });
 
 test("パスワード更新エラーは利用者向けの errorMessage を返す", async () => {
@@ -120,7 +146,9 @@ test("パスワード更新エラーは利用者向けの errorMessage を返す
     newPassword: "new-password",
   });
 
-  expect(result.errorMessage).toContain("現在のパスワード");
+  expect(authActionErrorMessage(result)).toBe(
+    "現在のパスワードが正しくありません。もう一度入力してください。",
+  );
 });
 
 test("ユーザー名の更新に成功すると errorMessage は null", async () => {
@@ -128,14 +156,65 @@ test("ユーザー名の更新に成功すると errorMessage は null", async (
 
   const result = await updateProfileUsername({ username: "new_user" });
 
-  expect(result).toEqual({ errorMessage: null });
+  expect(Result.isOk(result)).toBe(true);
+  expect(authActionErrorMessage(result)).toBeNull();
+});
+
+test("パスワード更新に成功すると reload せず session を再取得する", async () => {
+  vi.mocked(authClient.changePassword).mockResolvedValue({ data: {}, error: null });
+  const reload = vi.spyOn(location, "reload").mockImplementation(() => {});
+
+  const result = await updateProfilePassword({
+    currentPassword: "old-password",
+    newPassword: "new-password",
+  });
+
+  expect(Result.isOk(result)).toBe(true);
+  expect(authClient.changePassword).toHaveBeenCalledWith({
+    currentPassword: "old-password",
+    newPassword: "new-password",
+  });
+  expect(authClient.getSession).toHaveBeenCalledTimes(1);
+  expect(reload).not.toHaveBeenCalled();
+  reload.mockRestore();
 });
 
 test("パスキー削除は成功時に session 再取得もしない", async () => {
   vi.mocked(authClient.passkey.deletePasskey).mockResolvedValue({ data: {}, error: null });
+  const reload = vi.spyOn(location, "reload").mockImplementation(() => {});
 
   const result = await deletePasskey("pk_1");
 
-  expect(result).toEqual({ errorMessage: null });
+  expect(Result.isOk(result)).toBe(true);
   expect(authClient.getSession).not.toHaveBeenCalled();
+  expect(reload).not.toHaveBeenCalled();
+  reload.mockRestore();
+});
+
+test("パスキー削除エラーは利用者向けの errorMessage を返す", async () => {
+  vi.mocked(authClient.passkey.deletePasskey).mockResolvedValue({
+    data: null,
+    error: {
+      code: "PASSKEY_NOT_FOUND",
+      message: "Passkey not found",
+      status: 404,
+      statusText: "Not Found",
+    },
+  });
+
+  const result = await deletePasskey("pk_1");
+
+  expect(authActionErrorMessage(result)).toBe(
+    "パスキーが見つかりません。一覧を更新して、もう一度お試しください。",
+  );
+});
+
+test("未知の例外は fallback メッセージになる", async () => {
+  vi.mocked(authClient.updateUser).mockRejectedValue("boom");
+
+  const result = await updateProfileName({ name: "名前" });
+
+  expect(authActionErrorMessage(result)).toBe(
+    "表示名の更新に失敗しました。入力内容を確認して、もう一度お試しください。",
+  );
 });

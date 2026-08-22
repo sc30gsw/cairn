@@ -18,7 +18,6 @@ export function ProfileSection() {
   const uploadDeps = useAvatarUploadDeps();
   const [previewSrc, setPreviewSrc] = useState<null | string>(null);
   const [cropOpen, setCropOpen] = useState(false);
-  const [uploadSuccessMessage, setUploadSuccessMessage] = useState<null | string>(null);
 
   if (user === null) {
     return null;
@@ -44,17 +43,16 @@ export function ProfileSection() {
     reader.readAsDataURL(file);
   }
 
-  async function handleConfirm(blob: Blob): Promise<{ errorMessage: null | string }> {
-    setUploadSuccessMessage(null);
+  async function handleConfirm(blob: Blob): Promise<Result<void, string>> {
     const uploadResult = await uploadAvatarBlob(blob, uploadDeps);
     if (Result.isError(uploadResult)) {
-      return { errorMessage: avatarUploadErrorMessage(uploadResult.error) };
+      return Result.err(avatarUploadErrorMessage(uploadResult.error));
     }
-    const profileResult = await updateProfileImage(uploadResult.value);
-    if (profileResult.errorMessage === null) {
-      setUploadSuccessMessage("アイコンを更新しました");
+    const updateResult = await updateProfileImage(uploadResult.value);
+    if (Result.isError(updateResult)) {
+      return Result.err(updateResult.error.message);
     }
-    return profileResult;
+    return Result.ok(undefined);
   }
 
   return (
@@ -77,11 +75,6 @@ export function ProfileSection() {
             >
               アイコンを変更
             </Button>
-            {uploadSuccessMessage ? (
-              <Text c="green" size="xs">
-                {uploadSuccessMessage}
-              </Text>
-            ) : null}
             <Text c="dimmed" size="xs">
               JPEG / PNG（保存時 256×256px に切り抜き）
             </Text>

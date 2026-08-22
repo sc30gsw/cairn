@@ -1,4 +1,5 @@
 import { screen, waitFor } from "@testing-library/react";
+import { Result } from "better-result";
 import { useEffect } from "react";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
@@ -35,7 +36,7 @@ afterEach(() => {
 
 test("AvatarCropModal は onConfirm 失敗時にモーダルを閉じない", async () => {
   const onClose = vi.fn();
-  const onConfirm = vi.fn(async () => ({ errorMessage: "保存に失敗しました" }));
+  const onConfirm = vi.fn(async () => Result.err("保存に失敗しました"));
 
   renderWithMantine(
     <AvatarCropModal
@@ -56,7 +57,7 @@ test("AvatarCropModal は onConfirm 失敗時にモーダルを閉じない", as
 
 test("AvatarCropModal は onConfirm 成功時に onClose を呼ぶ", async () => {
   const onClose = vi.fn();
-  const onConfirm = vi.fn(async () => ({ errorMessage: null }));
+  const onConfirm = vi.fn(async () => Result.ok(undefined));
 
   renderWithMantine(
     <AvatarCropModal

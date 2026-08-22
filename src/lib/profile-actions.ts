@@ -2,14 +2,12 @@ import type { Passkey } from "@better-auth/passkey/client";
 import { Result } from "better-result";
 
 import type { Id } from "~/../convex/_generated/dataModel";
+import type { AuthActionResult } from "~/lib/auth-action-result";
 import { authClient } from "~/lib/auth-client";
+import { type AuthErrorContext } from "~/lib/auth-error-messages";
 import { encodeAvatarStorageRef } from "~/lib/avatar-image";
-import {
-  authActionError,
-  authActionErrorFromUnknown,
-  runAuthAction,
-  type ActionResult,
-} from "~/lib/run-auth-action";
+import { AuthActionError } from "~/lib/errors";
+import { authActionError, authActionErrorFromUnknown } from "~/lib/run-auth-action";
 import type { PasskeyAddInput } from "~/lib/validation/passkey-schema";
 import type {
   ProfileNameInput,
@@ -17,29 +15,22 @@ import type {
   ProfileUsernameInput,
 } from "~/lib/validation/profile-schema";
 
-export type ProfileActionResult = ActionResult;
-
-export type PasskeyListResult =
-  | { errorMessage: null; passkeys: Passkey[] }
-  | { errorMessage: string; passkeys: Passkey[] };
-
 async function runProfileAction(
   action: () => Promise<void>,
-  context: Parameters<typeof runAuthAction>[1],
+  context: AuthErrorContext,
   refreshSessionOnSuccess = true,
-): Promise<ProfileActionResult> {
-  return runAuthAction(
-    action,
-    context,
-    refreshSessionOnSuccess
-      ? async () => {
-          await authClient.getSession();
-        }
-      : undefined,
-  );
+): Promise<AuthActionResult> {
+  const result = await Result.tryPromise({
+    catch: (cause) => authActionErrorFromUnknown(cause, context),
+    try: action,
+  });
+  if (Result.isOk(result) && refreshSessionOnSuccess) {
+    await authClient.getSession();
+  }
+  return result;
 }
 
-export async function updateProfileName(input: ProfileNameInput): Promise<ProfileActionResult> {
+export async function updateProfileName(input: ProfileNameInput): Promise<AuthActionResult> {
   return runProfileAction(async () => {
     const authResult = await authClient.updateUser({ name: input.name });
     if (authResult.error) {
@@ -50,7 +41,7 @@ export async function updateProfileName(input: ProfileNameInput): Promise<Profil
 
 export async function updateProfileUsername(
   input: ProfileUsernameInput,
-): Promise<ProfileActionResult> {
+): Promise<AuthActionResult> {
   return runProfileAction(async () => {
     const authResult = await authClient.updateUser({ username: input.username });
     if (authResult.error) {
@@ -61,7 +52,7 @@ export async function updateProfileUsername(
 
 export async function updateProfilePassword(
   input: ProfilePasswordInput,
-): Promise<ProfileActionResult> {
+): Promise<AuthActionResult> {
   return runProfileAction(async () => {
     const authResult = await authClient.changePassword({
       currentPassword: input.currentPassword,
@@ -73,7 +64,7 @@ export async function updateProfilePassword(
   }, "changePassword");
 }
 
-export async function updateProfileImage(storageId: Id<"_storage">): Promise<ProfileActionResult> {
+export async function updateProfileImage(storageId: Id<"_storage">): Promise<AuthActionResult> {
   return runProfileAction(async () => {
     const authResult = await authClient.updateUser({
       image: encodeAvatarStorageRef(storageId),
@@ -84,7 +75,7 @@ export async function updateProfileImage(storageId: Id<"_storage">): Promise<Pro
   }, "updateImage");
 }
 
-export async function addPasskey(input: PasskeyAddInput): Promise<ProfileActionResult> {
+export async function addPasskey(input: PasskeyAddInput): Promise<AuthActionResult> {
   return runProfileAction(
     async () => {
       const authResult = await authClient.passkey.addPasskey({ name: input.name });
@@ -97,24 +88,15 @@ export async function addPasskey(input: PasskeyAddInput): Promise<ProfileActionR
   );
 }
 
-export async function listPasskeys(): Promise<PasskeyListResult> {
-  const result = await Result.tryPromise({
-    catch: (cause) => authActionErrorFromUnknown(cause, "listPasskeys"),
-    try: async () => {
-      const authResult = await authClient.passkey.listUserPasskeys();
-      if (authResult.error) {
-        throw authActionError(authResult.error, "listPasskeys");
-      }
-      return authResult.data ?? [];
-    },
-  });
-  if (Result.isError(result)) {
-    return { errorMessage: result.error.message, passkeys: [] };
+export async function listPasskeys(): Promise<Result<Passkey[], AuthActionError>> {
+  const result = await authClient.passkey.listUserPasskeys();
+  if (result.error) {
+    return Result.err(authActionError(result.error, "listPasskeys"));
   }
-  return { errorMessage: null, passkeys: result.value };
+  return Result.ok(result.data ?? []);
 }
 
-export async function deletePasskey(id: string): Promise<ProfileActionResult> {
+export async function deletePasskey(id: string): Promise<AuthActionResult> {
   return runProfileAction(
     async () => {
       const authResult = await authClient.passkey.deletePasskey({ id });

@@ -8,15 +8,11 @@ import {
 } from "~/features/onboarding/lib/setup-steps";
 
 const emptyStatus = {
-  examGoalCount: 0,
   hasExamGoal: false,
   hasItems: false,
   hasPresets: false,
   hasWeeklyTargets: false,
   isComplete: false,
-  itemCount: 0,
-  presetCount: 0,
-  targetCount: 0,
 };
 
 test("最初の未完了ステップは項目", () => {
@@ -25,10 +21,7 @@ test("最初の未完了ステップは項目", () => {
 });
 
 test("項目だけ完了ならプリセットが次", () => {
-  const step = firstIncompleteSetupStep(
-    { ...emptyStatus, hasItems: true, itemCount: 1 },
-    new Set(),
-  );
+  const step = firstIncompleteSetupStep({ ...emptyStatus, hasItems: true }, new Set());
   expect(step?.id).toBe("presets");
 });
 
@@ -41,15 +34,11 @@ test("全部完了ならホーム Stepper は非表示", () => {
   expect(
     shouldShowHomeSetupStepper(
       {
-        examGoalCount: 1,
         hasExamGoal: true,
         hasItems: true,
         hasPresets: true,
         hasWeeklyTargets: true,
         isComplete: true,
-        itemCount: 1,
-        presetCount: 1,
-        targetCount: 1,
       },
       new Set(),
     ),
@@ -61,7 +50,7 @@ test("isSetupStepComplete は status を参照する", () => {
 });
 
 test("incompleteSetupSteps は未完了だけ返す", () => {
-  const steps = incompleteSetupSteps({ ...emptyStatus, hasItems: true, itemCount: 1 });
+  const steps = incompleteSetupSteps({ ...emptyStatus, hasItems: true });
   expect(steps.map((step) => step.id)).toEqual(["presets", "examGoal", "weeklyTargets"]);
 });
 
