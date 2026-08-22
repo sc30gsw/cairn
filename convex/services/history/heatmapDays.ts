@@ -27,8 +27,11 @@ export function buildMinutesByDate(
   return mapValues(groupBy(liveRows(rows, liveDayDates), prop("dateJst")), confirmedVolumeMinutes);
 }
 
-export function buildConditionByDate(days: Doc<"days">[]): Record<string, Condition | null> {
-  const map: Record<string, Condition | null> = {};
+function buildCanonicalDayByDate<T>(
+  days: Doc<"days">[],
+  pick: (day: Doc<"days">) => T,
+): Record<string, T> {
+  const map: Record<string, T> = {};
   const liveByDate = groupBy(
     days.filter((day) => day.deletedAt === undefined),
     prop("dateJst"),
@@ -39,31 +42,22 @@ export function buildConditionByDate(days: Doc<"days">[]): Record<string, Condit
       (left, right) => left._creationTime - right._creationTime,
     )[0];
     if (canonical !== undefined) {
-      map[dateJst] = canonical.condition ?? null;
+      map[dateJst] = pick(canonical);
     }
   }
 
   return map;
 }
 
+export function buildConditionByDate(days: Doc<"days">[]): Record<string, Condition | null> {
+  return buildCanonicalDayByDate(days, (day) => day.condition ?? null);
+}
+
 export function buildMemoByDate(days: Doc<"days">[]): Record<string, string | null> {
-  const map: Record<string, string | null> = {};
-  const liveByDate = groupBy(
-    days.filter((day) => day.deletedAt === undefined),
-    prop("dateJst"),
-  );
-
-  for (const [dateJst, liveDays] of Object.entries(liveByDate)) {
-    const canonical = liveDays.toSorted(
-      (left, right) => left._creationTime - right._creationTime,
-    )[0];
-    if (canonical !== undefined) {
-      const memo = canonical.memo?.trim();
-      map[dateJst] = memo === undefined || memo.length === 0 ? null : memo;
-    }
-  }
-
-  return map;
+  return buildCanonicalDayByDate(days, (day) => {
+    const memo = day.memo?.trim();
+    return memo === undefined || memo.length === 0 ? null : memo;
+  });
 }
 
 export function buildHeatmapDays(

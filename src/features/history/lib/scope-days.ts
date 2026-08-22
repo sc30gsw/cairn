@@ -21,6 +21,7 @@ export function daysInAnalysisScope(
   }
 
   if (scope === "week") {
+    // Week breakdown rows omit memo/condition; heatmap days carry both for the week range.
     return heatmapDays.filter(
       (day) => day.dateJst >= week.weekStart && day.dateJst <= week.weekEnd,
     );

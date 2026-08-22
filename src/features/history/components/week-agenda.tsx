@@ -5,15 +5,9 @@ import { addDaysJst, type DateJst } from "~domain/jst";
 
 import { ConditionBadge } from "~/components/condition-badge";
 import { TruncatedText } from "~/components/truncated-text";
+import { formatJstDateLabel } from "~/features/history/lib/format-jst-date";
 import { RECORD_STATUS_UI } from "~/features/history/lib/record-status-label";
 import type { WeekEvent, WeekPage } from "~/features/history/types/history";
-
-const DATE_HEADER_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
-  day: "numeric",
-  month: "long",
-  timeZone: "Asia/Tokyo",
-  weekday: "short",
-});
 
 const WEEK_RANGE_START_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
   day: "numeric",
@@ -29,8 +23,7 @@ const WEEK_RANGE_END_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
 });
 
 function formatDateHeader(dateJst: DateJst): string {
-  const date = new Date(`${dateJst}T12:00:00+09:00`);
-  return DATE_HEADER_FORMATTER.format(date);
+  return formatJstDateLabel(dateJst);
 }
 
 function formatWeekRange(weekStart: DateJst, weekEnd: DateJst): string {

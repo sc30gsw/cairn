@@ -3,9 +3,7 @@ import { Alert, Button, Card, Grid, SegmentedControl, Stack, Text, Title } from 
 import { Link } from "@tanstack/react-router";
 import type { DateJst } from "~domain/jst";
 
-import { ConditionAvgMinutes } from "~/features/history/components/analysis/condition-avg-minutes";
-import { DayMemoHighlight } from "~/features/history/components/analysis/day-memo-highlight";
-import { MemosByCondition } from "~/features/history/components/analysis/memos-by-condition";
+import { HistoryConditionMemoSections } from "~/features/history/components/analysis/history-condition-memo-sections";
 import { BreakdownTable } from "~/features/history/components/breakdown-table";
 import { ConditionVolumeTable } from "~/features/history/components/condition-volume-table";
 import { HeatmapLegend } from "~/features/history/components/heatmap-legend";
@@ -253,27 +251,11 @@ export function HistoryAnalysisPanel({
         />
       </Stack>
 
-      {scope === "day" ? (
-        <Stack gap="xs">
-          <Title order={4}>この日のメモ</Title>
-          <DayMemoHighlight day={scopeDays[0]} dateJst={selectedDateJst} />
-        </Stack>
-      ) : null}
-
-      <Stack gap="xs">
-        <Title order={4}>コンディション別の平均学習量</Title>
-        <ConditionAvgMinutes days={scopeDays} />
-      </Stack>
-
-      {scope === "week" || scope === "month" ? (
-        <Stack gap="xs">
-          <Title order={4}>メモ（コンディション別）</Title>
-          <Text c="dimmed" size="sm">
-            メモがある日をコンディションごとに並べます。新しい日が上に来ます。
-          </Text>
-          <MemosByCondition days={scopeDays} />
-        </Stack>
-      ) : null}
+      <HistoryConditionMemoSections
+        scope={scope}
+        scopeDays={scopeDays}
+        selectedDateJst={selectedDateJst}
+      />
 
       {scope === "day" ? (
         <Button
