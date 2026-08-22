@@ -7,6 +7,7 @@ import {
   useHistoryDayBreakdown,
   useHistoryMonthBreakdown,
   useHistoryPresetReview,
+  useHistoryWeek,
   useHistoryWeekBreakdown,
   useHistoryYearHeatmap,
 } from "~/features/history/hooks/history-queries";
@@ -24,6 +25,7 @@ export function HistoryAnalysisTab() {
   } = useHistoryView();
   const { data: monthBreakdown } = useHistoryMonthBreakdown(today, yearMonth);
   const { data: yearHeatmap } = useHistoryYearHeatmap(today);
+  const { data: weekPage } = useHistoryWeek(weekAnchor, today);
   const { data: weekBreakdown } = useHistoryWeekBreakdown(weekAnchor, today);
   const { data: dayBreakdown } = useHistoryDayBreakdown(selectedDateJst, today);
   const { data: presetReview } = useHistoryPresetReview(today);
@@ -44,6 +46,7 @@ export function HistoryAnalysisTab() {
           selectedDateJst={selectedDateJst}
           todayJst={today}
           week={weekBreakdown}
+          weekDays={weekPage.days}
           yearMonth={yearMonth}
         />
       </Card>

@@ -10,6 +10,7 @@ import {
   historyShimmerPresetReview,
   historyShimmerSelectedDateJst,
   historyShimmerTodayJst,
+  historyShimmerWeek,
   historyShimmerWeekBreakdown,
   historyShimmerYearMonth,
 } from "~/features/history/lib/history-shimmer-template";
@@ -31,6 +32,7 @@ export function HistoryAnalysisTabPending() {
         selectedDateJst={historyShimmerSelectedDateJst}
         todayJst={historyShimmerTodayJst}
         week={historyShimmerWeekBreakdown}
+        weekDays={historyShimmerWeek.days}
         yearMonth={historyShimmerYearMonth}
       />
     </Shimmer>

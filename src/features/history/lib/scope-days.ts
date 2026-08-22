@@ -12,6 +12,7 @@ export function daysInAnalysisScope(
   week: WeekBreakdown,
   month: MonthBreakdown,
   heatmapDays: readonly HeatmapDay[],
+  weekDays: readonly HeatmapDay[],
 ): HeatmapDay[] {
   if (scope === "day") {
     const fromMonth = month.days.find((day) => day.dateJst === selectedDateJst);
@@ -21,10 +22,8 @@ export function daysInAnalysisScope(
   }
 
   if (scope === "week") {
-    // Week breakdown rows omit memo/condition; heatmap days carry both for the week range.
-    return heatmapDays.filter(
-      (day) => day.dateJst >= week.weekStart && day.dateJst <= week.weekEnd,
-    );
+    // Week page days include memo/condition for the full week; year heatmap only covers ~365 days.
+    return [...weekDays];
   }
 
   return month.days;

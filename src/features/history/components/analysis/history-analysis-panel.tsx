@@ -38,6 +38,7 @@ type HistoryAnalysisPanelProps = {
   selectedDateJst: DateJst;
   todayJst: DateJst;
   week: WeekBreakdown;
+  weekDays: HeatmapDay[];
   yearMonth: string;
 };
 
@@ -154,9 +155,10 @@ export function HistoryAnalysisPanel({
   selectedDateJst,
   todayJst,
   week,
+  weekDays,
   yearMonth,
 }: HistoryAnalysisPanelProps) {
-  const scopeDays = daysInAnalysisScope(scope, selectedDateJst, week, month, heatmapDays);
+  const scopeDays = daysInAnalysisScope(scope, selectedDateJst, week, month, heatmapDays, weekDays);
 
   return (
     <Stack gap="md">

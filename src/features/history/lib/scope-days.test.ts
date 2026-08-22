@@ -2,6 +2,7 @@ import { expect, test } from "vite-plus/test";
 
 import {
   avgMinutesByCondition,
+  daysInAnalysisScope,
   daysWithMemo,
   groupMemosByCondition,
   sortDaysNewestFirst,
@@ -19,6 +20,43 @@ function day(dateJst: string, overrides: Partial<HeatmapDay> = {}): HeatmapDay {
     ...overrides,
   };
 }
+
+test("daysInAnalysisScope の週スコープは weekDays を使う", () => {
+  const weekDays = [
+    day("2025-01-06", { condition: "好調", memo: "古い週のメモ", minutes: 20 }),
+    day("2025-01-07", { minutes: 10 }),
+  ];
+  const heatmapDays = [day("2026-08-17", { memo: "ヒートマップ内", minutes: 30 })];
+
+  expect(
+    daysInAnalysisScope(
+      "week",
+      "2025-01-06",
+      {
+        byCategory: [],
+        byCondition: [],
+        byDay: [],
+        confirmedMinutes: 30,
+        rows: [],
+        skippedMinutes: 0,
+        volumeMinutes: 30,
+        weekEnd: "2025-01-12",
+        weekStart: "2025-01-06",
+      },
+      {
+        byCategory: [],
+        byCondition: [],
+        confirmedMinutes: 0,
+        days: [],
+        events: [],
+        rows: [],
+        skippedMinutes: 0,
+      },
+      heatmapDays,
+      weekDays,
+    ),
+  ).toEqual(weekDays);
+});
 
 test("sortDaysNewestFirst は新しい日付を先に並べる", () => {
   expect(
