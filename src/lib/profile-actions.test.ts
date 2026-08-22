@@ -33,7 +33,7 @@ test("表示名の更新に成功すると errorMessage は null", async () => {
   reload.mockRestore();
 });
 
-test("表示名の更新エラーは errorMessage を返す", async () => {
+test("表示名の更新エラーは利用者向けの errorMessage を返す", async () => {
   vi.mocked(authClient.updateUser).mockResolvedValue({
     data: null,
     error: { message: "Invalid name", status: 400, statusText: "Bad Request" },
@@ -41,7 +41,9 @@ test("表示名の更新エラーは errorMessage を返す", async () => {
 
   const result = await updateProfileName({ name: "x" });
 
-  expect(result).toEqual({ errorMessage: "Invalid name" });
+  expect(result).toEqual({
+    errorMessage: "表示名を確認してください。50文字以内で入力してください。",
+  });
 });
 
 test("ユーザー名の更新に成功すると errorMessage は null", async () => {
@@ -55,10 +57,15 @@ test("ユーザー名の更新に成功すると errorMessage は null", async (
   reload.mockRestore();
 });
 
-test("パスワード更新エラーは errorMessage を返す", async () => {
+test("パスワード更新エラーは利用者向けの errorMessage を返す", async () => {
   vi.mocked(authClient.changePassword).mockResolvedValue({
     data: null,
-    error: { message: "Wrong password", status: 400, statusText: "Bad Request" },
+    error: {
+      code: "INVALID_PASSWORD",
+      message: "Invalid password",
+      status: 400,
+      statusText: "Bad Request",
+    },
   });
 
   const result = await updateProfilePassword({
@@ -66,7 +73,9 @@ test("パスワード更新エラーは errorMessage を返す", async () => {
     newPassword: "new-password",
   });
 
-  expect(result).toEqual({ errorMessage: "Wrong password" });
+  expect(result).toEqual({
+    errorMessage: "現在のパスワードが正しくありません。もう一度入力してください。",
+  });
 });
 
 test("アイコン URL 更新に成功すると errorMessage は null", async () => {
@@ -106,15 +115,22 @@ test("パスキー追加は成功時に reload しない", async () => {
   reload.mockRestore();
 });
 
-test("パスキー削除エラーは errorMessage を返す", async () => {
+test("パスキー削除エラーは利用者向けの errorMessage を返す", async () => {
   vi.mocked(authClient.passkey.deletePasskey).mockResolvedValue({
     data: null,
-    error: { message: "Not found", status: 404, statusText: "Not Found" },
+    error: {
+      code: "PASSKEY_NOT_FOUND",
+      message: "Passkey not found",
+      status: 404,
+      statusText: "Not Found",
+    },
   });
 
   const result = await deletePasskey("pk_1");
 
-  expect(result).toEqual({ errorMessage: "Not found" });
+  expect(result).toEqual({
+    errorMessage: "パスキーが見つかりません。一覧を更新して、もう一度お試しください。",
+  });
 });
 
 test("未知の例外は fallback メッセージになる", async () => {
@@ -122,5 +138,7 @@ test("未知の例外は fallback メッセージになる", async () => {
 
   const result = await updateProfileName({ name: "名前" });
 
-  expect(result).toEqual({ errorMessage: "表示名の更新に失敗しました" });
+  expect(result).toEqual({
+    errorMessage: "表示名の更新に失敗しました。入力内容を確認して、もう一度お試しください。",
+  });
 });

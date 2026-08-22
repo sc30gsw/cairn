@@ -44,10 +44,10 @@ test("ユーザー名なら username ログインを使う", async () => {
   reload.mockRestore();
 });
 
-test("登録エラーは errorMessage を返す", async () => {
+test("登録エラーは利用者向けの errorMessage を返す", async () => {
   vi.mocked(authClient.signUp.email).mockResolvedValue({
     data: null,
-    error: { message: "Email already registered", status: 400, statusText: "Bad Request" },
+    error: { message: "User already exists.", status: 400, statusText: "Bad Request" },
   });
 
   const result = await signUpWithAccount({
@@ -57,5 +57,8 @@ test("登録エラーは errorMessage を返す", async () => {
     username: "testuser",
   });
 
-  expect(result).toEqual({ errorMessage: "Email already registered" });
+  expect(result).toEqual({
+    errorMessage:
+      "このメールアドレスはすでに登録されています。ログインするか、別のメールアドレスを使ってください。",
+  });
 });

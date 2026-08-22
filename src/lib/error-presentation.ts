@@ -13,8 +13,8 @@ export type ErrorPresentation = {
 //? サーバ側にタグが増えたら satisfies が型エラーで知らせる
 const DOMAIN_ERROR_PRESENTATION = {
   Conflict: { recovery: "reload", title: "ほかの操作と競合しました" },
-  Forbidden: { recovery: "signIn", title: "権限がありません" },
-  NotFound: { recovery: "retry", title: "見つかりませんでした" },
+  Forbidden: { recovery: "signIn", title: "この操作を行う権限がありません" },
+  NotFound: { recovery: "retry", title: "データが見つかりませんでした" },
   Unauthenticated: { recovery: "signIn", title: "ログインが必要です" },
   ValidationFailed: { recovery: "retry", title: "入力を確認してください" },
 } as const satisfies Record<DomainError["_tag"], Omit<ErrorPresentation, "message">>;

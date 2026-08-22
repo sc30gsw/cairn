@@ -33,10 +33,9 @@ export async function uploadAvatarBlob(
   }
 
   const uploadResult = await Result.tryPromise({
-    catch: (cause) => ({
+    catch: () => ({
       _tag: "AvatarUploadFailed" as const,
-      cause,
-      message: cause instanceof Error ? cause.message : "アップロードに失敗しました",
+      message: "アップロードに失敗しました",
     }),
     try: async () => {
       const uploadUrl = await deps.generateUploadUrl();

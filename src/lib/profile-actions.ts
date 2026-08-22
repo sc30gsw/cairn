@@ -2,6 +2,7 @@ import type { Passkey } from "@better-auth/passkey/client";
 import { Result } from "better-result";
 
 import { authClient } from "~/lib/auth-client";
+import { type AuthErrorContext, presentAuthError } from "~/lib/auth-error-messages";
 import { AuthActionError } from "~/lib/errors";
 import type { PasskeyAddInput } from "~/lib/validation/passkey-schema";
 import type {
@@ -23,23 +24,24 @@ function toProfileActionResult(result: Result<void, AuthActionError>): ProfileAc
   return { errorMessage: null };
 }
 
-function authActionErrorFromUnknown(cause: unknown, fallbackMessage: string): AuthActionError {
+function authActionError(error: unknown, context: AuthErrorContext): AuthActionError {
+  return new AuthActionError({ cause: error, message: presentAuthError(error, context) });
+}
+
+function authActionErrorFromUnknown(cause: unknown, context: AuthErrorContext): AuthActionError {
   if (cause instanceof AuthActionError) {
     return cause;
   }
-  if (cause instanceof Error && cause.message !== "") {
-    return new AuthActionError({ cause, message: cause.message });
-  }
-  return new AuthActionError({ cause, message: fallbackMessage });
+  return authActionError(cause, context);
 }
 
 async function runProfileAction(
   action: () => Promise<void>,
-  fallbackMessage: string,
+  context: AuthErrorContext,
   reloadOnSuccess = true,
 ): Promise<ProfileActionResult> {
   const result = await Result.tryPromise({
-    catch: (cause) => authActionErrorFromUnknown(cause, fallbackMessage),
+    catch: (cause) => authActionErrorFromUnknown(cause, context),
     try: action,
   });
   if (Result.isOk(result) && reloadOnSuccess) {
@@ -52,12 +54,9 @@ export async function updateProfileName(input: ProfileNameInput): Promise<Profil
   return runProfileAction(async () => {
     const authResult = await authClient.updateUser({ name: input.name });
     if (authResult.error) {
-      throw new AuthActionError({
-        cause: authResult.error,
-        message: authResult.error.message ?? "表示名の更新に失敗しました",
-      });
+      throw authActionError(authResult.error, "updateName");
     }
-  }, "表示名の更新に失敗しました");
+  }, "updateName");
 }
 
 export async function updateProfileUsername(
@@ -66,12 +65,9 @@ export async function updateProfileUsername(
   return runProfileAction(async () => {
     const authResult = await authClient.updateUser({ username: input.username });
     if (authResult.error) {
-      throw new AuthActionError({
-        cause: authResult.error,
-        message: authResult.error.message ?? "ユーザー名の更新に失敗しました",
-      });
+      throw authActionError(authResult.error, "updateUsername");
     }
-  }, "ユーザー名の更新に失敗しました");
+  }, "updateUsername");
 }
 
 export async function updateProfilePassword(
@@ -83,24 +79,18 @@ export async function updateProfilePassword(
       newPassword: input.newPassword,
     });
     if (authResult.error) {
-      throw new AuthActionError({
-        cause: authResult.error,
-        message: authResult.error.message ?? "パスワードの更新に失敗しました",
-      });
+      throw authActionError(authResult.error, "changePassword");
     }
-  }, "パスワードの更新に失敗しました");
+  }, "changePassword");
 }
 
 export async function updateProfileImage(imageUrl: string): Promise<ProfileActionResult> {
   return runProfileAction(async () => {
     const authResult = await authClient.updateUser({ image: imageUrl });
     if (authResult.error) {
-      throw new AuthActionError({
-        cause: authResult.error,
-        message: authResult.error.message ?? "アイコンの更新に失敗しました",
-      });
+      throw authActionError(authResult.error, "updateImage");
     }
-  }, "アイコンの更新に失敗しました");
+  }, "updateImage");
 }
 
 export async function addPasskey(input: PasskeyAddInput): Promise<ProfileActionResult> {
@@ -108,13 +98,10 @@ export async function addPasskey(input: PasskeyAddInput): Promise<ProfileActionR
     async () => {
       const authResult = await authClient.passkey.addPasskey({ name: input.name });
       if (authResult.error) {
-        throw new AuthActionError({
-          cause: authResult.error,
-          message: authResult.error.message ?? "パスキーの登録に失敗しました",
-        });
+        throw authActionError(authResult.error, "addPasskey");
       }
     },
-    "パスキーの登録に失敗しました",
+    "addPasskey",
     false,
   );
 }
@@ -123,7 +110,7 @@ export async function listPasskeys(): Promise<PasskeyListResult> {
   const result = await authClient.passkey.listUserPasskeys();
   if (result.error) {
     return {
-      errorMessage: result.error.message ?? "パスキー一覧の取得に失敗しました",
+      errorMessage: presentAuthError(result.error, "listPasskeys"),
       passkeys: [],
     };
   }
@@ -135,13 +122,10 @@ export async function deletePasskey(id: string): Promise<ProfileActionResult> {
     async () => {
       const authResult = await authClient.passkey.deletePasskey({ id });
       if (authResult.error) {
-        throw new AuthActionError({
-          cause: authResult.error,
-          message: authResult.error.message ?? "パスキーの削除に失敗しました",
-        });
+        throw authActionError(authResult.error, "deletePasskey");
       }
     },
-    "パスキーの削除に失敗しました",
+    "deletePasskey",
     false,
   );
 }

@@ -6,11 +6,7 @@ import { AvatarCropModal } from "~/features/my-page/components/avatar-crop-modal
 import { renderWithMantine } from "~/test-utils/render";
 
 vi.mock("react-easy-crop", () => ({
-  default: ({
-    onCropComplete,
-  }: {
-    onCropComplete: (area: unknown, pixels: unknown) => void;
-  }) => {
+  default: ({ onCropComplete }: { onCropComplete: (area: unknown, pixels: unknown) => void }) => {
     useEffect(() => {
       onCropComplete(
         { height: 100, width: 100, x: 0, y: 0 },

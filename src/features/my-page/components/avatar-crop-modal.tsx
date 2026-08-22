@@ -7,7 +7,7 @@ const OUTPUT_SIZE = 256;
 
 async function cropImageToBlob(imageSrc: string, pixelCrop: Area): Promise<Result<Blob, string>> {
   return Result.tryPromise({
-    catch: (cause) => (cause instanceof Error ? cause.message : "画像の保存に失敗しました"),
+    catch: () => "画像の保存に失敗しました",
     try: async () => {
       const image = await loadImage(imageSrc);
       const canvas = document.createElement("canvas");
