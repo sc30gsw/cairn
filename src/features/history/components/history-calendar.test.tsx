@@ -23,8 +23,22 @@ const [confirmed, pending] = [STATUSES[0], STATUSES[1]] as const;
 test("buildHeatmapChartData は休養と0分を除外する", () => {
   expect(
     buildHeatmapChartData([
-      { condition: null, dateJst: "2026-08-15", isRest: true, minutes: 0, movingAverage: 0 },
-      { condition: null, dateJst: "2026-08-17", isRest: false, minutes: 30, movingAverage: 10 },
+      {
+        condition: null,
+        dateJst: "2026-08-15",
+        isRest: true,
+        memo: null,
+        minutes: 0,
+        movingAverage: 0,
+      },
+      {
+        condition: null,
+        dateJst: "2026-08-17",
+        isRest: false,
+        memo: null,
+        minutes: 30,
+        movingAverage: 10,
+      },
     ]),
   ).toEqual({
     "2026-08-17": 30,
@@ -37,6 +51,7 @@ test("formatHeatmapTooltip", () => {
       condition: null,
       dateJst: "2026-08-15",
       isRest: true,
+      memo: null,
       minutes: 0,
       movingAverage: 0,
     }),
@@ -46,6 +61,7 @@ test("formatHeatmapTooltip", () => {
       condition: null,
       dateJst: "2026-08-17",
       isRest: false,
+      memo: null,
       minutes: 30,
       movingAverage: 10,
     }),
@@ -63,7 +79,14 @@ test("学習量ヒートマップが Mantine Heatmap を描画", () => {
   const { container } = renderWithMantine(
     <HistoryLearningHeatmap
       days={[
-        { condition: null, dateJst: "2026-08-17", isRest: false, minutes: 30, movingAverage: 10 },
+        {
+          condition: null,
+          dateJst: "2026-08-17",
+          isRest: false,
+          memo: null,
+          minutes: 30,
+          movingAverage: 10,
+        },
       ]}
       onDayClick={vi.fn()}
       todayJst="2026-08-17"
@@ -121,14 +144,28 @@ test("分析パネルの月スコープに学習量ヒートマップが見え�
         skippedMinutes: 0,
       }}
       heatmapDays={[
-        { condition: null, dateJst: "2026-08-17", isRest: false, minutes: 30, movingAverage: 10 },
+        {
+          condition: null,
+          dateJst: "2026-08-17",
+          isRest: false,
+          memo: null,
+          minutes: 30,
+          movingAverage: 10,
+        },
       ]}
       month={{
         byCategory: [],
         byCondition: [],
         confirmedMinutes: 30,
         days: [
-          { condition: null, dateJst: "2026-08-17", isRest: false, minutes: 30, movingAverage: 10 },
+          {
+            condition: null,
+            dateJst: "2026-08-17",
+            isRest: false,
+            memo: null,
+            minutes: 30,
+            movingAverage: 10,
+          },
         ],
         events: [],
         rows: [],
@@ -158,13 +195,21 @@ test("分析パネルの月スコープに学習量ヒートマップが見え�
   expect(queryByText(/完了.*見送り/)).toBeNull();
   expect(getByText("日別ペース")).toBeDefined();
   expect(getByText("コンディション別の学習量")).toBeDefined();
+  expect(getByText("コンディション別の平均学習量")).toBeDefined();
 });
 
 test("月マスに学習量と均を載せる", () => {
   const { container } = renderWithMantine(
     <HistoryMonthView
       days={[
-        { condition: "好調", dateJst: "2026-08-17", isRest: false, minutes: 30, movingAverage: 10 },
+        {
+          condition: "好調",
+          dateJst: "2026-08-17",
+          isRest: false,
+          memo: null,
+          minutes: 30,
+          movingAverage: 10,
+        },
       ]}
       events={[]}
       month={new Date("2026-08-17T12:00:00+09:00")}
@@ -243,6 +288,7 @@ test("週の行がタイトルとステータスで見える", () => {
               condition: "好調",
               dateJst: "2026-08-17",
               isRest: false,
+              memo: "集中できた",
               minutes: 30,
               movingAverage: 10,
             },
@@ -267,7 +313,98 @@ test("週の行がタイトルとステータスで見える", () => {
   expect(getByText(/Distinction 2000/)).toBeDefined();
   expect(getByText("完了")).toBeDefined();
   expect(getByText("好調")).toBeDefined();
+  expect(getByText("集中できた")).toBeDefined();
   expect(getAllByText("30分").length).toBeGreaterThan(0);
+});
+
+test("分析パネルの日スコープでメモハイライトが見える", () => {
+  const { getByText } = renderWithMantine(
+    <HistoryAnalysisPanel
+      day={{
+        byCategory: [],
+        byCondition: [],
+        confirmedMinutes: 30,
+        dateJst: "2026-08-17",
+        isRest: false,
+        rows: [],
+        skippedMinutes: 0,
+      }}
+      heatmapDays={[
+        {
+          condition: "好調",
+          dateJst: "2026-08-17",
+          isRest: false,
+          memo: "集中できた",
+          minutes: 30,
+          movingAverage: 10,
+        },
+      ]}
+      month={{
+        byCategory: [],
+        byCondition: [],
+        confirmedMinutes: 30,
+        days: [
+          {
+            condition: "好調",
+            dateJst: "2026-08-17",
+            isRest: false,
+            memo: "集中できた",
+            minutes: 30,
+            movingAverage: 10,
+          },
+        ],
+        events: [],
+        rows: [],
+        skippedMinutes: 0,
+      }}
+      onDayClick={vi.fn()}
+      onScopeChange={vi.fn()}
+      scope="day"
+      selectedDateJst="2026-08-17"
+      todayJst="2026-08-17"
+      week={{
+        byCategory: [],
+        byCondition: [],
+        byDay: [],
+        confirmedMinutes: 0,
+        rows: [],
+        skippedMinutes: 0,
+        volumeMinutes: 0,
+        weekEnd: "2026-08-23",
+        weekStart: "2026-08-17",
+      }}
+      yearMonth="2026-08"
+    />,
+  );
+  expect(getByText("この日のメモ")).toBeDefined();
+  expect(getByText("集中できた")).toBeDefined();
+  expect(getByText("確定 30分")).toBeDefined();
+});
+
+test("週Agendaの日付ヘッダーが日ページへリンクする", () => {
+  const { getByRole } = renderWithMantine(
+    <WeekAgenda
+      week={
+        {
+          days: [
+            {
+              condition: "好調",
+              dateJst: "2026-08-17",
+              isRest: false,
+              memo: "集中できた",
+              minutes: 30,
+              movingAverage: 10,
+            },
+          ],
+          events: [],
+          volumeMinutes: 30,
+          weekEnd: "2026-08-23",
+          weekStart: "2026-08-17",
+        } satisfies WeekPage
+      }
+    />,
+  );
+  expect(getByRole("link", { name: /8月17日/ })).toBeDefined();
 });
 
 test("休養の日でもこの日を開くがある", () => {
@@ -283,14 +420,28 @@ test("休養の日でもこの日を開くがある", () => {
         skippedMinutes: 0,
       }}
       heatmapDays={[
-        { condition: null, dateJst: "2026-08-15", isRest: true, minutes: 0, movingAverage: 0 },
+        {
+          condition: null,
+          dateJst: "2026-08-15",
+          isRest: true,
+          memo: null,
+          minutes: 0,
+          movingAverage: 0,
+        },
       ]}
       month={{
         byCategory: [],
         byCondition: [],
         confirmedMinutes: 0,
         days: [
-          { condition: null, dateJst: "2026-08-15", isRest: true, minutes: 0, movingAverage: 0 },
+          {
+            condition: null,
+            dateJst: "2026-08-15",
+            isRest: true,
+            memo: null,
+            minutes: 0,
+            movingAverage: 0,
+          },
         ],
         events: [],
         rows: [],

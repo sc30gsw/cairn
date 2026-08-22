@@ -3,6 +3,9 @@ import { Alert, Button, Card, Grid, SegmentedControl, Stack, Text, Title } from 
 import { Link } from "@tanstack/react-router";
 import type { DateJst } from "~domain/jst";
 
+import { ConditionAvgMinutes } from "~/features/history/components/analysis/condition-avg-minutes";
+import { DayMemoHighlight } from "~/features/history/components/analysis/day-memo-highlight";
+import { MemosByCondition } from "~/features/history/components/analysis/memos-by-condition";
 import { BreakdownTable } from "~/features/history/components/breakdown-table";
 import { ConditionVolumeTable } from "~/features/history/components/condition-volume-table";
 import { HeatmapLegend } from "~/features/history/components/heatmap-legend";
@@ -16,6 +19,7 @@ import {
   PACE_CHART_SERIES,
   type PaceChartPoint,
 } from "~/features/history/lib/chart-data";
+import { daysInAnalysisScope } from "~/features/history/lib/scope-days";
 import type { AnalysisScope } from "~/features/history/schemas/analysis-scope-schema";
 import type {
   DayBreakdown,
@@ -154,6 +158,8 @@ export function HistoryAnalysisPanel({
   week,
   yearMonth,
 }: HistoryAnalysisPanelProps) {
+  const scopeDays = daysInAnalysisScope(scope, selectedDateJst, week, month, heatmapDays);
+
   return (
     <Stack gap="md">
       <SegmentedControl
@@ -246,6 +252,31 @@ export function HistoryAnalysisPanel({
           }
         />
       </Stack>
+
+      {scope === "day" ? (
+        <Stack gap="xs">
+          <Title order={4}>この日のメモ</Title>
+          <DayMemoHighlight day={scopeDays[0]} dateJst={selectedDateJst} />
+        </Stack>
+      ) : null}
+
+      <Stack gap="xs">
+        <Title order={4}>コンディション別の平均学習量</Title>
+        <Text c="dimmed" size="sm">
+          コンディションを記録した日だけを対象に、1日あたりの平均確定分数を出します。
+        </Text>
+        <ConditionAvgMinutes days={scopeDays} />
+      </Stack>
+
+      {scope === "week" || scope === "month" ? (
+        <Stack gap="xs">
+          <Title order={4}>メモ（コンディション別）</Title>
+          <Text c="dimmed" size="sm">
+            メモがある日をコンディションごとに並べます。新しい日が上に来ます。
+          </Text>
+          <MemosByCondition days={scopeDays} />
+        </Stack>
+      ) : null}
 
       {scope === "day" ? (
         <Button
