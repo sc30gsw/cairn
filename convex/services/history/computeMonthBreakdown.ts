@@ -3,7 +3,12 @@ import { loadCatalog } from "../../lib/catalogLoader";
 import { aggregateBreakdownRows, aggregateByCondition } from "../../lib/historyBreakdown";
 import { calendarDatesInMonth } from "../../lib/jst";
 import { addDaysJst } from "../../lib/jst";
-import { buildConditionByDate, buildHeatmapDays, buildMinutesByDate } from "./heatmapDays";
+import {
+  buildConditionByDate,
+  buildHeatmapDays,
+  buildMemoByDate,
+  buildMinutesByDate,
+} from "./heatmapDays";
 import { liveDayDatesFrom, liveRows } from "./liveRows";
 import { rowsToHistoryEvents } from "./rowToHistoryEvent";
 
@@ -58,11 +63,19 @@ export async function computeMonthBreakdown(
   const events = rowsToHistoryEvents(liveRowsInMonth, catalog);
   const minutesByDate = buildMinutesByDate(rows, liveDayDates);
   const conditionByDate = buildConditionByDate(days);
+  const memoByDate = buildMemoByDate(days);
   return {
     byCategory: aggregated.byCategory,
     byCondition: aggregateByCondition(liveRowsInMonth, conditionByDate),
     confirmedMinutes: aggregated.confirmedMinutes,
-    days: buildHeatmapDays(dates, args.todayJst, liveDayDates, minutesByDate, conditionByDate),
+    days: buildHeatmapDays(
+      dates,
+      args.todayJst,
+      liveDayDates,
+      minutesByDate,
+      conditionByDate,
+      memoByDate,
+    ),
     events,
     rows: aggregated.rows,
     skippedMinutes: aggregated.skippedMinutes,

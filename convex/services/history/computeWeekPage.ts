@@ -3,7 +3,12 @@ import { loadCatalog } from "../../lib/catalogLoader";
 import { buildWeekBreakdown } from "../../lib/historyBreakdown";
 import { addDaysJst, mondayOfWeek } from "../../lib/jst";
 import { confirmedVolumeMinutes } from "../../lib/volume";
-import { buildConditionByDate, buildHeatmapDays, buildMinutesByDate } from "./heatmapDays";
+import {
+  buildConditionByDate,
+  buildHeatmapDays,
+  buildMemoByDate,
+  buildMinutesByDate,
+} from "./heatmapDays";
 import { liveDayDatesFrom, liveRows } from "./liveRows";
 import { rowsToHistoryEvents } from "./rowToHistoryEvent";
 
@@ -39,8 +44,16 @@ export async function computeWeekPage(
   const events = rowsToHistoryEvents(liveWeekRows, catalog);
   const minutesByDate = buildMinutesByDate(rows, liveDayDates);
   const conditionByDate = buildConditionByDate(days);
+  const memoByDate = buildMemoByDate(days);
   return {
-    days: buildHeatmapDays(weekDates, args.todayJst, liveDayDates, minutesByDate, conditionByDate),
+    days: buildHeatmapDays(
+      weekDates,
+      args.todayJst,
+      liveDayDates,
+      minutesByDate,
+      conditionByDate,
+      memoByDate,
+    ),
     events,
     volumeMinutes: confirmedVolumeMinutes(liveWeekRows),
     weekBreakdown: buildWeekBreakdown(

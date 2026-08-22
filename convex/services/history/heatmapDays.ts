@@ -46,17 +46,39 @@ export function buildConditionByDate(days: Doc<"days">[]): Record<string, Condit
   return map;
 }
 
+export function buildMemoByDate(days: Doc<"days">[]): Record<string, string | null> {
+  const map: Record<string, string | null> = {};
+  const liveByDate = groupBy(
+    days.filter((day) => day.deletedAt === undefined),
+    prop("dateJst"),
+  );
+
+  for (const [dateJst, liveDays] of Object.entries(liveByDate)) {
+    const canonical = liveDays.toSorted(
+      (left, right) => left._creationTime - right._creationTime,
+    )[0];
+    if (canonical !== undefined) {
+      const memo = canonical.memo?.trim();
+      map[dateJst] = memo === undefined || memo.length === 0 ? null : memo;
+    }
+  }
+
+  return map;
+}
+
 export function buildHeatmapDays(
   dates: readonly string[],
   todayJst: string,
   liveDayDates: ReadonlySet<string>,
   minutesByDate: Readonly<Record<string, number>>,
   conditionByDate: Readonly<Record<string, Condition | null>>,
+  memoByDate: Readonly<Record<string, string | null>> = {},
 ) {
   return dates.map((dateJst) => ({
     condition: conditionByDate[dateJst] ?? null,
     dateJst,
     isRest: isRestCalendarDate(dateJst, todayJst, liveDayDates.has(dateJst)),
+    memo: memoByDate[dateJst] ?? null,
     minutes: minutesByDate[dateJst] ?? 0,
     movingAverage: sevenDayMovingAverage(minutesByDate, dateJst),
   }));
