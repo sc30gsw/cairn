@@ -5,6 +5,7 @@ import type { Id } from "~/../convex/_generated/dataModel";
 import {
   BOARD_ALL_DAY_MORE_PREFIX,
   toBoardScheduleEvents,
+  withoutAllDayEvents,
   withAllDayOverflow,
 } from "~/features/board/lib/board-schedule-events";
 import type { BoardMastery, BoardRow } from "~/features/board/types/board";
@@ -118,4 +119,27 @@ test("終日イベントが多い日は +N件 を追加する", () => {
     },
   ]);
   expect(overflow.hiddenEventsByDay.get("2026-08-17")?.map((event) => event.title)).toEqual(["D"]);
+});
+
+test("終日イベントだけを除外できる", () => {
+  const events = toBoardScheduleEvents("2026-08-17", [row("r1", "A", 0)], null, [
+    {
+      _id: "b1" as Id<"boardScheduleEvents">,
+      color: "blue",
+      endAt: "2026-08-17 10:30:00",
+      rowId: "r1" as Id<"rows">,
+      startAt: "2026-08-17 09:00:00",
+      title: "Morning Standup",
+    },
+  ]);
+
+  expect(withoutAllDayEvents(events)).toEqual([
+    {
+      color: "blue",
+      end: "2026-08-17 10:30:00",
+      id: "b1",
+      start: "2026-08-17 09:00:00",
+      title: "Morning Standup",
+    },
+  ]);
 });

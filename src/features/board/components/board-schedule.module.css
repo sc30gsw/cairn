@@ -1,13 +1,37 @@
-.boardSchedule :global(.mantine-Schedule-weekViewAllDaySlots),
-.boardSchedule :global(.mantine-WeekView-weekViewAllDaySlots) {
+.boardScheduleRoot {
+  position: relative;
+}
+
+.weekAllDaySlots {
   --week-view-all-day-slots-height: calc(
     var(--board-all-day-row-height) * var(--board-all-day-visible-rows)
   );
 }
 
-.boardSchedule :global(.mantine-Schedule-weekViewAllDaySlot),
-.boardSchedule :global(.mantine-WeekView-weekViewAllDaySlot) {
-  min-height: var(--board-all-day-row-height);
+.weekAllDayEvents {
+  overflow: visible;
+}
+
+.weekAllDaySlotsList {
+  position: relative;
+}
+
+.weekAllDaySlotsList:hover .weekAllDayEvents,
+.weekAllDaySlotsList:focus-within .weekAllDayEvents {
+  overflow: visible;
+}
+
+.weekAllDaySlotsList:hover .weekAllDayEvents::before,
+.weekAllDaySlotsList:focus-within .weekAllDayEvents::before {
+  content: none;
+  height: 0;
+}
+
+.weekAllDayEvents :global(button) {
+  font-size: var(--mantine-font-size-xs);
+  line-height: 1.2;
+  padding-block: 0;
+  padding-inline: calc(0.25rem * var(--mantine-scale));
 }
 
 .boardSchedule :global(.mantine-ScheduleEvent-root:has([data-board-all-day-more="true"])) {
@@ -18,4 +42,55 @@
 
 .boardSchedule :global(.mantine-ScheduleEvent-root:has([data-board-all-day-more="true"]):hover) {
   background-color: var(--mantine-color-orange-0);
+}
+
+.dayAllDayRow {
+  border-block-end: 1px solid var(--mantine-color-gray-3);
+  display: grid;
+  grid-template-columns: var(--board-day-all-day-label-width) minmax(0, 1fr);
+}
+
+.dayAllDayLabel {
+  align-items: flex-start;
+  border-inline-end: 1px solid var(--mantine-color-gray-3);
+  color: var(--mantine-color-dimmed);
+  display: flex;
+  font-size: var(--mantine-font-size-sm);
+  justify-content: flex-end;
+  min-height: calc(var(--board-all-day-row-height) * var(--board-all-day-visible-rows));
+  padding: calc(0.25rem * var(--mantine-scale)) calc(0.5rem * var(--mantine-scale));
+}
+
+.dayAllDayEvents {
+  display: grid;
+  gap: 2px;
+  min-height: calc(var(--board-all-day-row-height) * var(--board-all-day-visible-rows));
+  padding: 2px;
+}
+
+.dayAllDayEvent,
+.dayAllDayMore {
+  align-items: center;
+  background-color: var(--mantine-color-gray-1);
+  border-radius: calc(0.25rem * var(--mantine-scale));
+  display: flex;
+  font-size: var(--mantine-font-size-xs);
+  height: var(--board-all-day-row-height);
+  line-height: 1.2;
+  overflow: hidden;
+  padding-inline: calc(0.375rem * var(--mantine-scale));
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dayAllDayMore {
+  background-color: var(--mantine-color-orange-0);
+  color: var(--mantine-color-orange-7);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.dayAllDayMore:hover {
+  background-color: var(--mantine-color-orange-1);
 }

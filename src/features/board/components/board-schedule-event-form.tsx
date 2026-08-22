@@ -1,4 +1,4 @@
-import { Field, Form, getInput, reset, useForm } from "@formisch/react";
+import { Field, Form, reset, useForm } from "@formisch/react";
 import type { SubmitHandler } from "@formisch/react";
 import { Button, Group, Modal, Select, Stack } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
@@ -56,7 +56,7 @@ export function BoardScheduleEventForm({
     onClose();
   };
 
-  const isEditing = getInput(form, { path: ["blockId"] }) !== undefined;
+  const isEditing = initialValues?.blockId !== undefined;
 
   return (
     <Modal
@@ -67,6 +67,9 @@ export function BoardScheduleEventForm({
     >
       <Form of={form} onSubmit={handleSubmit}>
         <Stack gap="md">
+          <Field of={form} path={["blockId"]}>
+            {(field) => <input type="hidden" value={field.input ?? ""} readOnly />}
+          </Field>
           <Field of={form} path={["rowId"]}>
             {(field) => (
               <Select
@@ -127,18 +130,22 @@ export function BoardScheduleEventForm({
               />
             )}
           </Field>
-          <Group justify="flex-end">
+          <Group justify="space-between" wrap="nowrap">
             {isEditing && onDelete !== undefined ? (
-              <Button color="red" onClick={() => void onDelete()} type="button" variant="light">
+              <Button color="red" onClick={() => void onDelete()} type="button" variant="filled">
                 削除
               </Button>
-            ) : null}
-            <Button onClick={onClose} type="button" variant="default">
-              キャンセル
-            </Button>
-            <Button disabled={rows.length === 0} loading={form.isSubmitting} type="submit">
-              保存
-            </Button>
+            ) : (
+              <span />
+            )}
+            <Group gap="sm" wrap="nowrap">
+              <Button onClick={onClose} type="button" variant="default">
+                キャンセル
+              </Button>
+              <Button disabled={rows.length === 0} loading={form.isSubmitting} type="submit">
+                保存
+              </Button>
+            </Group>
           </Group>
         </Stack>
       </Form>

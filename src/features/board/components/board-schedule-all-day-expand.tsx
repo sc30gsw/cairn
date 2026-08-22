@@ -1,34 +1,52 @@
 import { Badge, Button, Group, Paper, Stack, Text } from "@mantine/core";
 import type { ScheduleEventData } from "@mantine/schedule";
+import type { CSSProperties } from "react";
+
+export type BoardScheduleAllDayExpandAnchor = {
+  dateJst: string;
+  left: number;
+  top: number;
+  width: number;
+};
 
 type BoardScheduleAllDayExpandProps = {
-  dateJst: string;
+  anchor: BoardScheduleAllDayExpandAnchor;
   events: readonly ScheduleEventData[];
   onClose: () => void;
 };
 
 export function BoardScheduleAllDayExpand({
-  dateJst,
+  anchor,
   events,
   onClose,
 }: BoardScheduleAllDayExpandProps) {
+  const style: CSSProperties = {
+    left: anchor.left,
+    position: "absolute",
+    top: anchor.top,
+    width: Math.max(anchor.width, 160),
+    zIndex: 5,
+  };
+
   return (
     <Paper
-      aria-label={`${dateJst} の終日記録`}
-      className="border-orange-2 bg-orange-0/40 border-t"
+      aria-label={`${anchor.dateJst} の終日記録`}
+      className="border-orange-2 bg-orange-0/95 border shadow-sm"
+      data-board-all-day-expand="true"
       p="sm"
-      radius={0}
+      radius="sm"
+      style={style}
       withBorder
     >
-      <Group justify="space-between" mb="xs">
+      <Group justify="space-between" mb="xs" wrap="nowrap">
         <Text fw={600} size="sm">
-          {dateJst} の記録（{events.length}件）
+          {anchor.dateJst}（{events.length}件）
         </Text>
         <Button onClick={onClose} size="compact-xs" type="button" variant="subtle">
           閉じる
         </Button>
       </Group>
-      <Stack gap={6}>
+      <Stack gap={4}>
         {events.map((event) => (
           <Badge
             color={event.color ?? "gray"}

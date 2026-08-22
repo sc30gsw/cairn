@@ -19,6 +19,14 @@ function isAllDayEvent(event: ScheduleEventData): boolean {
   return start.endsWith(ALL_DAY_START_SUFFIX) && end.endsWith(ALL_DAY_END_SUFFIX);
 }
 
+export function isBoardAllDayEvent(event: ScheduleEventData): boolean {
+  return isAllDayEvent(event);
+}
+
+export function withoutAllDayEvents(events: readonly ScheduleEventData[]): ScheduleEventData[] {
+  return events.filter((event) => !isAllDayEvent(event));
+}
+
 function dayFromScheduleInstant(value: string | Date): string {
   return scheduleInstantString(value).slice(0, 10);
 }
