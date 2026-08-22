@@ -59,10 +59,11 @@ test("computeOrderedRowIds は列間移動後も全体順序を保つ", () => {
   expect(ordered).toEqual(["b", "a", "c"].map((id) => id as Id<"rows">));
 });
 
-test("resolveKanbanStatusMove は確定列への移動を confirm とする", () => {
+test("resolveKanbanStatusMove は列間の状態遷移を解決する", () => {
   expect(resolveKanbanStatusMove("未着手", "確定")).toBe("confirm");
   expect(resolveKanbanStatusMove("スキップ", "未着手")).toBe("unskip");
-  expect(resolveKanbanStatusMove("確定", "未着手")).toBe("noop");
+  expect(resolveKanbanStatusMove("確定", "未着手")).toBe("unconfirm");
+  expect(resolveKanbanStatusMove("確定", "スキップ")).toBe("skip");
 });
 
 test("hasRowOrderChanged は順序差分を検出する", () => {

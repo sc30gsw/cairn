@@ -4,6 +4,7 @@ import { dateToScheduleInstant } from "~/features/board/lib/schedule-instant";
 import type { BoardMastery, BoardRow, BoardScheduleBlock } from "~/features/board/types/board";
 import { RECORD_STATUS_UI } from "~/lib/record-status-ui";
 
+export const BOARD_ALL_DAY_VISIBLE_LIMIT = 3;
 export const BOARD_ALL_DAY_MORE_PREFIX = "board-more:";
 const ALL_DAY_START_SUFFIX = " 00:00:00";
 const ALL_DAY_END_SUFFIX = " 23:59:59";
@@ -28,6 +29,15 @@ export function isBoardAllDayMoreEvent(eventId: string | number): boolean {
 
 export function boardAllDayMoreDate(eventId: string | number): string {
   return String(eventId).slice(BOARD_ALL_DAY_MORE_PREFIX.length);
+}
+
+export function allDayEventsForDay(
+  events: readonly ScheduleEventData[],
+  day: string,
+): ScheduleEventData[] {
+  return events.filter(
+    (event) => isAllDayEvent(event) && dayFromScheduleInstant(event.start) === day,
+  );
 }
 
 export function withAllDayOverflow(

@@ -15,6 +15,7 @@ import {
   useBoardScheduleRemove,
   useBoardScheduleUpdate,
   useBoardSkipRow,
+  useBoardUnconfirmRow,
   useBoardUnskipRow,
 } from "~/features/board/hooks/board-mutations";
 import { useBoardScheduleBlocks } from "~/features/board/hooks/board-queries";
@@ -55,6 +56,7 @@ function BoardPending() {
               onApplyOrder={async () => undefined}
               onConfirm={async () => undefined}
               onSkip={async () => undefined}
+              onUnconfirm={async () => undefined}
               onUnskip={async () => undefined}
               rows={boardShimmerRows}
             />
@@ -76,6 +78,7 @@ function BoardReady() {
   const confirmRow = useBoardConfirmRow(today, today);
   const skipRow = useBoardSkipRow(today, today);
   const unskipRow = useBoardUnskipRow(today, today);
+  const unconfirmRow = useBoardUnconfirmRow(today, today);
   const createBlock = useBoardScheduleCreate(today, today);
   const updateBlock = useBoardScheduleUpdate(today);
   const removeBlock = useBoardScheduleRemove(today);
@@ -117,6 +120,11 @@ function BoardReady() {
             }
             onUnskip={(input) =>
               runMutation(() => unskipRow.mutateAsync(input), {
+                successMessage: "未着手に戻しました",
+              }).then(() => undefined)
+            }
+            onUnconfirm={(input) =>
+              runMutation(() => unconfirmRow.mutateAsync(input), {
                 successMessage: "未着手に戻しました",
               }).then(() => undefined)
             }

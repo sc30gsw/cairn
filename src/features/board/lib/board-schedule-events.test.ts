@@ -81,11 +81,11 @@ test("ユーザー予定ブロックは記録と並べて表示する", () => {
 test("終日イベントが多い日は +N件 を追加する", () => {
   const events = toBoardScheduleEvents(
     "2026-08-17",
-    [row("r1", "A", 0), row("r2", "B", 1), row("r3", "C", 2)],
+    [row("r1", "A", 0), row("r2", "B", 1), row("r3", "C", 2), row("r4", "D", 3)],
     null,
     [],
   );
-  const overflow = withAllDayOverflow(events, 2, (count) => `+${count}件`);
+  const overflow = withAllDayOverflow(events, 3, (count) => `+${count}件`);
 
   expect(overflow.events).toEqual([
     {
@@ -103,6 +103,13 @@ test("終日イベントが多い日は +N件 を追加する", () => {
       title: "B",
     },
     {
+      color: "green",
+      end: "2026-08-17 23:59:59",
+      id: "r3",
+      start: "2026-08-17 00:00:00",
+      title: "C",
+    },
+    {
       color: "gray",
       end: "2026-08-17 23:59:59",
       id: `${BOARD_ALL_DAY_MORE_PREFIX}2026-08-17`,
@@ -110,5 +117,5 @@ test("終日イベントが多い日は +N件 を追加する", () => {
       title: "+1件",
     },
   ]);
-  expect(overflow.hiddenEventsByDay.get("2026-08-17")?.map((event) => event.title)).toEqual(["C"]);
+  expect(overflow.hiddenEventsByDay.get("2026-08-17")?.map((event) => event.title)).toEqual(["D"]);
 });

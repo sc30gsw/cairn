@@ -50,6 +50,7 @@ test("カンバンは未着手・確定・スキップとチェックポイン�
       onApplyOrder={noop}
       onConfirm={noop}
       onSkip={noop}
+      onUnconfirm={noop}
       onUnskip={noop}
       rows={[
         row("r1", pending, "Distinction 2000"),

@@ -8,6 +8,7 @@ import type {
   BoardApplyRowOrderInput,
   BoardConfirmRowInput,
   BoardSkipRowInput,
+  BoardUnconfirmRowInput,
   BoardUnskipRowInput,
 } from "~/features/board/hooks/board-mutations";
 import {
@@ -29,6 +30,7 @@ type BoardKanbanProps = {
   onApplyOrder: (input: BoardApplyRowOrderInput) => Promise<void>;
   onConfirm: (input: BoardConfirmRowInput) => Promise<void>;
   onSkip: (input: BoardSkipRowInput) => Promise<void>;
+  onUnconfirm: (input: BoardUnconfirmRowInput) => Promise<void>;
   onUnskip: (input: BoardUnskipRowInput) => Promise<void>;
   rows: readonly BoardRow[];
 };
@@ -91,6 +93,7 @@ export function BoardKanban({
   onApplyOrder,
   onConfirm,
   onSkip,
+  onUnconfirm,
   onUnskip,
   rows,
 }: BoardKanbanProps) {
@@ -128,6 +131,8 @@ export function BoardKanban({
       await onSkip({ rowId: row._id });
     } else if (statusMove === "unskip") {
       await onUnskip({ rowId: row._id });
+    } else if (statusMove === "unconfirm") {
+      await onUnconfirm({ rowId: row._id });
     }
 
     if (hasRowOrderChanged(rows, orderedRowIds)) {

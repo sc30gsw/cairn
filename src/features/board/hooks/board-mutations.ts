@@ -14,6 +14,7 @@ import {
 export type BoardApplyRowOrderInput = FunctionArgs<typeof api.mutations.rows.applyOrder.applyOrder>;
 export type BoardConfirmRowInput = FunctionArgs<typeof api.mutations.rows.confirm.confirm>;
 export type BoardSkipRowInput = FunctionArgs<typeof api.mutations.rows.skip.skip>;
+export type BoardUnconfirmRowInput = FunctionArgs<typeof api.mutations.rows.unconfirm.unconfirm>;
 export type BoardUnskipRowInput = FunctionArgs<typeof api.mutations.rows.unskip.unskip>;
 export type BoardScheduleCreateInput = FunctionArgs<
   typeof api.mutations.boardSchedule.create.create
@@ -42,6 +43,20 @@ export function useBoardSkipRow(dateJst: DateJst, todayJst: DateJst) {
 
 export function useBoardUnskipRow(dateJst: DateJst, todayJst: DateJst) {
   const mutateAsync = useMutation(api.mutations.rows.unskip.unskip).withOptimisticUpdate(
+    (localStore, args) => {
+      setBoardDayRowStatus(localStore, {
+        dateJst,
+        rowId: args.rowId,
+        status: "未着手",
+        todayJst,
+      });
+    },
+  );
+  return { mutateAsync };
+}
+
+export function useBoardUnconfirmRow(dateJst: DateJst, todayJst: DateJst) {
+  const mutateAsync = useMutation(api.mutations.rows.unconfirm.unconfirm).withOptimisticUpdate(
     (localStore, args) => {
       setBoardDayRowStatus(localStore, {
         dateJst,

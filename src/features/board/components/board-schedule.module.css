@@ -1,0 +1,21 @@
+.boardSchedule :global(.mantine-Schedule-weekViewAllDaySlots),
+.boardSchedule :global(.mantine-WeekView-weekViewAllDaySlots) {
+  --week-view-all-day-slots-height: calc(
+    var(--board-all-day-row-height) * var(--board-all-day-visible-rows)
+  );
+}
+
+.boardSchedule :global(.mantine-Schedule-weekViewAllDaySlot),
+.boardSchedule :global(.mantine-WeekView-weekViewAllDaySlot) {
+  min-height: var(--board-all-day-row-height);
+}
+
+.boardSchedule :global(.mantine-ScheduleEvent-root:has([data-board-all-day-more="true"])) {
+  color: var(--mantine-color-orange-7);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.boardSchedule :global(.mantine-ScheduleEvent-root:has([data-board-all-day-more="true"]):hover) {
+  background-color: var(--mantine-color-orange-0);
+}

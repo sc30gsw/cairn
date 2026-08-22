@@ -16,7 +16,7 @@ import type { BoardRow, BoardScheduleBlock } from "~/features/board/types/board"
 type BoardScheduleEventFormProps = {
   initialValues: BoardScheduleEventInput | null;
   onClose: () => void;
-  onDelete?: () => void;
+  onDelete?: () => void | Promise<void>;
   onSubmit: (values: BoardScheduleEventOutput) => Promise<void>;
   opened: boolean;
   rows: readonly BoardRow[];
@@ -129,11 +129,11 @@ export function BoardScheduleEventForm({
           </Field>
           <Group justify="flex-end">
             {isEditing && onDelete !== undefined ? (
-              <Button color="red" onClick={onDelete} variant="light">
+              <Button color="red" onClick={() => void onDelete()} type="button" variant="light">
                 削除
               </Button>
             ) : null}
-            <Button onClick={onClose} variant="default">
+            <Button onClick={onClose} type="button" variant="default">
               キャンセル
             </Button>
             <Button disabled={rows.length === 0} loading={form.isSubmitting} type="submit">

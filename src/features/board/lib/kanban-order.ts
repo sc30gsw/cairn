@@ -57,7 +57,7 @@ export function computeOrderedRowIds(
 export function resolveKanbanStatusMove(
   sourceStatus: BoardRow["status"],
   destinationStatus: KanbanColumn,
-): "confirm" | "noop" | "skip" | "unskip" {
+): "confirm" | "noop" | "skip" | "unconfirm" | "unskip" {
   if (sourceStatus === destinationStatus) {
     return "noop";
   }
@@ -69,6 +69,9 @@ export function resolveKanbanStatusMove(
   }
   if (destinationStatus === "未着手" && sourceStatus === "スキップ") {
     return "unskip";
+  }
+  if (destinationStatus === "未着手" && sourceStatus === "確定") {
+    return "unconfirm";
   }
   return "noop";
 }
