@@ -70,7 +70,17 @@ export function deriveBoardView(search: BoardSearch, today: DateJst) {
 /**
  * `/board` ルート上でのみ使う。search の read/write と derive を集約する。
  */
-export function useBoardView() {
+export type BoardViewState = ReturnType<typeof deriveBoardView> & {
+  setDate: (dateJst: DateJst) => void;
+  setMonth: (yearMonth: string) => void;
+  resetMonthViewToToday: () => void;
+  setScheduleView: (nextView: ScheduleViewLevel) => void;
+  setTab: (tab: BoardTab) => void;
+  setWeek: (weekAnchor: DateJst) => void;
+  today: DateJst;
+};
+
+export function useBoardView(): BoardViewState {
   const search = boardRoute.useSearch();
   const navigate = boardRoute.useNavigate();
   const today = todayJst();

@@ -1,7 +1,11 @@
 import { ValidationFailedError } from "./errors";
 import { throwDomain } from "./ownerFunctions";
 
-const SCHEDULE_INSTANT_PATTERN = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+export const SCHEDULE_INSTANT_PATTERN = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+
+export function isScheduleInstant(value: string): boolean {
+  return SCHEDULE_INSTANT_PATTERN.test(value);
+}
 
 export function requireScheduleInstant(value: string): string {
   if (!SCHEDULE_INSTANT_PATTERN.test(value)) {

@@ -2,8 +2,13 @@ import type { DropResult } from "@hello-pangea/dnd";
 import { ActionIcon, Badge, Card, Group, Stack, Text } from "@mantine/core";
 import { IconGripVertical } from "@tabler/icons-react";
 import { Link } from "@tanstack/react-router";
+import { useRef, useState } from "react";
 import type { DateJst } from "~domain/jst";
 
+import {
+  BoardKanbanConfirmModal,
+  needsKanbanConfirmEditor,
+} from "~/features/board/components/board-kanban-confirm-modal";
 import { useBoardKanbanActions } from "~/features/board/hooks/use-board-kanban-actions";
 import {
   computeOrderedRowIds,
@@ -86,6 +91,20 @@ export function BoardKanban({
   const { onApplyOrder, onConfirm, onSkip, onUnconfirm, onUnskip } = useBoardKanbanActions(dateJst);
   const { DragDropContext, Draggable, Droppable } = useDnd();
   const grouped = groupRowsByKanbanColumn(rows);
+  const [confirmRow, setConfirmRow] = useState<BoardRow | null>(null);
+  const pendingOrderRef = useRef<{
+    dateJst: DateJst;
+    orderedRowIds: BoardRow["_id"][];
+  } | null>(null);
+
+  async function applyPendingOrder() {
+    const pendingOrder = pendingOrderRef.current;
+    if (pendingOrder === null) {
+      return;
+    }
+    await onApplyOrder(pendingOrder);
+    pendingOrderRef.current = null;
+  }
 
   async function handleDragEnd(result: DropResult) {
     if (!interactive) {
@@ -112,7 +131,16 @@ export function BoardKanban({
     );
 
     const statusMove = resolveKanbanStatusMove(row.status, destinationStatus);
+    const orderChanged = hasRowOrderChanged(rows, orderedRowIds);
+    if (orderChanged) {
+      pendingOrderRef.current = { dateJst, orderedRowIds };
+    }
+
     if (statusMove === "confirm") {
+      if (needsKanbanConfirmEditor(row)) {
+        setConfirmRow(row);
+        return;
+      }
       await onConfirm({
         content: row.content,
         minutes: row.minutes,
@@ -126,64 +154,83 @@ export function BoardKanban({
       await onUnconfirm({ rowId: row._id });
     }
 
-    if (hasRowOrderChanged(rows, orderedRowIds)) {
+    if (orderChanged) {
       await onApplyOrder({ dateJst, orderedRowIds });
+      pendingOrderRef.current = null;
     }
   }
 
   return (
-    <DragDropContext onDragEnd={(result) => void handleDragEnd(result)}>
-      <div className="grid gap-3 md:grid-cols-4">
-        {KANBAN_COLUMNS.map((status) => {
-          const columnRows = grouped[status];
-          return (
-            <Droppable droppableId={status} key={status}>
-              {(provided) => (
-                <Stack gap="xs" ref={provided.innerRef} {...provided.droppableProps}>
-                  <Text fw={600} size="sm">
-                    {status}
-                  </Text>
-                  {columnRows.length === 0 ? (
-                    <Text c="dimmed" size="sm">
-                      なし
+    <>
+      <BoardKanbanConfirmModal
+        onClose={() => {
+          setConfirmRow(null);
+          pendingOrderRef.current = null;
+        }}
+        onConfirm={async (input) => {
+          await onConfirm(input);
+          await applyPendingOrder();
+        }}
+        opened={confirmRow !== null}
+        row={confirmRow}
+      />
+      <DragDropContext onDragEnd={(result) => void handleDragEnd(result)}>
+        <div className="grid gap-3 md:grid-cols-4">
+          {KANBAN_COLUMNS.map((status) => {
+            const columnRows = grouped[status];
+            return (
+              <Droppable droppableId={status} key={status}>
+                {(provided) => (
+                  <Stack gap="xs" ref={provided.innerRef} {...provided.droppableProps}>
+                    <Text fw={600} size="sm">
+                      {status}
                     </Text>
-                  ) : (
-                    columnRows.map((row, index) => (
-                      <Draggable draggableId={row._id} index={index} key={row._id}>
-                        {(dragProvided) => (
-                          <div ref={dragProvided.innerRef} {...dragProvided.draggableProps}>
-                            <RecordCard
-                              dragHandleProps={dragProvided.dragHandleProps ?? undefined}
-                              row={row}
-                            />
-                          </div>
-                        )}
-                      </Draggable>
-                    ))
-                  )}
-                  {provided.placeholder}
-                </Stack>
-              )}
-            </Droppable>
-          );
-        })}
-        <Stack gap="xs">
-          <Text fw={600} size="sm">
-            チェックポイント
-          </Text>
-          {obstacles.map((obstacle) => (
-            <NextStepCard key={obstacle._id} subtitle={obstacle.ifText} title={obstacle.thenText} />
-          ))}
-          {checkpointLabel === null ? null : (
-            <NextStepCard subtitle="チェックポイント" title={checkpointLabel} />
-          )}
-          {obstacles.length === 0 && checkpointLabel === null ? (
-            <Text c="dimmed" size="sm">
-              なし
+                    {columnRows.length === 0 ? (
+                      <Text c="dimmed" size="sm">
+                        なし
+                      </Text>
+                    ) : (
+                      columnRows.map((row, index) => (
+                        <Draggable draggableId={row._id} index={index} key={row._id}>
+                          {(dragProvided) => (
+                            <div ref={dragProvided.innerRef} {...dragProvided.draggableProps}>
+                              <RecordCard
+                                dragHandleProps={dragProvided.dragHandleProps ?? undefined}
+                                row={row}
+                              />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))
+                    )}
+                    {provided.placeholder}
+                  </Stack>
+                )}
+              </Droppable>
+            );
+          })}
+          <Stack gap="xs">
+            <Text fw={600} size="sm">
+              チェックポイント
             </Text>
-          ) : null}
-        </Stack>
-      </div>
-    </DragDropContext>
+            {obstacles.map((obstacle) => (
+              <NextStepCard
+                key={obstacle._id}
+                subtitle={obstacle.ifText}
+                title={obstacle.thenText}
+              />
+            ))}
+            {checkpointLabel === null ? null : (
+              <NextStepCard subtitle="チェックポイント" title={checkpointLabel} />
+            )}
+            {obstacles.length === 0 && checkpointLabel === null ? (
+              <Text c="dimmed" size="sm">
+                なし
+              </Text>
+            ) : null}
+          </Stack>
+        </div>
+      </DragDropContext>
+    </>
   );
 }

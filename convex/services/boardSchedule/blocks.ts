@@ -66,7 +66,7 @@ export async function listForWeek(
   const candidateBlocks = await ctx.db
     .query("boardScheduleEvents")
     .withIndex("by_owner_and_startAt", (q) =>
-      q.eq("ownerId", ownerId).lt("startAt", rangeEndExclusive),
+      q.eq("ownerId", ownerId).gte("startAt", rangeStart).lt("startAt", rangeEndExclusive),
     )
     .collect();
   const result: Array<{
@@ -78,9 +78,6 @@ export async function listForWeek(
     title: string;
   }> = [];
   for (const block of candidateBlocks) {
-    if (block.endAt <= rangeStart) {
-      continue;
-    }
     result.push({
       _id: block._id,
       color: block.color ?? DEFAULT_COLOR,
@@ -160,8 +157,28 @@ export async function move(
   ownerId: string,
   args: { blockId: Id<"boardScheduleEvents">; endAt: string; startAt: string },
 ): Promise<null> {
-  await requireOwnedBlock(ctx, ownerId, args.blockId);
+  const block = await requireOwnedBlock(ctx, ownerId, args.blockId);
+  await requireLiveRowForSchedule(ctx, ownerId, block.rowId);
   const { endAt, startAt } = normalizeRange(args.startAt, args.endAt);
   await ctx.db.patch("boardScheduleEvents", args.blockId, { endAt, startAt });
   return null;
+}
+
+export async function removeForRow(
+  ctx: MutationCtx,
+  ownerId: string,
+  rowId: Id<"rows">,
+): Promise<void> {
+  const blocks = await ctx.db
+    .query("boardScheduleEvents")
+    .withIndex("by_row", (q) => q.eq("rowId", rowId))
+    .collect();
+  const deletions: Array<Promise<void>> = [];
+  for (const block of blocks) {
+    if (block.ownerId !== ownerId) {
+      continue;
+    }
+    deletions.push(ctx.db.delete("boardScheduleEvents", block._id));
+  }
+  await Promise.all(deletions);
 }

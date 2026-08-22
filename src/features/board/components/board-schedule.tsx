@@ -1,51 +1,34 @@
 import { Card, Stack } from "@mantine/core";
-import { Schedule, type DateStringValue, type ScheduleEventData } from "@mantine/schedule";
-import { useEffect, useState, type CSSProperties, type MouseEvent } from "react";
+import { Schedule, type DateStringValue } from "@mantine/schedule";
+import type { CSSProperties } from "react";
 
-import {
-  BoardScheduleAllDayExpand,
-  type BoardScheduleAllDayExpandAnchor,
-} from "~/features/board/components/board-schedule-all-day-expand";
+import { BoardScheduleAllDayExpand } from "~/features/board/components/board-schedule-all-day-expand";
 import { boardScheduleAllDayRenderEvent } from "~/features/board/components/board-schedule-all-day-render-event";
 import { createBoardScheduleDayAllDayRenderEvent } from "~/features/board/components/board-schedule-day-all-day-render-event";
-import {
-  blockFormValues,
-  BoardScheduleEventForm,
-  slotFormValues,
-} from "~/features/board/components/board-schedule-event-form";
+import { BoardScheduleEventForm } from "~/features/board/components/board-schedule-event-form";
 import { BoardScheduleNavigation } from "~/features/board/components/board-schedule-navigation";
 import { createBoardScheduleYearRenderDay } from "~/features/board/components/board-schedule-year-render-day";
 import { useBoardScheduleActions } from "~/features/board/hooks/use-board-schedule-actions";
-import { useBoardView } from "~/features/board/hooks/use-board-view";
+import { useBoardScheduleUi } from "~/features/board/hooks/use-board-schedule-ui";
+import type { BoardViewState } from "~/features/board/hooks/use-board-view";
 import {
-  allDayEventsForDay,
-  boardAllDayMoreDate,
   BOARD_ALL_DAY_VISIBLE_LIMIT,
-  boardScheduleBlockIds,
   isBoardAllDayMoreEvent,
-  toBoardScheduleEvents,
-  withAllDayOverflow,
 } from "~/features/board/lib/board-schedule-events";
+import {
+  ALL_DAY_ROW_HEIGHT,
+  ALL_DAY_VISIBLE_ROWS,
+  BOARD_SCHEDULE_WITHOUT_HEADER,
+  DEFAULT_DAY_BLOCK_END,
+  DEFAULT_DAY_BLOCK_START,
+  DAY_VIEW_ALL_DAY_SLOT_HEIGHT,
+  BOARD_MONTH_MAX_EVENTS_PER_DAY,
+} from "~/features/board/lib/board-schedule-layout";
 import { dateToScheduleInstant } from "~/features/board/lib/schedule-instant";
-import type { BoardScheduleEventInput } from "~/features/board/schemas/board-schedule-event-schema";
 import type { BoardMastery, BoardRow, BoardScheduleBlock } from "~/features/board/types/board";
 import { SCHEDULE_LABELS_JA } from "~/lib/schedule-labels";
 
 import classes from "~/features/board/components/board-schedule.module.css";
-
-const ALL_DAY_ROW_HEIGHT = "1.25rem";
-const ALL_DAY_VISIBLE_ROWS = BOARD_ALL_DAY_VISIBLE_LIMIT + 1;
-const ALL_DAY_GRID_GAP_PX = 2;
-const ALL_DAY_GRID_PADDING_PX = 2;
-const ALL_DAY_GRID_CHROME_PX =
-  (ALL_DAY_VISIBLE_ROWS - 1) * ALL_DAY_GRID_GAP_PX + ALL_DAY_GRID_PADDING_PX * 2;
-const DAY_VIEW_ALL_DAY_SLOT_HEIGHT = `calc(${ALL_DAY_ROW_HEIGHT} * ${ALL_DAY_VISIBLE_ROWS} + ${ALL_DAY_GRID_CHROME_PX}px)`;
-const BOARD_MONTH_MAX_EVENTS_PER_DAY = BOARD_ALL_DAY_VISIBLE_LIMIT + 1;
-const DEFAULT_DAY_BLOCK_START = "09:00:00";
-const DEFAULT_DAY_BLOCK_END = "10:00:00";
-const boardMoreLabel = (hiddenEventsCount: number) => `+${hiddenEventsCount}件`;
-
-const BOARD_SCHEDULE_WITHOUT_HEADER = { withHeader: false as const };
 
 const BOARD_WEEK_VIEW_PROPS = {
   ...BOARD_SCHEDULE_WITHOUT_HEADER,
@@ -70,9 +53,16 @@ type BoardScheduleProps = {
   checkpoint: BoardMastery | null;
   pending?: boolean;
   rows: readonly BoardRow[];
+  view: BoardViewState;
 };
 
-export function BoardSchedule({ blocks, checkpoint, pending = false, rows }: BoardScheduleProps) {
+export function BoardSchedule({
+  blocks,
+  checkpoint,
+  pending = false,
+  rows,
+  view,
+}: BoardScheduleProps) {
   const {
     monthDate,
     scheduleAnchor: anchorDateJst,
@@ -83,110 +73,29 @@ export function BoardSchedule({ blocks, checkpoint, pending = false, rows }: Boa
     resetMonthViewToToday: onMonthViewToday,
     setScheduleView: onScheduleViewChange,
     setWeek: onWeekChange,
-    today: dateJst,
+    today: todayJst,
     weekAnchor,
-  } = useBoardView();
+  } = view;
   const { onCreateBlock, onMoveBlock, onRemoveBlock, onUpdateBlock } = useBoardScheduleActions(
     anchorDateJst,
     scheduleView,
   );
-  const todayJst = dateJst;
-  const [formOpened, setFormOpened] = useState(false);
-  const [formValues, setFormValues] = useState<BoardScheduleEventInput | null>(null);
-  const [expandedAllDayAnchor, setExpandedAllDayAnchor] =
-    useState<BoardScheduleAllDayExpandAnchor | null>(null);
-  const [scheduleRoot, setScheduleRoot] = useState<HTMLDivElement | null>(null);
-  const editableBlockIds = boardScheduleBlockIds(blocks);
-  const baseEvents = toBoardScheduleEvents(dateJst, rows, checkpoint, blocks);
-  const moreLabel = SCHEDULE_LABELS_JA.moreLabel ?? boardMoreLabel;
-  const { events: scheduleEvents } = withAllDayOverflow(
-    baseEvents,
-    BOARD_ALL_DAY_VISIBLE_LIMIT,
-    moreLabel,
-  );
-  const dayAllDayEvents = allDayEventsForDay(baseEvents, anchorDateJst);
-  const expandedAllDayEvents =
-    expandedAllDayAnchor === null
-      ? []
-      : allDayEventsForDay(baseEvents, expandedAllDayAnchor.dateJst);
-
-  function openAllDayExpand(date: string, target: HTMLElement) {
-    if (scheduleRoot === null) {
-      return;
-    }
-    const rootRect = scheduleRoot.getBoundingClientRect();
-    const targetRect = target.getBoundingClientRect();
-    setExpandedAllDayAnchor({
-      dateJst: date,
-      left: targetRect.left - rootRect.left,
-      top: targetRect.bottom - rootRect.top + 4,
-      width: targetRect.width,
-    });
-  }
-
-  useEffect(() => {
-    if (expandedAllDayAnchor === null) {
-      return;
-    }
-    function handlePointerDown(event: PointerEvent) {
-      const target = event.target;
-      if (!(target instanceof Node)) {
-        return;
-      }
-      if (scheduleRoot === null) {
-        return;
-      }
-      const expandPanel = scheduleRoot.querySelector("[data-board-all-day-expand]");
-      if (expandPanel?.contains(target)) {
-        return;
-      }
-      if (target instanceof Element && target.closest("[data-board-all-day-more]")) {
-        return;
-      }
-      setExpandedAllDayAnchor(null);
-    }
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [expandedAllDayAnchor, scheduleRoot]);
-
-  function collapseAllDayExpand() {
-    setExpandedAllDayAnchor(null);
-  }
-
-  function openCreate(start: string, end: string) {
-    collapseAllDayExpand();
-    const values = slotFormValues(rows, start, end);
-    if (values === null) {
-      return;
-    }
-    setFormValues(values);
-    setFormOpened(true);
-  }
-
-  function openEdit(block: BoardScheduleBlock) {
-    collapseAllDayExpand();
-    setFormValues(blockFormValues(block));
-    setFormOpened(true);
-  }
-
-  function openEditFromEvent(event: ScheduleEventData) {
-    if (!editableBlockIds.has(String(event.id))) {
-      return;
-    }
-    const block = blocks.find((entry) => entry._id === event.id);
-    if (block === undefined) {
-      return;
-    }
-    openEdit(block);
-  }
+  const ui = useBoardScheduleUi({
+    anchorDateJst,
+    blocks,
+    checkpoint,
+    rows,
+    scheduleView,
+    todayJst,
+  });
 
   const dayAllDayRenderEvent = createBoardScheduleDayAllDayRenderEvent({
-    allDayEvents: dayAllDayEvents,
+    allDayEvents: ui.dayAllDayEvents,
     limit: BOARD_ALL_DAY_VISIBLE_LIMIT,
-    moreLabel,
-    onEventClick: openEditFromEvent,
+    moreLabel: ui.moreLabel,
+    onEventClick: ui.openEditFromEvent,
     onMoreClick: (target) => {
-      openAllDayExpand(anchorDateJst, target);
+      ui.openAllDayExpand(anchorDateJst, target);
     },
   });
 
@@ -199,18 +108,18 @@ export function BoardSchedule({ blocks, checkpoint, pending = false, rows }: Boa
     },
     moreEventsProps: { mode: "static" as const },
     renderEvent: dayAllDayRenderEvent,
-    withAllDaySlot: dayAllDayEvents.length > 0,
+    withAllDaySlot: ui.dayAllDayEvents.length > 0,
   };
 
   function handleDayClick(day: DateStringValue) {
     if (scheduleView === "year") {
       return;
     }
-    collapseAllDayExpand();
+    ui.collapseAllDayExpand();
     if (rows.length === 0) {
       return;
     }
-    openCreate(`${day} ${DEFAULT_DAY_BLOCK_START}`, `${day} ${DEFAULT_DAY_BLOCK_END}`);
+    ui.openCreate(`${day} ${DEFAULT_DAY_BLOCK_START}`, `${day} ${DEFAULT_DAY_BLOCK_END}`);
   }
 
   const yearViewProps = {
@@ -218,24 +127,15 @@ export function BoardSchedule({ blocks, checkpoint, pending = false, rows }: Boa
     firstDayOfWeek: 1 as const,
     onDayClick: () => undefined,
     renderDay: createBoardScheduleYearRenderDay({
-      baseEvents,
+      baseEvents: ui.baseEvents,
       canAdd: rows.length > 0,
-      editableBlockIds,
+      editableBlockIds: ui.editableBlockIds,
       onAdd: (day) => {
-        openCreate(`${day} ${DEFAULT_DAY_BLOCK_START}`, `${day} ${DEFAULT_DAY_BLOCK_END}`);
+        ui.openCreate(`${day} ${DEFAULT_DAY_BLOCK_START}`, `${day} ${DEFAULT_DAY_BLOCK_END}`);
       },
-      onEditBlock: openEditFromEvent,
+      onEditBlock: ui.openEditFromEvent,
     }),
   };
-
-  function handleEventClick(event: ScheduleEventData, clickEvent: MouseEvent<HTMLButtonElement>) {
-    if (isBoardAllDayMoreEvent(event.id)) {
-      openAllDayExpand(boardAllDayMoreDate(event.id), clickEvent.currentTarget);
-      return;
-    }
-    collapseAllDayExpand();
-    openEditFromEvent(event);
-  }
 
   return (
     <>
@@ -262,24 +162,28 @@ export function BoardSchedule({ blocks, checkpoint, pending = false, rows }: Boa
             todayJst={todayJst}
             weekAnchor={weekAnchor}
           />
-          <div className={classes.boardScheduleRoot} data-view={scheduleView} ref={setScheduleRoot}>
+          <div
+            className={classes.boardScheduleRoot}
+            data-view={scheduleView}
+            ref={ui.setScheduleRoot}
+          >
             <Schedule
-              canDragEvent={(event) => !pending && editableBlockIds.has(String(event.id))}
+              canDragEvent={(event) => !pending && ui.editableBlockIds.has(String(event.id))}
               date={anchorDateJst}
-              events={scheduleEvents}
+              events={ui.scheduleEvents}
               labels={SCHEDULE_LABELS_JA}
               locale="ja"
               dayViewProps={dayViewProps}
               mode={pending ? "static" : "default"}
               monthViewProps={BOARD_MONTH_VIEW_PROPS}
               onDayClick={pending ? undefined : handleDayClick}
-              onEventClick={pending ? undefined : handleEventClick}
+              onEventClick={pending ? undefined : ui.handleEventClick}
               onEventDrop={
                 pending
                   ? undefined
                   : ({ eventId, newEnd, newStart }) => {
-                      collapseAllDayExpand();
-                      if (!editableBlockIds.has(String(eventId))) {
+                      ui.collapseAllDayExpand();
+                      if (!ui.editableBlockIds.has(String(eventId))) {
                         return;
                       }
                       void onMoveBlock({
@@ -289,12 +193,12 @@ export function BoardSchedule({ blocks, checkpoint, pending = false, rows }: Boa
                       });
                     }
               }
-              onSlotDragEnd={pending ? undefined : openCreate}
+              onSlotDragEnd={pending ? undefined : ui.openCreate}
               onTimeSlotClick={
                 pending
                   ? undefined
                   : ({ slotEnd, slotStart }) => {
-                      openCreate(slotStart, slotEnd);
+                      ui.openCreate(slotStart, slotEnd);
                     }
               }
               onViewChange={onScheduleViewChange}
@@ -311,12 +215,12 @@ export function BoardSchedule({ blocks, checkpoint, pending = false, rows }: Boa
               withDragSlotSelect={!pending && rows.length > 0}
               withEventsDragAndDrop={!pending}
             />
-            {expandedAllDayAnchor === null ? null : (
+            {ui.expandedAllDayAnchor === null ? null : (
               <BoardScheduleAllDayExpand
-                anchor={expandedAllDayAnchor}
-                editableBlockIds={editableBlockIds}
-                events={expandedAllDayEvents}
-                onEventClick={openEditFromEvent}
+                anchor={ui.expandedAllDayAnchor}
+                editableBlockIds={ui.editableBlockIds}
+                events={ui.expandedAllDayEvents}
+                onEventClick={ui.openEditFromEvent}
               />
             )}
           </div>
@@ -324,21 +228,25 @@ export function BoardSchedule({ blocks, checkpoint, pending = false, rows }: Boa
       </Card>
       {pending ? null : (
         <BoardScheduleEventForm
-          initialValues={formValues}
-          onClose={() => setFormOpened(false)}
+          initialValues={ui.formValues}
+          onClose={() => ui.setFormOpened(false)}
           onDelete={
-            formValues?.blockId === undefined
+            ui.formValues?.blockId === undefined
               ? undefined
               : async () => {
+                  const blockId = ui.formValues?.blockId;
+                  if (blockId === undefined) {
+                    return;
+                  }
                   await onRemoveBlock({
-                    blockId: formValues.blockId as BoardScheduleBlock["_id"],
+                    blockId: blockId as BoardScheduleBlock["_id"],
                   });
-                  setFormOpened(false);
+                  ui.setFormOpened(false);
                 }
           }
           onSubmit={async (values) => {
             const blockId =
-              values.blockId ?? (formValues?.blockId as BoardScheduleBlock["_id"] | undefined);
+              values.blockId ?? (ui.formValues?.blockId as BoardScheduleBlock["_id"] | undefined);
             const payload = {
               color: values.color,
               endAt: dateToScheduleInstant(values.end),
@@ -357,7 +265,7 @@ export function BoardSchedule({ blocks, checkpoint, pending = false, rows }: Boa
               ...payload,
             });
           }}
-          opened={formOpened}
+          opened={ui.formOpened}
           rows={rows}
         />
       )}

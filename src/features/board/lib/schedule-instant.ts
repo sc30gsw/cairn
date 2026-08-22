@@ -1,4 +1,5 @@
-const SCHEDULE_INSTANT_FORMAT = /^(?<date>\d{4}-\d{2}-\d{2}) (?<time>\d{2}:\d{2}:\d{2})$/;
+import { isScheduleInstant } from "~domain/scheduleInstant";
+
 const JST_TIME_ZONE = "Asia/Tokyo";
 
 const jstScheduleInstantFormatter = new Intl.DateTimeFormat("en-GB", {
@@ -28,10 +29,11 @@ export function formatScheduleTimeLabel(value: string | Date): string {
 }
 
 export function scheduleInstantToDate(value: string): Date {
-  const match = SCHEDULE_INSTANT_FORMAT.exec(value);
-  if (!match?.groups) {
+  if (!isScheduleInstant(value)) {
     throw new Error(`Invalid schedule instant: ${value}`);
   }
 
-  return new Date(`${match.groups.date}T${match.groups.time}+09:00`);
+  const date = value.slice(0, 10);
+  const time = value.slice(11);
+  return new Date(`${date}T${time}+09:00`);
 }

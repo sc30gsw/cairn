@@ -1,8 +1,9 @@
 import * as v from "valibot";
+import { BOARD_SCHEDULE_VIEWS } from "~domain/boardScheduleRange";
 import { DATE_JST_PATTERN } from "~domain/domain";
 
 const BoardTabSchema = v.picklist(["kanban", "schedule"]);
-const BoardScheduleViewSchema = v.picklist(["day", "week", "month", "year"]);
+const BoardScheduleViewSchema = v.picklist(BOARD_SCHEDULE_VIEWS);
 
 const YEAR_MONTH_PATTERN = /^\d{4}-(?:0[1-9]|1[0-2])$/;
 

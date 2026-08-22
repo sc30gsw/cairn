@@ -188,3 +188,37 @@ test("applyOrder でカンバン列の並べ替えを保存できる", async () 
   const after = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   expect(after.rows.map((row) => row._id)).toEqual(reversed);
 });
+
+test("ゴミ箱に入れた記録の boardScheduleEvents は削除される", async () => {
+  const t = await ownerWithDay();
+  const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  const row = day.rows[0];
+  if (row === undefined) {
+    throw new Error("expected a row");
+  }
+
+  const blockId = await t.mutation(api.mutations.boardSchedule.create.create, {
+    color: "green",
+    endAt: "2026-08-17 10:30:00",
+    rowId: row._id,
+    startAt: "2026-08-17 09:00:00",
+  });
+
+  await t.mutation(api.mutations.rows.remove.remove, { rowId: row._id });
+
+  expect(
+    await t.query(api.queries.boardSchedule.listForWeek.listForWeek, {
+      anchorDateJst: MONDAY,
+      view: "week",
+    }),
+  ).toEqual([]);
+
+  await expect(
+    t.mutation(api.mutations.boardSchedule.update.update, {
+      blockId,
+      color: "red",
+      endAt: "2026-08-17 11:00:00",
+      startAt: "2026-08-17 09:30:00",
+    }),
+  ).rejects.toThrow();
+});

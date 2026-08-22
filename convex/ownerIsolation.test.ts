@@ -132,3 +132,40 @@ test("他人の boardScheduleEvents は週一覧に出ない", async () => {
   });
   expect(listed).toEqual([]);
 });
+
+test("他人の行は unconfirm できない", async () => {
+  const ownerA = asOwner(OWNER_A);
+  const rowId = await firstRowId(ownerA);
+  await ownerA.mutation(api.mutations.rows.confirm.confirm, {
+    content: "done",
+    minutes: 10,
+    rowId,
+  });
+
+  const ownerB = asOwner(OWNER_B);
+  await expect(
+    ownerB.mutation(api.mutations.rows.unconfirm.unconfirm, { rowId }),
+  ).rejects.toThrow();
+});
+
+test("他人の行は unskip できない", async () => {
+  const ownerA = asOwner(OWNER_A);
+  const rowId = await firstRowId(ownerA);
+  await ownerA.mutation(api.mutations.rows.skip.skip, { rowId });
+
+  const ownerB = asOwner(OWNER_B);
+  await expect(ownerB.mutation(api.mutations.rows.unskip.unskip, { rowId })).rejects.toThrow();
+});
+
+test("他人の行順は applyOrder できない", async () => {
+  const ownerA = asOwner(OWNER_A);
+  const rowId = await firstRowId(ownerA);
+
+  const ownerB = asOwner(OWNER_B);
+  await expect(
+    ownerB.mutation(api.mutations.rows.applyOrder.applyOrder, {
+      dateJst: MONDAY,
+      orderedRowIds: [rowId],
+    }),
+  ).rejects.toThrow();
+});
