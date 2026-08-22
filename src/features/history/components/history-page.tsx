@@ -35,6 +35,7 @@ function HistoryReady() {
           }
         }}
         value={tab}
+        variant="pills"
       >
         <Tabs.List className={tabBarClasses.tabBar} grow justify="center">
           <Tabs.Tab value={"month" satisfies HistoryTab}>月</Tabs.Tab>
