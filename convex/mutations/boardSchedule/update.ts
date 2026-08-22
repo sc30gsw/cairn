@@ -9,7 +9,6 @@ export const update = ownerMutation({
     color: v.optional(v.string()),
     endAt: v.string(),
     startAt: v.string(),
-    title: v.string(),
   },
   handler: async (ctx, args) => updateBlock(ctx, ctx.ownerId, args),
   returns: v.null(),

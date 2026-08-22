@@ -7,8 +7,8 @@ export const create = ownerMutation({
   args: {
     color: v.optional(v.string()),
     endAt: v.string(),
+    rowId: v.id("rows"),
     startAt: v.string(),
-    title: v.string(),
   },
   handler: async (ctx, args) => createBlock(ctx, ctx.ownerId, args),
   returns: v.id("boardScheduleEvents"),

@@ -1,19 +1,13 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
-import { NotFoundError, ValidationFailedError } from "../../lib/errors";
+import { NotFoundError } from "../../lib/errors";
 import { addDaysJst, mondayOfWeek } from "../../lib/jst";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { assertScheduleRange, requireScheduleInstant } from "../../lib/scheduleInstant";
+import { requireOwnedRow } from "../rows/requireOwnedRow";
+import { rowDayLiveness } from "../rows/rowDayLiveness";
 
 const DEFAULT_COLOR = "blue";
-
-function normalizeTitle(title: string): string {
-  const trimmed = title.trim();
-  if (trimmed === "") {
-    throwDomain(new ValidationFailedError({ message: "タイトルは必須です" }));
-  }
-  return trimmed;
-}
 
 function normalizeRange(startAt: string, endAt: string): { endAt: string; startAt: string } {
   const normalizedStart = requireScheduleInstant(startAt);
@@ -34,6 +28,22 @@ async function requireOwnedBlock(
   return block;
 }
 
+async function requireLiveRowForSchedule(
+  ctx: MutationCtx,
+  ownerId: string,
+  rowId: Id<"rows">,
+): Promise<{ itemName: string; rowId: Id<"rows"> }> {
+  const row = await requireOwnedRow(ctx, ownerId, rowId);
+  if ((await rowDayLiveness(ctx, ownerId, row)) !== "live") {
+    throwDomain(new NotFoundError({ message: "記録が見つかりません", resource: "記録" }));
+  }
+  const item = await ctx.db.get("items", row.itemId);
+  if (item === null || item.ownerId !== ownerId) {
+    throwDomain(new NotFoundError({ message: "項目が見つかりません", resource: "項目" }));
+  }
+  return { itemName: item.name, rowId: row._id };
+}
+
 export async function listForWeek(
   ctx: QueryCtx,
   ownerId: string,
@@ -43,6 +53,7 @@ export async function listForWeek(
     _id: Id<"boardScheduleEvents">;
     color: string;
     endAt: string;
+    rowId: Id<"rows">;
     startAt: string;
     title: string;
   }>
@@ -58,6 +69,7 @@ export async function listForWeek(
     _id: Id<"boardScheduleEvents">;
     color: string;
     endAt: string;
+    rowId: Id<"rows">;
     startAt: string;
     title: string;
   }> = [];
@@ -69,6 +81,7 @@ export async function listForWeek(
       _id: block._id,
       color: block.color ?? DEFAULT_COLOR,
       endAt: block.endAt,
+      rowId: block.rowId,
       startAt: block.startAt,
       title: block.title,
     });
@@ -79,16 +92,17 @@ export async function listForWeek(
 export async function create(
   ctx: MutationCtx,
   ownerId: string,
-  args: { color?: string; endAt: string; startAt: string; title: string },
+  args: { color?: string; endAt: string; rowId: Id<"rows">; startAt: string },
 ): Promise<Id<"boardScheduleEvents">> {
-  const title = normalizeTitle(args.title);
   const { endAt, startAt } = normalizeRange(args.startAt, args.endAt);
+  const { itemName, rowId } = await requireLiveRowForSchedule(ctx, ownerId, args.rowId);
   return await ctx.db.insert("boardScheduleEvents", {
     color: args.color ?? DEFAULT_COLOR,
     endAt,
     ownerId,
+    rowId,
     startAt,
-    title,
+    title: itemName,
   });
 }
 
@@ -100,17 +114,14 @@ export async function update(
     color?: string;
     endAt: string;
     startAt: string;
-    title: string;
   },
 ): Promise<null> {
   await requireOwnedBlock(ctx, ownerId, args.blockId);
-  const title = normalizeTitle(args.title);
   const { endAt, startAt } = normalizeRange(args.startAt, args.endAt);
   await ctx.db.patch("boardScheduleEvents", args.blockId, {
     color: args.color ?? DEFAULT_COLOR,
     endAt,
     startAt,
-    title,
   });
   return null;
 }

@@ -424,6 +424,7 @@ export const boardScheduleEventDtoValidator = v.object({
   _id: v.id("boardScheduleEvents"),
   color: v.string(),
   endAt: v.string(),
+  rowId: v.id("rows"),
   startAt: v.string(),
   title: v.string(),
 });

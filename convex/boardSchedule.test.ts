@@ -31,11 +31,17 @@ async function ownerWithDay() {
 
 test("boardScheduleEvents を作成・週一覧・更新・削除できる", async () => {
   const t = await ownerWithDay();
+  const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  const row = day.rows[0];
+  if (row === undefined) {
+    throw new Error("expected a row");
+  }
+
   const blockId = await t.mutation(api.mutations.boardSchedule.create.create, {
     color: "green",
     endAt: "2026-08-17 10:30:00",
+    rowId: row._id,
     startAt: "2026-08-17 09:00:00",
-    title: "Team Meeting",
   });
 
   const listed = await t.query(api.queries.boardSchedule.listForWeek.listForWeek, {
@@ -46,8 +52,9 @@ test("boardScheduleEvents を作成・週一覧・更新・削除できる", asy
       _id: blockId,
       color: "green",
       endAt: "2026-08-17 10:30:00",
+      rowId: row._id,
       startAt: "2026-08-17 09:00:00",
-      title: "Team Meeting",
+      title: row.itemName,
     },
   ]);
 
@@ -56,7 +63,6 @@ test("boardScheduleEvents を作成・週一覧・更新・削除できる", asy
     color: "violet",
     endAt: "2026-08-17 11:00:00",
     startAt: "2026-08-17 09:30:00",
-    title: "Updated Meeting",
   });
 
   await t.mutation(api.mutations.boardSchedule.move.move, {
@@ -98,4 +104,21 @@ test("未着手の記録に unskip は失敗する", async () => {
   }
 
   await expect(t.mutation(api.mutations.rows.unskip.unskip, { rowId: row._id })).rejects.toThrow();
+});
+
+test("applyOrder でカンバン列の並べ替えを保存できる", async () => {
+  const t = await ownerWithDay();
+  const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  if (day.rows.length < 2) {
+    throw new Error("expected at least two rows");
+  }
+  const reversed = [...day.rows].reverse().map((row) => row._id);
+
+  await t.mutation(api.mutations.rows.applyOrder.applyOrder, {
+    dateJst: MONDAY,
+    orderedRowIds: reversed,
+  });
+
+  const after = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  expect(after.rows.map((row) => row._id)).toEqual(reversed);
 });

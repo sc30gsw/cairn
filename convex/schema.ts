@@ -85,7 +85,10 @@ export default defineSchema({
     color: v.optional(v.string()),
     endAt: v.string(),
     ownerId: v.string(),
+    rowId: v.id("rows"),
     startAt: v.string(),
     title: v.string(),
-  }).index("by_owner", ["ownerId"]),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_row", ["rowId"]),
 });
