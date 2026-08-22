@@ -1,12 +1,6 @@
 import { Card, Stack } from "@mantine/core";
-import {
-  Schedule,
-  type DateStringValue,
-  type ScheduleEventData,
-  type ScheduleViewLevel,
-} from "@mantine/schedule";
+import { Schedule, type DateStringValue, type ScheduleEventData } from "@mantine/schedule";
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react";
-import type { DateJst } from "~domain/jst";
 
 import {
   BoardScheduleAllDayExpand,
@@ -24,6 +18,7 @@ import type {
   BoardScheduleRemoveInput,
   BoardScheduleUpdateInput,
 } from "~/features/board/hooks/board-mutations";
+import { useBoardView } from "~/features/board/hooks/use-board-view";
 import { boardScheduleAllDayRenderEvent } from "~/features/board/lib/board-schedule-all-day-render-event";
 import { createBoardScheduleDayAllDayRenderEvent } from "~/features/board/lib/board-schedule-day-all-day-render-event";
 import {
@@ -76,46 +71,37 @@ const BOARD_MONTH_VIEW_PROPS = {
 };
 
 type BoardScheduleProps = {
-  anchorDateJst: DateJst;
   blocks: readonly BoardScheduleBlock[];
   checkpoint: BoardMastery | null;
-  dateJst: DateJst;
-  monthDate: Date;
   onCreateBlock: (input: BoardScheduleCreateInput) => Promise<void>;
-  onDateChange: (dateJst: DateJst) => void;
-  onMonthChange: (yearMonth: string) => void;
   onMoveBlock: (input: BoardScheduleMoveInput) => Promise<void>;
   onRemoveBlock: (input: BoardScheduleRemoveInput) => Promise<void>;
-  onScheduleViewChange: (view: ScheduleViewLevel) => void;
   onUpdateBlock: (input: BoardScheduleUpdateInput) => Promise<void>;
-  onWeekChange: (weekAnchor: DateJst) => void;
   rows: readonly BoardRow[];
-  scheduleView: ScheduleViewLevel;
-  selectedDateJst: DateJst;
-  todayJst: DateJst;
-  weekAnchor: DateJst;
 };
 
 export function BoardSchedule({
-  anchorDateJst,
   blocks,
   checkpoint,
-  dateJst,
-  monthDate,
   onCreateBlock,
-  onDateChange,
-  onMonthChange,
   onMoveBlock,
   onRemoveBlock,
-  onScheduleViewChange,
   onUpdateBlock,
-  onWeekChange,
   rows,
-  scheduleView,
-  selectedDateJst,
-  todayJst,
-  weekAnchor,
 }: BoardScheduleProps) {
+  const {
+    monthDate,
+    scheduleAnchor: anchorDateJst,
+    scheduleView,
+    selectedDateJst,
+    setDate: onDateChange,
+    setMonth: onMonthChange,
+    setScheduleView: onScheduleViewChange,
+    setWeek: onWeekChange,
+    today: dateJst,
+    weekAnchor,
+  } = useBoardView();
+  const todayJst = dateJst;
   const [formOpened, setFormOpened] = useState(false);
   const [formValues, setFormValues] = useState<BoardScheduleEventInput | null>(null);
   const [expandedAllDayAnchor, setExpandedAllDayAnchor] =

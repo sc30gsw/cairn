@@ -6,6 +6,7 @@ import { todayJst, type DateJst } from "~domain/jst";
 import { PageTitle } from "~/components/page-title";
 import { BoardKanban } from "~/features/board/components/board-kanban";
 import { BoardSchedule } from "~/features/board/components/board-schedule";
+import { BoardSchedulePending } from "~/features/board/components/board-schedule-pending";
 import { BoardTabs, BoardTabsPending } from "~/features/board/components/board-tabs";
 import {
   useBoardApplyRowOrder,
@@ -39,6 +40,8 @@ export function BoardPage() {
 }
 
 function BoardPending() {
+  const { tab } = useBoardView();
+
   return (
     <>
       <PageTitle data-shimmer-ignore mb="md">
@@ -62,6 +65,8 @@ function BoardPending() {
               rows={boardShimmerRows}
             />
           }
+          schedule={tab === "schedule" ? <BoardSchedulePending /> : null}
+          tab={tab}
         />
       </Shimmer>
     </>
@@ -148,17 +153,7 @@ function BoardScheduleTab({
   rows: readonly BoardRow[];
   today: DateJst;
 }) {
-  const {
-    monthDate,
-    scheduleAnchor,
-    scheduleView,
-    selectedDateJst,
-    setDate,
-    setMonth,
-    setScheduleView,
-    setWeek,
-    weekAnchor,
-  } = useBoardView();
+  const { scheduleAnchor } = useBoardView();
   const { data: blocks } = useBoardScheduleBlocks(scheduleAnchor);
   const createBlock = useBoardScheduleCreate(today, today);
   const updateBlock = useBoardScheduleUpdate(today, today);
@@ -167,18 +162,13 @@ function BoardScheduleTab({
 
   return (
     <BoardSchedule
-      anchorDateJst={scheduleAnchor}
       blocks={blocks}
       checkpoint={checkpoint}
-      dateJst={today}
-      monthDate={monthDate}
       onCreateBlock={(input) =>
         runMutation(() => createBlock.mutateAsync(input), {
           successMessage: "予定を追加しました",
         }).then(() => undefined)
       }
-      onDateChange={setDate}
-      onMonthChange={setMonth}
       onMoveBlock={(input) =>
         runMutation(() => moveBlock.mutateAsync(input), {
           successMessage: "予定を移動しました",
@@ -189,18 +179,12 @@ function BoardScheduleTab({
           successMessage: "予定を削除しました",
         }).then(() => undefined)
       }
-      onScheduleViewChange={setScheduleView}
       onUpdateBlock={(input) =>
         runMutation(() => updateBlock.mutateAsync(input), {
           successMessage: "予定を更新しました",
         }).then(() => undefined)
       }
-      onWeekChange={setWeek}
       rows={rows}
-      scheduleView={scheduleView}
-      selectedDateJst={selectedDateJst}
-      todayJst={today}
-      weekAnchor={weekAnchor}
     />
   );
 }

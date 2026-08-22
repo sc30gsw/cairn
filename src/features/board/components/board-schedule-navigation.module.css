@@ -1,0 +1,43 @@
+.navigationDateInput {
+  flex: 1 1 auto;
+  max-width: 18rem;
+  min-width: 11rem;
+}
+
+.navigationDateInput :global(.mantine-DatePickerInput-input) {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  min-height: auto;
+  padding-inline: var(--mantine-spacing-xs);
+  text-align: center;
+}
+
+.navigationDateInput :global(.mantine-DatePickerInput-input:focus) {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+}
+
+.weekRangeLabel {
+  flex: 1 1 auto;
+  font-weight: 600;
+  min-width: 12rem;
+  text-align: center;
+}
+
+.weekDateInput {
+  flex: 0 0 auto;
+  width: 2.75rem;
+}
+
+.weekDateInput :global(.mantine-DatePickerInput-input) {
+  opacity: 0;
+  padding: 0;
+  width: 2.75rem;
+}
+
+.weekDateInput :global(.mantine-Input-section) {
+  inset-inline-end: 0;
+  pointer-events: none;
+}

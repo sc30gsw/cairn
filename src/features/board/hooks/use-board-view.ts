@@ -1,6 +1,6 @@
 import type { ScheduleViewLevel } from "@mantine/schedule";
 import { getRouteApi } from "@tanstack/react-router";
-import { addDaysJst, isFutureDateJst, mondayOfWeek, todayJst, type DateJst } from "~domain/jst";
+import { isFutureDateJst, mondayOfWeek, todayJst, type DateJst } from "~domain/jst";
 
 import type {
   BoardScheduleView,

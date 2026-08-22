@@ -39,17 +39,22 @@ export function BoardTabs({ kanban, onTabChange, schedule, tab }: BoardTabsProps
 
 type BoardTabsPendingProps = {
   kanban: ReactNode;
+  schedule?: ReactNode;
+  tab: BoardTab;
 };
 
-export function BoardTabsPending({ kanban }: BoardTabsPendingProps) {
+export function BoardTabsPending({ kanban, schedule, tab }: BoardTabsPendingProps) {
   return (
-    <Tabs value="kanban">
+    <Tabs value={tab}>
       <Tabs.List className={tabBarClasses.tabBar} grow justify="center">
         <Tabs.Tab value="kanban">カンバン</Tabs.Tab>
         <Tabs.Tab value="schedule">スケジュール</Tabs.Tab>
       </Tabs.List>
       <Tabs.Panel pt="md" value="kanban">
-        {kanban}
+        {tab === "kanban" ? kanban : null}
+      </Tabs.Panel>
+      <Tabs.Panel pt="md" value="schedule">
+        {tab === "schedule" ? schedule : null}
       </Tabs.Panel>
     </Tabs>
   );

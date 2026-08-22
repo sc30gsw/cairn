@@ -1,9 +1,14 @@
-import { ScheduleHeader, type ScheduleViewLevel } from "@mantine/schedule";
+import { DatePickerInput } from "@mantine/dates";
+import { ScheduleHeader, getStartOfWeek, type ScheduleViewLevel } from "@mantine/schedule";
 import dayjs from "dayjs";
-import { addDaysJst, mondayOfWeek, type DateJst } from "~domain/jst";
+import { addDaysJst, isFutureDateJst, mondayOfWeek, type DateJst } from "~domain/jst";
 
+import { formatWeekNavigationLabel } from "~/features/board/lib/board-schedule-navigation-labels";
 import type { BoardScheduleView } from "~/features/board/schemas/board-search-schema";
+import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-style";
 import { SCHEDULE_LABELS_JA } from "~/lib/schedule-labels";
+
+import classes from "~/features/board/components/board-schedule-navigation.module.css";
 
 type BoardScheduleNavigationProps = {
   monthDate: Date;
@@ -21,6 +26,109 @@ function yearMonthOf(value: string): string {
   return value.slice(0, 7);
 }
 
+function monthDateString(monthDate: Date): string {
+  return `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}-01`;
+}
+
+function sharedDatePickerProps(todayJst: DateJst) {
+  return {
+    firstDayOfWeek: 1 as const,
+    getDayProps: (date: string) => calendarDayProps(date, todayJst),
+    getMonthControlProps: (month: string) => ({
+      disabled: month.slice(0, 7) > todayJst.slice(0, 7),
+    }),
+    getYearControlProps: (year: string) => ({
+      disabled: year.slice(0, 4) > todayJst.slice(0, 4),
+    }),
+    locale: "ja",
+    maxDate: todayJst,
+    popoverProps: { withinPortal: true },
+  };
+}
+
+function pickDateInWeek(
+  value: string | null,
+  todayJst: DateJst,
+  onDateChange: (dateJst: DateJst) => void,
+  onWeekChange: (weekAnchor: DateJst) => void,
+) {
+  if (typeof value !== "string" || isFutureDateJst(value, todayJst)) {
+    return;
+  }
+  onDateChange(value);
+  onWeekChange(mondayOfWeek(value));
+}
+
+function BoardScheduleDatePicker({
+  onChange,
+  todayJst,
+  value,
+  valueFormat,
+}: {
+  onChange: (value: string | null) => void;
+  todayJst: DateJst;
+  value: DateJst;
+  valueFormat: string;
+}) {
+  return (
+    <DatePickerInput
+      aria-label="日付を選択"
+      className={classes.navigationDateInput}
+      classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
+      onChange={onChange}
+      value={value}
+      valueFormat={valueFormat}
+      {...sharedDatePickerProps(todayJst)}
+    />
+  );
+}
+
+function BoardScheduleWeekPicker({
+  onDateChange,
+  onWeekChange,
+  selectedDateJst,
+  todayJst,
+  weekAnchor,
+}: {
+  onDateChange: (dateJst: DateJst) => void;
+  onWeekChange: (weekAnchor: DateJst) => void;
+  selectedDateJst: DateJst;
+  todayJst: DateJst;
+  weekAnchor: DateJst;
+}) {
+  const weekStart = getStartOfWeek({ date: weekAnchor, firstDayOfWeek: 1 });
+  const weekEnd = dayjs(weekStart).add(6, "day").format("YYYY-MM-DD");
+  const pickerValue =
+    selectedDateJst >= weekStart && selectedDateJst <= weekEnd ? selectedDateJst : weekAnchor;
+
+  return (
+    <>
+      <ScheduleHeader.Control className={classes.weekRangeLabel} interactive={false}>
+        {formatWeekNavigationLabel(weekAnchor)}
+      </ScheduleHeader.Control>
+      <DatePickerInput
+        aria-label="週を選択"
+        className={classes.weekDateInput}
+        classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
+        onChange={(value) => pickDateInWeek(value, todayJst, onDateChange, onWeekChange)}
+        value={pickerValue}
+        valueFormat="M/D"
+        {...sharedDatePickerProps(todayJst)}
+      />
+    </>
+  );
+}
+
+function BoardScheduleViewSelect({
+  onViewChange,
+  scheduleView,
+}: {
+  onViewChange: (view: ScheduleViewLevel) => void;
+  scheduleView: BoardScheduleView;
+}) {
+  return <ScheduleHeader.ViewSelect onChange={onViewChange} value={scheduleView} />;
+}
+
 export function BoardScheduleNavigation({
   monthDate,
   onDateChange,
@@ -32,7 +140,7 @@ export function BoardScheduleNavigation({
   todayJst,
   weekAnchor,
 }: BoardScheduleNavigationProps) {
-  const monthDateString = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}-01`;
+  const monthAnchor = monthDateString(monthDate);
 
   if (scheduleView === "day") {
     const nextDisabled = selectedDateJst >= todayJst;
@@ -42,24 +150,15 @@ export function BoardScheduleNavigation({
           aria-label={SCHEDULE_LABELS_JA.previous}
           onClick={() => onDateChange(addDaysJst(selectedDateJst, -1))}
         />
-        <ScheduleHeader.MonthYearSelect
-          monthValue={dayjs(selectedDateJst).month()}
-          onMonthChange={(monthValue) => {
-            const next = dayjs(selectedDateJst).month(monthValue);
-            if (yearMonthOf(next.format("YYYY-MM-DD")) > yearMonthOf(todayJst)) {
-              return;
+        <BoardScheduleDatePicker
+          onChange={(value) => {
+            if (typeof value === "string" && !isFutureDateJst(value, todayJst)) {
+              onDateChange(value);
             }
-            onDateChange(next.format("YYYY-MM-DD"));
           }}
-          onYearChange={(yearValue) => {
-            const next = dayjs(selectedDateJst).year(yearValue);
-            if (yearMonthOf(next.format("YYYY-MM-DD")) > yearMonthOf(todayJst)) {
-              return;
-            }
-            onDateChange(next.format("YYYY-MM-DD"));
-          }}
-          popoverProps={{ withinPortal: true }}
-          yearValue={dayjs(selectedDateJst).year()}
+          todayJst={todayJst}
+          value={selectedDateJst}
+          valueFormat="YYYY年M月D日（ddd）"
         />
         <ScheduleHeader.Next
           aria-label={SCHEDULE_LABELS_JA.next}
@@ -75,7 +174,7 @@ export function BoardScheduleNavigation({
           aria-label={SCHEDULE_LABELS_JA.today}
           onClick={() => onDateChange(todayJst)}
         />
-        <ScheduleHeader.ViewSelect onChange={onViewChange} value={scheduleView} />
+        <BoardScheduleViewSelect onViewChange={onViewChange} scheduleView={scheduleView} />
       </ScheduleHeader>
     );
   }
@@ -89,24 +188,12 @@ export function BoardScheduleNavigation({
           aria-label={SCHEDULE_LABELS_JA.previous}
           onClick={() => onWeekChange(addDaysJst(weekAnchor, -7))}
         />
-        <ScheduleHeader.MonthYearSelect
-          monthValue={dayjs(weekAnchor).month()}
-          onMonthChange={(monthValue) => {
-            const next = dayjs(weekAnchor).month(monthValue).startOf("month");
-            if (yearMonthOf(next.format("YYYY-MM-DD")) > yearMonthOf(todayJst)) {
-              return;
-            }
-            onWeekChange(mondayOfWeek(next.format("YYYY-MM-DD")));
-          }}
-          onYearChange={(yearValue) => {
-            const next = dayjs(weekAnchor).year(yearValue).startOf("month");
-            if (yearMonthOf(next.format("YYYY-MM-DD")) > yearMonthOf(todayJst)) {
-              return;
-            }
-            onWeekChange(mondayOfWeek(next.format("YYYY-MM-DD")));
-          }}
-          popoverProps={{ withinPortal: true }}
-          yearValue={dayjs(weekAnchor).year()}
+        <BoardScheduleWeekPicker
+          onDateChange={onDateChange}
+          onWeekChange={onWeekChange}
+          selectedDateJst={selectedDateJst}
+          todayJst={todayJst}
+          weekAnchor={weekAnchor}
         />
         <ScheduleHeader.Next
           aria-label={SCHEDULE_LABELS_JA.next}
@@ -122,13 +209,13 @@ export function BoardScheduleNavigation({
           aria-label={SCHEDULE_LABELS_JA.today}
           onClick={() => onWeekChange(mondayOfWeek(todayJst))}
         />
-        <ScheduleHeader.ViewSelect onChange={onViewChange} value={scheduleView} />
+        <BoardScheduleViewSelect onViewChange={onViewChange} scheduleView={scheduleView} />
       </ScheduleHeader>
     );
   }
 
   if (scheduleView === "month") {
-    const nextDisabled = yearMonthOf(monthDateString) >= yearMonthOf(todayJst);
+    const nextDisabled = yearMonthOf(monthAnchor) >= yearMonthOf(todayJst);
     const setDate = (value: string) => {
       if (yearMonthOf(value) > yearMonthOf(todayJst)) {
         return;
@@ -141,19 +228,19 @@ export function BoardScheduleNavigation({
         <ScheduleHeader.Previous
           aria-label={SCHEDULE_LABELS_JA.previous}
           onClick={() =>
-            setDate(dayjs(monthDateString).add(-1, "month").startOf("month").format("YYYY-MM-DD"))
+            setDate(dayjs(monthAnchor).add(-1, "month").startOf("month").format("YYYY-MM-DD"))
           }
         />
         <ScheduleHeader.MonthYearSelect
-          monthValue={dayjs(monthDateString).month()}
+          monthValue={dayjs(monthAnchor).month()}
           onMonthChange={(monthValue) => {
-            setDate(dayjs(monthDateString).month(monthValue).startOf("month").format("YYYY-MM-DD"));
+            setDate(dayjs(monthAnchor).month(monthValue).startOf("month").format("YYYY-MM-DD"));
           }}
           onYearChange={(yearValue) => {
-            setDate(dayjs(monthDateString).year(yearValue).startOf("month").format("YYYY-MM-DD"));
+            setDate(dayjs(monthAnchor).year(yearValue).startOf("month").format("YYYY-MM-DD"));
           }}
           popoverProps={{ withinPortal: true }}
-          yearValue={dayjs(monthDateString).year()}
+          yearValue={dayjs(monthAnchor).year()}
         />
         <ScheduleHeader.Next
           aria-label={SCHEDULE_LABELS_JA.next}
@@ -161,7 +248,7 @@ export function BoardScheduleNavigation({
           interactive={!nextDisabled}
           onClick={() => {
             if (!nextDisabled) {
-              setDate(dayjs(monthDateString).add(1, "month").startOf("month").format("YYYY-MM-DD"));
+              setDate(dayjs(monthAnchor).add(1, "month").startOf("month").format("YYYY-MM-DD"));
             }
           }}
         />
@@ -169,7 +256,7 @@ export function BoardScheduleNavigation({
           aria-label={SCHEDULE_LABELS_JA.today}
           onClick={() => onMonthChange(yearMonthOf(todayJst))}
         />
-        <ScheduleHeader.ViewSelect onChange={onViewChange} value={scheduleView} />
+        <BoardScheduleViewSelect onViewChange={onViewChange} scheduleView={scheduleView} />
       </ScheduleHeader>
     );
   }
@@ -210,7 +297,7 @@ export function BoardScheduleNavigation({
         aria-label={SCHEDULE_LABELS_JA.today}
         onClick={() => onDateChange(todayJst)}
       />
-      <ScheduleHeader.ViewSelect onChange={onViewChange} value={scheduleView} />
+      <BoardScheduleViewSelect onViewChange={onViewChange} scheduleView={scheduleView} />
     </ScheduleHeader>
   );
 }
