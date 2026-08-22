@@ -1,5 +1,4 @@
 import { useMutation } from "convex/react";
-import type { FunctionArgs } from "convex/server";
 import type { DateJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
@@ -11,22 +10,6 @@ import {
   setBoardDayRowStatus,
 } from "~/features/board/lib/optimistic-board-day";
 import type { BoardScheduleView } from "~/features/board/schemas/board-search-schema";
-
-export type BoardApplyRowOrderInput = FunctionArgs<typeof api.mutations.rows.applyOrder.applyOrder>;
-export type BoardConfirmRowInput = FunctionArgs<typeof api.mutations.rows.confirm.confirm>;
-export type BoardSkipRowInput = FunctionArgs<typeof api.mutations.rows.skip.skip>;
-export type BoardUnconfirmRowInput = FunctionArgs<typeof api.mutations.rows.unconfirm.unconfirm>;
-export type BoardUnskipRowInput = FunctionArgs<typeof api.mutations.rows.unskip.unskip>;
-export type BoardScheduleCreateInput = FunctionArgs<
-  typeof api.mutations.boardSchedule.create.create
->;
-export type BoardScheduleUpdateInput = FunctionArgs<
-  typeof api.mutations.boardSchedule.update.update
->;
-export type BoardScheduleRemoveInput = FunctionArgs<
-  typeof api.mutations.boardSchedule.remove.remove
->;
-export type BoardScheduleMoveInput = FunctionArgs<typeof api.mutations.boardSchedule.move.move>;
 
 export function useBoardSkipRow(dateJst: DateJst, todayJst: DateJst) {
   const mutateAsync = useMutation(api.mutations.rows.skip.skip).withOptimisticUpdate(

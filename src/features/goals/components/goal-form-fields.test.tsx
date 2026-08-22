@@ -1,5 +1,6 @@
-import { waitFor } from "@testing-library/react";
+import { fireEvent, waitFor } from "@testing-library/react";
 import { expect, test, vi } from "vite-plus/test";
+import { GOAL_DATE_MESSAGE } from "~domain/domain";
 
 import {
   CHECKPOINT_CROWDED_MESSAGE,
@@ -43,6 +44,61 @@ function fieldsProps(overrides: Partial<Parameters<typeof MasteryGoalFields>[0]>
     ...overrides,
   };
 }
+
+test("新規試験目標フォームは空欄で開く", () => {
+  const { getByRole } = renderWithMantine(
+    <ExamGoalFields
+      activeCheckpointCount={0}
+      copy={GOAL_FORM_COPY.goal}
+      goal={undefined}
+      onCancel={vi.fn()}
+      onSubmit={vi.fn()}
+      todayJst={TODAY}
+    />,
+  );
+  expect((getByRole("textbox", { name: "目標の内容" }) as HTMLInputElement).value).toBe("");
+  expect((getByRole("textbox", { name: "目標スコア下限" }) as HTMLInputElement).value).toBe("");
+});
+
+test("習得目標を試験フォームに渡しても空欄で開く", () => {
+  const { getByRole } = renderWithMantine(
+    <ExamGoalFields
+      activeCheckpointCount={0}
+      copy={GOAL_FORM_COPY.goal}
+      goal={MASTERY_GOAL}
+      onCancel={vi.fn()}
+      onSubmit={vi.fn()}
+      todayJst={TODAY}
+    />,
+  );
+  expect((getByRole("textbox", { name: "目標の内容" }) as HTMLInputElement).value).toBe("");
+});
+
+test("新規習得フォームは次の日曜が期限の初期値になる", () => {
+  const { getByDisplayValue } = renderWithMantine(<MasteryGoalFields {...fieldsProps()} />);
+  expect(getByDisplayValue("2026-08-23")).toBeDefined();
+});
+
+test("新規習得フォームは保存できる", async () => {
+  const onSubmit = vi.fn();
+  const { getByRole } = renderWithMantine(<MasteryGoalFields {...fieldsProps({ onSubmit })} />);
+  fireEvent.change(getByRole("textbox", { name: "チェックポイントの内容" }), {
+    target: { value: "新チェックポイント" },
+  });
+  fireEvent.change(getByRole("textbox", { name: "達成の基準" }), {
+    target: { value: "基準を満たす" },
+  });
+  getByRole("button", { name: "チェックポイントを追加" }).click();
+
+  await waitFor(() => {
+    expect(onSubmit).toHaveBeenCalledWith({
+      content: "新チェックポイント",
+      criterion: "基準を満たす",
+      deadline: "2026-08-23",
+      type: "mastery",
+    });
+  });
+});
 
 test("試験目標フォームは既存値で開き、保存できる", async () => {
   const onSubmit = vi.fn();
@@ -97,4 +153,119 @@ test("キャンセルボタンで onCancel が呼ばれる", () => {
   const { getByRole } = renderWithMantine(<MasteryGoalFields {...fieldsProps({ onCancel })} />);
   getByRole("button", { name: "キャンセル" }).click();
   expect(onCancel).toHaveBeenCalledOnce();
+});
+
+test("試験フォームのスコア入力を空にできる", () => {
+  const { getByRole } = renderWithMantine(
+    <ExamGoalFields
+      activeCheckpointCount={0}
+      copy={GOAL_FORM_COPY.goal}
+      goal={EXAM_GOAL}
+      onCancel={vi.fn()}
+      onSubmit={vi.fn()}
+      todayJst={TODAY}
+    />,
+  );
+  fireEvent.change(getByRole("textbox", { name: "目標スコア下限" }), { target: { value: "" } });
+  expect((getByRole("textbox", { name: "目標スコア下限" }) as HTMLInputElement).value).toBe("");
+});
+
+test("試験フォームは本番日が空なら保存できない", async () => {
+  const onSubmit = vi.fn();
+  const { findByText, getByRole } = renderWithMantine(
+    <ExamGoalFields
+      activeCheckpointCount={0}
+      copy={GOAL_FORM_COPY.goal}
+      goal={undefined}
+      onCancel={vi.fn()}
+      onSubmit={onSubmit}
+      todayJst={TODAY}
+    />,
+  );
+  fireEvent.change(getByRole("textbox", { name: "目標の内容" }), {
+    target: { value: "900点を取る" },
+  });
+  fireEvent.change(getByRole("textbox", { name: "目標スコア下限" }), { target: { value: "730" } });
+  fireEvent.change(getByRole("textbox", { name: "目標スコア上限" }), { target: { value: "850" } });
+  getByRole("button", { name: "保存" }).click();
+  expect(await findByText(GOAL_DATE_MESSAGE)).toBeDefined();
+  expect(onSubmit).not.toHaveBeenCalled();
+});
+
+test("試験フォームは内容が空なら保存できない", async () => {
+  const onSubmit = vi.fn();
+  const { findByText, getByRole } = renderWithMantine(
+    <ExamGoalFields
+      activeCheckpointCount={0}
+      copy={GOAL_FORM_COPY.goal}
+      goal={EXAM_GOAL}
+      onCancel={vi.fn()}
+      onSubmit={onSubmit}
+      todayJst={TODAY}
+    />,
+  );
+  fireEvent.change(getByRole("textbox", { name: "目標の内容" }), { target: { value: "  " } });
+  getByRole("button", { name: "保存" }).click();
+  expect(await findByText("具体的手順を入力してください")).toBeDefined();
+  expect(onSubmit).not.toHaveBeenCalled();
+});
+
+test("試験フォームはスコア順序が逆なら保存できない", async () => {
+  const onSubmit = vi.fn();
+  const { findByText, getByRole } = renderWithMantine(
+    <ExamGoalFields
+      activeCheckpointCount={0}
+      copy={GOAL_FORM_COPY.goal}
+      goal={EXAM_GOAL}
+      onCancel={vi.fn()}
+      onSubmit={onSubmit}
+      todayJst={TODAY}
+    />,
+  );
+  fireEvent.change(getByRole("textbox", { name: "目標スコア下限" }), { target: { value: "850" } });
+  fireEvent.change(getByRole("textbox", { name: "目標スコア上限" }), { target: { value: "730" } });
+  getByRole("button", { name: "保存" }).click();
+  expect(await findByText("目標点の下限が上限を超えています")).toBeDefined();
+  expect(onSubmit).not.toHaveBeenCalled();
+});
+
+test("試験フォームは上限スコアを空にできる", () => {
+  const { getByRole } = renderWithMantine(
+    <ExamGoalFields
+      activeCheckpointCount={0}
+      copy={GOAL_FORM_COPY.goal}
+      goal={EXAM_GOAL}
+      onCancel={vi.fn()}
+      onSubmit={vi.fn()}
+      todayJst={TODAY}
+    />,
+  );
+  fireEvent.change(getByRole("textbox", { name: "目標スコア上限" }), { target: { value: "" } });
+  expect((getByRole("textbox", { name: "目標スコア上限" }) as HTMLInputElement).value).toBe("");
+});
+
+test("習得フォームは基準が空なら保存できない", async () => {
+  const onSubmit = vi.fn();
+  const { findByText, getByRole } = renderWithMantine(
+    <MasteryGoalFields {...fieldsProps({ onSubmit })} />,
+  );
+  fireEvent.change(getByRole("textbox", { name: "チェックポイントの内容" }), {
+    target: { value: "新チェックポイント" },
+  });
+  getByRole("button", { name: "チェックポイントを追加" }).click();
+  expect(await findByText("達成の基準を入力してください")).toBeDefined();
+  expect(onSubmit).not.toHaveBeenCalled();
+});
+
+test("習得フォームは内容が空なら保存できない", async () => {
+  const onSubmit = vi.fn();
+  const { findByText, getByRole } = renderWithMantine(
+    <MasteryGoalFields {...fieldsProps({ onSubmit })} />,
+  );
+  fireEvent.change(getByRole("textbox", { name: "達成の基準" }), {
+    target: { value: "基準を満たす" },
+  });
+  getByRole("button", { name: "チェックポイントを追加" }).click();
+  expect(await findByText("具体的手順を入力してください")).toBeDefined();
+  expect(onSubmit).not.toHaveBeenCalled();
 });

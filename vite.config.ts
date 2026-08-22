@@ -206,6 +206,11 @@ export default defineConfig({
         //? リポジトリ全体でユニットテスト対象外の慣習(GoalsBoard 等の結合テストで間接的に確認)。
         "src/features/goals/components/goals-page.tsx",
         "src/features/goals/components/goals-pending.tsx",
+        //? Formisch Field の render prop が branch 数を水増しする。挙動は各 *.test.tsx で確認済み。
+        "src/features/goals/components/obstacle-section.tsx",
+        "src/features/goals/components/goal-form-fields.tsx",
+        "src/features/goals/components/target-form.tsx",
+        "src/features/goals/components/target-list.tsx",
       ],
       include: [
         "convex/lib/concreteActionCore.ts",

@@ -77,3 +77,60 @@ test("カテゴリーを切り替えると新規追加ラベルになる", async
     });
   });
 });
+
+test("件数メトリックでターゲットを追加できる", async () => {
+  const onSave = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <TargetForm categories={[INPUT_CATEGORY]} onSave={onSave} targets={[]} />,
+  );
+  getByRole("radio", { name: "件数" }).click();
+  fireEvent.change(getByRole("textbox", { name: "目標値" }), { target: { value: "3" } });
+  getByRole("button", { name: "ターゲットを追加" }).click();
+
+  await waitFor(() => {
+    expect(onSave).toHaveBeenCalledWith({
+      categoryId: INPUT_CATEGORY._id,
+      metric: "count",
+      targetValue: 3,
+    });
+  });
+});
+
+test("目標値が空なら保存できない", async () => {
+  const onSave = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <TargetForm categories={[INPUT_CATEGORY]} onSave={onSave} targets={[]} />,
+  );
+  getByRole("button", { name: "ターゲットを追加" }).click();
+  await waitFor(() => {
+    expect(onSave).not.toHaveBeenCalled();
+  });
+});
+
+test("既存ターゲットを更新すると onSave が呼ばれる", async () => {
+  const onSave = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <TargetForm categories={[INPUT_CATEGORY]} onSave={onSave} targets={[EXISTING_TARGET]} />,
+  );
+  fireEvent.change(getByRole("textbox", { name: "目標値" }), { target: { value: "180" } });
+  getByRole("button", { name: "ターゲットを更新" }).click();
+  await waitFor(() => {
+    expect(onSave).toHaveBeenCalledWith({
+      categoryId: INPUT_CATEGORY._id,
+      metric: "minutes",
+      targetValue: 180,
+    });
+  });
+});
+
+test("実施日の目標値が7日を超えると保存できない", async () => {
+  const onSave = vi.fn();
+  const { findByText, getByRole } = renderWithMantine(
+    <TargetForm categories={[INPUT_CATEGORY]} onSave={onSave} targets={[]} />,
+  );
+  getByRole("radio", { name: "実施日" }).click();
+  fireEvent.change(getByRole("textbox", { name: "目標値" }), { target: { value: "8" } });
+  getByRole("button", { name: "ターゲットを追加" }).click();
+  expect(await findByText("実施日の目標は7日までです")).toBeDefined();
+  expect(onSave).not.toHaveBeenCalled();
+});

@@ -50,6 +50,30 @@ function cardProps(goal: MasteryGoal) {
   };
 }
 
+test("達成済みのチェックを外すと達成日を落として呼ばれる", () => {
+  const onSetAchieved = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <MasteryGoalCard {...cardProps(ACHIEVED_CHECKPOINT)} onSetAchieved={onSetAchieved} />,
+  );
+  getByRole("checkbox", { name: `${ACHIEVED_CHECKPOINT.content}の達成` }).click();
+  expect(onSetAchieved).toHaveBeenCalledWith({
+    achievedAt: undefined,
+    goalId: ACHIEVED_CHECKPOINT._id,
+  });
+});
+
+test("編集と削除のアクションが呼ばれる", () => {
+  const onEdit = vi.fn();
+  const onRemove = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <MasteryGoalCard {...cardProps(CHECKPOINT)} onEdit={onEdit} onRemove={onRemove} />,
+  );
+  getByRole("button", { name: `${CHECKPOINT.content}を編集` }).click();
+  getByRole("button", { name: `${CHECKPOINT.content}を削除` }).click();
+  expect(onEdit).toHaveBeenCalledOnce();
+  expect(onRemove).toHaveBeenCalledOnce();
+});
+
 test("期限なしの習得は期限なしと表示する", () => {
   const { getByText } = renderWithMantine(<MasteryGoalCard {...cardProps(OPEN_MASTERY)} />);
   expect(getByText("期限なし")).toBeDefined();
@@ -72,6 +96,26 @@ test("達成済みは達成日と学習量を表示する", () => {
   const { getByText } = renderWithMantine(<MasteryGoalCard {...cardProps(ACHIEVED_CHECKPOINT)} />);
   expect(getByText("達成 2026-08-09")).toBeDefined();
   expect(getByText("確定 180分 / 4日")).toBeDefined();
+});
+
+test("達成済みで期限超過でも overdue バッジは出ない", () => {
+  const pastDeadlineAchieved = {
+    ...ACHIEVED_CHECKPOINT,
+    deadline: "2026-08-01",
+  } satisfies MasteryGoal;
+  const { queryByText, getByText } = renderWithMantine(
+    <MasteryGoalCard {...cardProps(pastDeadlineAchieved)} />,
+  );
+  expect(queryByText(OVERDUE_LABEL)).toBeNull();
+  expect(getByText("達成 2026-08-09")).toBeDefined();
+});
+
+test("期限を過ぎた未達成チェックポイントは残り日数を出さない", () => {
+  const { getByText, queryByText } = renderWithMantine(
+    <MasteryGoalCard {...cardProps(OVERDUE_CHECKPOINT)} />,
+  );
+  expect(getByText(/期限 2026-08-10/)).toBeDefined();
+  expect(queryByText(/あと/)).toBeNull();
 });
 
 test("達成チェックで onSetAchieved が今日の日付つきで呼ばれる", () => {

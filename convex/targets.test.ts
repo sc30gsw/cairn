@@ -343,3 +343,63 @@ test("他人のカテゴリやターゲットは操作できない", async () =>
     }),
   ).toEqual([]);
 });
+
+test("categoryId が無い項目の記録は進捗に加算されない", async () => {
+  const t = owner();
+  const categoryId = await seedCategory(t, "TOEIC対策", 0);
+  await t.run(async (ctx) => {
+    const itemId = await ctx.db.insert("items", {
+      name: "レガシー項目",
+      ownerId: OWNER.subject,
+      sortOrder: 0,
+    });
+    const dayId = await ctx.db.insert("days", { dateJst: "2026-08-17", ownerId: OWNER.subject });
+    await ctx.db.insert("rows", {
+      content: CONTENT,
+      dateJst: "2026-08-17",
+      dayId,
+      itemId,
+      minutes: 90,
+      ownerId: OWNER.subject,
+      sortOrder: 0,
+      status: "確定",
+    });
+  });
+  await t.mutation(api.mutations.targets.save.save, {
+    categoryId,
+    metric: "minutes",
+    targetValue: 60,
+  });
+
+  const targets = await t.query(api.queries.targets.listWithProgress.listWithProgress, {
+    weekStartJst: MONDAY,
+  });
+  expect(targets[0]).toMatchObject({ achieved: false, current: 0 });
+});
+
+test("削除済みカテゴリのターゲットはカテゴリ名を不明と表示する", async () => {
+  const t = owner();
+  const categoryId = await t.run(async (ctx) => {
+    return await ctx.db.insert("categories", {
+      name: "削除予定",
+      ownerId: OWNER.subject,
+      sortOrder: 0,
+    });
+  });
+  await t.run(async (ctx) => {
+    await ctx.db.insert("targets", {
+      categoryId,
+      metric: "minutes",
+      ownerId: OWNER.subject,
+      targetValue: 60,
+    });
+    await ctx.db.delete("categories", categoryId);
+  });
+
+  const targets = await t.query(api.queries.targets.listWithProgress.listWithProgress, {
+    weekStartJst: MONDAY,
+  });
+  expect(targets).toHaveLength(1);
+  expect(targets[0]?.categoryName).toBe("不明");
+  expect(targets[0]?.current).toBe(0);
+});

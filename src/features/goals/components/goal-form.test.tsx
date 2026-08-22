@@ -3,6 +3,7 @@ import { expect, test, vi } from "vite-plus/test";
 
 import { GoalForm } from "~/features/goals/components/goal-form";
 import { CHECKPOINT_CROWDED_MESSAGE } from "~/features/goals/components/goal-form-fields";
+import { GOAL_FORM_COPY } from "~/features/goals/lib/goal-form-copy";
 import { GOAL_TYPE_LABELS } from "~/features/goals/lib/goal-type-labels";
 import type { Goal } from "~/features/goals/types/goal";
 import { renderWithMantine } from "~/test-utils/render";
@@ -19,6 +20,15 @@ const MASTERY_GOAL = {
   criterion: "止まらずに音読できる",
   deadline: "2026-09-06",
   type: "mastery",
+} satisfies Goal;
+
+const EXAM_GOAL = {
+  _id: "goal-exam" as Goal["_id"],
+  content: "900点を取る",
+  examDate: "2026-09-27",
+  maxScore: 850,
+  minScore: 730,
+  type: "exam",
 } satisfies Goal;
 
 function formProps(overrides: Partial<Parameters<typeof GoalForm>[0]> = {}) {
@@ -179,4 +189,59 @@ test("編集中は助言を出さない", () => {
     <GoalForm {...formProps({ activeCheckpointCount: 3, goal: MASTERY_GOAL })} />,
   );
   expect(queryByText(CHECKPOINT_CROWDED_MESSAGE)).toBeNull();
+});
+
+test("編集モードでは編集タイトルとタイプ変更不可の説明が出る", () => {
+  const { getByRole, getByText } = renderWithMantine(
+    <GoalForm {...formProps({ goal: MASTERY_GOAL, initialType: "mastery" })} />,
+  );
+  expect(getByText(GOAL_FORM_COPY.goal.editTitle)).toBeDefined();
+  expect(
+    getByText("目標タイプは変更できません。別のタイプにするときは、削除して作り直します。"),
+  ).toBeDefined();
+  expect(getByRole("combobox", { name: /目標タイプ/ }).hasAttribute("disabled")).toBe(true);
+});
+
+test("新規作成モードでは作成タイトルが出る", () => {
+  const { getByText } = renderWithMantine(<GoalForm {...formProps()} />);
+  expect(getByText(GOAL_FORM_COPY.goal.createTitle)).toBeDefined();
+});
+
+test("チェックポイント variant では checkpoint の copy が使われる", () => {
+  const { getByRole } = renderWithMantine(<GoalForm {...formProps({ variant: "checkpoint" })} />);
+  expect(getByRole("heading", { name: GOAL_FORM_COPY.checkpoint.createTitle })).toBeDefined();
+});
+
+test("試験目標を編集すると exam ペイロードで送信される", async () => {
+  const onSubmit = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <GoalForm {...formProps({ goal: EXAM_GOAL, initialType: "exam", onSubmit })} />,
+  );
+  getByRole("button", { name: "保存" }).click();
+  await waitFor(() => {
+    expect(onSubmit).toHaveBeenCalledWith({
+      content: EXAM_GOAL.content,
+      examDate: EXAM_GOAL.examDate,
+      maxScore: EXAM_GOAL.maxScore,
+      minScore: EXAM_GOAL.minScore,
+      type: "exam",
+    });
+  });
+});
+
+test("新規作成でタイプを試験に切り替えると試験フォームになる", async () => {
+  const { getByRole } = renderWithMantine(<GoalForm {...formProps()} />);
+  getByRole("combobox", { name: /目標タイプ/ }).click();
+  getByRole("option", { hidden: true, name: GOAL_TYPE_LABELS.exam }).click();
+  await waitFor(() => {
+    expect(getByRole("textbox", { name: "目標スコア下限" })).toBeDefined();
+    expect(getByRole("button", { name: "本番日" })).toBeDefined();
+  });
+});
+
+test("キャンセルボタンで onCancel が呼ばれる", () => {
+  const onCancel = vi.fn();
+  const { getByRole } = renderWithMantine(<GoalForm {...formProps({ onCancel })} />);
+  getByRole("button", { name: "キャンセル" }).click();
+  expect(onCancel).toHaveBeenCalledOnce();
 });

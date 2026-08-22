@@ -41,6 +41,20 @@ function sectionProps(overrides: Partial<Parameters<typeof CheckpointSection>[0]
   };
 }
 
+test("form が渡されたらセクション内に描画する", () => {
+  const { getByText } = renderWithMantine(
+    <CheckpointSection {...sectionProps({ form: <div>追加フォーム</div> })} />,
+  );
+  expect(getByText("追加フォーム")).toBeDefined();
+});
+
+test("チェックポイントがあるとき空メッセージは出ない", () => {
+  const { queryByText } = renderWithMantine(
+    <CheckpointSection {...sectionProps({ checkpoints: [CHECKPOINT] })} />,
+  );
+  expect(queryByText(CHECKPOINT_EMPTY_MESSAGE)).toBeNull();
+});
+
 test("チェックポイントが無いとき空メッセージを出す", () => {
   const { getByText } = renderWithMantine(<CheckpointSection {...sectionProps()} />);
   expect(getByText(CHECKPOINT_EMPTY_MESSAGE)).toBeDefined();
@@ -82,4 +96,40 @@ test("達成済みがあれば件数つきのアコーディオンを出す", ()
   );
   expect(getByRole("button", { name: "達成済み（1件）" })).toBeDefined();
   expect(getByRole("region", { name: CHECKPOINT_SECTION_TITLE })).toBeDefined();
+});
+
+test("チェックポイントの達成チェックで onSetAchieved が呼ばれる", () => {
+  const onSetAchieved = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <CheckpointSection {...sectionProps({ checkpoints: [CHECKPOINT], onSetAchieved })} />,
+  );
+  getByRole("checkbox", { name: `${CHECKPOINT.content}の達成` }).click();
+  expect(onSetAchieved).toHaveBeenCalledWith({
+    achievedAt: TODAY,
+    goalId: CHECKPOINT._id,
+  });
+});
+
+test("達成済みアコーディオン内のチェックで達成取消が呼ばれる", () => {
+  const onSetAchieved = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <CheckpointSection {...sectionProps({ achieved: [ACHIEVED], onSetAchieved })} />,
+  );
+  getByRole("checkbox", { name: `${ACHIEVED.content}の達成` }).click();
+  expect(onSetAchieved).toHaveBeenCalledWith({
+    achievedAt: undefined,
+    goalId: ACHIEVED._id,
+  });
+});
+
+test("達成済みアコーディオン内の編集と削除が親ハンドラに渡る", () => {
+  const onEditGoal = vi.fn();
+  const onRemoveGoal = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <CheckpointSection {...sectionProps({ achieved: [ACHIEVED], onEditGoal, onRemoveGoal })} />,
+  );
+  getByRole("button", { name: `${ACHIEVED.content}を編集` }).click();
+  getByRole("button", { name: `${ACHIEVED.content}を削除` }).click();
+  expect(onEditGoal).toHaveBeenCalledWith(ACHIEVED);
+  expect(onRemoveGoal).toHaveBeenCalledWith(ACHIEVED._id);
 });

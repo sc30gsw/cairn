@@ -35,6 +35,13 @@ function cardProps(overrides: Partial<Parameters<typeof ExamGoalCard>[0]> = {}) 
   };
 }
 
+test("本番日当日は残り0日として表示する", () => {
+  const { getByText } = renderWithMantine(
+    <ExamGoalCard {...cardProps({ goal: { ...EXAM_GOAL, examDate: TODAY }, todayJst: TODAY })} />,
+  );
+  expect(getByText(/2026-08-17 まであと 0 日/)).toBeDefined();
+});
+
 test("本番までの残り日数とスコア帯が見える", () => {
   const { getByText } = renderWithMantine(<ExamGoalCard {...cardProps()} />);
   expect(getByText(/2026-09-27 まであと 41 日/)).toBeDefined();
@@ -74,4 +81,9 @@ test("編集と削除のアクションが呼ばれる", () => {
   getByRole("button", { name: `${EXAM_GOAL.content}を削除` }).click();
   expect(onEdit).toHaveBeenCalledOnce();
   expect(onRemove).toHaveBeenCalledOnce();
+});
+
+test("残り日数の大きな数字が表示される", () => {
+  const { getByText } = renderWithMantine(<ExamGoalCard {...cardProps()} />);
+  expect(getByText("41")).toBeDefined();
 });

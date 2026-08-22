@@ -66,6 +66,16 @@ test("空のカタログでは今日を開いても行は作られない", async
   expect(day.rows).toEqual([]);
 });
 
+test("今日を二度 open しても二重に行は作られない", async () => {
+  const t = await ownerWithCatalog();
+  expect(
+    await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY }),
+  ).toEqual({ applied: true });
+  expect(
+    await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY }),
+  ).toEqual({ applied: false });
+});
+
 test("シード済みカタログなら今日を開いて未着手行が読める", async () => {
   const t = await ownerWithCatalog();
   const opened = await t.mutation(api.mutations.days.open.open, {

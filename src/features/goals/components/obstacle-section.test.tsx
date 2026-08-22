@@ -17,6 +17,18 @@ function sectionProps(overrides: Partial<Parameters<typeof ObstacleSection>[0]> 
   };
 }
 
+test("ならが空なら障害プランは追加できない", async () => {
+  const onCreateObstacle = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <ObstacleSection {...sectionProps({ onCreateObstacle })} />,
+  );
+  fireEvent.change(getByRole("textbox", { name: "もし" }), { target: { value: "眠い" } });
+  getByRole("button", { name: "障害プランを追加" }).click();
+  await waitFor(() => {
+    expect(onCreateObstacle).not.toHaveBeenCalled();
+  });
+});
+
 test("空の障害プランは追加できない", async () => {
   const onCreateObstacle = vi.fn();
   const { getByRole } = renderWithMantine(
@@ -66,4 +78,64 @@ test("既存プランは保存と削除ができる", async () => {
 
   getByRole("button", { name: "削除" }).click();
   expect(onRemoveObstacle).toHaveBeenCalledWith("o1");
+});
+
+test("既存プランのもしが空なら保存できない", async () => {
+  const onUpdateObstacle = vi.fn();
+  const plan = { _id: "o1" as Obstacle["_id"], ifText: "眠い", thenText: THEN_ACTION };
+  const { getByRole } = renderWithMantine(
+    <ObstacleSection {...sectionProps({ obstacles: [plan], onUpdateObstacle })} />,
+  );
+  fireEvent.change(getByRole("textbox", { name: "眠いのもし" }), { target: { value: "  " } });
+  getByRole("button", { name: "眠いを保存" }).click();
+  await waitFor(() => {
+    expect(onUpdateObstacle).not.toHaveBeenCalled();
+  });
+});
+
+test("既存プランのならが空なら保存できない", async () => {
+  const onUpdateObstacle = vi.fn();
+  const plan = { _id: "o1" as Obstacle["_id"], ifText: "眠い", thenText: THEN_ACTION };
+  const { getByRole } = renderWithMantine(
+    <ObstacleSection {...sectionProps({ obstacles: [plan], onUpdateObstacle })} />,
+  );
+  fireEvent.change(getByRole("textbox", { name: "眠いのなら" }), { target: { value: "  " } });
+  getByRole("button", { name: "眠いを保存" }).click();
+  await waitFor(() => {
+    expect(onUpdateObstacle).not.toHaveBeenCalled();
+  });
+});
+
+test("もしが空なら新規追加できない", async () => {
+  const onCreateObstacle = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <ObstacleSection {...sectionProps({ onCreateObstacle })} />,
+  );
+  fireEvent.change(getByRole("textbox", { name: "なら" }), { target: { value: THEN_ACTION } });
+  getByRole("button", { name: "障害プランを追加" }).click();
+  await waitFor(() => {
+    expect(onCreateObstacle).not.toHaveBeenCalled();
+  });
+});
+
+test("既存プランの内容を更新できる", async () => {
+  const onUpdateObstacle = vi.fn();
+  const plan = { _id: "o1" as Obstacle["_id"], ifText: "眠い", thenText: THEN_ACTION };
+  const { getByRole } = renderWithMantine(
+    <ObstacleSection {...sectionProps({ obstacles: [plan], onUpdateObstacle })} />,
+  );
+  fireEvent.change(getByRole("textbox", { name: "眠いのもし" }), {
+    target: { value: "集中が切れた" },
+  });
+  fireEvent.change(getByRole("textbox", { name: "眠いのなら" }), {
+    target: { value: "5分だけ休憩して戻る" },
+  });
+  getByRole("button", { name: "眠いを保存" }).click();
+  await waitFor(() => {
+    expect(onUpdateObstacle).toHaveBeenCalledWith({
+      ifText: "集中が切れた",
+      planId: "o1",
+      thenText: "5分だけ休憩して戻る",
+    });
+  });
 });
