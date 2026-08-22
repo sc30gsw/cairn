@@ -3,6 +3,7 @@ import { useState, useTransition } from "react";
 
 import { AccountAuthPanel } from "~/features/auth/components/account-auth-form";
 import { signInWithNotion, signInWithPasskey } from "~/features/auth/lib/auth-actions";
+import { authActionErrorMessage } from "~/lib/auth-action-result";
 import { DISPLAY_FONT } from "~/lib/theme";
 
 export function LoginScreen() {
@@ -13,8 +14,9 @@ export function LoginScreen() {
     setPasskeyError(null);
     startPasskeyTransition(() => {
       void signInWithPasskey().then((result) => {
-        if (result.errorMessage !== null) {
-          setPasskeyError(result.errorMessage);
+        const message = authActionErrorMessage(result);
+        if (message !== null) {
+          setPasskeyError(message);
         }
       });
     });

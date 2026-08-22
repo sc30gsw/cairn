@@ -2,6 +2,7 @@ import { Form, useForm } from "@formisch/react";
 import { Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { useState } from "react";
 
+import { authActionErrorMessage } from "~/lib/auth-action-result";
 import {
   PASSKEY_MYPAGE_REPROMPTED_KEY,
   PASSKEY_SIGNUP_SKIPPED_KEY,
@@ -39,9 +40,9 @@ export function PasskeyPromptModal({ context, onClose, opened }: PasskeyPromptMo
         of={form}
         onSubmit={async (output) => {
           setErrorMessage(null);
-          const result = await addPasskey(output);
-          if (result.errorMessage !== null) {
-            setErrorMessage(result.errorMessage);
+          const message = authActionErrorMessage(await addPasskey(output));
+          if (message !== null) {
+            setErrorMessage(message);
             return;
           }
           writePasskeyFlag(PASSKEY_SIGNUP_SKIPPED_KEY, false);

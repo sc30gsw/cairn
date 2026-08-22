@@ -1,5 +1,7 @@
+import { Result } from "better-result";
 import { expect, test, vi, beforeEach } from "vite-plus/test";
 
+import { authActionErrorMessage } from "~/lib/auth-action-result";
 import { authClient } from "~/lib/auth-client";
 import {
   addPasskey,
@@ -40,7 +42,8 @@ test("表示名の更新に成功すると errorMessage は null で reload せ�
 
   const result = await updateProfileName({ name: "新しい名前" });
 
-  expect(result).toEqual({ errorMessage: null });
+  expect(Result.isOk(result)).toBe(true);
+  expect(authActionErrorMessage(result)).toBeNull();
   expect(authClient.updateUser).toHaveBeenCalledWith({ name: "新しい名前" });
   expect(authClient.getSession).toHaveBeenCalledTimes(1);
   expect(reload).not.toHaveBeenCalled();
@@ -55,9 +58,9 @@ test("表示名の更新エラーは利用者向けの errorMessage を返す", 
 
   const result = await updateProfileName({ name: "x" });
 
-  expect(result).toEqual({
-    errorMessage: "表示名を確認してください。50文字以内で入力してください。",
-  });
+  expect(authActionErrorMessage(result)).toBe(
+    "表示名を確認してください。50文字以内で入力してください。",
+  );
 });
 
 test("ユーザー名の更新に成功すると errorMessage は null で reload しない", async () => {
@@ -66,7 +69,7 @@ test("ユーザー名の更新に成功すると errorMessage は null で reloa
 
   const result = await updateProfileUsername({ username: "new_user" });
 
-  expect(result).toEqual({ errorMessage: null });
+  expect(Result.isOk(result)).toBe(true);
   expect(authClient.updateUser).toHaveBeenCalledWith({ username: "new_user" });
   expect(authClient.getSession).toHaveBeenCalledTimes(1);
   expect(reload).not.toHaveBeenCalled();
@@ -89,9 +92,9 @@ test("パスワード更新エラーは利用者向けの errorMessage を返す
     newPassword: "new-password",
   });
 
-  expect(result).toEqual({
-    errorMessage: "現在のパスワードが正しくありません。もう一度入力してください。",
-  });
+  expect(authActionErrorMessage(result)).toBe(
+    "現在のパスワードが正しくありません。もう一度入力してください。",
+  );
 });
 
 test("アイコン URL 更新に成功すると errorMessage は null で reload しない", async () => {
@@ -100,7 +103,7 @@ test("アイコン URL 更新に成功すると errorMessage は null で reload
 
   const result = await updateProfileImage("https://example.com/avatar.jpg");
 
-  expect(result).toEqual({ errorMessage: null });
+  expect(Result.isOk(result)).toBe(true);
   expect(authClient.updateUser).toHaveBeenCalledWith({
     image: "https://example.com/avatar.jpg",
   });
@@ -118,7 +121,7 @@ test("パスワード更新に成功すると reload せず session を再取得
     newPassword: "new-password",
   });
 
-  expect(result).toEqual({ errorMessage: null });
+  expect(Result.isOk(result)).toBe(true);
   expect(authClient.changePassword).toHaveBeenCalledWith({
     currentPassword: "old-password",
     newPassword: "new-password",
@@ -146,7 +149,7 @@ test("パスキー追加は成功時に reload も session 再取得もしない
 
   const result = await addPasskey({ name: "Cairn" });
 
-  expect(result).toEqual({ errorMessage: null });
+  expect(Result.isOk(result)).toBe(true);
   expect(authClient.passkey.addPasskey).toHaveBeenCalledWith({ name: "Cairn" });
   expect(authClient.getSession).not.toHaveBeenCalled();
   expect(reload).not.toHaveBeenCalled();
@@ -159,7 +162,7 @@ test("パスキー削除は成功時に reload も session 再取得もしない
 
   const result = await deletePasskey("pk_1");
 
-  expect(result).toEqual({ errorMessage: null });
+  expect(Result.isOk(result)).toBe(true);
   expect(authClient.getSession).not.toHaveBeenCalled();
   expect(reload).not.toHaveBeenCalled();
   reload.mockRestore();
@@ -178,9 +181,9 @@ test("パスキー削除エラーは利用者向けの errorMessage を返す", 
 
   const result = await deletePasskey("pk_1");
 
-  expect(result).toEqual({
-    errorMessage: "パスキーが見つかりません。一覧を更新して、もう一度お試しください。",
-  });
+  expect(authActionErrorMessage(result)).toBe(
+    "パスキーが見つかりません。一覧を更新して、もう一度お試しください。",
+  );
 });
 
 test("未知の例外は fallback メッセージになる", async () => {
@@ -188,7 +191,7 @@ test("未知の例外は fallback メッセージになる", async () => {
 
   const result = await updateProfileName({ name: "名前" });
 
-  expect(result).toEqual({
-    errorMessage: "表示名の更新に失敗しました。入力内容を確認して、もう一度お試しください。",
-  });
+  expect(authActionErrorMessage(result)).toBe(
+    "表示名の更新に失敗しました。入力内容を確認して、もう一度お試しください。",
+  );
 });

@@ -3,6 +3,7 @@ import { Button, Card, PasswordInput, Stack, Text, TextInput, Title } from "@man
 import { useState, useTransition } from "react";
 
 import { useAppShellUser } from "~/features/auth/hooks/use-auth-session";
+import { authActionErrorMessage } from "~/lib/auth-action-result";
 import {
   updateProfileName,
   updateProfilePassword,
@@ -14,14 +15,19 @@ import {
   ProfileUsernameSchema,
 } from "~/lib/validation/profile-schema";
 
-function ProfileNameForm({ initialName }: { initialName: string }) {
+function ProfileNameForm() {
+  const user = useAppShellUser();
   const [errorMessage, setErrorMessage] = useState<null | string>(null);
   const [successMessage, setSuccessMessage] = useState<null | string>(null);
   const [isPending, startTransition] = useTransition();
   const form = useForm({
-    initialInput: { name: initialName },
+    initialInput: { name: user?.name ?? "" },
     schema: ProfileNameSchema,
   });
+
+  if (user === null) {
+    return null;
+  }
 
   return (
     <Form
@@ -31,8 +37,9 @@ function ProfileNameForm({ initialName }: { initialName: string }) {
         setSuccessMessage(null);
         startTransition(() => {
           void updateProfileName(output).then((result) => {
-            if (result.errorMessage !== null) {
-              setErrorMessage(result.errorMessage);
+            const message = authActionErrorMessage(result);
+            if (message !== null) {
+              setErrorMessage(message);
               return;
             }
             setSuccessMessage("表示名を保存しました");
@@ -69,14 +76,19 @@ function ProfileNameForm({ initialName }: { initialName: string }) {
   );
 }
 
-function ProfileUsernameForm({ initialUsername }: { initialUsername: string }) {
+function ProfileUsernameForm() {
+  const user = useAppShellUser();
   const [errorMessage, setErrorMessage] = useState<null | string>(null);
   const [successMessage, setSuccessMessage] = useState<null | string>(null);
   const [isPending, startTransition] = useTransition();
   const form = useForm({
-    initialInput: { username: initialUsername },
+    initialInput: { username: user?.username ?? "" },
     schema: ProfileUsernameSchema,
   });
+
+  if (user === null) {
+    return null;
+  }
 
   return (
     <Form
@@ -86,8 +98,9 @@ function ProfileUsernameForm({ initialUsername }: { initialUsername: string }) {
         setSuccessMessage(null);
         startTransition(() => {
           void updateProfileUsername(output).then((result) => {
-            if (result.errorMessage !== null) {
-              setErrorMessage(result.errorMessage);
+            const message = authActionErrorMessage(result);
+            if (message !== null) {
+              setErrorMessage(message);
               return;
             }
             setSuccessMessage("ユーザー名を保存しました");
@@ -143,8 +156,9 @@ function ProfilePasswordForm() {
         setSuccessMessage(null);
         startTransition(() => {
           void updateProfilePassword(output).then((result) => {
-            if (result.errorMessage !== null) {
-              setErrorMessage(result.errorMessage);
+            const message = authActionErrorMessage(result);
+            if (message !== null) {
+              setErrorMessage(message);
               return;
             }
             reset(form, { initialInput: emptyPasswordInput, keepInput: false });
@@ -205,8 +219,8 @@ export function AccountSection() {
     <Card padding="md">
       <Stack gap="lg">
         <Title order={3}>アカウント</Title>
-        <ProfileNameForm initialName={user.name ?? ""} key={user.name ?? ""} />
-        <ProfileUsernameForm initialUsername={user.username ?? ""} key={user.username ?? ""} />
+        <ProfileNameForm key={user.name ?? ""} />
+        <ProfileUsernameForm key={user.username ?? ""} />
         <ProfilePasswordForm />
       </Stack>
     </Card>

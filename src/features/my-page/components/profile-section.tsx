@@ -7,6 +7,7 @@ import { useAppShellUser } from "~/features/auth/hooks/use-auth-session";
 import { AvatarCropModal } from "~/features/my-page/components/avatar-crop-modal";
 import { useAvatarUploadDeps } from "~/features/my-page/hooks/use-avatar-upload-deps";
 import { avatarUploadErrorMessage, uploadAvatarBlob } from "~/features/my-page/lib/avatar-upload";
+import { authActionErrorMessage } from "~/lib/auth-action-result";
 import { updateProfileImage } from "~/lib/profile-actions";
 import { userLabel } from "~/lib/user-label";
 
@@ -46,7 +47,7 @@ export function ProfileSection() {
     if (Result.isError(uploadResult)) {
       return { errorMessage: avatarUploadErrorMessage(uploadResult.error) };
     }
-    return updateProfileImage(uploadResult.value);
+    return { errorMessage: authActionErrorMessage(await updateProfileImage(uploadResult.value)) };
   }
 
   return (

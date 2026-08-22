@@ -1,8 +1,10 @@
 import type { Passkey } from "@better-auth/passkey/client";
 import { Form, useForm } from "@formisch/react";
 import { Button, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { Result } from "better-result";
 import { useEffect, useState, useTransition } from "react";
 
+import { authActionErrorMessage } from "~/lib/auth-action-result";
 import { addPasskey, deletePasskey, listPasskeys } from "~/lib/profile-actions";
 import { PASSKEY_DEFAULT_DEVICE_NAME, PasskeyAddSchema } from "~/lib/validation/passkey-schema";
 
@@ -18,12 +20,19 @@ export function PasskeySection() {
     schema: PasskeyAddSchema,
   });
 
+  function applyPasskeyList(result: Awaited<ReturnType<typeof listPasskeys>>) {
+    if (Result.isError(result)) {
+      setErrorMessage(result.error.message);
+      setPasskeys([]);
+      return;
+    }
+    setErrorMessage(null);
+    setPasskeys(result.value);
+  }
+
   function refreshPasskeys() {
     startListTransition(() => {
-      void listPasskeys().then((result) => {
-        setErrorMessage(result.errorMessage);
-        setPasskeys(result.passkeys);
-      });
+      void listPasskeys().then(applyPasskeyList);
     });
   }
 
@@ -40,8 +49,7 @@ export function PasskeySection() {
         if (cancelled) {
           return;
         }
-        setErrorMessage(result.errorMessage);
-        setPasskeys(result.passkeys);
+        applyPasskeyList(result);
       });
     });
 
@@ -56,16 +64,13 @@ export function PasskeySection() {
     startDeleteTransition(() => {
       void deletePasskey(id).then(async (result) => {
         setDeletingId(null);
-        if (result.errorMessage !== null) {
-          setErrorMessage(result.errorMessage);
+        const message = authActionErrorMessage(result);
+        if (message !== null) {
+          setErrorMessage(message);
           return;
         }
         setSuccessMessage("パスキーを削除しました");
-        const listResult = await listPasskeys();
-        if (listResult.errorMessage !== null) {
-          setErrorMessage(listResult.errorMessage);
-        }
-        setPasskeys(listResult.passkeys);
+        applyPasskeyList(await listPasskeys());
       });
     });
   }
@@ -80,8 +85,9 @@ export function PasskeySection() {
             onSubmit={async (output) => {
               clearFeedback();
               const result = await addPasskey(output);
-              if (result.errorMessage !== null) {
-                setErrorMessage(result.errorMessage);
+              const message = authActionErrorMessage(result);
+              if (message !== null) {
+                setErrorMessage(message);
                 return;
               }
               setSuccessMessage("パスキーを追加しました");

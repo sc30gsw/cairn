@@ -5,6 +5,7 @@ import type {
   AccountSignUpInput,
 } from "~/features/auth/schemas/account-auth-schema";
 import { isEmailAddress } from "~/features/auth/schemas/account-auth-schema";
+import type { AuthActionResult } from "~/lib/auth-action-result";
 import { authClient } from "~/lib/auth-client";
 import { type AuthErrorContext, presentAuthError } from "~/lib/auth-error-messages";
 import { AuthActionError } from "~/lib/errors";
@@ -12,15 +13,6 @@ import { PASSKEY_SIGNUP_PROMPT_KEY, writePasskeyFlag } from "~/lib/passkey-stora
 
 function reloadAfterAuth() {
   location.reload();
-}
-
-export type AuthActionResult = { errorMessage: null } | { errorMessage: string };
-
-function toAuthActionResult(result: Result<void, AuthActionError>): AuthActionResult {
-  if (Result.isError(result)) {
-    return { errorMessage: result.error.message };
-  }
-  return { errorMessage: null };
 }
 
 function authActionError(error: unknown, context: AuthErrorContext): AuthActionError {
@@ -45,7 +37,7 @@ async function runAuthAction(
   if (Result.isOk(result)) {
     reloadAfterAuth();
   }
-  return toAuthActionResult(result);
+  return result;
 }
 
 export async function signInWithAccount(input: AccountLoginInput): Promise<AuthActionResult> {
@@ -96,3 +88,5 @@ export function signOutAndReload() {
     },
   });
 }
+
+export type { AuthActionResult } from "~/lib/auth-action-result";
