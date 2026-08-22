@@ -9,10 +9,13 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 import { CatchBoundary, Link, useRouterState } from "@tanstack/react-router";
-import type { CSSProperties, ReactNode } from "react";
+import { cn } from "cnfast";
+import type { ReactNode } from "react";
 
 import { RouteErrorComponent } from "~/components/error-state";
 import { DISPLAY_FONT } from "~/lib/theme";
+
+import classes from "~/components/app-shell.module.css";
 
 type AppShellProps = {
   accountMenu: ReactNode;
@@ -71,42 +74,30 @@ const NAV: {
   },
 ];
 
-//? 手帳のインデックスタブ。奇数/偶数で微妙に回転を振り、手で貼ったタブのような不揃い感を出す
-function tabStyle(active: boolean, index: number): CSSProperties {
-  return {
-    backgroundColor: active ? "var(--mantine-color-orange-6)" : "var(--mantine-color-white)",
-    border: "1.5px solid var(--cairn-ink)",
-    borderLeft: "none",
-    borderRadius: "0 10px 14px 0/0 16px 10px 0",
-    boxShadow: "2px 2px 0 rgba(16,15,15,.15)",
-    color: active ? "var(--mantine-color-white)" : "var(--cairn-ink)",
-    fontWeight: active ? 600 : 400,
-    letterSpacing: 3,
-    marginLeft: active ? -3 : -1.5,
-    padding: "16px 7px",
-    transform: `rotate(${index % 2 === 0 ? "0.6" : "-0.6"}deg)`,
-    writingMode: "vertical-rl",
-  };
-}
-
 function IndexTabs({ pathname }: Record<"pathname", string>) {
   return (
-    <Stack gap="sm" pt={64} style={{ flex: "none", width: 56 }} visibleFrom="sm">
-      {NAV.map(({ Icon, label, match, to }, index) => (
-        <Box
-          key={to}
-          aria-current={match(pathname) ? "page" : undefined}
-          component={Link}
-          style={tabStyle(match(pathname), index)}
-          to={to}
-        >
-          <Group gap={8} justify="center" wrap="nowrap">
-            <Icon aria-hidden size={16} stroke={1.5} />
-            {label}
-          </Group>
-        </Box>
-      ))}
-    </Stack>
+    <Box className={classes.indexTabsRail} visibleFrom="sm">
+      <Stack className={classes.tabStack} gap="sm">
+        {NAV.map(({ Icon, label, match, to }, index) => {
+          const active = match(pathname);
+          return (
+            <Box
+              aria-current={active ? "page" : undefined}
+              className={cn(classes.tab, active && classes.tabActive)}
+              component={Link}
+              key={to}
+              style={{ "--tab-rotate": `${index % 2 === 0 ? 0.6 : -0.6}deg` }}
+              to={to}
+            >
+              <Group gap={6} justify="center" wrap="nowrap">
+                <Icon aria-hidden size={active ? 16 : 14} stroke={1.5} />
+                {label}
+              </Group>
+            </Box>
+          );
+        })}
+      </Stack>
+    </Box>
   );
 }
 
