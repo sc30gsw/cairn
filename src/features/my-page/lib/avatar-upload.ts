@@ -1,44 +1,62 @@
+import { TaggedError } from "better-result";
 import { Result } from "better-result";
 
 import type { Id } from "~/../convex/_generated/dataModel";
+import { MAX_AVATAR_BYTES } from "~/../convex/lib/avatarStorage";
 import { AuthActionError } from "~/lib/errors";
 
-const MAX_AVATAR_BYTES = 512 * 1024;
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png"]);
+export class AvatarTooLargeError extends TaggedError("AvatarTooLarge")<{
+  message: string;
+}> {}
+
+export class AvatarUnsupportedTypeError extends TaggedError("AvatarUnsupportedType")<{
+  message: string;
+}> {}
+
+export class AvatarUploadFailedError extends TaggedError("AvatarUploadFailed")<{
+  message: string;
+}> {}
 
 export type AvatarUploadError =
   | AuthActionError
-  | { _tag: "AvatarTooLarge"; message: string }
-  | { _tag: "AvatarUnsupportedType"; message: string }
-  | { _tag: "AvatarUploadFailed"; message: string };
+  | AvatarTooLargeError
+  | AvatarUnsupportedTypeError
+  | AvatarUploadFailedError;
+
+const ALLOWED_TYPES = new Set(["image/jpeg", "image/png"]);
 
 export async function uploadAvatarBlob(
   blob: Blob,
   deps: {
-    generateUploadUrl: () => Promise<string>;
-    getAvatarUrl: (storageId: Id<"_storage">) => Promise<string>;
+    claimAvatarUpload: (args: {
+      claimId: Id<"avatarUploadClaims">;
+      storageId: Id<"_storage">;
+    }) => Promise<void>;
+    generateUploadUrl: () => Promise<{ claimId: Id<"avatarUploadClaims">; uploadUrl: string }>;
   },
-): Promise<Result<string, AvatarUploadError>> {
+): Promise<Result<Id<"_storage">, AvatarUploadError>> {
   if (!ALLOWED_TYPES.has(blob.type)) {
-    return Result.err({
-      _tag: "AvatarUnsupportedType",
-      message: "JPEG または PNG の画像を選んでください",
-    });
+    return Result.err(
+      new AvatarUnsupportedTypeError({
+        message: "JPEG または PNG の画像を選んでください",
+      }),
+    );
   }
   if (blob.size > MAX_AVATAR_BYTES) {
-    return Result.err({
-      _tag: "AvatarTooLarge",
-      message: "画像は 512KB 以下にしてください",
-    });
+    return Result.err(
+      new AvatarTooLargeError({
+        message: "画像は 512KB 以下にしてください",
+      }),
+    );
   }
 
   const uploadResult = await Result.tryPromise({
-    catch: () => ({
-      _tag: "AvatarUploadFailed" as const,
-      message: "アップロードに失敗しました",
-    }),
+    catch: () =>
+      new AvatarUploadFailedError({
+        message: "アップロードに失敗しました",
+      }),
     try: async () => {
-      const uploadUrl = await deps.generateUploadUrl();
+      const { claimId, uploadUrl } = await deps.generateUploadUrl();
       const response = await fetch(uploadUrl, {
         body: blob,
         headers: { "Content-Type": blob.type },
@@ -51,7 +69,8 @@ export async function uploadAvatarBlob(
       if (json.storageId === undefined) {
         throw new Error("ストレージ ID を取得できませんでした");
       }
-      return deps.getAvatarUrl(json.storageId);
+      await deps.claimAvatarUpload({ claimId, storageId: json.storageId });
+      return json.storageId;
     },
   });
 
@@ -59,8 +78,7 @@ export async function uploadAvatarBlob(
 }
 
 export function avatarUploadErrorMessage(error: AvatarUploadError): string {
-  if ("message" in error) {
-    return error.message;
-  }
-  return "アップロードに失敗しました";
+  return error.message;
 }
+
+export { MAX_AVATAR_BYTES };
