@@ -93,4 +93,15 @@ export default defineSchema({
     .index("by_owner", ["ownerId"])
     .index("by_owner_and_startAt", ["ownerId", "startAt"])
     .index("by_row", ["rowId"]),
+
+  avatarUploadClaims: defineTable({
+    ownerId: v.string(),
+  }).index("by_owner", ["ownerId"]),
+
+  avatarUploads: defineTable({
+    ownerId: v.string(),
+    storageId: v.id("_storage"),
+  })
+    .index("by_owner_and_storage", ["ownerId", "storageId"])
+    .index("by_storage", ["storageId"]),
 });
