@@ -1,0 +1,85 @@
+import { expect, test, vi } from "vite-plus/test";
+
+import {
+  CHECKPOINT_EMPTY_MESSAGE,
+  CHECKPOINT_SECTION_TITLE,
+  CheckpointSection,
+} from "~/features/goals/components/checkpoint-section";
+import type { MasteryGoal } from "~/features/goals/types/goal";
+import { renderWithMantine } from "~/test-utils/render";
+
+const TODAY = "2026-08-17";
+
+const CHECKPOINT = {
+  _id: "goal-checkpoint" as MasteryGoal["_id"],
+  achievedAt: undefined,
+  activeDays: 4,
+  confirmedMinutes: 180,
+  content: "Unit 1-10 を音読する",
+  criterion: "Unit 1-10 を止まらずに音読できる",
+  deadline: "2026-08-23",
+  type: "mastery",
+} satisfies MasteryGoal;
+
+const ACHIEVED = {
+  ...CHECKPOINT,
+  _id: "goal-achieved" as MasteryGoal["_id"],
+  achievedAt: "2026-08-09",
+} satisfies MasteryGoal;
+
+function sectionProps(overrides: Partial<Parameters<typeof CheckpointSection>[0]> = {}) {
+  return {
+    achieved: [],
+    checkpoints: [],
+    form: null,
+    onAddCheckpoint: vi.fn(),
+    onEditGoal: vi.fn(),
+    onRemoveGoal: vi.fn(),
+    onSetAchieved: vi.fn(),
+    todayJst: TODAY,
+    ...overrides,
+  };
+}
+
+test("チェックポイントが無いとき空メッセージを出す", () => {
+  const { getByText } = renderWithMantine(<CheckpointSection {...sectionProps()} />);
+  expect(getByText(CHECKPOINT_EMPTY_MESSAGE)).toBeDefined();
+});
+
+test("追加導線が無いときボタンを出さない", () => {
+  const { queryByRole } = renderWithMantine(
+    <CheckpointSection {...sectionProps({ onAddCheckpoint: undefined })} />,
+  );
+  expect(queryByRole("button", { name: "チェックポイントを追加" })).toBeNull();
+});
+
+test("追加ボタンで onAddCheckpoint が呼ばれる", () => {
+  const onAddCheckpoint = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <CheckpointSection {...sectionProps({ onAddCheckpoint })} />,
+  );
+  getByRole("button", { name: "チェックポイントを追加" }).click();
+  expect(onAddCheckpoint).toHaveBeenCalledOnce();
+});
+
+test("チェックポイントカードの編集と削除が親ハンドラに渡る", () => {
+  const onEditGoal = vi.fn();
+  const onRemoveGoal = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <CheckpointSection
+      {...sectionProps({ checkpoints: [CHECKPOINT], onEditGoal, onRemoveGoal })}
+    />,
+  );
+  getByRole("button", { name: `${CHECKPOINT.content}を編集` }).click();
+  getByRole("button", { name: `${CHECKPOINT.content}を削除` }).click();
+  expect(onEditGoal).toHaveBeenCalledWith(CHECKPOINT);
+  expect(onRemoveGoal).toHaveBeenCalledWith(CHECKPOINT._id);
+});
+
+test("達成済みがあれば件数つきのアコーディオンを出す", () => {
+  const { getByRole } = renderWithMantine(
+    <CheckpointSection {...sectionProps({ achieved: [ACHIEVED] })} />,
+  );
+  expect(getByRole("button", { name: "達成済み（1件）" })).toBeDefined();
+  expect(getByRole("region", { name: CHECKPOINT_SECTION_TITLE })).toBeDefined();
+});
