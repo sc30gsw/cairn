@@ -8,6 +8,7 @@ type BoardScheduleDayAllDayStripProps = {
   events: readonly ScheduleEventData[];
   limit: number;
   moreLabel: (hiddenCount: number) => string;
+  onEventClick: (event: ScheduleEventData) => void;
   onMoreClick: (target: HTMLElement) => void;
 };
 
@@ -15,6 +16,7 @@ export function BoardScheduleDayAllDayStrip({
   events,
   limit,
   moreLabel,
+  onEventClick,
   onMoreClick,
 }: BoardScheduleDayAllDayStripProps) {
   const visible = events.slice(0, limit);
@@ -23,7 +25,14 @@ export function BoardScheduleDayAllDayStrip({
   return (
     <>
       {visible.map((event) => (
-        <UnstyledButton className={classes.dayAllDayEvent} key={String(event.id)} type="button">
+        <UnstyledButton
+          className={classes.dayAllDayEvent}
+          key={String(event.id)}
+          onClick={() => {
+            onEventClick(event);
+          }}
+          type="button"
+        >
           {event.title}
         </UnstyledButton>
       ))}
@@ -32,6 +41,7 @@ export function BoardScheduleDayAllDayStrip({
           className={classes.dayAllDayMore}
           data-board-all-day-more="true"
           onClick={(event: MouseEvent<HTMLButtonElement>) => {
+            event.stopPropagation();
             onMoreClick(event.currentTarget);
           }}
           type="button"

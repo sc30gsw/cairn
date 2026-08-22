@@ -129,26 +129,6 @@ export function BoardSchedule({
     });
   };
 
-  const dayAllDayRenderEvent = createBoardScheduleDayAllDayRenderEvent({
-    allDayEvents: dayAllDayEvents,
-    limit: BOARD_ALL_DAY_VISIBLE_LIMIT,
-    moreLabel,
-    onMoreClick: (target) => {
-      openAllDayExpand(anchorDateJst, target);
-    },
-  });
-
-  const dayViewProps = {
-    allDaySlotHeight: DAY_VIEW_ALL_DAY_SLOT_HEIGHT,
-    classNames: {
-      dayViewAllDay: classes.dayAllDayContainer,
-      dayViewAllDayEvents: classes.dayAllDayEventsContainer,
-    },
-    moreEventsProps: { mode: "static" as const },
-    renderEvent: dayAllDayRenderEvent,
-    withAllDaySlot: dayAllDayEvents.length > 0,
-  };
-
   useEffect(() => {
     editingBlockIdRef.current = formValues?.blockId as BoardScheduleBlock["_id"] | undefined;
   }, [formValues]);
@@ -209,6 +189,27 @@ export function BoardSchedule({
     }
     openEdit(block);
   }
+
+  const dayAllDayRenderEvent = createBoardScheduleDayAllDayRenderEvent({
+    allDayEvents: dayAllDayEvents,
+    limit: BOARD_ALL_DAY_VISIBLE_LIMIT,
+    moreLabel,
+    onEventClick: openEditFromEvent,
+    onMoreClick: (target) => {
+      openAllDayExpand(anchorDateJst, target);
+    },
+  });
+
+  const dayViewProps = {
+    allDaySlotHeight: DAY_VIEW_ALL_DAY_SLOT_HEIGHT,
+    classNames: {
+      dayViewAllDay: classes.dayAllDayContainer,
+      dayViewAllDayEvents: classes.dayAllDayEventsContainer,
+    },
+    moreEventsProps: { mode: "static" as const },
+    renderEvent: dayAllDayRenderEvent,
+    withAllDaySlot: dayAllDayEvents.length > 0,
+  };
 
   function handleDayClick(day: DateStringValue) {
     if (scheduleView === "year") {

@@ -21,6 +21,7 @@ type CreateBoardScheduleDayAllDayRenderEventInput = {
   allDayEvents: readonly ScheduleEventData[];
   limit: number;
   moreLabel: (hiddenCount: number) => string;
+  onEventClick: (event: ScheduleEventData) => void;
   onMoreClick: (target: HTMLElement) => void;
 };
 
@@ -28,6 +29,7 @@ export function createBoardScheduleDayAllDayRenderEvent({
   allDayEvents,
   limit,
   moreLabel,
+  onEventClick,
   onMoreClick,
 }: CreateBoardScheduleDayAllDayRenderEventInput) {
   const firstAllDayId = allDayEvents[0]?.id;
@@ -56,9 +58,8 @@ export function createBoardScheduleDayAllDayRenderEvent({
     const baseStyle = asStyleObject(props.style);
 
     return (
-      <UnstyledButton
-        {...props}
-        className={classes.dayAllDayComposite}
+      <div
+        className={[props.className, classes.dayAllDayComposite].filter(Boolean).join(" ")}
         style={{
           ...baseStyle,
           flex: "1 1 100%",
@@ -76,10 +77,11 @@ export function createBoardScheduleDayAllDayRenderEvent({
             events={allDayEvents}
             limit={limit}
             moreLabel={moreLabel}
+            onEventClick={onEventClick}
             onMoreClick={onMoreClick}
           />
         </div>
-      </UnstyledButton>
+      </div>
     );
   };
 }
