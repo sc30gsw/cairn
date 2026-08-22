@@ -48,7 +48,7 @@ export function PasskeySection() {
     return () => {
       cancelled = true;
     };
-  }, [startListTransition]);
+  }, []);
 
   function handleDelete(id: string) {
     setDeletingId(id);
