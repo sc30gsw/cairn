@@ -8,4 +8,5 @@ export {
   useSetDayMemo,
   useSkipRow,
   useSwitchPreset,
+  useUnskipRow,
 } from "~/hooks/use-row-mutations";

@@ -2,11 +2,8 @@ import { Card, Stack, Text, Title } from "@mantine/core";
 import { daysUntil } from "~domain/jst";
 
 import type { ExamGoal } from "~/features/my-page/types/exam-goal";
+import type { TodaySummaryTarget } from "~/features/my-page/types/today-summary-target";
 import { NUMERAL_FONT } from "~/lib/theme";
-
-export type TodaySummaryTarget = {
-  achieved: boolean;
-};
 
 type TodaySummaryContentProps = {
   examGoal: ExamGoal | undefined;

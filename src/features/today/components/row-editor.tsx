@@ -2,7 +2,7 @@ import { Field, Form, reset, useForm } from "@formisch/react";
 import { ActionIcon, Badge, Grid, Group, Input, NumberInput, Switch, Tooltip } from "@mantine/core";
 import { useFocusWithin } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
-import { IconTrash } from "@tabler/icons-react";
+import { IconArrowBackUp, IconPlayerSkipForward, IconTrash } from "@tabler/icons-react";
 import { useEffect, type ChangeEvent } from "react";
 import { concreteActionPlaceholder } from "~domain/concreteActionCore";
 
@@ -22,6 +22,7 @@ type RowEditorProps = {
   onConfirm: (input: ConfirmRowInput) => void;
   onRemove: (rowId: RemoveRowInput["rowId"]) => void;
   onSkip: (rowId: SkipRowInput["rowId"]) => void;
+  onUnskip: (rowId: SkipRowInput["rowId"]) => void;
   row: DayRow;
 };
 
@@ -90,12 +91,33 @@ function requestSkip(rowId: SkipRowInput["rowId"], onSkip: (rowId: SkipRowInput[
   });
 }
 
-export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }: RowEditorProps) {
+function requestUnskip(
+  rowId: SkipRowInput["rowId"],
+  onUnskip: (rowId: SkipRowInput["rowId"]) => void,
+) {
+  modals.openConfirmModal({
+    children: "未着手に戻します。",
+    labels: { cancel: "キャンセル", confirm: "見送りを取り消す" },
+    onConfirm: () => onUnskip(rowId),
+    title: "見送りを取り消しますか？",
+  });
+}
+
+export function RowEditor({
+  disabled = false,
+  onConfirm,
+  onRemove,
+  onSkip,
+  onUnskip,
+  row,
+}: RowEditorProps) {
   const form = useForm({
     initialInput: { content: row.content, minutes: row.minutes },
     schema: RowEditorSchema,
   });
   const isDone = row.status === "確定";
+  const canSkipDirectly = row.status === "未着手" || row.status === "進行中";
+  const canUnskip = row.status === "スキップ";
   const badge = RECORD_STATUS_UI[row.status];
 
   async function saveIfConfirmedDirty() {
@@ -195,14 +217,40 @@ export function RowEditor({ disabled = false, onConfirm, onRemove, onSkip, row }
                     }
                     if (row.status === "確定") {
                       requestSkip(row._id, onSkip);
-                      return;
-                    }
-                    if (row.status !== "スキップ") {
-                      onSkip(row._id);
                     }
                   }}
                   status={row.status}
                 />
+                {canSkipDirectly ? (
+                  <Tooltip label="見送りにする">
+                    <ActionIcon
+                      aria-label="見送りにする"
+                      color="yellow"
+                      disabled={disabled}
+                      onClick={() => requestSkip(row._id, onSkip)}
+                      size="lg"
+                      type="button"
+                      variant="light"
+                    >
+                      <IconPlayerSkipForward aria-hidden size={16} stroke={1.5} />
+                    </ActionIcon>
+                  </Tooltip>
+                ) : null}
+                {canUnskip ? (
+                  <Tooltip label="見送りを取り消す">
+                    <ActionIcon
+                      aria-label="見送りを取り消す"
+                      color="gray"
+                      disabled={disabled}
+                      onClick={() => requestUnskip(row._id, onUnskip)}
+                      size="lg"
+                      type="button"
+                      variant="light"
+                    >
+                      <IconArrowBackUp aria-hidden size={16} stroke={1.5} />
+                    </ActionIcon>
+                  </Tooltip>
+                ) : null}
                 <Badge
                   color={badge.color}
                   style={{ transform: isDone ? "rotate(-3deg)" : "rotate(2deg)" }}

@@ -3,6 +3,7 @@ import { expect, test } from "vite-plus/test";
 
 import { TodaySummaryContent } from "~/features/my-page/components/today-summary-content";
 import type { ExamGoal } from "~/features/my-page/types/exam-goal";
+import type { TodaySummaryTarget } from "~/features/my-page/types/today-summary-target";
 import { renderWithMantine } from "~/test-utils/render";
 
 const examGoal = {
@@ -13,6 +14,27 @@ const examGoal = {
   minScore: 730,
   type: "exam",
 } satisfies ExamGoal;
+
+const weeklyTargets = [
+  {
+    _id: "target_1" as TodaySummaryTarget["_id"],
+    achieved: true,
+    categoryId: "category_1" as TodaySummaryTarget["categoryId"],
+    categoryName: "TOEIC対策",
+    current: 60,
+    metric: "minutes",
+    targetValue: 60,
+  },
+  {
+    _id: "target_2" as TodaySummaryTarget["_id"],
+    achieved: false,
+    categoryId: "category_2" as TodaySummaryTarget["categoryId"],
+    categoryName: "多読",
+    current: 1,
+    metric: "days",
+    targetValue: 3,
+  },
+] satisfies TodaySummaryTarget[];
 
 test("TodaySummaryContent は本番目標がないときプレースホルダを表示する", () => {
   renderWithMantine(<TodaySummaryContent examGoal={undefined} targets={[]} today="2026-08-22" />);
@@ -26,11 +48,7 @@ test("TodaySummaryContent は本番目標がないときプレースホルダを
 
 test("TodaySummaryContent は本番目標と残り日数・週間ターゲット達成数を表示する", () => {
   renderWithMantine(
-    <TodaySummaryContent
-      examGoal={examGoal}
-      targets={[{ achieved: true }, { achieved: false }]}
-      today="2026-08-22"
-    />,
+    <TodaySummaryContent examGoal={examGoal} targets={weeklyTargets} today="2026-08-22" />,
   );
 
   expect(screen.getByText("司法試験")).toBeDefined();

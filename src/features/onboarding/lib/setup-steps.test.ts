@@ -5,6 +5,7 @@ import {
   incompleteSetupSteps,
   isSetupStepComplete,
   shouldShowHomeSetupStepper,
+  visibleSetupStep,
 } from "~/features/onboarding/lib/setup-steps";
 
 const emptyStatus = {
@@ -64,4 +65,19 @@ test("全部 dismiss かつ未完了なら firstIncompleteSetupStep は null", (
     new Set(["items", "presets", "examGoal", "weeklyTargets"]),
   );
   expect(step).toBeNull();
+});
+
+test("全部 dismiss かつ未完了でも visibleSetupStep は最初の未完了を返す", () => {
+  const dismissed = new Set(["items", "presets", "examGoal", "weeklyTargets"] as const);
+  const step = visibleSetupStep(emptyStatus, dismissed);
+  expect(step?.id).toBe("items");
+});
+
+test("全部 dismiss かつ未完了でもホーム Stepper は表示する", () => {
+  expect(
+    shouldShowHomeSetupStepper(
+      emptyStatus,
+      new Set(["items", "presets", "examGoal", "weeklyTargets"]),
+    ),
+  ).toBe(true);
 });

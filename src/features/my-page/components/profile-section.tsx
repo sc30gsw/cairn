@@ -5,23 +5,19 @@ import { useRef, useState } from "react";
 
 import { AvatarCropModal } from "~/features/my-page/components/avatar-crop-modal";
 import { useAvatarUploadDeps } from "~/features/my-page/hooks/use-avatar-upload-deps";
+import { useMyPageUser } from "~/features/my-page/hooks/use-my-page-user";
 import { avatarUploadErrorMessage, uploadAvatarBlob } from "~/features/my-page/lib/avatar-upload";
-import { useAppShellUser } from "~/hooks/use-auth-session";
 import { useAvatarDisplayUrl } from "~/hooks/use-avatar-display-url";
 import { updateProfileImage } from "~/lib/profile-actions";
 import { userLabel } from "~/lib/user-label";
 
 export function ProfileSection() {
-  const user = useAppShellUser();
-  const avatarSrc = useAvatarDisplayUrl(user?.image);
+  const user = useMyPageUser();
+  const avatarSrc = useAvatarDisplayUrl(user.image);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadDeps = useAvatarUploadDeps();
   const [previewSrc, setPreviewSrc] = useState<null | string>(null);
   const [cropOpen, setCropOpen] = useState(false);
-
-  if (user === null) {
-    return null;
-  }
 
   function openFilePicker() {
     fileInputRef.current?.click();

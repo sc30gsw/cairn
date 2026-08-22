@@ -15,7 +15,7 @@ Accepted
 1. **ホーム (`/`)** — `SetupStepper`（Mantine Stepper + Tooltip）で未完了ステップを1つずつ案内する。優先順は 項目 → プリセット → 本番目標 → 週間ターゲット。「あとで設定」は `localStorage`（`cairn:onboarding:dismissed:<stepId>`）に記録する。
 2. **マイページ (`/my-page`)** — アカウントメニューから開く。プロフィール（256px アバター + crop/upload）、アカウント編集（Formisch + Valibot）、パスキー管理、今日の状況、セットアップ checklist、カタログ例（閲覧専用）を置く。
 3. **Convex SSoT** — セットアップ完了判定は `convex/lib/setupStatus.ts` の純関数 + `queries.setup.status`。実カタログ seed は `convex/lib/catalog.ts`（`SEED_ITEMS` / `ensureCatalog`）が TOEIC 向け SSoT。マイページのカタログ例プレビューは `ONBOARDING_CATALOG_SAMPLES`（`src/features/onboarding/constants/catalog-samples.ts`）の閲覧専用サンプルで、seed データとは独立した参考表示。表示カテゴリ（`CatalogSampleDisplayCategory`）はアプリのカテゴリ列挙（TOEIC対策 / 多聴 / 多読 / 英会話 / その他）にマップせず、科目非依存の例示ラベルとして完全にスタンドアロン。フロントは自動 seed しない。
-4. **パスキー** — Better Auth `passkey` プラグイン。新規登録後にモーダル（スキップ可）。スキップ時は初回マイページ訪問で1回だけ再プロンプト。
+4. **パスキー** — Better Auth `passkey` プラグイン。新規登録後にモーダル（スキップ可）。スキップ時は初回マイページ訪問で1回だけ再プロンプト。`listPasskeys` が失敗した場合はモーダルを開かずサイレントにスキップする（ネットワーク障害で再プロンプトをブロックしない）。
 5. **better-result** — クライアントのプロフィール/アップロード操作は `Result` でエラーを型付けする。
 
 ## Consequences

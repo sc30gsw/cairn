@@ -75,6 +75,21 @@ export function firstIncompleteSetupStep(
   return null;
 }
 
+/** Falls back to the first incomplete step when every step was dismissed. */
+export function visibleSetupStep(
+  status: SetupStatus,
+  dismissed: ReadonlySet<SetupStepId>,
+): SetupStep | null {
+  const next = firstIncompleteSetupStep(status, dismissed);
+  if (next !== null) {
+    return next;
+  }
+  if (status.isComplete) {
+    return null;
+  }
+  return incompleteSetupSteps(status)[0] ?? null;
+}
+
 export function incompleteSetupSteps(status: SetupStatus): SetupStep[] {
   return SETUP_STEPS.filter((step) => !isSetupStepComplete(status, step.id));
 }
@@ -83,8 +98,5 @@ export function shouldShowHomeSetupStepper(
   status: SetupStatus,
   dismissed: ReadonlySet<SetupStepId>,
 ): boolean {
-  if (status.isComplete) {
-    return false;
-  }
-  return firstIncompleteSetupStep(status, dismissed) !== null;
+  return visibleSetupStep(status, dismissed) !== null;
 }

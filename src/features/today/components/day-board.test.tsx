@@ -1,12 +1,19 @@
-import { fireEvent, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { expect, test, vi } from "vite-plus/test";
 import { STATUSES } from "~domain/domain";
 
 import { DayBoard } from "~/features/today/components/day-board";
-import type { DayPage, DayRow } from "~/features/today/types/day";
+import {
+  CONCRETE_ACTION,
+  CONCRETE_ACTION_2,
+  dayBoardTestDay,
+  dayBoardTestItems,
+  dayBoardTestRow,
+} from "~/features/today/components/day-board.test-fixtures";
+import type { DayPage } from "~/features/today/types/day";
 import { renderWithMantine } from "~/test-utils/render";
 
-const [confirmed, pending] = [STATUSES[0], STATUSES[1]] as const;
+const [confirmed] = [STATUSES[0], STATUSES[1]] as const;
 
 const {
   navigate,
@@ -19,7 +26,9 @@ const {
   onSaveMemo,
   onSkip,
   onSwitchPreset,
+  onUnskip,
   appliedPresetRef,
+  useDayPageDateJstMock,
 } = vi.hoisted(() => ({
   navigate: vi.fn(),
   onAddRow: vi.fn(async () => undefined),
@@ -31,13 +40,22 @@ const {
   onSaveMemo: vi.fn(async () => undefined),
   onSkip: vi.fn(async () => undefined),
   onSwitchPreset: vi.fn(async () => undefined),
+  onUnskip: vi.fn(async () => undefined),
   appliedPresetRef: { current: null },
+  useDayPageDateJstMock: vi.fn(() => "2026-08-17"),
+}));
+
+vi.mock("~/features/today/hooks/use-day-page-date-jst", () => ({
+  useDayPageDateJst: useDayPageDateJstMock,
 }));
 
 vi.mock("@tanstack/react-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-router")>();
   return {
     ...actual,
+    Link: ({ children, to }: { children?: React.ReactNode; to: string }) => (
+      <a href={to}>{children}</a>
+    ),
     useNavigate: () => navigate,
   };
 });
@@ -57,6 +75,7 @@ vi.mock("~/features/today/hooks/use-day-board-actions", () => ({
     onSaveMemo,
     onSkip,
     onSwitchPreset,
+    onUnskip,
   }),
 }));
 
@@ -69,39 +88,9 @@ vi.mock("~/features/today/hooks/use-apply-preset-from-search", () => ({
   }),
 }));
 
-const CONCRETE_ACTION = "Unit 1 を音読する";
-const CONCRETE_ACTION_2 = "Unit 2 を音読する";
-
-const row = {
-  _id: "row1" as DayRow["_id"],
-  category: "多聴",
-  categorySortOrder: 1,
-  content: "",
-  itemId: "item1" as DayRow["itemId"],
-  itemName: "Distinction 2000",
-  minutes: 30,
-  sortOrder: 0,
-  status: pending,
-} satisfies DayRow;
-
-const day = {
-  canCopyYesterday: false,
-  dateJst: "2026-08-17",
-  day: {
-    _id: "day1" as NonNullable<DayPage["day"]>["_id"],
-    condition: null,
-    dateJst: "2026-08-17",
-    memo: null,
-  },
-  kind: "live",
-  rows: [row],
-  shareMarkdown: "",
-  volumeMinutes: 0,
-} satisfies DayPage;
-
-const items = [
-  { _id: row.itemId, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
-];
+const row = dayBoardTestRow;
+const day = dayBoardTestDay;
+const items = dayBoardTestItems;
 
 test("確定直後の残量を記録カードに出す", () => {
   const { getByText } = renderWithMantine(
@@ -233,6 +222,51 @@ test("確定済みの見送り確認をキャンセルするとスキップし�
   });
   getByRole("button", { name: "キャンセル" }).click();
   expect(onSkip).not.toHaveBeenCalled();
+});
+
+test("未着手は見送りボタンから確認後にスキップできる", async () => {
+  onSkip.mockClear();
+  const { getByRole } = renderWithMantine(
+    <DayBoard dateJst="2026-08-17" day={day} todayJst="2026-08-17" items={items} presets={[]} />,
+  );
+
+  getByRole("button", { name: "見送りにする" }).click();
+  await waitFor(() => {
+    expect(screen.getByRole("dialog")).toBeDefined();
+  });
+  within(screen.getByRole("dialog")).getByRole("button", { name: "見送りにする" }).click();
+  expect(onSkip).toHaveBeenCalledWith(row._id);
+});
+
+test("見送り済みは取り消しボタンから確認後に未着手へ戻せる", async () => {
+  onUnskip.mockClear();
+  const skippedDay = {
+    ...day,
+    rows: [{ ...row, status: STATUSES[3] }],
+  } satisfies DayPage;
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={skippedDay}
+      todayJst="2026-08-17"
+      items={items}
+      presets={[]}
+    />,
+  );
+
+  getByRole("button", { name: "見送りを取り消す" }).click();
+  await waitFor(() => {
+    expect(screen.getByRole("dialog")).toBeDefined();
+  });
+  within(screen.getByRole("dialog")).getByRole("button", { name: "見送りを取り消す" }).click();
+  expect(onUnskip).toHaveBeenCalledWith(row._id);
+});
+
+test("日ページからカンバンへのリンクが見える", () => {
+  const { getByText } = renderWithMantine(
+    <DayBoard dateJst="2026-08-17" day={day} todayJst="2026-08-17" items={items} presets={[]} />,
+  );
+  expect(getByText("2026-08-17 の記録をカンバンで見る")).toBeDefined();
 });
 
 test("未着手はスイッチがオフで未着手バッジが出る", () => {

@@ -4,6 +4,7 @@ import type { DateJst } from "~domain/jst";
 import { mondayOfWeek, todayJst } from "~domain/jst";
 
 import { DayBoard } from "~/features/today/components/day-board";
+import { DayBoardProvider } from "~/features/today/components/day-board-context";
 import {
   useItemsList,
   usePresetsList,
@@ -33,16 +34,20 @@ export function DayBoardTab({ dateJst, presetFromSearch }: DayBoardTabProps) {
 
   return (
     <Stack gap="md">
-      <DayBoard
-        dateJst={dateJst}
-        day={day}
-        items={items}
-        onConfirmedCategory={setConfirmedCategory}
-        presetFromSearch={presetFromSearch}
-        presets={presets}
-        remainderMessage={remainder === null ? null : targetRemainderMessage(remainder)}
-        todayJst={today}
-      />
+      <DayBoardProvider
+        value={{
+          dateJst,
+          day,
+          items,
+          onConfirmedCategory: setConfirmedCategory,
+          presetFromSearch,
+          presets,
+          remainderMessage: remainder === null ? null : targetRemainderMessage(remainder),
+          todayJst: today,
+        }}
+      >
+        <DayBoard />
+      </DayBoardProvider>
     </Stack>
   );
 }

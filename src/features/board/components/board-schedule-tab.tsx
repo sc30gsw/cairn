@@ -10,7 +10,7 @@ export function BoardScheduleTab() {
   const { data: day } = useOpenAndLoadDay(view.selectedDateJst, view.today);
   const { data: goals } = useGoalsList();
   const { data: blocks } = useBoardScheduleBlocks(view.scheduleAnchor, view.scheduleView);
-  const checkpoint = nearestCheckpoint(goals, view.today);
+  const checkpoint = nearestCheckpoint(goals, view.selectedDateJst);
 
   return <BoardSchedule blocks={blocks} checkpoint={checkpoint} rows={day.rows} view={view} />;
 }

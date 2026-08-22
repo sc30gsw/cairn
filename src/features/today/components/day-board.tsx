@@ -1,5 +1,4 @@
 import {
-  ActionIcon,
   Alert,
   Box,
   Button,
@@ -7,56 +6,52 @@ import {
   EmptyState,
   Grid,
   Group,
-  Input,
   Select,
   Stack,
   Text,
   Title,
-  Tooltip,
   type ComboboxItem,
 } from "@mantine/core";
-import { DatePickerInput } from "@mantine/dates";
-import { IconChevronLeft, IconChevronRight, IconNotes, IconRefresh } from "@tabler/icons-react";
+import { IconNotes } from "@tabler/icons-react";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import {
-  addDaysJst,
-  isDateJst,
-  isFutureDateJst,
-  weekdayFromDateJst,
-  type DateJst,
-} from "~domain/jst";
+import { isDateJst, weekdayFromDateJst, type DateJst } from "~domain/jst";
 
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
+import { LearningDateNavigation } from "~/components/learning-date-navigation";
 import { AdhocRowForm } from "~/features/today/components/adhoc-row-form";
+import {
+  useOptionalDayBoardContext,
+  type DayBoardContextValue,
+} from "~/features/today/components/day-board-context";
+import { DayBoardKanbanLink } from "~/features/today/components/day-board-kanban-link";
 import { DayMetaPanel } from "~/features/today/components/day-meta-panel";
 import { RowEditor } from "~/features/today/components/row-editor";
 import { ShareCopy } from "~/features/today/components/share-copy";
 import { useApplyPresetFromSearch } from "~/features/today/hooks/use-apply-preset-from-search";
 import { useDayBoardActions } from "~/features/today/hooks/use-day-board-actions";
 import { emptyDayCopy } from "~/features/today/lib/empty-day-copy";
-import type { DaySearch } from "~/features/today/schemas/day-search-schema";
-import type { DayPage } from "~/features/today/types/day";
-import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-style";
 import { onRequiredSelect } from "~/lib/select";
 import { BODY_FONT, NUMERAL_FONT } from "~/lib/theme";
-import type { ItemDto, PresetDto, PresetId } from "~/types/item";
+import type { PresetDto, PresetId } from "~/types/item";
 import { parsePresetId, unwrapPresetId } from "~/types/item";
 
-import classes from "~/features/today/components/day-board.module.css";
-
 type DayBoardProps = {
-  dateJst: DateJst;
-  day: DayPage;
   interactive?: boolean;
-  items: ItemDto[];
-  onConfirmedCategory?: (category: string) => void;
-  presetFromSearch?: DaySearch["preset"];
-  presets: PresetDto[];
-  remainderMessage?: string | null;
-  todayJst: DateJst;
-};
+} & Partial<DayBoardContextValue>;
+
+function requireDayBoardField<K extends keyof DayBoardContextValue>(
+  context: DayBoardContextValue | null,
+  overrides: Partial<DayBoardContextValue>,
+  key: K,
+): DayBoardContextValue[K] {
+  const value = overrides[key] ?? context?.[key];
+  if (value === undefined) {
+    throw new Error(`DayBoard requires ${String(key)} via props or DayBoardProvider`);
+  }
+  return value;
+}
 
 export function weekdayPresetId(dateJst: DateJst, presets: PresetDto[]) {
   return presets.find((preset) => preset.weekday === weekdayFromDateJst(dateJst))?._id ?? null;
@@ -114,17 +109,17 @@ function DayPresetSelect({
   );
 }
 
-export function DayBoard({
-  dateJst,
-  day,
-  interactive = true,
-  items,
-  onConfirmedCategory,
-  presetFromSearch,
-  presets,
-  remainderMessage = null,
-  todayJst,
-}: DayBoardProps) {
+export function DayBoard(props: DayBoardProps) {
+  const context = useOptionalDayBoardContext();
+  const interactive = props.interactive ?? true;
+  const dateJst = requireDayBoardField(context, props, "dateJst");
+  const day = requireDayBoardField(context, props, "day");
+  const items = requireDayBoardField(context, props, "items");
+  const presets = requireDayBoardField(context, props, "presets");
+  const todayJst = requireDayBoardField(context, props, "todayJst");
+  const presetFromSearch = props.presetFromSearch ?? context?.presetFromSearch;
+  const remainderMessage = props.remainderMessage ?? context?.remainderMessage ?? null;
+  const onConfirmedCategory = props.onConfirmedCategory ?? context?.onConfirmedCategory;
   const navigate = useNavigate();
   const isToday = dateJst === todayJst;
   const {
@@ -137,6 +132,7 @@ export function DayBoard({
     onSaveMemo,
     onSkip,
     onSwitchPreset,
+    onUnskip,
   } = useDayBoardActions(dateJst, day.rows, { onConfirmedCategory });
   const { appliedPresetRef, selectedPresetId } = useApplyPresetFromSearch(
     dateJst,
@@ -157,87 +153,23 @@ export function DayBoard({
     void navigate({ params: { dateJst: next }, to: "/days/$dateJst" });
   };
 
-  const pickLearningDate = (next: string) => {
-    if (isFutureDateJst(next, todayJst)) {
-      return;
-    }
-    goToDate(next);
-  };
-
   return (
     <ConcreteActionTour screen="today">
       <Stack gap="md">
         <Card>
           <Grid align="center">
             <Grid.Col span={{ base: 12, sm: 7 }}>
-              <Group align="flex-end" gap="sm" wrap="wrap">
-                <Input.Wrapper label="学習日">
-                  <Group align="center" gap={4} mt={4} wrap="nowrap">
-                    <DatePickerInput
-                      aria-label="学習日"
-                      classNames={{
-                        input: classes.learningDateInput,
-                        month: calendarDayStyleClasses.japaneseCalendar,
-                      }}
-                      firstDayOfWeek={1}
-                      getDayProps={(date) => calendarDayProps(date, todayJst)}
-                      getMonthControlProps={(month) => ({
-                        disabled: month.slice(0, 7) > todayJst.slice(0, 7),
-                      })}
-                      getYearControlProps={(year) => ({
-                        disabled: year.slice(0, 4) > todayJst.slice(0, 4),
-                      })}
-                      locale="ja"
-                      maxDate={todayJst}
-                      miw={0}
-                      onChange={(value) => {
-                        if (typeof value === "string") {
-                          pickLearningDate(value);
-                        }
-                      }}
-                      popoverProps={{ withinPortal: true }}
-                      value={dateJst}
-                      valueFormat="YYYY-MM-DD"
-                      w="fit-content"
-                    />
-                    <Tooltip label="前の日" withArrow>
-                      <ActionIcon
-                        aria-label="前の日"
-                        onClick={() => goToDate(addDaysJst(dateJst, -1))}
-                        size="input-sm"
-                        variant="subtle"
-                      >
-                        <IconChevronLeft aria-hidden size={18} stroke={1.75} />
-                      </ActionIcon>
-                    </Tooltip>
-                    <Tooltip label="次の日" withArrow>
-                      <Box component="span" display="inline-flex">
-                        <ActionIcon
-                          aria-label="次の日"
-                          disabled={dateJst >= todayJst}
-                          onClick={() => goToDate(addDaysJst(dateJst, 1))}
-                          size="input-sm"
-                          variant="subtle"
-                        >
-                          <IconChevronRight aria-hidden size={18} stroke={1.75} />
-                        </ActionIcon>
-                      </Box>
-                    </Tooltip>
-                    {isToday ? null : (
-                      <Tooltip label="今日へ戻る" withArrow>
-                        <ActionIcon
-                          aria-label="今日へ戻る"
-                          onClick={() => void navigate({ to: "/" })}
-                          size="input-sm"
-                          variant="subtle"
-                        >
-                          <IconRefresh aria-hidden size={18} stroke={1.75} />
-                        </ActionIcon>
-                      </Tooltip>
-                    )}
-                  </Group>
-                </Input.Wrapper>
-              </Group>
+              <LearningDateNavigation
+                dateJst={dateJst}
+                linkSlot={
+                  <Text c="dimmed" size="sm">
+                    <DayBoardKanbanLink />
+                  </Text>
+                }
+                onDateChange={goToDate}
+                onGoToToday={() => void navigate({ to: "/" })}
+                todayJst={todayJst}
+              />
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 5 }}>
               <Text c="dimmed" size="sm">
@@ -287,6 +219,7 @@ export function DayBoard({
                     onConfirm={interactive ? onConfirm : () => {}}
                     onRemove={interactive ? onRemoveRow : () => {}}
                     onSkip={interactive ? onSkip : () => {}}
+                    onUnskip={interactive ? onUnskip : () => {}}
                     row={row}
                   />
                 </Box>
@@ -297,6 +230,7 @@ export function DayBoard({
                   onConfirm={interactive ? onConfirm : () => {}}
                   onRemove={interactive ? onRemoveRow : () => {}}
                   onSkip={interactive ? onSkip : () => {}}
+                  onUnskip={interactive ? onUnskip : () => {}}
                   row={row}
                 />
               ),

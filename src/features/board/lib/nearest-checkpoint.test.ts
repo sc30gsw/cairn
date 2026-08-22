@@ -16,6 +16,14 @@ function mastery(id: string, deadline: string, achievedAt?: string): BoardGoal {
   };
 }
 
+test("選択日基準で最も近い未達成を返す", () => {
+  const found = nearestCheckpoint(
+    [mastery("g1", "2026-08-20"), mastery("g2", "2026-08-18"), mastery("g3", "2026-08-25")],
+    "2026-08-15",
+  );
+  expect(found?._id).toBe("g2");
+});
+
 test("今日以降で最も近い未達成を返す", () => {
   const found = nearestCheckpoint(
     [mastery("g1", "2026-08-20"), mastery("g2", "2026-08-18"), mastery("g3", "2026-08-25")],
