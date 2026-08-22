@@ -5,31 +5,27 @@ import { computeSetupStatus } from "./setupStatus";
 test("空のカタログは未完了", () => {
   expect(
     computeSetupStatus({
-      examGoalCount: 0,
-      itemCount: 0,
-      presetCount: 0,
-      targetCount: 0,
+      hasExamGoal: false,
+      hasItems: false,
+      hasPresets: false,
+      hasWeeklyTargets: false,
     }),
   ).toEqual({
-    examGoalCount: 0,
     hasExamGoal: false,
     hasItems: false,
     hasPresets: false,
     hasWeeklyTargets: false,
     isComplete: false,
-    itemCount: 0,
-    presetCount: 0,
-    targetCount: 0,
   });
 });
 
 test("4条件が揃えば完了", () => {
   expect(
     computeSetupStatus({
-      examGoalCount: 1,
-      itemCount: 2,
-      presetCount: 1,
-      targetCount: 3,
+      hasExamGoal: true,
+      hasItems: true,
+      hasPresets: true,
+      hasWeeklyTargets: true,
     }).isComplete,
   ).toBe(true);
 });
@@ -37,10 +33,10 @@ test("4条件が揃えば完了", () => {
 test("1つでも欠ければ未完了", () => {
   expect(
     computeSetupStatus({
-      examGoalCount: 1,
-      itemCount: 1,
-      presetCount: 1,
-      targetCount: 0,
+      hasExamGoal: true,
+      hasItems: true,
+      hasPresets: true,
+      hasWeeklyTargets: false,
     }).isComplete,
   ).toBe(false);
 });

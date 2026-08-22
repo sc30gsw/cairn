@@ -22,9 +22,9 @@ export async function status(ctx: QueryCtx, ownerId: string): Promise<SetupStatu
   ]);
 
   return computeSetupStatus({
-    examGoalCount: firstExamGoal === null ? 0 : 1,
-    itemCount: firstItem === null ? 0 : 1,
-    presetCount: firstPreset === null ? 0 : 1,
-    targetCount: firstTarget === null ? 0 : 1,
+    hasExamGoal: firstExamGoal !== null,
+    hasItems: firstItem !== null,
+    hasPresets: firstPreset !== null,
+    hasWeeklyTargets: firstTarget !== null,
   });
 }

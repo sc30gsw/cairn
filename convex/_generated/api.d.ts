@@ -67,6 +67,7 @@ import type * as mutations_items_rename from "../mutations/items/rename.js";
 import type * as mutations_presets_create from "../mutations/presets/create.js";
 import type * as mutations_presets_remove from "../mutations/presets/remove.js";
 import type * as mutations_presets_update from "../mutations/presets/update.js";
+import type * as mutations_profile_claimAvatarUpload from "../mutations/profile/claimAvatarUpload.js";
 import type * as mutations_profile_generateAvatarUploadUrl from "../mutations/profile/generateAvatarUploadUrl.js";
 import type * as mutations_rows_add from "../mutations/rows/add.js";
 import type * as mutations_rows_applyOrder from "../mutations/rows/applyOrder.js";
@@ -271,6 +272,7 @@ declare const fullApi: ApiFromModules<{
   "mutations/presets/create": typeof mutations_presets_create;
   "mutations/presets/remove": typeof mutations_presets_remove;
   "mutations/presets/update": typeof mutations_presets_update;
+  "mutations/profile/claimAvatarUpload": typeof mutations_profile_claimAvatarUpload;
   "mutations/profile/generateAvatarUploadUrl": typeof mutations_profile_generateAvatarUploadUrl;
   "mutations/rows/add": typeof mutations_rows_add;
   "mutations/rows/applyOrder": typeof mutations_rows_applyOrder;

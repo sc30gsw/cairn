@@ -82,6 +82,13 @@ export default defineSchema({
     targetValue: v.number(),
   }).index("by_owner_and_category", ["ownerId", "categoryId"]),
 
+  avatarUploads: defineTable({
+    ownerId: v.string(),
+    storageId: v.id("_storage"),
+  })
+    .index("by_owner_and_storage", ["ownerId", "storageId"])
+    .index("by_storage", ["storageId"]),
+
   boardScheduleEvents: defineTable({
     color: v.optional(boardScheduleColorValidator),
     endAt: v.string(),

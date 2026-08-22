@@ -27,15 +27,11 @@ test("空の所有者は setup が未完了", async () => {
   const asOwner = t.withIdentity(OWNER);
   const status = await asOwner.query(api.queries.setup.status.status, {});
   expect(status).toEqual({
-    examGoalCount: 0,
     hasExamGoal: false,
     hasItems: false,
     hasPresets: false,
     hasWeeklyTargets: false,
     isComplete: false,
-    itemCount: 0,
-    presetCount: 0,
-    targetCount: 0,
   });
 });
 
@@ -52,5 +48,4 @@ test("項目を1件追加すると hasItems が true", async () => {
   });
   const status = await asOwner.query(api.queries.setup.status.status, {});
   expect(status.hasItems).toBe(true);
-  expect(status.itemCount).toBe(1);
 });
