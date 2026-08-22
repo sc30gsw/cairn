@@ -63,7 +63,7 @@ test("カンバンは未着手・確定・スキップとチェックポイン�
   expect(getAllByText("未着手").length).toBeGreaterThanOrEqual(2);
   expect(getByText("確定")).toBeDefined();
   expect(getByText("スキップ")).toBeDefined();
-  expect(getByText("チェックポイント")).toBeDefined();
+  expect(getAllByText("チェックポイント").length).toBeGreaterThanOrEqual(2);
   expect(getByText("Distinction 2000")).toBeDefined();
   expect(getByText("金のフレーズ")).toBeDefined();
   expect(getByText("英会話")).toBeDefined();
