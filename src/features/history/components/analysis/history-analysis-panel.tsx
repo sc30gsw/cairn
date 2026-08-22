@@ -262,9 +262,6 @@ export function HistoryAnalysisPanel({
 
       <Stack gap="xs">
         <Title order={4}>コンディション別の平均学習量</Title>
-        <Text c="dimmed" size="sm">
-          コンディションを記録した日だけを対象に、1日あたりの平均確定分数を出します。
-        </Text>
         <ConditionAvgMinutes days={scopeDays} />
       </Stack>
 
