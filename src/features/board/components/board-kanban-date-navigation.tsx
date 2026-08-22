@@ -8,8 +8,9 @@ export function BoardKanbanDateNavigation() {
   const { selectedDateJst, setDate, today } = useBoardView();
 
   return (
-    <Group align="flex-end" gap="md" justify="space-between" mb="md" wrap="wrap">
+    <Group justify="center" mb="md" wrap="wrap">
       <LearningDateNavigation
+        centered
         dateJst={selectedDateJst}
         linkSlot={
           <Text c="dimmed" size="sm">

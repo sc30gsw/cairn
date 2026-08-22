@@ -10,3 +10,24 @@
   text-decoration-thickness: 2px;
   text-underline-offset: 10px;
 }
+
+.learningDateNavigationCentered {
+  margin-inline: auto;
+  width: fit-content;
+}
+
+.learningDateControls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs);
+  width: fit-content;
+}
+
+.learningDatePickerRow {
+  flex-wrap: nowrap;
+  width: fit-content;
+}
+
+.learningDateLinkCell {
+  max-width: 100%;
+}
