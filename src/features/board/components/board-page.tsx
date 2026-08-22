@@ -8,6 +8,7 @@ import { BoardKanban } from "~/features/board/components/board-kanban";
 import { BoardSchedule } from "~/features/board/components/board-schedule";
 import { BoardTabs, BoardTabsPending } from "~/features/board/components/board-tabs";
 import {
+  useBoardApplyRowOrder,
   useBoardConfirmRow,
   useBoardScheduleCreate,
   useBoardScheduleMove,
@@ -49,7 +50,9 @@ function BoardPending() {
           kanban={
             <BoardKanban
               checkpointLabel="Part 2 を聞き取る（2026-08-20）"
+              dateJst="2026-08-17"
               obstacles={[boardShimmerObstacle]}
+              onApplyOrder={async () => undefined}
               onConfirm={async () => undefined}
               onSkip={async () => undefined}
               onUnskip={async () => undefined}
@@ -69,10 +72,11 @@ function BoardReady() {
   const { data: goals } = useGoalsList();
   const { data: obstacles } = useObstaclesList();
   const { data: blocks } = useBoardScheduleBlocks(today);
+  const applyOrder = useBoardApplyRowOrder(today, today);
   const confirmRow = useBoardConfirmRow(today, today);
   const skipRow = useBoardSkipRow(today, today);
   const unskipRow = useBoardUnskipRow(today, today);
-  const createBlock = useBoardScheduleCreate(today);
+  const createBlock = useBoardScheduleCreate(today, today);
   const updateBlock = useBoardScheduleUpdate(today);
   const removeBlock = useBoardScheduleRemove(today);
   const moveBlock = useBoardScheduleMove(today);
@@ -94,7 +98,13 @@ function BoardReady() {
         kanban={
           <BoardKanban
             checkpointLabel={checkpointLabel}
+            dateJst={today}
             obstacles={obstacles}
+            onApplyOrder={(input) =>
+              runMutation(() => applyOrder.mutateAsync(input), {
+                successMessage: "並べ替えを保存しました",
+              }).then(() => undefined)
+            }
             onConfirm={(input) =>
               runMutation(() => confirmRow.mutateAsync(input), {
                 successMessage: "記録を確定しました",

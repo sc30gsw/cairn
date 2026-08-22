@@ -47,6 +47,32 @@ export function patchBoardDayRow(
   });
 }
 
+export function reorderBoardDayRows(
+  localStore: OptimisticLocalStore,
+  args: DayQueryArgs & { orderedRowIds: Id<"rows">[] },
+): void {
+  const queryArgs = dayQueryArgs(args);
+  const day = localStore.getQuery(api.queries.days.get.get, queryArgs);
+  if (day === undefined) {
+    return;
+  }
+  const rowsById = new Map(day.rows.map((row) => [row._id, row]));
+  const reordered = args.orderedRowIds.flatMap((rowId, sortOrder) => {
+    const row = rowsById.get(rowId);
+    if (row === undefined) {
+      return [];
+    }
+    return [{ ...row, sortOrder }];
+  });
+  if (reordered.length !== day.rows.length) {
+    return;
+  }
+  localStore.setQuery(api.queries.days.get.get, queryArgs, {
+    ...day,
+    rows: reordered,
+  });
+}
+
 export function patchBoardScheduleBlocks(
   localStore: OptimisticLocalStore,
   args: { anchorDateJst: DateJst; updater: (blocks: BoardScheduleBlock[]) => BoardScheduleBlock[] },

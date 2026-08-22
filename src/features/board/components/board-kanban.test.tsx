@@ -42,10 +42,12 @@ test("カンバンは未着手・確定・スキップと次の一手を並べ�
 
   const noop = vi.fn(async () => undefined);
 
-  const { getAllByText, getByRole, getByText } = renderWithMantine(
+  const { getAllByText, getByLabelText, getByRole, getByText } = renderWithMantine(
     <BoardKanban
       checkpointLabel="Part 2 を聞き取る（2026-08-20）"
+      dateJst="2026-08-17"
       obstacles={[obstacle]}
+      onApplyOrder={noop}
       onConfirm={noop}
       onSkip={noop}
       onUnskip={noop}
@@ -70,4 +72,5 @@ test("カンバンは未着手・確定・スキップと次の一手を並べ�
   expect(getByRole("link", { name: /金フレを1ページだけ開く/ }).getAttribute("href")).toBe(
     "/goals",
   );
+  expect(getByLabelText("Distinction 2000 の順序を変更")).toBeDefined();
 });

@@ -7,9 +7,11 @@ import type { Id } from "~/../convex/_generated/dataModel";
 import {
   patchBoardDayRow,
   patchBoardScheduleBlocks,
+  reorderBoardDayRows,
   setBoardDayRowStatus,
 } from "~/features/board/lib/optimistic-board-day";
 
+export type BoardApplyRowOrderInput = FunctionArgs<typeof api.mutations.rows.applyOrder.applyOrder>;
 export type BoardConfirmRowInput = FunctionArgs<typeof api.mutations.rows.confirm.confirm>;
 export type BoardSkipRowInput = FunctionArgs<typeof api.mutations.rows.skip.skip>;
 export type BoardUnskipRowInput = FunctionArgs<typeof api.mutations.rows.unskip.unskip>;
@@ -52,6 +54,19 @@ export function useBoardUnskipRow(dateJst: DateJst, todayJst: DateJst) {
   return { mutateAsync };
 }
 
+export function useBoardApplyRowOrder(dateJst: DateJst, todayJst: DateJst) {
+  const mutateAsync = useMutation(api.mutations.rows.applyOrder.applyOrder).withOptimisticUpdate(
+    (localStore, args) => {
+      reorderBoardDayRows(localStore, {
+        dateJst,
+        orderedRowIds: args.orderedRowIds,
+        todayJst,
+      });
+    },
+  );
+  return { mutateAsync };
+}
+
 export function useBoardConfirmRow(dateJst: DateJst, todayJst: DateJst) {
   const mutateAsync = useMutation(api.mutations.rows.confirm.confirm).withOptimisticUpdate(
     (localStore, args) => {
@@ -66,9 +81,14 @@ export function useBoardConfirmRow(dateJst: DateJst, todayJst: DateJst) {
   return { mutateAsync };
 }
 
-export function useBoardScheduleCreate(anchorDateJst: DateJst) {
+export function useBoardScheduleCreate(anchorDateJst: DateJst, todayJst: DateJst) {
   const mutateAsync = useMutation(api.mutations.boardSchedule.create.create).withOptimisticUpdate(
     (localStore, args) => {
+      const day = localStore.getQuery(api.queries.days.get.get, {
+        dateJst: todayJst,
+        todayJst,
+      });
+      const row = day?.rows.find((entry) => entry._id === args.rowId);
       patchBoardScheduleBlocks(localStore, {
         anchorDateJst,
         updater: (blocks) => [
@@ -77,8 +97,9 @@ export function useBoardScheduleCreate(anchorDateJst: DateJst) {
             _id: `optimistic-${crypto.randomUUID()}` as Id<"boardScheduleEvents">,
             color: args.color ?? "blue",
             endAt: args.endAt,
+            rowId: args.rowId,
             startAt: args.startAt,
-            title: args.title.trim(),
+            title: row?.itemName ?? "",
           },
         ],
       });
@@ -100,7 +121,6 @@ export function useBoardScheduleUpdate(anchorDateJst: DateJst) {
                   color: args.color ?? block.color,
                   endAt: args.endAt,
                   startAt: args.startAt,
-                  title: args.title.trim(),
                 }
               : block,
           ),
