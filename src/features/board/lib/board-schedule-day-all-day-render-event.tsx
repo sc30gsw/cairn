@@ -61,11 +61,14 @@ export function createBoardScheduleDayAllDayRenderEvent({
         className={classes.dayAllDayComposite}
         style={{
           ...baseStyle,
-          height: "calc(100% - 2px)",
+          flex: "1 1 100%",
+          height: "100%",
+          insetBlock: "1px",
           insetInlineEnd: "1px",
           insetInlineStart: "1px",
           maxHeight: "none",
-          top: "1px",
+          position: "absolute",
+          width: "auto",
         }}
       >
         <div className={classes.dayAllDayEvents}>

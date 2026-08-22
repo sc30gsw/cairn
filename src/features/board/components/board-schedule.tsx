@@ -34,6 +34,7 @@ import {
   toBoardScheduleEvents,
   withAllDayOverflow,
 } from "~/features/board/lib/board-schedule-events";
+import { createBoardScheduleYearRenderDay } from "~/features/board/lib/board-schedule-year-render-day";
 import { dateToScheduleInstant } from "~/features/board/lib/schedule-instant";
 import type { BoardScheduleEventInput } from "~/features/board/schemas/board-schedule-event-schema";
 import type { BoardMastery, BoardRow, BoardScheduleBlock } from "~/features/board/types/board";
@@ -43,6 +44,11 @@ import classes from "~/features/board/components/board-schedule.module.css";
 
 const ALL_DAY_ROW_HEIGHT = "1.25rem";
 const ALL_DAY_VISIBLE_ROWS = BOARD_ALL_DAY_VISIBLE_LIMIT + 1;
+const ALL_DAY_GRID_GAP_PX = 2;
+const ALL_DAY_GRID_PADDING_PX = 2;
+const ALL_DAY_GRID_CHROME_PX =
+  (ALL_DAY_VISIBLE_ROWS - 1) * ALL_DAY_GRID_GAP_PX + ALL_DAY_GRID_PADDING_PX * 2;
+const DAY_VIEW_ALL_DAY_SLOT_HEIGHT = `calc(${ALL_DAY_ROW_HEIGHT} * ${ALL_DAY_VISIBLE_ROWS} + ${ALL_DAY_GRID_CHROME_PX}px)`;
 const BOARD_MONTH_MAX_EVENTS_PER_DAY = BOARD_ALL_DAY_VISIBLE_LIMIT + 1;
 const DEFAULT_DAY_BLOCK_START = "09:00:00";
 const DEFAULT_DAY_BLOCK_END = "10:00:00";
@@ -133,7 +139,11 @@ export function BoardSchedule({
   });
 
   const dayViewProps = {
-    allDaySlotHeight: `calc(${ALL_DAY_ROW_HEIGHT} * ${ALL_DAY_VISIBLE_ROWS})`,
+    allDaySlotHeight: DAY_VIEW_ALL_DAY_SLOT_HEIGHT,
+    classNames: {
+      dayViewAllDay: classes.dayAllDayContainer,
+      dayViewAllDayEvents: classes.dayAllDayEventsContainer,
+    },
     moreEventsProps: { mode: "static" as const },
     renderEvent: dayAllDayRenderEvent,
     withAllDaySlot: dayAllDayEvents.length > 0,
@@ -201,12 +211,29 @@ export function BoardSchedule({
   }
 
   function handleDayClick(day: DateStringValue) {
+    if (scheduleView === "year") {
+      return;
+    }
     collapseAllDayExpand();
     if (rows.length === 0) {
       return;
     }
     openCreate(`${day} ${DEFAULT_DAY_BLOCK_START}`, `${day} ${DEFAULT_DAY_BLOCK_END}`);
   }
+
+  const yearViewProps = {
+    firstDayOfWeek: 1 as const,
+    onDayClick: () => undefined,
+    renderDay: createBoardScheduleYearRenderDay({
+      baseEvents,
+      canAdd: rows.length > 0,
+      editableBlockIds,
+      onAdd: (day) => {
+        openCreate(`${day} ${DEFAULT_DAY_BLOCK_START}`, `${day} ${DEFAULT_DAY_BLOCK_END}`);
+      },
+      onEditBlock: openEditFromEvent,
+    }),
+  };
 
   function handleEventClick(event: ScheduleEventData, clickEvent: MouseEvent<HTMLButtonElement>) {
     if (isBoardAllDayMoreEvent(event.id)) {
@@ -268,6 +295,7 @@ export function BoardSchedule({
             }
             view={scheduleView}
             weekViewProps={BOARD_WEEK_VIEW_PROPS}
+            yearViewProps={yearViewProps}
             withDragSlotSelect={rows.length > 0}
             withEventsDragAndDrop
           />

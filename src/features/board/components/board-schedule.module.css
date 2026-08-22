@@ -38,10 +38,23 @@
   display: none;
 }
 
+.dayAllDayContainer,
+.dayAllDayEventsContainer {
+  overflow: visible;
+}
+
+.dayAllDayEventsContainer > :global(.mantine-ScheduleEvent-event) {
+  flex: 1 1 100%;
+  height: 100%;
+  max-height: none;
+  min-height: 0;
+}
+
 .dayAllDayComposite {
   align-items: stretch;
+  box-sizing: border-box;
   display: flex;
-  overflow: hidden;
+  overflow: visible;
   padding: 0;
 }
 
