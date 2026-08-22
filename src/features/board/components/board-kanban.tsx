@@ -4,13 +4,7 @@ import { IconGripVertical } from "@tabler/icons-react";
 import { Link } from "@tanstack/react-router";
 import type { DateJst } from "~domain/jst";
 
-import type {
-  BoardApplyRowOrderInput,
-  BoardConfirmRowInput,
-  BoardSkipRowInput,
-  BoardUnconfirmRowInput,
-  BoardUnskipRowInput,
-} from "~/features/board/hooks/board-mutations";
+import { useBoardKanbanActions } from "~/features/board/hooks/use-board-kanban-actions";
 import {
   computeOrderedRowIds,
   groupRowsByKanbanColumn,
@@ -26,12 +20,8 @@ import { RECORD_STATUS_UI } from "~/lib/record-status-ui";
 type BoardKanbanProps = {
   checkpointLabel: string | null;
   dateJst: DateJst;
+  interactive?: boolean;
   obstacles: readonly BoardObstacle[];
-  onApplyOrder: (input: BoardApplyRowOrderInput) => Promise<void>;
-  onConfirm: (input: BoardConfirmRowInput) => Promise<void>;
-  onSkip: (input: BoardSkipRowInput) => Promise<void>;
-  onUnconfirm: (input: BoardUnconfirmRowInput) => Promise<void>;
-  onUnskip: (input: BoardUnskipRowInput) => Promise<void>;
   rows: readonly BoardRow[];
 };
 
@@ -89,18 +79,19 @@ function NextStepCard({ subtitle, title }: { subtitle: string; title: string }) 
 export function BoardKanban({
   checkpointLabel,
   dateJst,
+  interactive = true,
   obstacles,
-  onApplyOrder,
-  onConfirm,
-  onSkip,
-  onUnconfirm,
-  onUnskip,
   rows,
 }: BoardKanbanProps) {
+  const { onApplyOrder, onConfirm, onSkip, onUnconfirm, onUnskip } = useBoardKanbanActions(dateJst);
   const { DragDropContext, Draggable, Droppable } = useDnd();
   const grouped = groupRowsByKanbanColumn(rows);
 
   async function handleDragEnd(result: DropResult) {
+    if (!interactive) {
+      return;
+    }
+
     const { destination, draggableId, source } = result;
     if (destination === null) {
       return;

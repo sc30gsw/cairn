@@ -1,23 +1,24 @@
 import { Tabs } from "@mantine/core";
 import type { ReactNode } from "react";
 
+import { useBoardView } from "~/features/board/hooks/use-board-view";
 import type { BoardTab } from "~/features/board/schemas/board-search-schema";
 
 import tabBarClasses from "~/features/board/components/board-tab-bar.module.css";
 
 type BoardTabsProps = {
   kanban: ReactNode;
-  onTabChange: (tab: BoardTab) => void;
   schedule: ReactNode;
-  tab: BoardTab;
 };
 
-export function BoardTabs({ kanban, onTabChange, schedule, tab }: BoardTabsProps) {
+export function BoardTabs({ kanban, schedule }: BoardTabsProps) {
+  const { setTab, tab } = useBoardView();
+
   return (
     <Tabs
       onChange={(value) => {
         if (value === "kanban" || value === "schedule") {
-          onTabChange(value);
+          setTab(value);
         }
       }}
       value={tab}
@@ -39,17 +40,17 @@ export function BoardTabs({ kanban, onTabChange, schedule, tab }: BoardTabsProps
 
 type BoardTabsPendingProps = {
   kanban: ReactNode;
-  onTabChange: (tab: BoardTab) => void;
   schedule?: ReactNode;
-  tab: BoardTab;
 };
 
-export function BoardTabsPending({ kanban, onTabChange, schedule, tab }: BoardTabsPendingProps) {
+export function BoardTabsPending({ kanban, schedule }: BoardTabsPendingProps) {
+  const { setTab, tab } = useBoardView();
+
   return (
     <Tabs
       onChange={(value) => {
         if (value === "kanban" || value === "schedule") {
-          onTabChange(value);
+          setTab(value);
         }
       }}
       value={tab}

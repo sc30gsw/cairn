@@ -5,7 +5,7 @@ export function useAuthSession() {
   return authClient.useSession();
 }
 
-export function selectAppShellUser(
+function selectAppShellUser(
   session: ReturnType<typeof authClient.useSession>["data"],
 ): AppShellUser | null {
   if (session === null || session === undefined) {

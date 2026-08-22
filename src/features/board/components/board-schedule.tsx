@@ -12,12 +12,7 @@ import {
   slotFormValues,
 } from "~/features/board/components/board-schedule-event-form";
 import { BoardScheduleNavigation } from "~/features/board/components/board-schedule-navigation";
-import type {
-  BoardScheduleCreateInput,
-  BoardScheduleMoveInput,
-  BoardScheduleRemoveInput,
-  BoardScheduleUpdateInput,
-} from "~/features/board/hooks/board-mutations";
+import { useBoardScheduleActions } from "~/features/board/hooks/use-board-schedule-actions";
 import { useBoardView } from "~/features/board/hooks/use-board-view";
 import { boardScheduleAllDayRenderEvent } from "~/features/board/lib/board-schedule-all-day-render-event";
 import { createBoardScheduleDayAllDayRenderEvent } from "~/features/board/lib/board-schedule-day-all-day-render-event";
@@ -73,24 +68,11 @@ const BOARD_MONTH_VIEW_PROPS = {
 type BoardScheduleProps = {
   blocks: readonly BoardScheduleBlock[];
   checkpoint: BoardMastery | null;
-  onCreateBlock: (input: BoardScheduleCreateInput) => Promise<void>;
-  onMoveBlock: (input: BoardScheduleMoveInput) => Promise<void>;
-  onRemoveBlock: (input: BoardScheduleRemoveInput) => Promise<void>;
-  onUpdateBlock: (input: BoardScheduleUpdateInput) => Promise<void>;
   pending?: boolean;
   rows: readonly BoardRow[];
 };
 
-export function BoardSchedule({
-  blocks,
-  checkpoint,
-  onCreateBlock,
-  onMoveBlock,
-  onRemoveBlock,
-  onUpdateBlock,
-  pending = false,
-  rows,
-}: BoardScheduleProps) {
+export function BoardSchedule({ blocks, checkpoint, pending = false, rows }: BoardScheduleProps) {
   const {
     monthDate,
     scheduleAnchor: anchorDateJst,
@@ -103,6 +85,8 @@ export function BoardSchedule({
     today: dateJst,
     weekAnchor,
   } = useBoardView();
+  const { onCreateBlock, onMoveBlock, onRemoveBlock, onUpdateBlock } =
+    useBoardScheduleActions(anchorDateJst);
   const todayJst = dateJst;
   const [formOpened, setFormOpened] = useState(false);
   const [formValues, setFormValues] = useState<BoardScheduleEventInput | null>(null);

@@ -1,1 +1,1 @@
-export type { AppShellUser, SessionUser } from "~/types/session";
+export type { AppShellUser } from "~/types/session";

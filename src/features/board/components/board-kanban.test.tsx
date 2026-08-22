@@ -8,8 +8,20 @@ import { renderWithMantine } from "~/test-utils/render";
 
 const [confirmed, pending, skipped] = STATUSES;
 
+const noop = vi.fn(async () => undefined);
+
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, to }: { children?: ReactNode; to: string }) => <a href={to}>{children}</a>,
+}));
+
+vi.mock("~/features/board/hooks/use-board-kanban-actions", () => ({
+  useBoardKanbanActions: () => ({
+    onApplyOrder: noop,
+    onConfirm: noop,
+    onSkip: noop,
+    onUnconfirm: noop,
+    onUnskip: noop,
+  }),
 }));
 
 vi.mock("~/hooks/use-dnd", async () => {
@@ -40,18 +52,11 @@ test("カンバンは未着手・確定・スキップとチェックポイン�
     thenText: "金フレを1ページだけ開く",
   } satisfies BoardObstacle;
 
-  const noop = vi.fn(async () => undefined);
-
   const { getAllByText, getByLabelText, getByRole, getByText } = renderWithMantine(
     <BoardKanban
       checkpointLabel="Part 2 を聞き取る（2026-08-20）"
       dateJst="2026-08-17"
       obstacles={[obstacle]}
-      onApplyOrder={noop}
-      onConfirm={noop}
-      onSkip={noop}
-      onUnconfirm={noop}
-      onUnskip={noop}
       rows={[
         row("r1", pending, "Distinction 2000"),
         row("r2", confirmed, "金のフレーズ"),
