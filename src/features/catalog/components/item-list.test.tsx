@@ -5,7 +5,7 @@ import { ItemList } from "~/features/catalog/components/item-list";
 import { PresetList } from "~/features/catalog/components/preset-list";
 import { renderWithMemoryRouter } from "~/test-utils/render";
 
-vi.mock("~/features/catalog/hooks/use-dnd", async () => {
+vi.mock("~/hooks/use-dnd", async () => {
   const dnd = await vi.importActual<typeof import("@hello-pangea/dnd")>("@hello-pangea/dnd");
   return {
     useDnd: () => dnd,

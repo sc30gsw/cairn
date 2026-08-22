@@ -20,7 +20,7 @@ import {
   resolveKanbanStatusMove,
 } from "~/features/board/lib/kanban-order";
 import type { BoardObstacle, BoardRow } from "~/features/board/types/board";
-import { useDnd } from "~/features/catalog/hooks/use-dnd";
+import { useDnd } from "~/hooks/use-dnd";
 import { RECORD_STATUS_UI } from "~/lib/record-status-ui";
 
 type BoardKanbanProps = {

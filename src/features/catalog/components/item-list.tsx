@@ -19,7 +19,6 @@ import { IconGripVertical, IconTrash } from "@tabler/icons-react";
 import { groupBy, mapValues, prop, sortBy } from "remeda";
 
 import { PageTitle } from "~/components/page-title";
-import { useDnd } from "~/features/catalog/hooks/use-dnd";
 import { CategorySchema } from "~/features/catalog/schemas/category-schema";
 import { ItemNameSchema } from "~/features/catalog/schemas/item-schema";
 import type { ItemDto } from "~/features/catalog/types/item";
@@ -33,6 +32,7 @@ import type {
   RenameCategoryInput,
   RenameItemInput,
 } from "~/features/catalog/types/mutations";
+import { useDnd } from "~/hooks/use-dnd";
 import type { CategoryDto } from "~/types/category";
 
 type ItemListProps = {
