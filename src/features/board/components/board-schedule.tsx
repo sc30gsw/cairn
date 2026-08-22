@@ -80,6 +80,7 @@ export function BoardSchedule({ blocks, checkpoint, pending = false, rows }: Boa
     selectedDateJst,
     setDate: onDateChange,
     setMonth: onMonthChange,
+    resetMonthViewToToday: onMonthViewToday,
     setScheduleView: onScheduleViewChange,
     setWeek: onWeekChange,
     today: dateJst,
@@ -253,6 +254,7 @@ export function BoardSchedule({ blocks, checkpoint, pending = false, rows }: Boa
             monthDate={monthDate}
             onDateChange={onDateChange}
             onMonthChange={onMonthChange}
+            onMonthViewToday={onMonthViewToday}
             onViewChange={onScheduleViewChange}
             onWeekChange={onWeekChange}
             scheduleView={scheduleView}

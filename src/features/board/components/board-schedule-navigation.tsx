@@ -19,6 +19,7 @@ type BoardScheduleNavigationProps = {
   monthDate: Date;
   onDateChange: (dateJst: DateJst) => void;
   onMonthChange: (yearMonth: string) => void;
+  onMonthViewToday: () => void;
   onViewChange: (view: ScheduleViewLevel) => void;
   onWeekChange: (weekAnchor: DateJst) => void;
   scheduleView: BoardScheduleView;
@@ -146,6 +147,7 @@ export function BoardScheduleNavigation({
   monthDate,
   onDateChange,
   onMonthChange,
+  onMonthViewToday,
   onViewChange,
   onWeekChange,
   scheduleView,
@@ -267,10 +269,7 @@ export function BoardScheduleNavigation({
             }
           }}
         />
-        <ScheduleHeader.Today
-          aria-label={SCHEDULE_LABELS_JA.today}
-          onClick={() => onMonthChange(yearMonthOf(todayJst))}
-        />
+        <ScheduleHeader.Today aria-label={SCHEDULE_LABELS_JA.today} onClick={onMonthViewToday} />
         <BoardScheduleViewSelect onViewChange={onViewChange} scheduleView={scheduleView} />
       </ScheduleHeader>
     );

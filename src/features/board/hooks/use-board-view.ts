@@ -94,6 +94,15 @@ export function useBoardView() {
         }),
       });
     },
+    resetMonthViewToToday: () => {
+      void navigate({
+        search: (current) => ({
+          ...current,
+          date: undefined,
+          month: undefined,
+        }),
+      });
+    },
     setScheduleView: (nextView: ScheduleViewLevel) => {
       void navigate({
         search: (current) => ({

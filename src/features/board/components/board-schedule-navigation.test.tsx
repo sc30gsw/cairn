@@ -1,5 +1,5 @@
 import { screen } from "@testing-library/react";
-import { expect, test } from "vite-plus/test";
+import { expect, test, vi } from "vite-plus/test";
 
 import { BoardScheduleNavigation } from "~/features/board/components/board-schedule-navigation";
 import { renderWithMantine } from "~/test-utils/render";
@@ -8,6 +8,7 @@ const baseProps = {
   monthDate: new Date("2026-08-01T00:00:00+09:00"),
   onDateChange: () => undefined,
   onMonthChange: () => undefined,
+  onMonthViewToday: () => undefined,
   onViewChange: () => undefined,
   onWeekChange: () => undefined,
   selectedDateJst: "2026-08-22" as const,
@@ -27,4 +28,18 @@ test("week view renders one date control between previous and next", () => {
 
   expect(screen.getByText("2026年8月17日 – 23日")).toBeDefined();
   expect(screen.getByLabelText("週を選択")).toBeDefined();
+});
+
+test("month view today button resets month navigation", () => {
+  const onMonthViewToday = vi.fn();
+  renderWithMantine(
+    <BoardScheduleNavigation
+      {...baseProps}
+      onMonthViewToday={onMonthViewToday}
+      scheduleView="month"
+    />,
+  );
+
+  screen.getByRole("button", { name: "今日" }).click();
+  expect(onMonthViewToday).toHaveBeenCalledOnce();
 });
