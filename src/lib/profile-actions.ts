@@ -2,12 +2,12 @@ import type { Passkey } from "@better-auth/passkey/client";
 import { Result } from "better-result";
 
 import type { Id } from "~/../convex/_generated/dataModel";
-import type { AuthActionResult } from "~/lib/auth-action-result";
+import { type AuthActionResult, runAuthAction } from "~/lib/auth-action-result";
 import { authClient } from "~/lib/auth-client";
 import { type AuthErrorContext } from "~/lib/auth-error-messages";
 import { encodeAvatarStorageRef } from "~/lib/avatar-image";
 import { AuthActionError } from "~/lib/errors";
-import { authActionError, authActionErrorFromUnknown } from "~/lib/run-auth-action";
+import { authActionError } from "~/lib/run-auth-action";
 import type { PasskeyAddInput } from "~/lib/validation/passkey-schema";
 import type {
   ProfileNameInput,
@@ -20,14 +20,15 @@ async function runProfileAction(
   context: AuthErrorContext,
   refreshSessionOnSuccess = true,
 ): Promise<AuthActionResult> {
-  const result = await Result.tryPromise({
-    catch: (cause) => authActionErrorFromUnknown(cause, context),
-    try: action,
-  });
-  if (Result.isOk(result) && refreshSessionOnSuccess) {
-    await authClient.getSession();
-  }
-  return result;
+  return runAuthAction(
+    action,
+    context,
+    refreshSessionOnSuccess
+      ? async () => {
+          await authClient.getSession();
+        }
+      : undefined,
+  );
 }
 
 export async function updateProfileName(input: ProfileNameInput): Promise<AuthActionResult> {
