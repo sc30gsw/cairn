@@ -22,14 +22,7 @@ export function MyPagePasskeyReprompt() {
 
     void list.run(async () => {
       const result = await listPasskeys();
-      if (Result.isOk(result)) {
-        if (shouldShowMyPagePasskeyPrompt(result.value.length > 0)) {
-          setOpened(true);
-        }
-        return result;
-      }
-
-      if (shouldOpenMyPagePasskeyPrompt()) {
+      if (Result.isOk(result) && shouldShowMyPagePasskeyPrompt(result.value.length > 0)) {
         setOpened(true);
       }
       return result;

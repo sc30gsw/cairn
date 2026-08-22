@@ -4,6 +4,7 @@ import { Result } from "better-result";
 import { expect, test, vi, beforeEach } from "vite-plus/test";
 
 import { MyPagePasskeyReprompt } from "~/features/auth/components/my-page-passkey-reprompt";
+import { AuthActionError } from "~/lib/errors";
 import * as passkeyStorage from "~/lib/passkey-storage";
 import * as profileActions from "~/lib/profile-actions";
 import { renderWithMantine } from "~/test-utils/render";
@@ -42,6 +43,19 @@ test("MyPagePasskeyReprompt は passkey 未登録ならモーダルを開く", a
 
 test("MyPagePasskeyReprompt は passkey 登録済みならモーダルを開かない", async () => {
   vi.mocked(profileActions.listPasskeys).mockResolvedValue(Result.ok([{ id: "pk_1" } as Passkey]));
+
+  renderWithMantine(<MyPagePasskeyReprompt />);
+
+  await waitFor(() => {
+    expect(profileActions.listPasskeys).toHaveBeenCalled();
+  });
+  expect(screen.queryByRole("dialog", { name: "パスキーを登録しますか？" })).toBeNull();
+});
+
+test("MyPagePasskeyReprompt は listPasskeys 失敗時もモーダルを開かない", async () => {
+  vi.mocked(profileActions.listPasskeys).mockResolvedValue(
+    Result.err(new AuthActionError({ message: "取得に失敗しました" })),
+  );
 
   renderWithMantine(<MyPagePasskeyReprompt />);
 
