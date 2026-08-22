@@ -12,11 +12,13 @@ test("オンボーディング用カタログ例は5件の代表サンプル", (
 
 test("カタログ例は中立な表示カテゴリと活動名を持つ", () => {
   const categories = ONBOARDING_CATALOG_SAMPLES.map((sample) => sample.category);
-  expect(categories).toEqual(["試験対策", "多聴", "多読", "英会話", "その他"]);
+  expect(categories).toEqual(["演習", "試験対策", "暗記", "インプット", "復習"]);
   expect(categories).not.toContain("TOEIC対策");
+  expect(categories).not.toContain("多聴");
+  expect(categories).not.toContain("多読");
 
   const names = ONBOARDING_CATALOG_SAMPLES.map((sample) => sample.name);
-  expect(names).toEqual(["文法問題", "リスニング", "多読", "英会話", "その他"]);
+  expect(names).toEqual(["問題集", "過去問", "暗記カード", "動画講義", "復習"]);
   expect(names.some((name) => name.includes("Distinction"))).toBe(false);
 });
 

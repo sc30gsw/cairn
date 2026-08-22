@@ -1,5 +1,5 @@
 /** Neutral display labels for onboarding preview only — not app category IDs. */
-export type CatalogSampleDisplayCategory = "試験対策" | "多聴" | "多読" | "英会話" | "その他";
+export type CatalogSampleDisplayCategory = "演習" | "試験対策" | "暗記" | "インプット" | "復習";
 
 export type CatalogSample = {
   category: CatalogSampleDisplayCategory;
@@ -11,34 +11,34 @@ export type CatalogSample = {
 /** Illustrative samples for onboarding preview; decoupled from Convex SEED_ITEMS. */
 export const ONBOARDING_CATALOG_SAMPLES = [
   {
+    category: "演習",
+    content: "10問解いて、間違えた1問だけ解説を読む",
+    minutes: 30,
+    name: "問題集",
+  },
+  {
     category: "試験対策",
-    content: "問題5問解いて、間違えた1問だけ復習する",
+    content: "1年分を解いて、間違えた設問を3つ復習する",
+    minutes: 60,
+    name: "過去問",
+  },
+  {
+    category: "暗記",
+    content: "20枚めくって、覚えられなかった5枚を復習する",
     minutes: 20,
-    name: "文法問題",
+    name: "暗記カード",
   },
   {
-    category: "多聴",
-    content: "5分聞いて、聞き取れなかった語を3つメモする",
-    minutes: 30,
-    name: "リスニング",
+    category: "インプット",
+    content: "1本視聴して、要点を3行でまとめる",
+    minutes: 45,
+    name: "動画講義",
   },
   {
-    category: "多読",
-    content: "1ページ読んで、わからない語を2つ調べる",
+    category: "復習",
+    content: "前日のメモを見直して、不明点を1つ調べる",
     minutes: 20,
-    name: "多読",
-  },
-  {
-    category: "英会話",
-    content: "単語カードを10枚めくる",
-    minutes: 30,
-    name: "英会話",
-  },
-  {
-    category: "その他",
-    content: "机の上を5分片付ける",
-    minutes: 20,
-    name: "その他",
+    name: "復習",
   },
 ] as const satisfies readonly CatalogSample[];
 

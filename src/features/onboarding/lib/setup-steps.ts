@@ -19,7 +19,7 @@ export const SETUP_STEPS = [
     href: "/items",
     id: "items",
     label: "項目を登録する",
-    sampleHint: "例: 単語、文法問題、リスニング",
+    sampleHint: "例: 問題集、過去問、暗記カード",
     tooltip:
       "項目は今日の行の種類です。カテゴリー付きで登録すると、週間ターゲットともつながります。",
   },
