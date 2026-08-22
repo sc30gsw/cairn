@@ -11,6 +11,7 @@ import {
   useSetDayMemo,
   useSkipRow,
   useSwitchPreset,
+  useUnskipRow,
 } from "~/features/today/hooks/day-mutations";
 import type { DayRow } from "~/features/today/types/day";
 import type {
@@ -36,6 +37,7 @@ export function useDayBoardActions(
   const today = todayJst();
   const confirm = useConfirmRow();
   const skip = useSkipRow();
+  const unskip = useUnskipRow();
   const add = useAddRow();
   const removeRow = useRemoveRow();
   const setCondition = useSetDayCondition();
@@ -83,6 +85,10 @@ export function useDayBoardActions(
     onSkip: (rowId: SkipRowInput["rowId"]) =>
       runMutation(() => skip.mutateAsync({ rowId }), {
         successMessage: "記録を見送りにしました",
+      }).then(() => undefined),
+    onUnskip: (rowId: SkipRowInput["rowId"]) =>
+      runMutation(() => unskip.mutateAsync({ rowId }), {
+        successMessage: "見送りを取り消しました",
       }).then(() => undefined),
     onSwitchPreset: (presetId: PresetId, appliedPresetRef?: { current: PresetId | null }) => {
       if (appliedPresetRef !== undefined) {

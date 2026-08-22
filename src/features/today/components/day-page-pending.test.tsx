@@ -34,6 +34,13 @@ vi.mock("~/features/today/hooks/use-apply-preset-from-search", () => ({
   }),
 }));
 
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({ children, to }: { children?: React.ReactNode; to: string }) => (
+    <a href={to}>{children}</a>
+  ),
+  useNavigate: () => vi.fn(),
+}));
+
 test("DayPagePending は Distinction 2000 の shimmer を出す", () => {
   const { getAllByText } = renderWithMantine(<DayPagePending dateJst="2026-08-17" />);
   expect(getAllByText("Distinction 2000").length).toBeGreaterThan(0);

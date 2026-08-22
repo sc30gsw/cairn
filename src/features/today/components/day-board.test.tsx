@@ -1,4 +1,4 @@
-import { fireEvent, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { expect, test, vi } from "vite-plus/test";
 import { STATUSES } from "~domain/domain";
 
@@ -19,6 +19,7 @@ const {
   onSaveMemo,
   onSkip,
   onSwitchPreset,
+  onUnskip,
   appliedPresetRef,
 } = vi.hoisted(() => ({
   navigate: vi.fn(),
@@ -31,6 +32,7 @@ const {
   onSaveMemo: vi.fn(async () => undefined),
   onSkip: vi.fn(async () => undefined),
   onSwitchPreset: vi.fn(async () => undefined),
+  onUnskip: vi.fn(async () => undefined),
   appliedPresetRef: { current: null },
 }));
 
@@ -38,6 +40,9 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-router")>();
   return {
     ...actual,
+    Link: ({ children, to }: { children?: React.ReactNode; to: string }) => (
+      <a href={to}>{children}</a>
+    ),
     useNavigate: () => navigate,
   };
 });
@@ -57,6 +62,7 @@ vi.mock("~/features/today/hooks/use-day-board-actions", () => ({
     onSaveMemo,
     onSkip,
     onSwitchPreset,
+    onUnskip,
   }),
 }));
 
@@ -233,6 +239,51 @@ test("確定済みの見送り確認をキャンセルするとスキップし�
   });
   getByRole("button", { name: "キャンセル" }).click();
   expect(onSkip).not.toHaveBeenCalled();
+});
+
+test("未着手は見送りボタンから確認後にスキップできる", async () => {
+  onSkip.mockClear();
+  const { getByRole } = renderWithMantine(
+    <DayBoard dateJst="2026-08-17" day={day} todayJst="2026-08-17" items={items} presets={[]} />,
+  );
+
+  getByRole("button", { name: "見送りにする" }).click();
+  await waitFor(() => {
+    expect(screen.getByRole("dialog")).toBeDefined();
+  });
+  within(screen.getByRole("dialog")).getByRole("button", { name: "見送りにする" }).click();
+  expect(onSkip).toHaveBeenCalledWith(row._id);
+});
+
+test("見送り済みは取り消しボタンから確認後に未着手へ戻せる", async () => {
+  onUnskip.mockClear();
+  const skippedDay = {
+    ...day,
+    rows: [{ ...row, status: STATUSES[3] }],
+  } satisfies DayPage;
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={skippedDay}
+      todayJst="2026-08-17"
+      items={items}
+      presets={[]}
+    />,
+  );
+
+  getByRole("button", { name: "見送りを取り消す" }).click();
+  await waitFor(() => {
+    expect(screen.getByRole("dialog")).toBeDefined();
+  });
+  within(screen.getByRole("dialog")).getByRole("button", { name: "見送りを取り消す" }).click();
+  expect(onUnskip).toHaveBeenCalledWith(row._id);
+});
+
+test("日ページからカンバンへのリンクが見える", () => {
+  const { getByText } = renderWithMantine(
+    <DayBoard dateJst="2026-08-17" day={day} todayJst="2026-08-17" items={items} presets={[]} />,
+  );
+  expect(getByText("2026-08-17 の記録をカンバンで見る")).toBeDefined();
 });
 
 test("未着手はスイッチがオフで未着手バッジが出る", () => {

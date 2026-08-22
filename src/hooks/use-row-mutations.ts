@@ -13,6 +13,10 @@ export function useSkipRow() {
   return useConvexMutation(api.mutations.rows.skip.skip);
 }
 
+export function useUnskipRow() {
+  return useConvexMutation(api.mutations.rows.unskip.unskip);
+}
+
 export function useAddRow() {
   return useConvexMutation(api.mutations.rows.add.add);
 }

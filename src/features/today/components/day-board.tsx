@@ -27,6 +27,7 @@ import {
   type DateJst,
 } from "~domain/jst";
 
+import { BoardKanbanCrossLink } from "~/components/board-day-cross-links";
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
 import { AdhocRowForm } from "~/features/today/components/adhoc-row-form";
@@ -44,7 +45,7 @@ import { BODY_FONT, NUMERAL_FONT } from "~/lib/theme";
 import type { ItemDto, PresetDto, PresetId } from "~/types/item";
 import { parsePresetId, unwrapPresetId } from "~/types/item";
 
-import classes from "~/features/today/components/day-board.module.css";
+import classes from "~/lib/learning-date-input.module.css";
 
 type DayBoardProps = {
   dateJst: DateJst;
@@ -137,6 +138,7 @@ export function DayBoard({
     onSaveMemo,
     onSkip,
     onSwitchPreset,
+    onUnskip,
   } = useDayBoardActions(dateJst, day.rows, { onConfirmedCategory });
   const { appliedPresetRef, selectedPresetId } = useApplyPresetFromSearch(
     dateJst,
@@ -237,6 +239,9 @@ export function DayBoard({
                     )}
                   </Group>
                 </Input.Wrapper>
+                <Text c="dimmed" size="sm">
+                  <BoardKanbanCrossLink dateJst={dateJst} todayJst={todayJst} />
+                </Text>
               </Group>
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 5 }}>
@@ -287,6 +292,7 @@ export function DayBoard({
                     onConfirm={interactive ? onConfirm : () => {}}
                     onRemove={interactive ? onRemoveRow : () => {}}
                     onSkip={interactive ? onSkip : () => {}}
+                    onUnskip={interactive ? onUnskip : () => {}}
                     row={row}
                   />
                 </Box>
@@ -297,6 +303,7 @@ export function DayBoard({
                   onConfirm={interactive ? onConfirm : () => {}}
                   onRemove={interactive ? onRemoveRow : () => {}}
                   onSkip={interactive ? onSkip : () => {}}
+                  onUnskip={interactive ? onUnskip : () => {}}
                   row={row}
                 />
               ),

@@ -1,6 +1,7 @@
 import { Text } from "@mantine/core";
 import { Shimmer } from "@shimmer-from-structure/react";
 import { Suspense } from "react";
+import type { DateJst } from "~domain/jst";
 
 import { PageTitle } from "~/components/page-title";
 import { BoardKanban } from "~/features/board/components/board-kanban";
@@ -13,6 +14,13 @@ import {
   boardShimmerObstacle,
   boardShimmerRows,
 } from "~/features/board/lib/board-shimmer-template";
+
+function boardLeadCopy(selectedDateJst: DateJst, today: DateJst) {
+  if (selectedDateJst === today) {
+    return "今日の記録の状態と、チェックポイント。書く場所は日のままです。";
+  }
+  return `${selectedDateJst} の記録の状態と、チェックポイント。書く場所は日のままです。`;
+}
 
 export function BoardPage() {
   return (
@@ -52,13 +60,13 @@ function BoardPending() {
 }
 
 function BoardReady() {
-  const { tab } = useBoardView();
+  const { selectedDateJst, tab, today } = useBoardView();
 
   return (
     <>
       <PageTitle mb="md">ボード</PageTitle>
       <Text c="dimmed" mb="md" size="sm">
-        今日の記録の状態と、チェックポイント。書く場所は日のままです。
+        {boardLeadCopy(selectedDateJst, today)}
       </Text>
       <BoardTabs
         kanban={<BoardKanbanTab />}
