@@ -56,6 +56,7 @@ export const Route = createRootRouteWithContext<{
   errorComponent: RootErrorComponent,
   head: () => ({
     links: [
+      { href: "/favicon.svg", rel: "icon", type: "image/svg+xml" },
       { href: "https://fonts.googleapis.com", rel: "preconnect" },
       { crossOrigin: "anonymous", href: "https://fonts.gstatic.com", rel: "preconnect" },
       {

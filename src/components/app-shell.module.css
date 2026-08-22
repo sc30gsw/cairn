@@ -1,0 +1,70 @@
+.indexTabsRail {
+  align-self: flex-start;
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding-block: var(--mantine-spacing-md);
+  padding-top: calc(var(--mantine-spacing-xl) + 2.75rem);
+  width: 56px;
+}
+
+.tabStack {
+  gap: var(--mantine-spacing-xs);
+}
+
+.tab {
+  --tab-rotate: 0deg;
+
+  background-color: var(--mantine-color-white);
+  border: 1.5px solid var(--cairn-ink);
+  border-left: none;
+  border-radius: 0 8px 10px 0/0 12px 8px 0;
+  box-shadow: 1px 1px 0 rgb(16 15 15 / 12%);
+  color: var(--cairn-muted-2, #6b6760);
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 1.5px;
+  margin-left: -1px;
+  opacity: 0.92;
+  padding: 7px 4px;
+  text-decoration: none;
+  transform: rotate(var(--tab-rotate)) scale(0.78);
+  transition:
+    background-color 120ms ease,
+    box-shadow 120ms ease,
+    color 120ms ease,
+    font-size 120ms ease,
+    margin 120ms ease,
+    opacity 120ms ease,
+    padding 120ms ease,
+    transform 120ms ease;
+  writing-mode: vertical-rl;
+}
+
+.tab:hover {
+  box-shadow: 2px 2px 0 rgb(16 15 15 / 14%);
+  color: var(--cairn-ink);
+  opacity: 1;
+  transform: rotate(var(--tab-rotate)) scale(0.86);
+}
+
+.tabActive {
+  background-color: var(--mantine-color-orange-6);
+  border-radius: 0 10px 14px 0/0 16px 10px 0;
+  box-shadow: 2px 2px 0 rgb(16 15 15 / 15%);
+  color: var(--mantine-color-white);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  margin-left: -3px;
+  opacity: 1;
+  padding: 16px 7px;
+  transform: rotate(var(--tab-rotate)) scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab {
+    transition: none;
+  }
+}
