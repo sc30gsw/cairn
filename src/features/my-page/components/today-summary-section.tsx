@@ -4,7 +4,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { daysUntil, mondayOfWeek, todayJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
-import type { ExamGoal } from "~/features/goals/types/goal";
+import type { ExamGoal } from "~/features/my-page/types/exam-goal";
 import { NUMERAL_FONT } from "~/lib/theme";
 
 export function TodaySummarySection() {
