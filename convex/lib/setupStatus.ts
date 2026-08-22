@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { type Infer, v } from "convex/values";
 
 export const setupStatusValidator = v.object({
   hasExamGoal: v.boolean(),
@@ -8,13 +8,7 @@ export const setupStatusValidator = v.object({
   isComplete: v.boolean(),
 });
 
-export type SetupStatus = {
-  hasExamGoal: boolean;
-  hasItems: boolean;
-  hasPresets: boolean;
-  hasWeeklyTargets: boolean;
-  isComplete: boolean;
-};
+export type SetupStatus = Infer<typeof setupStatusValidator>;
 
 export function computeSetupStatus(input: {
   hasExamGoal: boolean;

@@ -31,7 +31,7 @@ export function BoardPage() {
 }
 
 function BoardPending() {
-  const { tab } = useBoardView();
+  const { selectedDateJst, tab, today } = useBoardView();
 
   return (
     <>
@@ -40,7 +40,7 @@ function BoardPending() {
       </PageTitle>
       <Shimmer loading>
         <Text c="dimmed" mb="md" size="sm">
-          今日の記録の状態と、チェックポイント。書く場所は日のままです。
+          {boardLeadCopy(selectedDateJst, today)}
         </Text>
         <BoardTabsPending
           kanban={
