@@ -23,23 +23,26 @@ const FEATURE_NAMES = [
   "trash",
 ] as const;
 
-const featureBoundaryLintOverrides = FEATURE_NAMES.map((feature) => ({
-  files: [`src/features/${feature}/**`],
-  rules: {
-    "no-restricted-imports": [
-      "error",
-      {
-        patterns: [
-          {
-            message:
-              "Feature modules cannot import from other features. Extract shared code to src/components, src/hooks, src/lib, or src/types.",
-            regex: `^~/features/(?!${feature}/)`,
-          },
-        ],
-      },
-    ],
-  },
-}));
+const featureBoundaryLintOverrides = FEATURE_NAMES.map((feature) => {
+  const otherFeatures = FEATURE_NAMES.filter((name) => name !== feature);
+  return {
+    files: [`src/features/${feature}/**`],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: otherFeatures.map((other) => `~/features/${other}/**`),
+              message:
+                "Feature modules cannot import from other features. Extract shared code to src/components, src/hooks, src/lib, or src/types.",
+            },
+          ],
+        },
+      ],
+    },
+  };
+});
 
 const sharedBoundaryLintOverride = {
   files: ["src/components/**", "src/hooks/**", "src/lib/**", "src/types/**"],
@@ -49,8 +52,8 @@ const sharedBoundaryLintOverride = {
       {
         patterns: [
           {
+            group: ["~/features/**"],
             message: "Shared modules cannot import from features.",
-            regex: "^~/features/",
           },
         ],
       },

@@ -2,13 +2,13 @@ import { Field, reset, useForm } from "@formisch/react";
 import { Card, PasswordInput, Stack, TextInput, Title } from "@mantine/core";
 import { Result } from "better-result";
 
-import { useAppShellUser } from "~/features/auth/hooks/use-auth-session";
+import { ProfileAccountActionForm } from "~/features/my-page/components/profile-account-action-form";
+import { useAppShellUser } from "~/hooks/use-auth-session";
 import {
   updateProfileName,
   updateProfilePassword,
   updateProfileUsername,
-} from "~/features/auth/lib/profile-actions";
-import { ProfileAccountActionForm } from "~/features/my-page/components/profile-account-action-form";
+} from "~/lib/profile-actions";
 import {
   ProfileNameSchema,
   ProfilePasswordSchema,

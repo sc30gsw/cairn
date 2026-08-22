@@ -3,6 +3,10 @@ import { tryLocalStorageGet, tryLocalStorageSet } from "~/lib/safe-storage";
 
 const DISMISS_PREFIX = "cairn:onboarding:dismissed:";
 
+export function isOnboardingDismissStorageKey(key: string | null): boolean {
+  return key?.startsWith(DISMISS_PREFIX) ?? false;
+}
+
 export function onboardingDismissKey(stepId: SetupStepId): string {
   return `${DISMISS_PREFIX}${stepId}`;
 }

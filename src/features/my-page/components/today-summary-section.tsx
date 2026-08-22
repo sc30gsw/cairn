@@ -3,8 +3,8 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { mondayOfWeek, todayJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
-import type { ExamGoal } from "~/features/goals/types/goal";
 import { TodaySummaryContent } from "~/features/my-page/components/today-summary-content";
+import type { ExamGoal } from "~/features/my-page/types/exam-goal";
 
 export function TodaySummarySection() {
   const today = todayJst();

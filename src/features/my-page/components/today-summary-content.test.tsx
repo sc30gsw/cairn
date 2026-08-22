@@ -1,8 +1,8 @@
 import { screen } from "@testing-library/react";
 import { expect, test } from "vite-plus/test";
 
-import type { ExamGoal } from "~/features/goals/types/goal";
 import { TodaySummaryContent } from "~/features/my-page/components/today-summary-content";
+import type { ExamGoal } from "~/features/my-page/types/exam-goal";
 import { renderWithMantine } from "~/test-utils/render";
 
 const examGoal = {

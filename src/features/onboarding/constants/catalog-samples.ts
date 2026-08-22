@@ -1,13 +1,6 @@
 /** Neutral display labels for onboarding preview only — not app category IDs. */
 export type CatalogSampleDisplayCategory = "演習" | "試験対策" | "暗記" | "インプット" | "復習";
 
-export type CatalogSample = {
-  category: CatalogSampleDisplayCategory;
-  content: string;
-  minutes: number;
-  name: string;
-};
-
 /** Illustrative samples for onboarding preview; decoupled from Convex SEED_ITEMS. */
 export const ONBOARDING_CATALOG_SAMPLES = [
   {
@@ -40,7 +33,9 @@ export const ONBOARDING_CATALOG_SAMPLES = [
     minutes: 20,
     name: "復習",
   },
-] as const satisfies readonly CatalogSample[];
-
-/** @deprecated Prefer ONBOARDING_CATALOG_SAMPLES — kept for existing imports. */
-export const CATALOG_SAMPLES = ONBOARDING_CATALOG_SAMPLES;
+] as const satisfies readonly {
+  category: CatalogSampleDisplayCategory;
+  content: string;
+  minutes: number;
+  name: string;
+}[];

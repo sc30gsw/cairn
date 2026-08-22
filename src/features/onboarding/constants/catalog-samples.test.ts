@@ -1,13 +1,9 @@
 import { expect, test } from "vite-plus/test";
 
-import {
-  CATALOG_SAMPLES,
-  ONBOARDING_CATALOG_SAMPLES,
-} from "~/features/onboarding/constants/catalog-samples";
+import { ONBOARDING_CATALOG_SAMPLES } from "~/features/onboarding/constants/catalog-samples";
 
 test("オンボーディング用カタログ例は5件の代表サンプル", () => {
   expect(ONBOARDING_CATALOG_SAMPLES).toHaveLength(5);
-  expect(CATALOG_SAMPLES).toEqual(ONBOARDING_CATALOG_SAMPLES);
 });
 
 test("カタログ例は中立な表示カテゴリと活動名を持つ", () => {

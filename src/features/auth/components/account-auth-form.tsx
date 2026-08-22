@@ -2,8 +2,7 @@ import { Field, Form, useForm } from "@formisch/react";
 import { Button, PasswordInput, SegmentedControl, Stack, TextInput } from "@mantine/core";
 import { useState } from "react";
 
-import { AuthActionFeedback } from "~/features/auth/components/auth-action-feedback";
-import { useAuthActionTransition } from "~/features/auth/hooks/use-auth-action-transition";
+import { AuthActionFeedback } from "~/components/auth-action-feedback";
 import { useAuthPublicConfig } from "~/features/auth/hooks/use-auth-config";
 import { signInWithAccount, signUpWithAccount } from "~/features/auth/lib/auth-actions";
 import {
@@ -11,6 +10,7 @@ import {
   AccountSignUpSchema,
   type AccountAuthMode,
 } from "~/features/auth/schemas/account-auth-schema";
+import { useAuthActionTransition } from "~/hooks/use-auth-action-transition";
 
 type AccountAuthFormProps = {
   mode: AccountAuthMode;

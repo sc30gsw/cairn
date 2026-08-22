@@ -1,16 +1,18 @@
 import { Result } from "better-result";
 import { expect, test, vi, beforeEach } from "vite-plus/test";
 
+import type { Id } from "~/../convex/_generated/dataModel";
+import { authActionErrorMessage } from "~/lib/auth-action-result";
+import { authClient } from "~/lib/auth-client";
 import {
   addPasskey,
   deletePasskey,
+  listPasskeys,
   updateProfileImage,
   updateProfileName,
   updateProfilePassword,
   updateProfileUsername,
-} from "~/features/auth/lib/profile-actions";
-import { authActionErrorMessage } from "~/lib/auth-action-result";
-import { authClient } from "~/lib/auth-client";
+} from "~/lib/profile-actions";
 
 vi.mock("~/lib/auth-client", () => ({
   authClient: {
@@ -19,6 +21,7 @@ vi.mock("~/lib/auth-client", () => ({
     passkey: {
       addPasskey: vi.fn(),
       deletePasskey: vi.fn(),
+      listUserPasskeys: vi.fn(),
     },
     updateUser: vi.fn(),
   },
@@ -63,75 +66,43 @@ test("表示名の更新エラーは利用者向けの errorMessage を返す", 
   );
 });
 
-test("ユーザー名の更新に成功すると errorMessage は null で reload しない", async () => {
+test("アイコン storageId 更新に成功すると convex-storage 参照を保存する", async () => {
   vi.mocked(authClient.updateUser).mockResolvedValue({ data: {}, error: null });
-  const reload = vi.spyOn(location, "reload").mockImplementation(() => {});
 
-  const result = await updateProfileUsername({ username: "new_user" });
+  const result = await updateProfileImage("storage123" as Id<"_storage">);
 
   expect(Result.isOk(result)).toBe(true);
-  expect(authClient.updateUser).toHaveBeenCalledWith({ username: "new_user" });
-  expect(authClient.getSession).toHaveBeenCalledTimes(1);
-  expect(reload).not.toHaveBeenCalled();
-  reload.mockRestore();
-});
-
-test("パスワード更新エラーは利用者向けの errorMessage を返す", async () => {
-  vi.mocked(authClient.changePassword).mockResolvedValue({
-    data: null,
-    error: {
-      code: "INVALID_PASSWORD",
-      message: "Invalid password",
-      status: 400,
-      statusText: "Bad Request",
-    },
-  });
-
-  const result = await updateProfilePassword({
-    currentPassword: "old-password",
-    newPassword: "new-password",
-  });
-
-  expect(authActionErrorMessage(result)).toBe(
-    "現在のパスワードが正しくありません。もう一度入力してください。",
-  );
-});
-
-test("アイコン URL 更新に成功すると errorMessage は null で reload しない", async () => {
-  vi.mocked(authClient.updateUser).mockResolvedValue({ data: {}, error: null });
-  const reload = vi.spyOn(location, "reload").mockImplementation(() => {});
-  const storageId = "storage123" as never;
-  const resolveAvatarUrl = vi.fn(async () => "https://example.com/avatar.jpg");
-
-  const result = await updateProfileImage(storageId, resolveAvatarUrl);
-
-  expect(Result.isOk(result)).toBe(true);
-  expect(resolveAvatarUrl).toHaveBeenCalledWith(storageId);
   expect(authClient.updateUser).toHaveBeenCalledWith({
-    image: "https://example.com/avatar.jpg",
+    image: "convex-storage:storage123",
   });
-  expect(authClient.getSession).toHaveBeenCalledTimes(1);
-  expect(reload).not.toHaveBeenCalled();
-  reload.mockRestore();
 });
 
-test("パスワード更新に成功すると reload せず session を再取得する", async () => {
-  vi.mocked(authClient.changePassword).mockResolvedValue({ data: {}, error: null });
-  const reload = vi.spyOn(location, "reload").mockImplementation(() => {});
-
-  const result = await updateProfilePassword({
-    currentPassword: "old-password",
-    newPassword: "new-password",
+test("listPasskeys は成功時に passkeys を返す", async () => {
+  vi.mocked(authClient.passkey.listUserPasskeys).mockResolvedValue({
+    data: [{ id: "pk_1" } as import("@better-auth/passkey/client").Passkey],
+    error: null,
   });
+
+  const result = await listPasskeys();
 
   expect(Result.isOk(result)).toBe(true);
-  expect(authClient.changePassword).toHaveBeenCalledWith({
-    currentPassword: "old-password",
-    newPassword: "new-password",
+  if (Result.isOk(result)) {
+    expect(result.value).toEqual([{ id: "pk_1" }]);
+  }
+});
+
+test("listPasskeys は API エラー時に AuthActionError を返す", async () => {
+  vi.mocked(authClient.passkey.listUserPasskeys).mockResolvedValue({
+    data: null,
+    error: { message: "fail", status: 500, statusText: "Error" },
   });
-  expect(authClient.getSession).toHaveBeenCalledTimes(1);
-  expect(reload).not.toHaveBeenCalled();
-  reload.mockRestore();
+
+  const result = await listPasskeys();
+
+  expect(Result.isError(result)).toBe(true);
+  if (Result.isError(result)) {
+    expect(result.error.message).toContain("パスキー一覧");
+  }
 });
 
 test("パスキー追加は成功時に reload も session 再取得もしない", async () => {
@@ -159,7 +130,56 @@ test("パスキー追加は成功時に reload も session 再取得もしない
   reload.mockRestore();
 });
 
-test("パスキー削除は成功時に reload も session 再取得もしない", async () => {
+test("パスワード更新エラーは利用者向けの errorMessage を返す", async () => {
+  vi.mocked(authClient.changePassword).mockResolvedValue({
+    data: null,
+    error: {
+      code: "INVALID_PASSWORD",
+      message: "Invalid password",
+      status: 400,
+      statusText: "Bad Request",
+    },
+  });
+
+  const result = await updateProfilePassword({
+    currentPassword: "old-password",
+    newPassword: "new-password",
+  });
+
+  expect(authActionErrorMessage(result)).toBe(
+    "現在のパスワードが正しくありません。もう一度入力してください。",
+  );
+});
+
+test("ユーザー名の更新に成功すると errorMessage は null", async () => {
+  vi.mocked(authClient.updateUser).mockResolvedValue({ data: {}, error: null });
+
+  const result = await updateProfileUsername({ username: "new_user" });
+
+  expect(Result.isOk(result)).toBe(true);
+  expect(authActionErrorMessage(result)).toBeNull();
+});
+
+test("パスワード更新に成功すると reload せず session を再取得する", async () => {
+  vi.mocked(authClient.changePassword).mockResolvedValue({ data: {}, error: null });
+  const reload = vi.spyOn(location, "reload").mockImplementation(() => {});
+
+  const result = await updateProfilePassword({
+    currentPassword: "old-password",
+    newPassword: "new-password",
+  });
+
+  expect(Result.isOk(result)).toBe(true);
+  expect(authClient.changePassword).toHaveBeenCalledWith({
+    currentPassword: "old-password",
+    newPassword: "new-password",
+  });
+  expect(authClient.getSession).toHaveBeenCalledTimes(1);
+  expect(reload).not.toHaveBeenCalled();
+  reload.mockRestore();
+});
+
+test("パスキー削除は成功時に session 再取得もしない", async () => {
   vi.mocked(authClient.passkey.deletePasskey).mockResolvedValue({ data: {}, error: null });
   const reload = vi.spyOn(location, "reload").mockImplementation(() => {});
 

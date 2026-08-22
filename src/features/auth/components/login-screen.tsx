@@ -1,9 +1,9 @@
 import { Button, Card, Center, Divider, Stack, Text, Title } from "@mantine/core";
 
+import { AuthActionFeedback } from "~/components/auth-action-feedback";
 import { AccountAuthPanel } from "~/features/auth/components/account-auth-form";
-import { AuthActionFeedback } from "~/features/auth/components/auth-action-feedback";
-import { useAuthActionTransition } from "~/features/auth/hooks/use-auth-action-transition";
 import { signInWithNotion, signInWithPasskey } from "~/features/auth/lib/auth-actions";
+import { useAuthActionTransition } from "~/hooks/use-auth-action-transition";
 import { DISPLAY_FONT } from "~/lib/theme";
 
 export function LoginScreen() {

@@ -1,7 +1,7 @@
 import { Card, Stack, Text, Title } from "@mantine/core";
 import { daysUntil } from "~domain/jst";
 
-import type { ExamGoal } from "~/features/goals/types/goal";
+import type { ExamGoal } from "~/features/my-page/types/exam-goal";
 import { NUMERAL_FONT } from "~/lib/theme";
 
 export type TodaySummaryTarget = {

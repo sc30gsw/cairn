@@ -4,25 +4,16 @@ import { Result } from "better-result";
 import type { Id } from "~/../convex/_generated/dataModel";
 import type { AuthActionResult } from "~/lib/auth-action-result";
 import { authClient } from "~/lib/auth-client";
-import { type AuthErrorContext, presentAuthError } from "~/lib/auth-error-messages";
+import { type AuthErrorContext } from "~/lib/auth-error-messages";
+import { encodeAvatarStorageRef } from "~/lib/avatar-image";
 import { AuthActionError } from "~/lib/errors";
+import { authActionError, authActionErrorFromUnknown } from "~/lib/run-auth-action";
 import type { PasskeyAddInput } from "~/lib/validation/passkey-schema";
 import type {
   ProfileNameInput,
   ProfilePasswordInput,
   ProfileUsernameInput,
 } from "~/lib/validation/profile-schema";
-
-function authActionError(error: unknown, context: AuthErrorContext): AuthActionError {
-  return new AuthActionError({ cause: error, message: presentAuthError(error, context) });
-}
-
-function authActionErrorFromUnknown(cause: unknown, context: AuthErrorContext): AuthActionError {
-  if (cause instanceof AuthActionError) {
-    return cause;
-  }
-  return authActionError(cause, context);
-}
 
 async function runProfileAction(
   action: () => Promise<void>,
@@ -73,13 +64,11 @@ export async function updateProfilePassword(
   }, "changePassword");
 }
 
-export async function updateProfileImage(
-  storageId: Id<"_storage">,
-  resolveAvatarUrl: (storageId: Id<"_storage">) => Promise<string>,
-): Promise<AuthActionResult> {
+export async function updateProfileImage(storageId: Id<"_storage">): Promise<AuthActionResult> {
   return runProfileAction(async () => {
-    const imageUrl = await resolveAvatarUrl(storageId);
-    const authResult = await authClient.updateUser({ image: imageUrl });
+    const authResult = await authClient.updateUser({
+      image: encodeAvatarStorageRef(storageId),
+    });
     if (authResult.error) {
       throw authActionError(authResult.error, "updateImage");
     }

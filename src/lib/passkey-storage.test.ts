@@ -1,4 +1,4 @@
-import { expect, test, vi } from "vite-plus/test";
+import { expect, test, beforeEach, vi } from "vite-plus/test";
 
 import {
   consumeSignupPasskeyPromptOpen,
@@ -37,6 +37,10 @@ function mockStorage() {
   return { local, session };
 }
 
+beforeEach(() => {
+  vi.unstubAllGlobals();
+});
+
 test("readPasskeyFlag / writePasskeyFlag は localStorage を使う", () => {
   mockStorage();
 
@@ -48,10 +52,18 @@ test("readPasskeyFlag / writePasskeyFlag は localStorage を使う", () => {
   vi.unstubAllGlobals();
 });
 
-test("consumeSignupPasskeyPromptOpen は OAuth pending を signup prompt に変換する", () => {
+test("shouldOpenMyPagePasskeyPrompt は skipped かつ未 reprompt のとき true", () => {
+  mockStorage();
+  writePasskeyFlag(PASSKEY_SIGNUP_SKIPPED_KEY, true);
+  expect(shouldOpenMyPagePasskeyPrompt()).toBe(true);
+  writePasskeyFlag(PASSKEY_MYPAGE_REPROMPTED_KEY, true);
+  expect(shouldOpenMyPagePasskeyPrompt()).toBe(false);
+  vi.unstubAllGlobals();
+});
+
+test("consumeSignupPasskeyPromptOpen は OAuth pending を signup prompt に昇格する", () => {
   mockStorage();
   writePasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY, true);
-
   expect(consumeSignupPasskeyPromptOpen()).toBe(true);
   expect(readPasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY)).toBe(false);
   expect(readPasskeyFlag(PASSKEY_SIGNUP_PROMPT_KEY)).toBe(false);

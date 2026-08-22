@@ -3,7 +3,7 @@ import { renderHook } from "@testing-library/react";
 import { expect, test } from "vite-plus/test";
 
 import { validateConfirmRow } from "~/features/today/lib/validate-confirm-row";
-import { RowEditorSchema } from "~/features/today/schemas/row-editor-schema";
+import { RowEditorSchema } from "~/lib/validation/row-editor-schema";
 
 test("validateConfirmRow は空のひとことでも値を返す", async () => {
   const { result } = renderHook(() =>

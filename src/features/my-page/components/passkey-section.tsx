@@ -4,10 +4,10 @@ import { Button, Card, Group, Stack, Text, TextInput, Title } from "@mantine/cor
 import { Result } from "better-result";
 import { useEffect, useState } from "react";
 
-import { AuthActionFeedback } from "~/features/auth/components/auth-action-feedback";
-import { useAuthActionTransition } from "~/features/auth/hooks/use-auth-action-transition";
-import { addPasskey, deletePasskey, listPasskeys } from "~/features/auth/lib/profile-actions";
+import { AuthActionFeedback } from "~/components/auth-action-feedback";
+import { useAuthActionTransition } from "~/hooks/use-auth-action-transition";
 import type { AuthActionError } from "~/lib/errors";
+import { addPasskey, deletePasskey, listPasskeys } from "~/lib/profile-actions";
 import { useResultTransition } from "~/lib/use-result-transition";
 import { PASSKEY_DEFAULT_DEVICE_NAME, PasskeyAddSchema } from "~/lib/validation/passkey-schema";
 

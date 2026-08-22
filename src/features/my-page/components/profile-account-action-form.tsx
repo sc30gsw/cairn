@@ -3,8 +3,8 @@ import { Button, Stack } from "@mantine/core";
 import type { ReactNode } from "react";
 import type { InferOutput } from "valibot";
 
-import { AuthActionFeedback } from "~/features/auth/components/auth-action-feedback";
-import { useAuthActionTransition } from "~/features/auth/hooks/use-auth-action-transition";
+import { AuthActionFeedback } from "~/components/auth-action-feedback";
+import { useAuthActionTransition } from "~/hooks/use-auth-action-transition";
 import type { AuthActionResult } from "~/lib/auth-action-result";
 
 type ProfileAccountActionFormProps<TSchema extends FormSchema> = {

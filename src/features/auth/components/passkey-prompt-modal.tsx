@@ -2,14 +2,14 @@ import { Field, Form, useForm } from "@formisch/react";
 import { Button, Group, Modal, Stack, Text, TextInput } from "@mantine/core";
 import { Result } from "better-result";
 
-import { AuthActionFeedback } from "~/features/auth/components/auth-action-feedback";
-import { useAuthActionTransition } from "~/features/auth/hooks/use-auth-action-transition";
-import { addPasskey } from "~/features/auth/lib/profile-actions";
+import { AuthActionFeedback } from "~/components/auth-action-feedback";
+import { useAuthActionTransition } from "~/hooks/use-auth-action-transition";
 import {
   PASSKEY_MYPAGE_REPROMPTED_KEY,
   PASSKEY_SIGNUP_SKIPPED_KEY,
   writePasskeyFlag,
 } from "~/lib/passkey-storage";
+import { addPasskey } from "~/lib/profile-actions";
 import { PASSKEY_DEFAULT_DEVICE_NAME, PasskeyAddSchema } from "~/lib/validation/passkey-schema";
 
 type PasskeyPromptModalProps = {

@@ -82,6 +82,10 @@ export default defineSchema({
     targetValue: v.number(),
   }).index("by_owner_and_category", ["ownerId", "categoryId"]),
 
+  avatarUploadClaims: defineTable({
+    ownerId: v.string(),
+  }).index("by_owner", ["ownerId"]),
+
   avatarUploads: defineTable({
     ownerId: v.string(),
     storageId: v.id("_storage"),

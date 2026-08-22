@@ -1,6 +1,6 @@
 import { validate, type FormStore } from "@formisch/react";
 
-import type { RowEditorSchema } from "~/features/today/schemas/row-editor-schema";
+import type { RowEditorSchema } from "~/lib/validation/row-editor-schema";
 
 export async function validateConfirmRow(form: FormStore<typeof RowEditorSchema>) {
   const result = await validate(form);
