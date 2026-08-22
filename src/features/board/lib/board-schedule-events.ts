@@ -44,8 +44,25 @@ export function allDayEventsForDay(
   day: string,
 ): ScheduleEventData[] {
   return events.filter(
-    (event) => isAllDayEvent(event) && dayFromScheduleInstant(event.start) === day,
+    (event) =>
+      isAllDayEvent(event) &&
+      !isBoardAllDayMoreEvent(event.id) &&
+      dayFromScheduleInstant(event.start) === day,
   );
+}
+
+export function timedEventsForDay(
+  events: readonly ScheduleEventData[],
+  day: string,
+): ScheduleEventData[] {
+  return events.filter((event) => {
+    if (isAllDayEvent(event) || isBoardAllDayMoreEvent(event.id)) {
+      return false;
+    }
+    const startDay = dayFromScheduleInstant(event.start);
+    const endDay = dayFromScheduleInstant(event.end);
+    return day >= startDay && day <= endDay;
+  });
 }
 
 export function withAllDayOverflow(

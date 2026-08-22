@@ -4,6 +4,7 @@ import { STATUSES } from "~domain/domain";
 import type { Id } from "~/../convex/_generated/dataModel";
 import {
   BOARD_ALL_DAY_MORE_PREFIX,
+  timedEventsForDay,
   toBoardScheduleEvents,
   withoutAllDayEvents,
   withAllDayOverflow,
@@ -144,6 +145,31 @@ test("終日7件は2件表示と+5件のみになる", () => {
     "F",
     "G",
   ]);
+});
+
+test("timedEventsForDay は終日とmoreを除いた予定だけ返す", () => {
+  const events = toBoardScheduleEvents("2026-08-17", [row("r1", "A", 0)], null, [
+    {
+      _id: "b1" as Id<"boardScheduleEvents">,
+      color: "blue",
+      endAt: "2026-08-17 10:30:00",
+      rowId: "r1" as Id<"rows">,
+      startAt: "2026-08-17 09:00:00",
+      title: "Morning Standup",
+    },
+  ]);
+  const overflow = withAllDayOverflow(events, 2, (count) => `+${count}件`);
+
+  expect(timedEventsForDay(overflow.events, "2026-08-17")).toEqual([
+    {
+      color: "blue",
+      end: "2026-08-17 10:30:00",
+      id: "b1",
+      start: "2026-08-17 09:00:00",
+      title: "Morning Standup",
+    },
+  ]);
+  expect(timedEventsForDay(overflow.events, "2026-08-18")).toEqual([]);
 });
 
 test("終日イベントだけを除外できる", () => {
