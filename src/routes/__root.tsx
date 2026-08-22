@@ -100,7 +100,7 @@ function RootDocument({ children }: Record<"children", ReactNode>) {
             <ModalsProvider labels={{ cancel: "キャンセル", confirm: "見送りにする" }}>
               <DatesProvider settings={{ locale: "ja" }}>{children}</DatesProvider>
             </ModalsProvider>
-            <Notifications position="top-center" styles={{ root: { top: "4.5rem" } }} />
+            <Notifications position="top-center" />
           </ShimmerProvider>
           {TanStackRouterDevtools ? (
             <Suspense fallback={null}>
