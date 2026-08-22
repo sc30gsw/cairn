@@ -1,6 +1,6 @@
 import * as v from "valibot";
 
-export const ACCOUNT_AUTH_MODES = ["signIn", "signUp"] as const;
+const ACCOUNT_AUTH_MODES = ["signIn", "signUp"] as const;
 
 export type AccountAuthMode = (typeof ACCOUNT_AUTH_MODES)[number];
 

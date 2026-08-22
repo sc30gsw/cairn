@@ -1,11 +1,12 @@
 import { v } from "convex/values";
 
+import { boardScheduleColorValidator } from "../../lib/boardScheduleColors";
 import { ownerMutation } from "../../lib/ownerFunctions";
 import { create as createBlock } from "../../services/boardSchedule/blocks";
 
 export const create = ownerMutation({
   args: {
-    color: v.optional(v.string()),
+    color: v.optional(boardScheduleColorValidator),
     endAt: v.string(),
     rowId: v.id("rows"),
     startAt: v.string(),

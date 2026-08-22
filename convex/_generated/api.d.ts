@@ -11,6 +11,7 @@
 import type * as auth from "../auth.js";
 import type * as crons from "../crons.js";
 import type * as http from "../http.js";
+import type * as lib_boardScheduleColors from "../lib/boardScheduleColors.js";
 import type * as lib_catalog from "../lib/catalog.js";
 import type * as lib_catalogLoader from "../lib/catalogLoader.js";
 import type * as lib_categories from "../lib/categories.js";
@@ -201,6 +202,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   crons: typeof crons;
   http: typeof http;
+  "lib/boardScheduleColors": typeof lib_boardScheduleColors;
   "lib/catalog": typeof lib_catalog;
   "lib/catalogLoader": typeof lib_catalogLoader;
   "lib/categories": typeof lib_categories;
