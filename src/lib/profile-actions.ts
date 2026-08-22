@@ -38,14 +38,14 @@ function authActionErrorFromUnknown(cause: unknown, context: AuthErrorContext): 
 async function runProfileAction(
   action: () => Promise<void>,
   context: AuthErrorContext,
-  reloadOnSuccess = true,
+  refreshSessionOnSuccess = true,
 ): Promise<ProfileActionResult> {
   const result = await Result.tryPromise({
     catch: (cause) => authActionErrorFromUnknown(cause, context),
     try: action,
   });
-  if (Result.isOk(result) && reloadOnSuccess) {
-    location.reload();
+  if (Result.isOk(result) && refreshSessionOnSuccess) {
+    await authClient.getSession();
   }
   return toProfileActionResult(result);
 }

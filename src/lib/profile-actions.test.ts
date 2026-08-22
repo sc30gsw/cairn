@@ -1,4 +1,4 @@
-import { expect, test, vi } from "vite-plus/test";
+import { expect, test, vi, beforeEach } from "vite-plus/test";
 
 import { authClient } from "~/lib/auth-client";
 import {
@@ -13,6 +13,7 @@ import {
 vi.mock("~/lib/auth-client", () => ({
   authClient: {
     changePassword: vi.fn(),
+    getSession: vi.fn(),
     passkey: {
       addPasskey: vi.fn(),
       deletePasskey: vi.fn(),
@@ -21,7 +22,19 @@ vi.mock("~/lib/auth-client", () => ({
   },
 }));
 
-test("表示名の更新に成功すると errorMessage は null", async () => {
+function mockProfileUpdateSuccess() {
+  vi.mocked(authClient.getSession).mockResolvedValue({
+    data: { session: null, user: null },
+    error: null,
+  });
+}
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockProfileUpdateSuccess();
+});
+
+test("表示名の更新に成功すると errorMessage は null で reload せず session を再取得する", async () => {
   vi.mocked(authClient.updateUser).mockResolvedValue({ data: {}, error: null });
   const reload = vi.spyOn(location, "reload").mockImplementation(() => {});
 
@@ -29,7 +42,8 @@ test("表示名の更新に成功すると errorMessage は null", async () => {
 
   expect(result).toEqual({ errorMessage: null });
   expect(authClient.updateUser).toHaveBeenCalledWith({ name: "新しい名前" });
-  expect(reload).toHaveBeenCalledTimes(1);
+  expect(authClient.getSession).toHaveBeenCalledTimes(1);
+  expect(reload).not.toHaveBeenCalled();
   reload.mockRestore();
 });
 
@@ -46,7 +60,7 @@ test("表示名の更新エラーは利用者向けの errorMessage を返す", 
   });
 });
 
-test("ユーザー名の更新に成功すると errorMessage は null", async () => {
+test("ユーザー名の更新に成功すると errorMessage は null で reload しない", async () => {
   vi.mocked(authClient.updateUser).mockResolvedValue({ data: {}, error: null });
   const reload = vi.spyOn(location, "reload").mockImplementation(() => {});
 
@@ -54,6 +68,8 @@ test("ユーザー名の更新に成功すると errorMessage は null", async (
 
   expect(result).toEqual({ errorMessage: null });
   expect(authClient.updateUser).toHaveBeenCalledWith({ username: "new_user" });
+  expect(authClient.getSession).toHaveBeenCalledTimes(1);
+  expect(reload).not.toHaveBeenCalled();
   reload.mockRestore();
 });
 
@@ -78,7 +94,7 @@ test("パスワード更新エラーは利用者向けの errorMessage を返す
   });
 });
 
-test("アイコン URL 更新に成功すると errorMessage は null", async () => {
+test("アイコン URL 更新に成功すると errorMessage は null で reload しない", async () => {
   vi.mocked(authClient.updateUser).mockResolvedValue({ data: {}, error: null });
   const reload = vi.spyOn(location, "reload").mockImplementation(() => {});
 
@@ -88,10 +104,31 @@ test("アイコン URL 更新に成功すると errorMessage は null", async ()
   expect(authClient.updateUser).toHaveBeenCalledWith({
     image: "https://example.com/avatar.jpg",
   });
+  expect(authClient.getSession).toHaveBeenCalledTimes(1);
+  expect(reload).not.toHaveBeenCalled();
   reload.mockRestore();
 });
 
-test("パスキー追加は成功時に reload しない", async () => {
+test("パスワード更新に成功すると reload せず session を再取得する", async () => {
+  vi.mocked(authClient.changePassword).mockResolvedValue({ data: {}, error: null });
+  const reload = vi.spyOn(location, "reload").mockImplementation(() => {});
+
+  const result = await updateProfilePassword({
+    currentPassword: "old-password",
+    newPassword: "new-password",
+  });
+
+  expect(result).toEqual({ errorMessage: null });
+  expect(authClient.changePassword).toHaveBeenCalledWith({
+    currentPassword: "old-password",
+    newPassword: "new-password",
+  });
+  expect(authClient.getSession).toHaveBeenCalledTimes(1);
+  expect(reload).not.toHaveBeenCalled();
+  reload.mockRestore();
+});
+
+test("パスキー追加は成功時に reload も session 再取得もしない", async () => {
   vi.mocked(authClient.passkey.addPasskey).mockResolvedValue({
     data: {
       backedUp: false,
@@ -111,6 +148,19 @@ test("パスキー追加は成功時に reload しない", async () => {
 
   expect(result).toEqual({ errorMessage: null });
   expect(authClient.passkey.addPasskey).toHaveBeenCalledWith({ name: "Cairn" });
+  expect(authClient.getSession).not.toHaveBeenCalled();
+  expect(reload).not.toHaveBeenCalled();
+  reload.mockRestore();
+});
+
+test("パスキー削除は成功時に reload も session 再取得もしない", async () => {
+  vi.mocked(authClient.passkey.deletePasskey).mockResolvedValue({ data: {}, error: null });
+  const reload = vi.spyOn(location, "reload").mockImplementation(() => {});
+
+  const result = await deletePasskey("pk_1");
+
+  expect(result).toEqual({ errorMessage: null });
+  expect(authClient.getSession).not.toHaveBeenCalled();
   expect(reload).not.toHaveBeenCalled();
   reload.mockRestore();
 });
