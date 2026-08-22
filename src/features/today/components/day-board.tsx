@@ -7,6 +7,7 @@ import {
   EmptyState,
   Grid,
   Group,
+  Input,
   Select,
   Stack,
   Text,
@@ -168,53 +169,55 @@ export function DayBoard({
         <Card>
           <Grid align="center">
             <Grid.Col span={{ base: 12, sm: 7 }}>
-              <Group align="center" gap="sm" wrap="nowrap">
-                <DatePickerInput
-                  classNames={{
-                    input: classes.learningDateInput,
-                    month: calendarDayStyleClasses.japaneseCalendar,
-                  }}
-                  firstDayOfWeek={1}
-                  getDayProps={(date) => calendarDayProps(date, todayJst)}
-                  getMonthControlProps={(month) => ({
-                    disabled: month.slice(0, 7) > todayJst.slice(0, 7),
-                  })}
-                  getYearControlProps={(year) => ({
-                    disabled: year.slice(0, 4) > todayJst.slice(0, 4),
-                  })}
-                  label="学習日"
-                  locale="ja"
-                  maxDate={todayJst}
-                  miw={0}
-                  onChange={(value) => {
-                    if (typeof value === "string") {
-                      pickLearningDate(value);
-                    }
-                  }}
-                  popoverProps={{ withinPortal: true }}
-                  style={{ flex: 1, minWidth: 0 }}
-                  value={dateJst}
-                  valueFormat="YYYY-MM-DD"
-                />
-                <Group align="center" gap={4} wrap="nowrap">
-                  <ActionIcon
-                    aria-label="前の日"
-                    onClick={() => goToDate(addDaysJst(dateJst, -1))}
-                    size="input-sm"
-                    variant="subtle"
-                  >
-                    <IconChevronLeft aria-hidden size={18} stroke={1.75} />
-                  </ActionIcon>
-                  <ActionIcon
-                    aria-label="次の日"
-                    disabled={dateJst >= todayJst}
-                    onClick={() => goToDate(addDaysJst(dateJst, 1))}
-                    size="input-sm"
-                    variant="subtle"
-                  >
-                    <IconChevronRight aria-hidden size={18} stroke={1.75} />
-                  </ActionIcon>
-                </Group>
+              <Group align="flex-end" gap="sm" wrap="wrap">
+                <Input.Wrapper label="学習日">
+                  <Group align="center" gap={4} mt={4} wrap="nowrap">
+                    <DatePickerInput
+                      aria-label="学習日"
+                      classNames={{
+                        input: classes.learningDateInput,
+                        month: calendarDayStyleClasses.japaneseCalendar,
+                      }}
+                      firstDayOfWeek={1}
+                      getDayProps={(date) => calendarDayProps(date, todayJst)}
+                      getMonthControlProps={(month) => ({
+                        disabled: month.slice(0, 7) > todayJst.slice(0, 7),
+                      })}
+                      getYearControlProps={(year) => ({
+                        disabled: year.slice(0, 4) > todayJst.slice(0, 4),
+                      })}
+                      locale="ja"
+                      maxDate={todayJst}
+                      miw={0}
+                      onChange={(value) => {
+                        if (typeof value === "string") {
+                          pickLearningDate(value);
+                        }
+                      }}
+                      popoverProps={{ withinPortal: true }}
+                      value={dateJst}
+                      valueFormat="YYYY-MM-DD"
+                      w="fit-content"
+                    />
+                    <ActionIcon
+                      aria-label="前の日"
+                      onClick={() => goToDate(addDaysJst(dateJst, -1))}
+                      size="input-sm"
+                      variant="subtle"
+                    >
+                      <IconChevronLeft aria-hidden size={18} stroke={1.75} />
+                    </ActionIcon>
+                    <ActionIcon
+                      aria-label="次の日"
+                      disabled={dateJst >= todayJst}
+                      onClick={() => goToDate(addDaysJst(dateJst, 1))}
+                      size="input-sm"
+                      variant="subtle"
+                    >
+                      <IconChevronRight aria-hidden size={18} stroke={1.75} />
+                    </ActionIcon>
+                  </Group>
+                </Input.Wrapper>
                 {isToday ? null : (
                   <Button onClick={() => void navigate({ to: "/" })} variant="light">
                     今日へ戻る

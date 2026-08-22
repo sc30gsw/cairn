@@ -90,7 +90,7 @@ function IndexTabs({ pathname }: Record<"pathname", string>) {
               to={to}
             >
               <Group gap={6} justify="center" wrap="nowrap">
-                <Icon aria-hidden size={active ? 16 : 14} stroke={1.5} />
+                <Icon aria-hidden size={active ? 16 : 12} stroke={1.5} />
                 {label}
               </Group>
             </Box>
