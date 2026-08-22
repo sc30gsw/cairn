@@ -2,8 +2,11 @@ import { getStartOfWeek } from "@mantine/schedule";
 import dayjs from "dayjs";
 import type { DateJst } from "~domain/jst";
 
+/** Mantine `DatePickerInput` valueFormat と day ラベル整形の SSoT */
+export const DAY_NAVIGATION_DATE_FORMAT = "YYYY年M月D日（ddd）";
+
 export function formatDayNavigationLabel(dateJst: DateJst): string {
-  return dayjs(dateJst).format("YYYY年M月D日（ddd）");
+  return dayjs(dateJst).format(DAY_NAVIGATION_DATE_FORMAT);
 }
 
 export function formatWeekNavigationLabel(weekAnchor: DateJst): string {

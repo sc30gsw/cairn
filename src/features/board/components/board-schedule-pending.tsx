@@ -10,6 +10,7 @@ export function BoardSchedulePending() {
       onMoveBlock={async () => undefined}
       onRemoveBlock={async () => undefined}
       onUpdateBlock={async () => undefined}
+      pending
       rows={boardShimmerRows}
     />
   );

@@ -1,6 +1,6 @@
 import { Card, Stack } from "@mantine/core";
 import { Schedule, type DateStringValue, type ScheduleEventData } from "@mantine/schedule";
-import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from "react";
+import { useEffect, useState, type CSSProperties, type MouseEvent } from "react";
 
 import {
   BoardScheduleAllDayExpand,
@@ -77,6 +77,7 @@ type BoardScheduleProps = {
   onMoveBlock: (input: BoardScheduleMoveInput) => Promise<void>;
   onRemoveBlock: (input: BoardScheduleRemoveInput) => Promise<void>;
   onUpdateBlock: (input: BoardScheduleUpdateInput) => Promise<void>;
+  pending?: boolean;
   rows: readonly BoardRow[];
 };
 
@@ -87,6 +88,7 @@ export function BoardSchedule({
   onMoveBlock,
   onRemoveBlock,
   onUpdateBlock,
+  pending = false,
   rows,
 }: BoardScheduleProps) {
   const {
@@ -106,7 +108,7 @@ export function BoardSchedule({
   const [formValues, setFormValues] = useState<BoardScheduleEventInput | null>(null);
   const [expandedAllDayAnchor, setExpandedAllDayAnchor] =
     useState<BoardScheduleAllDayExpandAnchor | null>(null);
-  const scheduleRootRef = useRef<HTMLDivElement>(null);
+  const [scheduleRoot, setScheduleRoot] = useState<HTMLDivElement | null>(null);
   const editableBlockIds = boardScheduleBlockIds(blocks);
   const baseEvents = toBoardScheduleEvents(dateJst, rows, checkpoint, blocks);
   const moreLabel = SCHEDULE_LABELS_JA.moreLabel ?? boardMoreLabel;
@@ -122,11 +124,10 @@ export function BoardSchedule({
       : allDayEventsForDay(baseEvents, expandedAllDayAnchor.dateJst);
 
   function openAllDayExpand(date: string, target: HTMLElement) {
-    const root = scheduleRootRef.current;
-    if (root === null) {
+    if (scheduleRoot === null) {
       return;
     }
-    const rootRect = root.getBoundingClientRect();
+    const rootRect = scheduleRoot.getBoundingClientRect();
     const targetRect = target.getBoundingClientRect();
     setExpandedAllDayAnchor({
       dateJst: date,
@@ -145,11 +146,10 @@ export function BoardSchedule({
       if (!(target instanceof Node)) {
         return;
       }
-      const root = scheduleRootRef.current;
-      if (root === null) {
+      if (scheduleRoot === null) {
         return;
       }
-      const expandPanel = root.querySelector("[data-board-all-day-expand]");
+      const expandPanel = scheduleRoot.querySelector("[data-board-all-day-expand]");
       if (expandPanel?.contains(target)) {
         return;
       }
@@ -160,7 +160,7 @@ export function BoardSchedule({
     }
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [expandedAllDayAnchor]);
+  }, [expandedAllDayAnchor, scheduleRoot]);
 
   function collapseAllDayExpand() {
     setExpandedAllDayAnchor(null);
@@ -274,34 +274,41 @@ export function BoardSchedule({
             todayJst={todayJst}
             weekAnchor={weekAnchor}
           />
-          <div className={classes.boardScheduleRoot} data-view={scheduleView} ref={scheduleRootRef}>
+          <div className={classes.boardScheduleRoot} data-view={scheduleView} ref={setScheduleRoot}>
             <Schedule
-              canDragEvent={(event) => editableBlockIds.has(String(event.id))}
+              canDragEvent={(event) => !pending && editableBlockIds.has(String(event.id))}
               date={anchorDateJst}
               events={scheduleEvents}
               labels={SCHEDULE_LABELS_JA}
               locale="ja"
               dayViewProps={dayViewProps}
+              mode={pending ? "static" : "default"}
               monthViewProps={BOARD_MONTH_VIEW_PROPS}
-              onDayClick={handleDayClick}
-              onEventClick={handleEventClick}
-              onEventDrop={({ eventId, newEnd, newStart }) => {
-                collapseAllDayExpand();
-                if (!editableBlockIds.has(String(eventId))) {
-                  return;
-                }
-                void onMoveBlock({
-                  blockId: eventId as BoardScheduleBlock["_id"],
-                  endAt: newEnd,
-                  startAt: newStart,
-                });
-              }}
-              onSlotDragEnd={(rangeStart, rangeEnd) => {
-                openCreate(rangeStart, rangeEnd);
-              }}
-              onTimeSlotClick={({ slotEnd, slotStart }) => {
-                openCreate(slotStart, slotEnd);
-              }}
+              onDayClick={pending ? undefined : handleDayClick}
+              onEventClick={pending ? undefined : handleEventClick}
+              onEventDrop={
+                pending
+                  ? undefined
+                  : ({ eventId, newEnd, newStart }) => {
+                      collapseAllDayExpand();
+                      if (!editableBlockIds.has(String(eventId))) {
+                        return;
+                      }
+                      void onMoveBlock({
+                        blockId: eventId as BoardScheduleBlock["_id"],
+                        endAt: newEnd,
+                        startAt: newStart,
+                      });
+                    }
+              }
+              onSlotDragEnd={pending ? undefined : openCreate}
+              onTimeSlotClick={
+                pending
+                  ? undefined
+                  : ({ slotEnd, slotStart }) => {
+                      openCreate(slotStart, slotEnd);
+                    }
+              }
               onViewChange={onScheduleViewChange}
               renderEventBody={(event) =>
                 isBoardAllDayMoreEvent(event.id) ? (
@@ -313,8 +320,8 @@ export function BoardSchedule({
               view={scheduleView}
               weekViewProps={BOARD_WEEK_VIEW_PROPS}
               yearViewProps={yearViewProps}
-              withDragSlotSelect={rows.length > 0}
-              withEventsDragAndDrop
+              withDragSlotSelect={!pending && rows.length > 0}
+              withEventsDragAndDrop={!pending}
             />
             {expandedAllDayAnchor === null ? null : (
               <BoardScheduleAllDayExpand
@@ -327,43 +334,45 @@ export function BoardSchedule({
           </div>
         </Stack>
       </Card>
-      <BoardScheduleEventForm
-        initialValues={formValues}
-        onClose={() => setFormOpened(false)}
-        onDelete={
-          formValues?.blockId === undefined
-            ? undefined
-            : async () => {
-                await onRemoveBlock({
-                  blockId: formValues.blockId as BoardScheduleBlock["_id"],
-                });
-                setFormOpened(false);
-              }
-        }
-        onSubmit={async (values) => {
-          const blockId =
-            values.blockId ?? (formValues?.blockId as BoardScheduleBlock["_id"] | undefined);
-          const payload = {
-            color: values.color,
-            endAt: dateToScheduleInstant(values.end),
-            startAt: dateToScheduleInstant(values.start),
-          };
-          if (blockId === undefined) {
-            await onCreateBlock({
-              ...payload,
-              rowId: values.rowId as BoardRow["_id"],
-            });
-            return;
+      {pending ? null : (
+        <BoardScheduleEventForm
+          initialValues={formValues}
+          onClose={() => setFormOpened(false)}
+          onDelete={
+            formValues?.blockId === undefined
+              ? undefined
+              : async () => {
+                  await onRemoveBlock({
+                    blockId: formValues.blockId as BoardScheduleBlock["_id"],
+                  });
+                  setFormOpened(false);
+                }
           }
-          await onUpdateBlock({
-            blockId: blockId as BoardScheduleBlock["_id"],
-            rowId: values.rowId as BoardRow["_id"],
-            ...payload,
-          });
-        }}
-        opened={formOpened}
-        rows={rows}
-      />
+          onSubmit={async (values) => {
+            const blockId =
+              values.blockId ?? (formValues?.blockId as BoardScheduleBlock["_id"] | undefined);
+            const payload = {
+              color: values.color,
+              endAt: dateToScheduleInstant(values.end),
+              startAt: dateToScheduleInstant(values.start),
+            };
+            if (blockId === undefined) {
+              await onCreateBlock({
+                ...payload,
+                rowId: values.rowId as BoardRow["_id"],
+              });
+              return;
+            }
+            await onUpdateBlock({
+              blockId: blockId as BoardScheduleBlock["_id"],
+              rowId: values.rowId as BoardRow["_id"],
+              ...payload,
+            });
+          }}
+          opened={formOpened}
+          rows={rows}
+        />
+      )}
     </>
   );
 }

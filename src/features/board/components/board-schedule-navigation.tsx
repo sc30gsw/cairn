@@ -3,7 +3,10 @@ import { ScheduleHeader, getStartOfWeek, type ScheduleViewLevel } from "@mantine
 import dayjs from "dayjs";
 import { addDaysJst, isFutureDateJst, mondayOfWeek, type DateJst } from "~domain/jst";
 
-import { formatWeekNavigationLabel } from "~/features/board/lib/board-schedule-navigation-labels";
+import {
+  DAY_NAVIGATION_DATE_FORMAT,
+  formatWeekNavigationLabel,
+} from "~/features/board/lib/board-schedule-navigation-labels";
 import type { BoardScheduleView } from "~/features/board/schemas/board-search-schema";
 import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-style";
 import { SCHEDULE_LABELS_JA } from "~/lib/schedule-labels";
@@ -158,7 +161,7 @@ export function BoardScheduleNavigation({
           }}
           todayJst={todayJst}
           value={selectedDateJst}
-          valueFormat="YYYY年M月D日（ddd）"
+          valueFormat={DAY_NAVIGATION_DATE_FORMAT}
         />
         <ScheduleHeader.Next
           aria-label={SCHEDULE_LABELS_JA.next}

@@ -40,7 +40,7 @@ export function BoardPage() {
 }
 
 function BoardPending() {
-  const { tab } = useBoardView();
+  const { setTab, tab } = useBoardView();
 
   return (
     <>
@@ -52,6 +52,7 @@ function BoardPending() {
           今日の記録の状態と、チェックポイント。書く場所は日のままです。
         </Text>
         <BoardTabsPending
+          onTabChange={setTab}
           kanban={
             <BoardKanban
               checkpointLabel="Part 2 を聞き取る（2026-08-20）"
