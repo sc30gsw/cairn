@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { useBoardView } from "~/features/board/hooks/use-board-view";
 import type { BoardTab } from "~/features/board/schemas/board-search-schema";
 
-import tabBarClasses from "~/features/board/components/board-tab-bar.module.css";
+import tabBarClasses from "~/components/pills-tab-bar.module.css";
 
 type BoardTabsProps = {
   kanban: ReactNode;

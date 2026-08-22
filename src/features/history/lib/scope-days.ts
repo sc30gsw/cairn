@@ -4,12 +4,11 @@ import { CONDITIONS } from "~domain/conditions";
 import type { DateJst } from "~domain/jst";
 
 import type { AnalysisScope } from "~/features/history/schemas/analysis-scope-schema";
-import type { HeatmapDay, MonthBreakdown, WeekBreakdown } from "~/features/history/types/history";
+import type { HeatmapDay, MonthBreakdown } from "~/features/history/types/history";
 
 export function daysInAnalysisScope(
   scope: AnalysisScope,
   selectedDateJst: DateJst,
-  week: WeekBreakdown,
   month: MonthBreakdown,
   heatmapDays: readonly HeatmapDay[],
   weekDays: readonly HeatmapDay[],

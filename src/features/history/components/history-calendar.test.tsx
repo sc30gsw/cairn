@@ -472,3 +472,111 @@ test("休養の日でもこの日を開くがある", () => {
   expect(getByText("この日は記録がありません。")).toBeDefined();
   expect(getByRole("link", { name: "この日を開く" })).toBeDefined();
 });
+
+const memoScopeWeekDays = [
+  {
+    condition: "好調" as const,
+    dateJst: "2026-08-17",
+    isRest: false,
+    memo: "週スコープの好調メモ",
+    minutes: 30,
+    movingAverage: 10,
+  },
+  {
+    condition: "普通" as const,
+    dateJst: "2026-08-16",
+    isRest: false,
+    memo: "週スコープの普通メモ",
+    minutes: 20,
+    movingAverage: 10,
+  },
+];
+
+const emptyWeekBreakdown = {
+  byCategory: [],
+  byCondition: [],
+  byDay: [],
+  confirmedMinutes: 50,
+  rows: [],
+  skippedMinutes: 0,
+  volumeMinutes: 50,
+  weekEnd: "2026-08-23",
+  weekStart: "2026-08-17",
+};
+
+test("分析パネルの週スコープでコンディション別メモが見える", () => {
+  const { getByText } = renderWithMantine(
+    <HistoryAnalysisPanel
+      day={{
+        byCategory: [],
+        byCondition: [],
+        confirmedMinutes: 0,
+        dateJst: "2026-08-17",
+        isRest: false,
+        rows: [],
+        skippedMinutes: 0,
+      }}
+      heatmapDays={[]}
+      month={{
+        byCategory: [],
+        byCondition: [],
+        confirmedMinutes: 0,
+        days: [],
+        events: [],
+        rows: [],
+        skippedMinutes: 0,
+      }}
+      onDayClick={vi.fn()}
+      onScopeChange={vi.fn()}
+      scope="week"
+      selectedDateJst="2026-08-17"
+      todayJst="2026-08-17"
+      week={emptyWeekBreakdown}
+      weekDays={memoScopeWeekDays}
+      yearMonth="2026-08"
+    />,
+  );
+
+  expect(getByText("メモ（コンディション別）")).toBeDefined();
+  expect(getByText("週スコープの好調メモ")).toBeDefined();
+  expect(getByText("週スコープの普通メモ")).toBeDefined();
+  expect(getByText("確定 30分")).toBeDefined();
+});
+
+test("分析パネルの月スコープでコンディション別メモが見える", () => {
+  const { getByText } = renderWithMantine(
+    <HistoryAnalysisPanel
+      day={{
+        byCategory: [],
+        byCondition: [],
+        confirmedMinutes: 0,
+        dateJst: "2026-08-17",
+        isRest: false,
+        rows: [],
+        skippedMinutes: 0,
+      }}
+      heatmapDays={memoScopeWeekDays}
+      month={{
+        byCategory: [],
+        byCondition: [],
+        confirmedMinutes: 50,
+        days: memoScopeWeekDays,
+        events: [],
+        rows: [],
+        skippedMinutes: 0,
+      }}
+      onDayClick={vi.fn()}
+      onScopeChange={vi.fn()}
+      scope="month"
+      selectedDateJst="2026-08-17"
+      todayJst="2026-08-17"
+      week={emptyWeekBreakdown}
+      weekDays={[]}
+      yearMonth="2026-08"
+    />,
+  );
+
+  expect(getByText("メモ（コンディション別）")).toBeDefined();
+  expect(getByText("週スコープの好調メモ")).toBeDefined();
+  expect(getByText("確定 20分")).toBeDefined();
+});

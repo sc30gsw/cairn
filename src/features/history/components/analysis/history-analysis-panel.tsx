@@ -26,7 +26,7 @@ import type {
   WeekBreakdown,
 } from "~/features/history/types/history";
 
-import tabBarClasses from "~/features/history/components/history-tab-bar.module.css";
+import tabBarClasses from "~/components/pills-tab-bar.module.css";
 
 type HistoryAnalysisPanelProps = {
   day: DayBreakdown;
@@ -158,7 +158,7 @@ export function HistoryAnalysisPanel({
   weekDays,
   yearMonth,
 }: HistoryAnalysisPanelProps) {
-  const scopeDays = daysInAnalysisScope(scope, selectedDateJst, week, month, heatmapDays, weekDays);
+  const scopeDays = daysInAnalysisScope(scope, selectedDateJst, month, heatmapDays, weekDays);
 
   return (
     <Stack gap="md">

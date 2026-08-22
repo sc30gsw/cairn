@@ -35,17 +35,6 @@ test("daysInAnalysisScope の週スコープは weekDays を使う", () => {
       {
         byCategory: [],
         byCondition: [],
-        byDay: [],
-        confirmedMinutes: 30,
-        rows: [],
-        skippedMinutes: 0,
-        volumeMinutes: 30,
-        weekEnd: "2025-01-12",
-        weekStart: "2025-01-06",
-      },
-      {
-        byCategory: [],
-        byCondition: [],
         confirmedMinutes: 0,
         days: [],
         events: [],

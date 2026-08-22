@@ -2,7 +2,7 @@ import { Tabs, Title } from "@mantine/core";
 
 import { HistoryMonthTabPending } from "~/features/history/components/history-month-tab-pending";
 
-import tabBarClasses from "~/features/history/components/history-tab-bar.module.css";
+import tabBarClasses from "~/components/pills-tab-bar.module.css";
 
 export function HistoryPending() {
   return (
