@@ -19,45 +19,32 @@ import { IconGripVertical, IconTrash } from "@tabler/icons-react";
 import { groupBy, mapValues, prop, sortBy } from "remeda";
 
 import { PageTitle } from "~/components/page-title";
-import { useDnd } from "~/features/catalog/hooks/use-dnd";
+import {
+  useCatalogItemActions,
+  type CatalogItemActions,
+} from "~/features/catalog/hooks/use-catalog-item-actions";
 import { CategorySchema } from "~/features/catalog/schemas/category-schema";
 import { ItemNameSchema } from "~/features/catalog/schemas/item-schema";
-import type { ItemDto } from "~/features/catalog/types/item";
-import { parseCategoryId, unwrapCategoryId } from "~/features/catalog/types/item";
-import type {
-  ApplyItemOrderInput,
-  CreateCategoryInput,
-  CreateItemInput,
-  RemoveCategoryInput,
-  RemoveItemInput,
-  RenameCategoryInput,
-  RenameItemInput,
-} from "~/features/catalog/types/mutations";
+import { useDnd } from "~/hooks/use-dnd";
 import type { CategoryDto } from "~/types/category";
+import type { ItemDto } from "~/types/item";
+import { parseCategoryId, unwrapCategoryId } from "~/types/item";
 
 type ItemListProps = {
   categories: CategoryDto[];
   items: ItemDto[];
-  onCreateCategory: (input: CreateCategoryInput) => void;
-  onCreateItem: (input: CreateItemInput) => void;
-  onRemoveCategory: (categoryId: RemoveCategoryInput["categoryId"]) => void;
-  onRemoveItem: (itemId: RemoveItemInput["itemId"]) => void;
-  onRenameCategory: (input: RenameCategoryInput) => void;
-  onRenameItem: (input: RenameItemInput) => void | Promise<void>;
-  onApplyItemOrder: (input: ApplyItemOrderInput) => void | Promise<void>;
 };
 
-export function ItemList({
-  categories,
-  items,
-  onCreateCategory,
-  onCreateItem,
-  onRemoveCategory,
-  onRemoveItem,
-  onRenameCategory,
-  onRenameItem,
-  onApplyItemOrder,
-}: ItemListProps) {
+export function ItemList({ categories, items }: ItemListProps) {
+  const {
+    onApplyItemOrder,
+    onCreateCategory,
+    onCreateItem,
+    onRemoveCategory,
+    onRemoveItem,
+    onRenameCategory,
+    onRenameItem,
+  } = useCatalogItemActions();
   const { DragDropContext } = useDnd();
   const sortedCategories = sortBy(categories, prop("sortOrder"));
   const itemsByCategory = mapValues(groupBy(items, prop("categoryId")), (categoryItems) =>
@@ -144,7 +131,7 @@ export function ItemList({
   );
 }
 
-function AddCategoryForm({ onCreate }: { onCreate: ItemListProps["onCreateCategory"] }) {
+function AddCategoryForm({ onCreate }: { onCreate: CatalogItemActions["onCreateCategory"] }) {
   const form = useForm({
     initialInput: { name: "" },
     schema: CategorySchema,
@@ -190,7 +177,7 @@ function AddItemToColumnForm({
   onCreate,
 }: {
   category: CategoryDto;
-  onCreate: ItemListProps["onCreateItem"];
+  onCreate: CatalogItemActions["onCreateItem"];
 }) {
   const form = useForm({
     initialInput: { name: "" },
@@ -243,11 +230,11 @@ function KanbanColumn({
   categories: CategoryDto[];
   category: CategoryDto;
   items: ItemDto[];
-  onCreateItem: ItemListProps["onCreateItem"];
-  onRemoveCategory: ItemListProps["onRemoveCategory"];
-  onRemoveItem: ItemListProps["onRemoveItem"];
-  onRenameCategory: ItemListProps["onRenameCategory"];
-  onRenameItem: ItemListProps["onRenameItem"];
+  onCreateItem: CatalogItemActions["onCreateItem"];
+  onRemoveCategory: CatalogItemActions["onRemoveCategory"];
+  onRemoveItem: CatalogItemActions["onRemoveItem"];
+  onRenameCategory: CatalogItemActions["onRenameCategory"];
+  onRenameItem: CatalogItemActions["onRenameItem"];
 }) {
   const { Draggable, Droppable } = useDnd();
 
@@ -311,8 +298,8 @@ function CategoryEditor({
   onRename,
 }: {
   category: CategoryDto;
-  onRemove: ItemListProps["onRemoveCategory"];
-  onRename: ItemListProps["onRenameCategory"];
+  onRemove: CatalogItemActions["onRemoveCategory"];
+  onRename: CatalogItemActions["onRenameCategory"];
 }) {
   const form = useForm({
     initialInput: { name: category.name },
@@ -368,8 +355,8 @@ function ItemEditor({
   categories: CategoryDto[];
   categoryId: CategoryDto["_id"];
   item: ItemDto;
-  onRemove: ItemListProps["onRemoveItem"];
-  onRename: ItemListProps["onRenameItem"];
+  onRemove: CatalogItemActions["onRemoveItem"];
+  onRename: CatalogItemActions["onRenameItem"];
 }) {
   const form = useForm({
     initialInput: { name: item.name },

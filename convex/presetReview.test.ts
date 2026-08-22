@@ -82,11 +82,19 @@ test("今日と休養は分母に入れず、消化の低い曜日を提案す�
   expect(monday).toMatchObject({
     confirmed: 0,
     leftover: 3,
+    ongoing: 0,
     planned: 5,
     skipped: 2,
     weekday: 1,
   });
-  expect(tuesday).toMatchObject({ confirmed: 5, leftover: 0, planned: 5, skipped: 0, weekday: 2 });
+  expect(tuesday).toMatchObject({
+    confirmed: 5,
+    leftover: 0,
+    ongoing: 0,
+    planned: 5,
+    skipped: 0,
+    weekday: 2,
+  });
   expect(review.suggestions).toEqual([{ reason: "leftoverHeavy", weekday: 1 }]);
 });
 
@@ -118,7 +126,7 @@ test("ゴミ箱の日の記録は数えない", async () => {
     .withIdentity(OWNER)
     .query(api.queries.history.presetReview.presetReview, { todayJst: TODAY });
   const monday = review.weekdays.find((row) => row.weekday === 1);
-  expect(monday).toMatchObject({ confirmed: 0, leftover: 0, planned: 0, skipped: 0 });
+  expect(monday).toMatchObject({ confirmed: 0, leftover: 0, ongoing: 0, planned: 0, skipped: 0 });
   expect(review.suggestions).toEqual([]);
 });
 
@@ -160,5 +168,5 @@ test("ゴミ箱の行は、日が残っていても数えない", async () => {
     .withIdentity(OWNER)
     .query(api.queries.history.presetReview.presetReview, { todayJst: TODAY });
   const monday = review.weekdays.find((row) => row.weekday === 1);
-  expect(monday).toMatchObject({ confirmed: 1, leftover: 0, planned: 1, skipped: 0 });
+  expect(monday).toMatchObject({ confirmed: 1, leftover: 0, ongoing: 0, planned: 1, skipped: 0 });
 });

@@ -16,7 +16,7 @@ export function presetReviewCaption(windowStart: string, windowEnd: string) {
 
 export function suggestionCopy(suggestion: Suggestion, weekday: WeekdayRow) {
   const label = weekdayLabel(suggestion.weekday);
-  const counts = `並んだ${weekday.planned}件のうち確定${weekday.confirmed}・見送り${weekday.skipped}・未着手${weekday.leftover}`;
+  const counts = `並んだ${weekday.planned}件のうち確定${weekday.confirmed}・見送り${weekday.skipped}・未着手${weekday.leftover}・進行中${weekday.ongoing}`;
   if (suggestion.reason === "leftoverHeavy") {
     return `直近の${label}は、${counts}。未着手のまま残ることが多い。`;
   }

@@ -30,16 +30,11 @@ import { AdhocRowForm } from "~/features/today/components/adhoc-row-form";
 import { DayMetaPanel } from "~/features/today/components/day-meta-panel";
 import { RowEditor } from "~/features/today/components/row-editor";
 import { ShareCopy } from "~/features/today/components/share-copy";
+import { useApplyPresetFromSearch } from "~/features/today/hooks/use-apply-preset-from-search";
+import { useDayBoardActions } from "~/features/today/hooks/use-day-board-actions";
 import { emptyDayCopy } from "~/features/today/lib/empty-day-copy";
+import type { DaySearch } from "~/features/today/schemas/day-search-schema";
 import type { DayPage } from "~/features/today/types/day";
-import type {
-  AddRowInput,
-  ConfirmRowInput,
-  RemoveRowInput,
-  SetConditionInput,
-  SetMemoInput,
-  SkipRowInput,
-} from "~/features/today/types/mutations";
 import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-style";
 import { onRequiredSelect } from "~/lib/select";
 import { BODY_FONT, NUMERAL_FONT } from "~/lib/theme";
@@ -51,19 +46,12 @@ import classes from "~/features/today/components/day-board.module.css";
 type DayBoardProps = {
   dateJst: DateJst;
   day: DayPage;
+  interactive?: boolean;
   items: ItemDto[];
-  onAddRow: (input: AddRowInput) => void;
-  onConfirm: (input: ConfirmRowInput) => void;
-  onCopyYesterday: () => void;
-  onRemoveDay: () => void;
-  onRemoveRow: (rowId: RemoveRowInput["rowId"]) => void;
-  onSaveCondition: (condition: SetConditionInput) => void;
-  onSaveMemo: (memo: SetMemoInput) => void;
-  onSkip: (rowId: SkipRowInput["rowId"]) => void;
-  onSwitchPreset: (presetId: PresetDto["_id"]) => void;
+  onConfirmedCategory?: (category: string) => void;
+  presetFromSearch?: DaySearch["preset"];
   presets: PresetDto[];
   remainderMessage?: string | null;
-  selectedPresetId: null | PresetId;
   todayJst: DateJst;
 };
 
@@ -126,24 +114,33 @@ function DayPresetSelect({
 export function DayBoard({
   dateJst,
   day,
+  interactive = true,
   items,
-  onAddRow,
-  onConfirm,
-  onCopyYesterday,
-  onRemoveDay,
-  onRemoveRow,
-  onSaveCondition,
-  onSaveMemo,
-  onSkip,
-  onSwitchPreset,
+  onConfirmedCategory,
+  presetFromSearch,
   presets,
   remainderMessage = null,
-  selectedPresetId,
   todayJst,
 }: DayBoardProps) {
   const navigate = useNavigate();
-  const canEdit = day.kind !== "unrecorded";
   const isToday = dateJst === todayJst;
+  const {
+    onAddRow,
+    onConfirm,
+    onCopyYesterday,
+    onRemoveDay,
+    onRemoveRow,
+    onSaveCondition,
+    onSaveMemo,
+    onSkip,
+    onSwitchPreset,
+  } = useDayBoardActions(dateJst, day.rows, { onConfirmedCategory });
+  const { appliedPresetRef, selectedPresetId } = useApplyPresetFromSearch(
+    dateJst,
+    presetFromSearch,
+    isToday,
+  );
+  const canEdit = day.kind !== "unrecorded";
   const emptyCopy = emptyDayCopy(day.kind);
 
   const goToDate = (next: string) => {
@@ -240,7 +237,12 @@ export function DayBoard({
                 dateJst={dateJst}
                 isRest={day.kind === "rest"}
                 isToday={isToday}
-                onSwitchPreset={onSwitchPreset}
+                onSwitchPreset={(presetId) => {
+                  if (!interactive) {
+                    return;
+                  }
+                  void onSwitchPreset(presetId, appliedPresetRef);
+                }}
                 presets={presets}
                 selectedPresetId={selectedPresetId}
               />
@@ -257,20 +259,20 @@ export function DayBoard({
               index === 0 ? (
                 <Box key={row._id} data-onboarding-tour-id={CONCRETE_ACTION_TOUR_TARGETS.today}>
                   <RowEditor
-                    disabled={!canEdit}
-                    onConfirm={onConfirm}
-                    onRemove={onRemoveRow}
-                    onSkip={onSkip}
+                    disabled={!canEdit || !interactive}
+                    onConfirm={interactive ? onConfirm : () => {}}
+                    onRemove={interactive ? onRemoveRow : () => {}}
+                    onSkip={interactive ? onSkip : () => {}}
                     row={row}
                   />
                 </Box>
               ) : (
                 <RowEditor
                   key={row._id}
-                  disabled={!canEdit}
-                  onConfirm={onConfirm}
-                  onRemove={onRemoveRow}
-                  onSkip={onSkip}
+                  disabled={!canEdit || !interactive}
+                  onConfirm={interactive ? onConfirm : () => {}}
+                  onRemove={interactive ? onRemoveRow : () => {}}
+                  onSkip={interactive ? onSkip : () => {}}
                   row={row}
                 />
               ),
@@ -289,12 +291,12 @@ export function DayBoard({
                 {remainderMessage}
               </Alert>
             )}
-            {canEdit ? (
+            {canEdit && interactive ? (
               <Button disabled={!day.canCopyYesterday} onClick={onCopyYesterday} variant="light">
                 昨日の確定をコピー
               </Button>
             ) : null}
-            {canEdit ? <AdhocRowForm items={items} onAdd={onAddRow} /> : null}
+            {canEdit && interactive ? <AdhocRowForm items={items} onAdd={onAddRow} /> : null}
           </Stack>
         </Card>
         {canEdit ? (
@@ -302,15 +304,15 @@ export function DayBoard({
             <DayMetaPanel
               condition={day.day?.condition ?? null}
               memo={day.day?.memo ?? null}
-              onSaveCondition={onSaveCondition}
-              onSaveMemo={onSaveMemo}
+              onSaveCondition={interactive ? onSaveCondition : () => {}}
+              onSaveMemo={interactive ? onSaveMemo : () => {}}
             />
           </Card>
         ) : null}
         <Card>
           <ShareCopy markdown={day.shareMarkdown} />
         </Card>
-        {canEdit && day.day !== null ? (
+        {canEdit && interactive && day.day !== null ? (
           <Button color="red" onClick={onRemoveDay} variant="light">
             この日をゴミ箱へ
           </Button>

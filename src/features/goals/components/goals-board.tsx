@@ -11,21 +11,14 @@ import { ExamGoalCard } from "~/features/goals/components/exam-goal-card";
 import { GoalForm } from "~/features/goals/components/goal-form";
 import { MasteryGoalCard } from "~/features/goals/components/mastery-goal-card";
 import { ObstacleSection } from "~/features/goals/components/obstacle-section";
-import {
-  WeeklyTargetsSection,
-  type WeeklyTargetsSectionProps,
-} from "~/features/goals/components/weekly-targets-section";
+import { WeeklyTargetsSection } from "~/features/goals/components/weekly-targets-section";
+import { useGoalsBoardActions } from "~/features/goals/hooks/use-goals-board-actions";
 import { findGoalOfType } from "~/features/goals/lib/goal-selectors";
 import { groupMasteryGoals } from "~/features/goals/lib/mastery-goals";
 import type { GoalFormOutput } from "~/features/goals/schemas/goal-schema";
-import type { Goal, GoalId, Obstacle } from "~/features/goals/types/goal";
-import type {
-  CreateObstacleInput,
-  RemoveObstacleInput,
-  SetAchievedInput,
-  UpdateGoalInput,
-  UpdateObstacleInput,
-} from "~/features/goals/types/mutations";
+import type { Goal, Obstacle } from "~/features/goals/types/goal";
+import type { TargetProgress } from "~/features/goals/types/target";
+import type { CategoryDto } from "~/types/category";
 
 export const EXAM_GOAL_EMPTY_TITLE = "本番目標がまだありません";
 export const OPEN_MASTERY_SECTION_TITLE = "期限なしの習得";
@@ -34,21 +27,6 @@ type GoalEditor =
   | { goal: Goal; kind: "edit" }
   | { kind: "closed" }
   | { kind: "create"; type: GoalType };
-
-type GoalsBoardProps = {
-  goals: Goal[];
-  obstacles: Obstacle[];
-  onCreateGoal: (goal: GoalFormOutput) => void;
-  onCreateObstacle: (input: CreateObstacleInput) => void;
-  onRemoveGoal: (goalId: GoalId) => void;
-  onRemoveObstacle: (planId: RemoveObstacleInput["planId"]) => void;
-  onSetAchieved: (input: SetAchievedInput) => void;
-  onUpdateGoal: (input: UpdateGoalInput) => void;
-  onUpdateObstacle: (input: UpdateObstacleInput) => void;
-  todayJst: DateJst;
-  //? 週間ターゲットはこの板では素通し。区画ごと渡して props の数を抑える
-  weeklyTargets: WeeklyTargetsSectionProps;
-};
 
 //? フォームはタイプごとに別ストア。編集対象が変わったら作り直す
 function editorKey(editor: GoalEditor): string {
@@ -59,19 +37,24 @@ function editorKey(editor: GoalEditor): string {
   return editor.kind === "edit" ? `edit-${editor.goal._id}` : "closed";
 }
 
-export function GoalsBoard({
-  goals,
-  obstacles,
-  onCreateGoal,
-  onCreateObstacle,
-  onRemoveGoal,
-  onRemoveObstacle,
-  onSetAchieved,
-  onUpdateGoal,
-  onUpdateObstacle,
-  todayJst,
-  weeklyTargets,
-}: GoalsBoardProps) {
+type GoalsBoardProps = {
+  categories: CategoryDto[];
+  goals: Goal[];
+  obstacles: Obstacle[];
+  targets: TargetProgress[];
+  todayJst: DateJst;
+};
+
+export function GoalsBoard({ categories, goals, obstacles, targets, todayJst }: GoalsBoardProps) {
+  const {
+    onCreateGoal,
+    onCreateObstacle,
+    onRemoveGoal,
+    onRemoveObstacle,
+    onSetAchieved,
+    onUpdateGoal,
+    onUpdateObstacle,
+  } = useGoalsBoardActions();
   const [editor, setEditor] = useState<GoalEditor>({ kind: "closed" });
   const weeklyTargetsRef = useRef<HTMLDivElement>(null);
   const examGoal = findGoalOfType(goals, "exam");
@@ -139,7 +122,7 @@ export function GoalsBoard({
           <Grid.Col span={12}>
             <ExamGoalCard
               goal={examGoal}
-              hasWeeklyTargets={weeklyTargets.targets.length > 0}
+              hasWeeklyTargets={targets.length > 0}
               onEdit={() => openEdit(examGoal)}
               onRemove={() => onRemoveGoal(examGoal._id)}
               onShowWeeklyTargets={showWeeklyTargets}
@@ -200,7 +183,7 @@ export function GoalsBoard({
         )}
         <Grid.Col span={12}>
           <Card ref={weeklyTargetsRef}>
-            <WeeklyTargetsSection {...weeklyTargets} />
+            <WeeklyTargetsSection categories={categories} targets={targets} />
           </Card>
         </Grid.Col>
         {mastery.open.length > 0 && (

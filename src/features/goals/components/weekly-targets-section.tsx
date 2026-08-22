@@ -2,25 +2,18 @@ import { Badge, Group, Stack, Text, Title } from "@mantine/core";
 
 import { TargetForm } from "~/features/goals/components/target-form";
 import { TargetList } from "~/features/goals/components/target-list";
-import type { SaveTargetInput } from "~/features/goals/types/mutations";
-import type { TargetId, TargetProgress } from "~/features/goals/types/target";
+import { useWeeklyTargetActions } from "~/features/goals/hooks/use-goals-board-actions";
+import type { TargetProgress } from "~/features/goals/types/target";
 import type { CategoryDto } from "~/types/category";
 
-//? GoalsBoard からはこの塊ごと渡ってくる(props の受け渡しを1つにまとめる)
-export type WeeklyTargetsSectionProps = {
-  categories: CategoryDto[];
-  onRemoveTarget: (targetId: TargetId) => void;
-  onSaveTarget: (input: SaveTargetInput) => void;
-  targets: TargetProgress[];
-};
-
-//? このアプリのプロセス目標の担い手。今週専用の計器で、週次スナップショットは取らない(docs/adr/0006)
 export function WeeklyTargetsSection({
   categories,
-  onRemoveTarget,
-  onSaveTarget,
   targets,
-}: WeeklyTargetsSectionProps) {
+}: {
+  categories: CategoryDto[];
+  targets: TargetProgress[];
+}) {
+  const { onRemoveTarget, onSaveTarget } = useWeeklyTargetActions();
   const achievedCount = targets.filter((target) => target.achieved).length;
 
   return (

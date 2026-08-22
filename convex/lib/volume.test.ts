@@ -3,7 +3,7 @@ import { expect, test } from "vite-plus/test";
 import { STATUSES } from "./domain";
 import { confirmedVolumeMinutes, type VolumeRow } from "./volume";
 
-const [confirmed, pending, skipped] = STATUSES;
+const [confirmed, pending, _ongoing, skipped] = STATUSES;
 
 test("学習量は確定行の分数だけ", () => {
   const rows = [

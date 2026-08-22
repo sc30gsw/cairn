@@ -6,6 +6,18 @@ import type { TargetProgress } from "~/features/goals/types/target";
 import { renderWithMantine } from "~/test-utils/render";
 import type { CategoryDto } from "~/types/category";
 
+const { onRemoveTarget, onSaveTarget } = vi.hoisted(() => ({
+  onRemoveTarget: vi.fn(),
+  onSaveTarget: vi.fn(),
+}));
+
+vi.mock("~/features/goals/hooks/use-goals-board-actions", () => ({
+  useWeeklyTargetActions: () => ({
+    onRemoveTarget,
+    onSaveTarget,
+  }),
+}));
+
 const INPUT_CATEGORY = {
   _id: "category-input" as CategoryDto["_id"],
   name: "インプット",
@@ -43,11 +55,16 @@ const MISSED_TARGET = {
 function sectionProps(targets: TargetProgress[], categories: CategoryDto[] = CATEGORIES) {
   return {
     categories,
-    onRemoveTarget: vi.fn(),
-    onSaveTarget: vi.fn(),
     targets,
   };
 }
+
+test("全ターゲット達成時は緑バッジになる", () => {
+  const { getByText } = renderWithMantine(
+    <WeeklyTargetsSection {...sectionProps([ACHIEVED_TARGET])} />,
+  );
+  expect(getByText("1/1 達成")).toBeDefined();
+});
 
 test("ターゲットの進捗と達成サマリが見える", () => {
   const { getByRole, getByText } = renderWithMantine(
@@ -71,19 +88,17 @@ test("ターゲットがゼロ件ならサマリを出さず、置くよう促�
 });
 
 test("削除アイコンで onRemoveTarget がターゲットIDとともに呼ばれる", () => {
-  const onRemoveTarget = vi.fn();
+  onRemoveTarget.mockClear();
   const { getByRole } = renderWithMantine(
-    <WeeklyTargetsSection {...sectionProps([MISSED_TARGET])} onRemoveTarget={onRemoveTarget} />,
+    <WeeklyTargetsSection {...sectionProps([MISSED_TARGET])} />,
   );
   getByRole("button", { name: "アウトプットのターゲットを削除" }).click();
   expect(onRemoveTarget).toHaveBeenCalledWith(MISSED_TARGET._id);
 });
 
 test("計器と目標値を入れて追加すると onSaveTarget がカテゴリIDつきで呼ばれる", async () => {
-  const onSaveTarget = vi.fn();
-  const { getByRole } = renderWithMantine(
-    <WeeklyTargetsSection {...sectionProps([])} onSaveTarget={onSaveTarget} />,
-  );
+  onSaveTarget.mockClear();
+  const { getByRole } = renderWithMantine(<WeeklyTargetsSection {...sectionProps([])} />);
   fireEvent.change(getByRole("textbox", { name: "目標値" }), { target: { value: "120" } });
   getByRole("button", { name: "ターゲットを追加" }).click();
 
@@ -97,9 +112,9 @@ test("計器と目標値を入れて追加すると onSaveTarget がカテゴリ
 });
 
 test("計器を実施日にすると目標値の単位が変わり、7日を超えるとエラーになる", async () => {
-  const onSaveTarget = vi.fn();
+  onSaveTarget.mockClear();
   const { getByRole, getByText } = renderWithMantine(
-    <WeeklyTargetsSection {...sectionProps([])} onSaveTarget={onSaveTarget} />,
+    <WeeklyTargetsSection {...sectionProps([])} />,
   );
   getByRole("radio", { name: "実施日" }).click();
   await waitFor(() => {

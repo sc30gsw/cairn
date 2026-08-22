@@ -5,18 +5,11 @@ import {
   catalogShimmerItems,
   catalogShimmerPresets,
 } from "~/features/catalog/lib/catalog-shimmer-template";
-import { shimmerNoop } from "~/lib/shimmer-noop";
 
 export function PresetListPending() {
   return (
     <Shimmer loading>
-      <PresetList
-        items={catalogShimmerItems}
-        onCreate={shimmerNoop}
-        onRemove={shimmerNoop}
-        onUpdate={shimmerNoop}
-        presets={catalogShimmerPresets}
-      />
+      <PresetList items={catalogShimmerItems} presets={catalogShimmerPresets} />
     </Shimmer>
   );
 }

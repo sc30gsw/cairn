@@ -15,7 +15,7 @@ type AccountAuthFormProps = {
   mode: AccountAuthMode;
 };
 
-export function AccountAuthForm({ mode }: AccountAuthFormProps) {
+function AccountAuthForm({ mode }: AccountAuthFormProps) {
   const [errorMessage, setErrorMessage] = useState<null | string>(null);
   const loginForm = useForm({ schema: AccountLoginSchema });
   const signUpForm = useForm({ schema: AccountSignUpSchema });

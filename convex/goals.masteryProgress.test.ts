@@ -171,6 +171,19 @@ test("確定をスキップに戻すと実績が減る", async () => {
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
 });
 
+test("確定を未着手に戻すと実績が減る", async () => {
+  const t = owner();
+  const itemId = await seedItemId(t);
+  const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  const rowId = await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
+
+  await t.mutation(api.mutations.rows.unconfirm.unconfirm, { rowId });
+  expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
+
+  const page = await t.query(api.queries.days.get.get, { dateJst: TODAY, todayJst: TODAY });
+  expect(page.rows.find((entry) => entry._id === rowId)?.status).toBe("未着手");
+});
+
 test("確定記録をゴミ箱に入れると実績が減り、戻すと実績も戻る", async () => {
   const t = owner();
   const itemId = await seedItemId(t);

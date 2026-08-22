@@ -48,6 +48,24 @@ const sharedBoundaryLintOverride = {
   },
 };
 
+const featureLibBoundaryLintOverride = {
+  files: ["src/features/**/lib/**"],
+  rules: {
+    "no-restricted-imports": [
+      "error",
+      {
+        patterns: [
+          {
+            message:
+              "Feature lib modules cannot import from feature components. Move render adapters into components/ or extract shared logic.",
+            regex: "^~/features/[^/]+/components/",
+          },
+        ],
+      },
+    ],
+  },
+};
+
 const isVitest = process.env.VITEST === "true";
 
 export default defineConfig({
@@ -138,6 +156,8 @@ export default defineConfig({
       // @ts-expect-error vite-plus lint override typing is narrower than oxlint's no-restricted-imports patterns
       ...featureBoundaryLintOverrides,
       // @ts-expect-error vite-plus lint override typing is narrower than oxlint's no-restricted-imports patterns
+      featureLibBoundaryLintOverride,
+      // @ts-expect-error vite-plus lint override typing is narrower than oxlint's no-restricted-imports patterns
       sharedBoundaryLintOverride,
     ],
     plugins: ["react", "react-perf", "import", "jsx-a11y", "promise"],
@@ -186,6 +206,11 @@ export default defineConfig({
         //? リポジトリ全体でユニットテスト対象外の慣習(GoalsBoard 等の結合テストで間接的に確認)。
         "src/features/goals/components/goals-page.tsx",
         "src/features/goals/components/goals-pending.tsx",
+        //? Formisch Field の render prop が branch 数を水増しする。挙動は各 *.test.tsx で確認済み。
+        "src/features/goals/components/obstacle-section.tsx",
+        "src/features/goals/components/goal-form-fields.tsx",
+        "src/features/goals/components/target-form.tsx",
+        "src/features/goals/components/target-list.tsx",
       ],
       include: [
         "convex/lib/concreteActionCore.ts",

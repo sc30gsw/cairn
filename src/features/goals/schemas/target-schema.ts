@@ -29,5 +29,3 @@ export const TargetSchema = v.pipe(
     ["targetValue"],
   ),
 );
-
-export type TargetFormOutput = v.InferOutput<typeof TargetSchema>;

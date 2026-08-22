@@ -1,5 +1,5 @@
 import { fireEvent, waitFor, within } from "@testing-library/react";
-import { expect, test, vi } from "vite-plus/test";
+import { beforeEach, expect, test, vi } from "vite-plus/test";
 
 import {
   CHECKPOINT_EMPTY_MESSAGE,
@@ -20,6 +20,50 @@ import type { CategoryDto } from "~/types/category";
 
 const TODAY = "2026-08-17";
 const THEN_ACTION = "Unit 3 の例文を声に出して5文読む";
+
+const {
+  onCreateGoal,
+  onCreateObstacle,
+  onRemoveGoal,
+  onRemoveObstacle,
+  onSetAchieved,
+  onUpdateGoal,
+  onUpdateObstacle,
+} = vi.hoisted(() => ({
+  onCreateGoal: vi.fn(),
+  onCreateObstacle: vi.fn(),
+  onRemoveGoal: vi.fn(),
+  onRemoveObstacle: vi.fn(),
+  onSetAchieved: vi.fn(),
+  onUpdateGoal: vi.fn(),
+  onUpdateObstacle: vi.fn(),
+}));
+
+vi.mock("~/features/goals/hooks/use-goals-board-actions", () => ({
+  useGoalsBoardActions: () => ({
+    onCreateGoal,
+    onCreateObstacle,
+    onRemoveGoal,
+    onRemoveObstacle,
+    onSetAchieved,
+    onUpdateGoal,
+    onUpdateObstacle,
+  }),
+  useWeeklyTargetActions: () => ({
+    onRemoveTarget: vi.fn(),
+    onSaveTarget: vi.fn(),
+  }),
+}));
+
+beforeEach(() => {
+  onCreateGoal.mockClear();
+  onCreateObstacle.mockClear();
+  onRemoveGoal.mockClear();
+  onRemoveObstacle.mockClear();
+  onSetAchieved.mockClear();
+  onUpdateGoal.mockClear();
+  onUpdateObstacle.mockClear();
+});
 
 const EXAM_GOAL = {
   _id: "goal-exam" as Goal["_id"],
@@ -98,22 +142,11 @@ const MINUTES_TARGET = {
 
 function goalsBoardProps(goals: Goal[], targets: TargetProgress[] = []) {
   return {
+    categories: [],
     goals,
     obstacles: [],
-    onCreateGoal: vi.fn(),
-    onCreateObstacle: vi.fn(),
-    onRemoveGoal: vi.fn(),
-    onRemoveObstacle: vi.fn(),
-    onSetAchieved: vi.fn(),
-    onUpdateGoal: vi.fn(),
-    onUpdateObstacle: vi.fn(),
+    targets,
     todayJst: TODAY,
-    weeklyTargets: {
-      categories: [],
-      onRemoveTarget: vi.fn(),
-      onSaveTarget: vi.fn(),
-      targets,
-    },
   };
 }
 
@@ -157,9 +190,8 @@ test("期限を過ぎたチェックポイントは表示だけが変わる", ()
 });
 
 test("達成チェックを入れると onSetAchieved が今日の日付つきで呼ばれる", () => {
-  const onSetAchieved = vi.fn();
   const { getByRole } = renderWithMantine(
-    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, SOON_CHECKPOINT])} onSetAchieved={onSetAchieved} />,
+    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, SOON_CHECKPOINT])} />,
   );
   getByRole("checkbox", { name: `${SOON_CHECKPOINT.content}の達成` }).click();
   expect(onSetAchieved).toHaveBeenCalledWith({
@@ -169,12 +201,8 @@ test("達成チェックを入れると onSetAchieved が今日の日付つき�
 });
 
 test("達成済みのチェックを外すと達成日を落として呼ばれる", () => {
-  const onSetAchieved = vi.fn();
   const { getByRole } = renderWithMantine(
-    <GoalsBoard
-      {...goalsBoardProps([EXAM_GOAL, ACHIEVED_MASTERY])}
-      onSetAchieved={onSetAchieved}
-    />,
+    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, ACHIEVED_MASTERY])} />,
   );
   getByRole("checkbox", { name: `${ACHIEVED_MASTERY.content}の達成` }).click();
   expect(onSetAchieved).toHaveBeenCalledWith({
@@ -270,9 +298,8 @@ test("「チェックポイントを追加」のフォームはチェックポ�
 });
 
 test("「チェックポイントを追加」から作ると期限が次の日曜で埋まる", async () => {
-  const onCreateGoal = vi.fn();
   const { getByRole, queryByRole } = renderWithMantine(
-    <GoalsBoard {...goalsBoardProps([EXAM_GOAL])} onCreateGoal={onCreateGoal} />,
+    <GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />,
   );
   getByRole("button", { name: "チェックポイントを追加" }).click();
   await waitFor(() => {
@@ -334,9 +361,8 @@ test("編集アイコンを押すと既存の値でフォームが開き、タ�
 });
 
 test("削除アイコンを押すと onRemoveGoal が目標IDで呼ばれる", () => {
-  const onRemoveGoal = vi.fn();
   const { getByRole } = renderWithMantine(
-    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, SOON_CHECKPOINT])} onRemoveGoal={onRemoveGoal} />,
+    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, SOON_CHECKPOINT])} />,
   );
   getByRole("button", { name: `${SOON_CHECKPOINT.content}を削除` }).click();
   expect(onRemoveGoal).toHaveBeenCalledWith(SOON_CHECKPOINT._id);
@@ -358,16 +384,10 @@ test("チェックポイントの追加フォームはキャンセルで閉じ�
 });
 
 test("障害プランの追加・更新・削除ができる", async () => {
-  const onCreateObstacle = vi.fn();
-  const onUpdateObstacle = vi.fn();
-  const onRemoveObstacle = vi.fn();
   const { getByRole } = renderWithMantine(
     <GoalsBoard
       {...goalsBoardProps([EXAM_GOAL])}
       obstacles={[{ _id: "o1" as never, ifText: "眠い", thenText: THEN_ACTION }]}
-      onCreateObstacle={onCreateObstacle}
-      onRemoveObstacle={onRemoveObstacle}
-      onUpdateObstacle={onUpdateObstacle}
     />,
   );
   fireEvent.change(getByRole("textbox", { name: "もし" }), { target: { value: "とても眠い" } });
@@ -391,4 +411,60 @@ test("障害プランの追加・更新・削除ができる", async () => {
 
   getByRole("button", { name: "削除" }).click();
   expect(onRemoveObstacle).toHaveBeenCalledWith("o1");
+});
+
+test("本番目標を編集して保存すると onUpdateGoal が呼ばれる", async () => {
+  const { getByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />);
+  getByRole("button", { name: `${EXAM_GOAL.content}を編集` }).click();
+  await waitFor(() => {
+    expect(getByRole("textbox", { name: "目標の内容" })).toBeDefined();
+  });
+
+  fireEvent.change(getByRole("textbox", { name: "目標の内容" }), {
+    target: { value: "900点を安定して取る" },
+  });
+  getByRole("button", { name: "保存" }).click();
+
+  await waitFor(() => {
+    expect(onUpdateGoal).toHaveBeenCalledWith({
+      goal: {
+        content: "900点を安定して取る",
+        examDate: EXAM_GOAL.examDate,
+        maxScore: EXAM_GOAL.maxScore,
+        minScore: EXAM_GOAL.minScore,
+        type: "exam",
+      },
+      goalId: EXAM_GOAL._id,
+    });
+  });
+});
+
+test("期限なし習得の編集と削除ができる", async () => {
+  const { getByRole } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, OPEN_MASTERY])} />,
+  );
+  getByRole("button", { name: `${OPEN_MASTERY.content}を編集` }).click();
+  await waitFor(() => {
+    expect((getByRole("textbox", { name: "目標の内容" }) as HTMLInputElement).value).toBe(
+      OPEN_MASTERY.content,
+    );
+  });
+
+  getByRole("button", { name: `${OPEN_MASTERY.content}を削除` }).click();
+  expect(onRemoveGoal).toHaveBeenCalledWith(OPEN_MASTERY._id);
+});
+
+test("週間ターゲット設定ボタンで週間ターゲットへスクロールする", () => {
+  const scrollIntoView = vi.fn();
+  Element.prototype.scrollIntoView = scrollIntoView;
+
+  const { getByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />);
+  getByRole("button", { name: "週間ターゲットを設定する" }).click();
+  expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
+});
+
+test("本番目標が無くても達成済みチェックポイントがあればセクションを出す", () => {
+  const { getByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([ACHIEVED_MASTERY])} />);
+  expect(getByRole("region", { name: CHECKPOINT_SECTION_TITLE })).toBeDefined();
+  expect(getByRole("button", { name: /達成済み（1件）/ })).toBeDefined();
 });

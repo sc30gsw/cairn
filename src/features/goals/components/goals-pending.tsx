@@ -8,28 +8,16 @@ import {
   goalsShimmerTargets,
   goalsShimmerTodayJst,
 } from "~/features/goals/lib/goals-shimmer-template";
-import { shimmerNoop } from "~/lib/shimmer-noop";
 
 export function GoalsPending() {
   return (
     <Shimmer loading>
       <GoalsBoard
+        categories={goalsShimmerCategories}
         goals={goalsShimmerGoals}
         obstacles={goalsShimmerObstacles}
-        onCreateGoal={shimmerNoop}
-        onCreateObstacle={shimmerNoop}
-        onRemoveGoal={shimmerNoop}
-        onRemoveObstacle={shimmerNoop}
-        onSetAchieved={shimmerNoop}
-        onUpdateGoal={shimmerNoop}
-        onUpdateObstacle={shimmerNoop}
+        targets={goalsShimmerTargets}
         todayJst={goalsShimmerTodayJst}
-        weeklyTargets={{
-          categories: goalsShimmerCategories,
-          onRemoveTarget: shimmerNoop,
-          onSaveTarget: shimmerNoop,
-          targets: goalsShimmerTargets,
-        }}
       />
     </Shimmer>
   );

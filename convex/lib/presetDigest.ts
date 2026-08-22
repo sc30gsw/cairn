@@ -2,7 +2,7 @@ import type { Weekday } from "./catalog";
 import { STATUSES, type Status } from "./domain";
 import { weekdayFromDateJst } from "./jst";
 
-const [confirmedStatus, leftoverStatus, skippedStatus] = STATUSES;
+const [confirmedStatus, leftoverStatus, ongoingStatus, skippedStatus] = STATUSES;
 
 //? 今日を除く過去28暦日。今日の未着手は計画倒れではない。
 export const PRESET_REVIEW_WINDOW_DAYS = 28;
@@ -28,6 +28,7 @@ export type PresetReviewReason = (typeof PRESET_REVIEW_REASONS)[number];
 export type WeekdayCounts = {
   confirmed: number;
   leftover: number;
+  ongoing: number;
   skipped: number;
   weekday: Weekday;
 };
@@ -45,11 +46,11 @@ export type StatusedRow = {
 export const WEEKDAY_DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 0] as const satisfies readonly Weekday[];
 
 function emptyCounts(weekday: Weekday): WeekdayCounts {
-  return { confirmed: 0, leftover: 0, skipped: 0, weekday };
+  return { confirmed: 0, leftover: 0, ongoing: 0, skipped: 0, weekday };
 }
 
 export function plannedCount(counts: WeekdayCounts): number {
-  return counts.confirmed + counts.leftover + counts.skipped;
+  return counts.confirmed + counts.leftover + counts.ongoing + counts.skipped;
 }
 
 export function digestRate(counts: WeekdayCounts): number {
@@ -78,6 +79,10 @@ export function countByWeekday(rows: readonly StatusedRow[]): WeekdayCounts[] {
       byWeekday.set(weekday, { ...current, leftover: current.leftover + 1 });
       continue;
     }
+    if (row.status === ongoingStatus) {
+      byWeekday.set(weekday, { ...current, ongoing: current.ongoing + 1 });
+      continue;
+    }
     if (row.status === skippedStatus) {
       byWeekday.set(weekday, { ...current, skipped: current.skipped + 1 });
     }
@@ -86,7 +91,8 @@ export function countByWeekday(rows: readonly StatusedRow[]): WeekdayCounts[] {
 }
 
 export function suggestionReason(counts: WeekdayCounts): PresetReviewReason {
-  return counts.leftover > counts.skipped ? "leftoverHeavy" : "skipHeavy";
+  const incomplete = counts.leftover + counts.ongoing;
+  return incomplete > counts.skipped ? "leftoverHeavy" : "skipHeavy";
 }
 
 export function suggestWeekdays(weekdays: readonly WeekdayCounts[]): PresetReviewSuggestion[] {
@@ -98,9 +104,9 @@ export function suggestWeekdays(weekdays: readonly WeekdayCounts[]): PresetRevie
   return peers
     .filter((counts) => {
       const rate = digestRate(counts);
-      const hasLeftoverOrSkip = counts.leftover + counts.skipped > 0;
+      const hasIncompleteOrSkip = counts.leftover + counts.ongoing + counts.skipped > 0;
       const weak = rate < PRESET_REVIEW_DIGEST_FLOOR || rate <= mean - PRESET_REVIEW_DIGEST_GAP;
-      return hasLeftoverOrSkip && weak;
+      return hasIncompleteOrSkip && weak;
     })
     .toSorted((left, right) => digestRate(left) - digestRate(right))
     .slice(0, PRESET_REVIEW_MAX_SUGGESTIONS)

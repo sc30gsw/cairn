@@ -2,6 +2,7 @@ import { Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { groupBy, prop } from "remeda";
 import { addDaysJst, type DateJst } from "~domain/jst";
 
+import { TruncatedText } from "~/components/truncated-text";
 import { RECORD_STATUS_UI } from "~/features/history/lib/record-status-label";
 import type { WeekEvent, WeekPage } from "~/features/history/types/history";
 import { CONDITION_MANTINE_COLOR } from "~/lib/condition-colors";
@@ -52,9 +53,9 @@ function WeekEventRow({ event }: { event: WeekEvent }) {
 
   return (
     <Group gap="sm" justify="space-between" wrap="nowrap">
-      <Text fw={500} lineClamp={1} size="sm">
+      <TruncatedText fw={500} lineClamp={1} size="sm">
         {event.title}
-      </Text>
+      </TruncatedText>
       <Group gap="xs" wrap="nowrap">
         <Badge color={badge.color} variant="light">
           {badge.label}

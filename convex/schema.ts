@@ -1,6 +1,7 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+import { boardScheduleColorValidator } from "./lib/boardScheduleColors";
 import {
   categoryValidator,
   conditionValidator,
@@ -80,4 +81,16 @@ export default defineSchema({
     ownerId: v.string(),
     targetValue: v.number(),
   }).index("by_owner_and_category", ["ownerId", "categoryId"]),
+
+  boardScheduleEvents: defineTable({
+    color: v.optional(boardScheduleColorValidator),
+    endAt: v.string(),
+    ownerId: v.string(),
+    rowId: v.id("rows"),
+    startAt: v.string(),
+    title: v.string(),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_owner_and_startAt", ["ownerId", "startAt"])
+    .index("by_row", ["rowId"]),
 });

@@ -7,7 +7,7 @@ import {
 } from "~/features/history/lib/month-schedule-events";
 import type { MonthEvent } from "~/features/history/types/history";
 
-const [confirmed, pending, skipped] = STATUSES;
+const [confirmed, pending, _ongoing, skipped] = STATUSES;
 
 test("ステータス色付きの schedule events に変換", () => {
   const input = [

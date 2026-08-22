@@ -1,0 +1,47 @@
+.dateControl {
+  flex: 1 1 auto;
+  font-weight: 600;
+  max-width: 18rem;
+  min-width: 11rem;
+  position: relative;
+  text-align: center;
+}
+
+.weekDateControl {
+  max-width: none;
+  min-width: 12rem;
+}
+
+.dateControlLabel {
+  display: block;
+  width: 100%;
+}
+
+.datePickerOverlay {
+  inset: 0;
+  position: absolute;
+}
+
+.datePickerOverlay :global(.mantine-InputWrapper-root) {
+  height: 100%;
+}
+
+.datePickerOverlay :global(.mantine-DatePickerInput-wrapper) {
+  border: none;
+  height: 100%;
+}
+
+.datePickerOverlay :global(.mantine-DatePickerInput-input) {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  height: 100%;
+  min-height: auto;
+  opacity: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.datePickerOverlay :global(.mantine-Input-section) {
+  display: none;
+}

@@ -5,5 +5,3 @@ import { WeekdayFromSearchSchema } from "~/features/catalog/schemas/weekday-sche
 export const PresetSearchSchema = v.object({
   weekday: v.optional(WeekdayFromSearchSchema),
 });
-
-export type PresetSearch = v.InferOutput<typeof PresetSearchSchema>;

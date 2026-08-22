@@ -1,4 +1,4 @@
-export const STATUSES = ["確定", "未着手", "スキップ"] as const;
+export const STATUSES = ["確定", "未着手", "進行中", "スキップ"] as const;
 
 export type Status = (typeof STATUSES)[number];
 

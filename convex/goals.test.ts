@@ -178,6 +178,19 @@ test("同タイプの更新は基準と期限を書き換える", async () => {
   expect(updated?.type === "mastery" && updated.deadline).toBe("2026-08-23");
 });
 
+test("試験目標も同タイプで更新できる", async () => {
+  const t = owner();
+  const examId = await t.mutation(api.mutations.goals.create.create, { goal: EXAM_GOAL });
+  await t.mutation(api.mutations.goals.update.update, {
+    goal: { ...EXAM_GOAL, content: "900点を安定して取る", maxScore: 900, minScore: 850 },
+    goalId: examId,
+  });
+  const goals = await t.query(api.queries.goals.list.list, {});
+  const updated = goals.find((goal) => goal._id === examId);
+  expect(updated?.type === "exam" && updated.content).toBe("900点を安定して取る");
+  expect(updated?.type === "exam" && updated.maxScore).toBe(900);
+});
+
 test("setAchieved は習得を達成にし、undefined で取り消せる", async () => {
   const t = owner();
   const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });

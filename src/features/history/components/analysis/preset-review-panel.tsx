@@ -42,6 +42,7 @@ export function PresetReviewPanel({ review }: { review: PresetReview }) {
               <Table.Th scope="col">確定</Table.Th>
               <Table.Th scope="col">見送り</Table.Th>
               <Table.Th scope="col">未着手</Table.Th>
+              <Table.Th scope="col">進行中</Table.Th>
               <Table.Th scope="col">消化</Table.Th>
             </Table.Tr>
           </Table.Thead>
@@ -54,6 +55,7 @@ export function PresetReviewPanel({ review }: { review: PresetReview }) {
                   <Table.Td>{row.confirmed}</Table.Td>
                   <Table.Td>{row.skipped}</Table.Td>
                   <Table.Td>{row.leftover}</Table.Td>
+                  <Table.Td>{row.ongoing}</Table.Td>
                   <Table.Td>
                     {row.planned === 0 ? (
                       "—"

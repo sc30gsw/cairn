@@ -5,6 +5,7 @@ import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import schema from "./schema";
 import { creationDateJst } from "./services/goals/masteryProgress";
+import { recomputeMasteryProgress } from "./services/goals/recomputeMasteryProgress";
 
 //? 達成時の凍結・解除時の再計算・カウンタ漂流の修復(ADR-0007)。差分更新そのものの経路別テストは
 //? goals.masteryProgress.test.ts に置く。
@@ -316,4 +317,25 @@ test("再計算は達成済みの目標を凍結したままにする", async ()
 
   await repair(t);
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
+});
+
+const EXAM_GOAL = {
+  content: "900点を取る",
+  examDate: "2026-09-27",
+  maxScore: 850,
+  minScore: 730,
+  type: "exam",
+} as const;
+
+test("試験目標は recomputeMasteryProgress の対象外", async () => {
+  const t = owner();
+  const examId = await t.mutation(api.mutations.goals.create.create, { goal: EXAM_GOAL });
+  const result = await t.run(async (ctx) => {
+    const goal = await ctx.db.get("goals", examId);
+    if (goal === null) {
+      throw new Error("試験目標が見つからない");
+    }
+    return recomputeMasteryProgress(ctx, goal);
+  });
+  expect(result).toBeNull();
 });

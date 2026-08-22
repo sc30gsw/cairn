@@ -3,7 +3,7 @@ import { expect, test } from "vite-plus/test";
 import { STATUSES } from "./domain";
 import { formatShareMarkdown, type ShareRow } from "./share";
 
-const [confirmed, pending, skipped] = STATUSES;
+const [confirmed, pending, _ongoing, skipped] = STATUSES;
 
 test("カテゴリが1つでも見出しは省略しない。未着手とスキップは出ない", () => {
   const rows = [
