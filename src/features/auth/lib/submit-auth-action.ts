@@ -1,7 +1,7 @@
-import type { AuthActionResult } from "~/features/auth/lib/auth-actions";
+import type { ActionResult } from "~/lib/run-auth-action";
 
 export async function submitAuthAction(
-  action: () => Promise<AuthActionResult>,
+  action: () => Promise<ActionResult>,
   setErrorMessage: (message: null | string) => void,
 ): Promise<void> {
   setErrorMessage(null);

@@ -2,7 +2,8 @@ import { Field, Form, reset, useForm } from "@formisch/react";
 import { Button, Card, PasswordInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { useState, useTransition } from "react";
 
-import { useAppShellUser } from "~/features/auth/hooks/use-auth-session";
+import { submitProfileFormAction } from "~/features/my-page/lib/submit-profile-form-action";
+import { useAppShellUser } from "~/hooks/use-auth-session";
 import {
   updateProfileName,
   updateProfilePassword,
@@ -27,15 +28,14 @@ function ProfileNameForm({ initialName }: { initialName: string }) {
     <Form
       of={form}
       onSubmit={(output) => {
-        setErrorMessage(null);
-        setSuccessMessage(null);
         startTransition(() => {
-          void updateProfileName(output).then((result) => {
-            if (result.errorMessage !== null) {
-              setErrorMessage(result.errorMessage);
-              return;
-            }
-            setSuccessMessage("表示名を保存しました");
+          void submitProfileFormAction(() => updateProfileName(output), {
+            onError: setErrorMessage,
+            onStart: () => {
+              setErrorMessage(null);
+              setSuccessMessage(null);
+            },
+            onSuccess: () => setSuccessMessage("表示名を保存しました"),
           });
         });
       }}
@@ -82,15 +82,14 @@ function ProfileUsernameForm({ initialUsername }: { initialUsername: string }) {
     <Form
       of={form}
       onSubmit={(output) => {
-        setErrorMessage(null);
-        setSuccessMessage(null);
         startTransition(() => {
-          void updateProfileUsername(output).then((result) => {
-            if (result.errorMessage !== null) {
-              setErrorMessage(result.errorMessage);
-              return;
-            }
-            setSuccessMessage("ユーザー名を保存しました");
+          void submitProfileFormAction(() => updateProfileUsername(output), {
+            onError: setErrorMessage,
+            onStart: () => {
+              setErrorMessage(null);
+              setSuccessMessage(null);
+            },
+            onSuccess: () => setSuccessMessage("ユーザー名を保存しました"),
           });
         });
       }}
@@ -139,16 +138,17 @@ function ProfilePasswordForm() {
     <Form
       of={form}
       onSubmit={(output) => {
-        setErrorMessage(null);
-        setSuccessMessage(null);
         startTransition(() => {
-          void updateProfilePassword(output).then((result) => {
-            if (result.errorMessage !== null) {
-              setErrorMessage(result.errorMessage);
-              return;
-            }
-            reset(form, { initialInput: emptyPasswordInput, keepInput: false });
-            setSuccessMessage("パスワードを変更しました");
+          void submitProfileFormAction(() => updateProfilePassword(output), {
+            onError: setErrorMessage,
+            onStart: () => {
+              setErrorMessage(null);
+              setSuccessMessage(null);
+            },
+            onSuccess: () => {
+              reset(form, { initialInput: emptyPasswordInput, keepInput: false });
+              setSuccessMessage("パスワードを変更しました");
+            },
           });
         });
       }}
