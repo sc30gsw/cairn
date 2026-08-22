@@ -10,3 +10,31 @@
   text-decoration-thickness: 2px;
   text-underline-offset: 10px;
 }
+
+.learningDateNavigationCentered {
+  margin-inline: auto;
+  width: fit-content;
+}
+
+.learningDateControls {
+  align-items: center;
+  column-gap: var(--mantine-spacing-xs);
+  display: grid;
+  grid-template-columns: auto auto;
+  row-gap: var(--mantine-spacing-xs);
+}
+
+.learningDatePickerCell {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.learningDateNavCell {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.learningDateLinkCell {
+  grid-column: 1;
+  grid-row: 2;
+}
