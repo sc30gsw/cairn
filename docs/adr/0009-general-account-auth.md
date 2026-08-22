@@ -18,6 +18,9 @@ Notion OAuth は併用可能（設定時のみ UI に表示）。メール確認
 | セッション型 | `authClient.$Infer.Session.user` → `Pick` で `AppShellUser` |
 | Notion ボタン表示 | `convex/queries/auth/publicConfig`（`notionOAuthConfigured()` と同一判定） |
 | 認証操作 | `src/features/auth/lib/auth-actions.ts` |
+| プロフィール / パスキー操作 | `src/features/auth/lib/profile-actions.ts` |
+| 認証エラー文言 | `src/lib/auth-error-messages.ts` |
+| パスキー signup / OAuth プロンプト | `src/lib/passkey-storage.ts` |
 | signup 制御 | `AUTH_DISABLE_SIGNUP` env → `publicConfig.signUpEnabled` |
 
 `LoginScreen` / `AuthAccountMenu` は hooks 経由で authClient を呼び、`OwnerGate` は props でコールバックを渡さない。共有 `AppShell` は `accountMenu` スロットのみ受け取り、feature から auth UI を compose する（bulletproof-react の単方向依存）。

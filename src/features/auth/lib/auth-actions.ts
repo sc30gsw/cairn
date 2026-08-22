@@ -1,17 +1,39 @@
+import { Result } from "better-result";
+
 import type {
   AccountLoginInput,
   AccountSignUpInput,
 } from "~/features/auth/schemas/account-auth-schema";
 import { isEmailAddress } from "~/features/auth/schemas/account-auth-schema";
+import type { AuthActionResult } from "~/lib/auth-action-result";
 import { authClient } from "~/lib/auth-client";
-import { PASSKEY_SIGNUP_PROMPT_KEY, writePasskeyFlag } from "~/lib/passkey-storage";
-import { authActionError, runAuthAction, type ActionResult } from "~/lib/run-auth-action";
+import { type AuthErrorContext } from "~/lib/auth-error-messages";
+import {
+  PASSKEY_OAUTH_PENDING_KEY,
+  PASSKEY_SIGNUP_PROMPT_KEY,
+  writePasskeyFlag,
+  writePasskeySessionFlag,
+} from "~/lib/passkey-storage";
+import { authActionError, authActionErrorFromUnknown } from "~/lib/run-auth-action";
 
 function reloadAfterAuth() {
   location.reload();
 }
 
-export type AuthActionResult = ActionResult;
+async function runAuthAction(
+  action: () => Promise<void>,
+  context: AuthErrorContext,
+  onSuccess?: () => void | Promise<void>,
+): Promise<AuthActionResult> {
+  const result = await Result.tryPromise({
+    catch: (cause) => authActionErrorFromUnknown(cause, context),
+    try: action,
+  });
+  if (Result.isOk(result) && onSuccess !== undefined) {
+    await onSuccess();
+  }
+  return result;
+}
 
 export async function signInWithAccount(input: AccountLoginInput): Promise<AuthActionResult> {
   return runAuthAction(
@@ -66,6 +88,7 @@ export async function signInWithPasskey(): Promise<AuthActionResult> {
 }
 
 export function signInWithNotion() {
+  writePasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY, true);
   void authClient.signIn.social({ provider: "notion" });
 }
 
@@ -76,3 +99,5 @@ export function signOutAndReload() {
     },
   });
 }
+
+export type { AuthActionResult } from "~/lib/auth-action-result";

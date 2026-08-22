@@ -1,6 +1,8 @@
+import { Result } from "better-result";
 import { expect, test, vi } from "vite-plus/test";
 
 import { signInWithAccount, signUpWithAccount } from "~/features/auth/lib/auth-actions";
+import { authActionErrorMessage } from "~/lib/auth-action-result";
 import { authClient } from "~/lib/auth-client";
 
 vi.mock("~/lib/auth-client", () => ({
@@ -19,7 +21,7 @@ test("メールアドレス形式なら email ログインを使う", async () =
     password: "password123",
   });
 
-  expect(result).toEqual({ errorMessage: null });
+  expect(Result.isOk(result)).toBe(true);
   expect(authClient.signIn.email).toHaveBeenCalledWith({
     email: "user@example.com",
     password: "password123",
@@ -57,8 +59,7 @@ test("登録エラーは利用者向けの errorMessage を返す", async () => 
     username: "testuser",
   });
 
-  expect(result).toEqual({
-    errorMessage:
-      "このメールアドレスはすでに登録されています。ログインするか、別のメールアドレスを使ってください。",
-  });
+  expect(authActionErrorMessage(result)).toBe(
+    "このメールアドレスはすでに登録されています。ログインするか、別のメールアドレスを使ってください。",
+  );
 });
