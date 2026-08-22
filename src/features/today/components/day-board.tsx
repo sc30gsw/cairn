@@ -12,10 +12,11 @@ import {
   Stack,
   Text,
   Title,
+  Tooltip,
   type ComboboxItem,
 } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
-import { IconChevronLeft, IconChevronRight, IconNotes } from "@tabler/icons-react";
+import { IconChevronLeft, IconChevronRight, IconNotes, IconRefresh } from "@tabler/icons-react";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import {
@@ -199,30 +200,43 @@ export function DayBoard({
                       valueFormat="YYYY-MM-DD"
                       w="fit-content"
                     />
-                    <ActionIcon
-                      aria-label="前の日"
-                      onClick={() => goToDate(addDaysJst(dateJst, -1))}
-                      size="input-sm"
-                      variant="subtle"
-                    >
-                      <IconChevronLeft aria-hidden size={18} stroke={1.75} />
-                    </ActionIcon>
-                    <ActionIcon
-                      aria-label="次の日"
-                      disabled={dateJst >= todayJst}
-                      onClick={() => goToDate(addDaysJst(dateJst, 1))}
-                      size="input-sm"
-                      variant="subtle"
-                    >
-                      <IconChevronRight aria-hidden size={18} stroke={1.75} />
-                    </ActionIcon>
+                    <Tooltip label="前の日" withArrow>
+                      <ActionIcon
+                        aria-label="前の日"
+                        onClick={() => goToDate(addDaysJst(dateJst, -1))}
+                        size="input-sm"
+                        variant="subtle"
+                      >
+                        <IconChevronLeft aria-hidden size={18} stroke={1.75} />
+                      </ActionIcon>
+                    </Tooltip>
+                    <Tooltip label="次の日" withArrow>
+                      <Box component="span" display="inline-flex">
+                        <ActionIcon
+                          aria-label="次の日"
+                          disabled={dateJst >= todayJst}
+                          onClick={() => goToDate(addDaysJst(dateJst, 1))}
+                          size="input-sm"
+                          variant="subtle"
+                        >
+                          <IconChevronRight aria-hidden size={18} stroke={1.75} />
+                        </ActionIcon>
+                      </Box>
+                    </Tooltip>
+                    {isToday ? null : (
+                      <Tooltip label="今日へ戻る" withArrow>
+                        <ActionIcon
+                          aria-label="今日へ戻る"
+                          onClick={() => void navigate({ to: "/" })}
+                          size="input-sm"
+                          variant="subtle"
+                        >
+                          <IconRefresh aria-hidden size={18} stroke={1.75} />
+                        </ActionIcon>
+                      </Tooltip>
+                    )}
                   </Group>
                 </Input.Wrapper>
-                {isToday ? null : (
-                  <Button onClick={() => void navigate({ to: "/" })} variant="light">
-                    今日へ戻る
-                  </Button>
-                )}
               </Group>
             </Grid.Col>
             <Grid.Col span={{ base: 12, sm: 5 }}>
