@@ -16,6 +16,7 @@ function selectAppShellUser(
     email: session.user.email,
     image: session.user.image,
     name: session.user.name,
+    username: session.user.username,
   };
 }
 

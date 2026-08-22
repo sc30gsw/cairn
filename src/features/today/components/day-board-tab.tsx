@@ -4,7 +4,6 @@ import type { DateJst } from "~domain/jst";
 import { mondayOfWeek, todayJst } from "~domain/jst";
 
 import { DayBoard } from "~/features/today/components/day-board";
-import { EmptyCatalogBanner } from "~/features/today/components/empty-catalog-banner";
 import {
   useItemsList,
   usePresetsList,
@@ -34,7 +33,6 @@ export function DayBoardTab({ dateJst, presetFromSearch }: DayBoardTabProps) {
 
   return (
     <Stack gap="md">
-      {items.length === 0 ? <EmptyCatalogBanner /> : null}
       <DayBoard
         dateJst={dateJst}
         day={day}

@@ -1,10 +1,25 @@
 import { Button, Card, Center, Divider, Stack, Text, Title } from "@mantine/core";
+import { useState, useTransition } from "react";
 
 import { AccountAuthPanel } from "~/features/auth/components/account-auth-form";
-import { signInWithNotion } from "~/features/auth/lib/auth-actions";
+import { signInWithNotion, signInWithPasskey } from "~/features/auth/lib/auth-actions";
 import { DISPLAY_FONT } from "~/lib/theme";
 
 export function LoginScreen() {
+  const [passkeyError, setPasskeyError] = useState<null | string>(null);
+  const [isPasskeyPending, startPasskeyTransition] = useTransition();
+
+  function handlePasskeySignIn() {
+    setPasskeyError(null);
+    startPasskeyTransition(() => {
+      void signInWithPasskey().then((result) => {
+        if (result.errorMessage !== null) {
+          setPasskeyError(result.errorMessage);
+        }
+      });
+    });
+  }
+
   return (
     <Center h="100dvh">
       <Card maw={420} padding="xl" shadow="sm" w="100%">
@@ -18,6 +33,20 @@ export function LoginScreen() {
           <Text>アカウントで入る。記録はアプリが正本です。</Text>
           <AccountAuthPanel />
           <Divider label="または" labelPosition="center" />
+          <Button
+            fullWidth
+            loading={isPasskeyPending}
+            onClick={handlePasskeySignIn}
+            size="md"
+            variant="light"
+          >
+            パスキーでログイン
+          </Button>
+          {passkeyError ? (
+            <Text c="red" size="sm">
+              {passkeyError}
+            </Text>
+          ) : null}
           <Button fullWidth onClick={signInWithNotion} size="md" variant="light">
             Notion でログイン
           </Button>
