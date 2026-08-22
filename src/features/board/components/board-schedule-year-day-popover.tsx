@@ -39,32 +39,19 @@ function YearPopoverTimedEvent({
   onClose,
   onEditBlock,
 }: YearPopoverTimedEventProps) {
-  const color = event.color ?? "gray";
   const timeLabel = `${formatScheduleTimeLabel(event.start)}–${formatScheduleTimeLabel(event.end)}`;
-  const row = (
-    <Box
-      className={classes.yearPopoverEventRow}
-      style={{
-        backgroundColor: `var(--mantine-color-${color}-light)`,
-        color: `var(--mantine-color-${color}-light-color)`,
-      }}
-    >
-      <Text inherit lineClamp={2} size="sm">
-        {event.title}
-      </Text>
-      <Text inherit opacity={0.85} size="xs">
-        {timeLabel}
-      </Text>
-    </Box>
+  const badge = (
+    <Badge color={event.color ?? "gray"} fullWidth size="sm" variant="light">
+      {event.title} · {timeLabel}
+    </Badge>
   );
 
   if (!editable) {
-    return row;
+    return badge;
   }
 
   return (
     <UnstyledButton
-      className={classes.yearPopoverEventButton}
       onClick={(clickEvent) => {
         stopDayClick(clickEvent);
         onClose();
@@ -72,7 +59,7 @@ function YearPopoverTimedEvent({
       }}
       type="button"
     >
-      {row}
+      {badge}
     </UnstyledButton>
   );
 }

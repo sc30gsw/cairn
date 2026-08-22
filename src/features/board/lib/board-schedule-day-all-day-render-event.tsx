@@ -1,6 +1,6 @@
 import { UnstyledButton } from "@mantine/core";
 import type { ScheduleEventData } from "@mantine/schedule";
-import type { ComponentPropsWithoutRef, CSSProperties } from "react";
+import type { ComponentPropsWithoutRef, CSSProperties, Ref } from "react";
 
 import { BoardScheduleDayAllDayStrip } from "~/features/board/components/board-schedule-day-all-day-strip";
 import {
@@ -36,17 +36,22 @@ export function createBoardScheduleDayAllDayRenderEvent({
 
   return (
     event: ScheduleEventData,
-    props: ComponentPropsWithoutRef<"button"> & { style?: CSSProperties },
+    props: ComponentPropsWithoutRef<"button"> & {
+      ref?: Ref<HTMLButtonElement>;
+      style?: CSSProperties;
+    },
   ) => {
+    const { ref, ...buttonProps } = props;
     if (!isBoardAllDayEvent(event)) {
-      return <UnstyledButton {...props} />;
+      return <UnstyledButton {...buttonProps} ref={ref} />;
     }
 
     if (isBoardAllDayMoreEvent(event.id) || event.id !== firstAllDayId) {
       return (
         <UnstyledButton
-          {...props}
+          {...buttonProps}
           aria-hidden
+          ref={ref}
           style={{ ...asStyleObject(props.style), display: "none" }}
           tabIndex={-1}
         >

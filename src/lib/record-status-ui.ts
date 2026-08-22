@@ -17,10 +17,6 @@ const TRASH_STATUS_LABEL = {
   確定: "やった",
 } as const satisfies Record<Status, string>;
 
-export function recordStatusLabel(status: Status): string {
-  return RECORD_STATUS_UI[status].label;
-}
-
 export function trashStatusLabel(status: Status): string {
   return TRASH_STATUS_LABEL[status];
 }
