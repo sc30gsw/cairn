@@ -26,13 +26,15 @@ function row(id: string, status: BoardRow["status"], sortOrder: number): BoardRo
 test("groupRowsByKanbanColumn は列ごとに記録を分ける", () => {
   const grouped = groupRowsByKanbanColumn([
     row("a", "未着手", 0),
-    row("b", "確定", 1),
-    row("c", "スキップ", 2),
+    row("b", "進行中", 1),
+    row("c", "確定", 2),
+    row("d", "スキップ", 3),
   ]);
 
   expect(grouped.未着手.map((entry) => entry._id)).toEqual(["a" as Id<"rows">]);
-  expect(grouped.確定.map((entry) => entry._id)).toEqual(["b" as Id<"rows">]);
-  expect(grouped.スキップ.map((entry) => entry._id)).toEqual(["c" as Id<"rows">]);
+  expect(grouped.進行中.map((entry) => entry._id)).toEqual(["b" as Id<"rows">]);
+  expect(grouped.確定.map((entry) => entry._id)).toEqual(["c" as Id<"rows">]);
+  expect(grouped.スキップ.map((entry) => entry._id)).toEqual(["d" as Id<"rows">]);
 });
 
 test("computeOrderedRowIds は列内の並べ替えを反映する", () => {
@@ -52,7 +54,7 @@ test("computeOrderedRowIds は列間移動後も全体順序を保つ", () => {
   const ordered = computeOrderedRowIds(
     rows,
     { index: 0, status: "未着手" },
-    { index: 0, status: "確定" },
+    { index: 0, status: "進行中" },
     "a" as Id<"rows">,
   );
 
@@ -61,9 +63,14 @@ test("computeOrderedRowIds は列間移動後も全体順序を保つ", () => {
 
 test("resolveKanbanStatusMove は列間の状態遷移を解決する", () => {
   expect(resolveKanbanStatusMove("未着手", "確定")).toBe("confirm");
+  expect(resolveKanbanStatusMove("未着手", "進行中")).toBe("start");
+  expect(resolveKanbanStatusMove("進行中", "未着手")).toBe("pause");
+  expect(resolveKanbanStatusMove("進行中", "確定")).toBe("confirm");
+  expect(resolveKanbanStatusMove("確定", "進行中")).toBe("reopen");
   expect(resolveKanbanStatusMove("スキップ", "未着手")).toBe("unskip");
   expect(resolveKanbanStatusMove("確定", "未着手")).toBe("unconfirm");
   expect(resolveKanbanStatusMove("確定", "スキップ")).toBe("skip");
+  expect(resolveKanbanStatusMove("スキップ", "進行中")).toBe("noop");
 });
 
 test("hasRowOrderChanged は順序差分を検出する", () => {

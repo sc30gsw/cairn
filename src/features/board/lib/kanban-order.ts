@@ -5,11 +5,22 @@ import type { BoardRow } from "~/features/board/types/board";
 
 export const KANBAN_COLUMNS = [
   "未着手",
+  "進行中",
   "確定",
   "スキップ",
 ] as const satisfies readonly (typeof STATUSES)[number][];
 
 export type KanbanColumn = (typeof KANBAN_COLUMNS)[number];
+
+export type KanbanStatusMove =
+  | "confirm"
+  | "noop"
+  | "pause"
+  | "reopen"
+  | "skip"
+  | "start"
+  | "unconfirm"
+  | "unskip";
 
 export function groupRowsByKanbanColumn(
   rows: readonly BoardRow[],
@@ -18,6 +29,7 @@ export function groupRowsByKanbanColumn(
     スキップ: rows.filter((row) => row.status === "スキップ"),
     未着手: rows.filter((row) => row.status === "未着手"),
     確定: rows.filter((row) => row.status === "確定"),
+    進行中: rows.filter((row) => row.status === "進行中"),
   };
 }
 
@@ -57,7 +69,7 @@ export function computeOrderedRowIds(
 export function resolveKanbanStatusMove(
   sourceStatus: BoardRow["status"],
   destinationStatus: KanbanColumn,
-): "confirm" | "noop" | "skip" | "unconfirm" | "unskip" {
+): KanbanStatusMove {
   if (sourceStatus === destinationStatus) {
     return "noop";
   }
@@ -67,11 +79,26 @@ export function resolveKanbanStatusMove(
   if (destinationStatus === "スキップ") {
     return "skip";
   }
-  if (destinationStatus === "未着手" && sourceStatus === "スキップ") {
-    return "unskip";
+  if (destinationStatus === "未着手") {
+    if (sourceStatus === "スキップ") {
+      return "unskip";
+    }
+    if (sourceStatus === "確定") {
+      return "unconfirm";
+    }
+    if (sourceStatus === "進行中") {
+      return "pause";
+    }
+    return "noop";
   }
-  if (destinationStatus === "未着手" && sourceStatus === "確定") {
-    return "unconfirm";
+  if (destinationStatus === "進行中") {
+    if (sourceStatus === "未着手") {
+      return "start";
+    }
+    if (sourceStatus === "確定") {
+      return "reopen";
+    }
+    return "noop";
   }
   return "noop";
 }

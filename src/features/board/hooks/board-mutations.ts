@@ -8,7 +8,10 @@ import type { BoardScheduleView } from "~/features/board/schemas/board-search-sc
 import {
   useOptimisticApplyRowOrder,
   useOptimisticConfirmRow,
+  useOptimisticPauseRow,
+  useOptimisticReopenRow,
   useOptimisticSkipRow,
+  useOptimisticStartRow,
   useOptimisticUnconfirmRow,
   useOptimisticUnskipRow,
 } from "~/hooks/use-row-mutations";
@@ -16,6 +19,9 @@ import {
 export const useBoardSkipRow = useOptimisticSkipRow;
 export const useBoardUnskipRow = useOptimisticUnskipRow;
 export const useBoardUnconfirmRow = useOptimisticUnconfirmRow;
+export const useBoardStartRow = useOptimisticStartRow;
+export const useBoardPauseRow = useOptimisticPauseRow;
+export const useBoardReopenRow = useOptimisticReopenRow;
 export const useBoardApplyRowOrder = useOptimisticApplyRowOrder;
 export const useBoardConfirmRow = useOptimisticConfirmRow;
 

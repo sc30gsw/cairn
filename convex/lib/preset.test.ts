@@ -10,7 +10,7 @@ import {
   type ExistingRow,
 } from "./preset";
 
-const [confirmed, pending, skipped] = STATUSES;
+const [confirmed, pending, ongoing, skipped] = STATUSES;
 const itemA = "item-a" as Id<"items">;
 const itemB = "item-b" as Id<"items">;
 
@@ -26,14 +26,19 @@ test("プリセット適用はすべて未着手", () => {
   ]);
 });
 
-test("切替は未着手だけ差し替え、確定とスキップは残る", () => {
+test("切替は未着手だけ差し替え、確定・進行中・スキップは残る", () => {
   const rows = [
     { status: confirmed },
     { status: skipped },
+    { status: ongoing },
     { status: pending },
   ] as const satisfies readonly ExistingRow[];
 
-  expect(keptRowsAfterSwitch(rows)).toEqual([{ status: confirmed }, { status: skipped }]);
+  expect(keptRowsAfterSwitch(rows)).toEqual([
+    { status: confirmed },
+    { status: skipped },
+    { status: ongoing },
+  ]);
 });
 
 test("同じ曜日のプリセットが二つある状態は拒否する", () => {

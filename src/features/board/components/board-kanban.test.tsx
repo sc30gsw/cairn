@@ -6,7 +6,7 @@ import { BoardKanban } from "~/features/board/components/board-kanban";
 import type { BoardObstacle, BoardRow } from "~/features/board/types/board";
 import { renderWithMantine } from "~/test-utils/render";
 
-const [confirmed, pending, skipped] = STATUSES;
+const [confirmed, pending, _ongoing, skipped] = STATUSES;
 
 const noop = vi.fn(async () => undefined);
 
@@ -18,7 +18,10 @@ vi.mock("~/features/board/hooks/use-board-kanban-actions", () => ({
   useBoardKanbanActions: () => ({
     onApplyOrder: noop,
     onConfirm: noop,
+    onPause: noop,
+    onReopen: noop,
     onSkip: noop,
+    onStart: noop,
     onUnconfirm: noop,
     onUnskip: noop,
   }),
@@ -45,7 +48,7 @@ function row(id: string, status: BoardRow["status"], name: string): BoardRow {
   };
 }
 
-test("カンバンは未着手・確定・スキップとチェックポイントを並べる", () => {
+test("カンバンは未着手・進行中・確定・スキップとチェックポイントを並べる", () => {
   const obstacle = {
     _id: "o1" as BoardObstacle["_id"],
     ifText: "眠い",
@@ -66,6 +69,7 @@ test("カンバンは未着手・確定・スキップとチェックポイン�
   );
 
   expect(getAllByText("未着手").length).toBeGreaterThanOrEqual(2);
+  expect(getByText("進行中")).toBeDefined();
   expect(getByText("確定")).toBeDefined();
   expect(getByText("スキップ")).toBeDefined();
   expect(getAllByText("チェックポイント").length).toBeGreaterThanOrEqual(2);

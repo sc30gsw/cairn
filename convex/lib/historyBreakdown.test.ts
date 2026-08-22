@@ -3,7 +3,7 @@ import { expect, test } from "vite-plus/test";
 import { STATUSES } from "./domain";
 import { aggregateBreakdownRows, aggregateByCondition } from "./historyBreakdown";
 
-const [confirmed, pending, skipped] = STATUSES;
+const [confirmed, pending, _ongoing, skipped] = STATUSES;
 
 const itemById = new Map([
   [

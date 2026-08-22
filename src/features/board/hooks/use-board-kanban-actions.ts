@@ -4,7 +4,10 @@ import { todayJst } from "~domain/jst";
 import {
   useBoardApplyRowOrder,
   useBoardConfirmRow,
+  useBoardPauseRow,
+  useBoardReopenRow,
   useBoardSkipRow,
+  useBoardStartRow,
   useBoardUnconfirmRow,
   useBoardUnskipRow,
 } from "~/features/board/hooks/board-mutations";
@@ -17,6 +20,9 @@ export function useBoardKanbanActions(dateJst: DateJst) {
   const skipRow = useBoardSkipRow(dateJst, today);
   const unskipRow = useBoardUnskipRow(dateJst, today);
   const unconfirmRow = useBoardUnconfirmRow(dateJst, today);
+  const startRow = useBoardStartRow(dateJst, today);
+  const pauseRow = useBoardPauseRow(dateJst, today);
+  const reopenRow = useBoardReopenRow(dateJst, today);
 
   return {
     onApplyOrder: (input: Parameters<typeof applyOrder.mutateAsync>[0]) =>
@@ -38,6 +44,18 @@ export function useBoardKanbanActions(dateJst: DateJst) {
     onUnskip: (input: Parameters<typeof unskipRow.mutateAsync>[0]) =>
       runMutation(() => unskipRow.mutateAsync(input), {
         successMessage: "未着手に戻しました",
+      }).then(() => undefined),
+    onStart: (input: Parameters<typeof startRow.mutateAsync>[0]) =>
+      runMutation(() => startRow.mutateAsync(input), {
+        successMessage: "進行中にしました",
+      }).then(() => undefined),
+    onPause: (input: Parameters<typeof pauseRow.mutateAsync>[0]) =>
+      runMutation(() => pauseRow.mutateAsync(input), {
+        successMessage: "未着手に戻しました",
+      }).then(() => undefined),
+    onReopen: (input: Parameters<typeof reopenRow.mutateAsync>[0]) =>
+      runMutation(() => reopenRow.mutateAsync(input), {
+        successMessage: "進行中に戻しました",
       }).then(() => undefined),
   };
 }

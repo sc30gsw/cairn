@@ -94,6 +94,7 @@ export const historyShimmerPresetReview = {
   weekdays: WEEKDAY_DISPLAY_ORDER.map((weekday) => ({
     confirmed: 0,
     leftover: 0,
+    ongoing: 0,
     planned: 0,
     skipped: 0,
     weekday,

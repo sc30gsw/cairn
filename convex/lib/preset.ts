@@ -17,7 +17,9 @@ export function materializePresetRows(lines: readonly PresetLine[]): (PresetLine
 }
 
 export function keptRowsAfterSwitch<T extends ExistingRow>(existing: readonly T[]): T[] {
-  return existing.filter((row) => row.status === "確定" || row.status === "スキップ");
+  return existing.filter(
+    (row) => row.status === "確定" || row.status === "スキップ" || row.status === "進行中",
+  );
 }
 
 export function weekdayAlreadyTaken(

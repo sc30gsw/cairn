@@ -88,7 +88,8 @@ export function BoardKanban({
   obstacles,
   rows,
 }: BoardKanbanProps) {
-  const { onApplyOrder, onConfirm, onSkip, onUnconfirm, onUnskip } = useBoardKanbanActions(dateJst);
+  const { onApplyOrder, onConfirm, onPause, onReopen, onSkip, onStart, onUnconfirm, onUnskip } =
+    useBoardKanbanActions(dateJst);
   const { DragDropContext, Draggable, Droppable } = useDnd();
   const grouped = groupRowsByKanbanColumn(rows);
   const [confirmRow, setConfirmRow] = useState<BoardRow | null>(null);
@@ -152,6 +153,12 @@ export function BoardKanban({
       await onUnskip({ rowId: row._id });
     } else if (statusMove === "unconfirm") {
       await onUnconfirm({ rowId: row._id });
+    } else if (statusMove === "start") {
+      await onStart({ rowId: row._id });
+    } else if (statusMove === "pause") {
+      await onPause({ rowId: row._id });
+    } else if (statusMove === "reopen") {
+      await onReopen({ rowId: row._id });
     }
 
     if (orderChanged) {
@@ -175,7 +182,7 @@ export function BoardKanban({
         row={confirmRow}
       />
       <DragDropContext onDragEnd={(result) => void handleDragEnd(result)}>
-        <div className="grid gap-3 md:grid-cols-4">
+        <div className="grid gap-3 md:grid-cols-5">
           {KANBAN_COLUMNS.map((status) => {
             const columnRows = grouped[status];
             return (

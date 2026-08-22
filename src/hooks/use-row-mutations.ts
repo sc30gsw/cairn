@@ -21,6 +21,18 @@ export function useUnconfirmRow() {
   return useConvexMutation(api.mutations.rows.unconfirm.unconfirm);
 }
 
+export function useStartRow() {
+  return useConvexMutation(api.mutations.rows.start.start);
+}
+
+export function usePauseRow() {
+  return useConvexMutation(api.mutations.rows.pause.pause);
+}
+
+export function useReopenRow() {
+  return useConvexMutation(api.mutations.rows.reopen.reopen);
+}
+
 export function useApplyRowOrder() {
   return useConvexMutation(api.mutations.rows.applyOrder.applyOrder);
 }
@@ -88,6 +100,48 @@ export function useOptimisticUnconfirmRow(dateJst: DateJst, todayJst: DateJst) {
         dateJst,
         rowId: args.rowId,
         status: "未着手",
+        todayJst,
+      });
+    },
+  );
+  return { mutateAsync };
+}
+
+export function useOptimisticStartRow(dateJst: DateJst, todayJst: DateJst) {
+  const mutateAsync = useMutation(api.mutations.rows.start.start).withOptimisticUpdate(
+    (localStore, args) => {
+      setDayRowStatus(localStore, {
+        dateJst,
+        rowId: args.rowId,
+        status: "進行中",
+        todayJst,
+      });
+    },
+  );
+  return { mutateAsync };
+}
+
+export function useOptimisticPauseRow(dateJst: DateJst, todayJst: DateJst) {
+  const mutateAsync = useMutation(api.mutations.rows.pause.pause).withOptimisticUpdate(
+    (localStore, args) => {
+      setDayRowStatus(localStore, {
+        dateJst,
+        rowId: args.rowId,
+        status: "未着手",
+        todayJst,
+      });
+    },
+  );
+  return { mutateAsync };
+}
+
+export function useOptimisticReopenRow(dateJst: DateJst, todayJst: DateJst) {
+  const mutateAsync = useMutation(api.mutations.rows.reopen.reopen).withOptimisticUpdate(
+    (localStore, args) => {
+      setDayRowStatus(localStore, {
+        dateJst,
+        rowId: args.rowId,
+        status: "進行中",
         todayJst,
       });
     },

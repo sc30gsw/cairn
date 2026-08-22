@@ -39,6 +39,7 @@ export async function presetReview(
     weekdays: counted.map((counts) => ({
       confirmed: counts.confirmed,
       leftover: counts.leftover,
+      ongoing: counts.ongoing,
       planned: plannedCount(counts),
       skipped: counts.skipped,
       weekday: counts.weekday,

@@ -169,3 +169,33 @@ test("他人の行順は applyOrder できない", async () => {
     }),
   ).rejects.toThrow();
 });
+
+test("他人の行は start できない", async () => {
+  const ownerA = asOwner(OWNER_A);
+  const rowId = await firstRowId(ownerA);
+
+  const ownerB = asOwner(OWNER_B);
+  await expect(ownerB.mutation(api.mutations.rows.start.start, { rowId })).rejects.toThrow();
+});
+
+test("他人の行は pause できない", async () => {
+  const ownerA = asOwner(OWNER_A);
+  const rowId = await firstRowId(ownerA);
+  await ownerA.mutation(api.mutations.rows.start.start, { rowId });
+
+  const ownerB = asOwner(OWNER_B);
+  await expect(ownerB.mutation(api.mutations.rows.pause.pause, { rowId })).rejects.toThrow();
+});
+
+test("他人の行は reopen できない", async () => {
+  const ownerA = asOwner(OWNER_A);
+  const rowId = await firstRowId(ownerA);
+  await ownerA.mutation(api.mutations.rows.confirm.confirm, {
+    content: "done",
+    minutes: 10,
+    rowId,
+  });
+
+  const ownerB = asOwner(OWNER_B);
+  await expect(ownerB.mutation(api.mutations.rows.reopen.reopen, { rowId })).rejects.toThrow();
+});

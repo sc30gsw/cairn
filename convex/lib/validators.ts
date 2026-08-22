@@ -11,7 +11,7 @@ import { PRESET_REVIEW_REASONS } from "./presetDigest";
 
 const [toeic, listening, reading, conversation, otherCategory] = CATEGORIES;
 const [good, ordinary, collapsed] = CONDITIONS;
-const [confirmed, pending, skipped] = STATUSES;
+const [confirmed, pending, ongoing, skipped] = STATUSES;
 const [examType, masteryType] = GOAL_TYPES;
 const [minutesMetric, daysMetric, countMetric] = TARGET_METRICS;
 const [liveKind, todayEmptyKind, restKind, unrecordedKind] = DAY_VIEW_KINDS;
@@ -28,6 +28,7 @@ export const categoryValidator = v.union(
 export const statusValidator = v.union(
   v.literal(confirmed),
   v.literal(pending),
+  v.literal(ongoing),
   v.literal(skipped),
 );
 
@@ -401,6 +402,7 @@ export const presetReviewReasonValidator = v.union(
 export const presetReviewWeekdayValidator = v.object({
   confirmed: v.number(),
   leftover: v.number(),
+  ongoing: v.number(),
   planned: v.number(),
   skipped: v.number(),
   weekday: weekdayValidator,

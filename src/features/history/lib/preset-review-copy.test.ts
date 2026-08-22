@@ -14,12 +14,15 @@ test("提案文は断定せず件数を出す", () => {
       {
         confirmed: 1,
         leftover: 4,
+        ongoing: 0,
         planned: 6,
         skipped: 1,
         weekday: 1,
       },
     ),
-  ).toBe("直近の月曜日は、並んだ6件のうち確定1・見送り1・未着手4。未着手のまま残ることが多い。");
+  ).toBe(
+    "直近の月曜日は、並んだ6件のうち確定1・見送り1・未着手4・進行中0。未着手のまま残ることが多い。",
+  );
   expect(suggestionLinkLabel(1)).toBe("月曜日のプリセットを見る");
   expect(weekdayLabel(0)).toBe("日曜日");
 });
@@ -31,6 +34,7 @@ test("見送りが多い提案は見送りと書く", () => {
       {
         confirmed: 1,
         leftover: 1,
+        ongoing: 0,
         planned: 6,
         skipped: 4,
         weekday: 3,
