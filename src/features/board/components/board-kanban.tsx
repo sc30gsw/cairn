@@ -173,7 +173,7 @@ export function BoardKanban({
         })}
         <Stack gap="xs">
           <Text fw={600} size="sm">
-            次の一手
+            チェックポイント
           </Text>
           {obstacles.map((obstacle) => (
             <NextStepCard key={obstacle._id} subtitle={obstacle.ifText} title={obstacle.thenText} />

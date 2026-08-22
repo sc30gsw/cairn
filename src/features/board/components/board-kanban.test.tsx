@@ -33,7 +33,7 @@ function row(id: string, status: BoardRow["status"], name: string): BoardRow {
   };
 }
 
-test("カンバンは未着手・確定・スキップと次の一手を並べる", () => {
+test("カンバンは未着手・確定・スキップとチェックポイントを並べる", () => {
   const obstacle = {
     _id: "o1" as BoardObstacle["_id"],
     ifText: "眠い",
@@ -62,7 +62,7 @@ test("カンバンは未着手・確定・スキップと次の一手を並べ�
   expect(getAllByText("未着手").length).toBeGreaterThanOrEqual(2);
   expect(getByText("確定")).toBeDefined();
   expect(getByText("スキップ")).toBeDefined();
-  expect(getByText("次の一手")).toBeDefined();
+  expect(getByText("チェックポイント")).toBeDefined();
   expect(getByText("Distinction 2000")).toBeDefined();
   expect(getByText("金のフレーズ")).toBeDefined();
   expect(getByText("英会話")).toBeDefined();

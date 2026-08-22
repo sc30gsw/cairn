@@ -44,7 +44,7 @@ function BoardPending() {
       </PageTitle>
       <Shimmer loading>
         <Text c="dimmed" mb="md" size="sm">
-          今日の記録の状態と、次の一手。書く場所は日のままです。
+          今日の記録の状態と、チェックポイント。書く場所は日のままです。
         </Text>
         <BoardTabsPending
           kanban={
@@ -92,7 +92,7 @@ function BoardReady() {
     <>
       <PageTitle mb="md">ボード</PageTitle>
       <Text c="dimmed" mb="md" size="sm">
-        今日の記録の状態と、次の一手。書く場所は日のままです。
+        今日の記録の状態と、チェックポイント。書く場所は日のままです。
       </Text>
       <BoardTabs
         kanban={
