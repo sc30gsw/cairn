@@ -1,15 +1,7 @@
 import * as v from "valibot";
+import { BOARD_SCHEDULE_COLORS, type BoardScheduleColor } from "~domain/boardScheduleColors";
 
-export const BOARD_SCHEDULE_COLORS = [
-  "blue",
-  "green",
-  "violet",
-  "orange",
-  "cyan",
-  "grape",
-  "red",
-  "teal",
-] as const;
+export { BOARD_SCHEDULE_COLORS, type BoardScheduleColor };
 
 const BoardScheduleColorSchema = v.picklist(BOARD_SCHEDULE_COLORS);
 

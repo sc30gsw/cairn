@@ -41,7 +41,7 @@ Select / DnD など UI 由来で既に有効な ID がある箇所は `unwrap*` 
 - コンポーネント境界では `{ errorMessage: string | null }` に変換（`AuthActionResult`）
 - `submitAuthAction`（`submit-auth-action.ts`）がフォーム共通のエラー表示を担当
 
-`use-auth-actions.ts` は後方互換の re-export のみ。新規コードは `~/features/auth/lib/auth-actions` を直接 import する。
+新規コードは `~/features/auth/lib/auth-actions` を直接 import する。
 
 ## 未採用 / 意図的に Result にしない箇所
 

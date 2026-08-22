@@ -100,6 +100,21 @@ test("他人の boardScheduleEvents は更新・削除できない", async () =>
   ).rejects.toThrow();
 });
 
+test("他人の rowId では boardScheduleEvents を作成できない", async () => {
+  const ownerA = asOwner(OWNER_A);
+  const rowId = await firstRowId(ownerA);
+
+  const ownerB = asOwner(OWNER_B);
+  await expect(
+    ownerB.mutation(api.mutations.boardSchedule.create.create, {
+      color: "green",
+      endAt: "2026-08-17 10:00:00",
+      rowId,
+      startAt: "2026-08-17 09:00:00",
+    }),
+  ).rejects.toThrow();
+});
+
 test("他人の boardScheduleEvents は週一覧に出ない", async () => {
   const ownerA = asOwner(OWNER_A);
   const rowId = await firstRowId(ownerA);

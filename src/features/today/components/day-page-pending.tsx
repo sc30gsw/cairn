@@ -8,7 +8,6 @@ import {
   dayBoardShimmerItems,
   dayBoardShimmerPresets,
 } from "~/features/today/lib/day-board-shimmer-template";
-import { shimmerNoop } from "~/lib/shimmer-noop";
 
 export function DayPagePending({ dateJst }: Record<"dateJst", DateJst>) {
   const today = todayJst();
@@ -18,18 +17,9 @@ export function DayPagePending({ dateJst }: Record<"dateJst", DateJst>) {
       <DayBoard
         dateJst={dateJst}
         day={dayBoardShimmerDay(dateJst)}
+        interactive={false}
         items={dayBoardShimmerItems}
-        onAddRow={shimmerNoop}
-        onConfirm={shimmerNoop}
-        onCopyYesterday={shimmerNoop}
-        onRemoveDay={shimmerNoop}
-        onRemoveRow={shimmerNoop}
-        onSaveCondition={shimmerNoop}
-        onSaveMemo={shimmerNoop}
-        onSkip={shimmerNoop}
-        onSwitchPreset={shimmerNoop}
         presets={dayBoardShimmerPresets}
-        selectedPresetId={null}
         todayJst={today}
       />
     </Shimmer>

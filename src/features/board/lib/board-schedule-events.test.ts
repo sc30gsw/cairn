@@ -9,6 +9,7 @@ import {
   withoutAllDayEvents,
   withAllDayOverflow,
 } from "~/features/board/lib/board-schedule-events";
+import type { BoardScheduleBlock } from "~/features/board/types/board";
 import type { BoardMastery, BoardRow } from "~/features/board/types/board";
 
 const [confirmed] = STATUSES;
@@ -66,7 +67,7 @@ test("ユーザー予定ブロックは記録と並べて表示する", () => {
     rowId: "r1" as Id<"rows">,
     startAt: "2026-08-17 09:00:00",
     title: "Morning Standup",
-  };
+  } satisfies BoardScheduleBlock;
 
   const events = toBoardScheduleEvents("2026-08-17", [], null, [block]);
   expect(events).toEqual([

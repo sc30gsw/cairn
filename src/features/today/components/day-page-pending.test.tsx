@@ -11,6 +11,29 @@ vi.mock("~/hooks/use-recent-concrete-actions", () => ({
   useRecentConcreteActions: useRecentConcreteActionsMock,
 }));
 
+vi.mock("~/features/today/hooks/use-day-board-actions", () => ({
+  useDayBoardActions: () => ({
+    onAddRow: vi.fn(),
+    onConfirm: vi.fn(),
+    onCopyYesterday: vi.fn(),
+    onRemoveDay: vi.fn(),
+    onRemoveRow: vi.fn(),
+    onSaveCondition: vi.fn(),
+    onSaveMemo: vi.fn(),
+    onSkip: vi.fn(),
+    onSwitchPreset: vi.fn(),
+  }),
+}));
+
+vi.mock("~/features/today/hooks/use-apply-preset-from-search", () => ({
+  useApplyPresetFromSearch: () => ({
+    appliedPresetRef: { current: null },
+    defaultPresetId: null,
+    selectedPresetId: null,
+    switchPreset: vi.fn(),
+  }),
+}));
+
 test("DayPagePending は Distinction 2000 の shimmer を出す", () => {
   const { getAllByText } = renderWithMantine(<DayPagePending dateJst="2026-08-17" />);
   expect(getAllByText("Distinction 2000").length).toBeGreaterThan(0);

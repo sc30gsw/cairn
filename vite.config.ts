@@ -48,6 +48,24 @@ const sharedBoundaryLintOverride = {
   },
 };
 
+const featureLibBoundaryLintOverride = {
+  files: ["src/features/**/lib/**"],
+  rules: {
+    "no-restricted-imports": [
+      "error",
+      {
+        patterns: [
+          {
+            message:
+              "Feature lib modules cannot import from feature components. Move render adapters into components/ or extract shared logic.",
+            regex: "^~/features/[^/]+/components/",
+          },
+        ],
+      },
+    ],
+  },
+};
+
 const isVitest = process.env.VITEST === "true";
 
 export default defineConfig({
@@ -137,6 +155,8 @@ export default defineConfig({
       },
       // @ts-expect-error vite-plus lint override typing is narrower than oxlint's no-restricted-imports patterns
       ...featureBoundaryLintOverrides,
+      // @ts-expect-error vite-plus lint override typing is narrower than oxlint's no-restricted-imports patterns
+      featureLibBoundaryLintOverride,
       // @ts-expect-error vite-plus lint override typing is narrower than oxlint's no-restricted-imports patterns
       sharedBoundaryLintOverride,
     ],

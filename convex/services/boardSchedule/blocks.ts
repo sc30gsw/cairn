@@ -1,5 +1,9 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
+import {
+  DEFAULT_BOARD_SCHEDULE_COLOR,
+  type BoardScheduleColor,
+} from "../../lib/boardScheduleColors";
 import { type BoardScheduleView, scheduleListRange } from "../../lib/boardScheduleRange";
 import { NotFoundError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
@@ -7,7 +11,7 @@ import { assertScheduleRange, requireScheduleInstant } from "../../lib/scheduleI
 import { requireOwnedRow } from "../rows/requireOwnedRow";
 import { rowDayLiveness } from "../rows/rowDayLiveness";
 
-const DEFAULT_COLOR = "blue";
+const DEFAULT_COLOR = DEFAULT_BOARD_SCHEDULE_COLOR;
 
 function normalizeRange(startAt: string, endAt: string): { endAt: string; startAt: string } {
   const normalizedStart = requireScheduleInstant(startAt);
@@ -51,7 +55,7 @@ export async function listForWeek(
 ): Promise<
   Array<{
     _id: Id<"boardScheduleEvents">;
-    color: string;
+    color: BoardScheduleColor;
     endAt: string;
     rowId: Id<"rows">;
     startAt: string;
@@ -59,20 +63,22 @@ export async function listForWeek(
   }>
 > {
   const { rangeEndExclusive, rangeStart } = scheduleListRange(args.view, args.anchorDateJst);
-  const blocks = await ctx.db
+  const candidateBlocks = await ctx.db
     .query("boardScheduleEvents")
-    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+    .withIndex("by_owner_and_startAt", (q) =>
+      q.eq("ownerId", ownerId).lt("startAt", rangeEndExclusive),
+    )
     .collect();
   const result: Array<{
     _id: Id<"boardScheduleEvents">;
-    color: string;
+    color: BoardScheduleColor;
     endAt: string;
     rowId: Id<"rows">;
     startAt: string;
     title: string;
   }> = [];
-  for (const block of blocks) {
-    if (block.startAt >= rangeEndExclusive || block.endAt <= rangeStart) {
+  for (const block of candidateBlocks) {
+    if (block.endAt <= rangeStart) {
       continue;
     }
     result.push({
@@ -90,7 +96,7 @@ export async function listForWeek(
 export async function create(
   ctx: MutationCtx,
   ownerId: string,
-  args: { color?: string; endAt: string; rowId: Id<"rows">; startAt: string },
+  args: { color?: BoardScheduleColor; endAt: string; rowId: Id<"rows">; startAt: string },
 ): Promise<Id<"boardScheduleEvents">> {
   const { endAt, startAt } = normalizeRange(args.startAt, args.endAt);
   const { itemName, rowId } = await requireLiveRowForSchedule(ctx, ownerId, args.rowId);
@@ -109,7 +115,7 @@ export async function update(
   ownerId: string,
   args: {
     blockId: Id<"boardScheduleEvents">;
-    color?: string;
+    color?: BoardScheduleColor;
     endAt: string;
     rowId?: Id<"rows">;
     startAt: string;
@@ -118,7 +124,7 @@ export async function update(
   await requireOwnedBlock(ctx, ownerId, args.blockId);
   const { endAt, startAt } = normalizeRange(args.startAt, args.endAt);
   const patch: {
-    color?: string;
+    color?: BoardScheduleColor;
     endAt: string;
     rowId?: Id<"rows">;
     startAt: string;

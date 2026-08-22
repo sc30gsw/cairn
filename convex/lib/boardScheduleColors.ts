@@ -14,12 +14,7 @@ export const BOARD_SCHEDULE_COLORS = [
 export type BoardScheduleColor = (typeof BOARD_SCHEDULE_COLORS)[number];
 
 export const boardScheduleColorValidator = v.union(
-  v.literal("blue"),
-  v.literal("green"),
-  v.literal("violet"),
-  v.literal("orange"),
-  v.literal("cyan"),
-  v.literal("grape"),
-  v.literal("red"),
-  v.literal("teal"),
+  ...BOARD_SCHEDULE_COLORS.map((color) => v.literal(color)),
 );
+
+export const DEFAULT_BOARD_SCHEDULE_COLOR: BoardScheduleColor = "blue";

@@ -1,5 +1,6 @@
 import { type Infer, v } from "convex/values";
 
+import { boardScheduleColorValidator } from "./boardScheduleColors";
 import { BOARD_SCHEDULE_VIEWS } from "./boardScheduleRange";
 import { WEEKDAYS } from "./catalog";
 import { CATEGORIES } from "./categories";
@@ -423,7 +424,7 @@ export type PresetReviewSuggestionDto = Infer<typeof presetReviewSuggestionValid
 
 export const boardScheduleEventDtoValidator = v.object({
   _id: v.id("boardScheduleEvents"),
-  color: v.string(),
+  color: boardScheduleColorValidator,
   endAt: v.string(),
   rowId: v.id("rows"),
   startAt: v.string(),
