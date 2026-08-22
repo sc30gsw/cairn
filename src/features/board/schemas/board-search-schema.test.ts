@@ -29,3 +29,12 @@ test("BoardSearchSchema は schedule view と日付パラメータを受け入�
 test("BoardSearchSchema は不正な tab を拒否する", () => {
   expect(v.safeParse(BoardSearchSchema, { tab: "month" }).success).toBe(false);
 });
+
+test("BoardSearchSchema は存在しない暦日を拒否する", () => {
+  expect(v.safeParse(BoardSearchSchema, { date: "2026-02-30" }).success).toBe(false);
+  expect(v.safeParse(BoardSearchSchema, { week: "2026-13-01" }).success).toBe(false);
+});
+
+test("BoardSearchSchema は不正な month 形式を拒否する", () => {
+  expect(v.safeParse(BoardSearchSchema, { month: "2026-8" }).success).toBe(false);
+});
