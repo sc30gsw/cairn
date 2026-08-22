@@ -3,10 +3,17 @@ import { expect, test, vi } from "vite-plus/test";
 import { STATUSES } from "~domain/domain";
 
 import { DayBoard } from "~/features/today/components/day-board";
-import type { DayPage, DayRow } from "~/features/today/types/day";
+import {
+  CONCRETE_ACTION,
+  CONCRETE_ACTION_2,
+  dayBoardTestDay,
+  dayBoardTestItems,
+  dayBoardTestRow,
+} from "~/features/today/components/day-board.test-fixtures";
+import type { DayPage } from "~/features/today/types/day";
 import { renderWithMantine } from "~/test-utils/render";
 
-const [confirmed, pending] = [STATUSES[0], STATUSES[1]] as const;
+const [confirmed] = [STATUSES[0], STATUSES[1]] as const;
 
 const {
   navigate,
@@ -81,39 +88,9 @@ vi.mock("~/features/today/hooks/use-apply-preset-from-search", () => ({
   }),
 }));
 
-const CONCRETE_ACTION = "Unit 1 を音読する";
-const CONCRETE_ACTION_2 = "Unit 2 を音読する";
-
-const row = {
-  _id: "row1" as DayRow["_id"],
-  category: "多聴",
-  categorySortOrder: 1,
-  content: "",
-  itemId: "item1" as DayRow["itemId"],
-  itemName: "Distinction 2000",
-  minutes: 30,
-  sortOrder: 0,
-  status: pending,
-} satisfies DayRow;
-
-const day = {
-  canCopyYesterday: false,
-  dateJst: "2026-08-17",
-  day: {
-    _id: "day1" as NonNullable<DayPage["day"]>["_id"],
-    condition: null,
-    dateJst: "2026-08-17",
-    memo: null,
-  },
-  kind: "live",
-  rows: [row],
-  shareMarkdown: "",
-  volumeMinutes: 0,
-} satisfies DayPage;
-
-const items = [
-  { _id: row.itemId, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
-];
+const row = dayBoardTestRow;
+const day = dayBoardTestDay;
+const items = dayBoardTestItems;
 
 test("確定直後の残量を記録カードに出す", () => {
   const { getByText } = renderWithMantine(

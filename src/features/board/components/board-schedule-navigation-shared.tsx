@@ -6,7 +6,8 @@ import { isFutureDateJst, mondayOfWeek, type DateJst } from "~domain/jst";
 
 import { formatWeekNavigationLabel } from "~/features/board/lib/board-schedule-navigation-labels";
 import type { BoardScheduleView } from "~/features/board/schemas/board-search-schema";
-import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-style";
+import { calendarDayStyleClasses } from "~/lib/calendar-day-style";
+import { learningDatePickerProps } from "~/lib/learning-date-picker-props";
 import { SCHEDULE_LABELS_JA } from "~/lib/schedule-labels";
 import { cn } from "~/lib/utils";
 
@@ -34,19 +35,7 @@ export function monthDateString(monthDate: Date): string {
 }
 
 export function sharedDatePickerProps(todayJst: DateJst) {
-  return {
-    firstDayOfWeek: 1 as const,
-    getDayProps: (date: string) => calendarDayProps(date, todayJst),
-    getMonthControlProps: (month: string) => ({
-      disabled: month.slice(0, 7) > todayJst.slice(0, 7),
-    }),
-    getYearControlProps: (year: string) => ({
-      disabled: year.slice(0, 4) > todayJst.slice(0, 4),
-    }),
-    locale: "ja",
-    maxDate: todayJst,
-    popoverProps: { withinPortal: true },
-  };
+  return learningDatePickerProps(todayJst);
 }
 
 export function pickDateInWeek(

@@ -3,7 +3,7 @@ import { screen, waitFor } from "@testing-library/react";
 import { Result } from "better-result";
 import { expect, test, vi, beforeEach } from "vite-plus/test";
 
-import { MyPagePasskeyReprompt } from "~/features/auth/components/my-page-passkey-reprompt";
+import { MyPagePasskeyReprompt } from "~/features/my-page/components/my-page-passkey-reprompt";
 import { AuthActionError } from "~/lib/errors";
 import * as passkeyStorage from "~/lib/passkey-storage";
 import * as profileActions from "~/lib/profile-actions";

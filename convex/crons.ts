@@ -11,4 +11,11 @@ crons.daily(
   {},
 );
 
+crons.hourly(
+  "purge expired avatar upload claims",
+  { minuteUTC: 15 },
+  internal.mutations.profile.purgeExpiredAvatarClaims.purgeExpiredAvatarClaims,
+  {},
+);
+
 export default crons;

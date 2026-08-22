@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { PasskeyPromptModal } from "~/features/auth/components/passkey-prompt-modal";
+import { PasskeyPromptModal } from "~/components/passkey-prompt-modal";
 import { consumeSignupPasskeyPromptOpen } from "~/lib/passkey-storage";
 
 export function PasskeySignupPromptGate() {

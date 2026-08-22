@@ -2,7 +2,7 @@ import type { Passkey } from "@better-auth/passkey/client";
 import { Result } from "better-result";
 import { useEffect, useState } from "react";
 
-import { PasskeyPromptModal } from "~/features/auth/components/passkey-prompt-modal";
+import { PasskeyPromptModal } from "~/components/passkey-prompt-modal";
 import type { AuthActionError } from "~/lib/errors";
 import {
   shouldOpenMyPagePasskeyPrompt,

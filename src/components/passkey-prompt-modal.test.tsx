@@ -2,7 +2,7 @@ import { screen, waitFor } from "@testing-library/react";
 import { Result } from "better-result";
 import { expect, test, vi } from "vite-plus/test";
 
-import { PasskeyPromptModal } from "~/features/auth/components/passkey-prompt-modal";
+import { PasskeyPromptModal } from "~/components/passkey-prompt-modal";
 import { AuthActionError } from "~/lib/errors";
 import { renderWithMantine } from "~/test-utils/render";
 

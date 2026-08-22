@@ -3,7 +3,7 @@ import { Card, PasswordInput, Stack, TextInput, Title } from "@mantine/core";
 import { Result } from "better-result";
 
 import { ProfileAccountActionForm } from "~/features/my-page/components/profile-account-action-form";
-import { useAppShellUser } from "~/hooks/use-auth-session";
+import { useMyPageUser } from "~/features/my-page/hooks/use-my-page-user";
 import {
   updateProfileName,
   updateProfilePassword,
@@ -107,11 +107,7 @@ function ProfilePasswordForm() {
 }
 
 export function AccountSection() {
-  const user = useAppShellUser();
-
-  if (user === null) {
-    return null;
-  }
+  const user = useMyPageUser();
 
   return (
     <Card padding="md">

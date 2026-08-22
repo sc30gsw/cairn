@@ -12,8 +12,8 @@ import {
 } from "~/features/onboarding/lib/dismissed-setup-store";
 import { dismissSetupStep as persistDismissSetupStep } from "~/features/onboarding/lib/onboarding-storage";
 import {
-  firstIncompleteSetupStep,
   shouldShowHomeSetupStepper,
+  visibleSetupStep,
   type SetupStep,
   type SetupStepId,
 } from "~/features/onboarding/lib/setup-steps";
@@ -34,7 +34,7 @@ export function useSetupStatus(): {
   );
   const dismissed = dismissedSetFromSnapshotKey(dismissedKey);
 
-  const firstStep = firstIncompleteSetupStep(status, dismissed);
+  const firstStep = visibleSetupStep(status, dismissed);
 
   return {
     dismissStep: (stepId: SetupStepId) => {
