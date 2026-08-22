@@ -10,6 +10,7 @@ import dayjs from "dayjs";
 import type { DateJst } from "~domain/jst";
 import { isFutureDateJst } from "~domain/jst";
 
+import { TruncatedText } from "~/components/truncated-text";
 import { monthDayOverlayAttrs } from "~/features/history/lib/month-day-overlay";
 import {
   confirmedMonthEvents,
@@ -147,9 +148,9 @@ export function HistoryMonthView({
               const minutes = minutesByEventId.get(String(event.id));
               return (
                 <Group gap={4} wrap="nowrap">
-                  <Text fw={600} lineClamp={1} size="xs">
+                  <TruncatedText fw={600} lineClamp={1} size="xs">
                     {event.title}
-                  </Text>
+                  </TruncatedText>
                   {minutes !== undefined ? (
                     <Text c="blue.7" fw={600} size="xs">
                       {minutes}分

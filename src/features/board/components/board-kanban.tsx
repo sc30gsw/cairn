@@ -1,10 +1,11 @@
 import type { DropResult } from "@hello-pangea/dnd";
-import { ActionIcon, Badge, Card, Group, Stack, Text } from "@mantine/core";
+import { ActionIcon, Badge, Card, Group, Stack, Text, Tooltip } from "@mantine/core";
 import { IconGripVertical } from "@tabler/icons-react";
 import { Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import type { DateJst } from "~domain/jst";
 
+import { TruncatedText } from "~/components/truncated-text";
 import {
   BoardKanbanConfirmModal,
   needsKanbanConfirmEditor,
@@ -20,7 +21,7 @@ import {
 } from "~/features/board/lib/kanban-order";
 import type { BoardObstacle, BoardRow } from "~/features/board/types/board";
 import { useDnd } from "~/hooks/use-dnd";
-import { RECORD_STATUS_UI } from "~/lib/record-status-ui";
+import { RECORD_STATUS_UI, statusTooltip } from "~/lib/record-status-ui";
 
 type BoardKanbanProps = {
   checkpointLabel: string | null;
@@ -38,30 +39,34 @@ function RecordCard({
   row: BoardRow;
 }) {
   const badge = RECORD_STATUS_UI[row.status];
+  const detail = row.content === "" ? row.category : `${row.category} · ${row.content}`;
 
   return (
     <Card padding="sm" withBorder>
       <Group align="flex-start" gap="xs" wrap="nowrap">
-        <ActionIcon
-          aria-label={`${row.itemName} の順序を変更`}
-          color="gray"
-          size="sm"
-          variant="subtle"
-          {...dragHandleProps}
-        >
-          <IconGripVertical size={16} />
-        </ActionIcon>
+        <Tooltip label="ドラッグして並べ替え・移動" withArrow>
+          <ActionIcon
+            aria-label={`${row.itemName} の順序を変更`}
+            color="gray"
+            size="sm"
+            variant="subtle"
+            {...dragHandleProps}
+          >
+            <IconGripVertical aria-hidden size={16} stroke={1.5} />
+          </ActionIcon>
+        </Tooltip>
         <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
-          <Text component={Link} fw={600} lineClamp={1} size="sm" to="/">
+          <TruncatedText fw={600} lineClamp={1} size="sm" to="/">
             {row.itemName}
-          </Text>
-          <Text c="dimmed" lineClamp={1} size="xs">
-            {row.category}
-            {row.content === "" ? "" : ` · ${row.content}`}
-          </Text>
-          <Badge color={badge.color} size="sm" variant="light">
-            {badge.label}
-          </Badge>
+          </TruncatedText>
+          <TruncatedText c="dimmed" lineClamp={1} size="xs">
+            {detail}
+          </TruncatedText>
+          <Tooltip label={statusTooltip(row.status)} withArrow>
+            <Badge color={badge.color} size="sm" variant="light">
+              {badge.label}
+            </Badge>
+          </Tooltip>
         </Stack>
       </Group>
     </Card>
@@ -71,12 +76,12 @@ function RecordCard({
 function NextStepCard({ subtitle, title }: { subtitle: string; title: string }) {
   return (
     <Card component={Link} padding="sm" to="/goals" withBorder>
-      <Text fw={600} lineClamp={2} size="sm">
+      <TruncatedText fw={600} lineClamp={2} size="sm">
         {title}
-      </Text>
-      <Text c="dimmed" lineClamp={2} size="xs">
+      </TruncatedText>
+      <TruncatedText c="dimmed" lineClamp={2} size="xs">
         {subtitle}
-      </Text>
+      </TruncatedText>
     </Card>
   );
 }
@@ -189,9 +194,11 @@ export function BoardKanban({
               <Droppable droppableId={status} key={status}>
                 {(provided) => (
                   <Stack gap="xs" ref={provided.innerRef} {...provided.droppableProps}>
-                    <Text fw={600} size="sm">
-                      {status}
-                    </Text>
+                    <Tooltip label={statusTooltip(status)} withArrow>
+                      <Text fw={600} size="sm">
+                        {status}
+                      </Text>
+                    </Tooltip>
                     {columnRows.length === 0 ? (
                       <Text c="dimmed" size="sm">
                         なし
@@ -217,9 +224,11 @@ export function BoardKanban({
             );
           })}
           <Stack gap="xs">
-            <Text fw={600} size="sm">
-              チェックポイント
-            </Text>
+            <Tooltip label="障害対策と次の一手" withArrow>
+              <Text fw={600} size="sm">
+                チェックポイント
+              </Text>
+            </Tooltip>
             {obstacles.map((obstacle) => (
               <NextStepCard
                 key={obstacle._id}
