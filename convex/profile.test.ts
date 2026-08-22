@@ -38,20 +38,6 @@ async function registerStorageForOwner(
   });
 }
 
-async function claimStorageForOwner(
-  asOwner: ReturnType<ReturnType<typeof convexTest>["withIdentity"]>,
-  storageId: Id<"_storage">,
-) {
-  const { claimId } = await asOwner.mutation(
-    api.mutations.profile.generateAvatarUploadUrl.generateAvatarUploadUrl,
-    {},
-  );
-  await asOwner.mutation(api.mutations.profile.claimAvatarUpload.claimAvatarUpload, {
-    claimId,
-    storageId,
-  });
-}
-
 test("未認証の profile.generateAvatarUploadUrl は throw する", async () => {
   const t = convexTest(schema, modules);
   await expect(
@@ -92,7 +78,6 @@ test("getAvatarUrl は claim 前の storage を拒否する", async () => {
 test("getAvatarUrl は他 owner が claim した storage を拒否する", async () => {
   const t = convexTest(schema, modules);
   const asOwner = t.withIdentity(OWNER);
-  const asOther = t.withIdentity(OTHER_OWNER);
   const storageId = await storeTestBlob(t);
 
   await registerStorageForOwner(t, OTHER_OWNER.subject, storageId);
