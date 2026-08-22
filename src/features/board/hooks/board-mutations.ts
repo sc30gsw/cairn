@@ -3,82 +3,21 @@ import type { DateJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
 import type { Id } from "~/../convex/_generated/dataModel";
-import {
-  patchBoardDayRow,
-  patchBoardScheduleBlocks,
-  reorderBoardDayRows,
-  setBoardDayRowStatus,
-} from "~/features/board/lib/optimistic-board-day";
+import { patchBoardScheduleBlocks } from "~/features/board/lib/optimistic-board-schedule";
 import type { BoardScheduleView } from "~/features/board/schemas/board-search-schema";
+import {
+  useOptimisticApplyRowOrder,
+  useOptimisticConfirmRow,
+  useOptimisticSkipRow,
+  useOptimisticUnconfirmRow,
+  useOptimisticUnskipRow,
+} from "~/hooks/use-row-mutations";
 
-export function useBoardSkipRow(dateJst: DateJst, todayJst: DateJst) {
-  const mutateAsync = useMutation(api.mutations.rows.skip.skip).withOptimisticUpdate(
-    (localStore, args) => {
-      setBoardDayRowStatus(localStore, {
-        dateJst,
-        rowId: args.rowId,
-        status: "スキップ",
-        todayJst,
-      });
-    },
-  );
-  return { mutateAsync };
-}
-
-export function useBoardUnskipRow(dateJst: DateJst, todayJst: DateJst) {
-  const mutateAsync = useMutation(api.mutations.rows.unskip.unskip).withOptimisticUpdate(
-    (localStore, args) => {
-      setBoardDayRowStatus(localStore, {
-        dateJst,
-        rowId: args.rowId,
-        status: "未着手",
-        todayJst,
-      });
-    },
-  );
-  return { mutateAsync };
-}
-
-export function useBoardUnconfirmRow(dateJst: DateJst, todayJst: DateJst) {
-  const mutateAsync = useMutation(api.mutations.rows.unconfirm.unconfirm).withOptimisticUpdate(
-    (localStore, args) => {
-      setBoardDayRowStatus(localStore, {
-        dateJst,
-        rowId: args.rowId,
-        status: "未着手",
-        todayJst,
-      });
-    },
-  );
-  return { mutateAsync };
-}
-
-export function useBoardApplyRowOrder(dateJst: DateJst, todayJst: DateJst) {
-  const mutateAsync = useMutation(api.mutations.rows.applyOrder.applyOrder).withOptimisticUpdate(
-    (localStore, args) => {
-      reorderBoardDayRows(localStore, {
-        dateJst,
-        orderedRowIds: args.orderedRowIds,
-        todayJst,
-      });
-    },
-  );
-  return { mutateAsync };
-}
-
-export function useBoardConfirmRow(dateJst: DateJst, todayJst: DateJst) {
-  const mutateAsync = useMutation(api.mutations.rows.confirm.confirm).withOptimisticUpdate(
-    (localStore, args) => {
-      patchBoardDayRow(localStore, {
-        dateJst,
-        patch: { content: args.content, minutes: args.minutes, status: "確定" },
-        rowId: args.rowId,
-        todayJst,
-      });
-    },
-  );
-  return { mutateAsync };
-}
+export const useBoardSkipRow = useOptimisticSkipRow;
+export const useBoardUnskipRow = useOptimisticUnskipRow;
+export const useBoardUnconfirmRow = useOptimisticUnconfirmRow;
+export const useBoardApplyRowOrder = useOptimisticApplyRowOrder;
+export const useBoardConfirmRow = useOptimisticConfirmRow;
 
 export function useBoardScheduleCreate(
   anchorDateJst: DateJst,

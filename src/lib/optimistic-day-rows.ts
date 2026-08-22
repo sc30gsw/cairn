@@ -5,12 +5,8 @@ import type { DateJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
 import type { Id } from "~/../convex/_generated/dataModel";
-import type { BoardScheduleView } from "~/features/board/schemas/board-search-schema";
 
 type BoardDay = FunctionReturnType<typeof api.queries.days.get.get>;
-type BoardScheduleBlock = FunctionReturnType<
-  typeof api.queries.boardSchedule.listForWeek.listForWeek
->[number];
 
 type DayQueryArgs = { dateJst: DateJst; todayJst: DateJst };
 
@@ -18,7 +14,7 @@ function dayQueryArgs(args: DayQueryArgs): DayQueryArgs {
   return { dateJst: args.dateJst, todayJst: args.todayJst };
 }
 
-export function setBoardDayRowStatus(
+export function setDayRowStatus(
   localStore: OptimisticLocalStore,
   args: DayQueryArgs & { rowId: Id<"rows">; status: Status },
 ): void {
@@ -33,7 +29,7 @@ export function setBoardDayRowStatus(
   });
 }
 
-export function patchBoardDayRow(
+export function patchDayRow(
   localStore: OptimisticLocalStore,
   args: DayQueryArgs & { patch: Partial<BoardDay["rows"][number]>; rowId: Id<"rows"> },
 ): void {
@@ -48,7 +44,7 @@ export function patchBoardDayRow(
   });
 }
 
-export function reorderBoardDayRows(
+export function reorderDayRows(
   localStore: OptimisticLocalStore,
   args: DayQueryArgs & { orderedRowIds: Id<"rows">[] },
 ): void {
@@ -72,24 +68,4 @@ export function reorderBoardDayRows(
     ...day,
     rows: reordered,
   });
-}
-
-export function patchBoardScheduleBlocks(
-  localStore: OptimisticLocalStore,
-  args: {
-    anchorDateJst: DateJst;
-    updater: (blocks: BoardScheduleBlock[]) => BoardScheduleBlock[];
-    view: BoardScheduleView;
-  },
-): void {
-  const queryArgs = { anchorDateJst: args.anchorDateJst, view: args.view };
-  const blocks = localStore.getQuery(api.queries.boardSchedule.listForWeek.listForWeek, queryArgs);
-  if (blocks === undefined) {
-    return;
-  }
-  localStore.setQuery(
-    api.queries.boardSchedule.listForWeek.listForWeek,
-    queryArgs,
-    args.updater(blocks),
-  );
 }
