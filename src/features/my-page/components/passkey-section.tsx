@@ -9,6 +9,7 @@ import { PASSKEY_DEFAULT_DEVICE_NAME, PasskeyAddSchema } from "~/lib/validation/
 export function PasskeySection() {
   const [passkeys, setPasskeys] = useState<Passkey[]>([]);
   const [errorMessage, setErrorMessage] = useState<null | string>(null);
+  const [successMessage, setSuccessMessage] = useState<null | string>(null);
   const [isListPending, startListTransition] = useTransition();
   const [isDeletePending, startDeleteTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<null | string>(null);
@@ -24,6 +25,11 @@ export function PasskeySection() {
         setPasskeys(result.passkeys);
       });
     });
+  }
+
+  function clearFeedback() {
+    setErrorMessage(null);
+    setSuccessMessage(null);
   }
 
   useEffect(() => {
@@ -46,7 +52,7 @@ export function PasskeySection() {
 
   function handleDelete(id: string) {
     setDeletingId(id);
-    setErrorMessage(null);
+    clearFeedback();
     startDeleteTransition(() => {
       void deletePasskey(id).then(async (result) => {
         setDeletingId(null);
@@ -54,8 +60,11 @@ export function PasskeySection() {
           setErrorMessage(result.errorMessage);
           return;
         }
+        setSuccessMessage("パスキーを削除しました");
         const listResult = await listPasskeys();
-        setErrorMessage(listResult.errorMessage);
+        if (listResult.errorMessage !== null) {
+          setErrorMessage(listResult.errorMessage);
+        }
         setPasskeys(listResult.passkeys);
       });
     });
@@ -69,12 +78,13 @@ export function PasskeySection() {
           <Form
             of={form}
             onSubmit={async (output) => {
-              setErrorMessage(null);
+              clearFeedback();
               const result = await addPasskey(output);
               if (result.errorMessage !== null) {
                 setErrorMessage(result.errorMessage);
                 return;
               }
+              setSuccessMessage("パスキーを追加しました");
               refreshPasskeys();
             }}
           >
@@ -122,6 +132,11 @@ export function PasskeySection() {
         {errorMessage ? (
           <Text c="red" size="sm">
             {errorMessage}
+          </Text>
+        ) : null}
+        {successMessage ? (
+          <Text c="green" size="sm">
+            {successMessage}
           </Text>
         ) : null}
       </Stack>

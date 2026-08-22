@@ -1,6 +1,6 @@
-import { Field, Form, useForm } from "@formisch/react";
+import { Field, Form, reset, useForm } from "@formisch/react";
 import { Button, Card, PasswordInput, Stack, Text, TextInput, Title } from "@mantine/core";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
 import { useAppShellUser } from "~/features/auth/hooks/use-auth-session";
 import {
@@ -16,6 +16,8 @@ import {
 
 function ProfileNameForm({ initialName }: { initialName: string }) {
   const [errorMessage, setErrorMessage] = useState<null | string>(null);
+  const [successMessage, setSuccessMessage] = useState<null | string>(null);
+  const [isPending, startTransition] = useTransition();
   const form = useForm({
     initialInput: { name: initialName },
     schema: ProfileNameSchema,
@@ -24,12 +26,18 @@ function ProfileNameForm({ initialName }: { initialName: string }) {
   return (
     <Form
       of={form}
-      onSubmit={async (output) => {
+      onSubmit={(output) => {
         setErrorMessage(null);
-        const result = await updateProfileName(output);
-        if (result.errorMessage !== null) {
-          setErrorMessage(result.errorMessage);
-        }
+        setSuccessMessage(null);
+        startTransition(() => {
+          void updateProfileName(output).then((result) => {
+            if (result.errorMessage !== null) {
+              setErrorMessage(result.errorMessage);
+              return;
+            }
+            setSuccessMessage("表示名を保存しました");
+          });
+        });
       }}
     >
       <Stack gap="sm">
@@ -48,7 +56,12 @@ function ProfileNameForm({ initialName }: { initialName: string }) {
             {errorMessage}
           </Text>
         ) : null}
-        <Button disabled={form.isSubmitting} loading={form.isSubmitting} size="xs" type="submit">
+        {successMessage ? (
+          <Text c="green" size="sm">
+            {successMessage}
+          </Text>
+        ) : null}
+        <Button disabled={isPending} loading={isPending} size="xs" type="submit">
           表示名を保存
         </Button>
       </Stack>
@@ -58,6 +71,8 @@ function ProfileNameForm({ initialName }: { initialName: string }) {
 
 function ProfileUsernameForm({ initialUsername }: { initialUsername: string }) {
   const [errorMessage, setErrorMessage] = useState<null | string>(null);
+  const [successMessage, setSuccessMessage] = useState<null | string>(null);
+  const [isPending, startTransition] = useTransition();
   const form = useForm({
     initialInput: { username: initialUsername },
     schema: ProfileUsernameSchema,
@@ -66,12 +81,18 @@ function ProfileUsernameForm({ initialUsername }: { initialUsername: string }) {
   return (
     <Form
       of={form}
-      onSubmit={async (output) => {
+      onSubmit={(output) => {
         setErrorMessage(null);
-        const result = await updateProfileUsername(output);
-        if (result.errorMessage !== null) {
-          setErrorMessage(result.errorMessage);
-        }
+        setSuccessMessage(null);
+        startTransition(() => {
+          void updateProfileUsername(output).then((result) => {
+            if (result.errorMessage !== null) {
+              setErrorMessage(result.errorMessage);
+              return;
+            }
+            setSuccessMessage("ユーザー名を保存しました");
+          });
+        });
       }}
     >
       <Stack gap="sm">
@@ -90,7 +111,12 @@ function ProfileUsernameForm({ initialUsername }: { initialUsername: string }) {
             {errorMessage}
           </Text>
         ) : null}
-        <Button disabled={form.isSubmitting} loading={form.isSubmitting} size="xs" type="submit">
+        {successMessage ? (
+          <Text c="green" size="sm">
+            {successMessage}
+          </Text>
+        ) : null}
+        <Button disabled={isPending} loading={isPending} size="xs" type="submit">
           ユーザー名を保存
         </Button>
       </Stack>
@@ -98,22 +124,33 @@ function ProfileUsernameForm({ initialUsername }: { initialUsername: string }) {
   );
 }
 
+const emptyPasswordInput = { currentPassword: "", newPassword: "" } as const;
+
 function ProfilePasswordForm() {
   const [errorMessage, setErrorMessage] = useState<null | string>(null);
+  const [successMessage, setSuccessMessage] = useState<null | string>(null);
+  const [isPending, startTransition] = useTransition();
   const form = useForm({
-    initialInput: { currentPassword: "", newPassword: "" },
+    initialInput: emptyPasswordInput,
     schema: ProfilePasswordSchema,
   });
 
   return (
     <Form
       of={form}
-      onSubmit={async (output) => {
+      onSubmit={(output) => {
         setErrorMessage(null);
-        const result = await updateProfilePassword(output);
-        if (result.errorMessage !== null) {
-          setErrorMessage(result.errorMessage);
-        }
+        setSuccessMessage(null);
+        startTransition(() => {
+          void updateProfilePassword(output).then((result) => {
+            if (result.errorMessage !== null) {
+              setErrorMessage(result.errorMessage);
+              return;
+            }
+            reset(form, { initialInput: emptyPasswordInput, keepInput: false });
+            setSuccessMessage("パスワードを変更しました");
+          });
+        });
       }}
     >
       <Stack gap="sm">
@@ -144,7 +181,12 @@ function ProfilePasswordForm() {
             {errorMessage}
           </Text>
         ) : null}
-        <Button disabled={form.isSubmitting} loading={form.isSubmitting} size="xs" type="submit">
+        {successMessage ? (
+          <Text c="green" size="sm">
+            {successMessage}
+          </Text>
+        ) : null}
+        <Button disabled={isPending} loading={isPending} size="xs" type="submit">
           パスワードを変更
         </Button>
       </Stack>
@@ -163,8 +205,8 @@ export function AccountSection() {
     <Card padding="md">
       <Stack gap="lg">
         <Title order={3}>アカウント</Title>
-        <ProfileNameForm initialName={user.name ?? ""} />
-        <ProfileUsernameForm initialUsername={user.username ?? ""} />
+        <ProfileNameForm initialName={user.name ?? ""} key={user.name ?? ""} />
+        <ProfileUsernameForm initialUsername={user.username ?? ""} key={user.username ?? ""} />
         <ProfilePasswordForm />
       </Stack>
     </Card>
