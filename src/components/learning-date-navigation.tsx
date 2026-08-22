@@ -39,60 +39,61 @@ export function LearningDateNavigation({
     <Box className={cn(centered && classes.learningDateNavigationCentered)}>
       <Input.Wrapper label="学習日">
         <Box className={classes.learningDateControls} mt={4}>
-          <DatePickerInput
-            aria-label="学習日"
-            className={classes.learningDatePickerCell}
-            classNames={{
-              input: classes.learningDateInput,
-              month: calendarDayStyleClasses.japaneseCalendar,
-            }}
-            miw={0}
-            onChange={(value) => {
-              if (typeof value === "string") {
-                pickDate(value);
-              }
-            }}
-            value={dateJst}
-            valueFormat="YYYY-MM-DD"
-            w="fit-content"
-            {...learningDatePickerProps(todayJst)}
-          />
-          <Group align="center" className={classes.learningDateNavCell} gap={4} wrap="nowrap">
-            <Tooltip label="前の日" withArrow>
-              <ActionIcon
-                aria-label="前の日"
-                onClick={() => onDateChange(addDaysJst(dateJst, -1))}
-                size="input-sm"
-                variant="subtle"
-              >
-                <IconChevronLeft aria-hidden size={18} stroke={1.75} />
-              </ActionIcon>
-            </Tooltip>
-            <Tooltip label="次の日" withArrow>
-              <Box component="span" display="inline-flex">
+          <Group align="center" className={classes.learningDatePickerRow} gap={4} wrap="nowrap">
+            <DatePickerInput
+              aria-label="学習日"
+              classNames={{
+                input: classes.learningDateInput,
+                month: calendarDayStyleClasses.japaneseCalendar,
+              }}
+              miw={0}
+              onChange={(value) => {
+                if (typeof value === "string") {
+                  pickDate(value);
+                }
+              }}
+              value={dateJst}
+              valueFormat="YYYY-MM-DD"
+              w="fit-content"
+              {...learningDatePickerProps(todayJst)}
+            />
+            <Group align="center" gap={4} wrap="nowrap">
+              <Tooltip label="前の日" withArrow>
                 <ActionIcon
-                  aria-label="次の日"
-                  disabled={dateJst >= todayJst}
-                  onClick={() => onDateChange(addDaysJst(dateJst, 1))}
+                  aria-label="前の日"
+                  onClick={() => onDateChange(addDaysJst(dateJst, -1))}
                   size="input-sm"
                   variant="subtle"
                 >
-                  <IconChevronRight aria-hidden size={18} stroke={1.75} />
-                </ActionIcon>
-              </Box>
-            </Tooltip>
-            {isToday ? null : (
-              <Tooltip label="今日へ戻る" withArrow>
-                <ActionIcon
-                  aria-label="今日へ戻る"
-                  onClick={onGoToToday}
-                  size="input-sm"
-                  variant="subtle"
-                >
-                  <IconRefresh aria-hidden size={18} stroke={1.75} />
+                  <IconChevronLeft aria-hidden size={18} stroke={1.75} />
                 </ActionIcon>
               </Tooltip>
-            )}
+              <Tooltip label="次の日" withArrow>
+                <Box component="span" display="inline-flex">
+                  <ActionIcon
+                    aria-label="次の日"
+                    disabled={dateJst >= todayJst}
+                    onClick={() => onDateChange(addDaysJst(dateJst, 1))}
+                    size="input-sm"
+                    variant="subtle"
+                  >
+                    <IconChevronRight aria-hidden size={18} stroke={1.75} />
+                  </ActionIcon>
+                </Box>
+              </Tooltip>
+              {isToday ? null : (
+                <Tooltip label="今日へ戻る" withArrow>
+                  <ActionIcon
+                    aria-label="今日へ戻る"
+                    onClick={onGoToToday}
+                    size="input-sm"
+                    variant="subtle"
+                  >
+                    <IconRefresh aria-hidden size={18} stroke={1.75} />
+                  </ActionIcon>
+                </Tooltip>
+              )}
+            </Group>
           </Group>
           {linkSlot ? <Box className={classes.learningDateLinkCell}>{linkSlot}</Box> : null}
         </Box>

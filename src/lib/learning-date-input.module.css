@@ -17,24 +17,17 @@
 }
 
 .learningDateControls {
-  align-items: center;
-  column-gap: var(--mantine-spacing-xs);
-  display: grid;
-  grid-template-columns: auto auto;
-  row-gap: var(--mantine-spacing-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs);
+  width: fit-content;
 }
 
-.learningDatePickerCell {
-  grid-column: 1;
-  grid-row: 1;
-}
-
-.learningDateNavCell {
-  grid-column: 2;
-  grid-row: 1;
+.learningDatePickerRow {
+  flex-wrap: nowrap;
+  width: fit-content;
 }
 
 .learningDateLinkCell {
-  grid-column: 1;
-  grid-row: 2;
+  max-width: 100%;
 }
