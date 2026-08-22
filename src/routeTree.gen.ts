@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrashRouteImport } from './routes/trash'
 import { Route as PresetsRouteImport } from './routes/presets'
+import { Route as MyPageRouteImport } from './routes/my-page'
 import { Route as ItemsRouteImport } from './routes/items'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as GoalsRouteImport } from './routes/goals'
@@ -27,6 +28,11 @@ const TrashRoute = TrashRouteImport.update({
 const PresetsRoute = PresetsRouteImport.update({
   id: '/presets',
   path: '/presets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyPageRoute = MyPageRouteImport.update({
+  id: '/my-page',
+  path: '/my-page',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ItemsRoute = ItemsRouteImport.update({
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/goals': typeof GoalsRoute
   '/history': typeof HistoryRoute
   '/items': typeof ItemsRoute
+  '/my-page': typeof MyPageRoute
   '/presets': typeof PresetsRoute
   '/trash': typeof TrashRoute
   '/days/$dateJst': typeof DaysDateJstRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/goals': typeof GoalsRoute
   '/history': typeof HistoryRoute
   '/items': typeof ItemsRoute
+  '/my-page': typeof MyPageRoute
   '/presets': typeof PresetsRoute
   '/trash': typeof TrashRoute
   '/days/$dateJst': typeof DaysDateJstRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/goals': typeof GoalsRoute
   '/history': typeof HistoryRoute
   '/items': typeof ItemsRoute
+  '/my-page': typeof MyPageRoute
   '/presets': typeof PresetsRoute
   '/trash': typeof TrashRoute
   '/days/$dateJst': typeof DaysDateJstRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/history'
     | '/items'
+    | '/my-page'
     | '/presets'
     | '/trash'
     | '/days/$dateJst'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/history'
     | '/items'
+    | '/my-page'
     | '/presets'
     | '/trash'
     | '/days/$dateJst'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/history'
     | '/items'
+    | '/my-page'
     | '/presets'
     | '/trash'
     | '/days/$dateJst'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   GoalsRoute: typeof GoalsRoute
   HistoryRoute: typeof HistoryRoute
   ItemsRoute: typeof ItemsRoute
+  MyPageRoute: typeof MyPageRoute
   PresetsRoute: typeof PresetsRoute
   TrashRoute: typeof TrashRoute
   DaysDateJstRoute: typeof DaysDateJstRoute
@@ -161,6 +174,13 @@ declare module '@tanstack/react-router' {
       path: '/presets'
       fullPath: '/presets'
       preLoaderRoute: typeof PresetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-page': {
+      id: '/my-page'
+      path: '/my-page'
+      fullPath: '/my-page'
+      preLoaderRoute: typeof MyPageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/items': {
@@ -221,6 +241,7 @@ const rootRouteChildren: RootRouteChildren = {
   GoalsRoute: GoalsRoute,
   HistoryRoute: HistoryRoute,
   ItemsRoute: ItemsRoute,
+  MyPageRoute: MyPageRoute,
   PresetsRoute: PresetsRoute,
   TrashRoute: TrashRoute,
   DaysDateJstRoute: DaysDateJstRoute,

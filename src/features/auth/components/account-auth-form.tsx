@@ -1,22 +1,23 @@
 import { Field, Form, useForm } from "@formisch/react";
-import { Button, PasswordInput, SegmentedControl, Stack, Text, TextInput } from "@mantine/core";
+import { Button, PasswordInput, SegmentedControl, Stack, TextInput } from "@mantine/core";
 import { useState } from "react";
 
+import { AuthActionFeedback } from "~/components/auth-action-feedback";
 import { useAuthPublicConfig } from "~/features/auth/hooks/use-auth-config";
 import { signInWithAccount, signUpWithAccount } from "~/features/auth/lib/auth-actions";
-import { submitAuthAction } from "~/features/auth/lib/submit-auth-action";
 import {
   AccountLoginSchema,
   AccountSignUpSchema,
   type AccountAuthMode,
 } from "~/features/auth/schemas/account-auth-schema";
+import { useAuthActionTransition } from "~/hooks/use-auth-action-transition";
 
 type AccountAuthFormProps = {
   mode: AccountAuthMode;
 };
 
 function AccountAuthForm({ mode }: AccountAuthFormProps) {
-  const [errorMessage, setErrorMessage] = useState<null | string>(null);
+  const { isPending, result, run } = useAuthActionTransition();
   const loginForm = useForm({ schema: AccountLoginSchema });
   const signUpForm = useForm({ schema: AccountSignUpSchema });
 
@@ -24,7 +25,9 @@ function AccountAuthForm({ mode }: AccountAuthFormProps) {
     return (
       <Form
         of={signUpForm}
-        onSubmit={(output) => submitAuthAction(() => signUpWithAccount(output), setErrorMessage)}
+        onSubmit={async (output) => {
+          await run(() => signUpWithAccount(output));
+        }}
       >
         <Stack gap="sm">
           <Field of={signUpForm} path={["username"]}>
@@ -72,15 +75,11 @@ function AccountAuthForm({ mode }: AccountAuthFormProps) {
               />
             )}
           </Field>
-          {errorMessage ? (
-            <Text c="red" size="sm">
-              {errorMessage}
-            </Text>
-          ) : null}
+          <AuthActionFeedback result={result} />
           <Button
-            disabled={signUpForm.isSubmitting}
+            disabled={signUpForm.isSubmitting || isPending}
             fullWidth
-            loading={signUpForm.isSubmitting}
+            loading={signUpForm.isSubmitting || isPending}
             type="submit"
           >
             アカウントを作成
@@ -93,7 +92,9 @@ function AccountAuthForm({ mode }: AccountAuthFormProps) {
   return (
     <Form
       of={loginForm}
-      onSubmit={(output) => submitAuthAction(() => signInWithAccount(output), setErrorMessage)}
+      onSubmit={async (output) => {
+        await run(() => signInWithAccount(output));
+      }}
     >
       <Stack gap="sm">
         <Field of={loginForm} path={["identifier"]}>
@@ -118,15 +119,11 @@ function AccountAuthForm({ mode }: AccountAuthFormProps) {
             />
           )}
         </Field>
-        {errorMessage ? (
-          <Text c="red" size="sm">
-            {errorMessage}
-          </Text>
-        ) : null}
+        <AuthActionFeedback result={result} />
         <Button
-          disabled={loginForm.isSubmitting}
+          disabled={loginForm.isSubmitting || isPending}
           fullWidth
-          loading={loginForm.isSubmitting}
+          loading={loginForm.isSubmitting || isPending}
           type="submit"
         >
           ログイン

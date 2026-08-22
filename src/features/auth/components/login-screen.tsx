@@ -1,10 +1,14 @@
 import { Button, Card, Center, Divider, Stack, Text, Title } from "@mantine/core";
 
+import { AuthActionFeedback } from "~/components/auth-action-feedback";
 import { AccountAuthPanel } from "~/features/auth/components/account-auth-form";
-import { signInWithNotion } from "~/features/auth/lib/auth-actions";
+import { signInWithNotion, signInWithPasskey } from "~/features/auth/lib/auth-actions";
+import { useAuthActionTransition } from "~/hooks/use-auth-action-transition";
 import { DISPLAY_FONT } from "~/lib/theme";
 
 export function LoginScreen() {
+  const passkeyAction = useAuthActionTransition();
+
   return (
     <Center h="100dvh">
       <Card maw={420} padding="xl" shadow="sm" w="100%">
@@ -18,6 +22,16 @@ export function LoginScreen() {
           <Text>アカウントで入る。記録はアプリが正本です。</Text>
           <AccountAuthPanel />
           <Divider label="または" labelPosition="center" />
+          <Button
+            fullWidth
+            loading={passkeyAction.isPending}
+            onClick={() => void passkeyAction.run(() => signInWithPasskey())}
+            size="md"
+            variant="light"
+          >
+            パスキーでログイン
+          </Button>
+          <AuthActionFeedback result={passkeyAction.result} />
           <Button fullWidth onClick={signInWithNotion} size="md" variant="light">
             Notion でログイン
           </Button>

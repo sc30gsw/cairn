@@ -8,7 +8,6 @@ import { concreteActionPlaceholder } from "~domain/concreteActionCore";
 
 import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action-field-with-suggestions";
 import { validateConfirmRow } from "~/features/today/lib/validate-confirm-row";
-import { RowEditorSchema } from "~/features/today/schemas/row-editor-schema";
 import type { DayRow } from "~/features/today/types/day";
 import type {
   ConfirmRowInput,
@@ -16,6 +15,7 @@ import type {
   SkipRowInput,
 } from "~/features/today/types/mutations";
 import { RECORD_STATUS_UI, statusTooltip } from "~/lib/record-status-ui";
+import { RowEditorSchema } from "~/lib/validation/row-editor-schema";
 
 type RowEditorProps = {
   disabled?: boolean;

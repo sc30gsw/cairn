@@ -4,7 +4,7 @@ import { Button, Group, Modal, NumberInput, Stack, Textarea } from "@mantine/cor
 import { useEffect } from "react";
 
 import type { BoardRow } from "~/features/board/types/board";
-import { RowEditorSchema } from "~/features/today/schemas/row-editor-schema";
+import { RowEditorSchema } from "~/lib/validation/row-editor-schema";
 
 export type KanbanConfirmInput = {
   content: string;

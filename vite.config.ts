@@ -11,25 +11,38 @@ const reactDoctorRules = {
   ...TANSTACK_START_RULES,
 };
 
-const FEATURE_NAMES = ["auth", "board", "catalog", "goals", "history", "today", "trash"] as const;
+const FEATURE_NAMES = [
+  "auth",
+  "board",
+  "catalog",
+  "goals",
+  "history",
+  "my-page",
+  "onboarding",
+  "today",
+  "trash",
+] as const;
 
-const featureBoundaryLintOverrides = FEATURE_NAMES.map((feature) => ({
-  files: [`src/features/${feature}/**`],
-  rules: {
-    "no-restricted-imports": [
-      "error",
-      {
-        patterns: [
-          {
-            message:
-              "Feature modules cannot import from other features. Extract shared code to src/components, src/hooks, src/lib, or src/types.",
-            regex: `^~/features/(?!${feature}/)`,
-          },
-        ],
-      },
-    ],
-  },
-}));
+const featureBoundaryLintOverrides = FEATURE_NAMES.map((feature) => {
+  const otherFeatures = FEATURE_NAMES.filter((name) => name !== feature);
+  return {
+    files: [`src/features/${feature}/**`],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: otherFeatures.map((other) => `~/features/${other}/**`),
+              message:
+                "Feature modules cannot import from other features. Extract shared code to src/components, src/hooks, src/lib, or src/types.",
+            },
+          ],
+        },
+      ],
+    },
+  };
+});
 
 const sharedBoundaryLintOverride = {
   files: ["src/components/**", "src/hooks/**", "src/lib/**", "src/types/**"],
@@ -39,8 +52,8 @@ const sharedBoundaryLintOverride = {
       {
         patterns: [
           {
+            group: ["~/features/**"],
             message: "Shared modules cannot import from features.",
-            regex: "^~/features/",
           },
         ],
       },
@@ -211,9 +224,15 @@ export default defineConfig({
         "src/features/goals/components/goal-form-fields.tsx",
         "src/features/goals/components/target-form.tsx",
         "src/features/goals/components/target-list.tsx",
+        "src/features/my-page/hooks/use-avatar-upload-deps.ts",
       ],
       include: [
-        "convex/lib/concreteActionCore.ts",
+        "convex/lib/setupStatus.ts",
+        "convex/lib/avatarStorage.ts",
+        "convex/services/setup/**/*.ts",
+        "convex/queries/setup/**/*.ts",
+        "convex/queries/profile/**/*.ts",
+        "convex/mutations/profile/**/*.ts",
         "convex/lib/concreteAction.ts",
         "convex/lib/catalog.ts",
         "convex/lib/domain.ts",
@@ -227,6 +246,12 @@ export default defineConfig({
         "convex/queries/targets/**/*.ts",
         "convex/mutations/targets/**/*.ts",
         "src/lib/validation/**/*.ts",
+        "src/features/onboarding/lib/**/*.ts",
+        "src/features/onboarding/types/**/*.ts",
+        "src/lib/profile-actions.ts",
+        "src/lib/passkey-storage.ts",
+        "src/lib/user-label.ts",
+        "src/features/my-page/lib/avatar-upload.ts",
         "src/features/**/schemas/**/*.ts",
         "src/features/today/lib/validate-confirm-row.ts",
         "convex/lib/dayView.ts",

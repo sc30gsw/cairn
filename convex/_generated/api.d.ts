@@ -11,6 +11,7 @@
 import type * as auth from "../auth.js";
 import type * as crons from "../crons.js";
 import type * as http from "../http.js";
+import type * as lib_avatarStorage from "../lib/avatarStorage.js";
 import type * as lib_boardScheduleColors from "../lib/boardScheduleColors.js";
 import type * as lib_boardScheduleRange from "../lib/boardScheduleRange.js";
 import type * as lib_catalog from "../lib/catalog.js";
@@ -35,6 +36,7 @@ import type * as lib_ownerFunctions from "../lib/ownerFunctions.js";
 import type * as lib_preset from "../lib/preset.js";
 import type * as lib_presetDigest from "../lib/presetDigest.js";
 import type * as lib_scheduleInstant from "../lib/scheduleInstant.js";
+import type * as lib_setupStatus from "../lib/setupStatus.js";
 import type * as lib_share from "../lib/share.js";
 import type * as lib_trash from "../lib/trash.js";
 import type * as lib_validators from "../lib/validators.js";
@@ -65,6 +67,8 @@ import type * as mutations_items_rename from "../mutations/items/rename.js";
 import type * as mutations_presets_create from "../mutations/presets/create.js";
 import type * as mutations_presets_remove from "../mutations/presets/remove.js";
 import type * as mutations_presets_update from "../mutations/presets/update.js";
+import type * as mutations_profile_claimAvatarUpload from "../mutations/profile/claimAvatarUpload.js";
+import type * as mutations_profile_generateAvatarUploadUrl from "../mutations/profile/generateAvatarUploadUrl.js";
 import type * as mutations_rows_add from "../mutations/rows/add.js";
 import type * as mutations_rows_applyOrder from "../mutations/rows/applyOrder.js";
 import type * as mutations_rows_confirm from "../mutations/rows/confirm.js";
@@ -101,7 +105,9 @@ import type * as queries_history_yearHeatmap from "../queries/history/yearHeatma
 import type * as queries_items_list from "../queries/items/list.js";
 import type * as queries_items_recentConcreteActions from "../queries/items/recentConcreteActions.js";
 import type * as queries_presets_list from "../queries/presets/list.js";
+import type * as queries_profile_getAvatarUrl from "../queries/profile/getAvatarUrl.js";
 import type * as queries_session_get from "../queries/session/get.js";
+import type * as queries_setup_status from "../queries/setup/status.js";
 import type * as queries_targets_listWithProgress from "../queries/targets/listWithProgress.js";
 import type * as queries_trash_list from "../queries/trash/list.js";
 import type * as services_boardSchedule_blocks from "../services/boardSchedule/blocks.js";
@@ -188,6 +194,7 @@ import type * as services_rows_switchPreset from "../services/rows/switchPreset.
 import type * as services_rows_unconfirm from "../services/rows/unconfirm.js";
 import type * as services_rows_unskip from "../services/rows/unskip.js";
 import type * as services_session_get from "../services/session/get.js";
+import type * as services_setup_status from "../services/setup/status.js";
 import type * as services_targets_aggregateByCategory from "../services/targets/aggregateByCategory.js";
 import type * as services_targets_listWithProgress from "../services/targets/listWithProgress.js";
 import type * as services_targets_remove from "../services/targets/remove.js";
@@ -209,6 +216,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   crons: typeof crons;
   http: typeof http;
+  "lib/avatarStorage": typeof lib_avatarStorage;
   "lib/boardScheduleColors": typeof lib_boardScheduleColors;
   "lib/boardScheduleRange": typeof lib_boardScheduleRange;
   "lib/catalog": typeof lib_catalog;
@@ -233,6 +241,7 @@ declare const fullApi: ApiFromModules<{
   "lib/preset": typeof lib_preset;
   "lib/presetDigest": typeof lib_presetDigest;
   "lib/scheduleInstant": typeof lib_scheduleInstant;
+  "lib/setupStatus": typeof lib_setupStatus;
   "lib/share": typeof lib_share;
   "lib/trash": typeof lib_trash;
   "lib/validators": typeof lib_validators;
@@ -263,6 +272,8 @@ declare const fullApi: ApiFromModules<{
   "mutations/presets/create": typeof mutations_presets_create;
   "mutations/presets/remove": typeof mutations_presets_remove;
   "mutations/presets/update": typeof mutations_presets_update;
+  "mutations/profile/claimAvatarUpload": typeof mutations_profile_claimAvatarUpload;
+  "mutations/profile/generateAvatarUploadUrl": typeof mutations_profile_generateAvatarUploadUrl;
   "mutations/rows/add": typeof mutations_rows_add;
   "mutations/rows/applyOrder": typeof mutations_rows_applyOrder;
   "mutations/rows/confirm": typeof mutations_rows_confirm;
@@ -299,7 +310,9 @@ declare const fullApi: ApiFromModules<{
   "queries/items/list": typeof queries_items_list;
   "queries/items/recentConcreteActions": typeof queries_items_recentConcreteActions;
   "queries/presets/list": typeof queries_presets_list;
+  "queries/profile/getAvatarUrl": typeof queries_profile_getAvatarUrl;
   "queries/session/get": typeof queries_session_get;
+  "queries/setup/status": typeof queries_setup_status;
   "queries/targets/listWithProgress": typeof queries_targets_listWithProgress;
   "queries/trash/list": typeof queries_trash_list;
   "services/boardSchedule/blocks": typeof services_boardSchedule_blocks;
@@ -386,6 +399,7 @@ declare const fullApi: ApiFromModules<{
   "services/rows/unconfirm": typeof services_rows_unconfirm;
   "services/rows/unskip": typeof services_rows_unskip;
   "services/session/get": typeof services_session_get;
+  "services/setup/status": typeof services_setup_status;
   "services/targets/aggregateByCategory": typeof services_targets_aggregateByCategory;
   "services/targets/listWithProgress": typeof services_targets_listWithProgress;
   "services/targets/remove": typeof services_targets_remove;

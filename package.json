@@ -17,6 +17,7 @@
     "type-ssot-check": "node scripts/type-ssot-check.mjs"
   },
   "dependencies": {
+    "@better-auth/passkey": "^1.7.1",
     "@convex-dev/better-auth": "^0.12.5",
     "@convex-dev/react-query": "^0.1.0",
     "@formisch/react": "1.0.0-rc.0",
@@ -45,6 +46,7 @@
     "nitro": "3.0.260610-beta",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "react-easy-crop": "^6.2.3",
     "recharts": "^3.2.1",
     "remeda": "^2.39.0",
     "tailwind-preset-mantine": "^4.1.0",

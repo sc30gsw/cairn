@@ -47,7 +47,7 @@ Select / DnD など UI 由来で既に有効な ID がある箇所は `unwrap*` 
 
 - Formisch フィールド検証 — Valibot スキーマ + Formisch の `field.errors` が SSoT
 - Convex query 結果 — TanStack Query + Suspense が読み込み・エラー境界を担当
-- `location.reload()` などブラウザ制御 — 成功時の副作用として直接呼ぶ
+- `location.reload()` などブラウザ制御 — 認証の sign-in / sign-up 成功時のみ（プロフィール更新は `authClient.getSession()` で session 再取得）
 
 ## 追加時チェックリスト
 
