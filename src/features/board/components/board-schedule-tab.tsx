@@ -9,10 +9,10 @@ import { useOpenAndLoadDay } from "~/hooks/use-open-and-load-day";
 
 export function BoardScheduleTab() {
   const today = todayJst();
-  const { scheduleAnchor } = useBoardView();
+  const { scheduleAnchor, scheduleView } = useBoardView();
   const { data: day } = useOpenAndLoadDay(today, today);
   const { data: goals } = useGoalsList();
-  const { data: blocks } = useBoardScheduleBlocks(scheduleAnchor);
+  const { data: blocks } = useBoardScheduleBlocks(scheduleAnchor, scheduleView);
   const checkpoint = nearestCheckpoint(goals, today);
 
   return <BoardSchedule blocks={blocks} checkpoint={checkpoint} rows={day.rows} />;

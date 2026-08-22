@@ -85,8 +85,10 @@ export function BoardSchedule({ blocks, checkpoint, pending = false, rows }: Boa
     today: dateJst,
     weekAnchor,
   } = useBoardView();
-  const { onCreateBlock, onMoveBlock, onRemoveBlock, onUpdateBlock } =
-    useBoardScheduleActions(anchorDateJst);
+  const { onCreateBlock, onMoveBlock, onRemoveBlock, onUpdateBlock } = useBoardScheduleActions(
+    anchorDateJst,
+    scheduleView,
+  );
   const todayJst = dateJst;
   const [formOpened, setFormOpened] = useState(false);
   const [formValues, setFormValues] = useState<BoardScheduleEventInput | null>(null);

@@ -5,6 +5,7 @@ import type { DateJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
 import type { Id } from "~/../convex/_generated/dataModel";
+import type { BoardScheduleView } from "~/features/board/schemas/board-search-schema";
 
 type BoardDay = FunctionReturnType<typeof api.queries.days.get.get>;
 type BoardScheduleBlock = FunctionReturnType<
@@ -75,9 +76,13 @@ export function reorderBoardDayRows(
 
 export function patchBoardScheduleBlocks(
   localStore: OptimisticLocalStore,
-  args: { anchorDateJst: DateJst; updater: (blocks: BoardScheduleBlock[]) => BoardScheduleBlock[] },
+  args: {
+    anchorDateJst: DateJst;
+    updater: (blocks: BoardScheduleBlock[]) => BoardScheduleBlock[];
+    view: BoardScheduleView;
+  },
 ): void {
-  const queryArgs = { anchorDateJst: args.anchorDateJst };
+  const queryArgs = { anchorDateJst: args.anchorDateJst, view: args.view };
   const blocks = localStore.getQuery(api.queries.boardSchedule.listForWeek.listForWeek, queryArgs);
   if (blocks === undefined) {
     return;

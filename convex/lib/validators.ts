@@ -1,5 +1,6 @@
 import { type Infer, v } from "convex/values";
 
+import { BOARD_SCHEDULE_VIEWS } from "./boardScheduleRange";
 import { WEEKDAYS } from "./catalog";
 import { CATEGORIES } from "./categories";
 import { CONDITIONS } from "./conditions";
@@ -428,5 +429,12 @@ export const boardScheduleEventDtoValidator = v.object({
   startAt: v.string(),
   title: v.string(),
 });
+
+export const boardScheduleViewValidator = v.union(
+  v.literal(BOARD_SCHEDULE_VIEWS[0]),
+  v.literal(BOARD_SCHEDULE_VIEWS[1]),
+  v.literal(BOARD_SCHEDULE_VIEWS[2]),
+  v.literal(BOARD_SCHEDULE_VIEWS[3]),
+);
 
 export type BoardScheduleEventDto = Infer<typeof boardScheduleEventDtoValidator>;

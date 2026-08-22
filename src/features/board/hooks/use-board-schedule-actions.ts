@@ -7,14 +7,15 @@ import {
   useBoardScheduleRemove,
   useBoardScheduleUpdate,
 } from "~/features/board/hooks/board-mutations";
+import type { BoardScheduleView } from "~/features/board/schemas/board-search-schema";
 import { runMutation } from "~/lib/run-mutation";
 
-export function useBoardScheduleActions(anchorDateJst: DateJst) {
+export function useBoardScheduleActions(anchorDateJst: DateJst, view: BoardScheduleView) {
   const today = todayJst();
-  const createBlock = useBoardScheduleCreate(anchorDateJst, today);
-  const updateBlock = useBoardScheduleUpdate(anchorDateJst, today);
-  const removeBlock = useBoardScheduleRemove(anchorDateJst);
-  const moveBlock = useBoardScheduleMove(anchorDateJst);
+  const createBlock = useBoardScheduleCreate(anchorDateJst, today, view);
+  const updateBlock = useBoardScheduleUpdate(anchorDateJst, today, view);
+  const removeBlock = useBoardScheduleRemove(anchorDateJst, view);
+  const moveBlock = useBoardScheduleMove(anchorDateJst, view);
 
   return {
     onCreateBlock: (input: Parameters<typeof createBlock.mutateAsync>[0]) =>

@@ -1,7 +1,7 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
+import { type BoardScheduleView, scheduleListRange } from "../../lib/boardScheduleRange";
 import { NotFoundError } from "../../lib/errors";
-import { addDaysJst, mondayOfWeek } from "../../lib/jst";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { assertScheduleRange, requireScheduleInstant } from "../../lib/scheduleInstant";
 import { requireOwnedRow } from "../rows/requireOwnedRow";
@@ -47,7 +47,7 @@ async function requireLiveRowForSchedule(
 export async function listForWeek(
   ctx: QueryCtx,
   ownerId: string,
-  args: { anchorDateJst: string },
+  args: { anchorDateJst: string; view: BoardScheduleView },
 ): Promise<
   Array<{
     _id: Id<"boardScheduleEvents">;
@@ -58,9 +58,7 @@ export async function listForWeek(
     title: string;
   }>
 > {
-  const weekStart = mondayOfWeek(args.anchorDateJst);
-  const weekEndExclusive = `${addDaysJst(weekStart, 7)} 00:00:00`;
-  const rangeStart = `${weekStart} 00:00:00`;
+  const { rangeEndExclusive, rangeStart } = scheduleListRange(args.view, args.anchorDateJst);
   const blocks = await ctx.db
     .query("boardScheduleEvents")
     .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
@@ -74,7 +72,7 @@ export async function listForWeek(
     title: string;
   }> = [];
   for (const block of blocks) {
-    if (block.startAt >= weekEndExclusive || block.endAt <= rangeStart) {
+    if (block.startAt >= rangeEndExclusive || block.endAt <= rangeStart) {
       continue;
     }
     result.push({

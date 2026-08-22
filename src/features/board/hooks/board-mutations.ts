@@ -10,6 +10,7 @@ import {
   reorderBoardDayRows,
   setBoardDayRowStatus,
 } from "~/features/board/lib/optimistic-board-day";
+import type { BoardScheduleView } from "~/features/board/schemas/board-search-schema";
 
 export type BoardApplyRowOrderInput = FunctionArgs<typeof api.mutations.rows.applyOrder.applyOrder>;
 export type BoardConfirmRowInput = FunctionArgs<typeof api.mutations.rows.confirm.confirm>;
@@ -96,7 +97,11 @@ export function useBoardConfirmRow(dateJst: DateJst, todayJst: DateJst) {
   return { mutateAsync };
 }
 
-export function useBoardScheduleCreate(anchorDateJst: DateJst, todayJst: DateJst) {
+export function useBoardScheduleCreate(
+  anchorDateJst: DateJst,
+  todayJst: DateJst,
+  view: BoardScheduleView,
+) {
   const mutateAsync = useMutation(api.mutations.boardSchedule.create.create).withOptimisticUpdate(
     (localStore, args) => {
       const day = localStore.getQuery(api.queries.days.get.get, {
@@ -106,6 +111,7 @@ export function useBoardScheduleCreate(anchorDateJst: DateJst, todayJst: DateJst
       const row = day?.rows.find((entry) => entry._id === args.rowId);
       patchBoardScheduleBlocks(localStore, {
         anchorDateJst,
+        view,
         updater: (blocks) => [
           ...blocks,
           {
@@ -123,7 +129,11 @@ export function useBoardScheduleCreate(anchorDateJst: DateJst, todayJst: DateJst
   return { mutateAsync };
 }
 
-export function useBoardScheduleUpdate(anchorDateJst: DateJst, todayJst: DateJst) {
+export function useBoardScheduleUpdate(
+  anchorDateJst: DateJst,
+  todayJst: DateJst,
+  view: BoardScheduleView,
+) {
   const mutateAsync = useMutation(api.mutations.boardSchedule.update.update).withOptimisticUpdate(
     (localStore, args) => {
       const day = localStore.getQuery(api.queries.days.get.get, {
@@ -134,6 +144,7 @@ export function useBoardScheduleUpdate(anchorDateJst: DateJst, todayJst: DateJst
         args.rowId === undefined ? undefined : day?.rows.find((entry) => entry._id === args.rowId);
       patchBoardScheduleBlocks(localStore, {
         anchorDateJst,
+        view,
         updater: (blocks) =>
           blocks.map((block) =>
             block._id === args.blockId
@@ -153,11 +164,12 @@ export function useBoardScheduleUpdate(anchorDateJst: DateJst, todayJst: DateJst
   return { mutateAsync };
 }
 
-export function useBoardScheduleRemove(anchorDateJst: DateJst) {
+export function useBoardScheduleRemove(anchorDateJst: DateJst, view: BoardScheduleView) {
   const mutateAsync = useMutation(api.mutations.boardSchedule.remove.remove).withOptimisticUpdate(
     (localStore, args) => {
       patchBoardScheduleBlocks(localStore, {
         anchorDateJst,
+        view,
         updater: (blocks) => blocks.filter((block) => block._id !== args.blockId),
       });
     },
@@ -165,11 +177,12 @@ export function useBoardScheduleRemove(anchorDateJst: DateJst) {
   return { mutateAsync };
 }
 
-export function useBoardScheduleMove(anchorDateJst: DateJst) {
+export function useBoardScheduleMove(anchorDateJst: DateJst, view: BoardScheduleView) {
   const mutateAsync = useMutation(api.mutations.boardSchedule.move.move).withOptimisticUpdate(
     (localStore, args) => {
       patchBoardScheduleBlocks(localStore, {
         anchorDateJst,
+        view,
         updater: (blocks) =>
           blocks.map((block) =>
             block._id === args.blockId

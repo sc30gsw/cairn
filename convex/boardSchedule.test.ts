@@ -46,6 +46,7 @@ test("boardScheduleEvents を作成・週一覧・更新・削除できる", asy
 
   const listed = await t.query(api.queries.boardSchedule.listForWeek.listForWeek, {
     anchorDateJst: MONDAY,
+    view: "week",
   });
   expect(listed).toEqual([
     {
@@ -79,6 +80,7 @@ test("boardScheduleEvents を作成・週一覧・更新・削除できる", asy
   expect(
     await t.query(api.queries.boardSchedule.listForWeek.listForWeek, {
       anchorDateJst: MONDAY,
+      view: "week",
     }),
   ).toEqual([
     {
@@ -102,8 +104,46 @@ test("boardScheduleEvents を作成・週一覧・更新・削除できる", asy
   expect(
     await t.query(api.queries.boardSchedule.listForWeek.listForWeek, {
       anchorDateJst: MONDAY,
+      view: "week",
     }),
   ).toEqual([]);
+});
+
+test("月表示はアンカー週の外にある予定も返す", async () => {
+  const t = await ownerWithDay();
+  const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  const row = day.rows[0];
+  if (row === undefined) {
+    throw new Error("expected a row");
+  }
+
+  const blockId = await t.mutation(api.mutations.boardSchedule.create.create, {
+    color: "green",
+    endAt: "2026-08-15 10:30:00",
+    rowId: row._id,
+    startAt: "2026-08-15 09:00:00",
+  });
+
+  const weekListed = await t.query(api.queries.boardSchedule.listForWeek.listForWeek, {
+    anchorDateJst: "2026-08-01",
+    view: "week",
+  });
+  expect(weekListed).toEqual([]);
+
+  const monthListed = await t.query(api.queries.boardSchedule.listForWeek.listForWeek, {
+    anchorDateJst: "2026-08-01",
+    view: "month",
+  });
+  expect(monthListed).toEqual([
+    {
+      _id: blockId,
+      color: "green",
+      endAt: "2026-08-15 10:30:00",
+      rowId: row._id,
+      startAt: "2026-08-15 09:00:00",
+      title: row.itemName,
+    },
+  ]);
 });
 
 test("スキップした記録は unskip で未着手に戻せる", async () => {

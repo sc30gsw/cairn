@@ -113,6 +113,7 @@ test("他人の boardScheduleEvents は週一覧に出ない", async () => {
   const ownerB = asOwner(OWNER_B);
   const listed = await ownerB.query(api.queries.boardSchedule.listForWeek.listForWeek, {
     anchorDateJst: MONDAY,
+    view: "week",
   });
   expect(listed).toEqual([]);
 });
