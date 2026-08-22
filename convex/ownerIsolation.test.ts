@@ -68,3 +68,51 @@ test("他人の行はスキップできない", async () => {
   const ownerB = asOwner(OWNER_B);
   await expect(ownerB.mutation(api.mutations.rows.skip.skip, { rowId })).rejects.toThrow();
 });
+
+test("他人の boardScheduleEvents は更新・削除できない", async () => {
+  const ownerA = asOwner(OWNER_A);
+  const rowId = await firstRowId(ownerA);
+  const blockId = await ownerA.mutation(api.mutations.boardSchedule.create.create, {
+    color: "blue",
+    endAt: "2026-08-17 10:00:00",
+    rowId,
+    startAt: "2026-08-17 09:00:00",
+  });
+
+  const ownerB = asOwner(OWNER_B);
+  await expect(
+    ownerB.mutation(api.mutations.boardSchedule.update.update, {
+      blockId,
+      color: "red",
+      endAt: "2026-08-17 11:00:00",
+      startAt: "2026-08-17 09:30:00",
+    }),
+  ).rejects.toThrow();
+  await expect(
+    ownerB.mutation(api.mutations.boardSchedule.remove.remove, { blockId }),
+  ).rejects.toThrow();
+  await expect(
+    ownerB.mutation(api.mutations.boardSchedule.move.move, {
+      blockId,
+      endAt: "2026-08-18 11:00:00",
+      startAt: "2026-08-18 09:30:00",
+    }),
+  ).rejects.toThrow();
+});
+
+test("他人の boardScheduleEvents は週一覧に出ない", async () => {
+  const ownerA = asOwner(OWNER_A);
+  const rowId = await firstRowId(ownerA);
+  await ownerA.mutation(api.mutations.boardSchedule.create.create, {
+    color: "green",
+    endAt: "2026-08-17 10:00:00",
+    rowId,
+    startAt: "2026-08-17 09:00:00",
+  });
+
+  const ownerB = asOwner(OWNER_B);
+  const listed = await ownerB.query(api.queries.boardSchedule.listForWeek.listForWeek, {
+    anchorDateJst: MONDAY,
+  });
+  expect(listed).toEqual([]);
+});
