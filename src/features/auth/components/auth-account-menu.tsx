@@ -1,5 +1,6 @@
 import { Avatar, Menu } from "@mantine/core";
-import { IconLogout } from "@tabler/icons-react";
+import { IconLogout, IconUserCircle } from "@tabler/icons-react";
+import { Link } from "@tanstack/react-router";
 
 import { useAppShellUser } from "~/features/auth/hooks/use-auth-session";
 import { signOutAndReload } from "~/features/auth/lib/auth-actions";
@@ -37,6 +38,13 @@ export function AuthAccountMenu() {
         </Avatar>
       </Menu.Target>
       <Menu.Dropdown>
+        <Menu.Item
+          component={Link}
+          leftSection={<IconUserCircle aria-hidden size={16} stroke={1.5} />}
+          to="/my-page"
+        >
+          マイページ
+        </Menu.Item>
         <Menu.Item
           color="red"
           onClick={signOutAndReload}

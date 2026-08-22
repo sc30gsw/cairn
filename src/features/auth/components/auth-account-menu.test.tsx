@@ -31,6 +31,7 @@ test("ログイン中ならアカウントメニューが見える", () => {
     email: "owner@example.com",
     image: null,
     name: "Owner",
+    username: "owner",
   });
 
   const { getByLabelText } = renderWithMantine(<AuthAccountMenu />);

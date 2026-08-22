@@ -5,6 +5,10 @@ import type {
   AccountSignUpInput,
 } from "~/features/auth/schemas/account-auth-schema";
 import { isEmailAddress } from "~/features/auth/schemas/account-auth-schema";
+import {
+  PASSKEY_SIGNUP_PROMPT_KEY,
+  writePasskeyFlag,
+} from "~/features/onboarding/lib/onboarding-storage";
 import { authClient } from "~/lib/auth-client";
 import { AuthActionError } from "~/lib/errors";
 
@@ -75,6 +79,7 @@ export async function signUpWithAccount(input: AccountSignUpInput): Promise<Auth
         message: authResult.error.message ?? "登録に失敗しました",
       });
     }
+    writePasskeyFlag(PASSKEY_SIGNUP_PROMPT_KEY, true);
   }, "登録に失敗しました");
 }
 

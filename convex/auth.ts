@@ -1,3 +1,4 @@
+import { passkey } from "@better-auth/passkey";
 import { createClient } from "@convex-dev/better-auth";
 import type { GenericCtx } from "@convex-dev/better-auth";
 import { convex } from "@convex-dev/better-auth/plugins";
@@ -15,6 +16,20 @@ import {
   signUpDisabledFromEnv,
   trustedOriginsFromEnv,
 } from "./lib/env";
+
+const DEFAULT_SITE_URL = "http://localhost:3000";
+
+function passkeyRpId(siteUrl: string | undefined): string {
+  const candidate = siteUrl ?? DEFAULT_SITE_URL;
+  if (typeof URL.canParse === "function" && !URL.canParse(candidate)) {
+    return new URL(DEFAULT_SITE_URL).hostname;
+  }
+  try {
+    return new URL(candidate).hostname;
+  } catch {
+    return new URL(DEFAULT_SITE_URL).hostname;
+  }
+}
 
 export const authComponent = createClient<DataModel, typeof authSchema>(components.betterAuth, {
   local: { schema: authSchema },
@@ -35,7 +50,14 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
       disableSignUp: signUpDisabledFromEnv(),
       enabled: true,
     },
-    plugins: [convex({ authConfig }), username()],
+    plugins: [
+      convex({ authConfig }),
+      username(),
+      passkey({
+        rpID: passkeyRpId(siteUrl),
+        rpName: "Cairn",
+      }),
+    ],
     rateLimit: {
       customRules: {
         "/sign-in/email": { max: 5, window: 60 },
