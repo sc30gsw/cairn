@@ -21,6 +21,7 @@ const {
   onSwitchPreset,
   onUnskip,
   appliedPresetRef,
+  useDayPageDateJstMock,
 } = vi.hoisted(() => ({
   navigate: vi.fn(),
   onAddRow: vi.fn(async () => undefined),
@@ -34,6 +35,11 @@ const {
   onSwitchPreset: vi.fn(async () => undefined),
   onUnskip: vi.fn(async () => undefined),
   appliedPresetRef: { current: null },
+  useDayPageDateJstMock: vi.fn(() => "2026-08-17"),
+}));
+
+vi.mock("~/features/today/hooks/use-day-page-date-jst", () => ({
+  useDayPageDateJst: useDayPageDateJstMock,
 }));
 
 vi.mock("@tanstack/react-router", async (importOriginal) => {

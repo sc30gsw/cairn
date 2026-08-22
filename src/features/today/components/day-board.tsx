@@ -27,10 +27,10 @@ import {
   type DateJst,
 } from "~domain/jst";
 
-import { BoardKanbanCrossLink } from "~/components/board-day-cross-links";
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
 import { AdhocRowForm } from "~/features/today/components/adhoc-row-form";
+import { DayBoardKanbanLink } from "~/features/today/components/day-board-kanban-link";
 import { DayMetaPanel } from "~/features/today/components/day-meta-panel";
 import { RowEditor } from "~/features/today/components/row-editor";
 import { ShareCopy } from "~/features/today/components/share-copy";
@@ -240,7 +240,7 @@ export function DayBoard({
                   </Group>
                 </Input.Wrapper>
                 <Text c="dimmed" size="sm">
-                  <BoardKanbanCrossLink dateJst={dateJst} todayJst={todayJst} />
+                  <DayBoardKanbanLink />
                 </Text>
               </Group>
             </Grid.Col>

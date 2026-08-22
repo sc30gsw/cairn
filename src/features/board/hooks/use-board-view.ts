@@ -1,15 +1,12 @@
 import type { ScheduleViewLevel } from "@mantine/schedule";
-import { getRouteApi } from "@tanstack/react-router";
 import { isFutureDateJst, mondayOfWeek, todayJst, type DateJst } from "~domain/jst";
 
+import { boardRoute } from "~/features/board/lib/board-route-api";
 import type {
   BoardScheduleView,
   BoardSearch,
   BoardTab,
 } from "~/features/board/schemas/board-search-schema";
-
-/** `/board` 専用 — BoardPage 配下からのみ import すること */
-const boardRoute = getRouteApi("/board");
 
 function yearMonthFromDateJst(dateJst: DateJst): string {
   return dateJst.slice(0, 7);

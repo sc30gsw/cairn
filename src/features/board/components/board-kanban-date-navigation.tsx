@@ -3,7 +3,7 @@ import { DatePickerInput } from "@mantine/dates";
 import { IconChevronLeft, IconChevronRight, IconRefresh } from "@tabler/icons-react";
 import { addDaysJst, isFutureDateJst } from "~domain/jst";
 
-import { DayEditCrossLink } from "~/components/board-day-cross-links";
+import { BoardDayEditLink } from "~/features/board/components/board-day-edit-link";
 import { sharedDatePickerProps } from "~/features/board/components/board-schedule-navigation-shared";
 import { useBoardView } from "~/features/board/hooks/use-board-view";
 import { calendarDayStyleClasses } from "~/lib/calendar-day-style";
@@ -72,7 +72,7 @@ export function BoardKanbanDateNavigation() {
         </Group>
       </Input.Wrapper>
       <Text c="dimmed" size="sm">
-        <DayEditCrossLink dateJst={selectedDateJst} todayJst={today} />
+        <BoardDayEditLink />
       </Text>
     </Group>
   );
