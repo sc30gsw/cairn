@@ -5,12 +5,9 @@ import type {
   AccountSignUpInput,
 } from "~/features/auth/schemas/account-auth-schema";
 import { isEmailAddress } from "~/features/auth/schemas/account-auth-schema";
-import {
-  PASSKEY_SIGNUP_PROMPT_KEY,
-  writePasskeyFlag,
-} from "~/features/onboarding/lib/onboarding-storage";
 import { authClient } from "~/lib/auth-client";
 import { AuthActionError } from "~/lib/errors";
+import { PASSKEY_SIGNUP_PROMPT_KEY, writePasskeyFlag } from "~/lib/passkey-storage";
 
 function reloadAfterAuth() {
   location.reload();
@@ -81,6 +78,18 @@ export async function signUpWithAccount(input: AccountSignUpInput): Promise<Auth
     }
     writePasskeyFlag(PASSKEY_SIGNUP_PROMPT_KEY, true);
   }, "登録に失敗しました");
+}
+
+export async function signInWithPasskey(): Promise<AuthActionResult> {
+  return runAuthAction(async () => {
+    const authResult = await authClient.signIn.passkey();
+    if (authResult.error) {
+      throw new AuthActionError({
+        cause: authResult.error,
+        message: authResult.error.message ?? "パスキーでのログインに失敗しました",
+      });
+    }
+  }, "パスキーでのログインに失敗しました");
 }
 
 export function signInWithNotion() {

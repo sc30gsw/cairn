@@ -5,12 +5,8 @@ export async function submitAuthAction(
   setErrorMessage: (message: null | string) => void,
 ): Promise<void> {
   setErrorMessage(null);
-  try {
-    const result = await action();
-    if (result.errorMessage !== null) {
-      setErrorMessage(result.errorMessage);
-    }
-  } catch (error: unknown) {
-    setErrorMessage(error instanceof Error ? error.message : "認証に失敗しました");
+  const result = await action();
+  if (result.errorMessage !== null) {
+    setErrorMessage(result.errorMessage);
   }
 }
