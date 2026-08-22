@@ -51,6 +51,7 @@ test("buildMinutesByDate と buildHeatmapDays が確定分を集計する", () =
     condition: null,
     dateJst: "2026-08-17",
     isRest: false,
+    memo: null,
     minutes: 30,
   });
 });

@@ -12,7 +12,7 @@ import { HistoryWeekTabPending } from "~/features/history/components/history-wee
 import { useHistoryView } from "~/features/history/hooks/use-history-view";
 import type { HistoryTab } from "~/features/history/schemas/history-search-schema";
 
-import tabBarClasses from "~/features/history/components/history-tab-bar.module.css";
+import tabBarClasses from "~/components/pills-tab-bar.module.css";
 
 export function HistoryPage() {
   return (
@@ -35,6 +35,7 @@ function HistoryReady() {
           }
         }}
         value={tab}
+        variant="pills"
       >
         <Tabs.List className={tabBarClasses.tabBar} grow justify="center">
           <Tabs.Tab value={"month" satisfies HistoryTab}>月</Tabs.Tab>

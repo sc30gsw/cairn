@@ -33,7 +33,16 @@ export const historyShimmerMonthEvents = [
 ] satisfies MonthEvent[];
 
 export const historyShimmerWeek = {
-  days: [{ condition: null, dateJst: "2026-08-17", isRest: false, minutes: 30, movingAverage: 10 }],
+  days: [
+    {
+      condition: null,
+      dateJst: "2026-08-17",
+      isRest: false,
+      memo: null,
+      minutes: 30,
+      movingAverage: 10,
+    },
+  ],
   events: [
     {
       category: "多聴",
@@ -50,14 +59,30 @@ export const historyShimmerWeek = {
 } satisfies WeekPage;
 
 export const historyShimmerHeatmapDays = [
-  { condition: null, dateJst: "2026-08-17", isRest: false, minutes: 30, movingAverage: 10 },
+  {
+    condition: null,
+    dateJst: "2026-08-17",
+    isRest: false,
+    memo: null,
+    minutes: 30,
+    movingAverage: 10,
+  },
 ] satisfies HeatmapDay[];
 
 export const historyShimmerMonthBreakdown = {
   byCategory: [],
   byCondition: [],
   confirmedMinutes: 30,
-  days: [{ condition: null, dateJst: "2026-08-17", isRest: false, minutes: 30, movingAverage: 10 }],
+  days: [
+    {
+      condition: null,
+      dateJst: "2026-08-17",
+      isRest: false,
+      memo: null,
+      minutes: 30,
+      movingAverage: 10,
+    },
+  ],
   events: [],
   rows: [],
   skippedMinutes: 0,

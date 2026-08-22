@@ -3,6 +3,7 @@ import { addDaysJst } from "../../lib/jst";
 import {
   buildConditionByDate,
   buildHeatmapDays,
+  buildMemoByDate,
   buildMinutesByDate,
   calendarDatesFromTo,
   YEAR_HEATMAP_DAYS,
@@ -30,6 +31,7 @@ export async function computeYearHeatmap(ctx: QueryCtx, ownerId: string, todayJs
   const liveDayDates = liveDayDatesFrom(days);
   const minutesByDate = buildMinutesByDate(rows, liveDayDates);
   const conditionByDate = buildConditionByDate(days);
+  const memoByDate = buildMemoByDate(days);
   return {
     days: buildHeatmapDays(
       calendarDatesFromTo(start, end),
@@ -37,6 +39,7 @@ export async function computeYearHeatmap(ctx: QueryCtx, ownerId: string, todayJs
       liveDayDates,
       minutesByDate,
       conditionByDate,
+      memoByDate,
     ),
     endDate: end,
     startDate: start,

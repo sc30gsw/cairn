@@ -98,6 +98,7 @@ export const monthDayValidator = v.object({
   condition: v.union(conditionValidator, v.null()),
   dateJst: v.string(),
   isRest: v.boolean(),
+  memo: v.union(v.string(), v.null()),
   minutes: v.number(),
   movingAverage: v.number(),
 });

@@ -3,6 +3,7 @@ import { Alert, Button, Card, Grid, SegmentedControl, Stack, Text, Title } from 
 import { Link } from "@tanstack/react-router";
 import type { DateJst } from "~domain/jst";
 
+import { HistoryConditionMemoSections } from "~/features/history/components/analysis/history-condition-memo-sections";
 import { BreakdownTable } from "~/features/history/components/breakdown-table";
 import { ConditionVolumeTable } from "~/features/history/components/condition-volume-table";
 import { HeatmapLegend } from "~/features/history/components/heatmap-legend";
@@ -16,6 +17,7 @@ import {
   PACE_CHART_SERIES,
   type PaceChartPoint,
 } from "~/features/history/lib/chart-data";
+import { daysInAnalysisScope } from "~/features/history/lib/scope-days";
 import type { AnalysisScope } from "~/features/history/schemas/analysis-scope-schema";
 import type {
   DayBreakdown,
@@ -24,7 +26,7 @@ import type {
   WeekBreakdown,
 } from "~/features/history/types/history";
 
-import tabBarClasses from "~/features/history/components/history-tab-bar.module.css";
+import tabBarClasses from "~/components/pills-tab-bar.module.css";
 
 type HistoryAnalysisPanelProps = {
   day: DayBreakdown;
@@ -36,6 +38,7 @@ type HistoryAnalysisPanelProps = {
   selectedDateJst: DateJst;
   todayJst: DateJst;
   week: WeekBreakdown;
+  weekDays: HeatmapDay[];
   yearMonth: string;
 };
 
@@ -152,8 +155,11 @@ export function HistoryAnalysisPanel({
   selectedDateJst,
   todayJst,
   week,
+  weekDays,
   yearMonth,
 }: HistoryAnalysisPanelProps) {
+  const scopeDays = daysInAnalysisScope(scope, selectedDateJst, month, heatmapDays, weekDays);
+
   return (
     <Stack gap="md">
       <SegmentedControl
@@ -246,6 +252,12 @@ export function HistoryAnalysisPanel({
           }
         />
       </Stack>
+
+      <HistoryConditionMemoSections
+        scope={scope}
+        scopeDays={scopeDays}
+        selectedDateJst={selectedDateJst}
+      />
 
       {scope === "day" ? (
         <Button

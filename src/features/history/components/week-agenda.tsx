@@ -1,18 +1,13 @@
-import { Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { Anchor, Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { Link } from "@tanstack/react-router";
 import { groupBy, prop } from "remeda";
 import { addDaysJst, type DateJst } from "~domain/jst";
 
+import { ConditionBadge } from "~/components/condition-badge";
 import { TruncatedText } from "~/components/truncated-text";
+import { formatJstDateLabel } from "~/features/history/lib/format-jst-date";
 import { RECORD_STATUS_UI } from "~/features/history/lib/record-status-label";
 import type { WeekEvent, WeekPage } from "~/features/history/types/history";
-import { CONDITION_MANTINE_COLOR } from "~/lib/condition-colors";
-
-const DATE_HEADER_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
-  day: "numeric",
-  month: "long",
-  timeZone: "Asia/Tokyo",
-  weekday: "short",
-});
 
 const WEEK_RANGE_START_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
   day: "numeric",
@@ -28,8 +23,7 @@ const WEEK_RANGE_END_FORMATTER = new Intl.DateTimeFormat("ja-JP", {
 });
 
 function formatDateHeader(dateJst: DateJst): string {
-  const date = new Date(`${dateJst}T12:00:00+09:00`);
-  return DATE_HEADER_FORMATTER.format(date);
+  return formatJstDateLabel(dateJst);
 }
 
 function formatWeekRange(weekStart: DateJst, weekEnd: DateJst): string {
@@ -70,7 +64,7 @@ function WeekEventRow({ event }: { event: WeekEvent }) {
 
 export function WeekAgenda({ week }: { week: WeekPage }) {
   const eventsByDate = groupBy(week.events, prop("dateJst"));
-  const conditionByDate = new Map(week.days.map((day) => [day.dateJst, day.condition] as const));
+  const dayByDate = new Map(week.days.map((day) => [day.dateJst, day] as const));
 
   return (
     <Card>
@@ -82,19 +76,29 @@ export function WeekAgenda({ week }: { week: WeekPage }) {
         <Stack gap="lg" mt="lg">
           {weekDates(week.weekStart).map((dateJst) => {
             const dayEvents = eventsByDate[dateJst] ?? [];
-            const condition = conditionByDate.get(dateJst);
+            const day = dayByDate.get(dateJst);
+            const condition = day?.condition ?? null;
+            const memo = day?.memo ?? null;
             return (
               <Stack gap="xs" key={dateJst}>
-                <Group gap="xs">
-                  <Text fw={600} size="sm">
+                <Group align="flex-start" gap="xs" wrap="wrap">
+                  <Anchor
+                    fw={600}
+                    renderRoot={(props) => (
+                      <Link {...props} params={{ dateJst }} to="/days/$dateJst" />
+                    )}
+                    size="sm"
+                    underline="hover"
+                  >
                     {formatDateHeader(dateJst)}
-                  </Text>
-                  {condition === null || condition === undefined ? null : (
-                    <Badge color={CONDITION_MANTINE_COLOR[condition]} size="sm" variant="light">
-                      {condition}
-                    </Badge>
-                  )}
+                  </Anchor>
+                  {condition === null ? null : <ConditionBadge condition={condition} />}
                 </Group>
+                {memo === null || memo.length === 0 ? null : (
+                  <TruncatedText c="dimmed" lineClamp={2} pl="sm" size="sm">
+                    {memo}
+                  </TruncatedText>
+                )}
                 {dayEvents.length === 0 ? (
                   <Text c="dimmed" pl="sm" size="sm">
                     記録なし
