@@ -1,5 +1,5 @@
 import type { ScheduleEventData } from "@mantine/schedule";
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useState, type MouseEvent, type RefObject } from "react";
 
 import type { BoardScheduleAllDayExpandAnchor } from "~/features/board/components/board-schedule-all-day-expand";
 import {
@@ -25,6 +25,7 @@ type UseBoardScheduleUiArgs = {
   blocks: readonly BoardScheduleBlock[];
   checkpoint: BoardMastery | null;
   rows: readonly BoardRow[];
+  scheduleRootRef: RefObject<HTMLDivElement | null>;
   scheduleView: string;
   todayJst: string;
 };
@@ -34,13 +35,13 @@ export function useBoardScheduleUi({
   blocks,
   checkpoint,
   rows,
+  scheduleRootRef,
   todayJst,
 }: UseBoardScheduleUiArgs) {
   const [formOpened, setFormOpened] = useState(false);
   const [formValues, setFormValues] = useState<BoardScheduleEventInput | null>(null);
   const [expandedAllDayAnchor, setExpandedAllDayAnchor] =
     useState<BoardScheduleAllDayExpandAnchor | null>(null);
-  const [scheduleRoot, setScheduleRoot] = useState<HTMLDivElement | null>(null);
 
   const editableBlockIds = boardScheduleBlockIds(blocks);
   const baseEvents = toBoardScheduleEvents(todayJst, rows, checkpoint, blocks);
@@ -57,6 +58,7 @@ export function useBoardScheduleUi({
       : allDayEventsForDay(baseEvents, expandedAllDayAnchor.dateJst);
 
   function openAllDayExpand(date: string, target: HTMLElement) {
+    const scheduleRoot = scheduleRootRef.current;
     if (scheduleRoot === null) {
       return;
     }
@@ -79,6 +81,7 @@ export function useBoardScheduleUi({
       if (!(target instanceof Node)) {
         return;
       }
+      const scheduleRoot = scheduleRootRef.current;
       if (scheduleRoot === null) {
         return;
       }
@@ -93,7 +96,7 @@ export function useBoardScheduleUi({
     }
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [expandedAllDayAnchor, scheduleRoot]);
+  }, [expandedAllDayAnchor, scheduleRootRef]);
 
   function collapseAllDayExpand() {
     setExpandedAllDayAnchor(null);
@@ -150,8 +153,6 @@ export function useBoardScheduleUi({
     openCreate,
     openEditFromEvent,
     scheduleEvents,
-    scheduleRoot,
     setFormOpened,
-    setScheduleRoot,
   };
 }

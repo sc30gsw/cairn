@@ -1,6 +1,7 @@
 import { Card, Stack } from "@mantine/core";
 import { Schedule, type DateStringValue } from "@mantine/schedule";
 import type { CSSProperties } from "react";
+import { useRef } from "react";
 
 import { BoardScheduleAllDayExpand } from "~/features/board/components/board-schedule-all-day-expand";
 import { boardScheduleAllDayRenderEvent } from "~/features/board/components/board-schedule-all-day-render-event";
@@ -80,11 +81,13 @@ export function BoardSchedule({
     anchorDateJst,
     scheduleView,
   );
+  const scheduleRootRef = useRef<HTMLDivElement | null>(null);
   const ui = useBoardScheduleUi({
     anchorDateJst,
     blocks,
     checkpoint,
     rows,
+    scheduleRootRef,
     scheduleView,
     todayJst,
   });
@@ -162,11 +165,7 @@ export function BoardSchedule({
             todayJst={todayJst}
             weekAnchor={weekAnchor}
           />
-          <div
-            className={classes.boardScheduleRoot}
-            data-view={scheduleView}
-            ref={ui.setScheduleRoot}
-          >
+          <div className={classes.boardScheduleRoot} data-view={scheduleView} ref={scheduleRootRef}>
             <Schedule
               canDragEvent={(event) => !pending && ui.editableBlockIds.has(String(event.id))}
               date={anchorDateJst}
