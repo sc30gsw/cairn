@@ -68,3 +68,11 @@ export function shouldOpenMyPagePasskeyPrompt(): boolean {
   const reprompted = readPasskeyFlag(PASSKEY_MYPAGE_REPROMPTED_KEY);
   return skippedSignup && !reprompted;
 }
+
+/** Storage flags plus whether the user already has at least one passkey. */
+export function shouldShowMyPagePasskeyPrompt(hasRegisteredPasskeys: boolean): boolean {
+  if (hasRegisteredPasskeys) {
+    return false;
+  }
+  return shouldOpenMyPagePasskeyPrompt();
+}

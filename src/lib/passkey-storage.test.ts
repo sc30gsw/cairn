@@ -9,6 +9,7 @@ import {
   readPasskeyFlag,
   readPasskeySessionFlag,
   shouldOpenMyPagePasskeyPrompt,
+  shouldShowMyPagePasskeyPrompt,
   writePasskeyFlag,
   writePasskeySessionFlag,
 } from "~/lib/passkey-storage";
@@ -85,5 +86,15 @@ test("shouldOpenMyPagePasskeyPrompt は再提示済みなら false", () => {
   writePasskeyFlag(PASSKEY_MYPAGE_REPROMPTED_KEY, true);
 
   expect(shouldOpenMyPagePasskeyPrompt()).toBe(false);
+  vi.unstubAllGlobals();
+});
+
+test("shouldShowMyPagePasskeyPrompt は登録済み passkey があると false", () => {
+  mockStorage();
+  writePasskeyFlag(PASSKEY_SIGNUP_SKIPPED_KEY, true);
+  writePasskeyFlag(PASSKEY_MYPAGE_REPROMPTED_KEY, false);
+
+  expect(shouldShowMyPagePasskeyPrompt(true)).toBe(false);
+  expect(shouldShowMyPagePasskeyPrompt(false)).toBe(true);
   vi.unstubAllGlobals();
 });
