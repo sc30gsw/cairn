@@ -5,11 +5,13 @@ import { addDaysJst, isFutureDateJst, mondayOfWeek, type DateJst } from "~domain
 
 import {
   DAY_NAVIGATION_DATE_FORMAT,
+  formatDayNavigationLabel,
   formatWeekNavigationLabel,
 } from "~/features/board/lib/board-schedule-navigation-labels";
 import type { BoardScheduleView } from "~/features/board/schemas/board-search-schema";
 import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-style";
 import { SCHEDULE_LABELS_JA } from "~/lib/schedule-labels";
+import { cn } from "~/lib/utils";
 
 import classes from "~/features/board/components/board-schedule-navigation.module.css";
 
@@ -62,27 +64,36 @@ function pickDateInWeek(
   onWeekChange(mondayOfWeek(value));
 }
 
-function BoardScheduleDatePicker({
+function BoardScheduleDateControl({
+  ariaLabel,
+  className,
+  label,
   onChange,
   todayJst,
   value,
   valueFormat,
 }: {
+  ariaLabel: string;
+  className?: string;
+  label: string;
   onChange: (value: string | null) => void;
   todayJst: DateJst;
   value: DateJst;
   valueFormat: string;
 }) {
   return (
-    <DatePickerInput
-      aria-label="日付を選択"
-      className={classes.navigationDateInput}
-      classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
-      onChange={onChange}
-      value={value}
-      valueFormat={valueFormat}
-      {...sharedDatePickerProps(todayJst)}
-    />
+    <ScheduleHeader.Control className={cn(classes.dateControl, className)} interactive={false}>
+      <span className={classes.dateControlLabel}>{label}</span>
+      <DatePickerInput
+        aria-label={ariaLabel}
+        className={classes.datePickerOverlay}
+        classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
+        onChange={onChange}
+        value={value}
+        valueFormat={valueFormat}
+        {...sharedDatePickerProps(todayJst)}
+      />
+    </ScheduleHeader.Control>
   );
 }
 
@@ -105,20 +116,15 @@ function BoardScheduleWeekPicker({
     selectedDateJst >= weekStart && selectedDateJst <= weekEnd ? selectedDateJst : weekAnchor;
 
   return (
-    <>
-      <ScheduleHeader.Control className={classes.weekRangeLabel} interactive={false}>
-        {formatWeekNavigationLabel(weekAnchor)}
-      </ScheduleHeader.Control>
-      <DatePickerInput
-        aria-label="週を選択"
-        className={classes.weekDateInput}
-        classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
-        onChange={(value) => pickDateInWeek(value, todayJst, onDateChange, onWeekChange)}
-        value={pickerValue}
-        valueFormat="M/D"
-        {...sharedDatePickerProps(todayJst)}
-      />
-    </>
+    <BoardScheduleDateControl
+      ariaLabel="週を選択"
+      className={classes.weekDateControl}
+      label={formatWeekNavigationLabel(weekAnchor)}
+      onChange={(value) => pickDateInWeek(value, todayJst, onDateChange, onWeekChange)}
+      todayJst={todayJst}
+      value={pickerValue}
+      valueFormat="M/D"
+    />
   );
 }
 
@@ -153,7 +159,9 @@ export function BoardScheduleNavigation({
           aria-label={SCHEDULE_LABELS_JA.previous}
           onClick={() => onDateChange(addDaysJst(selectedDateJst, -1))}
         />
-        <BoardScheduleDatePicker
+        <BoardScheduleDateControl
+          ariaLabel="日付を選択"
+          label={formatDayNavigationLabel(selectedDateJst)}
           onChange={(value) => {
             if (typeof value === "string" && !isFutureDateJst(value, todayJst)) {
               onDateChange(value);
