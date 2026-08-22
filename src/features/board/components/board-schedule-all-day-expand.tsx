@@ -1,5 +1,6 @@
-import { Badge, Button, Group, Paper, Stack, Text } from "@mantine/core";
+import { ActionIcon, Badge, Group, Paper, Stack, Text, UnstyledButton } from "@mantine/core";
 import type { ScheduleEventData } from "@mantine/schedule";
+import { IconX } from "@tabler/icons-react";
 import type { CSSProperties } from "react";
 
 export type BoardScheduleAllDayExpandAnchor = {
@@ -11,14 +12,18 @@ export type BoardScheduleAllDayExpandAnchor = {
 
 type BoardScheduleAllDayExpandProps = {
   anchor: BoardScheduleAllDayExpandAnchor;
+  editableBlockIds: ReadonlySet<string>;
   events: readonly ScheduleEventData[];
   onClose: () => void;
+  onEventClick: (event: ScheduleEventData) => void;
 };
 
 export function BoardScheduleAllDayExpand({
   anchor,
+  editableBlockIds,
   events,
   onClose,
+  onEventClick,
 }: BoardScheduleAllDayExpandProps) {
   const style: CSSProperties = {
     left: anchor.left,
@@ -42,22 +47,43 @@ export function BoardScheduleAllDayExpand({
         <Text fw={600} size="sm">
           {anchor.dateJst}（{events.length}件）
         </Text>
-        <Button onClick={onClose} size="compact-xs" type="button" variant="subtle">
-          閉じる
-        </Button>
+        <ActionIcon aria-label="閉じる" onClick={onClose} size="sm" type="button" variant="subtle">
+          <IconX size={16} />
+        </ActionIcon>
       </Group>
       <Stack gap={4}>
-        {events.map((event) => (
-          <Badge
-            color={event.color ?? "gray"}
-            fullWidth
-            key={String(event.id)}
-            size="sm"
-            variant="light"
-          >
-            {event.title}
-          </Badge>
-        ))}
+        {events.map((event) => {
+          const editable = editableBlockIds.has(String(event.id));
+
+          if (!editable) {
+            return (
+              <Badge
+                color={event.color ?? "gray"}
+                fullWidth
+                key={String(event.id)}
+                size="sm"
+                variant="light"
+              >
+                {event.title}
+              </Badge>
+            );
+          }
+
+          return (
+            <UnstyledButton
+              className="bg-gray-1 hover:bg-gray-2 w-full rounded-sm px-2 py-1 text-left text-sm"
+              key={String(event.id)}
+              onClick={() => {
+                onEventClick(event);
+              }}
+              type="button"
+            >
+              <Badge color={event.color ?? "gray"} fullWidth size="sm" variant="light">
+                {event.title}
+              </Badge>
+            </UnstyledButton>
+          );
+        })}
       </Stack>
     </Paper>
   );

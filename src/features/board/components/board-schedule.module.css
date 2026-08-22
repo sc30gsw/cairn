@@ -28,10 +28,31 @@
 }
 
 .weekAllDayEvents :global(button) {
-  font-size: var(--mantine-font-size-xs);
-  line-height: 1.2;
-  padding-block: 0;
-  padding-inline: calc(0.25rem * var(--mantine-scale));
+  font-size: var(--mantine-font-size-sm);
+  line-height: 1.25;
+  padding-block: 1px;
+  padding-inline: calc(0.375rem * var(--mantine-scale));
+}
+
+.boardScheduleRoot[data-view="day"] :global(.mantine-MoreEvents-moreEventsButton) {
+  display: none;
+}
+
+.dayAllDayComposite {
+  align-items: stretch;
+  display: flex;
+  overflow: hidden;
+  padding: 0;
+}
+
+.dayAllDayComposite .dayAllDayEvents {
+  display: grid;
+  gap: 2px;
+  grid-auto-rows: var(--board-all-day-row-height);
+  height: 100%;
+  min-height: calc(var(--board-all-day-row-height) * var(--board-all-day-visible-rows));
+  padding: 2px;
+  width: 100%;
 }
 
 .boardSchedule :global(.mantine-ScheduleEvent-root:has([data-board-all-day-more="true"])) {
@@ -42,30 +63,6 @@
 
 .boardSchedule :global(.mantine-ScheduleEvent-root:has([data-board-all-day-more="true"]):hover) {
   background-color: var(--mantine-color-orange-0);
-}
-
-.dayAllDayRow {
-  border-block-end: 1px solid var(--mantine-color-gray-3);
-  display: grid;
-  grid-template-columns: var(--board-day-all-day-label-width) minmax(0, 1fr);
-}
-
-.dayAllDayLabel {
-  align-items: flex-start;
-  border-inline-end: 1px solid var(--mantine-color-gray-3);
-  color: var(--mantine-color-dimmed);
-  display: flex;
-  font-size: var(--mantine-font-size-sm);
-  justify-content: flex-end;
-  min-height: calc(var(--board-all-day-row-height) * var(--board-all-day-visible-rows));
-  padding: calc(0.25rem * var(--mantine-scale)) calc(0.5rem * var(--mantine-scale));
-}
-
-.dayAllDayEvents {
-  display: grid;
-  gap: 2px;
-  min-height: calc(var(--board-all-day-row-height) * var(--board-all-day-visible-rows));
-  padding: 2px;
 }
 
 .dayAllDayEvent,

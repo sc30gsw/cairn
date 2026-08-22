@@ -121,6 +121,34 @@ test("終日イベントが多い日は +N件 を追加する", () => {
   expect(overflow.hiddenEventsByDay.get("2026-08-17")?.map((event) => event.title)).toEqual(["D"]);
 });
 
+test("終日7件は3件表示と+4件のみになる", () => {
+  const events = toBoardScheduleEvents(
+    "2026-08-22",
+    [
+      row("r1", "A", 0),
+      row("r2", "B", 1),
+      row("r3", "C", 2),
+      row("r4", "D", 3),
+      row("r5", "E", 4),
+      row("r6", "F", 5),
+      row("r7", "G", 6),
+    ],
+    null,
+    [],
+  );
+  const overflow = withAllDayOverflow(events, 3, (count) => `+${count}件`);
+  const dayEvents = overflow.events.filter((event) => String(event.start).startsWith("2026-08-22"));
+
+  expect(dayEvents).toHaveLength(4);
+  expect(dayEvents.at(-1)?.title).toBe("+4件");
+  expect(overflow.hiddenEventsByDay.get("2026-08-22")?.map((event) => event.title)).toEqual([
+    "D",
+    "E",
+    "F",
+    "G",
+  ]);
+});
+
 test("終日イベントだけを除外できる", () => {
   const events = toBoardScheduleEvents("2026-08-17", [row("r1", "A", 0)], null, [
     {

@@ -2,6 +2,7 @@ import type { ScheduleLabelsOverride } from "@mantine/schedule";
 
 export const SCHEDULE_LABELS_JA: ScheduleLabelsOverride = {
   agenda: "Agenda",
+  allDay: "終日",
   day: "日",
   month: "月",
   moreLabel: (hiddenEventsCount) => `+${hiddenEventsCount}件`,
