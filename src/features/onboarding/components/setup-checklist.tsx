@@ -1,14 +1,12 @@
 import { Anchor, Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
 
+import { useSetupStatus } from "~/features/onboarding/hooks/use-setup-status";
 import { SETUP_STEPS, isSetupStepComplete } from "~/features/onboarding/lib/setup-steps";
-import type { SetupStatus } from "~/features/onboarding/types/setup-status";
 
-type SetupChecklistProps = {
-  status: SetupStatus;
-};
+export function SetupChecklist() {
+  const { status } = useSetupStatus();
 
-export function SetupChecklist({ status }: SetupChecklistProps) {
   return (
     <Card padding="md">
       <Stack gap="md">

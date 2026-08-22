@@ -13,30 +13,6 @@ export function useSkipRow() {
   return useConvexMutation(api.mutations.rows.skip.skip);
 }
 
-export function useUnskipRow() {
-  return useConvexMutation(api.mutations.rows.unskip.unskip);
-}
-
-export function useUnconfirmRow() {
-  return useConvexMutation(api.mutations.rows.unconfirm.unconfirm);
-}
-
-export function useStartRow() {
-  return useConvexMutation(api.mutations.rows.start.start);
-}
-
-export function usePauseRow() {
-  return useConvexMutation(api.mutations.rows.pause.pause);
-}
-
-export function useReopenRow() {
-  return useConvexMutation(api.mutations.rows.reopen.reopen);
-}
-
-export function useApplyRowOrder() {
-  return useConvexMutation(api.mutations.rows.applyOrder.applyOrder);
-}
-
 export function useAddRow() {
   return useConvexMutation(api.mutations.rows.add.add);
 }
