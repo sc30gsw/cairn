@@ -1,6 +1,5 @@
-import { ActionIcon, Badge, Group, Paper, Stack, Text, UnstyledButton } from "@mantine/core";
+import { Badge, Paper, Stack, Text, UnstyledButton } from "@mantine/core";
 import type { ScheduleEventData } from "@mantine/schedule";
-import { IconX } from "@tabler/icons-react";
 import type { CSSProperties } from "react";
 
 export type BoardScheduleAllDayExpandAnchor = {
@@ -14,7 +13,6 @@ type BoardScheduleAllDayExpandProps = {
   anchor: BoardScheduleAllDayExpandAnchor;
   editableBlockIds: ReadonlySet<string>;
   events: readonly ScheduleEventData[];
-  onClose: () => void;
   onEventClick: (event: ScheduleEventData) => void;
 };
 
@@ -22,7 +20,6 @@ export function BoardScheduleAllDayExpand({
   anchor,
   editableBlockIds,
   events,
-  onClose,
   onEventClick,
 }: BoardScheduleAllDayExpandProps) {
   const style: CSSProperties = {
@@ -43,14 +40,9 @@ export function BoardScheduleAllDayExpand({
       style={style}
       withBorder
     >
-      <Group justify="space-between" mb="xs" wrap="nowrap">
-        <Text fw={600} size="sm">
-          {anchor.dateJst}（{events.length}件）
-        </Text>
-        <ActionIcon aria-label="閉じる" onClick={onClose} size="sm" type="button" variant="subtle">
-          <IconX size={16} />
-        </ActionIcon>
-      </Group>
+      <Text fw={600} mb="xs" size="sm">
+        {anchor.dateJst}（{events.length}件）
+      </Text>
       <Stack gap={4}>
         {events.map((event) => {
           const editable = editableBlockIds.has(String(event.id));

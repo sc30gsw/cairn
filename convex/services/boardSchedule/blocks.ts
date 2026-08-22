@@ -113,16 +113,31 @@ export async function update(
     blockId: Id<"boardScheduleEvents">;
     color?: string;
     endAt: string;
+    rowId?: Id<"rows">;
     startAt: string;
   },
 ): Promise<null> {
   await requireOwnedBlock(ctx, ownerId, args.blockId);
   const { endAt, startAt } = normalizeRange(args.startAt, args.endAt);
-  await ctx.db.patch("boardScheduleEvents", args.blockId, {
-    color: args.color ?? DEFAULT_COLOR,
+  const patch: {
+    color?: string;
+    endAt: string;
+    rowId?: Id<"rows">;
+    startAt: string;
+    title?: string;
+  } = {
     endAt,
     startAt,
-  });
+  };
+  if (args.color !== undefined) {
+    patch.color = args.color;
+  }
+  if (args.rowId !== undefined) {
+    const { itemName, rowId } = await requireLiveRowForSchedule(ctx, ownerId, args.rowId);
+    patch.rowId = rowId;
+    patch.title = itemName;
+  }
+  await ctx.db.patch("boardScheduleEvents", args.blockId, patch);
   return null;
 }
 

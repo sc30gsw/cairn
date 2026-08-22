@@ -75,7 +75,6 @@ export function BoardScheduleEventForm({
               <Select
                 {...field.props}
                 data={rowOptions}
-                disabled={isEditing}
                 error={field.errors?.[0]}
                 label="項目"
                 onChange={(value) => {

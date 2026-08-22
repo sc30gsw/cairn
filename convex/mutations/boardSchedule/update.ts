@@ -8,6 +8,7 @@ export const update = ownerMutation({
     blockId: v.id("boardScheduleEvents"),
     color: v.optional(v.string()),
     endAt: v.string(),
+    rowId: v.optional(v.id("rows")),
     startAt: v.string(),
   },
   handler: async (ctx, args) => updateBlock(ctx, ctx.ownerId, args),

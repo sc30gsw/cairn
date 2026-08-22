@@ -276,7 +276,6 @@ export function BoardSchedule({
               anchor={expandedAllDayAnchor}
               editableBlockIds={editableBlockIds}
               events={expandedAllDayEvents}
-              onClose={collapseAllDayExpand}
               onEventClick={openEditFromEvent}
             />
           )}
@@ -314,6 +313,7 @@ export function BoardSchedule({
           }
           await onUpdateBlock({
             blockId: blockId as BoardScheduleBlock["_id"],
+            rowId: values.rowId as BoardRow["_id"],
             ...payload,
           });
         }}

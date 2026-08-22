@@ -80,7 +80,7 @@ function BoardReady() {
   const unskipRow = useBoardUnskipRow(today, today);
   const unconfirmRow = useBoardUnconfirmRow(today, today);
   const createBlock = useBoardScheduleCreate(today, today);
-  const updateBlock = useBoardScheduleUpdate(today);
+  const updateBlock = useBoardScheduleUpdate(today, today);
   const removeBlock = useBoardScheduleRemove(today);
   const moveBlock = useBoardScheduleMove(today);
   const checkpoint = nearestCheckpoint(goals, today);

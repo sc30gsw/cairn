@@ -65,6 +65,32 @@ test("boardScheduleEvents を作成・週一覧・更新・削除できる", asy
     startAt: "2026-08-17 09:30:00",
   });
 
+  const secondRow = day.rows[1];
+  if (secondRow === undefined) {
+    throw new Error("expected a second row");
+  }
+  await t.mutation(api.mutations.boardSchedule.update.update, {
+    blockId,
+    endAt: "2026-08-17 11:00:00",
+    rowId: secondRow._id,
+    startAt: "2026-08-17 09:30:00",
+  });
+
+  expect(
+    await t.query(api.queries.boardSchedule.listForWeek.listForWeek, {
+      anchorDateJst: MONDAY,
+    }),
+  ).toEqual([
+    {
+      _id: blockId,
+      color: "violet",
+      endAt: "2026-08-17 11:00:00",
+      rowId: secondRow._id,
+      startAt: "2026-08-17 09:30:00",
+      title: secondRow.itemName,
+    },
+  ]);
+
   await t.mutation(api.mutations.boardSchedule.move.move, {
     blockId,
     endAt: "2026-08-18 11:00:00",

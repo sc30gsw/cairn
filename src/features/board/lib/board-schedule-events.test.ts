@@ -86,7 +86,7 @@ test("終日イベントが多い日は +N件 を追加する", () => {
     null,
     [],
   );
-  const overflow = withAllDayOverflow(events, 3, (count) => `+${count}件`);
+  const overflow = withAllDayOverflow(events, 2, (count) => `+${count}件`);
 
   expect(overflow.events).toEqual([
     {
@@ -104,24 +104,20 @@ test("終日イベントが多い日は +N件 を追加する", () => {
       title: "B",
     },
     {
-      color: "green",
-      end: "2026-08-17 23:59:59",
-      id: "r3",
-      start: "2026-08-17 00:00:00",
-      title: "C",
-    },
-    {
       color: "gray",
       end: "2026-08-17 23:59:59",
       id: `${BOARD_ALL_DAY_MORE_PREFIX}2026-08-17`,
       start: "2026-08-17 00:00:00",
-      title: "+1件",
+      title: "+2件",
     },
   ]);
-  expect(overflow.hiddenEventsByDay.get("2026-08-17")?.map((event) => event.title)).toEqual(["D"]);
+  expect(overflow.hiddenEventsByDay.get("2026-08-17")?.map((event) => event.title)).toEqual([
+    "C",
+    "D",
+  ]);
 });
 
-test("終日7件は3件表示と+4件のみになる", () => {
+test("終日7件は2件表示と+5件のみになる", () => {
   const events = toBoardScheduleEvents(
     "2026-08-22",
     [
@@ -136,12 +132,13 @@ test("終日7件は3件表示と+4件のみになる", () => {
     null,
     [],
   );
-  const overflow = withAllDayOverflow(events, 3, (count) => `+${count}件`);
+  const overflow = withAllDayOverflow(events, 2, (count) => `+${count}件`);
   const dayEvents = overflow.events.filter((event) => String(event.start).startsWith("2026-08-22"));
 
-  expect(dayEvents).toHaveLength(4);
-  expect(dayEvents.at(-1)?.title).toBe("+4件");
+  expect(dayEvents).toHaveLength(3);
+  expect(dayEvents.at(-1)?.title).toBe("+5件");
   expect(overflow.hiddenEventsByDay.get("2026-08-22")?.map((event) => event.title)).toEqual([
+    "C",
     "D",
     "E",
     "F",

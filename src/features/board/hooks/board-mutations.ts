@@ -123,9 +123,15 @@ export function useBoardScheduleCreate(anchorDateJst: DateJst, todayJst: DateJst
   return { mutateAsync };
 }
 
-export function useBoardScheduleUpdate(anchorDateJst: DateJst) {
+export function useBoardScheduleUpdate(anchorDateJst: DateJst, todayJst: DateJst) {
   const mutateAsync = useMutation(api.mutations.boardSchedule.update.update).withOptimisticUpdate(
     (localStore, args) => {
+      const day = localStore.getQuery(api.queries.days.get.get, {
+        dateJst: todayJst,
+        todayJst,
+      });
+      const row =
+        args.rowId === undefined ? undefined : day?.rows.find((entry) => entry._id === args.rowId);
       patchBoardScheduleBlocks(localStore, {
         anchorDateJst,
         updater: (blocks) =>
@@ -135,7 +141,9 @@ export function useBoardScheduleUpdate(anchorDateJst: DateJst) {
                   ...block,
                   color: args.color ?? block.color,
                   endAt: args.endAt,
+                  rowId: args.rowId ?? block.rowId,
                   startAt: args.startAt,
+                  title: row?.itemName ?? block.title,
                 }
               : block,
           ),

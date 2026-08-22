@@ -8,7 +8,7 @@ import {
 } from "~/features/board/lib/board-schedule-all-day-layout";
 
 describe("board-schedule-all-day-layout", () => {
-  test("maps Mantine 50% rows into four compact all-day slots", () => {
+  test("maps Mantine 50% rows into three compact all-day slots", () => {
     expect(parseMantineAllDayRow("calc(0% + 1px)")).toBe(0);
     expect(parseMantineAllDayRow("calc(50% + 1px)")).toBe(1);
     expect(parseMantineAllDayRow("calc(2 * 50% + 1px)")).toBe(2);
