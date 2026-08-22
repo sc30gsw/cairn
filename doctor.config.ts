@@ -1,6 +1,7 @@
 export default {
   $schema: "https://react.doctor/schema/config.json",
   ignore: {
+    rules: ["deslop/unused-dev-dependency"],
     files: ["convex/_generated/**", "convex/betterAuth/_generated/**"],
     //? vite.config.ts の oxlint 設定と揃える。TanStack Start のルートファイルは
     //? component / errorComponent / notFoundComponent / pendingComponent を
