@@ -24,27 +24,23 @@ import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/conc
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
 import { LabelAlignedCell } from "~/components/label-aligned-cell";
 import { PageTitle } from "~/components/page-title";
+import {
+  useCatalogPresetActions,
+  type CatalogPresetActions,
+} from "~/features/catalog/hooks/use-catalog-preset-actions";
 import { presetsRoute } from "~/features/catalog/lib/preset-route-api";
 import { CreatePresetSchema, PresetSchema } from "~/features/catalog/schemas/preset-schema";
 import type { PresetLineInput } from "~/features/catalog/schemas/preset-schema";
 import { weekdayFromSelect } from "~/features/catalog/schemas/weekday-schema";
-import type { ItemDto, ItemId, PresetDto } from "~/features/catalog/types/item";
-import { parseItemId, unwrapItemId } from "~/features/catalog/types/item";
-import type {
-  CreatePresetInput,
-  RemovePresetInput,
-  UpdatePresetInput,
-} from "~/features/catalog/types/mutations";
 import { presetWeekdayHash } from "~/lib/preset-weekday-hash";
 import { onRequiredSelect } from "~/lib/select";
+import type { ItemDto, ItemId, PresetDto } from "~/types/item";
+import { parseItemId, unwrapItemId } from "~/types/item";
 
 type PresetLineDto = PresetDto["lines"][number];
 
 type PresetListProps = {
   items: ItemDto[];
-  onCreate: (input: CreatePresetInput) => void;
-  onRemove: (presetId: RemovePresetInput["presetId"]) => void;
-  onUpdate: (input: UpdatePresetInput) => void;
   presets: PresetDto[];
 };
 
@@ -99,7 +95,8 @@ function removeLineLabel(items: ItemDto[], itemId: string | undefined) {
   return `「${name}」を外す`;
 }
 
-export function PresetList({ items, onCreate, onRemove, onUpdate, presets }: PresetListProps) {
+export function PresetList({ items, presets }: PresetListProps) {
+  const { onCreate, onRemove, onUpdate } = useCatalogPresetActions();
   const { weekday: focusWeekday } = presetsRoute.useSearch();
   const createFormKey = [...presets]
     .map((preset) => preset.weekday)
@@ -178,7 +175,7 @@ function PresetCreateForm({
   onCreate,
   presets,
 }: {
-  onCreate: PresetListProps["onCreate"];
+  onCreate: CatalogPresetActions["onCreate"];
   presets: PresetDto[];
 }) {
   const remainingWeekdays = availableWeekdays(presets);
@@ -265,8 +262,8 @@ function PresetEditor({
   preset,
 }: {
   items: ItemDto[];
-  onRemove: PresetListProps["onRemove"];
-  onUpdate: PresetListProps["onUpdate"];
+  onRemove: CatalogPresetActions["onRemove"];
+  onUpdate: CatalogPresetActions["onUpdate"];
   preset: PresetDto;
 }) {
   //? 雛形行もフォーム状態(PresetSchema)が SSoT。行単位のエラーは Field の errors で表示する(formisch.md)

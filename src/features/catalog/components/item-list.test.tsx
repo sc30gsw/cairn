@@ -5,6 +5,39 @@ import { ItemList } from "~/features/catalog/components/item-list";
 import { PresetList } from "~/features/catalog/components/preset-list";
 import { renderWithMemoryRouter } from "~/test-utils/render";
 
+const catalogActions = vi.hoisted(() => ({
+  onApplyItemOrder: vi.fn(),
+  onCreateCategory: vi.fn(),
+  onCreateItem: vi.fn(),
+  onRemoveCategory: vi.fn(),
+  onRemoveItem: vi.fn(),
+  onRenameCategory: vi.fn(),
+  onRenameItem: vi.fn(),
+  onCreatePreset: vi.fn(),
+  onRemovePreset: vi.fn(),
+  onUpdatePreset: vi.fn(),
+}));
+
+vi.mock("~/features/catalog/hooks/use-catalog-item-actions", () => ({
+  useCatalogItemActions: () => ({
+    onApplyItemOrder: catalogActions.onApplyItemOrder,
+    onCreateCategory: catalogActions.onCreateCategory,
+    onCreateItem: catalogActions.onCreateItem,
+    onRemoveCategory: catalogActions.onRemoveCategory,
+    onRemoveItem: catalogActions.onRemoveItem,
+    onRenameCategory: catalogActions.onRenameCategory,
+    onRenameItem: catalogActions.onRenameItem,
+  }),
+}));
+
+vi.mock("~/features/catalog/hooks/use-catalog-preset-actions", () => ({
+  useCatalogPresetActions: () => ({
+    onCreate: catalogActions.onCreatePreset,
+    onRemove: catalogActions.onRemovePreset,
+    onUpdate: catalogActions.onUpdatePreset,
+  }),
+}));
+
 vi.mock("~/hooks/use-dnd", async () => {
   const dnd = await vi.importActual<typeof import("@hello-pangea/dnd")>("@hello-pangea/dnd");
   return {
@@ -27,21 +60,11 @@ test("カテゴリーの下に学習内容が並び、カテゴリーも編集�
         items={[
           { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
         ]}
-        onCreateCategory={vi.fn()}
-        onCreateItem={vi.fn()}
-        onRemoveCategory={vi.fn()}
-        onRemoveItem={vi.fn()}
-        onRenameCategory={vi.fn()}
-        onRenameItem={vi.fn()}
-        onApplyItemOrder={vi.fn()}
       />
       <PresetList
         items={[
           { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
         ]}
-        onCreate={vi.fn()}
-        onRemove={vi.fn()}
-        onUpdate={vi.fn()}
         presets={[
           {
             _id: "p1" as never,
@@ -83,9 +106,6 @@ test("プリセット追加は未登録の曜日だけ選べ、1つだけなら�
       items={[
         { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
       ]}
-      onCreate={vi.fn()}
-      onRemove={vi.fn()}
-      onUpdate={vi.fn()}
       presets={[
         {
           _id: "p1" as never,
@@ -138,9 +158,6 @@ test("プリセット追加は未登録曜日が2つ以上なら初期値は空"
       items={[
         { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
       ]}
-      onCreate={vi.fn()}
-      onRemove={vi.fn()}
-      onUpdate={vi.fn()}
       presets={[
         {
           _id: "p1" as never,
@@ -165,9 +182,6 @@ test("プリセット雛形を足すと未使用の項目が選ばれる", async
         { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
         { _id: "i2" as never, categoryId: "c1" as never, name: "英会話", sortOrder: 1 },
       ]}
-      onCreate={vi.fn()}
-      onRemove={vi.fn()}
-      onUpdate={vi.fn()}
       presets={[
         {
           _id: "p1" as never,
@@ -195,9 +209,6 @@ test("プリセット雛形ですべての項目を使うと雛形を足すは�
         { _id: "i1" as never, categoryId: "c1" as never, name: "Distinction 2000", sortOrder: 0 },
         { _id: "i2" as never, categoryId: "c1" as never, name: "英会話", sortOrder: 1 },
       ]}
-      onCreate={vi.fn()}
-      onRemove={vi.fn()}
-      onUpdate={vi.fn()}
       presets={[
         {
           _id: "p1" as never,

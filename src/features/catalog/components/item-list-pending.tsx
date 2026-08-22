@@ -5,22 +5,11 @@ import {
   catalogShimmerCategories,
   catalogShimmerItems,
 } from "~/features/catalog/lib/catalog-shimmer-template";
-import { shimmerNoop } from "~/lib/shimmer-noop";
 
 export function ItemListPending() {
   return (
     <Shimmer loading>
-      <ItemList
-        categories={catalogShimmerCategories}
-        items={catalogShimmerItems}
-        onApplyItemOrder={shimmerNoop}
-        onCreateCategory={shimmerNoop}
-        onCreateItem={shimmerNoop}
-        onRemoveCategory={shimmerNoop}
-        onRemoveItem={shimmerNoop}
-        onRenameCategory={shimmerNoop}
-        onRenameItem={shimmerNoop}
-      />
+      <ItemList categories={catalogShimmerCategories} items={catalogShimmerItems} />
     </Shimmer>
   );
 }
