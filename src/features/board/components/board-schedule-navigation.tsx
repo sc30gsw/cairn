@@ -82,7 +82,11 @@ function BoardScheduleDateControl({
   valueFormat: string;
 }) {
   return (
-    <ScheduleHeader.Control className={cn(classes.dateControl, className)} interactive={false}>
+    <ScheduleHeader.Control
+      className={cn(classes.dateControl, className)}
+      component="div"
+      interactive={false}
+    >
       <span className={classes.dateControlLabel}>{label}</span>
       <DatePickerInput
         aria-label={ariaLabel}
