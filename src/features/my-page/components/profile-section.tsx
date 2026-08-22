@@ -3,23 +3,23 @@ import { IconCamera } from "@tabler/icons-react";
 import { Result } from "better-result";
 import { useRef, useState } from "react";
 
-import { userLabel } from "~/features/auth/components/auth-account-menu";
+import { useAppShellUser } from "~/features/auth/hooks/use-auth-session";
 import { AvatarCropModal } from "~/features/my-page/components/avatar-crop-modal";
 import { useAvatarUploadDeps } from "~/features/my-page/hooks/use-avatar-upload-deps";
 import { avatarUploadErrorMessage, uploadAvatarBlob } from "~/features/my-page/lib/avatar-upload";
-import { updateProfileImage } from "~/features/my-page/lib/profile-actions";
-import type { AppShellUser } from "~/types/session";
+import { updateProfileImage } from "~/lib/profile-actions";
+import { userLabel } from "~/lib/user-label";
 
-type ProfileSectionProps = {
-  user: AppShellUser;
-};
-
-export function ProfileSection({ user }: ProfileSectionProps) {
+export function ProfileSection() {
+  const user = useAppShellUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadDeps = useAvatarUploadDeps();
   const [previewSrc, setPreviewSrc] = useState<null | string>(null);
   const [cropOpen, setCropOpen] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<null | string>(null);
+
+  if (user === null) {
+    return null;
+  }
 
   function openFilePicker() {
     fileInputRef.current?.click();
@@ -41,17 +41,12 @@ export function ProfileSection({ user }: ProfileSectionProps) {
     reader.readAsDataURL(file);
   }
 
-  async function handleConfirm(blob: Blob) {
-    setErrorMessage(null);
+  async function handleConfirm(blob: Blob): Promise<{ errorMessage: null | string }> {
     const uploadResult = await uploadAvatarBlob(blob, uploadDeps);
     if (Result.isError(uploadResult)) {
-      setErrorMessage(avatarUploadErrorMessage(uploadResult.error));
-      return;
+      return { errorMessage: avatarUploadErrorMessage(uploadResult.error) };
     }
-    const updateResult = await updateProfileImage(uploadResult.value);
-    if (updateResult.errorMessage !== null) {
-      setErrorMessage(updateResult.errorMessage);
-    }
+    return updateProfileImage(uploadResult.value);
   }
 
   return (
@@ -59,7 +54,7 @@ export function ProfileSection({ user }: ProfileSectionProps) {
       <Stack gap="md">
         <Title order={3}>プロフィール</Title>
         <Group gap="md" wrap="nowrap">
-          <Avatar alt={userLabel(user)} radius="xl" size={128} src={user.image ?? undefined}>
+          <Avatar alt={userLabel(user)} radius="xl" size={256} src={user.image ?? undefined}>
             {userLabel(user).slice(0, 1)}
           </Avatar>
           <Stack gap="xs">
@@ -75,15 +70,10 @@ export function ProfileSection({ user }: ProfileSectionProps) {
               アイコンを変更
             </Button>
             <Text c="dimmed" size="xs">
-              JPEG / PNG、正方形 256×256 以内
+              JPEG / PNG（保存時 256×256px に切り抜き）
             </Text>
           </Stack>
         </Group>
-        {errorMessage ? (
-          <Text c="red" size="sm">
-            {errorMessage}
-          </Text>
-        ) : null}
         <input
           accept="image/jpeg,image/png"
           hidden

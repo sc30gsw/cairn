@@ -1,6 +1,6 @@
-import type { SetupStatus } from "~/../convex/lib/setupStatus";
+import type { SetupStatus } from "~/features/onboarding/types/setup-status";
 
-const SETUP_STEP_IDS = ["items", "presets", "examGoal", "weeklyTargets"] as const;
+export const SETUP_STEP_IDS = ["items", "presets", "examGoal", "weeklyTargets"] as const;
 
 export type SetupStepId = (typeof SETUP_STEP_IDS)[number];
 

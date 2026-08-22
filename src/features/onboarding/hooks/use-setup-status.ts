@@ -3,18 +3,17 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
 
 import { api } from "~/../convex/_generated/api";
-import type { SetupStatus } from "~/../convex/lib/setupStatus";
 import {
   readDismissedSetupSteps,
   dismissSetupStep as persistDismissSetupStep,
 } from "~/features/onboarding/lib/onboarding-storage";
 import {
   firstIncompleteSetupStep,
-  incompleteSetupSteps,
   shouldShowHomeSetupStepper,
   type SetupStep,
   type SetupStepId,
 } from "~/features/onboarding/lib/setup-steps";
+import type { SetupStatus } from "~/features/onboarding/types/setup-status";
 
 function subscribeToDismissed(onStoreChange: () => void) {
   window.addEventListener("storage", onStoreChange);
@@ -42,7 +41,6 @@ export function useSetupStatus(): {
   dismissStep: (stepId: SetupStepId) => void;
   dismissed: Set<SetupStepId>;
   firstStep: SetupStep | null;
-  incompleteSteps: SetupStep[];
   showHomeStepper: boolean;
   status: SetupStatus;
 } {
@@ -59,7 +57,6 @@ export function useSetupStatus(): {
     },
     dismissed,
     firstStep,
-    incompleteSteps: incompleteSetupSteps(status),
     showHomeStepper: shouldShowHomeSetupStepper(status, dismissed),
     status,
   };

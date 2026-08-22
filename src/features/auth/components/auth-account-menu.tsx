@@ -4,17 +4,7 @@ import { Link } from "@tanstack/react-router";
 
 import { useAppShellUser } from "~/features/auth/hooks/use-auth-session";
 import { signOutAndReload } from "~/features/auth/lib/auth-actions";
-import type { AppShellUser } from "~/features/auth/types/session";
-
-export function userLabel(user: AppShellUser): string {
-  if (user.name !== null && user.name !== undefined && user.name !== "") {
-    return user.name;
-  }
-  if (user.email !== null && user.email !== undefined && user.email !== "") {
-    return user.email;
-  }
-  return "アカウント";
-}
+import { userLabel } from "~/lib/user-label";
 
 export function AuthAccountMenu() {
   const user = useAppShellUser();

@@ -2,21 +2,17 @@ import { Field, Form, useForm } from "@formisch/react";
 import { Button, Card, PasswordInput, Stack, Text, TextInput, Title } from "@mantine/core";
 import { useState } from "react";
 
+import { useAppShellUser } from "~/features/auth/hooks/use-auth-session";
 import {
   updateProfileName,
   updateProfilePassword,
   updateProfileUsername,
-} from "~/features/my-page/lib/profile-actions";
+} from "~/lib/profile-actions";
 import {
   ProfileNameSchema,
   ProfilePasswordSchema,
   ProfileUsernameSchema,
-} from "~/features/my-page/schemas/profile-schema";
-import type { AppShellUser } from "~/types/session";
-
-type AccountSectionProps = {
-  user: AppShellUser;
-};
+} from "~/lib/validation/profile-schema";
 
 function ProfileNameForm({ initialName }: { initialName: string }) {
   const [errorMessage, setErrorMessage] = useState<null | string>(null);
@@ -156,7 +152,13 @@ function ProfilePasswordForm() {
   );
 }
 
-export function AccountSection({ user }: AccountSectionProps) {
+export function AccountSection() {
+  const user = useAppShellUser();
+
+  if (user === null) {
+    return null;
+  }
+
   return (
     <Card padding="md">
       <Stack gap="lg">

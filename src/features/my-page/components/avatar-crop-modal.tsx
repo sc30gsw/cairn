@@ -1,42 +1,48 @@
 import { Button, Group, Modal, Stack, Text } from "@mantine/core";
-import { useRef, useState } from "react";
+import { Result } from "better-result";
+import { useRef, useState, useTransition } from "react";
 import Cropper, { type Area } from "react-easy-crop";
 
 const OUTPUT_SIZE = 256;
 
-async function cropImageToBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> {
-  const image = await loadImage(imageSrc);
-  const canvas = document.createElement("canvas");
-  canvas.width = OUTPUT_SIZE;
-  canvas.height = OUTPUT_SIZE;
-  const context = canvas.getContext("2d");
-  if (context === null) {
-    throw new Error("キャンバスを初期化できませんでした");
-  }
-  context.drawImage(
-    image,
-    pixelCrop.x,
-    pixelCrop.y,
-    pixelCrop.width,
-    pixelCrop.height,
-    0,
-    0,
-    OUTPUT_SIZE,
-    OUTPUT_SIZE,
-  );
+async function cropImageToBlob(imageSrc: string, pixelCrop: Area): Promise<Result<Blob, string>> {
+  return Result.tryPromise({
+    catch: (cause) => (cause instanceof Error ? cause.message : "画像の保存に失敗しました"),
+    try: async () => {
+      const image = await loadImage(imageSrc);
+      const canvas = document.createElement("canvas");
+      canvas.width = OUTPUT_SIZE;
+      canvas.height = OUTPUT_SIZE;
+      const context = canvas.getContext("2d");
+      if (context === null) {
+        throw new Error("キャンバスを初期化できませんでした");
+      }
+      context.drawImage(
+        image,
+        pixelCrop.x,
+        pixelCrop.y,
+        pixelCrop.width,
+        pixelCrop.height,
+        0,
+        0,
+        OUTPUT_SIZE,
+        OUTPUT_SIZE,
+      );
 
-  return await new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (blob === null) {
-          reject(new Error("画像の変換に失敗しました"));
-          return;
-        }
-        resolve(blob);
-      },
-      "image/jpeg",
-      0.92,
-    );
+      return await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          (blob) => {
+            if (blob === null) {
+              reject(new Error("画像の変換に失敗しました"));
+              return;
+            }
+            resolve(blob);
+          },
+          "image/jpeg",
+          0.92,
+        );
+      });
+    },
   });
 }
 
@@ -52,7 +58,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 type AvatarCropModalProps = {
   imageSrc: string;
   onClose: () => void;
-  onConfirm: (blob: Blob) => Promise<void>;
+  onConfirm: (blob: Blob) => Promise<{ errorMessage: null | string }>;
   opened: boolean;
 };
 
@@ -60,28 +66,33 @@ export function AvatarCropModal({ imageSrc, onClose, onConfirm, opened }: Avatar
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const croppedAreaRef = useRef<Area | null>(null);
-  const [submitting, setSubmitting] = useState(false);
+  const [isConfirmPending, startConfirmTransition] = useTransition();
   const [errorMessage, setErrorMessage] = useState<null | string>(null);
 
   function onCropComplete(_area: Area, pixels: Area) {
     croppedAreaRef.current = pixels;
   }
 
-  async function handleConfirm() {
+  function handleConfirm() {
     if (croppedAreaRef.current === null) {
       return;
     }
-    setSubmitting(true);
     setErrorMessage(null);
-    try {
-      const blob = await cropImageToBlob(imageSrc, croppedAreaRef.current);
-      await onConfirm(blob);
-      onClose();
-    } catch (error: unknown) {
-      setErrorMessage(error instanceof Error ? error.message : "画像の保存に失敗しました");
-    } finally {
-      setSubmitting(false);
-    }
+    startConfirmTransition(() => {
+      void (async () => {
+        const cropResult = await cropImageToBlob(imageSrc, croppedAreaRef.current!);
+        if (Result.isError(cropResult)) {
+          setErrorMessage(cropResult.error);
+          return;
+        }
+        const confirmResult = await onConfirm(cropResult.value);
+        if (confirmResult.errorMessage !== null) {
+          setErrorMessage(confirmResult.errorMessage);
+          return;
+        }
+        onClose();
+      })();
+    });
   }
 
   return (
@@ -108,7 +119,7 @@ export function AvatarCropModal({ imageSrc, onClose, onConfirm, opened }: Avatar
           <Button onClick={onClose} type="button" variant="default">
             キャンセル
           </Button>
-          <Button loading={submitting} onClick={handleConfirm} type="button">
+          <Button loading={isConfirmPending} onClick={handleConfirm} type="button">
             保存
           </Button>
         </Group>

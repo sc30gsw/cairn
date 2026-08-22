@@ -1,14 +1,12 @@
 import { expect, test, vi } from "vite-plus/test";
 
 import { LoginScreen } from "~/features/auth/components/login-screen";
+import { signInWithNotion } from "~/features/auth/lib/auth-actions";
 import { renderWithMantine } from "~/test-utils/render";
 
-const { signInWithNotion } = vi.hoisted(() => ({
-  signInWithNotion: vi.fn(),
-}));
-
 vi.mock("~/features/auth/lib/auth-actions", () => ({
-  signInWithNotion,
+  signInWithNotion: vi.fn(),
+  signInWithPasskey: vi.fn(),
   signInWithAccount: vi.fn(),
   signOutAndReload: vi.fn(),
   signUpWithAccount: vi.fn(),
@@ -40,4 +38,13 @@ test("アカウントログインの入力欄が見える", () => {
   expect(getByLabelText("ユーザー名またはメールアドレス")).toBeDefined();
   expect(getByLabelText("パスワード")).toBeDefined();
   expect(getByRole("button", { name: "Notion でログイン" })).toBeDefined();
+});
+
+test("パスキーでログインボタンが見える", () => {
+  vi.mocked(useAuthPublicConfig).mockReturnValue({
+    data: { notionSignIn: false, signUpEnabled: false },
+  } as ReturnType<typeof useAuthPublicConfig>);
+
+  const { getByRole } = renderWithMantine(<LoginScreen />);
+  expect(getByRole("button", { name: "パスキーでログイン" })).toBeDefined();
 });

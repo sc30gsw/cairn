@@ -11,6 +11,7 @@
 import type * as auth from "../auth.js";
 import type * as crons from "../crons.js";
 import type * as http from "../http.js";
+import type * as lib_avatarStorage from "../lib/avatarStorage.js";
 import type * as lib_boardScheduleColors from "../lib/boardScheduleColors.js";
 import type * as lib_boardScheduleRange from "../lib/boardScheduleRange.js";
 import type * as lib_catalog from "../lib/catalog.js";
@@ -67,7 +68,6 @@ import type * as mutations_presets_create from "../mutations/presets/create.js";
 import type * as mutations_presets_remove from "../mutations/presets/remove.js";
 import type * as mutations_presets_update from "../mutations/presets/update.js";
 import type * as mutations_profile_generateAvatarUploadUrl from "../mutations/profile/generateAvatarUploadUrl.js";
-import type * as mutations_profile_getAvatarUrl from "../mutations/profile/getAvatarUrl.js";
 import type * as mutations_rows_add from "../mutations/rows/add.js";
 import type * as mutations_rows_applyOrder from "../mutations/rows/applyOrder.js";
 import type * as mutations_rows_confirm from "../mutations/rows/confirm.js";
@@ -104,6 +104,7 @@ import type * as queries_history_yearHeatmap from "../queries/history/yearHeatma
 import type * as queries_items_list from "../queries/items/list.js";
 import type * as queries_items_recentConcreteActions from "../queries/items/recentConcreteActions.js";
 import type * as queries_presets_list from "../queries/presets/list.js";
+import type * as queries_profile_getAvatarUrl from "../queries/profile/getAvatarUrl.js";
 import type * as queries_session_get from "../queries/session/get.js";
 import type * as queries_setup_status from "../queries/setup/status.js";
 import type * as queries_targets_listWithProgress from "../queries/targets/listWithProgress.js";
@@ -214,6 +215,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   crons: typeof crons;
   http: typeof http;
+  "lib/avatarStorage": typeof lib_avatarStorage;
   "lib/boardScheduleColors": typeof lib_boardScheduleColors;
   "lib/boardScheduleRange": typeof lib_boardScheduleRange;
   "lib/catalog": typeof lib_catalog;
@@ -270,7 +272,6 @@ declare const fullApi: ApiFromModules<{
   "mutations/presets/remove": typeof mutations_presets_remove;
   "mutations/presets/update": typeof mutations_presets_update;
   "mutations/profile/generateAvatarUploadUrl": typeof mutations_profile_generateAvatarUploadUrl;
-  "mutations/profile/getAvatarUrl": typeof mutations_profile_getAvatarUrl;
   "mutations/rows/add": typeof mutations_rows_add;
   "mutations/rows/applyOrder": typeof mutations_rows_applyOrder;
   "mutations/rows/confirm": typeof mutations_rows_confirm;
@@ -307,6 +308,7 @@ declare const fullApi: ApiFromModules<{
   "queries/items/list": typeof queries_items_list;
   "queries/items/recentConcreteActions": typeof queries_items_recentConcreteActions;
   "queries/presets/list": typeof queries_presets_list;
+  "queries/profile/getAvatarUrl": typeof queries_profile_getAvatarUrl;
   "queries/session/get": typeof queries_session_get;
   "queries/setup/status": typeof queries_setup_status;
   "queries/targets/listWithProgress": typeof queries_targets_listWithProgress;

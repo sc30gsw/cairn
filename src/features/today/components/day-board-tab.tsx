@@ -1,11 +1,8 @@
 import { Stack } from "@mantine/core";
-import { Suspense, useState } from "react";
+import { useState } from "react";
 import type { DateJst } from "~domain/jst";
 import { mondayOfWeek, todayJst } from "~domain/jst";
 
-import { PendingComponent } from "~/components/pending-component";
-import { SetupStepper } from "~/features/onboarding/components/setup-stepper";
-import { useSetupStatus } from "~/features/onboarding/hooks/use-setup-status";
 import { DayBoard } from "~/features/today/components/day-board";
 import {
   useItemsList,
@@ -20,14 +17,6 @@ type DayBoardTabProps = {
   dateJst: DateJst;
   presetFromSearch?: DaySearch["preset"];
 };
-
-function DayBoardOnboarding() {
-  const { dismissStep, firstStep, showHomeStepper } = useSetupStatus();
-  if (!showHomeStepper || firstStep === null) {
-    return null;
-  }
-  return <SetupStepper activeStep={firstStep} onDismiss={() => dismissStep(firstStep.id)} />;
-}
 
 export function DayBoardTab({ dateJst, presetFromSearch }: DayBoardTabProps) {
   const today = todayJst();
@@ -44,9 +33,6 @@ export function DayBoardTab({ dateJst, presetFromSearch }: DayBoardTabProps) {
 
   return (
     <Stack gap="md">
-      <Suspense fallback={<PendingComponent />}>
-        <DayBoardOnboarding />
-      </Suspense>
       <DayBoard
         dateJst={dateJst}
         day={day}

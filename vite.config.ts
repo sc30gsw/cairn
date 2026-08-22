@@ -11,7 +11,17 @@ const reactDoctorRules = {
   ...TANSTACK_START_RULES,
 };
 
-const FEATURE_NAMES = ["auth", "board", "catalog", "goals", "history", "today", "trash"] as const;
+const FEATURE_NAMES = [
+  "auth",
+  "board",
+  "catalog",
+  "goals",
+  "history",
+  "my-page",
+  "onboarding",
+  "today",
+  "trash",
+] as const;
 
 const featureBoundaryLintOverrides = FEATURE_NAMES.map((feature) => ({
   files: [`src/features/${feature}/**`],
@@ -215,8 +225,10 @@ export default defineConfig({
       ],
       include: [
         "convex/lib/setupStatus.ts",
+        "convex/lib/avatarStorage.ts",
         "convex/services/setup/**/*.ts",
         "convex/queries/setup/**/*.ts",
+        "convex/queries/profile/**/*.ts",
         "convex/mutations/profile/**/*.ts",
         "convex/lib/concreteAction.ts",
         "convex/lib/catalog.ts",
@@ -232,7 +244,10 @@ export default defineConfig({
         "convex/mutations/targets/**/*.ts",
         "src/lib/validation/**/*.ts",
         "src/features/onboarding/lib/**/*.ts",
-        "src/features/my-page/lib/profile-actions.ts",
+        "src/features/onboarding/types/**/*.ts",
+        "src/lib/profile-actions.ts",
+        "src/lib/passkey-storage.ts",
+        "src/lib/user-label.ts",
         "src/features/my-page/lib/avatar-upload.ts",
         "src/features/**/schemas/**/*.ts",
         "src/features/today/lib/validate-confirm-row.ts",

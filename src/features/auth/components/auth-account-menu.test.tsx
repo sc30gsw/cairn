@@ -1,6 +1,7 @@
 import { expect, test, vi } from "vite-plus/test";
 
-import { AuthAccountMenu, userLabel } from "~/features/auth/components/auth-account-menu";
+import { AuthAccountMenu } from "~/features/auth/components/auth-account-menu";
+import { userLabel } from "~/lib/user-label";
 import { renderWithMantine } from "~/test-utils/render";
 
 vi.mock("~/features/auth/lib/auth-actions", () => ({

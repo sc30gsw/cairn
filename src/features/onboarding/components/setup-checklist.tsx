@@ -1,8 +1,8 @@
 import { Anchor, Badge, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
 
-import type { SetupStatus } from "~/../convex/lib/setupStatus";
 import { SETUP_STEPS, isSetupStepComplete } from "~/features/onboarding/lib/setup-steps";
+import type { SetupStatus } from "~/features/onboarding/types/setup-status";
 
 type SetupChecklistProps = {
   status: SetupStatus;
