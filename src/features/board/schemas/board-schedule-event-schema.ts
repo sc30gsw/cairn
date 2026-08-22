@@ -18,8 +18,8 @@ export const BoardScheduleEventSchema = v.pipe(
     blockId: v.optional(v.string()),
     color: BoardScheduleColorSchema,
     end: v.date(),
+    rowId: v.pipe(v.string(), v.nonEmpty("項目を選んでください")),
     start: v.date(),
-    title: v.pipe(v.string(), v.trim(), v.nonEmpty("タイトルを入力してください")),
   }),
   v.forward(
     v.partialCheck(

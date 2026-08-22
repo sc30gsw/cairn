@@ -1,6 +1,9 @@
 import { expect, test } from "vite-plus/test";
 
-import { dateToScheduleInstant, scheduleInstantToDate } from "~/features/board/lib/schedule-instant";
+import {
+  dateToScheduleInstant,
+  scheduleInstantToDate,
+} from "~/features/board/lib/schedule-instant";
 
 test("dateToScheduleInstant formats wall clock in JST", () => {
   const utcMidnight = new Date("2026-08-17T15:00:00.000Z");

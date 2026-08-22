@@ -3,7 +3,12 @@ import { Schedule, type ScheduleEventData } from "@mantine/schedule";
 import { useState } from "react";
 import type { DateJst } from "~domain/jst";
 
-import { BoardScheduleEventForm } from "~/features/board/components/board-schedule-event-form";
+import { BoardScheduleAllDayModal } from "~/features/board/components/board-schedule-all-day-modal";
+import {
+  blockFormValues,
+  BoardScheduleEventForm,
+  slotFormValues,
+} from "~/features/board/components/board-schedule-event-form";
 import type {
   BoardScheduleCreateInput,
   BoardScheduleMoveInput,
@@ -11,16 +16,18 @@ import type {
   BoardScheduleUpdateInput,
 } from "~/features/board/hooks/board-mutations";
 import {
+  boardAllDayMoreDate,
   boardScheduleBlockIds,
+  isBoardAllDayMoreEvent,
   toBoardScheduleEvents,
+  withAllDayOverflow,
 } from "~/features/board/lib/board-schedule-events";
-import {
-  dateToScheduleInstant,
-  scheduleInstantToDate,
-} from "~/features/board/lib/schedule-instant";
+import { dateToScheduleInstant } from "~/features/board/lib/schedule-instant";
 import type { BoardScheduleEventInput } from "~/features/board/schemas/board-schedule-event-schema";
 import type { BoardMastery, BoardRow, BoardScheduleBlock } from "~/features/board/types/board";
 import { SCHEDULE_LABELS_JA } from "~/lib/schedule-labels";
+
+const ALL_DAY_VISIBLE_LIMIT = 2;
 
 type BoardScheduleProps = {
   anchorDateJst: DateJst;
@@ -33,26 +40,6 @@ type BoardScheduleProps = {
   onUpdateBlock: (input: BoardScheduleUpdateInput) => Promise<void>;
   rows: readonly BoardRow[];
 };
-
-function blockFormValues(block: BoardScheduleBlock): BoardScheduleEventInput {
-  return {
-    blockId: block._id,
-    color: block.color as BoardScheduleEventInput["color"],
-    end: scheduleInstantToDate(block.endAt),
-    start: scheduleInstantToDate(block.startAt),
-    title: block.title,
-  };
-}
-
-function slotFormValues(start: string, end: string): BoardScheduleEventInput {
-  return {
-    blockId: undefined,
-    color: "blue",
-    end: scheduleInstantToDate(end),
-    start: scheduleInstantToDate(start),
-    title: "",
-  };
-}
 
 export function BoardSchedule({
   anchorDateJst,
@@ -67,11 +54,23 @@ export function BoardSchedule({
 }: BoardScheduleProps) {
   const [formOpened, setFormOpened] = useState(false);
   const [formValues, setFormValues] = useState<BoardScheduleEventInput | null>(null);
+  const [allDayModalDate, setAllDayModalDate] = useState<string | null>(null);
   const editableBlockIds = boardScheduleBlockIds(blocks);
-  const events = toBoardScheduleEvents(dateJst, rows, checkpoint, blocks);
+  const baseEvents = toBoardScheduleEvents(dateJst, rows, checkpoint, blocks);
+  const { events, hiddenEventsByDay } = withAllDayOverflow(
+    baseEvents,
+    ALL_DAY_VISIBLE_LIMIT,
+    SCHEDULE_LABELS_JA.moreLabel ?? ((count) => `+${count}件`),
+  );
+  const allDayModalEvents =
+    allDayModalDate === null ? [] : (hiddenEventsByDay.get(allDayModalDate) ?? []);
 
   function openCreate(start: string, end: string) {
-    setFormValues(slotFormValues(start, end));
+    const values = slotFormValues(rows, start, end);
+    if (values === null) {
+      return;
+    }
+    setFormValues(values);
     setFormOpened(true);
   }
 
@@ -81,6 +80,10 @@ export function BoardSchedule({
   }
 
   function handleEventClick(event: ScheduleEventData) {
+    if (isBoardAllDayMoreEvent(event.id)) {
+      setAllDayModalDate(boardAllDayMoreDate(event.id));
+      return;
+    }
     if (!editableBlockIds.has(String(event.id))) {
       return;
     }
@@ -120,7 +123,7 @@ export function BoardSchedule({
             openCreate(slotStart, slotEnd);
           }}
           weekViewProps={{ firstDayOfWeek: 1 }}
-          withDragSlotSelect
+          withDragSlotSelect={rows.length > 0}
           withEventsDragAndDrop
         />
       </Card>
@@ -142,10 +145,12 @@ export function BoardSchedule({
             color: values.color,
             endAt: dateToScheduleInstant(values.end),
             startAt: dateToScheduleInstant(values.start),
-            title: values.title,
           };
           if (values.blockId === undefined) {
-            await onCreateBlock(payload);
+            await onCreateBlock({
+              ...payload,
+              rowId: values.rowId as BoardRow["_id"],
+            });
             return;
           }
           await onUpdateBlock({
@@ -154,6 +159,13 @@ export function BoardSchedule({
           });
         }}
         opened={formOpened}
+        rows={rows}
+      />
+      <BoardScheduleAllDayModal
+        dateJst={allDayModalDate}
+        events={allDayModalEvents}
+        onClose={() => setAllDayModalDate(null)}
+        opened={allDayModalDate !== null}
       />
     </>
   );
