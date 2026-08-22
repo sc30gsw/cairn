@@ -1,4 +1,4 @@
-import { Card } from "@mantine/core";
+import { Card, Stack } from "@mantine/core";
 import {
   Schedule,
   type DateStringValue,
@@ -17,6 +17,7 @@ import {
   BoardScheduleEventForm,
   slotFormValues,
 } from "~/features/board/components/board-schedule-event-form";
+import { BoardScheduleNavigation } from "~/features/board/components/board-schedule-navigation";
 import type {
   BoardScheduleCreateInput,
   BoardScheduleMoveInput,
@@ -54,7 +55,10 @@ const DEFAULT_DAY_BLOCK_START = "09:00:00";
 const DEFAULT_DAY_BLOCK_END = "10:00:00";
 const boardMoreLabel = (hiddenEventsCount: number) => `+${hiddenEventsCount}件`;
 
+const BOARD_SCHEDULE_WITHOUT_HEADER = { withHeader: false as const };
+
 const BOARD_WEEK_VIEW_PROPS = {
+  ...BOARD_SCHEDULE_WITHOUT_HEADER,
   allDaySlotHeight: `calc(${ALL_DAY_ROW_HEIGHT} * ${ALL_DAY_VISIBLE_ROWS})`,
   classNames: {
     weekViewAllDaySlots: classes.weekAllDaySlots,
@@ -66,6 +70,7 @@ const BOARD_WEEK_VIEW_PROPS = {
 };
 
 const BOARD_MONTH_VIEW_PROPS = {
+  ...BOARD_SCHEDULE_WITHOUT_HEADER,
   firstDayOfWeek: 1 as const,
   maxEventsPerDay: BOARD_MONTH_MAX_EVENTS_PER_DAY,
 };
@@ -75,11 +80,20 @@ type BoardScheduleProps = {
   blocks: readonly BoardScheduleBlock[];
   checkpoint: BoardMastery | null;
   dateJst: DateJst;
+  monthDate: Date;
   onCreateBlock: (input: BoardScheduleCreateInput) => Promise<void>;
+  onDateChange: (dateJst: DateJst) => void;
+  onMonthChange: (yearMonth: string) => void;
   onMoveBlock: (input: BoardScheduleMoveInput) => Promise<void>;
   onRemoveBlock: (input: BoardScheduleRemoveInput) => Promise<void>;
+  onScheduleViewChange: (view: ScheduleViewLevel) => void;
   onUpdateBlock: (input: BoardScheduleUpdateInput) => Promise<void>;
+  onWeekChange: (weekAnchor: DateJst) => void;
   rows: readonly BoardRow[];
+  scheduleView: ScheduleViewLevel;
+  selectedDateJst: DateJst;
+  todayJst: DateJst;
+  weekAnchor: DateJst;
 };
 
 export function BoardSchedule({
@@ -87,19 +101,26 @@ export function BoardSchedule({
   blocks,
   checkpoint,
   dateJst,
+  monthDate,
   onCreateBlock,
+  onDateChange,
+  onMonthChange,
   onMoveBlock,
   onRemoveBlock,
+  onScheduleViewChange,
   onUpdateBlock,
+  onWeekChange,
   rows,
+  scheduleView,
+  selectedDateJst,
+  todayJst,
+  weekAnchor,
 }: BoardScheduleProps) {
   const [formOpened, setFormOpened] = useState(false);
   const [formValues, setFormValues] = useState<BoardScheduleEventInput | null>(null);
-  const [scheduleView, setScheduleView] = useState<ScheduleViewLevel>("week");
   const [expandedAllDayAnchor, setExpandedAllDayAnchor] =
     useState<BoardScheduleAllDayExpandAnchor | null>(null);
   const scheduleRootRef = useRef<HTMLDivElement>(null);
-  const editingBlockIdRef = useRef<BoardScheduleBlock["_id"] | undefined>(undefined);
   const editableBlockIds = boardScheduleBlockIds(blocks);
   const baseEvents = toBoardScheduleEvents(dateJst, rows, checkpoint, blocks);
   const moreLabel = SCHEDULE_LABELS_JA.moreLabel ?? boardMoreLabel;
@@ -114,7 +135,7 @@ export function BoardSchedule({
       ? []
       : allDayEventsForDay(baseEvents, expandedAllDayAnchor.dateJst);
 
-  const openAllDayExpand = (date: string, target: HTMLElement) => {
+  function openAllDayExpand(date: string, target: HTMLElement) {
     const root = scheduleRootRef.current;
     if (root === null) {
       return;
@@ -127,11 +148,7 @@ export function BoardSchedule({
       top: targetRect.bottom - rootRect.top + 4,
       width: targetRect.width,
     });
-  };
-
-  useEffect(() => {
-    editingBlockIdRef.current = formValues?.blockId as BoardScheduleBlock["_id"] | undefined;
-  }, [formValues]);
+  }
 
   useEffect(() => {
     if (expandedAllDayAnchor === null) {
@@ -201,6 +218,7 @@ export function BoardSchedule({
   });
 
   const dayViewProps = {
+    ...BOARD_SCHEDULE_WITHOUT_HEADER,
     allDaySlotHeight: DAY_VIEW_ALL_DAY_SLOT_HEIGHT,
     classNames: {
       dayViewAllDay: classes.dayAllDayContainer,
@@ -223,6 +241,7 @@ export function BoardSchedule({
   }
 
   const yearViewProps = {
+    ...BOARD_SCHEDULE_WITHOUT_HEADER,
     firstDayOfWeek: 1 as const,
     onDayClick: () => undefined,
     renderDay: createBoardScheduleYearRenderDay({
@@ -257,58 +276,70 @@ export function BoardSchedule({
           } as CSSProperties
         }
       >
-        <div className={classes.boardScheduleRoot} data-view={scheduleView} ref={scheduleRootRef}>
-          <Schedule
-            canDragEvent={(event) => editableBlockIds.has(String(event.id))}
-            date={anchorDateJst}
-            defaultView="week"
-            events={scheduleEvents}
-            labels={SCHEDULE_LABELS_JA}
-            locale="ja"
-            dayViewProps={dayViewProps}
-            monthViewProps={BOARD_MONTH_VIEW_PROPS}
-            onDayClick={handleDayClick}
-            onEventClick={handleEventClick}
-            onEventDrop={({ eventId, newEnd, newStart }) => {
-              collapseAllDayExpand();
-              if (!editableBlockIds.has(String(eventId))) {
-                return;
-              }
-              void onMoveBlock({
-                blockId: eventId as BoardScheduleBlock["_id"],
-                endAt: newEnd,
-                startAt: newStart,
-              });
-            }}
-            onSlotDragEnd={(rangeStart, rangeEnd) => {
-              openCreate(rangeStart, rangeEnd);
-            }}
-            onTimeSlotClick={({ slotEnd, slotStart }) => {
-              openCreate(slotStart, slotEnd);
-            }}
-            onViewChange={setScheduleView}
-            renderEventBody={(event) =>
-              isBoardAllDayMoreEvent(event.id) ? (
-                <span data-board-all-day-more="true">{event.title}</span>
-              ) : (
-                event.title
-              )
-            }
-            view={scheduleView}
-            weekViewProps={BOARD_WEEK_VIEW_PROPS}
-            yearViewProps={yearViewProps}
-            withDragSlotSelect={rows.length > 0}
-            withEventsDragAndDrop
+        <Stack gap="sm">
+          <BoardScheduleNavigation
+            monthDate={monthDate}
+            onDateChange={onDateChange}
+            onMonthChange={onMonthChange}
+            onViewChange={onScheduleViewChange}
+            onWeekChange={onWeekChange}
+            scheduleView={scheduleView}
+            selectedDateJst={selectedDateJst}
+            todayJst={todayJst}
+            weekAnchor={weekAnchor}
           />
-          {expandedAllDayAnchor === null ? null : (
-            <BoardScheduleAllDayExpand
-              anchor={expandedAllDayAnchor}
-              editableBlockIds={editableBlockIds}
-              events={expandedAllDayEvents}
-              onEventClick={openEditFromEvent}
+          <div className={classes.boardScheduleRoot} data-view={scheduleView} ref={scheduleRootRef}>
+            <Schedule
+              canDragEvent={(event) => editableBlockIds.has(String(event.id))}
+              date={anchorDateJst}
+              events={scheduleEvents}
+              labels={SCHEDULE_LABELS_JA}
+              locale="ja"
+              dayViewProps={dayViewProps}
+              monthViewProps={BOARD_MONTH_VIEW_PROPS}
+              onDayClick={handleDayClick}
+              onEventClick={handleEventClick}
+              onEventDrop={({ eventId, newEnd, newStart }) => {
+                collapseAllDayExpand();
+                if (!editableBlockIds.has(String(eventId))) {
+                  return;
+                }
+                void onMoveBlock({
+                  blockId: eventId as BoardScheduleBlock["_id"],
+                  endAt: newEnd,
+                  startAt: newStart,
+                });
+              }}
+              onSlotDragEnd={(rangeStart, rangeEnd) => {
+                openCreate(rangeStart, rangeEnd);
+              }}
+              onTimeSlotClick={({ slotEnd, slotStart }) => {
+                openCreate(slotStart, slotEnd);
+              }}
+              onViewChange={onScheduleViewChange}
+              renderEventBody={(event) =>
+                isBoardAllDayMoreEvent(event.id) ? (
+                  <span data-board-all-day-more="true">{event.title}</span>
+                ) : (
+                  event.title
+                )
+              }
+              view={scheduleView}
+              weekViewProps={BOARD_WEEK_VIEW_PROPS}
+              yearViewProps={yearViewProps}
+              withDragSlotSelect={rows.length > 0}
+              withEventsDragAndDrop
             />
-          )}
-        </div>
+            {expandedAllDayAnchor === null ? null : (
+              <BoardScheduleAllDayExpand
+                anchor={expandedAllDayAnchor}
+                editableBlockIds={editableBlockIds}
+                events={expandedAllDayEvents}
+                onEventClick={openEditFromEvent}
+              />
+            )}
+          </div>
+        </Stack>
       </Card>
       <BoardScheduleEventForm
         initialValues={formValues}
@@ -325,9 +356,7 @@ export function BoardSchedule({
         }
         onSubmit={async (values) => {
           const blockId =
-            values.blockId ??
-            editingBlockIdRef.current ??
-            (formValues?.blockId as BoardScheduleBlock["_id"] | undefined);
+            values.blockId ?? (formValues?.blockId as BoardScheduleBlock["_id"] | undefined);
           const payload = {
             color: values.color,
             endAt: dateToScheduleInstant(values.end),

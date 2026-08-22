@@ -9,6 +9,23 @@ test("BoardSearchSchema は kanban と schedule を受け入れる", () => {
   expect(v.safeParse(BoardSearchSchema, { tab: "schedule" }).success).toBe(true);
 });
 
+test("BoardSearchSchema は schedule view と日付パラメータを受け入れる", () => {
+  expect(
+    v.safeParse(BoardSearchSchema, {
+      tab: "schedule",
+      view: "week",
+      week: "2026-08-11",
+    }).success,
+  ).toBe(true);
+  expect(
+    v.safeParse(BoardSearchSchema, {
+      date: "2026-08-17",
+      month: "2026-08",
+      view: "day",
+    }).success,
+  ).toBe(true);
+});
+
 test("BoardSearchSchema は不正な tab を拒否する", () => {
   expect(v.safeParse(BoardSearchSchema, { tab: "month" }).success).toBe(false);
 });

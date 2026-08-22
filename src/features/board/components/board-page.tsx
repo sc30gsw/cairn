@@ -1,7 +1,7 @@
 import { Text } from "@mantine/core";
 import { Shimmer } from "@shimmer-from-structure/react";
 import { Suspense } from "react";
-import { todayJst } from "~domain/jst";
+import { todayJst, type DateJst } from "~domain/jst";
 
 import { PageTitle } from "~/components/page-title";
 import { BoardKanban } from "~/features/board/components/board-kanban";
@@ -25,6 +25,7 @@ import {
   boardShimmerRows,
 } from "~/features/board/lib/board-shimmer-template";
 import { nearestCheckpoint } from "~/features/board/lib/nearest-checkpoint";
+import type { BoardRow } from "~/features/board/types/board";
 import { useGoalsList, useObstaclesList } from "~/hooks/goals-queries";
 import { useOpenAndLoadDay } from "~/hooks/use-open-and-load-day";
 import { runMutation } from "~/lib/run-mutation";
@@ -73,16 +74,11 @@ function BoardReady() {
   const { data: day } = useOpenAndLoadDay(today, today);
   const { data: goals } = useGoalsList();
   const { data: obstacles } = useObstaclesList();
-  const { data: blocks } = useBoardScheduleBlocks(today);
   const applyOrder = useBoardApplyRowOrder(today, today);
   const confirmRow = useBoardConfirmRow(today, today);
   const skipRow = useBoardSkipRow(today, today);
   const unskipRow = useBoardUnskipRow(today, today);
   const unconfirmRow = useBoardUnconfirmRow(today, today);
-  const createBlock = useBoardScheduleCreate(today, today);
-  const updateBlock = useBoardScheduleUpdate(today, today);
-  const removeBlock = useBoardScheduleRemove(today);
-  const moveBlock = useBoardScheduleMove(today);
   const checkpoint = nearestCheckpoint(goals, today);
   const checkpointLabel =
     checkpoint === null
@@ -133,36 +129,78 @@ function BoardReady() {
         }
         onTabChange={setTab}
         schedule={
-          <BoardSchedule
-            anchorDateJst={today}
-            blocks={blocks}
-            checkpoint={checkpoint}
-            dateJst={today}
-            onCreateBlock={(input) =>
-              runMutation(() => createBlock.mutateAsync(input), {
-                successMessage: "予定を追加しました",
-              }).then(() => undefined)
-            }
-            onMoveBlock={(input) =>
-              runMutation(() => moveBlock.mutateAsync(input), {
-                successMessage: "予定を移動しました",
-              }).then(() => undefined)
-            }
-            onRemoveBlock={(input) =>
-              runMutation(() => removeBlock.mutateAsync(input), {
-                successMessage: "予定を削除しました",
-              }).then(() => undefined)
-            }
-            onUpdateBlock={(input) =>
-              runMutation(() => updateBlock.mutateAsync(input), {
-                successMessage: "予定を更新しました",
-              }).then(() => undefined)
-            }
-            rows={day.rows}
-          />
+          tab === "schedule" ? (
+            <BoardScheduleTab checkpoint={checkpoint} rows={day.rows} today={today} />
+          ) : null
         }
         tab={tab}
       />
     </>
+  );
+}
+
+function BoardScheduleTab({
+  checkpoint,
+  rows,
+  today,
+}: {
+  checkpoint: ReturnType<typeof nearestCheckpoint>;
+  rows: readonly BoardRow[];
+  today: DateJst;
+}) {
+  const {
+    monthDate,
+    scheduleAnchor,
+    scheduleView,
+    selectedDateJst,
+    setDate,
+    setMonth,
+    setScheduleView,
+    setWeek,
+    weekAnchor,
+  } = useBoardView();
+  const { data: blocks } = useBoardScheduleBlocks(scheduleAnchor);
+  const createBlock = useBoardScheduleCreate(today, today);
+  const updateBlock = useBoardScheduleUpdate(today, today);
+  const removeBlock = useBoardScheduleRemove(today);
+  const moveBlock = useBoardScheduleMove(today);
+
+  return (
+    <BoardSchedule
+      anchorDateJst={scheduleAnchor}
+      blocks={blocks}
+      checkpoint={checkpoint}
+      dateJst={today}
+      monthDate={monthDate}
+      onCreateBlock={(input) =>
+        runMutation(() => createBlock.mutateAsync(input), {
+          successMessage: "予定を追加しました",
+        }).then(() => undefined)
+      }
+      onDateChange={setDate}
+      onMonthChange={setMonth}
+      onMoveBlock={(input) =>
+        runMutation(() => moveBlock.mutateAsync(input), {
+          successMessage: "予定を移動しました",
+        }).then(() => undefined)
+      }
+      onRemoveBlock={(input) =>
+        runMutation(() => removeBlock.mutateAsync(input), {
+          successMessage: "予定を削除しました",
+        }).then(() => undefined)
+      }
+      onScheduleViewChange={setScheduleView}
+      onUpdateBlock={(input) =>
+        runMutation(() => updateBlock.mutateAsync(input), {
+          successMessage: "予定を更新しました",
+        }).then(() => undefined)
+      }
+      onWeekChange={setWeek}
+      rows={rows}
+      scheduleView={scheduleView}
+      selectedDateJst={selectedDateJst}
+      todayJst={today}
+      weekAnchor={weekAnchor}
+    />
   );
 }
