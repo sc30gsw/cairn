@@ -1,14 +1,15 @@
-import { Form, useForm } from "@formisch/react";
-import { Button, Group, Modal, Stack, Text } from "@mantine/core";
-import { useState } from "react";
+import { Field, Form, useForm } from "@formisch/react";
+import { Button, Group, Modal, Stack, Text, TextInput } from "@mantine/core";
+import { Result } from "better-result";
 
-import { authActionErrorMessage } from "~/lib/auth-action-result";
+import { AuthActionFeedback } from "~/features/auth/components/auth-action-feedback";
+import { useAuthActionTransition } from "~/features/auth/hooks/use-auth-action-transition";
+import { addPasskey } from "~/features/auth/lib/profile-actions";
 import {
   PASSKEY_MYPAGE_REPROMPTED_KEY,
   PASSKEY_SIGNUP_SKIPPED_KEY,
   writePasskeyFlag,
 } from "~/lib/passkey-storage";
-import { addPasskey } from "~/lib/profile-actions";
 import { PASSKEY_DEFAULT_DEVICE_NAME, PasskeyAddSchema } from "~/lib/validation/passkey-schema";
 
 type PasskeyPromptModalProps = {
@@ -18,7 +19,7 @@ type PasskeyPromptModalProps = {
 };
 
 export function PasskeyPromptModal({ context, onClose, opened }: PasskeyPromptModalProps) {
-  const [errorMessage, setErrorMessage] = useState<null | string>(null);
+  const { isPending, result, run } = useAuthActionTransition();
   const form = useForm({
     initialInput: { name: PASSKEY_DEFAULT_DEVICE_NAME },
     schema: PasskeyAddSchema,
@@ -39,10 +40,8 @@ export function PasskeyPromptModal({ context, onClose, opened }: PasskeyPromptMo
       <Form
         of={form}
         onSubmit={async (output) => {
-          setErrorMessage(null);
-          const message = authActionErrorMessage(await addPasskey(output));
-          if (message !== null) {
-            setErrorMessage(message);
+          const next = await run(() => addPasskey(output));
+          if (Result.isError(next)) {
             return;
           }
           writePasskeyFlag(PASSKEY_SIGNUP_SKIPPED_KEY, false);
@@ -53,16 +52,27 @@ export function PasskeyPromptModal({ context, onClose, opened }: PasskeyPromptMo
           <Text size="sm">
             次回からパスワードの代わりに、端末の生体認証で素早くログインできます。スキップしてもあとからマイページで追加できます。
           </Text>
-          {errorMessage ? (
-            <Text c="red" size="sm">
-              {errorMessage}
-            </Text>
-          ) : null}
+          <Field of={form} path={["name"]}>
+            {(field) => (
+              <TextInput
+                {...field.props}
+                error={field.errors?.[0]}
+                label="デバイス名"
+                placeholder={PASSKEY_DEFAULT_DEVICE_NAME}
+                value={field.input}
+              />
+            )}
+          </Field>
+          <AuthActionFeedback result={result} />
           <Group justify="flex-end">
             <Button onClick={handleSkip} type="button" variant="default">
               あとで
             </Button>
-            <Button disabled={form.isSubmitting} loading={form.isSubmitting} type="submit">
+            <Button
+              disabled={form.isSubmitting || isPending}
+              loading={form.isSubmitting || isPending}
+              type="submit"
+            >
               パスキーを追加
             </Button>
           </Group>

@@ -1,50 +1,32 @@
 import { Field, Form, reset, useForm } from "@formisch/react";
-import { Button, Card, PasswordInput, Stack, Text, TextInput, Title } from "@mantine/core";
-import { useState, useTransition } from "react";
+import { Button, Card, PasswordInput, Stack, TextInput, Title } from "@mantine/core";
+import { Result } from "better-result";
 
+import { AuthActionFeedback } from "~/features/auth/components/auth-action-feedback";
+import { useAuthActionTransition } from "~/features/auth/hooks/use-auth-action-transition";
 import { useAppShellUser } from "~/features/auth/hooks/use-auth-session";
-import { authActionErrorMessage } from "~/lib/auth-action-result";
 import {
   updateProfileName,
   updateProfilePassword,
   updateProfileUsername,
-} from "~/lib/profile-actions";
+} from "~/features/auth/lib/profile-actions";
 import {
   ProfileNameSchema,
   ProfilePasswordSchema,
   ProfileUsernameSchema,
 } from "~/lib/validation/profile-schema";
 
-function ProfileNameForm() {
-  const user = useAppShellUser();
-  const [errorMessage, setErrorMessage] = useState<null | string>(null);
-  const [successMessage, setSuccessMessage] = useState<null | string>(null);
-  const [isPending, startTransition] = useTransition();
-  const form = useForm({
-    initialInput: { name: user?.name ?? "" },
-    schema: ProfileNameSchema,
-  });
+const emptyPasswordInput = { currentPassword: "", newPassword: "" } as const;
 
-  if (user === null) {
-    return null;
-  }
+function ProfileNameForm({ name }: { name: string }) {
+  const { isPending, result, run } = useAuthActionTransition();
+  const form = useForm({ initialInput: { name }, schema: ProfileNameSchema });
 
   return (
     <Form
       of={form}
-      onSubmit={(output) => {
-        setErrorMessage(null);
-        setSuccessMessage(null);
-        startTransition(() => {
-          void updateProfileName(output).then((result) => {
-            const message = authActionErrorMessage(result);
-            if (message !== null) {
-              setErrorMessage(message);
-              return;
-            }
-            setSuccessMessage("表示名を保存しました");
-          });
-        });
+      onSubmit={async (output) => {
+        await run(() => updateProfileName(output));
       }}
     >
       <Stack gap="sm">
@@ -58,17 +40,13 @@ function ProfileNameForm() {
             />
           )}
         </Field>
-        {errorMessage ? (
-          <Text c="red" size="sm">
-            {errorMessage}
-          </Text>
-        ) : null}
-        {successMessage ? (
-          <Text c="green" size="sm">
-            {successMessage}
-          </Text>
-        ) : null}
-        <Button disabled={isPending} loading={isPending} size="xs" type="submit">
+        <AuthActionFeedback result={result} successMessage="表示名を保存しました" />
+        <Button
+          disabled={form.isSubmitting || isPending}
+          loading={form.isSubmitting || isPending}
+          size="xs"
+          type="submit"
+        >
           表示名を保存
         </Button>
       </Stack>
@@ -76,36 +54,15 @@ function ProfileNameForm() {
   );
 }
 
-function ProfileUsernameForm() {
-  const user = useAppShellUser();
-  const [errorMessage, setErrorMessage] = useState<null | string>(null);
-  const [successMessage, setSuccessMessage] = useState<null | string>(null);
-  const [isPending, startTransition] = useTransition();
-  const form = useForm({
-    initialInput: { username: user?.username ?? "" },
-    schema: ProfileUsernameSchema,
-  });
-
-  if (user === null) {
-    return null;
-  }
+function ProfileUsernameForm({ username }: { username: string }) {
+  const { isPending, result, run } = useAuthActionTransition();
+  const form = useForm({ initialInput: { username }, schema: ProfileUsernameSchema });
 
   return (
     <Form
       of={form}
-      onSubmit={(output) => {
-        setErrorMessage(null);
-        setSuccessMessage(null);
-        startTransition(() => {
-          void updateProfileUsername(output).then((result) => {
-            const message = authActionErrorMessage(result);
-            if (message !== null) {
-              setErrorMessage(message);
-              return;
-            }
-            setSuccessMessage("ユーザー名を保存しました");
-          });
-        });
+      onSubmit={async (output) => {
+        await run(() => updateProfileUsername(output));
       }}
     >
       <Stack gap="sm">
@@ -119,17 +76,13 @@ function ProfileUsernameForm() {
             />
           )}
         </Field>
-        {errorMessage ? (
-          <Text c="red" size="sm">
-            {errorMessage}
-          </Text>
-        ) : null}
-        {successMessage ? (
-          <Text c="green" size="sm">
-            {successMessage}
-          </Text>
-        ) : null}
-        <Button disabled={isPending} loading={isPending} size="xs" type="submit">
+        <AuthActionFeedback result={result} successMessage="ユーザー名を保存しました" />
+        <Button
+          disabled={form.isSubmitting || isPending}
+          loading={form.isSubmitting || isPending}
+          size="xs"
+          type="submit"
+        >
           ユーザー名を保存
         </Button>
       </Stack>
@@ -137,34 +90,18 @@ function ProfileUsernameForm() {
   );
 }
 
-const emptyPasswordInput = { currentPassword: "", newPassword: "" } as const;
-
 function ProfilePasswordForm() {
-  const [errorMessage, setErrorMessage] = useState<null | string>(null);
-  const [successMessage, setSuccessMessage] = useState<null | string>(null);
-  const [isPending, startTransition] = useTransition();
-  const form = useForm({
-    initialInput: emptyPasswordInput,
-    schema: ProfilePasswordSchema,
-  });
+  const { isPending, result, run } = useAuthActionTransition();
+  const form = useForm({ initialInput: emptyPasswordInput, schema: ProfilePasswordSchema });
 
   return (
     <Form
       of={form}
-      onSubmit={(output) => {
-        setErrorMessage(null);
-        setSuccessMessage(null);
-        startTransition(() => {
-          void updateProfilePassword(output).then((result) => {
-            const message = authActionErrorMessage(result);
-            if (message !== null) {
-              setErrorMessage(message);
-              return;
-            }
-            reset(form, { initialInput: emptyPasswordInput, keepInput: false });
-            setSuccessMessage("パスワードを変更しました");
-          });
-        });
+      onSubmit={async (output) => {
+        const next = await run(() => updateProfilePassword(output));
+        if (Result.isOk(next)) {
+          reset(form, { initialInput: emptyPasswordInput, keepInput: false });
+        }
       }}
     >
       <Stack gap="sm">
@@ -190,17 +127,13 @@ function ProfilePasswordForm() {
             />
           )}
         </Field>
-        {errorMessage ? (
-          <Text c="red" size="sm">
-            {errorMessage}
-          </Text>
-        ) : null}
-        {successMessage ? (
-          <Text c="green" size="sm">
-            {successMessage}
-          </Text>
-        ) : null}
-        <Button disabled={isPending} loading={isPending} size="xs" type="submit">
+        <AuthActionFeedback result={result} successMessage="パスワードを変更しました" />
+        <Button
+          disabled={form.isSubmitting || isPending}
+          loading={form.isSubmitting || isPending}
+          size="xs"
+          type="submit"
+        >
           パスワードを変更
         </Button>
       </Stack>
@@ -219,8 +152,8 @@ export function AccountSection() {
     <Card padding="md">
       <Stack gap="lg">
         <Title order={3}>アカウント</Title>
-        <ProfileNameForm key={user.name ?? ""} />
-        <ProfileUsernameForm key={user.username ?? ""} />
+        <ProfileNameForm key={user.name ?? ""} name={user.name ?? ""} />
+        <ProfileUsernameForm key={user.username ?? ""} username={user.username ?? ""} />
         <ProfilePasswordForm />
       </Stack>
     </Card>

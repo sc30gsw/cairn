@@ -1,78 +1,48 @@
 import type { Passkey } from "@better-auth/passkey/client";
-import { Form, useForm } from "@formisch/react";
-import { Button, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { Field, Form, useForm } from "@formisch/react";
+import { Button, Card, Group, Stack, Text, TextInput, Title } from "@mantine/core";
 import { Result } from "better-result";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 
-import { authActionErrorMessage } from "~/lib/auth-action-result";
-import { addPasskey, deletePasskey, listPasskeys } from "~/lib/profile-actions";
+import { AuthActionFeedback } from "~/features/auth/components/auth-action-feedback";
+import { useAuthActionTransition } from "~/features/auth/hooks/use-auth-action-transition";
+import { addPasskey, deletePasskey, listPasskeys } from "~/features/auth/lib/profile-actions";
+import type { AuthActionError } from "~/lib/errors";
+import { useResultTransition } from "~/lib/use-result-transition";
 import { PASSKEY_DEFAULT_DEVICE_NAME, PasskeyAddSchema } from "~/lib/validation/passkey-schema";
 
 export function PasskeySection() {
-  const [passkeys, setPasskeys] = useState<Passkey[]>([]);
-  const [errorMessage, setErrorMessage] = useState<null | string>(null);
-  const [successMessage, setSuccessMessage] = useState<null | string>(null);
-  const [isListPending, startListTransition] = useTransition();
-  const [isDeletePending, startDeleteTransition] = useTransition();
+  const list = useResultTransition<Passkey[], AuthActionError>();
+  const addAction = useAuthActionTransition();
+  const deleteAction = useAuthActionTransition();
   const [deletingId, setDeletingId] = useState<null | string>(null);
   const form = useForm({
     initialInput: { name: PASSKEY_DEFAULT_DEVICE_NAME },
     schema: PasskeyAddSchema,
   });
 
-  function applyPasskeyList(result: Awaited<ReturnType<typeof listPasskeys>>) {
-    if (Result.isError(result)) {
-      setErrorMessage(result.error.message);
-      setPasskeys([]);
-      return;
-    }
-    setErrorMessage(null);
-    setPasskeys(result.value);
-  }
-
-  function refreshPasskeys() {
-    startListTransition(() => {
-      void listPasskeys().then(applyPasskeyList);
-    });
-  }
-
-  function clearFeedback() {
-    setErrorMessage(null);
-    setSuccessMessage(null);
-  }
+  const passkeys = list.result !== null && Result.isOk(list.result) ? list.result.value : [];
+  const isListLoading = list.isPending && list.result === null;
+  const listErrorMessage =
+    list.result !== null && Result.isError(list.result) ? list.result.error.message : null;
 
   useEffect(() => {
-    let cancelled = false;
+    void list.run(() => listPasskeys());
+    // Mount-only passkey list load; `list.run` is stable enough for a single fetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only
+  }, []);
 
-    startListTransition(() => {
-      void listPasskeys().then((result) => {
-        if (cancelled) {
-          return;
-        }
-        applyPasskeyList(result);
-      });
-    });
+  async function refreshPasskeys() {
+    await list.run(() => listPasskeys());
+  }
 
-    return () => {
-      cancelled = true;
-    };
-  }, [startListTransition]);
-
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     setDeletingId(id);
-    clearFeedback();
-    startDeleteTransition(() => {
-      void deletePasskey(id).then(async (result) => {
-        setDeletingId(null);
-        const message = authActionErrorMessage(result);
-        if (message !== null) {
-          setErrorMessage(message);
-          return;
-        }
-        setSuccessMessage("パスキーを削除しました");
-        applyPasskeyList(await listPasskeys());
-      });
-    });
+    const next = await deleteAction.run(() => deletePasskey(id));
+    setDeletingId(null);
+    if (Result.isOk(next)) {
+      await refreshPasskeys();
+    }
   }
 
   return (
@@ -83,32 +53,46 @@ export function PasskeySection() {
           <Form
             of={form}
             onSubmit={async (output) => {
-              clearFeedback();
-              const result = await addPasskey(output);
-              const message = authActionErrorMessage(result);
-              if (message !== null) {
-                setErrorMessage(message);
-                return;
+              const next = await addAction.run(() => addPasskey(output));
+              if (Result.isOk(next)) {
+                await refreshPasskeys();
               }
-              setSuccessMessage("パスキーを追加しました");
-              refreshPasskeys();
             }}
           >
-            <Button
-              disabled={form.isSubmitting}
-              loading={form.isSubmitting}
-              size="xs"
-              type="submit"
-            >
-              パスキーを追加
-            </Button>
+            <Stack gap="sm">
+              <Field of={form} path={["name"]}>
+                {(field) => (
+                  <TextInput
+                    {...field.props}
+                    error={field.errors?.[0]}
+                    label="デバイス名"
+                    placeholder={PASSKEY_DEFAULT_DEVICE_NAME}
+                    size="xs"
+                    value={field.input}
+                  />
+                )}
+              </Field>
+              <Button
+                disabled={form.isSubmitting || addAction.isPending}
+                loading={form.isSubmitting || addAction.isPending}
+                size="xs"
+                type="submit"
+              >
+                パスキーを追加
+              </Button>
+            </Stack>
           </Form>
         </Group>
         <Text c="dimmed" size="sm">
           パスワードの代わりに端末の生体認証でログインできます。
         </Text>
-        {isListPending ? <Text size="sm">読み込み中…</Text> : null}
-        {!isListPending && passkeys.length === 0 ? (
+        {isListLoading ? <Text size="sm">読み込み中…</Text> : null}
+        {listErrorMessage ? (
+          <Text c="red" size="sm">
+            {listErrorMessage}
+          </Text>
+        ) : null}
+        {!isListLoading && passkeys.length === 0 ? (
           <Text c="dimmed" size="sm">
             登録済みのパスキーはありません。
           </Text>
@@ -125,8 +109,8 @@ export function PasskeySection() {
             </Stack>
             <Button
               color="red"
-              loading={isDeletePending && deletingId === passkey.id}
-              onClick={() => handleDelete(passkey.id)}
+              loading={deletingId === passkey.id}
+              onClick={() => void handleDelete(passkey.id)}
               size="xs"
               type="button"
               variant="light"
@@ -135,16 +119,8 @@ export function PasskeySection() {
             </Button>
           </Group>
         ))}
-        {errorMessage ? (
-          <Text c="red" size="sm">
-            {errorMessage}
-          </Text>
-        ) : null}
-        {successMessage ? (
-          <Text c="green" size="sm">
-            {successMessage}
-          </Text>
-        ) : null}
+        <AuthActionFeedback result={addAction.result} successMessage="パスキーを追加しました" />
+        <AuthActionFeedback result={deleteAction.result} successMessage="パスキーを削除しました" />
       </Stack>
     </Card>
   );

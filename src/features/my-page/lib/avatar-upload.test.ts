@@ -4,11 +4,13 @@ import { expect, test, vi } from "vite-plus/test";
 import { uploadAvatarBlob, avatarUploadErrorMessage } from "~/features/my-page/lib/avatar-upload";
 import { AuthActionError } from "~/lib/errors";
 
+const STORAGE_ID = "storage123" as never;
+
 test("JPEG 以外は拒否する", async () => {
   const blob = new Blob(["x"], { type: "image/gif" });
   const result = await uploadAvatarBlob(blob, {
+    claimAvatarUpload: async () => {},
     generateUploadUrl: async () => "https://example.com/upload",
-    getAvatarUrl: async () => "https://example.com/avatar",
   });
   expect(Result.isError(result)).toBe(true);
   if (Result.isError(result)) {
@@ -19,8 +21,8 @@ test("JPEG 以外は拒否する", async () => {
 test("512KB 超は拒否する", async () => {
   const blob = new Blob([new Uint8Array(513 * 1024)], { type: "image/jpeg" });
   const result = await uploadAvatarBlob(blob, {
+    claimAvatarUpload: async () => {},
     generateUploadUrl: async () => "https://example.com/upload",
-    getAvatarUrl: async () => "https://example.com/avatar",
   });
   expect(Result.isError(result)).toBe(true);
   if (Result.isError(result)) {
@@ -28,23 +30,25 @@ test("512KB 超は拒否する", async () => {
   }
 });
 
-test("アップロード成功時は URL を返す", async () => {
+test("アップロード成功時は storageId を返す", async () => {
   const blob = new Blob(["jpeg"], { type: "image/jpeg" });
   const fetchMock = vi.fn(async () => ({
-    json: async () => ({ storageId: "storage123" }),
+    json: async () => ({ storageId: STORAGE_ID }),
     ok: true,
   }));
   vi.stubGlobal("fetch", fetchMock);
 
+  const claimMock = vi.fn(async () => {});
   const result = await uploadAvatarBlob(blob, {
+    claimAvatarUpload: claimMock,
     generateUploadUrl: async () => "https://example.com/upload",
-    getAvatarUrl: async () => "https://cdn.example.com/avatar.jpg",
   });
 
   expect(Result.isOk(result)).toBe(true);
   if (Result.isOk(result)) {
-    expect(result.value).toBe("https://cdn.example.com/avatar.jpg");
+    expect(result.value).toBe(STORAGE_ID);
   }
+  expect(claimMock).toHaveBeenCalledWith(STORAGE_ID);
   expect(fetchMock).toHaveBeenCalledWith(
     "https://example.com/upload",
     expect.objectContaining({ method: "POST" }),
@@ -62,8 +66,8 @@ test("HTTP エラーは AvatarUploadFailed を返す", async () => {
   );
 
   const result = await uploadAvatarBlob(blob, {
+    claimAvatarUpload: async () => {},
     generateUploadUrl: async () => "https://example.com/upload",
-    getAvatarUrl: async () => "https://cdn.example.com/avatar.jpg",
   });
 
   expect(Result.isError(result)).toBe(true);
@@ -84,8 +88,8 @@ test("storageId が無いレスポンスは失敗する", async () => {
   );
 
   const result = await uploadAvatarBlob(blob, {
+    claimAvatarUpload: async () => {},
     generateUploadUrl: async () => "https://example.com/upload",
-    getAvatarUrl: async () => "https://cdn.example.com/avatar.jpg",
   });
 
   expect(Result.isError(result)).toBe(true);

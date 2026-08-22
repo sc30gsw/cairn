@@ -9,8 +9,12 @@ export function useAvatarUploadDeps() {
   const generateUploadUrl = useMutation(
     api.mutations.profile.generateAvatarUploadUrl.generateAvatarUploadUrl,
   );
+  const claimAvatarUpload = useMutation(api.mutations.profile.claimAvatarUpload.claimAvatarUpload);
 
   return {
+    claimAvatarUpload: async (storageId: Id<"_storage">) => {
+      await claimAvatarUpload({ storageId });
+    },
     generateUploadUrl: () => generateUploadUrl({}),
     getAvatarUrl: (storageId: Id<"_storage">) =>
       convex.query(api.queries.profile.getAvatarUrl.getAvatarUrl, { storageId }),

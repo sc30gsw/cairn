@@ -10,7 +10,7 @@ const { addPasskey } = vi.hoisted(() => ({
   addPasskey: vi.fn(),
 }));
 
-vi.mock("~/lib/profile-actions", () => ({
+vi.mock("~/features/auth/lib/profile-actions", () => ({
   addPasskey,
 }));
 

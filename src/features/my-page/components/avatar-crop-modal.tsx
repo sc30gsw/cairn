@@ -1,7 +1,9 @@
 import { Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { Result } from "better-result";
-import { useRef, useState, useTransition } from "react";
+import { useRef, useState } from "react";
 import Cropper, { type Area } from "react-easy-crop";
+
+import { useResultTransition } from "~/lib/use-result-transition";
 
 const OUTPUT_SIZE = 256;
 
@@ -58,7 +60,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 type AvatarCropModalProps = {
   imageSrc: string;
   onClose: () => void;
-  onConfirm: (blob: Blob) => Promise<{ errorMessage: null | string }>;
+  onConfirm: (blob: Blob) => Promise<Result<void, string>>;
   opened: boolean;
 };
 
@@ -66,34 +68,30 @@ export function AvatarCropModal({ imageSrc, onClose, onConfirm, opened }: Avatar
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const croppedAreaRef = useRef<Area | null>(null);
-  const [isConfirmPending, startConfirmTransition] = useTransition();
-  const [errorMessage, setErrorMessage] = useState<null | string>(null);
+  const confirm = useResultTransition<void, string>();
 
   function onCropComplete(_area: Area, pixels: Area) {
     croppedAreaRef.current = pixels;
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
     if (croppedAreaRef.current === null) {
       return;
     }
-    setErrorMessage(null);
-    startConfirmTransition(() => {
-      void (async () => {
-        const cropResult = await cropImageToBlob(imageSrc, croppedAreaRef.current!);
-        if (Result.isError(cropResult)) {
-          setErrorMessage(cropResult.error);
-          return;
-        }
-        const confirmResult = await onConfirm(cropResult.value);
-        if (confirmResult.errorMessage !== null) {
-          setErrorMessage(confirmResult.errorMessage);
-          return;
-        }
-        onClose();
-      })();
+    const next = await confirm.run(async () => {
+      const cropResult = await cropImageToBlob(imageSrc, croppedAreaRef.current!);
+      if (Result.isError(cropResult)) {
+        return Result.err(cropResult.error);
+      }
+      return await onConfirm(cropResult.value);
     });
+    if (Result.isOk(next)) {
+      onClose();
+    }
   }
+
+  const errorMessage =
+    confirm.result !== null && Result.isError(confirm.result) ? confirm.result.error : null;
 
   return (
     <Modal onClose={onClose} opened={opened} size="md" title="アイコンを切り抜く">
@@ -119,7 +117,7 @@ export function AvatarCropModal({ imageSrc, onClose, onConfirm, opened }: Avatar
           <Button onClick={onClose} type="button" variant="default">
             キャンセル
           </Button>
-          <Button loading={isConfirmPending} onClick={handleConfirm} type="button">
+          <Button loading={confirm.isPending} onClick={() => void handleConfirm()} type="button">
             保存
           </Button>
         </Group>

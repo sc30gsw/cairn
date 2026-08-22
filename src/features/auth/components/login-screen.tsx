@@ -1,26 +1,13 @@
 import { Button, Card, Center, Divider, Stack, Text, Title } from "@mantine/core";
-import { useState, useTransition } from "react";
 
 import { AccountAuthPanel } from "~/features/auth/components/account-auth-form";
+import { AuthActionFeedback } from "~/features/auth/components/auth-action-feedback";
+import { useAuthActionTransition } from "~/features/auth/hooks/use-auth-action-transition";
 import { signInWithNotion, signInWithPasskey } from "~/features/auth/lib/auth-actions";
-import { authActionErrorMessage } from "~/lib/auth-action-result";
 import { DISPLAY_FONT } from "~/lib/theme";
 
 export function LoginScreen() {
-  const [passkeyError, setPasskeyError] = useState<null | string>(null);
-  const [isPasskeyPending, startPasskeyTransition] = useTransition();
-
-  function handlePasskeySignIn() {
-    setPasskeyError(null);
-    startPasskeyTransition(() => {
-      void signInWithPasskey().then((result) => {
-        const message = authActionErrorMessage(result);
-        if (message !== null) {
-          setPasskeyError(message);
-        }
-      });
-    });
-  }
+  const passkeyAction = useAuthActionTransition();
 
   return (
     <Center h="100dvh">
@@ -37,18 +24,14 @@ export function LoginScreen() {
           <Divider label="または" labelPosition="center" />
           <Button
             fullWidth
-            loading={isPasskeyPending}
-            onClick={handlePasskeySignIn}
+            loading={passkeyAction.isPending}
+            onClick={() => void passkeyAction.run(() => signInWithPasskey())}
             size="md"
             variant="light"
           >
             パスキーでログイン
           </Button>
-          {passkeyError ? (
-            <Text c="red" size="sm">
-              {passkeyError}
-            </Text>
-          ) : null}
+          <AuthActionFeedback result={passkeyAction.result} />
           <Button fullWidth onClick={signInWithNotion} size="md" variant="light">
             Notion でログイン
           </Button>

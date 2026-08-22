@@ -1,6 +1,7 @@
 import type { Passkey } from "@better-auth/passkey/client";
 import { Result } from "better-result";
 
+import type { Id } from "~/../convex/_generated/dataModel";
 import type { AuthActionResult } from "~/lib/auth-action-result";
 import { authClient } from "~/lib/auth-client";
 import { type AuthErrorContext, presentAuthError } from "~/lib/auth-error-messages";
@@ -72,8 +73,12 @@ export async function updateProfilePassword(
   }, "changePassword");
 }
 
-export async function updateProfileImage(imageUrl: string): Promise<AuthActionResult> {
+export async function updateProfileImage(
+  storageId: Id<"_storage">,
+  resolveAvatarUrl: (storageId: Id<"_storage">) => Promise<string>,
+): Promise<AuthActionResult> {
   return runProfileAction(async () => {
+    const imageUrl = await resolveAvatarUrl(storageId);
     const authResult = await authClient.updateUser({ image: imageUrl });
     if (authResult.error) {
       throw authActionError(authResult.error, "updateImage");

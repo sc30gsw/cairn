@@ -1,8 +1,6 @@
 import { Result } from "better-result";
 import { expect, test, vi, beforeEach } from "vite-plus/test";
 
-import { authActionErrorMessage } from "~/lib/auth-action-result";
-import { authClient } from "~/lib/auth-client";
 import {
   addPasskey,
   deletePasskey,
@@ -10,7 +8,9 @@ import {
   updateProfileName,
   updateProfilePassword,
   updateProfileUsername,
-} from "~/lib/profile-actions";
+} from "~/features/auth/lib/profile-actions";
+import { authActionErrorMessage } from "~/lib/auth-action-result";
+import { authClient } from "~/lib/auth-client";
 
 vi.mock("~/lib/auth-client", () => ({
   authClient: {
@@ -100,10 +100,13 @@ test("パスワード更新エラーは利用者向けの errorMessage を返す
 test("アイコン URL 更新に成功すると errorMessage は null で reload しない", async () => {
   vi.mocked(authClient.updateUser).mockResolvedValue({ data: {}, error: null });
   const reload = vi.spyOn(location, "reload").mockImplementation(() => {});
+  const storageId = "storage123" as never;
+  const resolveAvatarUrl = vi.fn(async () => "https://example.com/avatar.jpg");
 
-  const result = await updateProfileImage("https://example.com/avatar.jpg");
+  const result = await updateProfileImage(storageId, resolveAvatarUrl);
 
   expect(Result.isOk(result)).toBe(true);
+  expect(resolveAvatarUrl).toHaveBeenCalledWith(storageId);
   expect(authClient.updateUser).toHaveBeenCalledWith({
     image: "https://example.com/avatar.jpg",
   });

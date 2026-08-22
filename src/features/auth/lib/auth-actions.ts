@@ -9,7 +9,12 @@ import type { AuthActionResult } from "~/lib/auth-action-result";
 import { authClient } from "~/lib/auth-client";
 import { type AuthErrorContext, presentAuthError } from "~/lib/auth-error-messages";
 import { AuthActionError } from "~/lib/errors";
-import { PASSKEY_SIGNUP_PROMPT_KEY, writePasskeyFlag } from "~/lib/passkey-storage";
+import {
+  PASSKEY_SIGNUP_PROMPT_KEY,
+  PASSKEY_OAUTH_PENDING_KEY,
+  writePasskeyFlag,
+  writePasskeySessionFlag,
+} from "~/lib/passkey-storage";
 
 function reloadAfterAuth() {
   location.reload();
@@ -78,6 +83,7 @@ export async function signInWithPasskey(): Promise<AuthActionResult> {
 }
 
 export function signInWithNotion() {
+  writePasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY, true);
   void authClient.signIn.social({ provider: "notion" });
 }
 

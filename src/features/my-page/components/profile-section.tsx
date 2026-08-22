@@ -4,11 +4,10 @@ import { Result } from "better-result";
 import { useRef, useState } from "react";
 
 import { useAppShellUser } from "~/features/auth/hooks/use-auth-session";
+import { updateProfileImage } from "~/features/auth/lib/profile-actions";
 import { AvatarCropModal } from "~/features/my-page/components/avatar-crop-modal";
 import { useAvatarUploadDeps } from "~/features/my-page/hooks/use-avatar-upload-deps";
 import { avatarUploadErrorMessage, uploadAvatarBlob } from "~/features/my-page/lib/avatar-upload";
-import { authActionErrorMessage } from "~/lib/auth-action-result";
-import { updateProfileImage } from "~/lib/profile-actions";
 import { userLabel } from "~/lib/user-label";
 
 export function ProfileSection() {
@@ -42,12 +41,16 @@ export function ProfileSection() {
     reader.readAsDataURL(file);
   }
 
-  async function handleConfirm(blob: Blob): Promise<{ errorMessage: null | string }> {
+  async function handleConfirm(blob: Blob): Promise<Result<void, string>> {
     const uploadResult = await uploadAvatarBlob(blob, uploadDeps);
     if (Result.isError(uploadResult)) {
-      return { errorMessage: avatarUploadErrorMessage(uploadResult.error) };
+      return Result.err(avatarUploadErrorMessage(uploadResult.error));
     }
-    return { errorMessage: authActionErrorMessage(await updateProfileImage(uploadResult.value)) };
+    const updateResult = await updateProfileImage(uploadResult.value, uploadDeps.getAvatarUrl);
+    if (Result.isError(updateResult)) {
+      return Result.err(updateResult.error.message);
+    }
+    return Result.ok(undefined);
   }
 
   return (

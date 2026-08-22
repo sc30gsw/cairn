@@ -1,9 +1,9 @@
 import { Result } from "better-result";
+import { MAX_AVATAR_BYTES } from "~domain/avatarStorage";
 
 import type { Id } from "~/../convex/_generated/dataModel";
 import { AuthActionError } from "~/lib/errors";
 
-const MAX_AVATAR_BYTES = 512 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png"]);
 
 export type AvatarUploadError =
@@ -15,10 +15,10 @@ export type AvatarUploadError =
 export async function uploadAvatarBlob(
   blob: Blob,
   deps: {
+    claimAvatarUpload: (storageId: Id<"_storage">) => Promise<void>;
     generateUploadUrl: () => Promise<string>;
-    getAvatarUrl: (storageId: Id<"_storage">) => Promise<string>;
   },
-): Promise<Result<string, AvatarUploadError>> {
+): Promise<Result<Id<"_storage">, AvatarUploadError>> {
   if (!ALLOWED_TYPES.has(blob.type)) {
     return Result.err({
       _tag: "AvatarUnsupportedType",
@@ -51,7 +51,8 @@ export async function uploadAvatarBlob(
       if (json.storageId === undefined) {
         throw new Error("ストレージ ID を取得できませんでした");
       }
-      return deps.getAvatarUrl(json.storageId);
+      await deps.claimAvatarUpload(json.storageId);
+      return json.storageId;
     },
   });
 
