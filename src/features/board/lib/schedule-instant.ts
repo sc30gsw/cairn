@@ -22,6 +22,11 @@ export function dateToScheduleInstant(value: Date): string {
   return `${formatPart(parts, "year")}-${formatPart(parts, "month")}-${formatPart(parts, "day")} ${formatPart(parts, "hour")}:${formatPart(parts, "minute")}:${formatPart(parts, "second")}`;
 }
 
+export function formatScheduleTimeLabel(value: string | Date): string {
+  const instant = typeof value === "string" ? value : dateToScheduleInstant(value);
+  return instant.slice(11, 16);
+}
+
 export function scheduleInstantToDate(value: string): Date {
   const match = SCHEDULE_INSTANT_FORMAT.exec(value);
   if (!match?.groups) {

@@ -2,6 +2,7 @@ import { expect, test } from "vite-plus/test";
 
 import {
   dateToScheduleInstant,
+  formatScheduleTimeLabel,
   scheduleInstantToDate,
 } from "~/features/board/lib/schedule-instant";
 
@@ -23,4 +24,9 @@ test("schedule instant round trip preserves JST wall clock", () => {
 
   expect(instant).toBe("2026-08-18 10:15:00");
   expect(dateToScheduleInstant(scheduleInstantToDate(instant))).toBe(instant);
+});
+
+test("formatScheduleTimeLabel returns HH:mm from string or Date", () => {
+  expect(formatScheduleTimeLabel("2026-08-23 11:00:00")).toBe("11:00");
+  expect(formatScheduleTimeLabel(scheduleInstantToDate("2026-08-23 11:00:00"))).toBe("11:00");
 });

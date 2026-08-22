@@ -18,14 +18,63 @@ import {
   isBoardAllDayMoreEvent,
   timedEventsForDay,
 } from "~/features/board/lib/board-schedule-events";
+import { formatScheduleTimeLabel } from "~/features/board/lib/schedule-instant";
 
-function formatScheduleTime(value: string | Date): string {
-  const instant = typeof value === "string" ? value : "";
-  return instant.slice(11, 16);
-}
+import classes from "~/features/board/components/board-schedule.module.css";
 
 function stopDayClick(event: MouseEvent) {
   event.stopPropagation();
+}
+
+type YearPopoverTimedEventProps = {
+  editable: boolean;
+  event: ScheduleEventData;
+  onEditBlock: (event: ScheduleEventData) => void;
+  onClose: () => void;
+};
+
+function YearPopoverTimedEvent({
+  editable,
+  event,
+  onClose,
+  onEditBlock,
+}: YearPopoverTimedEventProps) {
+  const color = event.color ?? "gray";
+  const timeLabel = `${formatScheduleTimeLabel(event.start)}–${formatScheduleTimeLabel(event.end)}`;
+  const row = (
+    <Box
+      className={classes.yearPopoverEventRow}
+      style={{
+        backgroundColor: `var(--mantine-color-${color}-light)`,
+        color: `var(--mantine-color-${color}-light-color)`,
+      }}
+    >
+      <Text inherit lineClamp={2} size="sm">
+        {event.title}
+      </Text>
+      <Text inherit opacity={0.85} size="xs">
+        {timeLabel}
+      </Text>
+    </Box>
+  );
+
+  if (!editable) {
+    return row;
+  }
+
+  return (
+    <UnstyledButton
+      className={classes.yearPopoverEventButton}
+      onClick={(clickEvent) => {
+        stopDayClick(clickEvent);
+        onClose();
+        onEditBlock(event);
+      }}
+      type="button"
+    >
+      {row}
+    </UnstyledButton>
+  );
 }
 
 type BoardScheduleYearDayPopoverProps = {
@@ -75,6 +124,11 @@ export function BoardScheduleYearDayPopover({
     }, 120);
   }
 
+  function closePopover() {
+    clearCloseTimer();
+    setOpened(false);
+  }
+
   return (
     <Popover
       closeOnClickOutside
@@ -88,21 +142,19 @@ export function BoardScheduleYearDayPopover({
     >
       <Popover.Target>
         <Box
+          className={classes.yearDayTarget}
           component="span"
           onMouseEnter={openPopover}
           onMouseLeave={scheduleClose}
-          style={{ display: "block", height: "100%", width: "100%" }}
         >
           {Number(dateJst.slice(8, 10))}
-          <Box component="span" display="flex" mt={2}>
+          <Box className={classes.yearDayIndicators} component="span">
             {indicatorEvents.map((event) => (
               <Box
                 bg={getThemeColor(event.color ?? "gray", theme)}
-                bdrs={999}
-                h={4}
+                className={classes.yearDayIndicator}
+                component="span"
                 key={String(event.id)}
-                mr={2}
-                w={4}
               />
             ))}
           </Box>
@@ -146,58 +198,22 @@ export function BoardScheduleYearDayPopover({
             </Text>
           ) : (
             <Stack gap={4}>
-              {timedEvents.map((event) => {
-                const editable = editableBlockIds.has(String(event.id));
-                const timeLabel = `${formatScheduleTime(event.start)}–${formatScheduleTime(event.end)}`;
-                const label = (
-                  <Stack gap={0}>
-                    <Text inherit lineClamp={1} size="sm">
-                      {event.title}
-                    </Text>
-                    <Text c="dimmed" inherit size="xs">
-                      {timeLabel}
-                    </Text>
-                  </Stack>
-                );
-
-                if (!editable) {
-                  return (
-                    <Badge
-                      color={event.color ?? "gray"}
-                      fullWidth
-                      key={String(event.id)}
-                      size="sm"
-                      variant="light"
-                    >
-                      {label}
-                    </Badge>
-                  );
-                }
-
-                return (
-                  <UnstyledButton
-                    className="bg-gray-1 hover:bg-gray-2 w-full rounded-sm px-2 py-1 text-left"
-                    key={String(event.id)}
-                    onClick={(clickEvent) => {
-                      stopDayClick(clickEvent);
-                      setOpened(false);
-                      onEditBlock(event);
-                    }}
-                    type="button"
-                  >
-                    <Badge color={event.color ?? "gray"} fullWidth size="sm" variant="light">
-                      {label}
-                    </Badge>
-                  </UnstyledButton>
-                );
-              })}
+              {timedEvents.map((event) => (
+                <YearPopoverTimedEvent
+                  editable={editableBlockIds.has(String(event.id))}
+                  event={event}
+                  key={String(event.id)}
+                  onClose={closePopover}
+                  onEditBlock={onEditBlock}
+                />
+              ))}
             </Stack>
           )}
           <Button
             disabled={!canAdd}
             onClick={(clickEvent) => {
               stopDayClick(clickEvent);
-              setOpened(false);
+              closePopover();
               onAdd(dateJst);
             }}
             size="xs"
