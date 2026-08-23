@@ -42,4 +42,5 @@ test("BoardScheduleEventForm renders row options and submit button", () => {
   expect(getByText("予定を追加")).toBeDefined();
   expect(getByRole("button", { name: "保存" })).toBeDefined();
   expect(getByText("Distinction")).toBeDefined();
+  expect(document.querySelector(".mantine-ColorSwatch-root")).not.toBeNull();
 });

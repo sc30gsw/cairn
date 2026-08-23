@@ -1,13 +1,15 @@
 import { Field, Form, reset, useForm } from "@formisch/react";
 import type { SubmitHandler } from "@formisch/react";
-import { Button, Group, Modal, Select, Stack } from "@mantine/core";
+import { Button, ColorSwatch, Group, Modal, Select, Stack } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
 import { useEffect } from "react";
 
+import { boardScheduleColorCss } from "~/features/board/lib/board-schedule-color-ui";
 import { scheduleInstantToDate } from "~/features/board/lib/schedule-instant";
 import {
   BOARD_SCHEDULE_COLORS,
   BoardScheduleEventSchema,
+  type BoardScheduleColor,
   type BoardScheduleEventInput,
   type BoardScheduleEventOutput,
 } from "~/features/board/schemas/board-schedule-event-schema";
@@ -23,6 +25,15 @@ type BoardScheduleEventFormProps = {
 };
 
 const colorOptions = BOARD_SCHEDULE_COLORS.map((color) => ({ label: color, value: color }));
+
+function renderScheduleColorOption(color: BoardScheduleColor) {
+  return (
+    <Group gap="xs" wrap="nowrap">
+      <ColorSwatch color={boardScheduleColorCss(color)} radius="sm" size={16} />
+      <span>{color}</span>
+    </Group>
+  );
+}
 
 export function BoardScheduleEventForm({
   initialValues,
@@ -120,11 +131,20 @@ export function BoardScheduleEventForm({
                 {...field.props}
                 data={colorOptions}
                 label="色"
+                leftSection={
+                  field.input === undefined ? undefined : (
+                    <ColorSwatch color={boardScheduleColorCss(field.input)} radius="sm" size={18} />
+                  )
+                }
+                leftSectionWidth={32}
                 onChange={(value) => {
                   if (value !== null) {
                     field.onChange(value as BoardScheduleEventInput["color"]);
                   }
                 }}
+                renderOption={({ option }) =>
+                  renderScheduleColorOption(option.value as BoardScheduleColor)
+                }
                 value={field.input}
               />
             )}
