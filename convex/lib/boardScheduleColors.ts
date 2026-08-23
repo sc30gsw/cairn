@@ -1,15 +1,22 @@
+import type { MantineColor } from "@mantine/core";
 import { v } from "convex/values";
+
+// export type DefaultMantineColor = 'dark' | 'gray' | 'red' | 'pink' | 'grape' | 'violet' | 'indigo' | 'blue' | 'cyan' | 'green' | 'lime' | 'yellow' | 'orange' | 'teal'
 
 export const BOARD_SCHEDULE_COLORS = [
   "blue",
-  "green",
-  "violet",
-  "orange",
   "cyan",
-  "grape",
+  "indigo",
+  "green",
+  "lime",
   "red",
+  "orange",
+  "pink",
+  "yellow",
   "teal",
-] as const;
+  "violet",
+  "grape",
+] as const satisfies readonly MantineColor[];
 
 export type BoardScheduleColor = (typeof BOARD_SCHEDULE_COLORS)[number];
 
