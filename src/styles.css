@@ -33,6 +33,16 @@ body {
     );
 }
 
+/*? iOS Safari は 16px 未満の入力にフォーカスすると自動ズームして戻らない。モバイルだけ底上げする
+    (docs/specs/pwa-mobile.md §12.1)。Mantine の内部セレクタは叩かず、ネイティブ要素にだけ当てる */
+@media (max-width: 47.9375em) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: max(16px, 1em);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

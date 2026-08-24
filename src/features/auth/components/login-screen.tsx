@@ -4,10 +4,14 @@ import { AuthActionFeedback } from "~/components/auth-action-feedback";
 import { AccountAuthPanel } from "~/features/auth/components/account-auth-form";
 import { signInWithNotion, signInWithPasskey } from "~/features/auth/lib/auth-actions";
 import { useAuthActionTransition } from "~/hooks/use-auth-action-transition";
+import { useInstallPrompt } from "~/hooks/use-install-prompt";
 import { DISPLAY_FONT } from "~/lib/theme";
 
 export function LoginScreen() {
   const passkeyAction = useAuthActionTransition();
+  //? standalone では Notion のドメインが scope 外なので iOS がシステムブラウザに投げうる。
+  //? 認証フローは変えず、並びと注記だけ変える(docs/specs/pwa-mobile.md E7)。
+  const { standalone } = useInstallPrompt();
 
   return (
     <Center h="100dvh">
@@ -35,6 +39,11 @@ export function LoginScreen() {
           <Button fullWidth onClick={signInWithNotion} size="md" variant="light">
             Notion でログイン
           </Button>
+          {standalone ? (
+            <Text c="dimmed" size="xs">
+              Notion でのログインはブラウザで開きます。
+            </Text>
+          ) : null}
         </Stack>
       </Card>
     </Center>

@@ -5,6 +5,8 @@ import {
   type MantineTheme,
 } from "@mantine/core";
 
+import { PAPER_TOKENS } from "~/lib/paper-tokens";
+
 const blue = [
   "#E8F0F8",
   "#C9DBEF",
@@ -79,12 +81,13 @@ export const NUMERAL_FONT = "'Zen Kaku Gothic New', sans-serif";
 export const BODY_FONT = HAND_FONT;
 export const DISPLAY_FONT = HAND_FONT;
 
-const INK = "#100F0F";
-const PAPER = "#FFFCF0";
-const PAPER_2 = "#F2F0E5";
-const RULE = "#E6E4D9";
-const MUTED = "#B7B5AC";
-const MUTED_2 = "#6F6E69";
+//? 色の一次値は paper-tokens.ts が唯一の出所(pwa-mobile.md §9.3)。offline.html の生成スクリプトも同じ値を読む
+const INK = PAPER_TOKENS.ink;
+const PAPER = PAPER_TOKENS.paper;
+const PAPER_2 = PAPER_TOKENS.paper2;
+const RULE = PAPER_TOKENS.rule;
+const MUTED = PAPER_TOKENS.muted;
+const MUTED_2 = PAPER_TOKENS.muted2;
 
 //? スケッチ風の不揃いな輪郭(要所のカードのみ)。CSS の border-radius 8値+slash 記法で手描き感を出す
 const SKETCH_RADIUS = "8px 14px 9px 16px/16px 9px 14px 8px";
@@ -99,7 +102,7 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
   light: {},
   variables: {
     "--bd2": RULE,
-    "--cairn-desk": "#DAD8CE",
+    "--cairn-desk": PAPER_TOKENS.desk,
     "--cairn-ink": INK,
     "--cairn-muted": MUTED,
     "--cairn-muted-2": MUTED_2,

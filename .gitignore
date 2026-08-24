@@ -9,6 +9,9 @@ dist
 # generated tool dirs
 .tanstack
 
+# Service Worker の中間バンドル出力(scripts/build-sw.ts)
+.pwa
+
 # environment variable files
 .env
 .env.development.local

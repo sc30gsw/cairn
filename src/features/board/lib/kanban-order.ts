@@ -103,6 +103,45 @@ export function resolveKanbanStatusMove(
   return "noop";
 }
 
+//* モバイルのドラッグ代替。同一列内で1つ動かした順序を返す。端なら null(pwa-mobile.md §15)。
+//? 実体は列内 index を求めて computeOrderedRowIds に委譲するだけ — 並べ替えの規則を二重に持たない。
+export function shiftRowWithinColumn(
+  rows: readonly BoardRow[],
+  rowId: Id<"rows">,
+  direction: -1 | 1,
+): Id<"rows">[] | null {
+  const row = rows.find((entry) => entry._id === rowId);
+  if (row === undefined) {
+    return null;
+  }
+  const column = row.status;
+  if (!KANBAN_COLUMNS.some((status) => status === column)) {
+    return null;
+  }
+  const columnRows = groupRowsByKanbanColumn(rows)[column as KanbanColumn];
+  const index = columnRows.findIndex((entry) => entry._id === rowId);
+  const nextIndex = index + direction;
+  if (index === -1 || nextIndex < 0 || nextIndex >= columnRows.length) {
+    return null;
+  }
+  return computeOrderedRowIds(
+    rows,
+    { index, status: column as KanbanColumn },
+    { index: nextIndex, status: column as KanbanColumn },
+    rowId,
+  );
+}
+
+//* カードの ⋮ Menu に出す「移動」項目。noop の列を落とすだけで、遷移の規則は resolveKanbanStatusMove に残す。
+export function kanbanMoveMenuItems(
+  status: BoardRow["status"],
+): { column: KanbanColumn; move: Exclude<KanbanStatusMove, "noop"> }[] {
+  return KANBAN_COLUMNS.flatMap((column) => {
+    const move = resolveKanbanStatusMove(status, column);
+    return move === "noop" ? [] : [{ column, move }];
+  });
+}
+
 export function hasRowOrderChanged(
   rows: readonly BoardRow[],
   orderedRowIds: readonly Id<"rows">[],

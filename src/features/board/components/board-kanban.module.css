@@ -1,0 +1,32 @@
+/*? モバイルは1画面1列の横スナップ。5列縦積み + 長押しドラッグ + ページスクロールは
+    三重に衝突していて成立していないので、列間ドラッグは捨てる(docs/specs/pwa-mobile.md §11.1) */
+.columns {
+  display: grid;
+
+  /*? 次の列の背が少し見える(peek)ことでスワイプできると分かる */
+  grid-auto-columns: 86%;
+  grid-auto-flow: column;
+  gap: var(--mantine-spacing-sm);
+  overflow-x: auto;
+
+  /*? Android の横オーバースクロールで「戻る」が発火しないよう封じる(E10) */
+  overscroll-behavior-x: contain;
+  padding-bottom: var(--mantine-spacing-xs);
+  scroll-padding-inline-start: var(--mantine-spacing-xs);
+  scroll-snap-type: x mandatory;
+}
+
+.column {
+  min-width: 0;
+  scroll-snap-align: start;
+}
+
+/*? 境を md(48em) にするのは既存の md:grid-cols-5 と同じ。ナビの境(sm)と揃えないのは意図的 */
+@media (min-width: 48em) {
+  .columns {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    overflow-x: visible;
+    scroll-snap-type: none;
+  }
+}

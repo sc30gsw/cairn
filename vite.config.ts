@@ -123,6 +123,10 @@ export default defineConfig({
       ".scratch/**",
       "docs/**",
       "**/*.md",
+      //? WebWorker ランタイム前提の宣言(self / ServiceWorkerGlobalScope)が oxlint の env と噛み合わず、
+      //? Serwist の declaration merging が interface を要求する(docs/specs/pwa-mobile.md §4.3 / §19-14)。
+      //? 整形は掛けるので fmt.ignorePatterns には入れない。
+      "sw/**",
     ],
     jsPlugins: [{ name: "react-doctor", specifier: "oxlint-plugin-react-doctor" }],
     options: {
