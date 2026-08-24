@@ -25,6 +25,40 @@ export const TOEIC_SCORE_ORDER_MESSAGE = "目標点の下限が上限を超え�
 
 export const MASTERY_CRITERION_MESSAGE = "達成の基準を入力してください";
 
+//* 目標階層の不変条件メッセージ。services と Valibot が同じ文言を共有する(CVX-16)。
+//? 期限と親は同時に存在する(INV-1)。片方だけの状態は services 層で弾く。
+export const CHECKPOINT_PARENT_REQUIRED_MESSAGE =
+  "期限を付けるときは親（本番目標か長期目標）を選んでください";
+
+export const CHECKPOINT_DEADLINE_REQUIRED_MESSAGE = "親を持つチェックポイントには期限が必要です";
+
+export const CHECKPOINT_PARENT_SELF_MESSAGE = "自分自身を親にはできません";
+
+export const CHECKPOINT_PARENT_KIND_MESSAGE = "チェックポイントの下にチェックポイントは置けません";
+
+export const CHECKPOINT_HAS_CHILDREN_MESSAGE =
+  "子チェックポイントを持つ長期目標は、チェックポイントにできません";
+
+//* 既存チェックポイントへの親バックフィル(#49)の監査。全所有者を横断するので上限で切る(CVX-11)。
+export const CHECKPOINT_AUDIT_LIMIT = 2000;
+
+//* バックフィルの適用規則。監査の出力と純関数の戻り値が同じ語彙を使う。
+export const CHECKPOINT_BACKFILL_PLANS = [
+  "exam",
+  "longTerm",
+  "promote",
+  "manual",
+  "none",
+] as const satisfies readonly string[];
+
+export type CheckpointBackfillPlan = (typeof CHECKPOINT_BACKFILL_PLANS)[number];
+
+export const CHECKPOINT_BACKFILL_MANUAL_MESSAGE =
+  "親候補が無く、孤児のチェックポイントがすべて達成済みです。長期目標を手で作ってから再実行してください";
+
+export const CHECKPOINT_DEADLINE_MALFORMED_MESSAGE =
+  "期限の形式が壊れたチェックポイントがあります。手で直してから再実行してください";
+
 //* 週間ターゲットの計器。今週のカテゴリ別実績を何で測るか — docs CONTEXT「週間ターゲット」。
 export const TARGET_METRICS = ["minutes", "days", "count"] as const satisfies readonly string[];
 

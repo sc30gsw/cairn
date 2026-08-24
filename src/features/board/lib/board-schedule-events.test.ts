@@ -48,6 +48,7 @@ test("チェックポイントは期限の終日イベントになる", () => {
     activeDays: 0,
     confirmedMinutes: 0,
     content: "Part 2 を聞き取る",
+    createdAt: 1_755_000_000_000,
     criterion: "できる",
     deadline: "2026-08-20",
     type: "mastery",

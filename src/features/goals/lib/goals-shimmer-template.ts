@@ -6,11 +6,16 @@ import type { CategoryDto } from "~/types/category";
 
 export const goalsShimmerTodayJst = "2026-08-17" satisfies DateJst;
 
-//? 実データと同じ件数・同じ形にして、読み込み後のガタつきをなくす
+const EXAM_GOAL_ID = "shimmer-goal-exam" as Goal["_id"];
+const LONG_TERM_GOAL_ID = "shimmer-goal-long-term" as Goal["_id"];
+
+//? 実データと同じ階層・同じ件数にして、読み込み後のガタつきをなくす
+//? 本番目標1 + その子1 + 長期目標1 + その子1 + 達成済み1
 export const goalsShimmerGoals = [
   {
-    _id: "shimmer-goal-exam" as Goal["_id"],
+    _id: EXAM_GOAL_ID,
     content: "金のフレーズを1 Unit 音読する",
+    createdAt: 1_755_000_000_000,
     examDate: "2026-09-27",
     maxScore: 850,
     minScore: 730,
@@ -22,18 +27,46 @@ export const goalsShimmerGoals = [
     activeDays: 4,
     confirmedMinutes: 180,
     content: "Unit 1-10 を音読する",
+    createdAt: 1_755_000_100_000,
     criterion: "Unit 1-10 を止まらずに音読できる",
     deadline: "2026-08-23",
+    parentGoalId: EXAM_GOAL_ID,
     type: "mastery",
   },
   {
-    _id: "shimmer-goal-mastery" as Goal["_id"],
+    _id: LONG_TERM_GOAL_ID,
     achievedAt: undefined,
     activeDays: 2,
     confirmedMinutes: 90,
     content: "Distinction の例文を口頭で言い切る",
+    createdAt: 1_755_000_200_000,
     criterion: "3秒以内に例文を口に出せる",
     deadline: undefined,
+    parentGoalId: undefined,
+    type: "mastery",
+  },
+  {
+    _id: "shimmer-goal-long-term-checkpoint" as Goal["_id"],
+    achievedAt: undefined,
+    activeDays: 2,
+    confirmedMinutes: 40,
+    content: "Chapter 1-3 を暗唱する",
+    createdAt: 1_755_000_300_000,
+    criterion: "例文を見ずに言える",
+    deadline: "2026-09-06",
+    parentGoalId: LONG_TERM_GOAL_ID,
+    type: "mastery",
+  },
+  {
+    _id: "shimmer-goal-achieved" as Goal["_id"],
+    achievedAt: "2026-08-09",
+    activeDays: 6,
+    confirmedMinutes: 300,
+    content: "金のフレーズ Unit 1 を暗唱する",
+    createdAt: 1_755_000_400_000,
+    criterion: "見ずに Unit 1 を言える",
+    deadline: "2026-08-09",
+    parentGoalId: EXAM_GOAL_ID,
     type: "mastery",
   },
 ] satisfies Goal[];

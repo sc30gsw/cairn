@@ -10,6 +10,7 @@ function mastery(id: string, deadline: string, achievedAt?: string): BoardGoal {
     activeDays: 0,
     confirmedMinutes: 0,
     content: `${id}の内容`,
+    createdAt: 1_755_000_000_000,
     criterion: "できる",
     deadline,
     type: "mastery",
@@ -44,6 +45,7 @@ test("達成済みと試験は除外する", () => {
   const exam: BoardGoal = {
     _id: "exam" as BoardGoal["_id"],
     content: "TOEIC",
+    createdAt: 1_755_000_000_000,
     examDate: "2026-09-01",
     maxScore: 900,
     minScore: 800,

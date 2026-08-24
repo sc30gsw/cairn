@@ -3,14 +3,15 @@ import { Result } from "better-result";
 import { MutationFailedError } from "~/lib/errors";
 import { notifyError, notifySuccess } from "~/lib/notify";
 
-type RunMutationOptions = {
+type RunMutationOptions<T> = {
   errorMessage?: string;
-  successMessage?: string;
+  //? 返り値で文言が変わるものがある(カスケード削除の件数)。string はそのまま使える
+  successMessage?: ((value: T) => string) | string;
 };
 
 export async function runMutation<T>(
   operation: () => Promise<T>,
-  { errorMessage, successMessage }: RunMutationOptions = {},
+  { errorMessage, successMessage }: RunMutationOptions<T> = {},
 ): Promise<void> {
   const result = await Result.tryPromise({
     catch: (cause) =>
@@ -23,7 +24,13 @@ export async function runMutation<T>(
     return;
   }
 
-  if (successMessage) {
-    notifySuccess(successMessage);
+  if (successMessage === undefined) {
+    return;
+  }
+
+  const message =
+    typeof successMessage === "string" ? successMessage : successMessage(result.value);
+  if (message) {
+    notifySuccess(message);
   }
 }

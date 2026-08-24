@@ -1,46 +1,35 @@
 import { expect, test, vi } from "vite-plus/test";
 
-import { MasteryGoalCard, OVERDUE_LABEL } from "~/features/goals/components/mastery-goal-card";
+import {
+  ACHIEVED_BADGE_LABEL,
+  LONG_TERM_CARD_TITLE,
+  MasteryGoalBody,
+} from "~/features/goals/components/mastery-goal-card";
 import type { MasteryGoal } from "~/features/goals/types/goal";
 import { renderWithMantine } from "~/test-utils/render";
 
 const TODAY = "2026-08-17";
 
-const OPEN_MASTERY = {
-  _id: "goal-open" as MasteryGoal["_id"],
+const LONG_TERM = {
+  _id: "goal-long-term" as MasteryGoal["_id"],
   achievedAt: undefined,
   activeDays: 2,
   confirmedMinutes: 90,
   content: "Distinction の例文を口頭で言い切る",
+  createdAt: 1_755_000_000_000,
   criterion: "3秒以内に例文を口に出せる",
   deadline: undefined,
+  parentGoalId: undefined,
   type: "mastery",
 } satisfies MasteryGoal;
 
-const CHECKPOINT = {
-  _id: "goal-checkpoint" as MasteryGoal["_id"],
-  achievedAt: undefined,
-  activeDays: 4,
-  confirmedMinutes: 180,
-  content: "Unit 1-10 を音読する",
-  criterion: "Unit 1-10 を止まらずに音読できる",
-  deadline: "2026-08-23",
-  type: "mastery",
-} satisfies MasteryGoal;
-
-const OVERDUE_CHECKPOINT = {
-  ...CHECKPOINT,
-  _id: "goal-overdue" as MasteryGoal["_id"],
-  deadline: "2026-08-10",
-} satisfies MasteryGoal;
-
-const ACHIEVED_CHECKPOINT = {
-  ...CHECKPOINT,
+const ACHIEVED_LONG_TERM = {
+  ...LONG_TERM,
   _id: "goal-achieved" as MasteryGoal["_id"],
   achievedAt: "2026-08-09",
 } satisfies MasteryGoal;
 
-function cardProps(goal: MasteryGoal) {
+function bodyProps(goal: MasteryGoal) {
   return {
     goal,
     onEdit: vi.fn(),
@@ -50,15 +39,47 @@ function cardProps(goal: MasteryGoal) {
   };
 }
 
+test("長期目標として見出し・基準・学習量の実績を出す", () => {
+  const { getByText } = renderWithMantine(<MasteryGoalBody {...bodyProps(LONG_TERM)} />);
+  expect(getByText(LONG_TERM_CARD_TITLE)).toBeDefined();
+  expect(getByText("基準: 3秒以内に例文を口に出せる")).toBeDefined();
+  expect(getByText("確定 90分 / 2日")).toBeDefined();
+});
+
+test("達成済みの長期目標はバッジと達成日を出す", () => {
+  const { getByText } = renderWithMantine(<MasteryGoalBody {...bodyProps(ACHIEVED_LONG_TERM)} />);
+  expect(getByText(ACHIEVED_BADGE_LABEL)).toBeDefined();
+  expect(getByText("達成 2026-08-09")).toBeDefined();
+});
+
+test("達成を取り消すとバッジと達成日が消える(再描画)", () => {
+  const view = renderWithMantine(<MasteryGoalBody {...bodyProps(ACHIEVED_LONG_TERM)} />);
+  expect(view.getByText(ACHIEVED_BADGE_LABEL)).toBeDefined();
+
+  view.rerender(<MasteryGoalBody {...bodyProps(LONG_TERM)} />);
+
+  expect(view.queryByText(ACHIEVED_BADGE_LABEL)).toBeNull();
+  expect(view.queryByText("達成 2026-08-09")).toBeNull();
+});
+
+test("達成チェックで onSetAchieved が今日の日付つきで呼ばれる", () => {
+  const onSetAchieved = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <MasteryGoalBody {...bodyProps(LONG_TERM)} onSetAchieved={onSetAchieved} />,
+  );
+  getByRole("checkbox", { name: `${LONG_TERM.content}の達成` }).click();
+  expect(onSetAchieved).toHaveBeenCalledWith({ achievedAt: TODAY, goalId: LONG_TERM._id });
+});
+
 test("達成済みのチェックを外すと達成日を落として呼ばれる", () => {
   const onSetAchieved = vi.fn();
   const { getByRole } = renderWithMantine(
-    <MasteryGoalCard {...cardProps(ACHIEVED_CHECKPOINT)} onSetAchieved={onSetAchieved} />,
+    <MasteryGoalBody {...bodyProps(ACHIEVED_LONG_TERM)} onSetAchieved={onSetAchieved} />,
   );
-  getByRole("checkbox", { name: `${ACHIEVED_CHECKPOINT.content}の達成` }).click();
+  getByRole("checkbox", { name: `${ACHIEVED_LONG_TERM.content}の達成` }).click();
   expect(onSetAchieved).toHaveBeenCalledWith({
     achievedAt: undefined,
-    goalId: ACHIEVED_CHECKPOINT._id,
+    goalId: ACHIEVED_LONG_TERM._id,
   });
 });
 
@@ -66,66 +87,10 @@ test("編集と削除のアクションが呼ばれる", () => {
   const onEdit = vi.fn();
   const onRemove = vi.fn();
   const { getByRole } = renderWithMantine(
-    <MasteryGoalCard {...cardProps(CHECKPOINT)} onEdit={onEdit} onRemove={onRemove} />,
+    <MasteryGoalBody {...bodyProps(LONG_TERM)} onEdit={onEdit} onRemove={onRemove} />,
   );
-  getByRole("button", { name: `${CHECKPOINT.content}を編集` }).click();
-  getByRole("button", { name: `${CHECKPOINT.content}を削除` }).click();
+  getByRole("button", { name: `${LONG_TERM.content}を編集` }).click();
+  getByRole("button", { name: `${LONG_TERM.content}を削除` }).click();
   expect(onEdit).toHaveBeenCalledOnce();
   expect(onRemove).toHaveBeenCalledOnce();
-});
-
-test("期限なしの習得は期限なしと表示する", () => {
-  const { getByText } = renderWithMantine(<MasteryGoalCard {...cardProps(OPEN_MASTERY)} />);
-  expect(getByText("期限なし")).toBeDefined();
-  expect(getByText("習得")).toBeDefined();
-});
-
-test("チェックポイントは残り日数つきで期限を表示する", () => {
-  const { getByText } = renderWithMantine(<MasteryGoalCard {...cardProps(CHECKPOINT)} />);
-  expect(getByText("チェックポイント")).toBeDefined();
-  expect(getByText(/期限 2026-08-23（あと 6 日）/)).toBeDefined();
-});
-
-test("期限超過のチェックポイントはバッジを出す", () => {
-  const { getByText } = renderWithMantine(<MasteryGoalCard {...cardProps(OVERDUE_CHECKPOINT)} />);
-  expect(getByText(OVERDUE_LABEL)).toBeDefined();
-  expect(getByText(/期限 2026-08-10/)).toBeDefined();
-});
-
-test("達成済みは達成日と学習量を表示する", () => {
-  const { getByText } = renderWithMantine(<MasteryGoalCard {...cardProps(ACHIEVED_CHECKPOINT)} />);
-  expect(getByText("達成 2026-08-09")).toBeDefined();
-  expect(getByText("確定 180分 / 4日")).toBeDefined();
-});
-
-test("達成済みで期限超過でも overdue バッジは出ない", () => {
-  const pastDeadlineAchieved = {
-    ...ACHIEVED_CHECKPOINT,
-    deadline: "2026-08-01",
-  } satisfies MasteryGoal;
-  const { queryByText, getByText } = renderWithMantine(
-    <MasteryGoalCard {...cardProps(pastDeadlineAchieved)} />,
-  );
-  expect(queryByText(OVERDUE_LABEL)).toBeNull();
-  expect(getByText("達成 2026-08-09")).toBeDefined();
-});
-
-test("期限を過ぎた未達成チェックポイントは残り日数を出さない", () => {
-  const { getByText, queryByText } = renderWithMantine(
-    <MasteryGoalCard {...cardProps(OVERDUE_CHECKPOINT)} />,
-  );
-  expect(getByText(/期限 2026-08-10/)).toBeDefined();
-  expect(queryByText(/あと/)).toBeNull();
-});
-
-test("達成チェックで onSetAchieved が今日の日付つきで呼ばれる", () => {
-  const onSetAchieved = vi.fn();
-  const { getByRole } = renderWithMantine(
-    <MasteryGoalCard {...cardProps(CHECKPOINT)} onSetAchieved={onSetAchieved} />,
-  );
-  getByRole("checkbox", { name: `${CHECKPOINT.content}の達成` }).click();
-  expect(onSetAchieved).toHaveBeenCalledWith({
-    achievedAt: TODAY,
-    goalId: CHECKPOINT._id,
-  });
 });

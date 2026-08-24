@@ -1,46 +1,78 @@
-import { Field, Form, useForm, type FieldStore } from "@formisch/react";
-import { Alert, Button, Grid, Group, NumberInput, TextInput } from "@mantine/core";
+import { Field, Form, setErrors, useField, useForm, type FieldStore } from "@formisch/react";
+import {
+  Alert,
+  Button,
+  Grid,
+  Group,
+  Input,
+  NumberInput,
+  Select,
+  Text,
+  TextInput,
+} from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
-import { TOEIC_SCORE } from "~domain/domain";
+import { CHECKPOINT_HAS_CHILDREN_MESSAGE, TOEIC_SCORE } from "~domain/domain";
 import type { DateJst } from "~domain/jst";
 
 import { ConcreteActionField } from "~/components/concrete-action-field";
 import { nextSundayJst } from "~/features/goals/lib/checkpoint-deadline";
 import type { GoalFormCopy } from "~/features/goals/lib/goal-form-copy";
+import { tierTransition, tierTransitionAlert } from "~/features/goals/lib/goal-tier-transition";
+import { parentGoalOptions, type ParentGoal } from "~/features/goals/lib/goal-tree";
+import { GOAL_TYPE_DESCRIPTIONS } from "~/features/goals/lib/goal-type-labels";
 import {
+  CheckpointGoalFieldsSchema,
   ExamGoalFieldsSchema,
-  MasteryGoalFieldsSchema,
+  LongTermGoalFieldsSchema,
+  MasteryEditFieldsSchema,
   type GoalFormOutput,
 } from "~/features/goals/schemas/goal-schema";
-import type { Goal } from "~/features/goals/types/goal";
+import type { ExamGoal, Goal, MasteryGoal } from "~/features/goals/types/goal";
 import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-style";
 
 const CONTENT_PLACEHOLDER = "例: 金のフレーズを1 Unit 音読する";
+const CRITERION_PLACEHOLDER = "例: Unit 1-10 を止まらずに音読できる";
+const PARENT_LABEL = "親";
+const DEADLINE_LABEL = "期限";
+const OPTIONAL_DEADLINE_LABEL = "期限（任意）";
 
 //* 同時に追いかけるチェックポイントの目安。超えても止めない非ブロッキングの助言(docs/adr/0006)。
 const CHECKPOINT_CROWDED_THRESHOLD = 2;
 export const CHECKPOINT_CROWDED_MESSAGE = "同時に追いかけるチェックポイントは1〜2件が目安です";
+const PARENT_NOT_FOUND_MESSAGE = "親の目標が見つかりません。選び直してください";
 
-//? タイプごとにフォームは総取り替えだが、props は共通。GoalForm 側でタイプ→部品を引けるようにする
+//? どのフォームも props は共通。GoalForm が variant から部品を引けるようにする
 export type GoalFieldsProps = {
-  //? 期限つき・未達成の習得の件数。3件目を作るときだけ助言を出す
+  //? その親の未達成チェックポイント数。3件目を作るときだけ助言を出す(親ごとに数える)
   activeCheckpointCount: number;
-  //? 「目標」として開くか「チェックポイント」として開くかで替わる語。GoalForm が variant から引いて渡す
+  //? フォームの語。GoalForm が variant から引いて渡す
   copy: GoalFormCopy;
   //? 編集対象。undefined なら新規作成
   goal: Goal | undefined;
+  //? 親候補の引き当て(Select が返す文字列から Id のブランドを取り戻す)
+  goals: Goal[];
+  //? 子チェックポイントを持つ長期目標は期限を付けられない(INV-5)
+  hasChildCheckpoints: boolean;
   onCancel: () => void;
   onSubmit: (goal: GoalFormOutput) => void;
+  //? 新規チェックポイントの親。導線から確定するので Select は出さない
+  parent: ParentGoal | undefined;
   todayJst: DateJst;
 };
 
-type GoalFieldsSchema = typeof ExamGoalFieldsSchema | typeof MasteryGoalFieldsSchema;
+type GoalFieldsSchema =
+  | typeof CheckpointGoalFieldsSchema
+  | typeof ExamGoalFieldsSchema
+  | typeof LongTermGoalFieldsSchema
+  | typeof MasteryEditFieldsSchema;
 
-//? どちらのタイプも文字列フィールドの FieldStore は同じ形。path だけ違うので落として使い回す
+//? どのスキーマでも文字列フィールドの FieldStore は同じ形。path だけ違うので落として使い回す
 type GoalTextFieldStore = Omit<FieldStore<GoalFieldsSchema, ["content"]>, "path">;
 
 type GoalDateFieldProps = {
   clearable?: boolean;
+  description?: string;
+  disabled?: boolean;
   field: GoalTextFieldStore;
   label: string;
   todayJst: DateJst;
@@ -63,11 +95,34 @@ function GoalContentField({ contentLabel, field }: GoalContentFieldProps) {
   );
 }
 
-function GoalDateField({ clearable = false, field, label, todayJst }: GoalDateFieldProps) {
+function GoalCriterionField({ field }: Record<"field", GoalTextFieldStore>) {
+  return (
+    <TextInput
+      {...field.props}
+      error={field.errors?.[0]}
+      label="達成の基準"
+      placeholder={CRITERION_PLACEHOLDER}
+      value={field.input}
+    />
+  );
+}
+
+function GoalDateField({
+  clearable = false,
+  description,
+  disabled = false,
+  field,
+  label,
+  todayJst,
+}: GoalDateFieldProps) {
   return (
     <DatePickerInput
       classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
       clearable={clearable}
+      //? クリアボタンは既定でアクセシブル名を持たない。色や位置だけに頼らない(#48 §12)
+      clearButtonProps={{ "aria-label": `${label}を消す` }}
+      description={description}
+      disabled={disabled}
       error={field.errors?.[0]}
       firstDayOfWeek={1}
       getDayProps={(date) => calendarDayProps(date, todayJst)}
@@ -98,8 +153,17 @@ function GoalFormActions({ onCancel, submitLabel }: GoalFormActionsProps) {
   );
 }
 
+//? 止めない。列やチェーンにせず件数を絞るための助言だけ(Rai et al. 2023)
+function CheckpointCrowdedAlert({ count }: Record<"count", number>) {
+  return (
+    <Alert color="yellow" title={CHECKPOINT_CROWDED_MESSAGE} variant="light">
+      いま追いかけているチェックポイントが {count} 件あります。先に片づけてからでも遅くありません。
+    </Alert>
+  );
+}
+
 export function ExamGoalFields({ copy, goal, onCancel, onSubmit, todayJst }: GoalFieldsProps) {
-  const examGoal = goal?.type === "exam" ? goal : undefined;
+  const examGoal: ExamGoal | undefined = goal?.type === "exam" ? goal : undefined;
   const form = useForm({
     initialInput: {
       content: examGoal?.content ?? "",
@@ -163,36 +227,83 @@ export function ExamGoalFields({ copy, goal, onCancel, onSubmit, todayJst }: Goa
   );
 }
 
-export function MasteryGoalFields({
-  activeCheckpointCount,
-  copy,
-  goal,
-  onCancel,
-  onSubmit,
-  todayJst,
-}: GoalFieldsProps) {
-  const masteryGoal = goal?.type === "mastery" ? goal : undefined;
-  //? 期限の既定は次の日曜。週の切れ目に置くだけのナッジで、消せるし変えられる
+//* 新規長期目標。期限欄は出さない(期限を切りたくなったら編集で付ける = そのとき親が必要になる)。
+export function LongTermGoalFields({ copy, onCancel, onSubmit }: GoalFieldsProps) {
   const form = useForm({
-    initialInput: {
-      content: masteryGoal?.content ?? "",
-      criterion: masteryGoal?.criterion ?? "",
-      deadline: masteryGoal?.deadline ?? (goal === undefined ? nextSundayJst(todayJst) : ""),
-    },
-    schema: MasteryGoalFieldsSchema,
+    initialInput: { content: "", criterion: "" },
+    schema: LongTermGoalFieldsSchema,
   });
-  const crowded = goal === undefined && activeCheckpointCount >= CHECKPOINT_CROWDED_THRESHOLD;
 
   return (
-    <Form of={form} onSubmit={(output) => onSubmit({ ...output, type: "mastery" })}>
+    <Form
+      of={form}
+      onSubmit={(output) =>
+        onSubmit({ ...output, deadline: undefined, parentGoalId: undefined, type: "mastery" })
+      }
+    >
       <Grid align="flex-start" gap="sm">
-        {crowded && (
+        <Grid.Col span={12}>
+          <Text c="dimmed" size="sm">
+            {GOAL_TYPE_DESCRIPTIONS.mastery}
+          </Text>
+        </Grid.Col>
+        <Grid.Col span={12}>
+          <Field of={form} path={["content"]}>
+            {(field) => <GoalContentField contentLabel={copy.contentLabel} field={field} />}
+          </Field>
+        </Grid.Col>
+        <Grid.Col span={12}>
+          <Field of={form} path={["criterion"]}>
+            {(field) => <GoalCriterionField field={field} />}
+          </Field>
+        </Grid.Col>
+        <Grid.Col span={12}>
+          <GoalFormActions onCancel={onCancel} submitLabel={copy.submitLabel} />
+        </Grid.Col>
+      </Grid>
+    </Form>
+  );
+}
+
+//* 新規チェックポイント。親は押した導線が決めるので読み取り専用、期限は必須(既定は次の日曜)。
+export function CheckpointGoalFields({
+  activeCheckpointCount,
+  copy,
+  onCancel,
+  onSubmit,
+  parent,
+  todayJst,
+}: GoalFieldsProps) {
+  const form = useForm({
+    initialInput: {
+      content: "",
+      criterion: "",
+      deadline: nextSundayJst(todayJst),
+      parentGoalId: parent?._id ?? "",
+    },
+    schema: CheckpointGoalFieldsSchema,
+  });
+
+  return (
+    <Form
+      of={form}
+      onSubmit={(output) => {
+        if (parent === undefined) {
+          setErrors(form, { errors: [PARENT_NOT_FOUND_MESSAGE], path: ["parentGoalId"] });
+          return;
+        }
+        onSubmit({ ...output, parentGoalId: parent._id, type: "mastery" });
+      }}
+    >
+      <Grid align="flex-start" gap="sm">
+        <Grid.Col span={12}>
+          <Input.Wrapper label={PARENT_LABEL}>
+            <Text>{parent?.content ?? ""}</Text>
+          </Input.Wrapper>
+        </Grid.Col>
+        {activeCheckpointCount >= CHECKPOINT_CROWDED_THRESHOLD && (
           <Grid.Col span={12}>
-            {/*? 止めない。列やチェーンにせず件数を絞るための助言だけ(Rai et al. 2023) */}
-            <Alert color="yellow" title={CHECKPOINT_CROWDED_MESSAGE} variant="light">
-              いま追いかけているチェックポイントが {activeCheckpointCount}{" "}
-              件あります。先に片づけてからでも遅くありません。
-            </Alert>
+            <CheckpointCrowdedAlert count={activeCheckpointCount} />
           </Grid.Col>
         )}
         <Grid.Col span={12}>
@@ -202,24 +313,117 @@ export function MasteryGoalFields({
         </Grid.Col>
         <Grid.Col span={12}>
           <Field of={form} path={["criterion"]}>
-            {(field) => (
-              <TextInput
-                {...field.props}
-                error={field.errors?.[0]}
-                label="達成の基準"
-                placeholder="例: Unit 1-10 を止まらずに音読できる"
-                value={field.input}
-              />
-            )}
+            {(field) => <GoalCriterionField field={field} />}
           </Field>
         </Grid.Col>
         <Grid.Col span={12}>
           <Field of={form} path={["deadline"]}>
-            {(field) => (
-              <GoalDateField clearable field={field} label="期限（任意）" todayJst={todayJst} />
-            )}
+            {(field) => <GoalDateField field={field} label={DEADLINE_LABEL} todayJst={todayJst} />}
           </Field>
         </Grid.Col>
+        <Grid.Col span={12}>
+          <GoalFormActions onCancel={onCancel} submitLabel={copy.submitLabel} />
+        </Grid.Col>
+      </Grid>
+    </Form>
+  );
+}
+
+//* 習得の編集(長期目標 / チェックポイント共通)。期限の付け外しが区分の移行そのものになる。
+export function MasteryEditFields({
+  copy,
+  goal,
+  goals,
+  hasChildCheckpoints,
+  onCancel,
+  onSubmit,
+  todayJst,
+}: GoalFieldsProps) {
+  const masteryGoal: MasteryGoal | undefined = goal?.type === "mastery" ? goal : undefined;
+  const form = useForm({
+    initialInput: {
+      content: masteryGoal?.content ?? "",
+      criterion: masteryGoal?.criterion ?? "",
+      deadline: masteryGoal?.deadline ?? "",
+      parentGoalId: masteryGoal?.parentGoalId ?? "",
+    },
+    schema: MasteryEditFieldsSchema,
+  });
+  const deadlineField = useField(form, { path: ["deadline"] });
+  const parentField = useField(form, { path: ["parentGoalId"] });
+  const deadline = deadlineField.input ?? "";
+  const parentGoalId = parentField.input ?? "";
+  const transition = tierTransition({
+    after: { deadline, parentGoalId },
+    before: { deadline: masteryGoal?.deadline, parentGoalId: masteryGoal?.parentGoalId },
+  });
+  const selectedParent = goals.find((candidate) => candidate._id === parentGoalId);
+  const alert = tierTransitionAlert(transition, selectedParent?.content);
+
+  return (
+    <Form
+      of={form}
+      onSubmit={(output) => {
+        if (output.deadline === undefined) {
+          //? 期限を外すと親も落ちる(INV-1)。replace なので同時に消える
+          onSubmit({ ...output, parentGoalId: undefined, type: "mastery" });
+          return;
+        }
+        //? Select が返すのはただの文字列。一覧から引き当てて Id のブランドを取り戻す
+        const nextParent = goals.find((candidate) => candidate._id === output.parentGoalId);
+        if (nextParent === undefined) {
+          setErrors(form, { errors: [PARENT_NOT_FOUND_MESSAGE], path: ["parentGoalId"] });
+          return;
+        }
+        onSubmit({ ...output, parentGoalId: nextParent._id, type: "mastery" });
+      }}
+    >
+      <Grid align="flex-start" gap="sm">
+        <Grid.Col span={12}>
+          <Field of={form} path={["content"]}>
+            {(field) => <GoalContentField contentLabel={copy.contentLabel} field={field} />}
+          </Field>
+        </Grid.Col>
+        <Grid.Col span={12}>
+          <Field of={form} path={["criterion"]}>
+            {(field) => <GoalCriterionField field={field} />}
+          </Field>
+        </Grid.Col>
+        <Grid.Col span={12}>
+          <GoalDateField
+            clearable
+            description={hasChildCheckpoints ? CHECKPOINT_HAS_CHILDREN_MESSAGE : undefined}
+            disabled={hasChildCheckpoints}
+            field={deadlineField}
+            label={OPTIONAL_DEADLINE_LABEL}
+            todayJst={todayJst}
+          />
+        </Grid.Col>
+        {/*? 期限なし = 長期目標には親がない。期限が入っているときだけ親を選ばせる */}
+        {deadline !== "" && !hasChildCheckpoints && (
+          <Grid.Col span={12}>
+            <Select
+              {...parentField.props}
+              data={parentGoalOptions(goals, {
+                currentParentId: masteryGoal?.parentGoalId,
+                selfId: masteryGoal?._id,
+              })}
+              error={parentField.errors?.[0]}
+              label={PARENT_LABEL}
+              onChange={(value) => parentField.onChange(value ?? "")}
+              placeholder="選択してください"
+              value={parentGoalId}
+            />
+          </Grid.Col>
+        )}
+        {alert !== undefined && (
+          <Grid.Col span={12}>
+            {/*? 可逆な操作なので止めない。行き先だけを先に見せる */}
+            <Alert color="blue" variant="light">
+              {alert}
+            </Alert>
+          </Grid.Col>
+        )}
         <Grid.Col span={12}>
           <GoalFormActions onCancel={onCancel} submitLabel={copy.submitLabel} />
         </Grid.Col>

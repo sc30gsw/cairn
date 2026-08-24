@@ -1,24 +1,37 @@
 import { fireEvent, waitFor, within } from "@testing-library/react";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
 
-import {
-  CHECKPOINT_EMPTY_MESSAGE,
-  CHECKPOINT_SECTION_TITLE,
-} from "~/features/goals/components/checkpoint-section";
+import { ACHIEVED_SECTION_TITLE } from "~/features/goals/components/achieved-history-section";
+import { OVERDUE_LABEL } from "~/features/goals/components/checkpoint-row";
 import { EXAM_GOAL_INCOMPLETE_TITLE } from "~/features/goals/components/exam-goal-card";
 import { CHECKPOINT_CROWDED_MESSAGE } from "~/features/goals/components/goal-form-fields";
 import {
   EXAM_GOAL_EMPTY_TITLE,
+  GOAL_HIERARCHY_HINT,
   GoalsBoard,
-  OPEN_MASTERY_SECTION_TITLE,
 } from "~/features/goals/components/goals-board";
-import { OVERDUE_LABEL } from "~/features/goals/components/mastery-goal-card";
+import {
+  LONG_TERM_ADD_LABEL,
+  LONG_TERM_EMPTY_MESSAGE,
+  LONG_TERM_HINT,
+  LONG_TERM_SECTION_TITLE,
+} from "~/features/goals/components/long-term-section";
+import { ACHIEVED_BADGE_LABEL } from "~/features/goals/components/mastery-goal-card";
+import {
+  ORPHAN_CHECKPOINTS_MESSAGE,
+  ORPHAN_CHECKPOINTS_TITLE,
+} from "~/features/goals/components/orphan-checkpoints-alert";
+import {
+  CHECKPOINT_GROUP_EMPTY_MESSAGE,
+  CHECKPOINT_GROUP_TITLE,
+} from "~/features/goals/components/parent-goal-group";
 import type { Goal } from "~/features/goals/types/goal";
 import type { TargetProgress } from "~/features/goals/types/target";
 import { renderWithMantine } from "~/test-utils/render";
 import type { CategoryDto } from "~/types/category";
 
 const TODAY = "2026-08-17";
+const NEXT_SUNDAY = "2026-08-23";
 const THEN_ACTION = "Unit 3 の例文を声に出して5文読む";
 
 const {
@@ -68,66 +81,90 @@ beforeEach(() => {
 const EXAM_GOAL = {
   _id: "goal-exam" as Goal["_id"],
   content: "金のフレーズを1 Unit 音読する",
+  createdAt: 1_755_000_000_000,
   examDate: "2026-09-27",
   maxScore: 850,
   minScore: 730,
   type: "exam",
 } satisfies Goal;
 
-//? 期限つき・未達成の習得がチェックポイント。SOON のほうが期限が早い
+//? SOON のほうが期限が早い
 const SOON_CHECKPOINT = {
   _id: "goal-soon" as Goal["_id"],
   achievedAt: undefined,
   activeDays: 4,
   confirmedMinutes: 180,
   content: "Unit 1-10 を音読する",
+  createdAt: 1_755_000_100_000,
   criterion: "Unit 1-10 を止まらずに音読できる",
   deadline: "2026-08-23",
+  parentGoalId: EXAM_GOAL._id,
   type: "mastery",
 } satisfies Goal;
 
 const LATER_CHECKPOINT = {
+  ...SOON_CHECKPOINT,
   _id: "goal-later" as Goal["_id"],
-  achievedAt: undefined,
   activeDays: 1,
   confirmedMinutes: 45,
   content: "Part 5 を10問解く",
+  createdAt: 1_755_000_200_000,
   criterion: "10問を8分で解ける",
   deadline: "2026-08-30",
-  type: "mastery",
 } satisfies Goal;
 
 const OVERDUE_CHECKPOINT = {
+  ...SOON_CHECKPOINT,
   _id: "goal-overdue" as Goal["_id"],
-  achievedAt: undefined,
   activeDays: 0,
   confirmedMinutes: 0,
   content: "公式問題集を1回分解く",
+  createdAt: 1_755_000_300_000,
   criterion: "時間内に1回分を解き切れる",
   deadline: "2026-08-10",
-  type: "mastery",
 } satisfies Goal;
 
-const OPEN_MASTERY = {
-  _id: "goal-open" as Goal["_id"],
+const LONG_TERM_GOAL = {
+  _id: "goal-long-term" as Goal["_id"],
   achievedAt: undefined,
   activeDays: 2,
   confirmedMinutes: 90,
   content: "Distinction の例文を口頭で言い切る",
+  createdAt: 1_755_000_400_000,
   criterion: "3秒以内に例文を口に出せる",
   deadline: undefined,
+  parentGoalId: undefined,
   type: "mastery",
 } satisfies Goal;
 
-const ACHIEVED_MASTERY = {
+const LONG_TERM_CHECKPOINT = {
+  ...SOON_CHECKPOINT,
+  _id: "goal-long-term-child" as Goal["_id"],
+  content: "Chapter 1-3 を暗唱する",
+  createdAt: 1_755_000_500_000,
+  criterion: "例文を見ずに言える",
+  deadline: "2026-09-06",
+  parentGoalId: LONG_TERM_GOAL._id,
+} satisfies Goal;
+
+const ACHIEVED_CHECKPOINT = {
+  ...SOON_CHECKPOINT,
   _id: "goal-achieved" as Goal["_id"],
   achievedAt: "2026-08-09",
   activeDays: 6,
   confirmedMinutes: 300,
   content: "金のフレーズ Unit 1 を暗唱する",
+  createdAt: 1_755_000_600_000,
   criterion: "見ずに Unit 1 を言える",
   deadline: "2026-08-09",
-  type: "mastery",
+} satisfies Goal;
+
+const ORPHAN_CHECKPOINT = {
+  ...SOON_CHECKPOINT,
+  _id: "goal-orphan" as Goal["_id"],
+  content: "親のない刻み",
+  createdAt: 1_755_000_700_000,
+  parentGoalId: undefined,
 } satisfies Goal;
 
 const MINUTES_TARGET = {
@@ -150,6 +187,23 @@ function goalsBoardProps(goals: Goal[], targets: TargetProgress[] = []) {
   };
 }
 
+function addCheckpointName(parentContent: string) {
+  return `${parentContent}にチェックポイントを追加`;
+}
+
+test("ページ見出しの下に階層の説明を出す", () => {
+  const { getByText } = renderWithMantine(<GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />);
+  expect(getByText(GOAL_HIERARCHY_HINT)).toBeDefined();
+  expect(getByText(LONG_TERM_HINT)).toBeDefined();
+});
+
+test("子が0件の親グループは見出しと「なし」だけを出す", () => {
+  const { getByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />);
+  const group = within(getByRole("region", { name: `${EXAM_GOAL.content}のチェックポイント` }));
+  expect(group.getByText(CHECKPOINT_GROUP_TITLE)).toBeDefined();
+  expect(group.getByText(CHECKPOINT_GROUP_EMPTY_MESSAGE)).toBeDefined();
+});
+
 test("本番目標のカウントダウンとスコア帯が見える", () => {
   const { getByText } = renderWithMantine(
     <GoalsBoard {...goalsBoardProps([EXAM_GOAL], [MINUTES_TARGET])} />,
@@ -166,19 +220,30 @@ test("週間ターゲットが1件も無い本番目標は未完成として設�
   expect(getByRole("button", { name: "週間ターゲットを設定する" })).toBeDefined();
 });
 
-test("週間ターゲットがあれば未完成の促しは出ない", () => {
-  const { queryByText } = renderWithMantine(
-    <GoalsBoard {...goalsBoardProps([EXAM_GOAL], [MINUTES_TARGET])} />,
-  );
-  expect(queryByText(EXAM_GOAL_INCOMPLETE_TITLE)).toBeNull();
-});
-
-test("チェックポイントは期限の早い順に並ぶ", () => {
-  const { getAllByRole } = renderWithMantine(
+test("本番目標の下に子が期限の早い順に並ぶ", () => {
+  const { getByRole } = renderWithMantine(
     <GoalsBoard {...goalsBoardProps([EXAM_GOAL, LATER_CHECKPOINT, SOON_CHECKPOINT])} />,
   );
-  const labels = getAllByRole("checkbox").map((checkbox) => checkbox.getAttribute("aria-label"));
+  const group = within(getByRole("region", { name: `${EXAM_GOAL.content}のチェックポイント` }));
+  const labels = group
+    .getAllByRole("checkbox")
+    .map((checkbox) => checkbox.getAttribute("aria-label"));
   expect(labels).toEqual([`${SOON_CHECKPOINT.content}の達成`, `${LATER_CHECKPOINT.content}の達成`]);
+});
+
+test("長期目標の下にはその親の子だけが並ぶ", () => {
+  const { getByRole } = renderWithMantine(
+    <GoalsBoard
+      {...goalsBoardProps([EXAM_GOAL, SOON_CHECKPOINT, LONG_TERM_GOAL, LONG_TERM_CHECKPOINT])}
+    />,
+  );
+  const longTermGroup = within(
+    getByRole("region", { name: `${LONG_TERM_GOAL.content}のチェックポイント` }),
+  );
+  expect(
+    longTermGroup.getAllByRole("checkbox").map((checkbox) => checkbox.getAttribute("aria-label")),
+  ).toEqual([`${LONG_TERM_CHECKPOINT.content}の達成`]);
+  expect(longTermGroup.queryByText(SOON_CHECKPOINT.content)).toBeNull();
 });
 
 test("期限を過ぎたチェックポイントは表示だけが変わる", () => {
@@ -200,187 +265,256 @@ test("達成チェックを入れると onSetAchieved が今日の日付つき�
   });
 });
 
-test("達成済みのチェックを外すと達成日を落として呼ばれる", () => {
-  const { getByRole } = renderWithMantine(
-    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, ACHIEVED_MASTERY])} />,
+test("達成したチェックポイントは親グループから消え、達成した目標に集まる", () => {
+  const { getByRole, queryByRole } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, SOON_CHECKPOINT, ACHIEVED_CHECKPOINT])} />,
   );
-  getByRole("checkbox", { name: `${ACHIEVED_MASTERY.content}の達成` }).click();
-  expect(onSetAchieved).toHaveBeenCalledWith({
-    achievedAt: undefined,
-    goalId: ACHIEVED_MASTERY._id,
-  });
+  const group = within(getByRole("region", { name: `${EXAM_GOAL.content}のチェックポイント` }));
+  expect(group.queryByText(ACHIEVED_CHECKPOINT.content)).toBeNull();
+
+  const accordion = getByRole("button", { name: new RegExp(ACHIEVED_SECTION_TITLE) });
+  expect(within(accordion).getByText("1")).toBeDefined();
+  //? 既定は閉じている
+  expect(queryByRole("region", { name: new RegExp(ACHIEVED_SECTION_TITLE) })).toBeNull();
 });
 
-test("達成済みは件数つきの一覧になり、達成日が残る", () => {
+test("達成した目標を開くと親名つきの行と達成日が出る", async () => {
   const { getByRole, getByText } = renderWithMantine(
-    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, ACHIEVED_MASTERY])} />,
+    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, ACHIEVED_CHECKPOINT])} />,
   );
-  expect(getByRole("button", { name: /達成済み（1件）/ })).toBeDefined();
-  expect(getByText("達成 2026-08-09")).toBeDefined();
+  getByRole("button", { name: new RegExp(ACHIEVED_SECTION_TITLE) }).click();
+
+  await waitFor(() => {
+    expect(getByText("達成 2026-08-09")).toBeDefined();
+  });
+  expect(getByText(`親: ${EXAM_GOAL.content}`)).toBeDefined();
 });
 
-test("チェックポイントがゼロ件なら置くよう促す", () => {
-  const { getByText } = renderWithMantine(<GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />);
-  expect(getByText(CHECKPOINT_EMPTY_MESSAGE)).toBeDefined();
-});
-
-test("期限なしの習得は別の一覧に出て、学習量の実績を併記する", () => {
-  const { getByText } = renderWithMantine(
-    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, OPEN_MASTERY])} />,
+test("達成済みだが未達成の子が残る長期目標はツリーに残り、バッジが出る", () => {
+  const achievedParent = { ...LONG_TERM_GOAL, achievedAt: "2026-08-09" } satisfies Goal;
+  const { getByRole, getByText } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([achievedParent, LONG_TERM_CHECKPOINT])} />,
   );
-  expect(getByText(OPEN_MASTERY_SECTION_TITLE)).toBeDefined();
-  expect(getByText("基準: 3秒以内に例文を口に出せる")).toBeDefined();
-  expect(getByText("確定 90分 / 2日")).toBeDefined();
+  expect(getByText(ACHIEVED_BADGE_LABEL)).toBeDefined();
+  expect(
+    getByRole("region", { name: `${LONG_TERM_GOAL.content}のチェックポイント` }),
+  ).toBeDefined();
 });
 
-test("本番目標が無ければ空状態から作成できる", async () => {
-  const { getByRole, getByText } = renderWithMantine(<GoalsBoard {...goalsBoardProps([])} />);
-  expect(getByText(EXAM_GOAL_EMPTY_TITLE)).toBeDefined();
-
-  getByRole("button", { name: "本番目標を作成する" }).click();
-  await waitFor(() => {
-    expect(getByRole("textbox", { name: "目標スコア下限" })).toBeDefined();
-  });
-});
-
-test("本番目標が無ければ上部の「目標を追加」が本番目標の導線として出る", async () => {
-  const { getByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([])} />);
-  getByRole("button", { name: "目標を追加" }).click();
-  await waitFor(() => {
-    expect(getByRole("textbox", { name: "目標スコア下限" })).toBeDefined();
-  });
-});
-
-test("フォームを開いている間は本番目標の空状態カードを出さず、閉じると戻る", async () => {
-  const { getByRole, getByText, queryByText } = renderWithMantine(
-    <GoalsBoard {...goalsBoardProps([])} />,
-  );
-  getByRole("button", { name: "目標を追加" }).click();
-  await waitFor(() => {
-    expect(getByRole("textbox", { name: "目標スコア下限" })).toBeDefined();
-  });
-  expect(queryByText(EXAM_GOAL_EMPTY_TITLE)).toBeNull();
-
-  getByRole("button", { name: "キャンセル" }).click();
-  await waitFor(() => {
-    expect(getByText(EXAM_GOAL_EMPTY_TITLE)).toBeDefined();
-  });
-});
-
-test("本番目標が無ければチェックポイントの追加エリアは出ない", () => {
-  const { queryByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([])} />);
-  expect(queryByRole("region", { name: CHECKPOINT_SECTION_TITLE })).toBeNull();
-  expect(queryByRole("button", { name: "チェックポイントを追加" })).toBeNull();
-});
-
-test("本番目標があれば上部の「目標を追加」は出ず、追加はチェックポイントだけになる", () => {
-  const { getByRole, queryByRole } = renderWithMantine(
+test("長期目標が0件でも見出しと追加導線は出る", () => {
+  const { getByRole, getByText } = renderWithMantine(
     <GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />,
   );
-  expect(queryByRole("button", { name: "目標を追加" })).toBeNull();
-  expect(getByRole("button", { name: "チェックポイントを追加" })).toBeDefined();
+  expect(getByRole("region", { name: LONG_TERM_SECTION_TITLE })).toBeDefined();
+  expect(getByRole("button", { name: LONG_TERM_ADD_LABEL })).toBeDefined();
+  expect(getByText(LONG_TERM_EMPTY_MESSAGE)).toBeDefined();
 });
 
-test("「チェックポイントを追加」のフォームはチェックポイント区画の中にチェックポイントの語で開く", async () => {
+test("長期目標の追加フォームは期限欄を持たない", async () => {
+  const { getByRole, queryByLabelText } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />,
+  );
+  getByRole("button", { name: LONG_TERM_ADD_LABEL }).click();
+
+  await waitFor(() => {
+    expect(getByRole("textbox", { name: "長期目標の内容" })).toBeDefined();
+  });
+  expect(queryByLabelText(/期限/)).toBeNull();
+});
+
+test("長期目標を作ると期限も親も付けずに送信される", async () => {
   const { getByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />);
-  getByRole("button", { name: "チェックポイントを追加" }).click();
-
+  getByRole("button", { name: LONG_TERM_ADD_LABEL }).click();
   await waitFor(() => {
-    expect(getByRole("textbox", { name: "達成の基準" })).toBeDefined();
+    expect(getByRole("textbox", { name: "長期目標の内容" })).toBeDefined();
   });
-  const section = within(getByRole("region", { name: CHECKPOINT_SECTION_TITLE }));
-  expect(section.getByRole("textbox", { name: "チェックポイントの内容" })).toBeDefined();
-  expect(section.getByRole("textbox", { name: "達成の基準" })).toBeDefined();
-  expect(section.getByRole("button", { name: "チェックポイントを追加" })).toBeDefined();
-  expect(section.queryByRole("textbox", { name: "目標の内容" })).toBeNull();
-  //? タイプは習得に固定。選択欄は出さない
-  expect(section.queryByRole("combobox", { name: /目標タイプ/ })).toBeNull();
-});
 
-test("「チェックポイントを追加」から作ると期限が次の日曜で埋まる", async () => {
-  const { getByRole, queryByRole } = renderWithMantine(
-    <GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />,
-  );
-  getByRole("button", { name: "チェックポイントを追加" }).click();
-  await waitFor(() => {
-    expect(getByRole("textbox", { name: "達成の基準" })).toBeDefined();
-  });
-  expect(queryByRole("combobox", { name: /目標タイプ/ })).toBeNull();
-
-  fireEvent.change(getByRole("textbox", { name: "チェックポイントの内容" }), {
-    target: { value: SOON_CHECKPOINT.content },
+  fireEvent.change(getByRole("textbox", { name: "長期目標の内容" }), {
+    target: { value: LONG_TERM_GOAL.content },
   });
   fireEvent.change(getByRole("textbox", { name: "達成の基準" }), {
-    target: { value: SOON_CHECKPOINT.criterion },
+    target: { value: LONG_TERM_GOAL.criterion },
   });
-  getByRole("button", { name: "チェックポイントを追加" }).click();
+  getByRole("button", { name: "保存" }).click();
 
   await waitFor(() => {
     expect(onCreateGoal).toHaveBeenCalledWith({
-      content: SOON_CHECKPOINT.content,
-      criterion: SOON_CHECKPOINT.criterion,
-      deadline: "2026-08-23",
+      content: LONG_TERM_GOAL.content,
+      criterion: LONG_TERM_GOAL.criterion,
+      deadline: undefined,
+      parentGoalId: undefined,
       type: "mastery",
     });
   });
-  expect(queryByRole("textbox", { name: "達成の基準" })).toBeNull();
 });
 
-test("追いかけ中のチェックポイントが2件あると3件目の作成で助言が出る", async () => {
-  const { getByRole, getByText } = renderWithMantine(
-    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, SOON_CHECKPOINT, LATER_CHECKPOINT])} />,
+test("親ごとの追加導線からフォームが開き、期限の既定が次の日曜になる", async () => {
+  const { getByRole } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, LONG_TERM_GOAL])} />,
   );
-  getByRole("button", { name: "チェックポイントを追加" }).click();
+  getByRole("button", { name: addCheckpointName(LONG_TERM_GOAL.content) }).click();
+
   await waitFor(() => {
-    expect(getByText(CHECKPOINT_CROWDED_MESSAGE)).toBeDefined();
+    expect(getByRole("textbox", { name: "チェックポイントの内容" })).toBeDefined();
+  });
+  const group = within(
+    getByRole("region", { name: `${LONG_TERM_GOAL.content}のチェックポイント` }),
+  );
+  expect(group.getByDisplayValue(NEXT_SUNDAY)).toBeDefined();
+
+  fireEvent.change(getByRole("textbox", { name: "チェックポイントの内容" }), {
+    target: { value: LONG_TERM_CHECKPOINT.content },
+  });
+  fireEvent.change(getByRole("textbox", { name: "達成の基準" }), {
+    target: { value: LONG_TERM_CHECKPOINT.criterion },
+  });
+  getByRole("button", { name: "保存" }).click();
+
+  await waitFor(() => {
+    expect(onCreateGoal).toHaveBeenCalledWith({
+      content: LONG_TERM_CHECKPOINT.content,
+      criterion: LONG_TERM_CHECKPOINT.criterion,
+      deadline: NEXT_SUNDAY,
+      parentGoalId: LONG_TERM_GOAL._id,
+      type: "mastery",
+    });
   });
 });
 
-test("追いかけ中が1件なら助言は出ない", async () => {
-  const { getByRole, queryByText } = renderWithMantine(
-    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, SOON_CHECKPOINT])} />,
+test("crowded の助言は親ごとに数える(別の親では出ない)", async () => {
+  const { getByRole, getByText, queryByText } = renderWithMantine(
+    <GoalsBoard
+      {...goalsBoardProps([EXAM_GOAL, SOON_CHECKPOINT, LATER_CHECKPOINT, LONG_TERM_GOAL])}
+    />,
   );
-  getByRole("button", { name: "チェックポイントを追加" }).click();
+  getByRole("button", { name: addCheckpointName(EXAM_GOAL.content) }).click();
   await waitFor(() => {
-    expect(getByRole("textbox", { name: "達成の基準" })).toBeDefined();
+    expect(getByText(CHECKPOINT_CROWDED_MESSAGE)).toBeDefined();
+  });
+
+  getByRole("button", { name: "キャンセル" }).click();
+  await waitFor(() => {
+    expect(queryByText(CHECKPOINT_CROWDED_MESSAGE)).toBeNull();
+  });
+
+  getByRole("button", { name: addCheckpointName(LONG_TERM_GOAL.content) }).click();
+  await waitFor(() => {
+    expect(getByRole("textbox", { name: "チェックポイントの内容" })).toBeDefined();
   });
   expect(queryByText(CHECKPOINT_CROWDED_MESSAGE)).toBeNull();
 });
 
-test("編集アイコンを押すと既存の値でフォームが開き、タイプは変えられない", async () => {
+test("チェックポイントの編集で期限を消すと長期目標への移行を予告する", async () => {
+  const { findByText, getByRole } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, SOON_CHECKPOINT])} />,
+  );
+  getByRole("button", { name: `${SOON_CHECKPOINT.content}を編集` }).click();
+  await waitFor(() => {
+    expect(getByRole("textbox", { name: "チェックポイントの内容" })).toBeDefined();
+  });
+
+  getByRole("button", { name: /期限.*を消す/ }).click();
+  expect(await findByText("保存すると期限が外れ、長期目標へ移ります")).toBeDefined();
+});
+
+test("子を持つ長期目標の編集では期限を付けられない", async () => {
+  const { getByLabelText, getByRole, getByText } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([LONG_TERM_GOAL, LONG_TERM_CHECKPOINT])} />,
+  );
+  getByRole("button", { name: `${LONG_TERM_GOAL.content}を編集` }).click();
+
+  await waitFor(() => {
+    expect(getByRole("textbox", { name: "長期目標の内容" })).toBeDefined();
+  });
+  expect(
+    getByText("子チェックポイントを持つ長期目標は、チェックポイントにできません"),
+  ).toBeDefined();
+  expect((getByLabelText(/期限/) as HTMLButtonElement).disabled).toBe(true);
+});
+
+test("編集を保存すると onUpdateGoal が移行なしのトースト文言つきで呼ばれる", async () => {
   const { getByRole } = renderWithMantine(
     <GoalsBoard {...goalsBoardProps([EXAM_GOAL, SOON_CHECKPOINT])} />,
   );
   getByRole("button", { name: `${SOON_CHECKPOINT.content}を編集` }).click();
   await waitFor(() => {
-    expect((getByRole("textbox", { name: "達成の基準" }) as HTMLInputElement).value).toBe(
-      SOON_CHECKPOINT.criterion,
+    expect(getByRole("textbox", { name: "チェックポイントの内容" })).toBeDefined();
+  });
+  getByRole("button", { name: "保存" }).click();
+
+  await waitFor(() => {
+    expect(onUpdateGoal).toHaveBeenCalledWith(
+      {
+        goal: {
+          content: SOON_CHECKPOINT.content,
+          criterion: SOON_CHECKPOINT.criterion,
+          deadline: SOON_CHECKPOINT.deadline,
+          parentGoalId: EXAM_GOAL._id,
+          type: "mastery",
+        },
+        goalId: SOON_CHECKPOINT._id,
+      },
+      "目標を更新しました",
     );
   });
-  expect(getByRole("combobox", { name: /目標タイプ/ }).hasAttribute("disabled")).toBe(true);
 });
 
-test("削除アイコンを押すと onRemoveGoal が目標IDで呼ばれる", () => {
+test("削除は Confirm を出し、キャンセルでは mutation を呼ばない", async () => {
+  const { getByRole, getByText } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([LONG_TERM_GOAL, LONG_TERM_CHECKPOINT])} />,
+  );
+  getByRole("button", { name: `${LONG_TERM_GOAL.content}を削除` }).click();
+
+  await waitFor(() => {
+    expect(getByText("長期目標を削除しますか？")).toBeDefined();
+  });
+  expect(getByText(/ひもづくチェックポイント 1件/)).toBeDefined();
+
+  getByRole("button", { name: "キャンセル" }).click();
+  expect(onRemoveGoal).not.toHaveBeenCalled();
+});
+
+test("Confirm を確定すると onRemoveGoal が目標IDで呼ばれる", async () => {
   const { getByRole } = renderWithMantine(
     <GoalsBoard {...goalsBoardProps([EXAM_GOAL, SOON_CHECKPOINT])} />,
   );
   getByRole("button", { name: `${SOON_CHECKPOINT.content}を削除` }).click();
+
+  await waitFor(() => {
+    expect(getByRole("button", { name: "削除する" })).toBeDefined();
+  });
+  getByRole("button", { name: "削除する" }).click();
   expect(onRemoveGoal).toHaveBeenCalledWith(SOON_CHECKPOINT._id);
 });
 
-test("チェックポイントの追加フォームはキャンセルで閉じる", async () => {
-  const { getByRole, queryByRole } = renderWithMantine(
-    <GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />,
+test("親のないチェックポイントは孤児の Alert に出る", () => {
+  const { getByText } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, ORPHAN_CHECKPOINT])} />,
   );
-  getByRole("button", { name: "チェックポイントを追加" }).click();
-  await waitFor(() => {
-    expect(getByRole("textbox", { name: "達成の基準" })).toBeDefined();
-  });
+  expect(getByText(ORPHAN_CHECKPOINTS_TITLE)).toBeDefined();
+  expect(getByText(ORPHAN_CHECKPOINTS_MESSAGE)).toBeDefined();
+  expect(getByText(ORPHAN_CHECKPOINT.content)).toBeDefined();
+});
 
-  getByRole("button", { name: "キャンセル" }).click();
+test("孤児が無ければ Alert は出ない", () => {
+  const { queryByText } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, SOON_CHECKPOINT])} />,
+  );
+  expect(queryByText(ORPHAN_CHECKPOINTS_TITLE)).toBeNull();
+});
+
+test("本番目標が無ければ空状態から作成でき、チェックポイントの導線は出ない", async () => {
+  const { getByRole, getByText, queryByRole } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([])} />,
+  );
+  expect(getByText(EXAM_GOAL_EMPTY_TITLE)).toBeDefined();
+  expect(queryByRole("button", { name: /チェックポイントを追加/ })).toBeNull();
+
+  getByRole("button", { name: "本番目標を作成する" }).click();
   await waitFor(() => {
-    expect(queryByRole("textbox", { name: "達成の基準" })).toBeNull();
+    expect(getByRole("textbox", { name: "目標スコア下限" })).toBeDefined();
   });
+  expect(queryByRole("button", { name: "本番目標を作成する" })).toBeNull();
 });
 
 test("障害プランの追加・更新・削除ができる", async () => {
@@ -413,47 +547,6 @@ test("障害プランの追加・更新・削除ができる", async () => {
   expect(onRemoveObstacle).toHaveBeenCalledWith("o1");
 });
 
-test("本番目標を編集して保存すると onUpdateGoal が呼ばれる", async () => {
-  const { getByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />);
-  getByRole("button", { name: `${EXAM_GOAL.content}を編集` }).click();
-  await waitFor(() => {
-    expect(getByRole("textbox", { name: "目標の内容" })).toBeDefined();
-  });
-
-  fireEvent.change(getByRole("textbox", { name: "目標の内容" }), {
-    target: { value: "900点を安定して取る" },
-  });
-  getByRole("button", { name: "保存" }).click();
-
-  await waitFor(() => {
-    expect(onUpdateGoal).toHaveBeenCalledWith({
-      goal: {
-        content: "900点を安定して取る",
-        examDate: EXAM_GOAL.examDate,
-        maxScore: EXAM_GOAL.maxScore,
-        minScore: EXAM_GOAL.minScore,
-        type: "exam",
-      },
-      goalId: EXAM_GOAL._id,
-    });
-  });
-});
-
-test("期限なし習得の編集と削除ができる", async () => {
-  const { getByRole } = renderWithMantine(
-    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, OPEN_MASTERY])} />,
-  );
-  getByRole("button", { name: `${OPEN_MASTERY.content}を編集` }).click();
-  await waitFor(() => {
-    expect((getByRole("textbox", { name: "目標の内容" }) as HTMLInputElement).value).toBe(
-      OPEN_MASTERY.content,
-    );
-  });
-
-  getByRole("button", { name: `${OPEN_MASTERY.content}を削除` }).click();
-  expect(onRemoveGoal).toHaveBeenCalledWith(OPEN_MASTERY._id);
-});
-
 test("週間ターゲット設定ボタンで週間ターゲットへスクロールする", () => {
   const scrollIntoView = vi.fn();
   Element.prototype.scrollIntoView = scrollIntoView;
@@ -461,10 +554,4 @@ test("週間ターゲット設定ボタンで週間ターゲットへスクロ�
   const { getByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />);
   getByRole("button", { name: "週間ターゲットを設定する" }).click();
   expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
-});
-
-test("本番目標が無くても達成済みチェックポイントがあればセクションを出す", () => {
-  const { getByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([ACHIEVED_MASTERY])} />);
-  expect(getByRole("region", { name: CHECKPOINT_SECTION_TITLE })).toBeDefined();
-  expect(getByRole("button", { name: /達成済み（1件）/ })).toBeDefined();
 });

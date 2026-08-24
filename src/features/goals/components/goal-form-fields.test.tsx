@@ -1,116 +1,86 @@
 import { fireEvent, waitFor } from "@testing-library/react";
 import { expect, test, vi } from "vite-plus/test";
-import { GOAL_DATE_MESSAGE } from "~domain/domain";
+import { CHECKPOINT_HAS_CHILDREN_MESSAGE, GOAL_DATE_MESSAGE } from "~domain/domain";
 
 import {
   CHECKPOINT_CROWDED_MESSAGE,
+  CheckpointGoalFields,
   ExamGoalFields,
-  MasteryGoalFields,
+  LongTermGoalFields,
+  MasteryEditFields,
 } from "~/features/goals/components/goal-form-fields";
 import { GOAL_FORM_COPY } from "~/features/goals/lib/goal-form-copy";
-import type { Goal } from "~/features/goals/types/goal";
+import type { ExamGoal, Goal, MasteryGoal } from "~/features/goals/types/goal";
 import { renderWithMantine } from "~/test-utils/render";
 
 const TODAY = "2026-08-17";
+const NEXT_SUNDAY = "2026-08-23";
 
 const EXAM_GOAL = {
-  _id: "goal-exam" as Goal["_id"],
+  _id: "goal-exam" as ExamGoal["_id"],
   content: "金のフレーズを1 Unit 音読する",
+  createdAt: 1_755_000_000_000,
   examDate: "2026-09-27",
   maxScore: 850,
   minScore: 730,
   type: "exam",
-} satisfies Goal;
+} satisfies ExamGoal;
 
-const MASTERY_GOAL = {
-  _id: "goal-mastery" as Goal["_id"],
+const LONG_TERM_GOAL = {
+  _id: "goal-long-term" as MasteryGoal["_id"],
+  achievedAt: undefined,
+  activeDays: 2,
+  confirmedMinutes: 90,
+  content: "Distinction の例文を口頭で言い切る",
+  createdAt: 1_755_000_100_000,
+  criterion: "3秒以内に例文を口に出せる",
+  deadline: undefined,
+  parentGoalId: undefined,
+  type: "mastery",
+} satisfies MasteryGoal;
+
+const CHECKPOINT = {
+  _id: "goal-checkpoint" as MasteryGoal["_id"],
   achievedAt: undefined,
   activeDays: 4,
   confirmedMinutes: 180,
   content: "Unit 1-10 を音読する",
+  createdAt: 1_755_000_200_000,
   criterion: "止まらずに音読できる",
   deadline: "2026-09-06",
+  parentGoalId: EXAM_GOAL._id,
   type: "mastery",
-} satisfies Goal;
+} satisfies MasteryGoal;
 
-function fieldsProps(overrides: Partial<Parameters<typeof MasteryGoalFields>[0]> = {}) {
+const GOALS: Goal[] = [EXAM_GOAL, LONG_TERM_GOAL, CHECKPOINT];
+
+function fieldsProps(overrides: Partial<Parameters<typeof MasteryEditFields>[0]> = {}) {
   return {
     activeCheckpointCount: 0,
     copy: GOAL_FORM_COPY.checkpoint,
     goal: undefined,
+    goals: GOALS,
+    hasChildCheckpoints: false,
     onCancel: vi.fn(),
     onSubmit: vi.fn(),
+    parent: EXAM_GOAL,
     todayJst: TODAY,
     ...overrides,
-  };
+  } satisfies Parameters<typeof MasteryEditFields>[0];
 }
 
-test("新規試験目標フォームは空欄で開く", () => {
+test("新規本番目標フォームは空欄で開く", () => {
   const { getByRole } = renderWithMantine(
-    <ExamGoalFields
-      activeCheckpointCount={0}
-      copy={GOAL_FORM_COPY.goal}
-      goal={undefined}
-      onCancel={vi.fn()}
-      onSubmit={vi.fn()}
-      todayJst={TODAY}
-    />,
+    <ExamGoalFields {...fieldsProps({ copy: GOAL_FORM_COPY.exam, parent: undefined })} />,
   );
   expect((getByRole("textbox", { name: "目標の内容" }) as HTMLInputElement).value).toBe("");
   expect((getByRole("textbox", { name: "目標スコア下限" }) as HTMLInputElement).value).toBe("");
 });
 
-test("習得目標を試験フォームに渡しても空欄で開く", () => {
-  const { getByRole } = renderWithMantine(
-    <ExamGoalFields
-      activeCheckpointCount={0}
-      copy={GOAL_FORM_COPY.goal}
-      goal={MASTERY_GOAL}
-      onCancel={vi.fn()}
-      onSubmit={vi.fn()}
-      todayJst={TODAY}
-    />,
-  );
-  expect((getByRole("textbox", { name: "目標の内容" }) as HTMLInputElement).value).toBe("");
-});
-
-test("新規習得フォームは次の日曜が期限の初期値になる", () => {
-  const { getByDisplayValue } = renderWithMantine(<MasteryGoalFields {...fieldsProps()} />);
-  expect(getByDisplayValue("2026-08-23")).toBeDefined();
-});
-
-test("新規習得フォームは保存できる", async () => {
-  const onSubmit = vi.fn();
-  const { getByRole } = renderWithMantine(<MasteryGoalFields {...fieldsProps({ onSubmit })} />);
-  fireEvent.change(getByRole("textbox", { name: "チェックポイントの内容" }), {
-    target: { value: "新チェックポイント" },
-  });
-  fireEvent.change(getByRole("textbox", { name: "達成の基準" }), {
-    target: { value: "基準を満たす" },
-  });
-  getByRole("button", { name: "チェックポイントを追加" }).click();
-
-  await waitFor(() => {
-    expect(onSubmit).toHaveBeenCalledWith({
-      content: "新チェックポイント",
-      criterion: "基準を満たす",
-      deadline: "2026-08-23",
-      type: "mastery",
-    });
-  });
-});
-
-test("試験目標フォームは既存値で開き、保存できる", async () => {
+test("本番目標フォームは既存値で開き、exam ペイロードで送信する", async () => {
   const onSubmit = vi.fn();
   const { getByRole } = renderWithMantine(
-    <ExamGoalFields
-      activeCheckpointCount={0}
-      copy={GOAL_FORM_COPY.goal}
-      goal={EXAM_GOAL}
-      onCancel={vi.fn()}
-      onSubmit={onSubmit}
-      todayJst={TODAY}
-    />,
+    <ExamGoalFields {...fieldsProps({ copy: GOAL_FORM_COPY.exam, goal: EXAM_GOAL, onSubmit })} />,
   );
   expect((getByRole("textbox", { name: "目標の内容" }) as HTMLInputElement).value).toBe(
     EXAM_GOAL.content,
@@ -127,60 +97,10 @@ test("試験目標フォームは既存値で開き、保存できる", async ()
   });
 });
 
-test("習得フォームは編集時に期限の既定値を空にしない", () => {
-  const { getByDisplayValue } = renderWithMantine(
-    <MasteryGoalFields {...fieldsProps({ goal: MASTERY_GOAL })} />,
-  );
-  expect(getByDisplayValue(MASTERY_GOAL.deadline)).toBeDefined();
-});
-
-test("新規チェックポイントが多いとき助言を出す", () => {
-  const { getByText } = renderWithMantine(
-    <MasteryGoalFields {...fieldsProps({ activeCheckpointCount: 2 })} />,
-  );
-  expect(getByText(CHECKPOINT_CROWDED_MESSAGE)).toBeDefined();
-});
-
-test("編集時は助言を出さない", () => {
-  const { queryByText } = renderWithMantine(
-    <MasteryGoalFields {...fieldsProps({ activeCheckpointCount: 2, goal: MASTERY_GOAL })} />,
-  );
-  expect(queryByText(CHECKPOINT_CROWDED_MESSAGE)).toBeNull();
-});
-
-test("キャンセルボタンで onCancel が呼ばれる", () => {
-  const onCancel = vi.fn();
-  const { getByRole } = renderWithMantine(<MasteryGoalFields {...fieldsProps({ onCancel })} />);
-  getByRole("button", { name: "キャンセル" }).click();
-  expect(onCancel).toHaveBeenCalledOnce();
-});
-
-test("試験フォームのスコア入力を空にできる", () => {
-  const { getByRole } = renderWithMantine(
-    <ExamGoalFields
-      activeCheckpointCount={0}
-      copy={GOAL_FORM_COPY.goal}
-      goal={EXAM_GOAL}
-      onCancel={vi.fn()}
-      onSubmit={vi.fn()}
-      todayJst={TODAY}
-    />,
-  );
-  fireEvent.change(getByRole("textbox", { name: "目標スコア下限" }), { target: { value: "" } });
-  expect((getByRole("textbox", { name: "目標スコア下限" }) as HTMLInputElement).value).toBe("");
-});
-
-test("試験フォームは本番日が空なら保存できない", async () => {
+test("本番目標フォームは本番日が空なら保存できない", async () => {
   const onSubmit = vi.fn();
   const { findByText, getByRole } = renderWithMantine(
-    <ExamGoalFields
-      activeCheckpointCount={0}
-      copy={GOAL_FORM_COPY.goal}
-      goal={undefined}
-      onCancel={vi.fn()}
-      onSubmit={onSubmit}
-      todayJst={TODAY}
-    />,
+    <ExamGoalFields {...fieldsProps({ copy: GOAL_FORM_COPY.exam, onSubmit })} />,
   );
   fireEvent.change(getByRole("textbox", { name: "目標の内容" }), {
     target: { value: "900点を取る" },
@@ -192,80 +112,121 @@ test("試験フォームは本番日が空なら保存できない", async () =>
   expect(onSubmit).not.toHaveBeenCalled();
 });
 
-test("試験フォームは内容が空なら保存できない", async () => {
+test("新規長期目標フォームには期限欄が無く、期限も親も付けずに送信する", async () => {
   const onSubmit = vi.fn();
-  const { findByText, getByRole } = renderWithMantine(
-    <ExamGoalFields
-      activeCheckpointCount={0}
-      copy={GOAL_FORM_COPY.goal}
-      goal={EXAM_GOAL}
-      onCancel={vi.fn()}
-      onSubmit={onSubmit}
-      todayJst={TODAY}
-    />,
+  const { getByRole, queryByLabelText } = renderWithMantine(
+    <LongTermGoalFields {...fieldsProps({ copy: GOAL_FORM_COPY.longTerm, onSubmit })} />,
   );
-  fireEvent.change(getByRole("textbox", { name: "目標の内容" }), { target: { value: "  " } });
+  expect(queryByLabelText(/期限/)).toBeNull();
+
+  fireEvent.change(getByRole("textbox", { name: "長期目標の内容" }), {
+    target: { value: "音読を毎日続けられる" },
+  });
+  fireEvent.change(getByRole("textbox", { name: "達成の基準" }), {
+    target: { value: "1週間続けられる" },
+  });
   getByRole("button", { name: "保存" }).click();
-  expect(await findByText("具体的手順を入力してください")).toBeDefined();
-  expect(onSubmit).not.toHaveBeenCalled();
+
+  await waitFor(() => {
+    expect(onSubmit).toHaveBeenCalledWith({
+      content: "音読を毎日続けられる",
+      criterion: "1週間続けられる",
+      deadline: undefined,
+      parentGoalId: undefined,
+      type: "mastery",
+    });
+  });
 });
 
-test("試験フォームはスコア順序が逆なら保存できない", async () => {
+test("新規チェックポイントは親を読み取り専用で見せ、期限の既定が次の日曜になる", async () => {
   const onSubmit = vi.fn();
-  const { findByText, getByRole } = renderWithMantine(
-    <ExamGoalFields
-      activeCheckpointCount={0}
-      copy={GOAL_FORM_COPY.goal}
-      goal={EXAM_GOAL}
-      onCancel={vi.fn()}
-      onSubmit={onSubmit}
-      todayJst={TODAY}
-    />,
+  const { getByDisplayValue, getByRole, getByText, queryByRole } = renderWithMantine(
+    <CheckpointGoalFields {...fieldsProps({ onSubmit })} />,
   );
-  fireEvent.change(getByRole("textbox", { name: "目標スコア下限" }), { target: { value: "850" } });
-  fireEvent.change(getByRole("textbox", { name: "目標スコア上限" }), { target: { value: "730" } });
+  expect(getByText(EXAM_GOAL.content)).toBeDefined();
+  expect(queryByRole("combobox", { name: /親/ })).toBeNull();
+  expect(getByDisplayValue(NEXT_SUNDAY)).toBeDefined();
+
+  fireEvent.change(getByRole("textbox", { name: "チェックポイントの内容" }), {
+    target: { value: "Unit 1-10 を音読する" },
+  });
+  fireEvent.change(getByRole("textbox", { name: "達成の基準" }), {
+    target: { value: "止まらずに音読できる" },
+  });
   getByRole("button", { name: "保存" }).click();
-  expect(await findByText("目標点の下限が上限を超えています")).toBeDefined();
-  expect(onSubmit).not.toHaveBeenCalled();
+
+  await waitFor(() => {
+    expect(onSubmit).toHaveBeenCalledWith({
+      content: "Unit 1-10 を音読する",
+      criterion: "止まらずに音読できる",
+      deadline: NEXT_SUNDAY,
+      parentGoalId: EXAM_GOAL._id,
+      type: "mastery",
+    });
+  });
 });
 
-test("試験フォームは上限スコアを空にできる", () => {
-  const { getByRole } = renderWithMantine(
-    <ExamGoalFields
-      activeCheckpointCount={0}
-      copy={GOAL_FORM_COPY.goal}
-      goal={EXAM_GOAL}
-      onCancel={vi.fn()}
-      onSubmit={vi.fn()}
-      todayJst={TODAY}
-    />,
-  );
-  fireEvent.change(getByRole("textbox", { name: "目標スコア上限" }), { target: { value: "" } });
-  expect((getByRole("textbox", { name: "目標スコア上限" }) as HTMLInputElement).value).toBe("");
-});
-
-test("習得フォームは基準が空なら保存できない", async () => {
+test("新規チェックポイントは基準が空なら保存できない", async () => {
   const onSubmit = vi.fn();
   const { findByText, getByRole } = renderWithMantine(
-    <MasteryGoalFields {...fieldsProps({ onSubmit })} />,
+    <CheckpointGoalFields {...fieldsProps({ onSubmit })} />,
   );
   fireEvent.change(getByRole("textbox", { name: "チェックポイントの内容" }), {
-    target: { value: "新チェックポイント" },
+    target: { value: "Unit 1-10 を音読する" },
   });
-  getByRole("button", { name: "チェックポイントを追加" }).click();
+  getByRole("button", { name: "保存" }).click();
   expect(await findByText("達成の基準を入力してください")).toBeDefined();
   expect(onSubmit).not.toHaveBeenCalled();
 });
 
-test("習得フォームは内容が空なら保存できない", async () => {
-  const onSubmit = vi.fn();
-  const { findByText, getByRole } = renderWithMantine(
-    <MasteryGoalFields {...fieldsProps({ onSubmit })} />,
+test("追いかけ中が2件以上なら助言を出し、1件なら出さない", () => {
+  const crowded = renderWithMantine(
+    <CheckpointGoalFields {...fieldsProps({ activeCheckpointCount: 2 })} />,
   );
-  fireEvent.change(getByRole("textbox", { name: "達成の基準" }), {
-    target: { value: "基準を満たす" },
+  expect(crowded.getByText(CHECKPOINT_CROWDED_MESSAGE)).toBeDefined();
+  crowded.unmount();
+
+  const calm = renderWithMantine(
+    <CheckpointGoalFields {...fieldsProps({ activeCheckpointCount: 1 })} />,
+  );
+  expect(calm.queryByText(CHECKPOINT_CROWDED_MESSAGE)).toBeNull();
+});
+
+test("チェックポイントの編集は期限と親を保ったまま送信できる", async () => {
+  const onSubmit = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <MasteryEditFields {...fieldsProps({ goal: CHECKPOINT, onSubmit })} />,
+  );
+  getByRole("button", { name: "保存" }).click();
+
+  await waitFor(() => {
+    expect(onSubmit).toHaveBeenCalledWith({
+      content: CHECKPOINT.content,
+      criterion: CHECKPOINT.criterion,
+      deadline: CHECKPOINT.deadline,
+      parentGoalId: EXAM_GOAL._id,
+      type: "mastery",
+    });
   });
-  getByRole("button", { name: "チェックポイントを追加" }).click();
-  expect(await findByText("具体的手順を入力してください")).toBeDefined();
-  expect(onSubmit).not.toHaveBeenCalled();
+});
+
+test("長期目標の編集では親 Select を出さない(期限が無いので親も無い)", () => {
+  const { queryByRole } = renderWithMantine(
+    <MasteryEditFields {...fieldsProps({ copy: GOAL_FORM_COPY.longTerm, goal: LONG_TERM_GOAL })} />,
+  );
+  expect(queryByRole("combobox", { name: /親/ })).toBeNull();
+});
+
+test("子を持つ長期目標では期限が disabled になり、理由を出す", () => {
+  const { getByText, getByLabelText } = renderWithMantine(
+    <MasteryEditFields
+      {...fieldsProps({
+        copy: GOAL_FORM_COPY.longTerm,
+        goal: LONG_TERM_GOAL,
+        hasChildCheckpoints: true,
+      })}
+    />,
+  );
+  expect(getByText(CHECKPOINT_HAS_CHILDREN_MESSAGE)).toBeDefined();
+  expect((getByLabelText(/期限/) as HTMLInputElement).disabled).toBe(true);
 });

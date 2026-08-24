@@ -13,6 +13,7 @@ const modules = import.meta.glob([
   "!./convex.config.ts",
   "!./crons.ts",
   "!./http.ts",
+  "!./migrations.ts",
 ]);
 
 const CONCRETE_ACTION = "Unit 1 を音読する";
@@ -707,6 +708,7 @@ test("試験目標の保存と障害プラン更新", async () => {
     {
       _id: goalId,
       content: "本番までに公式問題集を1冊やり切る",
+      createdAt: expect.any(Number),
       examDate: "2026-10-01",
       maxScore: 900,
       minScore: 800,

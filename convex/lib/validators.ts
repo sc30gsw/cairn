@@ -6,7 +6,7 @@ import { WEEKDAYS } from "./catalog";
 import { CATEGORIES } from "./categories";
 import { CONDITIONS } from "./conditions";
 import { DAY_VIEW_KINDS } from "./dayView";
-import { GOAL_TYPES, STATUSES, TARGET_METRICS } from "./domain";
+import { CHECKPOINT_BACKFILL_PLANS, GOAL_TYPES, STATUSES, TARGET_METRICS } from "./domain";
 import { PRESET_REVIEW_REASONS } from "./presetDigest";
 
 const [toeic, listening, reading, conversation, otherCategory] = CATEGORIES;
@@ -229,11 +229,14 @@ const examGoalFields = v.object({
 });
 
 //? achievedAt は setAchieved の担当なので、作成・更新の入力には含めない(編集で達成を消さない)。
-//? deadline を持つ習得が「チェックポイント」。別タイプではないので枝は増やさない。
+//? deadline を持つ習得が「チェックポイント」。別タイプではないので枝は増やさない(docs/adr/0006)。
+//? 期限と親は同時に存在する(INV-1)。片方だけの状態は services 層で弾く。
 const masteryGoalInputFields = v.object({
   content: v.string(),
   criterion: v.string(),
   deadline: v.optional(v.string()),
+  //? 必須化は既存データのバックフィル後(#49 Phase 5)。それまでは optional で受ける。
+  parentGoalId: v.optional(v.id("goals")),
   type: v.literal(masteryType),
 });
 
@@ -260,7 +263,9 @@ export const goalDocumentValidator = v.union(
   masteryGoalDocumentFields.extend(goalOwnerField),
 );
 
-const goalIdField = { _id: v.id("goals") };
+//? 並び順をクライアントの index 順の偶然に頼らないため、DTO に作成時刻を載せる。
+//? ツリー構築(goal-tree.ts)が自己完結し、純関数のままテストできる。
+const goalIdField = { _id: v.id("goals"), createdAt: v.number() };
 
 export const goalDtoValidator = v.union(
   examGoalFields.extend(goalIdField),
@@ -272,6 +277,57 @@ export type GoalDto = Infer<typeof goalDtoValidator>;
 export const goalInputValidator = v.union(examGoalFields, masteryGoalInputFields);
 
 export type GoalInput = Infer<typeof goalInputValidator>;
+
+//? 値の SSoT は domain.ts のタプル。ここは validator を組み立てるだけ(CVX-16)。
+const [examPlan, longTermPlan, promotePlan, manualPlan, nonePlan] = CHECKPOINT_BACKFILL_PLANS;
+
+export const checkpointBackfillPlanValidator = v.union(
+  v.literal(examPlan),
+  v.literal(longTermPlan),
+  v.literal(promotePlan),
+  v.literal(manualPlan),
+  v.literal(nonePlan),
+);
+
+export const checkpointParentAuditOwnerValidator = v.object({
+  examGoalCount: v.number(),
+  longTermCount: v.number(),
+  orphanCount: v.number(),
+  ownerId: v.string(),
+  plan: checkpointBackfillPlanValidator,
+  promoteLosesDeadline: v.union(v.string(), v.null()),
+});
+
+//* #49 の移行ゲート兼検証。所有者を横断するので internalQuery からしか返さない。
+export const checkpointParentAuditValidator = v.object({
+  //? 親自身が親を持つ(チェーン)
+  chainedCount: v.number(),
+  //? 親の ownerId が子と違う
+  crossOwnerParentCount: v.number(),
+  //? 親 id が実在しない
+  danglingParentCount: v.number(),
+  malformedDeadlineCount: v.number(),
+  //? 期限あり・親なし
+  orphanCount: v.number(),
+  owners: v.array(checkpointParentAuditOwnerValidator),
+  //? 親あり・期限なし
+  parentWithoutDeadlineCount: v.number(),
+  selfParentCount: v.number(),
+  truncated: v.boolean(),
+});
+
+export type CheckpointParentAudit = Infer<typeof checkpointParentAuditValidator>;
+export type CheckpointParentAuditOwner = Infer<typeof checkpointParentAuditOwnerValidator>;
+
+export const backfillCheckpointParentsResultValidator = v.object({
+  assigned: v.number(),
+  plan: checkpointBackfillPlanValidator,
+  promoted: v.number(),
+});
+
+export type BackfillCheckpointParentsResult = Infer<
+  typeof backfillCheckpointParentsResultValidator
+>;
 
 //* 週間ターゲット。常設定義・週次スナップショットなしの「今週専用の計器」。
 export const targetMetricValidator = v.union(

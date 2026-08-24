@@ -91,6 +91,8 @@ const SKETCH_RADIUS = "8px 14px 9px 16px/16px 9px 14px 8px";
 //? ピル/スタンプ状の不揃い輪郭(タブ・ボタン・バッジ共通)
 const PILL_RADIUS = "255px 15px 225px 15px/15px 225px 15px 255px";
 const PAPER_SHADOW = "2px 3px 0 rgba(16,15,15,.12)";
+//? チェックボックスだけの小さな手描き角丸(設計ファイル由来)
+const CHECK_RADIUS = "6px 10px 7px 11px/11px 7px 10px 6px";
 
 export const cssVariablesResolver: CSSVariablesResolver = () => ({
   dark: {},
@@ -154,6 +156,10 @@ export const theme = createTheme({
               : "2px 2px 0 rgba(16,15,15,.15)",
         },
       }),
+    },
+    //? 手描き風の不揃いな角丸(設計ファイルのチェックボックス)。2箇所目の需要が出るまで export しない
+    Checkbox: {
+      styles: { input: { border: `1.5px solid ${INK}`, borderRadius: CHECK_RADIUS } },
     },
     Card: {
       defaultProps: {

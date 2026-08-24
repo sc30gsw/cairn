@@ -4,6 +4,7 @@ import { ValidationFailedError } from "../../lib/errors";
 import { todayJst } from "../../lib/jst";
 import { throwDomain } from "../../lib/ownerFunctions";
 import type { GoalInput } from "../../lib/validators";
+import { assertCheckpointParent } from "./assertCheckpointParent";
 import { assertGoalInput } from "./assertGoalInput";
 import { loadDayTotals } from "./loadDayTotals";
 import { initialMasteryProgress } from "./masteryDayTotals";
@@ -31,6 +32,8 @@ export async function create(
     }
     return await ctx.db.insert("goals", toGoalDocument(goal, ownerId));
   }
+  //? 期限を持つなら親の不変条件を確かめる。新規は子を持たないので INV-5 は不要。
+  await assertCheckpointParent(ctx, ownerId, goal);
   //? 学習量の実績は作成日を起点にする。作成と同じ暦日に既にある確定は実績に入る(ADR-0007)。
   //? mutation なので Date.now() を読んでよい(CVX-14 は query だけの制約)。
   const progress = initialMasteryProgress(await loadDayTotals(ctx, ownerId, todayJst()));

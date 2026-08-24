@@ -1,6 +1,7 @@
 import * as v from "valibot";
 import { expect, test } from "vite-plus/test";
 import {
+  CHECKPOINT_PARENT_REQUIRED_MESSAGE,
   MASTERY_CRITERION_MESSAGE,
   TOEIC_SCORE_ORDER_MESSAGE,
   TOEIC_SCORE_RANGE_MESSAGE,
@@ -8,9 +9,11 @@ import {
 } from "~domain/domain";
 
 import {
+  CheckpointGoalFieldsSchema,
   ExamGoalFieldsSchema,
   GoalSchema,
-  MasteryGoalFieldsSchema,
+  LongTermGoalFieldsSchema,
+  MasteryEditFieldsSchema,
 } from "~/features/goals/schemas/goal-schema";
 
 function firstIssue(result: v.SafeParseResult<v.GenericSchema>) {
@@ -58,39 +61,84 @@ test("試験: 本番日は YYYY-MM-DD 以外を弾く", () => {
   expect(result.success).toBe(false);
 });
 
-test("習得: 達成の基準が空ならエラー", () => {
-  const result = v.safeParse(MasteryGoalFieldsSchema, {
+test("新規長期目標: 期限キーを持たない(期限欄を出さない確定事項)", () => {
+  expect(Object.keys(LongTermGoalFieldsSchema.entries)).toEqual(["content", "criterion"]);
+});
+
+test("新規長期目標: 達成の基準が空ならエラー", () => {
+  const result = v.safeParse(LongTermGoalFieldsSchema, {
     content: "Unit 1-10 を音読する",
     criterion: "   ",
-    deadline: "",
   });
   expect(result.success).toBe(false);
   expect(firstIssue(result)).toBe(MASTERY_CRITERION_MESSAGE);
 });
 
-test("習得: 期限は空欄なら undefined に畳む", () => {
-  const output = v.parse(MasteryGoalFieldsSchema, {
+test("新規チェックポイント: 期限と親が必須", () => {
+  const missingDeadline = v.safeParse(CheckpointGoalFieldsSchema, {
     content: "Unit 1-10 を音読する",
     criterion: "止まらずに音読できる",
     deadline: "",
+    parentGoalId: "parent",
+  });
+  expect(missingDeadline.success).toBe(false);
+
+  const missingParent = v.safeParse(CheckpointGoalFieldsSchema, {
+    content: "Unit 1-10 を音読する",
+    criterion: "止まらずに音読できる",
+    deadline: "2026-08-23",
+    parentGoalId: "",
+  });
+  expect(missingParent.success).toBe(false);
+  expect(firstIssue(missingParent)).toBe(CHECKPOINT_PARENT_REQUIRED_MESSAGE);
+});
+
+test("新規チェックポイント: 期限と親が揃えば通る", () => {
+  const result = v.safeParse(CheckpointGoalFieldsSchema, {
+    content: "Unit 1-10 を音読する",
+    criterion: "止まらずに音読できる",
+    deadline: "2026-08-23",
+    parentGoalId: "parent",
+  });
+  expect(result.success).toBe(true);
+});
+
+test("編集: 期限は空欄なら undefined に畳む", () => {
+  const output = v.parse(MasteryEditFieldsSchema, {
+    content: "Unit 1-10 を音読する",
+    criterion: "止まらずに音読できる",
+    deadline: "",
+    parentGoalId: "",
   });
   expect(output.deadline).toBeUndefined();
 });
 
-test("習得: 期限があればチェックポイントとしてそのまま残す", () => {
-  const output = v.parse(MasteryGoalFieldsSchema, {
+test("編集: 期限と親の片方だけなら parentGoalId にエラーが付く(INV-1)", () => {
+  const deadlineOnly = v.safeParse(MasteryEditFieldsSchema, {
     content: "Unit 1-10 を音読する",
     criterion: "止まらずに音読できる",
     deadline: "2026-08-23",
+    parentGoalId: "",
   });
-  expect(output.deadline).toBe("2026-08-23");
+  expect(deadlineOnly.success).toBe(false);
+  expect(deadlineOnly.issues?.[0]?.path?.[0]?.key).toBe("parentGoalId");
+  expect(firstIssue(deadlineOnly)).toBe(CHECKPOINT_PARENT_REQUIRED_MESSAGE);
+
+  const parentOnly = v.safeParse(MasteryEditFieldsSchema, {
+    content: "Unit 1-10 を音読する",
+    criterion: "止まらずに音読できる",
+    deadline: "",
+    parentGoalId: "parent",
+  });
+  expect(parentOnly.success).toBe(false);
 });
 
-test("習得: 期限は空欄以外なら日付形式を検証する", () => {
-  const result = v.safeParse(MasteryGoalFieldsSchema, {
+test("編集: 期限は空欄以外なら日付形式を検証する", () => {
+  const result = v.safeParse(MasteryEditFieldsSchema, {
     content: "Unit 1-10 を音読する",
     criterion: "止まらずに音読できる",
     deadline: "2026/09/20",
+    parentGoalId: "parent",
   });
   expect(result.success).toBe(false);
 });
@@ -100,6 +148,7 @@ test("送信ペイロードは type で分岐する2枝の union になる", () 
     content: "Unit 1-10 を音読する",
     criterion: "止まらずに音読できる",
     deadline: "2026-08-23",
+    parentGoalId: "parent",
     type: "mastery",
   });
   expect(result.success).toBe(true);
@@ -107,6 +156,7 @@ test("送信ペイロードは type で分岐する2枝の union になる", () 
     content: "Unit 1-10 を音読する",
     criterion: "止まらずに音読できる",
     deadline: "2026-08-23",
+    parentGoalId: "parent",
     type: "mastery",
   });
 });

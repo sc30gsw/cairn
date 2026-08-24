@@ -2,7 +2,8 @@ import { expect, test, vi } from "vite-plus/test";
 
 import {
   EXAM_GOAL_INCOMPLETE_TITLE,
-  ExamGoalCard,
+  EXAM_GOAL_SECTION_TITLE,
+  ExamGoalBody,
 } from "~/features/goals/components/exam-goal-card";
 import type { ExamGoal } from "~/features/goals/types/goal";
 import { renderWithMantine } from "~/test-utils/render";
@@ -12,6 +13,7 @@ const TODAY = "2026-08-17";
 const EXAM_GOAL = {
   _id: "goal-exam" as ExamGoal["_id"],
   content: "金のフレーズを1 Unit 音読する",
+  createdAt: 1_755_000_000_000,
   examDate: "2026-09-27",
   maxScore: 850,
   minScore: 730,
@@ -23,7 +25,7 @@ const PAST_EXAM_GOAL = {
   examDate: "2026-08-01",
 } satisfies ExamGoal;
 
-function cardProps(overrides: Partial<Parameters<typeof ExamGoalCard>[0]> = {}) {
+function cardProps(overrides: Partial<Parameters<typeof ExamGoalBody>[0]> = {}) {
   return {
     goal: EXAM_GOAL,
     hasWeeklyTargets: false,
@@ -37,20 +39,21 @@ function cardProps(overrides: Partial<Parameters<typeof ExamGoalCard>[0]> = {}) 
 
 test("本番日当日は残り0日として表示する", () => {
   const { getByText } = renderWithMantine(
-    <ExamGoalCard {...cardProps({ goal: { ...EXAM_GOAL, examDate: TODAY }, todayJst: TODAY })} />,
+    <ExamGoalBody {...cardProps({ goal: { ...EXAM_GOAL, examDate: TODAY }, todayJst: TODAY })} />,
   );
   expect(getByText(/2026-08-17 まであと 0 日/)).toBeDefined();
 });
 
 test("本番までの残り日数とスコア帯が見える", () => {
-  const { getByText } = renderWithMantine(<ExamGoalCard {...cardProps()} />);
+  const { getByText } = renderWithMantine(<ExamGoalBody {...cardProps()} />);
+  expect(getByText(EXAM_GOAL_SECTION_TITLE)).toBeDefined();
   expect(getByText(/2026-09-27 まであと 41 日/)).toBeDefined();
   expect(getByText(/730〜850/)).toBeDefined();
 });
 
 test("本番日を過ぎているときは過ぎた旨だけを強調する", () => {
   const { getByText, queryByText } = renderWithMantine(
-    <ExamGoalCard {...cardProps({ goal: PAST_EXAM_GOAL })} />,
+    <ExamGoalBody {...cardProps({ goal: PAST_EXAM_GOAL })} />,
   );
   expect(getByText("本番日を過ぎています。")).toBeDefined();
   expect(queryByText(/まであと/)).toBeNull();
@@ -59,7 +62,7 @@ test("本番日を過ぎているときは過ぎた旨だけを強調する", ()
 test("週間ターゲットが無いときは設定を促す", () => {
   const onShowWeeklyTargets = vi.fn();
   const { getByRole, getByText } = renderWithMantine(
-    <ExamGoalCard {...cardProps({ onShowWeeklyTargets })} />,
+    <ExamGoalBody {...cardProps({ onShowWeeklyTargets })} />,
   );
   expect(getByText(EXAM_GOAL_INCOMPLETE_TITLE)).toBeDefined();
   getByRole("button", { name: "週間ターゲットを設定する" }).click();
@@ -68,15 +71,24 @@ test("週間ターゲットが無いときは設定を促す", () => {
 
 test("週間ターゲットがあれば未完成の促しは出ない", () => {
   const { queryByText } = renderWithMantine(
-    <ExamGoalCard {...cardProps({ hasWeeklyTargets: true })} />,
+    <ExamGoalBody {...cardProps({ hasWeeklyTargets: true })} />,
   );
   expect(queryByText(EXAM_GOAL_INCOMPLETE_TITLE)).toBeNull();
+});
+
+test("週間ターゲットを置くと未完成の促しが消える(再描画)", () => {
+  const view = renderWithMantine(<ExamGoalBody {...cardProps()} />);
+  expect(view.getByText(EXAM_GOAL_INCOMPLETE_TITLE)).toBeDefined();
+
+  view.rerender(<ExamGoalBody {...cardProps({ hasWeeklyTargets: true })} />);
+
+  expect(view.queryByText(EXAM_GOAL_INCOMPLETE_TITLE)).toBeNull();
 });
 
 test("編集と削除のアクションが呼ばれる", () => {
   const onEdit = vi.fn();
   const onRemove = vi.fn();
-  const { getByRole } = renderWithMantine(<ExamGoalCard {...cardProps({ onEdit, onRemove })} />);
+  const { getByRole } = renderWithMantine(<ExamGoalBody {...cardProps({ onEdit, onRemove })} />);
   getByRole("button", { name: `${EXAM_GOAL.content}を編集` }).click();
   getByRole("button", { name: `${EXAM_GOAL.content}を削除` }).click();
   expect(onEdit).toHaveBeenCalledOnce();
@@ -84,6 +96,6 @@ test("編集と削除のアクションが呼ばれる", () => {
 });
 
 test("残り日数の大きな数字が表示される", () => {
-  const { getByText } = renderWithMantine(<ExamGoalCard {...cardProps()} />);
+  const { getByText } = renderWithMantine(<ExamGoalBody {...cardProps()} />);
   expect(getByText("41")).toBeDefined();
 });

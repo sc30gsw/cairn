@@ -19,6 +19,7 @@
   "dependencies": {
     "@better-auth/passkey": "^1.7.1",
     "@convex-dev/better-auth": "^0.12.5",
+    "@convex-dev/migrations": "^0.3.6",
     "@convex-dev/react-query": "^0.1.0",
     "@formisch/react": "1.0.0-rc.0",
     "@gfazioli/mantine-onboarding-tour": "^4.0.9",

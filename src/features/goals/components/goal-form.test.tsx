@@ -1,221 +1,125 @@
-import { fireEvent, waitFor } from "@testing-library/react";
+import { waitFor } from "@testing-library/react";
 import { expect, test, vi } from "vite-plus/test";
 
 import { GoalForm } from "~/features/goals/components/goal-form";
-import { CHECKPOINT_CROWDED_MESSAGE } from "~/features/goals/components/goal-form-fields";
 import { GOAL_FORM_COPY } from "~/features/goals/lib/goal-form-copy";
-import { GOAL_TYPE_LABELS } from "~/features/goals/lib/goal-type-labels";
-import type { Goal } from "~/features/goals/types/goal";
+import type { ExamGoal, Goal, MasteryGoal } from "~/features/goals/types/goal";
 import { renderWithMantine } from "~/test-utils/render";
 
 const TODAY = "2026-08-17";
 const NEXT_SUNDAY = "2026-08-23";
 
-const MASTERY_GOAL = {
-  _id: "goal-mastery" as Goal["_id"],
-  achievedAt: undefined,
-  activeDays: 4,
-  confirmedMinutes: 180,
-  content: "Unit 1-10 を音読する",
-  criterion: "止まらずに音読できる",
-  deadline: "2026-09-06",
-  type: "mastery",
-} satisfies Goal;
-
 const EXAM_GOAL = {
-  _id: "goal-exam" as Goal["_id"],
+  _id: "goal-exam" as ExamGoal["_id"],
   content: "900点を取る",
+  createdAt: 1_755_000_000_000,
   examDate: "2026-09-27",
   maxScore: 850,
   minScore: 730,
   type: "exam",
-} satisfies Goal;
+} satisfies ExamGoal;
+
+const LONG_TERM_GOAL = {
+  _id: "goal-long-term" as MasteryGoal["_id"],
+  achievedAt: undefined,
+  activeDays: 2,
+  confirmedMinutes: 90,
+  content: "Distinction の例文を口頭で言い切る",
+  createdAt: 1_755_000_100_000,
+  criterion: "3秒以内に例文を口に出せる",
+  deadline: undefined,
+  parentGoalId: undefined,
+  type: "mastery",
+} satisfies MasteryGoal;
+
+const CHECKPOINT = {
+  _id: "goal-checkpoint" as MasteryGoal["_id"],
+  achievedAt: undefined,
+  activeDays: 4,
+  confirmedMinutes: 180,
+  content: "Unit 1-10 を音読する",
+  createdAt: 1_755_000_200_000,
+  criterion: "止まらずに音読できる",
+  deadline: "2026-09-06",
+  parentGoalId: EXAM_GOAL._id,
+  type: "mastery",
+} satisfies MasteryGoal;
+
+const GOALS: Goal[] = [EXAM_GOAL, LONG_TERM_GOAL, CHECKPOINT];
 
 function formProps(overrides: Partial<Parameters<typeof GoalForm>[0]> = {}) {
   return {
     activeCheckpointCount: 0,
     goal: undefined,
-    initialType: "mastery",
+    goals: GOALS,
+    hasChildCheckpoints: false,
     onCancel: vi.fn(),
     onSubmit: vi.fn(),
+    parent: undefined,
     todayJst: TODAY,
+    variant: "longTerm",
     ...overrides,
   } satisfies Parameters<typeof GoalForm>[0];
 }
 
-test("習得を選ぶと達成の基準と期限の欄が出る", () => {
-  const { getByRole } = renderWithMantine(<GoalForm {...formProps()} />);
-  expect(getByRole("textbox", { name: "達成の基準" })).toBeDefined();
-  expect(getByRole("textbox", { name: "目標の内容" })).toBeDefined();
-});
-
-test.each([
-  ["exam", "目標スコア下限"],
-  ["mastery", "達成の基準"],
-] as const)("目標タイプ「%s」を選ぶと専用の入力欄に切り替わる", async (type, fieldLabel) => {
-  const { getByRole } = renderWithMantine(<GoalForm {...formProps()} />);
-
-  getByRole("combobox", { name: /目標タイプ/ }).click();
-  getByRole("option", { hidden: true, name: GOAL_TYPE_LABELS[type] }).click();
-
-  await waitFor(() => {
-    expect(getByRole("textbox", { name: fieldLabel })).toBeDefined();
-  });
-});
-
-test("習得を新規作成すると期限の既定値は次の日曜になる", async () => {
-  const onSubmit = vi.fn();
-  const { getByRole } = renderWithMantine(<GoalForm {...formProps({ onSubmit })} />);
-
-  fireEvent.change(getByRole("textbox", { name: "目標の内容" }), {
-    target: { value: "Unit 1-10 を音読する" },
-  });
-  fireEvent.change(getByRole("textbox", { name: "達成の基準" }), {
-    target: { value: "止まらずに音読できる" },
-  });
-  getByRole("button", { name: "保存" }).click();
-
-  await waitFor(() => {
-    expect(onSubmit).toHaveBeenCalledWith({
-      content: "Unit 1-10 を音読する",
-      criterion: "止まらずに音読できる",
-      deadline: NEXT_SUNDAY,
-      type: "mastery",
-    });
-  });
-});
-
-test("習得を編集すると既存の期限のまま送信できる", async () => {
-  const onSubmit = vi.fn();
-  const { getByRole } = renderWithMantine(
-    <GoalForm {...formProps({ goal: MASTERY_GOAL, onSubmit })} />,
-  );
-
-  getByRole("button", { name: "保存" }).click();
-
-  await waitFor(() => {
-    expect(onSubmit).toHaveBeenCalledWith({
-      content: MASTERY_GOAL.content,
-      criterion: MASTERY_GOAL.criterion,
-      deadline: MASTERY_GOAL.deadline,
-      type: "mastery",
-    });
-  });
-});
-
-test("目標の内容が空なら保存できず、エラーが出る", async () => {
-  const onSubmit = vi.fn();
-  const { findByText, getByRole } = renderWithMantine(<GoalForm {...formProps({ onSubmit })} />);
-
-  fireEvent.change(getByRole("textbox", { name: "達成の基準" }), {
-    target: { value: "止まらずに音読できる" },
-  });
-  getByRole("button", { name: "保存" }).click();
-
-  expect(await findByText("具体的手順を入力してください")).toBeDefined();
-  expect(onSubmit).not.toHaveBeenCalled();
-});
-
-test("習得の達成の基準が空なら保存できず、エラーが出る", async () => {
-  const onSubmit = vi.fn();
-  const { findByText, getByRole } = renderWithMantine(<GoalForm {...formProps({ onSubmit })} />);
-
-  fireEvent.change(getByRole("textbox", { name: "目標の内容" }), {
-    target: { value: "Unit 1-10 を音読する" },
-  });
-  getByRole("button", { name: "保存" }).click();
-
-  expect(await findByText("達成の基準を入力してください")).toBeDefined();
-  expect(onSubmit).not.toHaveBeenCalled();
-});
-
-test("試験のスコア下限が上限を超えるとエラーが出て送信できない", async () => {
-  const onSubmit = vi.fn();
-  const { findByText, getByRole } = renderWithMantine(
-    <GoalForm {...formProps({ initialType: "exam", onSubmit })} />,
-  );
-
-  fireEvent.change(getByRole("textbox", { name: "目標の内容" }), {
-    target: { value: "公式問題集を1回分解く" },
-  });
-  fireEvent.change(getByRole("textbox", { name: "目標スコア下限" }), { target: { value: "850" } });
-  fireEvent.change(getByRole("textbox", { name: "目標スコア上限" }), { target: { value: "730" } });
-  getByRole("button", { name: "保存" }).click();
-
-  expect(await findByText("目標点の下限が上限を超えています")).toBeDefined();
-  expect(onSubmit).not.toHaveBeenCalled();
-});
-
-test("編集時は目標タイプを変更できない", () => {
-  const { getByRole } = renderWithMantine(<GoalForm {...formProps({ goal: MASTERY_GOAL })} />);
-  expect(getByRole("combobox", { name: /目標タイプ/ }).hasAttribute("disabled")).toBe(true);
-});
-
-test("チェックポイントとして開くと文言がチェックポイントに揃い、タイプ選択は出ない", async () => {
-  const onSubmit = vi.fn();
-  const { getByRole, queryByRole } = renderWithMantine(
-    <GoalForm {...formProps({ onSubmit, variant: "checkpoint" })} />,
-  );
+test("どの区分でも目標タイプの Select は出ない", () => {
+  const { queryByRole } = renderWithMantine(<GoalForm {...formProps()} />);
   expect(queryByRole("combobox", { name: /目標タイプ/ })).toBeNull();
-  expect(queryByRole("textbox", { name: "目標の内容" })).toBeNull();
-
-  fireEvent.change(getByRole("textbox", { name: "チェックポイントの内容" }), {
-    target: { value: "Unit 1-10 を音読する" },
-  });
-  fireEvent.change(getByRole("textbox", { name: "達成の基準" }), {
-    target: { value: "止まらずに音読できる" },
-  });
-  getByRole("button", { name: "チェックポイントを追加" }).click();
-
-  await waitFor(() => {
-    expect(onSubmit).toHaveBeenCalledWith({
-      content: "Unit 1-10 を音読する",
-      criterion: "止まらずに音読できる",
-      deadline: NEXT_SUNDAY,
-      type: "mastery",
-    });
-  });
 });
 
-test("追いかけ中が2件以上のときだけ、新規作成に助言が出る", () => {
-  const { getByText } = renderWithMantine(
-    <GoalForm {...formProps({ activeCheckpointCount: 2 })} />,
+test("新規長期目標は長期目標の語で開き、期限欄を出さない", () => {
+  const { getByRole, queryByLabelText } = renderWithMantine(<GoalForm {...formProps()} />);
+  expect(getByRole("heading", { name: GOAL_FORM_COPY.longTerm.createTitle })).toBeDefined();
+  expect(getByRole("textbox", { name: GOAL_FORM_COPY.longTerm.contentLabel })).toBeDefined();
+  expect(queryByLabelText(/期限/)).toBeNull();
+});
+
+test("新規チェックポイントはチェックポイントの語で開き、親を読み取り専用で見せる", () => {
+  const { getByDisplayValue, getByRole, getByText } = renderWithMantine(
+    <GoalForm {...formProps({ parent: EXAM_GOAL, variant: "checkpoint" })} />,
   );
-  expect(getByText(CHECKPOINT_CROWDED_MESSAGE)).toBeDefined();
-});
-
-test("編集中は助言を出さない", () => {
-  const { queryByText } = renderWithMantine(
-    <GoalForm {...formProps({ activeCheckpointCount: 3, goal: MASTERY_GOAL })} />,
-  );
-  expect(queryByText(CHECKPOINT_CROWDED_MESSAGE)).toBeNull();
-});
-
-test("編集モードでは編集タイトルとタイプ変更不可の説明が出る", () => {
-  const { getByRole, getByText } = renderWithMantine(
-    <GoalForm {...formProps({ goal: MASTERY_GOAL, initialType: "mastery" })} />,
-  );
-  expect(getByText(GOAL_FORM_COPY.goal.editTitle)).toBeDefined();
-  expect(
-    getByText("目標タイプは変更できません。別のタイプにするときは、削除して作り直します。"),
-  ).toBeDefined();
-  expect(getByRole("combobox", { name: /目標タイプ/ }).hasAttribute("disabled")).toBe(true);
-});
-
-test("新規作成モードでは作成タイトルが出る", () => {
-  const { getByText } = renderWithMantine(<GoalForm {...formProps()} />);
-  expect(getByText(GOAL_FORM_COPY.goal.createTitle)).toBeDefined();
-});
-
-test("チェックポイント variant では checkpoint の copy が使われる", () => {
-  const { getByRole } = renderWithMantine(<GoalForm {...formProps({ variant: "checkpoint" })} />);
   expect(getByRole("heading", { name: GOAL_FORM_COPY.checkpoint.createTitle })).toBeDefined();
+  expect(getByText(EXAM_GOAL.content)).toBeDefined();
+  expect(getByDisplayValue(NEXT_SUNDAY)).toBeDefined();
 });
 
-test("試験目標を編集すると exam ペイロードで送信される", async () => {
+test("新規本番目標はスコア欄つきで開く", () => {
+  const { getByRole } = renderWithMantine(<GoalForm {...formProps({ variant: "exam" })} />);
+  expect(getByRole("heading", { name: GOAL_FORM_COPY.exam.createTitle })).toBeDefined();
+  expect(getByRole("textbox", { name: "目標スコア下限" })).toBeDefined();
+});
+
+test("チェックポイントの編集はチェックポイントの語で開き、送信ラベルは保存になる", () => {
+  const { getByRole } = renderWithMantine(
+    <GoalForm {...formProps({ goal: CHECKPOINT, variant: "checkpoint" })} />,
+  );
+  expect(getByRole("heading", { name: GOAL_FORM_COPY.checkpoint.editTitle })).toBeDefined();
+  expect(getByRole("button", { name: "保存" })).toBeDefined();
+});
+
+test("長期目標の編集は長期目標の語で開く", () => {
+  const { getByRole } = renderWithMantine(
+    <GoalForm {...formProps({ goal: LONG_TERM_GOAL, variant: "longTerm" })} />,
+  );
+  expect(getByRole("heading", { name: GOAL_FORM_COPY.longTerm.editTitle })).toBeDefined();
+});
+
+test("習得の編集で期限を消すと長期目標への移行を予告し、親 Select が消える", async () => {
+  const { findByText, getByRole, queryByRole } = renderWithMantine(
+    <GoalForm {...formProps({ goal: CHECKPOINT, variant: "checkpoint" })} />,
+  );
+  expect(getByRole("combobox", { name: /親/ })).toBeDefined();
+
+  getByRole("button", { name: /期限.*を消す/ }).click();
+
+  expect(await findByText("保存すると期限が外れ、長期目標へ移ります")).toBeDefined();
+  expect(queryByRole("combobox", { name: /親/ })).toBeNull();
+});
+
+test("本番目標の編集は exam ペイロードで送信する", async () => {
   const onSubmit = vi.fn();
   const { getByRole } = renderWithMantine(
-    <GoalForm {...formProps({ goal: EXAM_GOAL, initialType: "exam", onSubmit })} />,
+    <GoalForm {...formProps({ goal: EXAM_GOAL, onSubmit, variant: "exam" })} />,
   );
   getByRole("button", { name: "保存" }).click();
   await waitFor(() => {
@@ -226,16 +130,6 @@ test("試験目標を編集すると exam ペイロードで送信される", as
       minScore: EXAM_GOAL.minScore,
       type: "exam",
     });
-  });
-});
-
-test("新規作成でタイプを試験に切り替えると試験フォームになる", async () => {
-  const { getByRole } = renderWithMantine(<GoalForm {...formProps()} />);
-  getByRole("combobox", { name: /目標タイプ/ }).click();
-  getByRole("option", { hidden: true, name: GOAL_TYPE_LABELS.exam }).click();
-  await waitFor(() => {
-    expect(getByRole("textbox", { name: "目標スコア下限" })).toBeDefined();
-    expect(getByRole("button", { name: "本番日" })).toBeDefined();
   });
 });
 

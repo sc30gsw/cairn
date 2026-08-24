@@ -1,17 +1,6 @@
 import { expect, test } from "vite-plus/test";
 
-import { isGoalType, isTargetMetric } from "~/features/goals/lib/goal-guards";
-
-test.each(["exam", "mastery"])("isGoalType は %s をドメイン値として認める", (value) => {
-  expect(isGoalType(value)).toBe(true);
-});
-
-test.each(["pace", "volume", "other", "okr"])(
-  "isGoalType は廃止・ドメイン外の %s を弾く",
-  (value) => {
-    expect(isGoalType(value)).toBe(false);
-  },
-);
+import { isTargetMetric } from "~/features/goals/lib/goal-guards";
 
 test.each(["minutes", "days", "count"])(
   "isTargetMetric は %s をドメイン値として認める",
