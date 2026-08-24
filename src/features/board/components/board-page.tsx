@@ -10,16 +10,13 @@ import { BoardSchedulePending } from "~/features/board/components/board-schedule
 import { BoardScheduleTab } from "~/features/board/components/board-schedule-tab";
 import { BoardTabs, BoardTabsPending } from "~/features/board/components/board-tabs";
 import { useBoardView } from "~/features/board/hooks/use-board-view";
-import {
-  boardShimmerObstacle,
-  boardShimmerRows,
-} from "~/features/board/lib/board-shimmer-template";
+import { boardShimmerRows } from "~/features/board/lib/board-shimmer-template";
 
 function boardLeadCopy(selectedDateJst: DateJst, today: DateJst) {
   if (selectedDateJst === today) {
-    return "今日の記録の状態と、チェックポイント。書く場所は日のままです。";
+    return "今日の記録の状態。書く場所は日のままです。";
   }
-  return `${selectedDateJst} の記録の状態と、チェックポイント。書く場所は日のままです。`;
+  return `${selectedDateJst} の記録の状態。書く場所は日のままです。`;
 }
 
 export function BoardPage() {
@@ -43,15 +40,7 @@ function BoardPending() {
           {boardLeadCopy(selectedDateJst, today)}
         </Text>
         <BoardTabsPending
-          kanban={
-            <BoardKanban
-              checkpointLabel="Part 2 を聞き取る（2026-08-20）"
-              dateJst="2026-08-17"
-              interactive={false}
-              obstacles={[boardShimmerObstacle]}
-              rows={boardShimmerRows}
-            />
-          }
+          kanban={<BoardKanban dateJst="2026-08-17" interactive={false} rows={boardShimmerRows} />}
           schedule={tab === "schedule" ? <BoardSchedulePending /> : null}
         />
       </Shimmer>

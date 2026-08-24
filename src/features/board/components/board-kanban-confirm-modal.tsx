@@ -2,11 +2,12 @@ import { Field, Form, reset, useForm } from "@formisch/react";
 import type { SubmitHandler } from "@formisch/react";
 import { Button, Group, Modal, NumberInput, Stack, Textarea } from "@mantine/core";
 import { useEffect } from "react";
+import { hasTimerState } from "~domain/rowTimer";
 
 import type { BoardRow } from "~/features/board/types/board";
 import { RowEditorSchema } from "~/lib/validation/row-editor-schema";
 
-export type KanbanConfirmInput = {
+type KanbanConfirmInput = {
   content: string;
   minutes: number;
   rowId: BoardRow["_id"];
@@ -16,6 +17,8 @@ type BoardKanbanConfirmModalProps = {
   onClose: () => void;
   onConfirm: (input: KanbanConfirmInput) => void | Promise<void>;
   opened: boolean;
+  //? 計測がある行はサーバで畳んだ真値を初期値にする(docs/specs/study-timer.md §11.3)。
+  prefillMinutes: number | null;
   row: BoardRow | null;
 };
 
@@ -23,12 +26,13 @@ export function BoardKanbanConfirmModal({
   onClose,
   onConfirm,
   opened,
+  prefillMinutes,
   row,
 }: BoardKanbanConfirmModalProps) {
   const form = useForm({
     initialInput: {
       content: row?.content ?? "",
-      minutes: row?.minutes ?? 0,
+      minutes: prefillMinutes ?? row?.minutes ?? 0,
     },
     schema: RowEditorSchema,
   });
@@ -38,10 +42,10 @@ export function BoardKanbanConfirmModal({
       return;
     }
     reset(form, {
-      initialInput: { content: row.content, minutes: row.minutes },
+      initialInput: { content: row.content, minutes: prefillMinutes ?? row.minutes },
       keepInput: false,
     });
-  }, [form, row]);
+  }, [form, prefillMinutes, row]);
 
   const handleSubmit: SubmitHandler<typeof RowEditorSchema> = async (values) => {
     if (row === null) {
@@ -97,5 +101,6 @@ export function BoardKanbanConfirmModal({
 }
 
 export function needsKanbanConfirmEditor(row: BoardRow): boolean {
-  return row.content.trim() === "" || row.minutes === 0;
+  //? 計測があるのにモーダルを開かないと、目安分数のまま確定して計測結果を捨てる(#51 §2 の現状バグ)。
+  return row.content.trim() === "" || row.minutes === 0 || hasTimerState(row.timer);
 }

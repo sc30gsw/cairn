@@ -1,10 +1,15 @@
 import { fireEvent, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { expect, test, vi } from "vite-plus/test";
 
 import { WeeklyTargetsSection } from "~/features/goals/components/weekly-targets-section";
 import type { TargetProgress } from "~/features/goals/types/target";
 import { renderWithMantine } from "~/test-utils/render";
 import type { CategoryDto } from "~/types/category";
+
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({ children }: Record<"children", ReactNode>) => <a href="/review">{children}</a>,
+}));
 
 const { onRemoveTarget, onSaveTarget } = vi.hoisted(() => ({
   onRemoveTarget: vi.fn(),
@@ -144,4 +149,11 @@ test("カテゴリーが1件も無ければフォームの代わりに案内を�
   );
   expect(getByText("先にカテゴリーを作ると、週間ターゲットを置けます。")).toBeDefined();
   expect(queryByRole("textbox", { name: "目標値" })).toBeNull();
+});
+
+test("週間ターゲット節から週次レビューへの導線がある", () => {
+  const { getByRole } = renderWithMantine(
+    <WeeklyTargetsSection {...sectionProps([ACHIEVED_TARGET])} />,
+  );
+  expect(getByRole("link", { name: "今週のレビュー" })).toBeDefined();
 });

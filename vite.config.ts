@@ -19,6 +19,7 @@ const FEATURE_NAMES = [
   "history",
   "my-page",
   "onboarding",
+  "review",
   "today",
   "trash",
 ] as const;
@@ -122,6 +123,10 @@ export default defineConfig({
       ".scratch/**",
       "docs/**",
       "**/*.md",
+      //? WebWorker ランタイム前提の宣言(self / ServiceWorkerGlobalScope)が oxlint の env と噛み合わず、
+      //? Serwist の declaration merging が interface を要求する(docs/specs/pwa-mobile.md §4.3 / §19-14)。
+      //? 整形は掛けるので fmt.ignorePatterns には入れない。
+      "sw/**",
     ],
     jsPlugins: [{ name: "react-doctor", specifier: "oxlint-plugin-react-doctor" }],
     options: {
@@ -265,9 +270,18 @@ export default defineConfig({
         "src/features/goals/components/**/*.tsx",
         "src/features/goals/hooks/use-week-snapshot.ts",
         "src/features/goals/lib/goal-guards.ts",
-        "src/features/goals/lib/goal-selectors.ts",
+        "src/features/goals/lib/goal-remove-confirm.ts",
+        "src/features/goals/lib/goal-tier-transition.ts",
+        "src/features/goals/lib/goal-tree.ts",
         "src/features/goals/lib/goal-type-labels.ts",
-        "src/features/goals/lib/target-metric-labels.ts",
+        "src/lib/target-metric-labels.ts",
+        "convex/lib/notifications.ts",
+        "convex/lib/notificationCopy.ts",
+        "convex/services/notifications/**/*.ts",
+        "convex/queries/notifications/**/*.ts",
+        "convex/mutations/notifications/**/*.ts",
+        "src/lib/notification-link.ts",
+        "src/features/my-page/lib/hour-options.ts",
         "src/features/goals/lib/weekly-trend-chart-data.ts",
         "src/features/goals/lib/weekly-trend-format.ts",
         "src/features/goals/lib/weekly-trend-streak.ts",

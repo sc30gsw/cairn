@@ -5,6 +5,7 @@ import { modals } from "@mantine/modals";
 import { IconArrowBackUp, IconPlayerSkipForward, IconTrash } from "@tabler/icons-react";
 import { useEffect, type ChangeEvent } from "react";
 import { concreteActionPlaceholder } from "~domain/concreteActionCore";
+import { measuredMs, timerMinutes, timerRunState } from "~domain/rowTimer";
 
 import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action-field-with-suggestions";
 import { validateConfirmRow } from "~/features/today/lib/validate-confirm-row";
@@ -15,6 +16,7 @@ import type {
   SkipRowInput,
 } from "~/features/today/types/mutations";
 import { RECORD_STATUS_UI, statusTooltip } from "~/lib/record-status-ui";
+import { serverNowMs } from "~/lib/server-clock";
 import { RowEditorSchema } from "~/lib/validation/row-editor-schema";
 
 type RowEditorProps = {
@@ -79,6 +81,19 @@ function RowStatusSwitch({
       />
     </Tooltip>
   );
+}
+
+//* 日ページには開始・停止を置かない(CONTEXT「進行中」)。分数の食い違いだけを注記で防ぐ。
+//? 1秒刻みでは動かさない。時計は実行ボードだけが持つ(docs/specs/study-timer.md §11.4)。
+function measurementNote(row: DayRow): string | undefined {
+  const runState = timerRunState(row.timer);
+  if (runState === "計測中") {
+    return "計測中（実行ボードで操作）";
+  }
+  if (runState === "一時停止") {
+    return `計測 ${String(timerMinutes(measuredMs(row.timer, serverNowMs())))}分`;
+  }
+  return undefined;
 }
 
 function requestSkip(rowId: SkipRowInput["rowId"], onSkip: (rowId: SkipRowInput["rowId"]) => void) {
@@ -190,6 +205,7 @@ export function RowEditor({
               {(field) => (
                 <NumberInput
                   {...field.props}
+                  description={measurementNote(row)}
                   disabled={disabled}
                   error={field.errors?.[0]}
                   label="分数"

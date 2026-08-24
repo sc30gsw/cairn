@@ -17,6 +17,7 @@ function sampleRow(id: string, name: string): BoardRow {
     minutes: 0,
     sortOrder: 0,
     status: "未着手",
+    timer: null,
   };
 }
 

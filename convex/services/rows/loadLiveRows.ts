@@ -7,7 +7,7 @@ export type LiveRowsRange = {
   to?: string;
 };
 
-//* 所有者の暦日範囲から「生きた記録」を読む唯一の入口(loadDayTotals と再計算が共有する)。
+//* 所有者の暦日範囲から「生きた記録」を読む唯一の入口(loadDayItemTotals と再計算が共有する)。
 //? 日がゴミ箱にある暦日は丸ごと外す — history/shared.ts の liveRows と同じ規則。範囲は index で
 //? 絞るので .filter は使わない(CVX-10)。1日あたり数件なので collect で足りる(CVX-11)。
 //? to を省くと下端だけの開いた範囲(目標作成日以降の全期間)になる。

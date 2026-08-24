@@ -19,11 +19,14 @@ import "dayjs/locale/ja";
 import { createServerFn } from "@tanstack/react-start";
 import { Suspense, lazy, type ReactNode } from "react";
 
+import { DayRolloverGuard } from "~/components/day-rollover-guard";
 import { FullPageErrorState } from "~/components/error-state";
 import { NotFoundState } from "~/components/not-found-state";
 import { PendingComponent } from "~/components/pending-component";
+import { ServiceWorkerRegistrar } from "~/components/service-worker-registrar";
 import { authClient } from "~/lib/auth-client";
 import { getToken } from "~/lib/auth-server";
+import { PAPER_TOKENS } from "~/lib/paper-tokens";
 import { cssVariablesResolver, theme } from "~/lib/theme";
 
 import appCss from "~/styles.css?url";
@@ -57,6 +60,22 @@ export const Route = createRootRouteWithContext<{
   head: () => ({
     links: [
       { href: "/favicon.svg", rel: "icon", type: "image/svg+xml" },
+      { href: "/manifest.webmanifest", rel: "manifest" },
+      { href: "/icons/apple-touch-icon-180.png", rel: "apple-touch-icon", sizes: "180x180" },
+      //? iOS は Manifest 標準ではなく Apple 独自のスプラッシュ。media が一致しない機種は
+      //? 「画像なし」に落ちるだけで崩れないので、所有者の実機1機種分だけ置く(#58 §6.4)。
+      {
+        href: "/icons/splash-1179x2556.png",
+        media:
+          "(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)",
+        rel: "apple-touch-startup-image",
+      },
+      {
+        href: "/icons/splash-2556x1179.png",
+        media:
+          "(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)",
+        rel: "apple-touch-startup-image",
+      },
       { href: "https://fonts.googleapis.com", rel: "preconnect" },
       { crossOrigin: "anonymous", href: "https://fonts.gstatic.com", rel: "preconnect" },
       {
@@ -67,8 +86,19 @@ export const Route = createRootRouteWithContext<{
     ],
     meta: [
       { charSet: "utf-8" },
-      { content: "width=device-width, initial-scale=1", name: "viewport" },
+      //? viewport-fit=cover でノッチ下まで机色を敷き、safe-area-inset-* を有効化する(#58 §12.2)。
+      //? maximum-scale / user-scalable は付けない(ピンチズームを塞がない)。
+      { content: "width=device-width, initial-scale=1, viewport-fit=cover", name: "viewport" },
       { title: "学習ログ" },
+      //* 机色。manifest の theme_color と一致させる(値は PAPER_TOKENS.desk が唯一の出所)。
+      { content: PAPER_TOKENS.desk, name: "theme-color" },
+      { content: "yes", name: "mobile-web-app-capable" },
+      //? 旧 iOS 向けの別名。両方出す。
+      { content: "yes", name: "apple-mobile-web-app-capable" },
+      //? ライト固定なので default(暗い文字・コンテンツはステータスバーの下から始まる) が正しい。
+      //? black-translucent は使わない(コンテンツがノッチ下に潜り safe-area 依存が増える)。
+      { content: "default", name: "apple-mobile-web-app-status-bar-style" },
+      { content: "学習ログ", name: "apple-mobile-web-app-title" },
     ],
   }),
   notFoundComponent: RootNotFoundComponent,
@@ -83,6 +113,9 @@ function RootDocument({ children }: Record<"children", ReactNode>) {
         <HeadContent />
       </head>
       <body>
+        {/*? どちらも DOM を描かない。SW 登録(#58 §8.1)と JST 日付ロールオーバーの検知(#58 §12.4) */}
+        <ServiceWorkerRegistrar />
+        <DayRolloverGuard />
         <MantineProvider
           cssVariablesResolver={cssVariablesResolver}
           defaultColorScheme={DEFAULT_COLOR_SCHEME}
@@ -100,7 +133,11 @@ function RootDocument({ children }: Record<"children", ReactNode>) {
             <ModalsProvider labels={{ cancel: "キャンセル", confirm: "見送りにする" }}>
               <DatesProvider settings={{ locale: "ja" }}>{children}</DatesProvider>
             </ModalsProvider>
-            <Notifications position="top-center" />
+            {/*? apple-mobile-web-app-status-bar-style: default では iOS の inset-top は 0。実質 Android 用の保険 */}
+            <Notifications
+              position="top-center"
+              style={{ marginTop: "env(safe-area-inset-top)" }}
+            />
           </ShimmerProvider>
           {TanStackRouterDevtools ? (
             <Suspense fallback={null}>

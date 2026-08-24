@@ -13,6 +13,7 @@ const modules = import.meta.glob([
   "!./convex.config.ts",
   "!./crons.ts",
   "!./http.ts",
+  "!./migrations.ts",
 ]);
 
 const OWNER_A = { email: "owner-a@example.com", subject: "owner-a" };

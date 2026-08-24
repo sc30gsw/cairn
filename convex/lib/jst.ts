@@ -77,6 +77,16 @@ export function calendarDatesInMonth(yearMonth: string): string[] {
   return dates;
 }
 
+//* yearMonth(`YYYY-MM`)の月算術。負数で過去へ、年またぎも正しく処理する。addDaysJst と対になる。
+export function addMonthsJst(yearMonth: string, months: number): string {
+  const [yearText, monthText] = yearMonth.split("-");
+  const year = Number(yearText);
+  const zeroBasedMonth = Number(monthText) - 1 + months;
+  const nextYear = year + Math.floor(zeroBasedMonth / 12);
+  const nextMonth = ((zeroBasedMonth % 12) + 12) % 12;
+  return `${nextYear}-${String(nextMonth + 1).padStart(2, "0")}`;
+}
+
 export function daysUntil(fromDateJst: string, toDateJst: string): number {
   const from = new Date(`${fromDateJst}T12:00:00+09:00`).getTime();
   const to = new Date(`${toDateJst}T12:00:00+09:00`).getTime();

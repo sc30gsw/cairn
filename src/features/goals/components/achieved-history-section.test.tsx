@@ -1,0 +1,145 @@
+import { waitFor, within } from "@testing-library/react";
+import { expect, test, vi } from "vite-plus/test";
+
+import {
+  ACHIEVED_SECTION_TITLE,
+  AchievedHistorySection,
+} from "~/features/goals/components/achieved-history-section";
+import { KINFURE_ITEM, scopeItemsFixture } from "~/features/goals/mocks/goal-scope-fixture";
+import type { MasteryGoal } from "~/features/goals/types/goal";
+import { renderWithMantine } from "~/test-utils/render";
+
+const TODAY = "2026-08-17";
+
+const ACHIEVED_CHECKPOINT = {
+  _id: "goal-achieved" as MasteryGoal["_id"],
+  achievedAt: "2026-08-09",
+  activeDays: 6,
+  confirmedMinutes: 300,
+  content: "金のフレーズ Unit 1 を暗唱する",
+  createdAt: 1_755_000_000_000,
+  criterion: "見ずに Unit 1 を言える",
+  deadline: "2026-08-09",
+  parentGoalId: "goal-exam" as MasteryGoal["_id"],
+  type: "mastery",
+} satisfies MasteryGoal;
+
+const ACHIEVED_LONG_TERM = {
+  ...ACHIEVED_CHECKPOINT,
+  _id: "goal-achieved-long-term" as MasteryGoal["_id"],
+  content: "音読を毎日続けられる",
+  deadline: undefined,
+  parentGoalId: undefined,
+} satisfies MasteryGoal;
+
+function sectionProps(overrides: Partial<Parameters<typeof AchievedHistorySection>[0]> = {}) {
+  return {
+    achieved: [ACHIEVED_CHECKPOINT, ACHIEVED_LONG_TERM],
+    form: undefined,
+    items: scopeItemsFixture,
+    onEditGoal: vi.fn(),
+    onRemoveGoal: vi.fn(),
+    onSetAchieved: vi.fn(),
+    parentNameOf: (goal: MasteryGoal) =>
+      goal.parentGoalId === undefined ? undefined : "TOEIC で900点を取る",
+    todayJst: TODAY,
+    ...overrides,
+  } satisfies Parameters<typeof AchievedHistorySection>[0];
+}
+
+test("既定は閉じていて、件数つきの見出しだけを開いていない状態で出す", () => {
+  const { getByRole } = renderWithMantine(<AchievedHistorySection {...sectionProps()} />);
+  const control = getByRole("button", { name: new RegExp(ACHIEVED_SECTION_TITLE) });
+  expect(within(control).getByText("2")).toBeDefined();
+  expect(control.getAttribute("aria-expanded")).toBe("false");
+});
+
+test("達成が1件増えても件数と行が追従する(再描画)", () => {
+  const view = renderWithMantine(
+    <AchievedHistorySection {...sectionProps({ achieved: [ACHIEVED_CHECKPOINT] })} />,
+  );
+  expect(
+    within(view.getByRole("button", { name: new RegExp(ACHIEVED_SECTION_TITLE) })).getByText("1"),
+  ).toBeDefined();
+
+  view.rerender(<AchievedHistorySection {...sectionProps()} />);
+
+  expect(
+    within(view.getByRole("button", { name: new RegExp(ACHIEVED_SECTION_TITLE) })).getByText("2"),
+  ).toBeDefined();
+});
+
+test("開くと親のある行にだけ親名が付く", async () => {
+  const { getByRole, getByText, queryByText } = renderWithMantine(
+    <AchievedHistorySection {...sectionProps()} />,
+  );
+  getByRole("button", { name: new RegExp(ACHIEVED_SECTION_TITLE) }).click();
+
+  await waitFor(() => {
+    expect(getByText(ACHIEVED_CHECKPOINT.content)).toBeDefined();
+  });
+  expect(getByText("親: TOEIC で900点を取る")).toBeDefined();
+  expect(queryByText(`親: ${ACHIEVED_LONG_TERM.content}`)).toBeNull();
+});
+
+test("達成を外すと onSetAchieved が達成日なしで呼ばれる", async () => {
+  const onSetAchieved = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <AchievedHistorySection {...sectionProps({ onSetAchieved })} />,
+  );
+  getByRole("button", { name: new RegExp(ACHIEVED_SECTION_TITLE) }).click();
+
+  await waitFor(() => {
+    expect(getByRole("checkbox", { name: `${ACHIEVED_CHECKPOINT.content}の達成` })).toBeDefined();
+  });
+  getByRole("checkbox", { name: `${ACHIEVED_CHECKPOINT.content}の達成` }).click();
+
+  expect(onSetAchieved).toHaveBeenCalledWith({
+    achievedAt: undefined,
+    goalId: ACHIEVED_CHECKPOINT._id,
+  });
+});
+
+test("編集フォームは一覧の上に開く", async () => {
+  const { getByRole, getByText } = renderWithMantine(
+    <AchievedHistorySection {...sectionProps({ form: <div>編集フォーム</div> })} />,
+  );
+  getByRole("button", { name: new RegExp(ACHIEVED_SECTION_TITLE) }).click();
+
+  await waitFor(() => {
+    expect(getByText("編集フォーム")).toBeDefined();
+  });
+});
+
+test("編集と削除のアクションが呼ばれる", async () => {
+  const onEditGoal = vi.fn();
+  const onRemoveGoal = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <AchievedHistorySection {...sectionProps({ onEditGoal, onRemoveGoal })} />,
+  );
+  getByRole("button", { name: new RegExp(ACHIEVED_SECTION_TITLE) }).click();
+
+  await waitFor(() => {
+    expect(getByRole("button", { name: `${ACHIEVED_CHECKPOINT.content}を編集` })).toBeDefined();
+  });
+  getByRole("button", { name: `${ACHIEVED_CHECKPOINT.content}を編集` }).click();
+  getByRole("button", { name: `${ACHIEVED_CHECKPOINT.content}を削除` }).click();
+
+  expect(onEditGoal).toHaveBeenCalledWith(ACHIEVED_CHECKPOINT);
+  expect(onRemoveGoal).toHaveBeenCalledWith(ACHIEVED_CHECKPOINT);
+});
+
+test("達成履歴の行も、凍結時点の対象項目を短縮形で併記する", async () => {
+  const { getByRole, getByText } = renderWithMantine(
+    <AchievedHistorySection
+      {...sectionProps({
+        achieved: [{ ...ACHIEVED_CHECKPOINT, scopeItemIds: [KINFURE_ITEM._id] }],
+      })}
+    />,
+  );
+  getByRole("button", { name: new RegExp(ACHIEVED_SECTION_TITLE) }).click();
+
+  await waitFor(() => {
+    expect(getByText("金フレ・確定 300分 / 6日")).toBeDefined();
+  });
+});

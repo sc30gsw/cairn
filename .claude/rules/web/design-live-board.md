@@ -21,7 +21,10 @@ Use the claude_design MCP (https://api.anthropic.com/v1/design/mcp, auth via /de
 
 ## Rules
 
-1. All screens (Today/History/Items/Presets/Goals/Trash, plus any new route) use the Paper Redesign language: Flexoki Light paper background, a handwritten body/heading font with numerals in a separate readable font, a right-edge vertical "index tab" nav (collapses to a horizontal top row on mobile), and sketch-style irregular border-radii + paper drop-shadows reserved for prominent elements (cards, buttons, tabs) — not every element.
+1. 全画面（Today/History/Items/Presets/Goals/Trash、新規ルートを含む）は Paper Redesign の言語に従う:
+   Flexoki Light の紙背景、手書きの本文/見出しフォント + 数字は別の可読フォント、右小口の縦インデックスタブ
+   ナビ（モバイルでは**画面下端に固定した下小口タブ4本 + 「その他」メニュー**に置き換わる。
+   `docs/specs/pwa-mobile.md` §10）、スケッチ風の不揃いな border-radius と紙影は要所（カード・ボタン・タブ）だけ。
 2. Colors come from `src/lib/theme.ts`'s Flexoki-derived Mantine color tuples (`orange` primary, `green` = success/complete, `red` = delete/danger, `blue`/`red` reserved for calendar Saturday/Sunday) plus the `--cairn-*` CSS variables (`--cairn-ink`, `--cairn-muted`, `--cairn-muted-2`, `--cairn-rule`, `--cairn-desk`, `--cairn-paper-2`). Never hardcode hex values in components — use theme colors, `var(--mantine-color-*)`, or the `--cairn-*` tokens.
 3. Fonts: `BODY_FONT`/`DISPLAY_FONT` (handwritten, both point at the same stack) for headings and body text; `NUMERAL_FONT` for numeric displays (dates, minutes, counts, percentages). All three are exported from `src/lib/theme.ts` — import them, don't redeclare font stacks locally.
 4. Light-only. Do not add dark-mode handling — the paper/handwriting concept is light-only by design decision (`project/design-notes.md`).
@@ -32,6 +35,11 @@ Use the claude_design MCP (https://api.anthropic.com/v1/design/mcp, auth via /de
 
 - The `851手書き雑フォント` ("Tegaki851") named in the original design chat could not be self-hosted in past implementation sessions because its distribution host was outside the network egress allowlist — Yomogi (Google Fonts, the design's own documented fallback) is the actual `BODY_FONT`/`DISPLAY_FONT` today. If Tegaki851 becomes reachable, swap it in as the primary face with Yomogi kept as the fallback, matching the original design file's `@font-face` stack (see `docs/design/Paper Redesign.dc.html`).
 - The shared `PageTitle` component (`src/components/page-title.tsx`) renders the wavy-underline page heading used by History/Items/Presets/Goals/Trash — reuse it for any new top-level page heading instead of a bare `<Title order={1}>`.
+- モバイル（`< sm`）のナビは画面下端に固定した下小口タブ4本 + 「その他」メニュー。上部の横スクロール
+  タブ列は廃止した（`docs/specs/pwa-mobile.md` §10）。デスクトップの右小口レールは無変更。
+- 色の一次値（机・紙・罫線・墨・muted・orange アクセント）は `src/lib/paper-tokens.ts` が唯一の出所。
+  `theme.ts`、`__root.tsx` の `theme-color`、`public/manifest.webmanifest`、`scripts/render-offline-html.ts`
+  はすべてそこから読む（`src/lib/paper-tokens.test.ts` が manifest との一致を縛る）。
 
 ## Related
 

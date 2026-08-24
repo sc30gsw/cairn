@@ -20,6 +20,7 @@ const dayBoardShimmerRow = {
   minutes: 30,
   sortOrder: 0,
   status: pendingStatus,
+  timer: null,
 } satisfies DayRow;
 
 const dayBoardShimmerRow2 = {

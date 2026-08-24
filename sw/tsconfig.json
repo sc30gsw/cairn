@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "lib": ["ESNext", "WebWorker"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022",
+    "types": []
+  },
+  "include": ["."]
+}

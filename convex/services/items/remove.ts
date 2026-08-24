@@ -29,7 +29,20 @@ export async function remove(
   if (itemIdIsInUse(args.itemId, holders)) {
     throwDomain(new ConflictError({ message: "使っている行または雛形がある項目は消せません" }));
   }
-  //? 目標は項目を参照しない(本番目標・習得とも項目リンクを持たない)ので、掃除は要らない
+  //? 対象項目にしている目標があれば消せない。自動で対象から外すと、最後の1件が外れた瞬間に
+  //? スコープが「すべての記録」へ静かに広がり、カウンタの意味が反転する(#53 §8)。
+  //? 1所有者の習得目標は数件。type で絞ってから collect(CVX-10/11)。
+  const masteryGoals = await ctx.db
+    .query("goals")
+    .withIndex("by_owner_and_type", (q) => q.eq("ownerId", ownerId).eq("type", "mastery"))
+    .collect();
+  if (
+    masteryGoals.some(
+      (goal) => goal.type === "mastery" && goal.scopeItemIds?.includes(args.itemId) === true,
+    )
+  ) {
+    throwDomain(new ConflictError({ message: "対象項目にしている目標がある項目は消せません" }));
+  }
   await ctx.db.delete("items", args.itemId);
   return null;
 }

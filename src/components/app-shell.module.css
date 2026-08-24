@@ -56,8 +56,69 @@
   z-index: 1;
 }
 
+:root {
+  --cairn-bottom-nav-h: 60px;
+}
+
+/*? モバイルの一次ナビ。standalone ではブラウザ枠が無く、最上部は親指から最も遠い(pwa-mobile.md §10) */
+.bottomBar {
+  background-color: var(--mantine-color-white);
+  border-top: 1.5px solid var(--cairn-ink);
+  bottom: 0;
+  box-shadow: 0 -3px 0 rgb(16 15 15 / 10%);
+  left: 0;
+  padding: 6px var(--mantine-spacing-sm) calc(6px + env(safe-area-inset-bottom, 0px))
+    var(--mantine-spacing-sm);
+  position: fixed;
+  right: 0;
+
+  /*? Mantine の Modal / Drawer(既定 200)より必ず下、本文より上。同値にして DOM 順に賭けない */
+  z-index: 100;
+}
+
+/*? 右小口タブ(.tab)の質感を上下反転させたもの。回転は交互、不揃いな角丸は上側だけ */
+.bottomTab {
+  --tab-rotate: 0deg;
+
+  align-items: center;
+  border: 1.5px solid var(--cairn-ink);
+  border-bottom: none;
+  border-radius: 10px 14px 0 0/16px 10px 0 0;
+  color: var(--cairn-ink);
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  font-size: 11px;
+  gap: 2px;
+  justify-content: center;
+  letter-spacing: 1px;
+  min-height: 46px; /* タップ領域(§12.3) */
+  text-decoration: none;
+  transform: rotate(var(--tab-rotate));
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.bottomTabActive {
+  background-color: var(--mantine-color-orange-6);
+  color: var(--mantine-color-white);
+  font-weight: 600;
+}
+
+/*? 固定バーの下に本文が隠れないぶんを、モバイルだけ足す */
+@media (max-width: 47.9375em) {
+  .shellBody {
+    padding-bottom: calc(
+      var(--cairn-bottom-nav-h) + env(safe-area-inset-bottom, 0px) + var(--mantine-spacing-md)
+    );
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .tab {
+  .tab,
+  .bottomTab {
     transition: none;
   }
 }

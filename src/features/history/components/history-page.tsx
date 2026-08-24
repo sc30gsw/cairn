@@ -1,4 +1,5 @@
-import { Tabs } from "@mantine/core";
+import { Anchor, Group, Tabs } from "@mantine/core";
+import { Link } from "@tanstack/react-router";
 import { Suspense } from "react";
 
 import { PageTitle } from "~/components/page-title";
@@ -27,7 +28,13 @@ function HistoryReady() {
 
   return (
     <>
-      <PageTitle mb="md">履歴</PageTitle>
+      <Group align="center" justify="space-between" mb="md">
+        <PageTitle>履歴</PageTitle>
+        {/*? /review への入口。ナビタブは増やさない。既定タブ(weekly)へ飛ばす */}
+        <Anchor component={Link} to="/review">
+          レビューを見る
+        </Anchor>
+      </Group>
       <Tabs
         onChange={(value) => {
           if (value === "month" || value === "week" || value === "analysis") {

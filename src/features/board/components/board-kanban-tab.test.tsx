@@ -29,15 +29,11 @@ vi.mock("~/hooks/use-open-and-load-day", () => ({
           minutes: 30,
           sortOrder: 0,
           status: "未着手",
+          timer: null,
         },
       ],
     },
   }),
-}));
-
-vi.mock("~/hooks/goals-queries", () => ({
-  useGoalsList: () => ({ data: [] }),
-  useObstaclesList: () => ({ data: [] }),
 }));
 
 vi.mock("~/features/board/hooks/use-board-kanban-actions", () => ({

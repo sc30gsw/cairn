@@ -5,6 +5,8 @@ import {
   type MantineTheme,
 } from "@mantine/core";
 
+import { PAPER_TOKENS } from "~/lib/paper-tokens";
+
 const blue = [
   "#E8F0F8",
   "#C9DBEF",
@@ -79,25 +81,28 @@ export const NUMERAL_FONT = "'Zen Kaku Gothic New', sans-serif";
 export const BODY_FONT = HAND_FONT;
 export const DISPLAY_FONT = HAND_FONT;
 
-const INK = "#100F0F";
-const PAPER = "#FFFCF0";
-const PAPER_2 = "#F2F0E5";
-const RULE = "#E6E4D9";
-const MUTED = "#B7B5AC";
-const MUTED_2 = "#6F6E69";
+//? 色の一次値は paper-tokens.ts が唯一の出所(pwa-mobile.md §9.3)。offline.html の生成スクリプトも同じ値を読む
+const INK = PAPER_TOKENS.ink;
+const PAPER = PAPER_TOKENS.paper;
+const PAPER_2 = PAPER_TOKENS.paper2;
+const RULE = PAPER_TOKENS.rule;
+const MUTED = PAPER_TOKENS.muted;
+const MUTED_2 = PAPER_TOKENS.muted2;
 
 //? スケッチ風の不揃いな輪郭(要所のカードのみ)。CSS の border-radius 8値+slash 記法で手描き感を出す
 const SKETCH_RADIUS = "8px 14px 9px 16px/16px 9px 14px 8px";
 //? ピル/スタンプ状の不揃い輪郭(タブ・ボタン・バッジ共通)
 const PILL_RADIUS = "255px 15px 225px 15px/15px 225px 15px 255px";
 const PAPER_SHADOW = "2px 3px 0 rgba(16,15,15,.12)";
+//? チェックボックスだけの小さな手描き角丸(設計ファイル由来)
+const CHECK_RADIUS = "6px 10px 7px 11px/11px 7px 10px 6px";
 
 export const cssVariablesResolver: CSSVariablesResolver = () => ({
   dark: {},
   light: {},
   variables: {
     "--bd2": RULE,
-    "--cairn-desk": "#DAD8CE",
+    "--cairn-desk": PAPER_TOKENS.desk,
     "--cairn-ink": INK,
     "--cairn-muted": MUTED,
     "--cairn-muted-2": MUTED_2,
@@ -154,6 +159,10 @@ export const theme = createTheme({
               : "2px 2px 0 rgba(16,15,15,.15)",
         },
       }),
+    },
+    //? 手描き風の不揃いな角丸(設計ファイルのチェックボックス)。2箇所目の需要が出るまで export しない
+    Checkbox: {
+      styles: { input: { border: `1.5px solid ${INK}`, borderRadius: CHECK_RADIUS } },
     },
     Card: {
       defaultProps: {

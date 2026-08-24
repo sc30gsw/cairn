@@ -6,7 +6,8 @@ import { WEEKDAYS } from "./catalog";
 import { CATEGORIES } from "./categories";
 import { CONDITIONS } from "./conditions";
 import { DAY_VIEW_KINDS } from "./dayView";
-import { GOAL_TYPES, STATUSES, TARGET_METRICS } from "./domain";
+import { CHECKPOINT_BACKFILL_PLANS, GOAL_TYPES, STATUSES, TARGET_METRICS } from "./domain";
+import { NOTIFICATION_KINDS, NOTIFICATION_PENDING_SOURCES } from "./notifications";
 import { PRESET_REVIEW_REASONS } from "./presetDigest";
 
 const [toeic, listening, reading, conversation, otherCategory] = CATEGORIES;
@@ -176,6 +177,16 @@ export type WeekBreakdown = Infer<typeof weekBreakdownValidator>;
 export type MonthBreakdown = Infer<typeof monthBreakdownValidator>;
 export type YearHeatmapDto = Infer<typeof yearHeatmapValidator>;
 
+//* 進行中の記録が測っている経過。開始時刻はサーバが持ち(mutation の Date.now())、経過は画面が導出する(CVX-14)。
+//? DTO は null 正規化して全キーを必ず出す。dayDtoValidator の condition / memo と同じ規則。
+export const rowTimerDtoValidator = v.object({
+  accumulatedMs: v.number(),
+  autoStoppedAt: v.union(v.number(), v.null()),
+  startedAt: v.union(v.number(), v.null()),
+});
+
+export type RowTimerDto = Infer<typeof rowTimerDtoValidator>;
+
 export const rowDtoValidator = v.object({
   _id: v.id("rows"),
   category: v.string(),
@@ -186,7 +197,19 @@ export const rowDtoValidator = v.object({
   minutes: v.number(),
   sortOrder: v.number(),
   status: statusValidator,
+  //? 計測が無い行は null。進行中でないなら常に null(study-timer.md §4.3 の不変条件)。
+  timer: v.union(rowTimerDtoValidator, v.null()),
 });
+
+//* いま計測中の1件。どの画面にいても「計測中」を見せるため(study-timer.md §13.2)。
+export const runningTimerDtoValidator = v.object({
+  _id: v.id("rows"),
+  dateJst: v.string(),
+  itemName: v.string(),
+  timer: rowTimerDtoValidator,
+});
+
+export type RunningTimerDto = Infer<typeof runningTimerDtoValidator>;
 
 export const dayDtoValidator = v.object({
   _id: v.id("days"),
@@ -229,11 +252,17 @@ const examGoalFields = v.object({
 });
 
 //? achievedAt は setAchieved の担当なので、作成・更新の入力には含めない(編集で達成を消さない)。
-//? deadline を持つ習得が「チェックポイント」。別タイプではないので枝は増やさない。
+//? deadline を持つ習得が「チェックポイント」。別タイプではないので枝は増やさない(docs/adr/0006)。
+//? 期限と親は同時に存在する(INV-1)。片方だけの状態は services 層で弾く。
 const masteryGoalInputFields = v.object({
   content: v.string(),
   criterion: v.string(),
   deadline: v.optional(v.string()),
+  //? 必須化は既存データのバックフィル後(#49 Phase 5)。それまでは optional で受ける。
+  parentGoalId: v.optional(v.id("goals")),
+  //? 実績に数える記録の範囲(対象項目)。省略 = すべての記録(ADR-0007 の元の意味そのまま)。
+  //? 空配列は services 側で省略に畳むので、保存済みドキュメントに [] は現れない(#53)。
+  scopeItemIds: v.optional(v.array(v.id("items"))),
   type: v.literal(masteryType),
 });
 
@@ -260,7 +289,9 @@ export const goalDocumentValidator = v.union(
   masteryGoalDocumentFields.extend(goalOwnerField),
 );
 
-const goalIdField = { _id: v.id("goals") };
+//? 並び順をクライアントの index 順の偶然に頼らないため、DTO に作成時刻を載せる。
+//? ツリー構築(goal-tree.ts)が自己完結し、純関数のままテストできる。
+const goalIdField = { _id: v.id("goals"), createdAt: v.number() };
 
 export const goalDtoValidator = v.union(
   examGoalFields.extend(goalIdField),
@@ -272,6 +303,57 @@ export type GoalDto = Infer<typeof goalDtoValidator>;
 export const goalInputValidator = v.union(examGoalFields, masteryGoalInputFields);
 
 export type GoalInput = Infer<typeof goalInputValidator>;
+
+//? 値の SSoT は domain.ts のタプル。ここは validator を組み立てるだけ(CVX-16)。
+const [examPlan, longTermPlan, promotePlan, manualPlan, nonePlan] = CHECKPOINT_BACKFILL_PLANS;
+
+export const checkpointBackfillPlanValidator = v.union(
+  v.literal(examPlan),
+  v.literal(longTermPlan),
+  v.literal(promotePlan),
+  v.literal(manualPlan),
+  v.literal(nonePlan),
+);
+
+export const checkpointParentAuditOwnerValidator = v.object({
+  examGoalCount: v.number(),
+  longTermCount: v.number(),
+  orphanCount: v.number(),
+  ownerId: v.string(),
+  plan: checkpointBackfillPlanValidator,
+  promoteLosesDeadline: v.union(v.string(), v.null()),
+});
+
+//* #49 の移行ゲート兼検証。所有者を横断するので internalQuery からしか返さない。
+export const checkpointParentAuditValidator = v.object({
+  //? 親自身が親を持つ(チェーン)
+  chainedCount: v.number(),
+  //? 親の ownerId が子と違う
+  crossOwnerParentCount: v.number(),
+  //? 親 id が実在しない
+  danglingParentCount: v.number(),
+  malformedDeadlineCount: v.number(),
+  //? 期限あり・親なし
+  orphanCount: v.number(),
+  owners: v.array(checkpointParentAuditOwnerValidator),
+  //? 親あり・期限なし
+  parentWithoutDeadlineCount: v.number(),
+  selfParentCount: v.number(),
+  truncated: v.boolean(),
+});
+
+export type CheckpointParentAudit = Infer<typeof checkpointParentAuditValidator>;
+export type CheckpointParentAuditOwner = Infer<typeof checkpointParentAuditOwnerValidator>;
+
+export const backfillCheckpointParentsResultValidator = v.object({
+  assigned: v.number(),
+  plan: checkpointBackfillPlanValidator,
+  promoted: v.number(),
+});
+
+export type BackfillCheckpointParentsResult = Infer<
+  typeof backfillCheckpointParentsResultValidator
+>;
 
 //* 週間ターゲット。常設定義・週次スナップショットなしの「今週専用の計器」。
 export const targetMetricValidator = v.union(
@@ -442,3 +524,189 @@ export const boardScheduleViewValidator = v.union(
 );
 
 export type BoardScheduleEventDto = Infer<typeof boardScheduleEventDtoValidator>;
+
+//* 週の消化(CONTEXT「消化」: 確定 / 並んだ件数)。今日の行は数えないので、今日を含む週は isPartial=true。
+export const weeklyDigestValidator = v.object({
+  confirmedCount: v.number(),
+  //? 数えた範囲。UI の注記(「08/17〜08/22 を数えた」)にそのまま使う。
+  countedFrom: v.string(),
+  //? 1日も数えられないとき(週初日が今日 or 未来週)は null。
+  countedThrough: v.union(v.string(), v.null()),
+  digestRate: v.number(),
+  //? 週の全7日を数えられていない(今日を含む・未来を含む)ときに true。UI は注記を出す。
+  isPartial: v.boolean(),
+  leftoverCount: v.number(),
+  ongoingCount: v.number(),
+  plannedCount: v.number(),
+  skippedCount: v.number(),
+});
+
+export type WeeklyDigest = Infer<typeof weeklyDigestValidator>;
+
+//* 週次レビューの1日分。月〜日の7件固定。kind は既存の dayViewKind をそのまま使う(CVX-16)。
+export const weeklyReviewDayValidator = v.object({
+  condition: v.union(conditionValidator, v.null()),
+  confirmedCount: v.number(),
+  confirmedMinutes: v.number(),
+  dateJst: v.string(),
+  //? 今日・未記録・並んだ件数0 の日は消化を出さない(null)。0% と描くと「サボった」に見え、
+  //? CONTEXT「消化」の定義(計画が残ったかの指標。計画が無い日は指標そのものが無い)に反する。
+  digestRate: v.union(v.number(), v.null()),
+  kind: dayViewKindValidator,
+  plannedCount: v.number(),
+  skippedCount: v.number(),
+});
+
+export type WeeklyReviewDay = Infer<typeof weeklyReviewDayValidator>;
+
+//* 週次レビュー画面1枚ぶん。前週比のラベル整形はクライアントの純関数が担う。
+export const weeklyReviewValidator = v.object({
+  //? 確定記録が1件以上ある暦日数。週間ターゲットの days 計器と同じ「実施日」の定義。
+  activeDays: v.number(),
+  byDay: v.array(weeklyReviewDayValidator),
+  confirmedMinutes: v.number(),
+  digest: weeklyDigestValidator,
+  //? 週内で今日以前の暦日数(過去週なら7)。1日平均の分母。
+  elapsedDays: v.number(),
+  isCurrentWeek: v.boolean(),
+  previousActiveDays: v.number(),
+  previousConfirmedMinutes: v.number(),
+  previousWeekStart: v.string(),
+  shareMarkdown: v.string(),
+  skippedMinutes: v.number(),
+  //? 週間ターゲットは「今週専用の計器」(CONTEXT)。過去週は null を返し、UI は数値を描かない。
+  targets: v.union(v.array(targetProgressDtoValidator), v.null()),
+  weekEnd: v.string(),
+  weekStart: v.string(),
+});
+
+export type WeeklyReviewDto = Infer<typeof weeklyReviewValidator>;
+
+//* 月内の週バケット1つ分の消化推移(digestRate と同じ定義)。
+//? weeklyDigestValidator を週バケットに使わない理由: 月境界で7日に満たないバケットは
+//? 「今日を含むから不完全」ではなく「暦週として不完全」という別の理由で isPartial になる
+//? (weeklyDigestValidator の isPartial は「今日/未来を数えられなかった」ことだけを意味する)。
+//? チャートが必要とするのは digestRate / isPartial / plannedCount(0件判定) だけなので最小形にする。
+export const monthlyDigestBucketValidator = v.object({
+  bucketEnd: v.string(),
+  bucketStart: v.string(),
+  confirmedCount: v.number(),
+  digestRate: v.number(),
+  //? 月境界の部分週(7日未満) or 当日/未来を含む進行中の週の両方で true。
+  isPartial: v.boolean(),
+  plannedCount: v.number(),
+});
+
+export type MonthlyDigestBucket = Infer<typeof monthlyDigestBucketValidator>;
+
+//* 月次レビュー画面1枚ぶんの集計。カテゴリ比較の delta%・ラベル付けはクライアントの純関数が担う。
+export const monthlyReviewValidator = v.object({
+  activeDays: v.number(),
+  byCategory: v.array(categoryBreakdownValidator),
+  confirmedMinutes: v.number(),
+  //? 月全体(今日を除く)の消化。weeklyDigestValidator をそのまま再利用する。
+  //? 週次レビューのサマリー「消化」タイルと同じ形にするための意図的な再利用(CVX-16 SSoT)。
+  digest: weeklyDigestValidator,
+  digestTrend: v.array(monthlyDigestBucketValidator),
+  //? 月内で今日以前の暦日数(過去月なら月の日数と同じ)。1日平均の分母。
+  elapsedDays: v.number(),
+  //? yearMonth が todayJst の月と一致するか。当月は「まだ途中」の注記に使う。
+  isCurrentMonth: v.boolean(),
+  monthEnd: v.string(),
+  monthStart: v.string(),
+  previousActiveDays: v.number(),
+  previousByCategory: v.array(categoryBreakdownValidator),
+  previousConfirmedMinutes: v.number(),
+  previousYearMonth: v.string(),
+  skippedMinutes: v.number(),
+  yearMonth: v.string(),
+});
+
+export type MonthlyReviewDto = Infer<typeof monthlyReviewValidator>;
+
+const [checkpointDeadlineKind, eveningUntouchedKind, weeklyTargetMissKind] = NOTIFICATION_KINDS;
+const [daySource, presetSource] = NOTIFICATION_PENDING_SOURCES;
+
+//* 通知の種類。UI のフィルタと設定のキー集合がここから派生する。
+export const notificationKindValidator = v.union(
+  v.literal(checkpointDeadlineKind),
+  v.literal(eveningUntouchedKind),
+  v.literal(weeklyTargetMissKind),
+);
+
+export type NotificationKindDto = Infer<typeof notificationKindValidator>;
+
+//? 参照先のテキストは生成時に写す。親目標がカスケード削除されても通知は読める(#48 INV-6)。
+//? goalId は残すが、リンク先はページ(/goals)なので「開けない」ことは起きない。
+const checkpointDeadlineItemValidator = v.object({
+  content: v.string(),
+  daysLeft: v.number(),
+  deadline: v.string(),
+  goalId: v.id("goals"),
+});
+
+const weeklyTargetShortfallValidator = v.object({
+  categoryName: v.string(),
+  current: v.number(),
+  metric: targetMetricValidator,
+  targetValue: v.number(),
+});
+
+//* 通知の中身。種類ごとに形が変わる discriminated union(目標の goalDocumentValidator と同じ流儀)。
+//? 「1発火単位 = 1通」なので、複数件は配列で1つの payload に入る。
+export const notificationPayloadValidator = v.union(
+  v.object({
+    dateJst: v.string(),
+    items: v.array(checkpointDeadlineItemValidator),
+    kind: v.literal(checkpointDeadlineKind),
+  }),
+  v.object({
+    dateJst: v.string(),
+    kind: v.literal(eveningUntouchedKind),
+    pendingCount: v.number(),
+    source: v.union(v.literal(daySource), v.literal(presetSource)),
+  }),
+  v.object({
+    kind: v.literal(weeklyTargetMissKind),
+    shortfalls: v.array(weeklyTargetShortfallValidator),
+    weekStartJst: v.string(),
+  }),
+);
+
+export type NotificationPayload = Infer<typeof notificationPayloadValidator>;
+
+//* トリガーごとのオプトイン。キー集合は NOTIFICATION_KINDS と一致する。
+//? 一致は評価器の `setting.triggers[kind]` アクセスで tsc が守る — キーを足し忘れると型エラーになる。
+export const notificationTriggerPrefsValidator = v.object({
+  checkpointDeadline: v.boolean(),
+  eveningUntouched: v.boolean(),
+  weeklyTargetMiss: v.boolean(),
+});
+
+export type NotificationTriggerPrefs = Infer<typeof notificationTriggerPrefsValidator>;
+
+//* 通知欄の1行。readAt は boolean に畳む(dayDtoValidator の null 正規化と同じ規則)。
+export const notificationDtoValidator = v.object({
+  _creationTime: v.number(),
+  _id: v.id("notifications"),
+  payload: notificationPayloadValidator,
+  read: v.boolean(),
+});
+
+export type NotificationDto = Infer<typeof notificationDtoValidator>;
+
+export const notificationPageValidator = v.object({
+  items: v.array(notificationDtoValidator),
+  unreadCount: v.number(),
+});
+
+export type NotificationPageDto = Infer<typeof notificationPageValidator>;
+
+//* 設定の DTO。v1 のチャネルはアプリ内通知欄だけなので、出す値は「使うか」「いつ」「何を」に尽きる。
+export const notificationSettingsDtoValidator = v.object({
+  enabled: v.boolean(),
+  eveningHourJst: v.number(),
+  triggers: notificationTriggerPrefsValidator,
+});
+
+export type NotificationSettingsDto = Infer<typeof notificationSettingsDtoValidator>;

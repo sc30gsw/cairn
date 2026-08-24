@@ -3,6 +3,7 @@ import type { MutationCtx } from "../../_generated/server";
 import { NotFoundError, ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { withMasteryProgressDelta } from "../goals/withMasteryProgressDelta";
+import { clearTimerFields } from "./clearTimerFields";
 import { requireOwnedRow } from "./requireOwnedRow";
 import { rowDayLiveness } from "./rowDayLiveness";
 
@@ -19,7 +20,7 @@ export async function unconfirm(
     throwDomain(new ValidationFailedError({ message: "確定した記録だけ未着手に戻せます" }));
   }
   await withMasteryProgressDelta(ctx, ownerId, row, async () => {
-    await ctx.db.patch("rows", args.rowId, { status: "未着手" });
+    await ctx.db.patch("rows", args.rowId, { ...clearTimerFields(), status: "未着手" });
   });
   return null;
 }

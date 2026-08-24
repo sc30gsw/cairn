@@ -15,6 +15,7 @@ const modules = import.meta.glob([
   "!./convex.config.ts",
   "!./crons.ts",
   "!./http.ts",
+  "!./migrations.ts",
 ]);
 
 const OWNER = { email: "owner@example.com", subject: "owner-subject" };
@@ -60,22 +61,29 @@ test("試験・習得の2タイプを作成でき、list に反映される", as
 
   const goals = await t.query(api.queries.goals.list.list, {});
   expect(goals).toHaveLength(2);
-  expect(goals).toContainEqual({ _id: examId, ...EXAM_GOAL });
-  //? 習得には達成日(未達成なら undefined)と学習量の実績が載る
+  //? createdAt は _creationTime。並び順をクライアントの index 順に依存させないため DTO に載る
+  expect(goals).toContainEqual({ _id: examId, createdAt: expect.any(Number), ...EXAM_GOAL });
+  //? 習得には達成日(未達成なら undefined)と学習量の実績、親(未設定なら undefined)が載る
   expect(goals).toContainEqual({
     _id: masteryId,
     achievedAt: undefined,
     activeDays: 0,
     confirmedMinutes: 0,
+    createdAt: expect.any(Number),
     ...MASTERY_GOAL,
     deadline: undefined,
+    parentGoalId: undefined,
   });
 });
 
 test("期限つきの習得(チェックポイント)は同じタイプとして保存される", async () => {
   const t = owner();
+  //? 期限を持つなら親が必要(INV-1)。親子の不変条件そのものは goals.hierarchy.test.ts で網羅する
+  const parentGoalId = await t.mutation(api.mutations.goals.create.create, {
+    goal: { ...MASTERY_GOAL, content: "長期目標として親になる" },
+  });
   const goalId = await t.mutation(api.mutations.goals.create.create, {
-    goal: { ...MASTERY_GOAL, deadline: "2026-08-23" },
+    goal: { ...MASTERY_GOAL, deadline: "2026-08-23", parentGoalId },
   });
   const goals = await t.query(api.queries.goals.list.list, {});
   const goal = goals.find((entry) => entry._id === goalId);
@@ -96,12 +104,19 @@ test("本番目標は1件までで2件目は拒否される", async () => {
 
 test("習得は複数件作成できる", async () => {
   const t = owner();
-  await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
+  const parentGoalId = await t.mutation(api.mutations.goals.create.create, {
+    goal: MASTERY_GOAL,
+  });
   await t.mutation(api.mutations.goals.create.create, {
     goal: { ...MASTERY_GOAL, content: "Part2 を聞き取れる", criterion: "正答率9割" },
   });
   await t.mutation(api.mutations.goals.create.create, {
-    goal: { ...MASTERY_GOAL, content: "長文を時間内に読み切れる", deadline: "2026-08-30" },
+    goal: {
+      ...MASTERY_GOAL,
+      content: "長文を時間内に読み切れる",
+      deadline: "2026-08-30",
+      parentGoalId,
+    },
   });
   expect(await t.query(api.queries.goals.list.list, {})).toHaveLength(3);
 });
@@ -167,9 +182,12 @@ test("目標タイプの変更は拒否される", async () => {
 
 test("同タイプの更新は基準と期限を書き換える", async () => {
   const t = owner();
+  const parentGoalId = await t.mutation(api.mutations.goals.create.create, {
+    goal: { ...MASTERY_GOAL, content: "長期目標として親になる" },
+  });
   const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
   await t.mutation(api.mutations.goals.update.update, {
-    goal: { ...MASTERY_GOAL, criterion: "1分間で150語", deadline: "2026-08-23" },
+    goal: { ...MASTERY_GOAL, criterion: "1分間で150語", deadline: "2026-08-23", parentGoalId },
     goalId: masteryId,
   });
   const goals = await t.query(api.queries.goals.list.list, {});
@@ -214,13 +232,16 @@ test("setAchieved は習得を達成にし、undefined で取り消せる", asyn
 
 test("達成日は編集で消えない", async () => {
   const t = owner();
+  const parentGoalId = await t.mutation(api.mutations.goals.create.create, {
+    goal: { ...MASTERY_GOAL, content: "長期目標として親になる" },
+  });
   const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
   await t.mutation(api.mutations.goals.setAchieved.setAchieved, {
     achievedAt: TODAY,
     goalId: masteryId,
   });
   await t.mutation(api.mutations.goals.update.update, {
-    goal: { ...MASTERY_GOAL, deadline: "2026-08-30" },
+    goal: { ...MASTERY_GOAL, deadline: "2026-08-30", parentGoalId },
     goalId: masteryId,
   });
   const goals = await t.query(api.queries.goals.list.list, {});

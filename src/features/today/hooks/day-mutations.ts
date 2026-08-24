@@ -6,6 +6,7 @@ export {
   useRemoveRow,
   useSetDayCondition,
   useSetDayMemo,
+  useOptimisticStopRowTimer,
   useSkipRow,
   useSwitchPreset,
   useUnskipRow,

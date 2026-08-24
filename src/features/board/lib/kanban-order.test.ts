@@ -5,7 +5,9 @@ import {
   computeOrderedRowIds,
   groupRowsByKanbanColumn,
   hasRowOrderChanged,
+  kanbanMoveMenuItems,
   resolveKanbanStatusMove,
+  shiftRowWithinColumn,
 } from "~/features/board/lib/kanban-order";
 import type { BoardRow } from "~/features/board/types/board";
 
@@ -20,6 +22,7 @@ function row(id: string, status: BoardRow["status"], sortOrder: number): BoardRo
     minutes: 0,
     sortOrder,
     status,
+    timer: null,
   };
 }
 
@@ -87,4 +90,57 @@ test("hasRowOrderChanged は順序差分を検出する", () => {
       ["b", "a"].map((id) => id as Id<"rows">),
     ),
   ).toBe(true);
+});
+
+//* #58 §15: モバイルのドラッグ代替。列内で1つ動かすか、端なら null。
+test("shiftRowWithinColumn は列の先頭で -1、末尾で +1 なら null", () => {
+  const rows = [row("a", "未着手", 0), row("b", "未着手", 1), row("c", "確定", 2)];
+
+  expect(shiftRowWithinColumn(rows, "a" as Id<"rows">, -1)).toBeNull();
+  expect(shiftRowWithinColumn(rows, "b" as Id<"rows">, 1)).toBeNull();
+  expect(shiftRowWithinColumn(rows, "c" as Id<"rows">, -1)).toBeNull();
+  expect(shiftRowWithinColumn(rows, "c" as Id<"rows">, 1)).toBeNull();
+});
+
+test("shiftRowWithinColumn は同じ列の中で入れ替え、他列の順序を保つ", () => {
+  const rows = [
+    row("a", "未着手", 0),
+    row("b", "未着手", 1),
+    row("c", "未着手", 2),
+    row("d", "確定", 3),
+  ];
+
+  expect(shiftRowWithinColumn(rows, "a" as Id<"rows">, 1)).toEqual(
+    ["b", "a", "c", "d"].map((id) => id as Id<"rows">),
+  );
+  expect(shiftRowWithinColumn(rows, "c" as Id<"rows">, -1)).toEqual(
+    ["a", "c", "b", "d"].map((id) => id as Id<"rows">),
+  );
+});
+
+test("shiftRowWithinColumn は知らない行なら null", () => {
+  expect(shiftRowWithinColumn([row("a", "未着手", 0)], "zz" as Id<"rows">, 1)).toBeNull();
+});
+
+//* #58 §15: カードの ⋮ Menu に出す移動先。noop の列だけが落ちる。
+test("kanbanMoveMenuItems は noop の列を落として KANBAN_COLUMNS の順で返す", () => {
+  expect(kanbanMoveMenuItems("未着手")).toEqual([
+    { column: "進行中", move: "start" },
+    { column: "確定", move: "confirm" },
+    { column: "スキップ", move: "skip" },
+  ]);
+  expect(kanbanMoveMenuItems("確定")).toEqual([
+    { column: "未着手", move: "unconfirm" },
+    { column: "進行中", move: "reopen" },
+    { column: "スキップ", move: "skip" },
+  ]);
+  expect(kanbanMoveMenuItems("スキップ")).toEqual([
+    { column: "未着手", move: "unskip" },
+    { column: "確定", move: "confirm" },
+  ]);
+  expect(kanbanMoveMenuItems("進行中")).toEqual([
+    { column: "未着手", move: "pause" },
+    { column: "確定", move: "confirm" },
+    { column: "スキップ", move: "skip" },
+  ]);
 });

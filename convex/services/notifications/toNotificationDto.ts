@@ -1,0 +1,12 @@
+import type { Doc } from "../../_generated/dataModel";
+import type { NotificationDto } from "../../lib/validators";
+
+//* readAt(optional number)を read(boolean)へ畳む。DTO は全キーを必ず出す。
+export function toNotificationDto(doc: Doc<"notifications">): NotificationDto {
+  return {
+    _creationTime: doc._creationTime,
+    _id: doc._id,
+    payload: doc.payload,
+    read: doc.readAt !== undefined,
+  };
+}

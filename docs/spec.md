@@ -109,7 +109,8 @@ Convex は Testing Pyramid。底は純関数の unit を厚くする（睡眠時
 - OKR ツリー、WOOP ウィザード、障害プランによる自動スキップ
 - WorkOS、Clerk、`@convex-dev/auth`、自前 JWT、genericOAuth
 - Playwright / 本番 Notion を使う e2e
-- ResourcesDayView、オフライン対応
+- ResourcesDayView、オフラインでの記録の書き込み・読み取りキャッシュ（PWA 化そのもの — ホーム画面追加・
+  静的資産キャッシュ・オフライン貼り紙 — は対象。docs/specs/pwa-mobile.md）
 
 ## Further Notes
 

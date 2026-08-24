@@ -1,10 +1,12 @@
 import type { DateJst } from "~domain/jst";
 import { todayJst } from "~domain/jst";
+import { hasTimerState, timerMinutes } from "~domain/rowTimer";
 
 import {
   useAddRow,
   useConfirmRow,
   useCopyYesterdayConfirmed,
+  useOptimisticStopRowTimer,
   useRemoveDay,
   useRemoveRow,
   useSetDayCondition,
@@ -31,7 +33,7 @@ type UseDayBoardActionsOptions = {
 
 export function useDayBoardActions(
   dateJst: DateJst,
-  rows: readonly Pick<DayRow, "_id" | "category">[],
+  rows: readonly Pick<DayRow, "_id" | "category" | "timer">[],
   options: UseDayBoardActionsOptions = {},
 ) {
   const today = todayJst();
@@ -45,22 +47,37 @@ export function useDayBoardActions(
   const removeDay = useRemoveDay();
   const copyYesterday = useCopyYesterdayConfirmed();
   const switchPreset = useSwitchPreset();
+  const stopTimer = useOptimisticStopRowTimer(dateJst, today);
 
   return {
     onAddRow: (input: AddRowInput) =>
       runMutation(() => add.mutateAsync({ ...input, dateJst, todayJst: today }), {
         successMessage: "記録を追加しました",
       }).then(() => undefined),
+    //? 日ページに開始・停止のボタンは置かないが、分数だけは食い違わせない。計測がある行は
+    //? stopTimer でサーバに区間を閉じさせ、その真値で確定する(docs/specs/study-timer.md §11.4)。
     onConfirm: (input: ConfirmRowInput) =>
       runMutation(
         async () => {
-          await confirm.mutateAsync(input);
           const row = rows.find((entry) => entry._id === input.rowId);
+          const measuredMinutes =
+            row !== undefined && hasTimerState(row.timer)
+              ? timerMinutes(await stopTimer.mutateAsync({ rowId: input.rowId }))
+              : null;
+          await confirm.mutateAsync(
+            measuredMinutes === null ? input : { ...input, minutes: measuredMinutes },
+          );
           if (row !== undefined) {
             options.onConfirmedCategory?.(row.category);
           }
+          return measuredMinutes;
         },
-        { successMessage: "記録を確定しました" },
+        {
+          successMessage: (measuredMinutes) =>
+            measuredMinutes === null
+              ? "記録を確定しました"
+              : `計測した${String(measuredMinutes)}分で確定しました`,
+        },
       ).then(() => undefined),
     onCopyYesterday: () =>
       runMutation(() => copyYesterday.mutateAsync({ dateJst, todayJst: today }), {

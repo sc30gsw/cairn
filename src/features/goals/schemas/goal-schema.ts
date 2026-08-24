@@ -1,5 +1,6 @@
 import * as v from "valibot";
 import {
+  CHECKPOINT_PARENT_REQUIRED_MESSAGE,
   DATE_JST_PATTERN,
   GOAL_DATE_MESSAGE,
   GOAL_TYPES,
@@ -10,6 +11,7 @@ import {
   TOEIC_SCORE_STEP_MESSAGE,
 } from "~domain/domain";
 
+import type { GoalId } from "~/features/goals/types/goal";
 import { ConcreteActionSchema } from "~/lib/validation/concrete-action";
 
 const [examType, masteryType] = GOAL_TYPES;
@@ -53,18 +55,66 @@ export const ExamGoalFieldsSchema = v.pipe(
   ),
 );
 
-//? 期限を持つ習得が「チェックポイント」。別タイプではないので枝は増やさない(docs/adr/0006)。
-//? 達成日は setAchieved の担当なので、この入力には含めない(編集で達成を消さない)。
-export const MasteryGoalFieldsSchema = v.object({
+//? 内容と基準は3つのフォームで共通。区分ごとに期限・親の必須度だけが違う
+const MasteryCoreEntries = {
   content: ConcreteActionSchema,
   criterion: v.pipe(v.string(), v.trim(), v.minLength(1, MASTERY_CRITERION_MESSAGE)),
-  deadline: OptionalDateJstSchema,
+};
+
+//* 新規長期目標。期限欄は出さないので schema にも無い(トップ層は期限も親も持たない)。
+export const LongTermGoalFieldsSchema = v.object(MasteryCoreEntries);
+
+//* 新規チェックポイント。期限は必須。親は導線から確定するが、値としても検証する。
+export const CheckpointGoalFieldsSchema = v.object({
+  ...MasteryCoreEntries,
+  deadline: DateJstSchema,
+  parentGoalId: v.pipe(v.string(), v.nonEmpty(CHECKPOINT_PARENT_REQUIRED_MESSAGE)),
 });
 
-//* 送信ペイロードの単一の真実。convex の goalInputValidator と同じ形になる(CVX-16)。
+//* 編集(習得)。期限は外せる。期限と親は同時に存在する(INV-1 をフォーム側でも守る)。
+export const MasteryEditFieldsSchema = v.pipe(
+  v.object({
+    ...MasteryCoreEntries,
+    deadline: OptionalDateJstSchema,
+    //? "" は Select 未選択
+    parentGoalId: v.optional(v.string()),
+  }),
+  v.forward(
+    v.partialCheck(
+      [["deadline"], ["parentGoalId"]],
+      (input) =>
+        (input.deadline === undefined) ===
+        (input.parentGoalId === undefined || input.parentGoalId === ""),
+      CHECKPOINT_PARENT_REQUIRED_MESSAGE,
+    ),
+    ["parentGoalId"],
+  ),
+);
+
+//? 親 id は一覧から引き当てて Id のブランドを取り戻す(as を書かない)。ここは受け皿の型だけ
+const ParentGoalIdSchema = v.custom<GoalId>(
+  (value) => typeof value === "string" && value.length > 0,
+  CHECKPOINT_PARENT_REQUIRED_MESSAGE,
+);
+
+//? 対象項目はフォームストアの外(useState)にあるので、フィールドスキーマではなく
+//? 送信ペイロードのスキーマにだけ現れる。空配列は undefined に畳む(サーバの正規化と同じ規則)。
+const ScopeItemIdsSchema = v.optional(
+  v.pipe(
+    v.array(v.string()),
+    v.transform((values) => (values.length === 0 ? undefined : values)),
+  ),
+);
+
+//* 送信ペイロードの形の確認用スキーマ。convex の goalInputValidator と同じ形になる(CVX-16)。
+//? type は v.variant の判別子なので mastery の枝は1本のまま(区分では枝を割らない)。
+//? 実際に onSubmit / mutation が使う型は GoalInputPayload(Convex 由来。ブランド付き Id を持つ)。
 export const GoalSchema = v.variant("type", [
   v.object({ ...ExamGoalFieldsSchema.entries, type: v.literal(examType) }),
-  v.object({ ...MasteryGoalFieldsSchema.entries, type: v.literal(masteryType) }),
+  v.object({
+    ...MasteryEditFieldsSchema.entries,
+    parentGoalId: v.optional(ParentGoalIdSchema),
+    scopeItemIds: ScopeItemIdsSchema,
+    type: v.literal(masteryType),
+  }),
 ]);
-
-export type GoalFormOutput = v.InferOutput<typeof GoalSchema>;

@@ -1,4 +1,5 @@
 import { Card, Stack } from "@mantine/core";
+import { useMediaQuery } from "@mantine/hooks";
 import { Schedule, type DateStringValue } from "@mantine/schedule";
 import type { CSSProperties } from "react";
 import { useRef } from "react";
@@ -26,7 +27,7 @@ import {
   BOARD_MONTH_MAX_EVENTS_PER_DAY,
 } from "~/features/board/lib/board-schedule-layout";
 import { dateToScheduleInstant } from "~/features/board/lib/schedule-instant";
-import type { BoardMastery, BoardRow, BoardScheduleBlock } from "~/features/board/types/board";
+import type { BoardRow, BoardScheduleBlock } from "~/features/board/types/board";
 import { SCHEDULE_LABELS_JA } from "~/lib/schedule-labels";
 
 import classes from "~/features/board/components/board-schedule.module.css";
@@ -51,19 +52,12 @@ const BOARD_MONTH_VIEW_PROPS = {
 
 type BoardScheduleProps = {
   blocks: readonly BoardScheduleBlock[];
-  checkpoint: BoardMastery | null;
   pending?: boolean;
   rows: readonly BoardRow[];
   view: BoardViewState;
 };
 
-export function BoardSchedule({
-  blocks,
-  checkpoint,
-  pending = false,
-  rows,
-  view,
-}: BoardScheduleProps) {
+export function BoardSchedule({ blocks, pending = false, rows, view }: BoardScheduleProps) {
   const {
     monthDate,
     scheduleAnchor: anchorDateJst,
@@ -82,10 +76,14 @@ export function BoardSchedule({
     scheduleView,
   );
   const scheduleRootRef = useRef<HTMLDivElement | null>(null);
+  //? @mantine/schedule の props を切るため CSS では表現できない。getInitialValueInEffect: true で
+  //? SSR は常に false(= ドラッグ有効)→ ハイドレーション不一致を避け、effect 後にモバイルなら無効化する。
+  const isCompact = useMediaQuery("(max-width: 47.9375em)", false, {
+    getInitialValueInEffect: true,
+  });
   const ui = useBoardScheduleUi({
     anchorDateJst,
     blocks,
-    checkpoint,
     rows,
     scheduleRootRef,
     scheduleView,
@@ -211,8 +209,10 @@ export function BoardSchedule({
               view={scheduleView}
               weekViewProps={BOARD_WEEK_VIEW_PROPS}
               yearViewProps={yearViewProps}
-              withDragSlotSelect={!pending && rows.length > 0}
-              withEventsDragAndDrop={!pending}
+              //? モバイルはドラッグを切るだけ。作成/編集のタップ経路(onTimeSlotClick / onDayClick /
+              //? 年ビューの onAdd)は既にあるので、新しい UI は作らない(#58 §11.4)。
+              withDragSlotSelect={!pending && rows.length > 0 && !isCompact}
+              withEventsDragAndDrop={!pending && !isCompact}
             />
             {ui.expandedAllDayAnchor === null ? null : (
               <BoardScheduleAllDayExpand

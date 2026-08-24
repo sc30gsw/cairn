@@ -1,0 +1,19 @@
+import { EVENING_HOUR_RANGE } from "~domain/notifications";
+
+export type HourOption = {
+  label: string;
+  value: string;
+};
+
+//? Select は文字列しか扱えないので、value は String(hour)。戻すのは呼び出し側の Number(value)。
+export function hourOptions(min: number, max: number): HourOption[] {
+  const options: HourOption[] = [];
+  for (let hour = min; hour <= max; hour += 1) {
+    options.push({ label: `${String(hour)}時`, value: String(hour) });
+  }
+  return options;
+}
+
+export function eveningHourOptions(): HourOption[] {
+  return hourOptions(EVENING_HOUR_RANGE.min, EVENING_HOUR_RANGE.max);
+}

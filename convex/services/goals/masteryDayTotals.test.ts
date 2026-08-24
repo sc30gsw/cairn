@@ -1,40 +1,126 @@
 import { expect, test } from "vite-plus/test";
 
+import type { Id } from "../../_generated/dataModel";
 import {
   activeDayDelta,
-  confirmedDayTotals,
+  confirmedTotalsByItem,
   EMPTY_DAY_TOTALS,
   initialMasteryProgress,
   masteryProgressDelta,
+  sameItemTotals,
+  scopedDayTotals,
   shiftMasteryProgress,
+  type ItemConfirmedTotals,
 } from "./masteryDayTotals";
 
-test("確定だけを数え、ゴミ箱の記録と確定以外は外す", () => {
+const KINFURE = "item-kinfure" as Id<"items">;
+const TADOKU = "item-tadoku" as Id<"items">;
+
+function totalsOf(entries: readonly [Id<"items">, number, number][]): ItemConfirmedTotals {
+  return new Map(
+    entries.map(([itemId, confirmedCount, confirmedMinutes]) => [
+      itemId,
+      { confirmedCount, confirmedMinutes },
+    ]),
+  );
+}
+
+test("確定だけを項目別に数え、ゴミ箱の記録と確定以外は外す", () => {
   expect(
-    confirmedDayTotals(
+    confirmedTotalsByItem(
       [
-        { deletedAt: undefined, minutes: 30, status: "確定" },
-        { deletedAt: undefined, minutes: 20, status: "確定" },
-        { deletedAt: undefined, minutes: 999, status: "未着手" },
-        { deletedAt: undefined, minutes: 999, status: "スキップ" },
-        { deletedAt: 1, minutes: 999, status: "確定" },
+        { deletedAt: undefined, itemId: KINFURE, minutes: 30, status: "確定" },
+        { deletedAt: undefined, itemId: KINFURE, minutes: 20, status: "確定" },
+        { deletedAt: undefined, itemId: TADOKU, minutes: 40, status: "確定" },
+        { deletedAt: undefined, itemId: KINFURE, minutes: 999, status: "未着手" },
+        { deletedAt: undefined, itemId: TADOKU, minutes: 999, status: "スキップ" },
+        { deletedAt: 1, itemId: KINFURE, minutes: 999, status: "確定" },
       ],
       true,
     ),
-  ).toEqual({ confirmedCount: 2, confirmedMinutes: 50 });
+  ).toEqual(
+    totalsOf([
+      [KINFURE, 2, 50],
+      [TADOKU, 1, 40],
+    ]),
+  );
 });
 
-test("日がゴミ箱にあるとその暦日は丸ごと0になる", () => {
+test("日がゴミ箱にあるとその暦日は丸ごと空になる", () => {
   expect(
-    confirmedDayTotals([{ deletedAt: undefined, minutes: 30, status: "確定" }], false),
-  ).toEqual(EMPTY_DAY_TOTALS);
+    confirmedTotalsByItem(
+      [{ deletedAt: undefined, itemId: KINFURE, minutes: 30, status: "確定" }],
+      false,
+    ).size,
+  ).toBe(0);
 });
 
 test("0分の確定でも件数は数える(実施日は分数ではなく件数で決まる)", () => {
-  expect(confirmedDayTotals([{ deletedAt: undefined, minutes: 0, status: "確定" }], true)).toEqual({
-    confirmedCount: 1,
-    confirmedMinutes: 0,
+  expect(
+    confirmedTotalsByItem(
+      [{ deletedAt: undefined, itemId: KINFURE, minutes: 0, status: "確定" }],
+      true,
+    ),
+  ).toEqual(totalsOf([[KINFURE, 1, 0]]));
+});
+
+test("項目別合計が完全一致なら同一、どこか1つでも違えば別", () => {
+  const before = totalsOf([
+    [KINFURE, 1, 30],
+    [TADOKU, 1, 40],
+  ]);
+  expect(
+    sameItemTotals(
+      before,
+      totalsOf([
+        [KINFURE, 1, 30],
+        [TADOKU, 1, 40],
+      ]),
+    ),
+  ).toBe(true);
+  //? 分数だけ違う
+  expect(
+    sameItemTotals(
+      before,
+      totalsOf([
+        [KINFURE, 1, 45],
+        [TADOKU, 1, 40],
+      ]),
+    ),
+  ).toBe(false);
+  //? 件数だけ違う
+  expect(
+    sameItemTotals(
+      before,
+      totalsOf([
+        [KINFURE, 2, 30],
+        [TADOKU, 1, 40],
+      ]),
+    ),
+  ).toBe(false);
+  //? キーが減った
+  expect(sameItemTotals(before, totalsOf([[KINFURE, 1, 30]]))).toBe(false);
+  //? キーが増えた
+  expect(sameItemTotals(totalsOf([[KINFURE, 1, 30]]), before)).toBe(false);
+});
+
+test("日合計が同じでも項目が入れ替われば別と判定する(早期リターンの安全性)", () => {
+  expect(sameItemTotals(totalsOf([[KINFURE, 1, 30]]), totalsOf([[TADOKU, 1, 30]]))).toBe(false);
+});
+
+test("対象項目で絞った日合計。未指定は全項目の合計、該当なしはゼロ", () => {
+  const totals = totalsOf([
+    [KINFURE, 2, 50],
+    [TADOKU, 1, 40],
+  ]);
+  expect(scopedDayTotals(totals, undefined)).toEqual({ confirmedCount: 3, confirmedMinutes: 90 });
+  expect(scopedDayTotals(totals, [KINFURE])).toEqual({ confirmedCount: 2, confirmedMinutes: 50 });
+  expect(scopedDayTotals(totals, [KINFURE, TADOKU])).toEqual({
+    confirmedCount: 3,
+    confirmedMinutes: 90,
   });
+  expect(scopedDayTotals(totals, ["item-none" as Id<"items">])).toEqual(EMPTY_DAY_TOTALS);
+  expect(scopedDayTotals(new Map(), undefined)).toEqual(EMPTY_DAY_TOTALS);
 });
 
 test("実施日数は 0↔正 の遷移でだけ ±1 する", () => {

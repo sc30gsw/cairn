@@ -14,14 +14,11 @@ import { TARGET_METRICS, TARGET_VALUE_LIMITS, type TargetMetric } from "~domain/
 
 import { LabelAlignedCell } from "~/components/label-aligned-cell";
 import { isTargetMetric } from "~/features/goals/lib/goal-guards";
-import {
-  TARGET_METRIC_SEGMENTS,
-  TARGET_METRIC_UNITS,
-} from "~/features/goals/lib/target-metric-labels";
 import { TargetSchema } from "~/features/goals/schemas/target-schema";
 import type { SaveTargetInput } from "~/features/goals/types/mutations";
 import type { TargetProgress } from "~/features/goals/types/target";
 import { onRequiredSelect } from "~/lib/select";
+import { TARGET_METRIC_SEGMENTS, TARGET_METRIC_UNITS } from "~/lib/target-metric-labels";
 import type { CategoryDto } from "~/types/category";
 
 const [defaultMetric] = TARGET_METRICS;

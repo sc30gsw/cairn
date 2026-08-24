@@ -9,8 +9,7 @@ import {
   withoutAllDayEvents,
   withAllDayOverflow,
 } from "~/features/board/lib/board-schedule-events";
-import type { BoardScheduleBlock } from "~/features/board/types/board";
-import type { BoardMastery, BoardRow } from "~/features/board/types/board";
+import type { BoardRow, BoardScheduleBlock } from "~/features/board/types/board";
 
 const [confirmed] = STATUSES;
 
@@ -25,13 +24,14 @@ function row(id: string, name: string, sortOrder: number): BoardRow {
     minutes: 30,
     sortOrder,
     status: confirmed,
+    timer: null,
   };
 }
 
 test("今日の記録は終日イベントになる", () => {
   const todayRow = row("r1", "Distinction 2000", 0);
 
-  expect(toBoardScheduleEvents("2026-08-17", [todayRow], null, [])).toEqual([
+  expect(toBoardScheduleEvents("2026-08-17", [todayRow], [])).toEqual([
     {
       color: "green",
       end: "2026-08-17 23:59:59",
@@ -40,23 +40,6 @@ test("今日の記録は終日イベントになる", () => {
       title: "Distinction 2000",
     },
   ]);
-});
-
-test("チェックポイントは期限の終日イベントになる", () => {
-  const checkpoint = {
-    _id: "g1" as BoardMastery["_id"],
-    activeDays: 0,
-    confirmedMinutes: 0,
-    content: "Part 2 を聞き取る",
-    criterion: "できる",
-    deadline: "2026-08-20",
-    type: "mastery",
-  } satisfies BoardMastery;
-
-  const events = toBoardScheduleEvents("2026-08-17", [], checkpoint, []);
-  expect(events).toHaveLength(1);
-  expect(events[0]?.start).toBe("2026-08-20 00:00:00");
-  expect(events[0]?.title).toBe("Part 2 を聞き取る");
 });
 
 test("ユーザー予定ブロックは記録と並べて表示する", () => {
@@ -69,7 +52,7 @@ test("ユーザー予定ブロックは記録と並べて表示する", () => {
     title: "Morning Standup",
   } satisfies BoardScheduleBlock;
 
-  const events = toBoardScheduleEvents("2026-08-17", [], null, [block]);
+  const events = toBoardScheduleEvents("2026-08-17", [], [block]);
   expect(events).toEqual([
     {
       color: "blue",
@@ -85,7 +68,6 @@ test("終日イベントが多い日は +N件 を追加する", () => {
   const events = toBoardScheduleEvents(
     "2026-08-17",
     [row("r1", "A", 0), row("r2", "B", 1), row("r3", "C", 2), row("r4", "D", 3)],
-    null,
     [],
   );
   const overflow = withAllDayOverflow(events, 2, (count) => `+${count}件`);
@@ -131,7 +113,6 @@ test("終日7件は2件表示と+5件のみになる", () => {
       row("r6", "F", 5),
       row("r7", "G", 6),
     ],
-    null,
     [],
   );
   const overflow = withAllDayOverflow(events, 2, (count) => `+${count}件`);
@@ -149,16 +130,20 @@ test("終日7件は2件表示と+5件のみになる", () => {
 });
 
 test("timedEventsForDay は終日とmoreを除いた予定だけ返す", () => {
-  const events = toBoardScheduleEvents("2026-08-17", [row("r1", "A", 0)], null, [
-    {
-      _id: "b1" as Id<"boardScheduleEvents">,
-      color: "blue",
-      endAt: "2026-08-17 10:30:00",
-      rowId: "r1" as Id<"rows">,
-      startAt: "2026-08-17 09:00:00",
-      title: "Morning Standup",
-    },
-  ]);
+  const events = toBoardScheduleEvents(
+    "2026-08-17",
+    [row("r1", "A", 0)],
+    [
+      {
+        _id: "b1" as Id<"boardScheduleEvents">,
+        color: "blue",
+        endAt: "2026-08-17 10:30:00",
+        rowId: "r1" as Id<"rows">,
+        startAt: "2026-08-17 09:00:00",
+        title: "Morning Standup",
+      },
+    ],
+  );
   const overflow = withAllDayOverflow(events, 2, (count) => `+${count}件`);
 
   expect(timedEventsForDay(overflow.events, "2026-08-17")).toEqual([
@@ -174,16 +159,20 @@ test("timedEventsForDay は終日とmoreを除いた予定だけ返す", () => {
 });
 
 test("終日イベントだけを除外できる", () => {
-  const events = toBoardScheduleEvents("2026-08-17", [row("r1", "A", 0)], null, [
-    {
-      _id: "b1" as Id<"boardScheduleEvents">,
-      color: "blue",
-      endAt: "2026-08-17 10:30:00",
-      rowId: "r1" as Id<"rows">,
-      startAt: "2026-08-17 09:00:00",
-      title: "Morning Standup",
-    },
-  ]);
+  const events = toBoardScheduleEvents(
+    "2026-08-17",
+    [row("r1", "A", 0)],
+    [
+      {
+        _id: "b1" as Id<"boardScheduleEvents">,
+        color: "blue",
+        endAt: "2026-08-17 10:30:00",
+        rowId: "r1" as Id<"rows">,
+        startAt: "2026-08-17 09:00:00",
+        title: "Morning Standup",
+      },
+    ],
+  );
 
   expect(withoutAllDayEvents(events)).toEqual([
     {

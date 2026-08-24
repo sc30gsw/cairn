@@ -2,6 +2,7 @@ import { expect, test } from "vite-plus/test";
 
 import {
   addDaysJst,
+  addMonthsJst,
   daysUntil,
   isDateJst,
   isFutureDateJst,
@@ -44,4 +45,15 @@ test("本番日 2026-09-27 まで 2026-08-15 から 43 日", () => {
 
 test("1日進める", () => {
   expect(addDaysJst("2026-08-15", 1)).toBe("2026-08-16");
+});
+
+test("addMonthsJst は年をまたいで前後の月を返す", () => {
+  expect(addMonthsJst("2026-01", -1)).toBe("2025-12");
+  expect(addMonthsJst("2026-12", 1)).toBe("2027-01");
+  expect(addMonthsJst("2026-08", 0)).toBe("2026-08");
+});
+
+test("addMonthsJst は12か月以上の移動も月を2桁に保つ", () => {
+  expect(addMonthsJst("2026-08", -13)).toBe("2025-07");
+  expect(addMonthsJst("2026-08", 5)).toBe("2027-01");
 });

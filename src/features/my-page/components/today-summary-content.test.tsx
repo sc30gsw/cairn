@@ -9,6 +9,7 @@ import { renderWithMantine } from "~/test-utils/render";
 const examGoal = {
   _id: "goal_exam_1" as ExamGoal["_id"],
   content: "司法試験",
+  createdAt: 1_755_000_000_000,
   examDate: "2026-12-01",
   maxScore: 850,
   minScore: 730,

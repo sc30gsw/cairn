@@ -1,5 +1,6 @@
+import { TARGET_METRIC_UNITS } from "~domain/domain";
+
 import type { TargetProgress } from "~/features/today/types/targets";
-import { TARGET_METRIC_UNITS } from "~/lib/target-metric-units";
 
 export type TargetRemainder = {
   achieved: boolean;

@@ -1,5 +1,5 @@
 import { Avatar, Menu } from "@mantine/core";
-import { IconLogout, IconUserCircle } from "@tabler/icons-react";
+import { IconBell, IconChartBar, IconLogout, IconUserCircle } from "@tabler/icons-react";
 import { Link } from "@tanstack/react-router";
 
 import { signOutAndReload } from "~/features/auth/lib/auth-actions";
@@ -35,7 +35,21 @@ export function AuthAccountMenu() {
           leftSection={<IconUserCircle aria-hidden size={16} stroke={1.5} />}
           to="/my-page"
         >
-          マイページ
+          アカウント設定
+        </Menu.Item>
+        <Menu.Item
+          component={Link}
+          leftSection={<IconChartBar aria-hidden size={16} stroke={1.5} />}
+          to="/my-page/status"
+        >
+          状況
+        </Menu.Item>
+        <Menu.Item
+          component={Link}
+          leftSection={<IconBell aria-hidden size={16} stroke={1.5} />}
+          to="/my-page/notifications"
+        >
+          通知設定
         </Menu.Item>
         <Menu.Item
           color="red"
