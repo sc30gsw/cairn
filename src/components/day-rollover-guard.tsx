@@ -13,7 +13,10 @@ export function DayRolloverGuard() {
   const seenRef = useRef<string | null>(null);
 
   useEffect(() => {
-    seenRef.current ??= todayJst();
+    //? React Compiler が ??= 代入を未サポートのため if で書く(react-doctor: react-hooks-js/todo)
+    if (seenRef.current === null) {
+      seenRef.current = todayJst();
+    }
 
     function check() {
       const now = todayJst();
