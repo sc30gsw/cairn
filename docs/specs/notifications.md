@@ -1,9 +1,13 @@
 # 通知設計（#56）
 
-- 対象: マップ #47 の6本目「通知」。決定のみを行い、実装はしない。
+- 対象: マップ #47 の6本目「通知」。**決定のみを行い、実装はしない。**
 - 前提ドキュメント: [CONTEXT.md](../../CONTEXT.md) / [.claude/rules/convex-rules.md](../../.claude/rules/convex-rules.md)（CVX-01〜20）/ [ADR-0003](../adr/0003-process-goals-not-okr.md) / [ADR-0006](../adr/0006-checkpoints-replace-weekly-goals.md) / [ADR-0007](../adr/0007-denormalize-mastery-progress.md)
-- 兄弟仕様: [goal-hierarchy-layout.md](goal-hierarchy-layout.md)（#48）/ [checkpoint-parent-backfill.md](checkpoint-parent-backfill.md)（#49）/ [study-timer.md](study-timer.md)（#51）
-- 調査: #55（通知配信手段）/ #57（PWA）。**`research/notification-channels` ブランチは remote から消えている**（`git ls-remote origin` に無い）ため、本書は #55 のクローズコメントに記録された調査結論と、マップ #47 に転記済みの要点を一次情報として扱う。原文が復活した場合、本書 §2 の事実記述と突き合わせること（判断は変わらない見込み）。
+- 兄弟仕様: [goal-hierarchy-layout.md](goal-hierarchy-layout.md)（#48）/ [checkpoint-parent-backfill.md](checkpoint-parent-backfill.md)（#49）/ [study-timer.md](study-timer.md)（#51）/ [pwa-mobile.md](pwa-mobile.md)（#58）
+- 調査: #55（通知配信手段）/ #57（PWA）。
+
+> **調査原文の所在について（実装者への注意）**
+> `research/notification-channels` ブランチは remote から消えている（`git ls-remote --heads origin` に存在しない。remote は `main` と `cursor/*` の2本だけ）。`docs/research/` にも通知の調査ファイルは無い（あるのは目標系の3本）。
+> よって本書は **#55 / #57 のクローズ時に確定し、マップ #47 の「Decisions already locked」へ転記済みの調査結論**を一次情報として扱う（§2.1 の表がその全文相当）。原文が復活した場合は §2.1 の**事実記述**だけを突き合わせること。§2.2〜2.5 の**判断**は、原文の細部が増えても変わらない構造（in-app が最小コスト・Slack が最単純・Web Push は SW 前提・Email は PII 複製が必要）に依っている。
 
 ---
 
@@ -14,9 +18,10 @@
 3. **通知はオプトイン。** `notificationSettings` 行が無い所有者は評価対象外。行が無いことがそのまま「通知しない」で、評価器の所有者列挙もこの表から引く。
 4. **頻度上限は数えない。`dedupeKey` の粒度がそのまま上限。** `{kind}:{発火単位}` の1本キーで、所有者あたり **最大 2通/日 ＋ 週1通**。カウンタもレート制限機構も持たない。
 5. **静穏時間（JST）は押し出しだけを止める。** 通知欄の行は静穏中でも作る。静穏で落とした押し出しは**翌朝へ持ち越さない**（行動できない催促は無価値）。
-6. **cron は1本だけ。毎時0分の `internal.mutations.notifications.evaluate.evaluate`。** 3トリガーの「いま発火すべきか」は JST の暦日・時・曜日から純関数で決める。UTC 換算を cron 定義に埋めない。
-7. **通知の中身は構造化ペイロードで保存し、文言は共有純関数で組む。** ただし目標名などの参照先テキストは生成時に非正規化して凍結する（親目標が消えても通知は読める）。
-8. **Slack の Webhook URL は所有者データとして DB に持つが、query では絶対に返さない。** 書き込み専用フィールド＋`https://hooks.slack.com/services/` の前置検証＋連続失敗3回で自動停止。
+6. **cron は2本。** 評価は毎時0分の `internal.mutations.notifications.evaluate.evaluate` の1本だけ。もう1本は保持期間の掃除（`purgeExpired`）。3トリガーの「いま発火すべきか」は JST の暦日・時・曜日から純関数で決める。**UTC 換算を cron 定義に埋めない。**
+7. **JST の「時」は Intl ではなく固定オフセット演算で出す。** JST は UTC+9:00 固定・夏時間なし。`new Date(now + JST_OFFSET_MS).getUTCHours()` は決定的で、`Intl` の `hour12` / `hourCycle` の実装差（深夜が `"24"` になる系）を踏まない。
+8. **通知の中身は構造化ペイロードで保存し、文言は共有純関数で組む。** ただし目標名などの参照先テキストは生成時に非正規化して凍結する（親目標が消えても通知は読める）。
+9. **Slack の Webhook URL は所有者データとして DB に持つが、query では絶対に返さない。** 書き込み専用フィールド＋`https://hooks.slack.com/services/` の前置検証＋連続失敗3回で自動停止。
 
 ---
 
@@ -24,15 +29,18 @@
 
 | 含む | 含まない |
 | --- | --- |
-| チャネルの選定と根拠 | Web Push の実装一式（購読表・配信 action・SW リスナー・権限要求 UI）→ #58 完了後の後続チケット（§2.4 / §17） |
+| チャネルの選定と根拠 | Web Push の実装一式（購読表・配信 action・SW リスナー・権限要求 UI）→ #58 完了後の後続チケット（§2.4 / §18） |
 | トリガー3種の発火条件（境界値まで） | 週次レビュー画面（#52）・月次レビュー（#54）の中身 |
 | `notifications` / `notificationSettings` のスキーマ | 目標×記録の紐付け（#53） |
 | 関数サーフェス（1関数1ファイル） | Email 配信 |
 | 頻度制御・静穏時間・保持期間 | 通知の A/B や文言の最適化 |
 | 通知欄 UI とマイページの設定 UI | 通知からの直接操作（確定・達成チェック） |
 | Valibot / Formisch のフォーム | 複数端末・複数セッションの区別 |
+| `vite.config.ts` のカバレッジ include への追加（§13） | |
 
-**#52 / #53 / #54 への依存は持たない。** `weeklyTargetMiss` は**今日すでに存在する** `targets` と既存サービス `services/targets/listWithProgress` だけを読む。#52 が週次レビュー画面を作ったら、通知のリンク先を `/goals` からそちらへ差し替えるだけで済む（§9.2 のリンク表1行の変更）。
+**#52 / #53 / #54 への依存は持たない。** `weeklyTargetMiss` は**今日すでに存在する** `targets` と既存サービス `services/targets/listWithProgress` だけを読む。#52 が週次レビュー画面を作ったら、通知のリンク先を `/goals` からそちらへ差し替えるだけで済む（§10.2 のリンク表1行の変更）。
+
+**#48 / #49 への依存も持たない。** `checkpointDeadline` の対象判定は `deadline` と `achievedAt` だけを見る（`parentGoalId` を見ない。§4.2）。#48 が `parentGoalId` を足す前でも後でも、この評価器は1文字も変わらない。
 
 ---
 
@@ -52,7 +60,7 @@ PWA 調査（#57）の結論が効く: `vite-plugin-pwa` は TanStack Start の�
 ### 2.2 採用: アプリ内通知欄（v1 必須）
 
 - Convex の reactive query がそのまま配信路になる。ポーリングも SW も要らない。
-- 既読・未読という**導出できない状態**を持てる（§14 の反論10への答え）。
+- 既読・未読という**導出できない状態**を持てる（§15 の反論10への答え）。
 - 押し出しチャネル（Slack / 将来の Web Push）が失敗しても、通知そのものは失われない。**通知欄が正で、押し出しは写し。**
 
 ### 2.3 採用: Slack Incoming Webhook（v1 オプトイン）
@@ -65,19 +73,19 @@ PWA 調査（#57）の結論が効く: `vite-plugin-pwa` は TanStack Start の�
 
 SW 登録が必要条件で、iOS はホーム画面追加まで要る。マップの優先順で PWA は通知の**後**なので、通知の実装セッションで SW を先に作るのは順序の逆転になる。
 
-**所有者の確定（この段落が唯一の正。`docs/specs/pwa-mobile.md` §22.1 にも同文を置く）**:
+**所有者の確定（この段落が唯一の正。対応表は §18.1）**:
 
 > **#58 は Service Worker の土台までしか作らない。** `push` / `notificationclick` / `pushsubscriptionchange` のリスナーも、購読を保存する表も、権限要求 UI も #58 では作らない。
-> **#56（本書）も Web Push を実装しない。** 本書は設計だけを置き、実装対象は §9.5 のファイル一覧に限る（`deliverWebPush.ts` と `pushSubscriptions` は入っていない）。
+> **#56（本書）も Web Push を実装しない。** 本書は設計だけを置き、実装対象は §10.5 のファイル一覧に限る（`deliverWebPush.ts` と `pushSubscriptions` は入っていない）。
 > **Web Push 一式 —— `pushSubscriptions` 表・`deliverWebPush` internalAction・`emitNotification` の schedule 行・権限要求 UI・SW の `push` / `notificationclick` / `pushsubscriptionchange` リスナー —— は #58 完了後の後続チケットが、本書の設計を延長して1回で実装する。**
 
 この確定が必要な理由: 以前の版は本書が「Web Push は #58 の仕事」と書き、`pwa-mobile.md` が「購読表とリスナーは #56 の仕事」と書いていた。両方が相手の成果物を待つので誰も実装せず、#58 の実装セッションは存在しない #56 のリスナーを探すことになる。**押し合いを解く唯一の方法は所有者を1つに決めることで、その所有者は「#58 完了後の後続チケット」である**（#58 の時点では通知の設計＝本書が既に存在し、SW の土台も揃っているので、そこで初めて一括で作れる）。
 
-**先送りしても設計をやり直さないための約束**: 押し出しは `notifications` 行の *insert 後に scheduler で走るアダプタ* に閉じている（§7.2）。Web Push を足すときの差分は「`deliverWebPush` action 1本 ＋ 購読を保存する表1つ ＋ `emitNotification` の schedule 行1つ（＋ SW リスナーと権限要求 UI）」で、トリガー・ペイロード・静穏時間・dedupe はいっさい触らない。
+**先送りしても設計をやり直さないための約束**: 押し出しは `notifications` 行の *insert 後に scheduler で走るアダプタ* に閉じている（§10.2）。Web Push を足すときの差分は「`deliverWebPush` action 1本 ＋ 購読を保存する表1つ ＋ `emitNotification` の schedule 行1つ（＋ SW リスナーと権限要求 UI）」で、トリガー・ペイロード・静穏時間・dedupe はいっさい触らない。
 
 ### 2.5 不採用: Email
 
-- Convex 適合は高いが、**cron 文脈で所有者のメールアドレスを知る手段がない**。identity は request 由来で、cron に identity は無い（CVX-05）。よってオプトイン時にアドレスをアプリ表へ複製する必要があり、Better Auth component が正本として持つ PII の二重管理・失効の追随という負債が発生する。
+- Convex 適合は高いが、**cron 文脈で所有者のメールアドレスを知る手段がない**。identity は request 由来で、cron に identity は無い（CVX-05。実装上も `ownerQuery` / `ownerMutation` は `ctx.auth.getUserIdentity()` に依っており、cron からは使えない）。よってオプトイン時にアドレスをアプリ表へ複製する必要があり、Better Auth component が正本として持つ PII の二重管理・失効の追随という負債が発生する。
 - さらに Resend の API キーと**検証済み送信ドメイン**が要る。1〜2人の学習ログに対して運用コストが釣り合わない。
 - 通知の性質とも合わない: 本設計の3トリガーはいずれも「その時刻に見て、その日に動く」もので、メールの非同期性・受信箱での埋没と相性が悪い。
 
@@ -106,7 +114,7 @@ JST の時刻帯。この間は押し出しをしない。通知そのものは�
 _Avoid_: 通知の生成を止めること, 翌朝への持ち越し, 既定で無効にすること
 
 **トースト**（既存概念の明示）:
-`@mantine/notifications` による操作直後の一時表示（`src/lib/notify.ts`）。サーバ発の通知とは別物で、履歴も既読も持たない。
+`@mantine/notifications` による操作直後の一時表示（`src/lib/notify.ts` の `notifySuccess` / `notifyError`）。サーバ発の通知とは別物で、履歴も既読も持たない。
 _Avoid_: 通知と同じ語で呼ぶこと
 
 > **実装者向けの命名注意**: `@mantine/notifications` と本機能の名前が衝突する。トーストは既存の `notifySuccess` / `notifyError`（`src/lib/notify.ts`）のまま触らない。本機能の UI 名は `NotificationBell` / `NotificationTray`、フックは `useNotificationInbox`。
@@ -129,9 +137,11 @@ _Avoid_: 通知と同じ語で呼ぶこと
 
 #### `checkpointDeadline` — チェックポイント期限接近
 
-- 対象: `type === "mastery" && deadline !== undefined && achievedAt === undefined`（#48 §2 の「チェックポイント」区分。`parentGoalId` の有無は問わない — #49 のバックフィル前の孤児も催促する）。
-- 窓: `daysLeft = daysUntil(todayJst, deadline)` が `0 ≤ daysLeft ≤ CHECKPOINT_NEAR_DAYS(=3)`。
-- **範囲判定にする理由**: 「3日前ちょうど」の等号判定にすると、cron が1回落ちた日の節目が永久に失われる。範囲なら翌朝の通知に含まれる。代償は「残り3日を切ると毎朝1通」になること — 期限を過ぎるまで最大4通（残り3/2/1/0）。自分で置いた期限に対して最終3日間の毎朝1通は過剰ではないと判断した（§14 反論6も参照）。
+- 対象: `type === "mastery" && deadline !== undefined && achievedAt === undefined`。
+  - `type` の値は `convex/lib/domain.ts` の `GOAL_TYPES = ["exam", "mastery"]`（英字。日本語ラベルは UI 側）。
+  - **`parentGoalId` を見ない。** #48 の INV-1 は「`deadline` と `parentGoalId` は両方あるか両方ない」を services 層で守るので、#48 以降は「期限あり = 親あり」が成立する。それでも判定に `parentGoalId` を入れないのは、(a) #49 のバックフィル前の孤児（親が解決できない期限つき習得）も催促したいから、(b) 通知が #48/#49 の進捗に依存しないから。**期限を自分で置いた事実だけが催促の根拠**である。
+- 窓: `daysLeft = daysUntil(todayJst, deadline)`（`convex/lib/jst.ts` の既存純関数）が `0 ≤ daysLeft ≤ CHECKPOINT_NEAR_DAYS(=3)`。
+- **範囲判定にする理由**: 「3日前ちょうど」の等号判定にすると、cron が1回落ちた日の節目が永久に失われる。範囲なら翌朝の通知に含まれる。代償は「残り3日を切ると毎朝1通」になること — 期限を過ぎるまで最大4通（残り3/2/1/0）。自分で置いた期限に対して最終3日間の毎朝1通は過剰ではないと判断した（§15 反論6も参照）。
 - **`daysLeft < 0`（期限超過）では発火しない。** CONTEXT.md「習得」の _Avoid_「未達の自動失敗記録」を通知でも守る。期限を過ぎたことは画面の表示が変わるだけ、が既存の決定。
 - payload の `content` は目標の内容（`Doc<"goals">.content`）を生成時に写す。親目標のカスケード削除（#48 INV-6）で目標が消えても通知は読める。
 
@@ -139,8 +149,9 @@ _Avoid_: 通知と同じ語で呼ぶこと
 
 - 時刻: **土曜 09:00 JST**。
 - **土曜の朝である理由**: 週は月曜始まり（CONTEXT.md「週間ターゲット」）なので土曜の朝には残り2日ある。日曜夜に出すと事後報告になり、それは週次レビュー（#52）の担当領域。通知は「まだ間に合ううちに動かす」ためのもの。
-- 実績の読み: **既存サービス `services/targets/listWithProgress(ctx, ownerId, { weekStartJst })` をそのまま呼ぶ。** 画面（`/goals` の週間ターゲット、マイページの今日の状況）が見せている数字と通知の数字が同じ関数から出ることを保証する。`ctx` は `MutationCtx`（`QueryCtx` に構造的に代入可能）。
-- `weekStartJst = mondayOfWeek(todayJst)`。土曜に評価するので必ず今週の月曜になる。
+- 実績の読み: **既存サービス `services/targets/listWithProgress(ctx, ownerId, { weekStartJst })` をそのまま呼ぶ。** 画面（`/goals` の週間ターゲット、マイページの今日の状況）が見せている数字と通知の数字が同じ関数から出ることを保証する。
+  - 同関数のシグネチャは `(ctx: QueryCtx, ownerId: string, args: { weekStartJst: string }) => Promise<TargetProgressDto[]>`。`MutationCtx` は `QueryCtx` に構造的に代入可能なので、評価器（mutation 文脈）からそのまま渡せる。
+  - 同関数は内部で `requireWeekStartJst(args.weekStartJst)` を通す（月曜以外を拒否する）ので、**呼び出し側で `mondayOfWeek(dateJst)` に正規化してから渡す**。土曜に評価するので必ず今週の月曜になる。
 - ターゲットが0件なら発火しない（設定が未完成なのはセットアップ Stepper / マイページ checklist の担当 — CONTEXT.md「セットアップ」）。
 - 全件達成なら発火しない。**祝わない**（§4.3）。
 - `shortfalls` は `achieved === false` のものだけ。`remaining = targetValue - current` は文言側で引く（保存しない — 引き算はいつでも同じ答えになる）。
@@ -148,6 +159,7 @@ _Avoid_: 通知と同じ語で呼ぶこと
 #### `eveningUntouched` — 夜の未着手
 
 - 時刻: 所有者ごとの `eveningHourJst`（既定 21、18〜23）。
+- 「未着手」は `convex/lib/domain.ts` の `STATUSES = ["確定", "未着手", "進行中", "スキップ"]` の第2要素（日本語リテラル。`statusValidator` と同じ値）。
 - 分岐:
 
 | 今日の状態 | 発火 | `source` | `pendingCount` |
@@ -156,10 +168,10 @@ _Avoid_: 通知と同じ語で呼ぶこと
 | 日があり、未着手が0件（全部 確定/スキップ/進行中） | しない | — | — |
 | 日が無く、今日の曜日のプリセットに行がある | する | `"preset"` | プリセットの行数 |
 | 日が無く、今日の曜日のプリセットも無い/空 | しない | — | — |
-| 日がゴミ箱にある（`deletedAt`） | 日が無い扱い（`getLiveDay` が null） | — | — |
+| 日がゴミ箱にある（`deletedAt`） | 日が無い扱い（`getLiveDay` が null を返す） | — | — |
 
 - **進行中は催促しない。** いま手を動かしている人を急かす通知は害しかない。未着手の件数だけを見る。
-- **「日が無い暦日は休養」と矛盾しない理由**（§14 反論5の答え）: CONTEXT.md「休養」は **過去**で日が無いことを指す。この通知は**今日**の 18〜23 時に出るので、対象の暦日はまだ終わっていない。通知は日ドキュメントを作らないので、休養の意味論にも一切触れない。
+- **「日が無い暦日は休養」と矛盾しない理由**（§15 反論5の答え）: CONTEXT.md「休養」は **過去**で日が無いことを指す。この通知は**今日**の 18〜23 時に出るので、対象の暦日はまだ終わっていない。通知は日ドキュメントを作らないので、休養の意味論にも一切触れない。
 - **プリセットも無い日（土日など自動行なし）に黙る理由**: 計画が無い日に催促するのは「休養を計画倒れに数える」こと（CONTEXT.md「履歴」_Avoid_）。プリセットの有無がそのまま「今日は計画があったか」の判定になる。
 
 ### 4.3 採用しなかったトリガー
@@ -179,7 +191,7 @@ _Avoid_: 通知と同じ語で呼ぶこと
 
 ### 5.1 `convex/lib/notifications.ts`（新規・純関数とドメイン定数）
 
-`categories.ts` / `conditions.ts` / `boardScheduleColors.ts` と同じ「サブドメインの1ファイル」。Convex ランタイムを import しないので `~domain/notifications` としてフロントからも読める。
+`categories.ts` / `conditions.ts` / `boardScheduleColors.ts` と同じ「サブドメインの1ファイル」。Convex ランタイムを import しないので `~domain/notifications`（`tsconfig.json` の `"~domain/*": ["./convex/lib/*"]`）としてフロントからも読める。
 
 ```ts
 import type { Weekday } from "./catalog";
@@ -214,20 +226,29 @@ export const WEEKLY_MISS_WEEKDAY = 6 satisfies Weekday;
 //* 夜の催促に選べる時刻。
 export const EVENING_HOUR_RANGE = { max: 23, min: 18 } as const satisfies Record<string, number>;
 
+//* 静穏時間に選べる時刻(0〜23)。
+export const QUIET_HOUR_RANGE = { max: 23, min: 0 } as const satisfies Record<string, number>;
+
 //* 通知の保持期間。ゴミ箱(TRASH_TTL_MS)と同じ30日。
 export const NOTIFICATION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-//* 1回の purge で消す上限。トランザクションを短く保つ。
+//* 1回の purge で読む上限。トランザクションを短く保つ(CVX-11 の .take による上限)。
 export const NOTIFICATION_PURGE_BATCH = 200;
 
-//* 通知欄が返す最大件数。上限は「30日 × 最大3通/日」で理論上90件(§6.1)。
+//* 通知欄が返す最大件数。理論上の在庫は「30日 × 最大3通/日」で90件(§6.1)。
 export const NOTIFICATION_LIST_LIMIT = 50;
 
-//* Slack の Incoming Webhook 以外へは投げない(SSRF 防止。§8.2)。
+//* 本文に並べる明細の最大行数。超えた分は「…他N件」に畳む(§5.2)。
+export const NOTIFICATION_BODY_LINE_LIMIT = 5;
+
+//* Slack の Incoming Webhook 以外へは投げない(SSRF 防止。§9.2)。
 export const SLACK_WEBHOOK_PATTERN = /^https:\/\/hooks\.slack\.com\/services\/[A-Za-z0-9_/-]+$/;
 
-//* 連続失敗でオプトインを自動的に落とす回数(§8.3)。
+//* 連続失敗でオプトインを自動的に落とす回数(§9.3)。
 export const SLACK_FAILURE_STREAK_LIMIT = 3;
+
+//* JST は UTC+9:00 固定・夏時間なし。時の算出は Intl を使わずこのオフセットで行う(§5.1 末尾)。
+export const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
 //* 設定の既定値。行が無い所有者に query が**そのまま**返す値なので、
 //? 形は notificationSettingsDtoValidator と1対1にしておく(services 側で足す値を作らない)。
@@ -244,9 +265,10 @@ export const NOTIFICATION_DEFAULTS = {
 
 //* 検証メッセージ。services と Valibot が同じ文言を共有する(CVX-16)。
 export const EVENING_HOUR_MESSAGE = `夜の催促は${EVENING_HOUR_RANGE.min}〜${EVENING_HOUR_RANGE.max}時から選んでください`;
-export const QUIET_HOUR_MESSAGE = "静穏時間は0〜23時で指定してください";
+export const QUIET_HOUR_MESSAGE = `静穏時間は${QUIET_HOUR_RANGE.min}〜${QUIET_HOUR_RANGE.max}時で指定してください`;
 export const SLACK_WEBHOOK_MESSAGE =
   "Slack の Incoming Webhook URL（https://hooks.slack.com/services/…）を入力してください";
+export const SLACK_REQUIRED_MESSAGE = "Slack へ送るには Webhook URL が必要です";
 
 //* 静穏時間の判定。from === to は「静穏なし」(24時間の静穏で全部黙るのを避ける)。
 //? from > to は日付をまたぐ窓(既定の 22 → 7)。
@@ -280,30 +302,38 @@ export function deadlineDaysLeft(todayDateJst: string, deadline: string): number
 }
 
 //* JST の時(0〜23)。mutation / action からだけ呼ぶ。query では呼ばない(CVX-14)。
-const JST_HOUR = new Intl.DateTimeFormat("en-GB", {
-  hour: "2-digit",
-  hour12: false,
-  timeZone: "Asia/Tokyo",
-});
-
-export function hourJst(now: Date): number {
-  return Number(JST_HOUR.format(now));
+//? JST は固定オフセットなので、UTC に +9h してから getUTCHours() で厳密に出る。
+export function hourJst(now: number): number {
+  return new Date(now + JST_OFFSET_MS).getUTCHours();
 }
 
 //* 「いま」の JST 座標。評価器は先頭で1回だけ時計を読み、以降はこの値を配る。
 export function nowJst(now: number) {
-  const at = new Date(now);
-  return { dateJst: todayJst(at), hourJst: hourJst(at) };
+  return { dateJst: todayJst(new Date(now)), hourJst: hourJst(now) };
 }
 ```
 
-> `hourJst` / `nowJst` を `jst.ts` に置かず `notifications.ts` に置く理由: `jst.ts` の冒頭コメントは「クエリ内では `Date.now()` を呼ばず、呼び出し側が `dateJst` を渡す」と宣言しており、時刻を読む関数をそこに混ぜると規約の見た目が濁る。時を読むのは通知の評価器だけなので、通知のファイルに置く。`Intl` の `en-GB` + `hour12: false` は `"00"`〜`"23"` を返す（`en-US` は 24 時を返す実装があるので使わない）。
+> **`hourJst` を Intl で書かない理由（決定。実装者は判断しない）**
+> `Intl.DateTimeFormat(..., { hour: "2-digit", hour12: false })` は、ロケールと実装によって深夜0時を `"24"` と返す系がある（`hour12` が `hourCycle` を上書きし、`h24` に落ちる経路）。`hourCycle: "h23"` を明示すれば回避できるが、**JST は UTC+9:00 固定・夏時間なし**なので、`new Date(now + JST_OFFSET_MS).getUTCHours()` が最も短く・決定的で・ロケールに依らない。日付側（`todayJst`）は既存の `Intl`（`en-CA`）実装をそのまま再利用する（作り直さない）。
+>
+> **`hourJst` / `nowJst` を `jst.ts` に置かず `notifications.ts` に置く理由**: `jst.ts` の冒頭コメントは「クエリ内では `Date.now()` を呼ばず、呼び出し側が `dateJst` を渡す」と宣言しており、時刻を読む関数をそこに混ぜると規約の見た目が濁る。時を読むのは通知の評価器だけなので、通知のファイルに置く。
 
 ### 5.2 `convex/lib/notificationCopy.ts`（新規・文言の SSoT）
 
 ```ts
 import { TARGET_METRIC_UNITS } from "./domain";
+import { NOTIFICATION_BODY_LINE_LIMIT } from "./notifications";
 import type { NotificationPayload } from "./validators";
+
+//? 明細が多いときは先頭 N 行だけ並べ、残りを「…他N件」に畳む。
+//? Slack の1メッセージが長大化するのを防ぐ。件数は items.length から導出するので保存しない。
+function joinLines(lines: readonly string[]): string {
+  if (lines.length <= NOTIFICATION_BODY_LINE_LIMIT) {
+    return lines.join("\n");
+  }
+  const shown = lines.slice(0, NOTIFICATION_BODY_LINE_LIMIT);
+  return [...shown, `…他${lines.length - NOTIFICATION_BODY_LINE_LIMIT}件`].join("\n");
+}
 
 //* 通知の文言はここだけで組む。Slack のテキストも通知欄の表示も同じ関数を通る(CVX-16)。
 //? 保存するのは数値と非正規化した参照先テキストだけ。文言そのものは保存しない —
@@ -315,30 +345,30 @@ export function notificationMessage(payload: NotificationPayload): {
   switch (payload.kind) {
     case "checkpointDeadline":
       return {
-        body: payload.items
-          .map(
+        body: joinLines(
+          payload.items.map(
             (item) =>
-              `・${item.content}（${item.daysLeft === 0 ? "今日まで" : `あと${item.daysLeft}日`} / ${item.deadline}）`,
-          )
-          .join("\n"),
+              `・${item.content}（${item.daysLeft === 0 ? "今日まで" : `あと${String(item.daysLeft)}日`} / ${item.deadline}）`,
+          ),
+        ),
         title: "チェックポイントの期限が近づいています",
       };
     case "weeklyTargetMiss":
       return {
-        body: payload.shortfalls
-          .map(
+        body: joinLines(
+          payload.shortfalls.map(
             (shortfall) =>
-              `・${shortfall.categoryName} あと${shortfall.targetValue - shortfall.current}${TARGET_METRIC_UNITS[shortfall.metric]}`,
-          )
-          .join("\n"),
+              `・${shortfall.categoryName} あと${String(shortfall.targetValue - shortfall.current)}${TARGET_METRIC_UNITS[shortfall.metric]}`,
+          ),
+        ),
         title: "今週の週間ターゲットが未達です",
       };
     default:
       return {
         body:
           payload.source === "day"
-            ? `未着手が${payload.pendingCount}件残っています。`
-            : `今日はまだ開いていません。今日のプリセットに${payload.pendingCount}件あります。`,
+            ? `未着手が${String(payload.pendingCount)}件残っています。`
+            : `今日はまだ開いていません。今日のプリセットに${String(payload.pendingCount)}件あります。`,
         title: "今日の残りがあります",
       };
   }
@@ -349,22 +379,21 @@ export function notificationMessage(payload: NotificationPayload): {
 
 ### 5.3 `TARGET_METRIC_UNITS` の移動（SSoT の是正）
 
-いま `src/lib/target-metric-units.ts` にある `TARGET_METRIC_UNITS`（`{ count: "件", days: "日", minutes: "分" }`）を **`convex/lib/domain.ts` へ移す**。理由: サーバが組む Slack 本文に同じ単位が出るので、単位はもう UI 専有の飾りではない（`TargetMetric` タプルと同じ層の値）。表示ラベル（`TARGET_METRIC_LABELS` = 「件数 / 実施日 / 分」）は UI のままにする。
+いま `src/lib/target-metric-units.ts` にある `TARGET_METRIC_UNITS`（`{ count: "件", days: "日", minutes: "分" }`、`as const satisfies Record<TargetMetric, string>`）を **`convex/lib/domain.ts` へ移す**。理由: サーバが組む Slack 本文に同じ単位が出るので、単位はもう UI 専有の飾りではない（`TARGET_METRICS` タプルと同じ層の値）。表示ラベル（`TARGET_METRIC_LABELS` = 「件数 / 実施日 / 分」）は UI のままにする。
 
 | ファイル | 変更 |
 | --- | --- |
-| `convex/lib/domain.ts` | `TARGET_METRIC_UNITS` を追加（`as const satisfies Record<TargetMetric, string>`） |
-| `src/lib/target-metric-units.ts` | 削除（`vp run fallow` で未使用検出できる） |
-| `src/features/goals/lib/target-metric-labels.ts` | `import { TARGET_METRIC_UNITS } from "~domain/domain"` に差し替え（`export { TARGET_METRIC_UNITS }` の再輸出はそのまま維持し、下流3ファイルを触らない） |
+| `convex/lib/domain.ts` | `TARGET_METRIC_UNITS` を追加（`TARGET_METRICS` / `TargetMetric` の直下） |
+| `src/lib/target-metric-units.ts` | 削除（`vp run fallow` で参照残りを検出できる） |
+| `src/features/goals/lib/target-metric-labels.ts` | `import { TARGET_METRIC_UNITS } from "~domain/domain"` に差し替え。**既存の `export { TARGET_METRIC_UNITS }` 再輸出はそのまま維持**し、下流を触らない |
 | `src/features/today/lib/target-remainder.ts` | import 元を `~domain/domain` に差し替え |
 
 ### 5.4 `convex/lib/validators.ts` への追加
 
+既存ファイルは冒頭で `import { type Infer, v } from "convex/values"` を済ませているので、追加するのは import 1行と下記の定義だけ。
+
 ```ts
-import {
-  NOTIFICATION_KINDS,
-  NOTIFICATION_PENDING_SOURCES,
-} from "./notifications";
+import { NOTIFICATION_KINDS, NOTIFICATION_PENDING_SOURCES } from "./notifications";
 
 const [checkpointDeadlineKind, eveningUntouchedKind, weeklyTargetMissKind] = NOTIFICATION_KINDS;
 const [daySource, presetSource] = NOTIFICATION_PENDING_SOURCES;
@@ -418,8 +447,7 @@ export const notificationPayloadValidator = v.union(
 export type NotificationPayload = Infer<typeof notificationPayloadValidator>;
 
 //* トリガーごとのオプトイン。キー集合は NOTIFICATION_KINDS と一致する。
-//? 一致は評価器の `for (const kind of NOTIFICATION_KINDS) { prefs[kind] }` で tsc が守る —
-//? キーを足し忘れると index アクセスが型エラーになる。ダミーの型アサート export は置かない。
+//? 一致は評価器の `setting.triggers[kind]` アクセスで tsc が守る — キーを足し忘れると型エラーになる。
 export const notificationTriggerPrefsValidator = v.object({
   checkpointDeadline: v.boolean(),
   eveningUntouched: v.boolean(),
@@ -445,7 +473,7 @@ export const notificationPageValidator = v.object({
 
 export type NotificationPageDto = Infer<typeof notificationPageValidator>;
 
-//* 設定の DTO。**slackWebhookUrl は含めない**(§8.2)。設定済みかどうかだけを boolean で出す。
+//* 設定の DTO。**slackWebhookUrl は含めない**(§9.2)。設定済みかどうかだけを boolean で出す。
 export const notificationSettingsDtoValidator = v.object({
   enabled: v.boolean(),
   eveningHourJst: v.number(),
@@ -459,11 +487,13 @@ export const notificationSettingsDtoValidator = v.object({
 
 export type NotificationSettingsDto = Infer<typeof notificationSettingsDtoValidator>;
 
-//* Slack 配信の入力。internalQuery が返し、internalAction が使う。query では返さない。
+//* Slack 配信の入力。internalQuery が返し、internalAction が使う。公開 query では返さない。
 export const slackDeliveryValidator = v.object({
   text: v.string(),
   webhookUrl: v.string(),
 });
+
+export type SlackDelivery = Infer<typeof slackDeliveryValidator>;
 ```
 
 ### 5.5 `convex/schema.ts`
@@ -484,7 +514,7 @@ export const slackDeliveryValidator = v.object({
     //? 発火時の重複確認。eq(ownerId).eq(dedupeKey) + take(1)。
     .index("by_owner_and_dedupeKey", ["ownerId", "dedupeKey"]),
 
-  //? 通知のオプトイン設定。行が無い = 通知しない。評価器の所有者列挙もこの表から引く(§7.5)。
+  //? 通知のオプトイン設定。行が無い = 通知しない。評価器の所有者列挙もこの表から引く(§10.5)。
   notificationSettings: defineTable({
     enabled: v.boolean(),
     eveningHourJst: v.number(),
@@ -493,12 +523,12 @@ export const slackDeliveryValidator = v.object({
     quietToHourJst: v.number(),
     slackEnabled: v.boolean(),
     slackFailureStreak: v.number(),
-    //? 書き込み専用。query の返り値に入れない(§8.2)。
+    //? 書き込み専用。公開 query の返り値に入れない(§9.2)。
     slackWebhookUrl: v.optional(v.string()),
     triggers: notificationTriggerPrefsValidator,
   })
     .index("by_owner", ["ownerId"])
-    //? cron の所有者列挙。夜の催促は時が一致する所有者だけに絞れる(§7.5)。
+    //? cron の所有者列挙。夜の催促は時が一致する所有者だけに絞れる(§10.5)。
     .index("by_enabled_and_eveningHourJst", ["enabled", "eveningHourJst"]),
 ```
 
@@ -506,18 +536,18 @@ export const slackDeliveryValidator = v.object({
 
 | index | 用途 | 重複していない理由 |
 | --- | --- | --- |
-| `notifications.by_owner` | 通知欄（`eq(ownerId)` + `order("desc")`） | `by_owner_and_dedupeKey` のプレフィックスだが、`order("desc")` が返すのは（`dedupeKey` 降順 → `_creationTime` 降順）であって時刻順にならない。**CVX-12 が明記する「特定の `_creationTime` ソート順が必要」例外**そのもの |
+| `notifications.by_owner` | 通知欄（`eq(ownerId)` + `order("desc")`） | `by_owner_and_dedupeKey` のプレフィックスだが、後者で `order("desc")` すると（`dedupeKey` 降順 → `_creationTime` 降順）になり時刻順にならない。**CVX-12 が明記する「特定の `_creationTime` ソート順が必要」例外**そのもの |
 | `notifications.by_owner_and_dedupeKey` | 発火時の存在確認（`take(1)`） | 上と用途が背反（片方は順序、片方は等値） |
 | `notificationSettings.by_owner` | 設定の読み書き（upsert） | 下の index は先頭列が `enabled` なのでプレフィックス関係にない |
 | `notificationSettings.by_enabled_and_eveningHourJst` | cron の所有者列挙 | 同上 |
 
-`.filter()` はどこにも書かない（CVX-10）。取得後の絞り込みは TypeScript 側（`deletedAt` 除外・`achievedAt` 除外など）。`purgeExpired` は組み込みの `by_creation_time` を使う（§7.2）。
+`.filter()` はどこにも書かない（CVX-10）。取得後の絞り込みは TypeScript 側（`deletedAt` 除外・`achievedAt` 除外など）。`purgeExpired` は index を張らず `.take()` で読む（§10.2）。
 
-### 5.6 `convex/lib/domain.ts`（`TARGET_METRIC_UNITS` の追加のみ。再輸出は**しない**）
+### 5.6 `convex/lib/domain.ts`（`TARGET_METRIC_UNITS` の追加のみ。通知定数は再輸出**しない**）
 
 `CATEGORIES` / `CONDITIONS` は `domain.ts` が末尾で再輸出しているが、**通知の定数は再輸出しない。**
 
-**循環 import になるため。** `jst.ts` は `domain.ts` から `DATE_JST_PATTERN` を import している。`notifications.ts` は `jst.ts` から `daysUntil` / `weekdayFromDateJst` / `todayJst` を import する。ここで `domain.ts` が `notifications.ts` を再輸出すると `domain → notifications → jst → domain` の輪ができる。ESM は関数宣言なら耐えるが、const の初期化順に依存する壊れ方をするので作らない（`categories.ts` / `conditions.ts` が再輸出できているのは、それらが `jst.ts` を import しないからである）。
+**循環 import になるため。** `jst.ts` は `domain.ts` から `DATE_JST_PATTERN` を import している。`notifications.ts` は `jst.ts` から `daysUntil` / `weekdayFromDateJst` / `todayJst` を import する。ここで `domain.ts` が `notifications.ts` を再輸出すると `domain → notifications → jst → domain` の輪ができる。ESM は関数宣言なら耐えるが、`const` の初期化順に依存する壊れ方をするので作らない（`categories.ts` / `conditions.ts` が再輸出できているのは、それらが `jst.ts` を import しないからである）。
 
 したがって:
 
@@ -525,7 +555,7 @@ export const slackDeliveryValidator = v.object({
 - `domain.ts` への追加は `TARGET_METRIC_UNITS`（§5.3）だけ。これは `jst.ts` を参照しないので輪にならない。
 
 ```ts
-// convex/lib/domain.ts に追加（既存の TARGET_* 定数の隣）
+// convex/lib/domain.ts に追加（TARGET_METRICS / TargetMetric の直下）
 //* 週間ターゲットの単位。Slack 本文もサーバが組むので、単位はもう UI 専有の飾りではない(§5.3)。
 export const TARGET_METRIC_UNITS = {
   count: "件",
@@ -580,7 +610,7 @@ weeklyTargetMiss:{weekStartJst}   → 1所有者あたり 1通/週
 2. cron の遅延・再試行で発火が静穏時間帯にずれ込んだとき。
 3. 後続チケット（#58 完了後・§2.4）で Web Push が入ったとき、静穏時間の意味論を**その時に決め直さなくてよい**。
 
-同時に、v1 の既定値（夜21時・静穏22〜7）では静穏が押し出しを止めることは無い。**それが正しい既定である**（既定で黙る通知は要らない）。設定画面では「Slack を有効にした人だけに関係する」ことを明示する（§9.3）。
+同時に、v1 の既定値（夜21時・静穏22〜7）では静穏が押し出しを止めることは無い。**それが正しい既定である**（既定で黙る通知は要らない）。設定画面では「Slack を有効にした人だけに関係する」ことを明示する（§10.3）。
 
 ### 6.3 発火の見落としと遡り生成
 
@@ -590,17 +620,26 @@ weeklyTargetMiss:{weekStartJst}   → 1所有者あたり 1通/週
 | cron が丸1日落ちた | `checkpointDeadline` は翌朝の範囲判定（残り0〜3日）に含まれるので実質回復する。`eveningUntouched` / `weeklyTargetMiss` はその日/その週ぶんを失う |
 | 同じ時に2回走った | dedupeKey で2通目は作らない |
 | 期限を編集した（3日後 → 明日） | dedupeKey は日単位なので、その日すでに通知済みなら翌朝から新しい `daysLeft` で出る |
+| 通知を有効にした（`enabled: false → true`）| その回の発火は作らない。**次の該当時刻から**出る（設定保存が通知を吐かない） |
 
 **遡り生成をしない理由**: 通知はその時刻に意味がある。夜の催促を翌朝作るのは「行動できない催促」で、通知欄の信頼を落とす。範囲判定（§4.2）を入れたのは、この方針のもとで**期限だけは取りこぼしを自己修復させる**ため。
 
 ---
 
-## 7. 関数サーフェス（CVX-01/02/03/04/05/20）
+## 7. 保持期間
 
-### 7.1 crons — 1本だけ
+- `NOTIFICATION_TTL_MS = 30日`。ゴミ箱の `TRASH_TTL_MS` と同じ値・別定数（意味が違うものを同じ定数で兼用しない）。
+- 未読でも消す。**読まれない催促を永久に溜めない。**
+- 掃除は `purgeExpired`（日次 cron）。読みは `.take(NOTIFICATION_PURGE_BATCH)` で上限を切り、1回で消し切れなくても翌日続く（30日境界を1日ずらすだけなので害がない）。
+
+---
+
+## 8. 関数サーフェス（CVX-01/02/03/04/05/20）
+
+### 8.1 crons — 評価1本 ＋ 掃除1本
 
 ```ts
-// convex/crons.ts に追加
+// convex/crons.ts に追加（既存の trash / avatar クレーム掃除の下）
 crons.hourly(
   "evaluate notifications",
   { minuteUTC: 0 },
@@ -616,11 +655,11 @@ crons.daily(
 );
 ```
 
-`internal.*` のみを指す（CVX-05）。`api` は import しない。
+`internal.*` のみを指す（CVX-05）。`crons.ts` は `api` を import しない（既存のまま）。既存 cron 名（`"purge expired trash"` / `"purge expired avatar upload claims"`）とは重複しない。
 
-**トリガー3本に対して cron が1本である理由**:
+**トリガー3本に対して評価 cron が1本である理由**:
 
-1. **UTC 換算をコードから追い出せる。** 08:00 JST = 23:00 UTC（前日）、土曜 09:00 JST = 土曜 00:00 UTC。cron 定義に書くとオフバイワンの温床で、しかもテストできない。毎時走って JST 側で判定すれば、判定は `dueFixedTriggers` という**純関数のテスト対象**になる。
+1. **UTC 換算をコードから追い出せる。** 08:00 JST = 前日 23:00 UTC、土曜 09:00 JST = 土曜 00:00 UTC。cron 定義に書くとオフバイワンの温床で、しかもテストできない。毎時走って JST 側で判定すれば、判定は `dueFixedTriggers` という**純関数のテスト対象**になる。
 2. **`eveningHourJst` が所有者ごとに違う。** 固定 cron では per-user 時刻を表現できない。
 3. `now` を1回だけ読み、3つの評価器に配れる（時計を読む場所が1箇所）。
 
@@ -628,7 +667,7 @@ crons.daily(
 
 `minuteUTC: 0` は JST でも分0（JST は UTC+9:00 の固定オフセット、夏時間なし）。
 
-### 7.2 internal 関数
+### 8.2 internal 関数
 
 | ファイル | export | 種別 | args | returns | 委譲先 |
 | --- | --- | --- | --- | --- | --- |
@@ -636,9 +675,9 @@ crons.daily(
 | `convex/mutations/notifications/purgeExpired.ts` | `purgeExpired` | `internalMutation` | `{ now: v.optional(v.number()) }` | `v.null()` | `services/notifications/purgeExpired.ts` |
 | `convex/mutations/notifications/markSlackDelivered.ts` | `markSlackDelivered` | `internalMutation` | `{ error: v.optional(v.string()), notificationId: v.id("notifications") }` | `v.null()` | `services/notifications/markSlackDelivered.ts` |
 | `convex/queries/notifications/deliveryPayload.ts` | `deliveryPayload` | `internalQuery` | `{ notificationId: v.id("notifications") }` | `v.union(slackDeliveryValidator, v.null())` | `services/notifications/deliveryPayload.ts` |
-| `convex/actions/notifications/deliverSlack.ts` | `deliverSlack` | `internalAction` | `{ notificationId: v.id("notifications") }` | `v.null()` | （action 本体。§8.1） |
+| `convex/actions/notifications/deliverSlack.ts` | `deliverSlack` | `internalAction` | `{ notificationId: v.id("notifications") }` | `v.null()` | （action 本体。§9.1） |
 
-`internalMutation` / `internalQuery` / `internalAction` は `convex/_generated/server` から import する（`ownerMutation` は cron に identity が無いので使えない）。形は既存の `mutations/trash/purgeExpired.ts` にそろえる。
+`internalMutation` / `internalQuery` / `internalAction` は `convex/_generated/server` から import する（`ownerQuery` / `ownerMutation` は `ctx.auth.getUserIdentity()` に依っており、cron / scheduler 文脈では使えない）。形は既存の `mutations/trash/purgeExpired.ts` にそろえる。
 
 ```ts
 // convex/mutations/notifications/evaluate.ts — API 層は薄く保つ(CVX-02)
@@ -655,23 +694,24 @@ export const evaluate = internalMutation({
 });
 ```
 
-**`purgeExpired` の読み**:
+**`purgeExpired` の読み（決定済み。実装者は判断しない）**:
 
 ```ts
 const cutoff = now - NOTIFICATION_TTL_MS;
-const expired = await ctx.db
-  .query("notifications")
-  //? 組み込みの by_creation_time。テーブルごとに常に存在するので index 追加は不要(CVX-12)。
-  .withIndex("by_creation_time", (q) => q.lt("_creationTime", cutoff))
-  .take(NOTIFICATION_PURGE_BATCH);
-for (const doc of expired) {
-  await ctx.db.delete("notifications", doc._id);
+//? 素のテーブルスキャンは組み込みの by_creation_time 昇順(= 最古から)なので、
+//? .take で上限を切れば「古い順に最大200件」を読める(CVX-11 の許容手段)。
+//? .filter は書かない(CVX-10)。cutoff の判定は TypeScript 側で行う。
+const oldest = await ctx.db.query("notifications").take(NOTIFICATION_PURGE_BATCH);
+for (const doc of oldest) {
+  if (doc._creationTime < cutoff) {
+    await ctx.db.delete("notifications", doc._id);
+  }
 }
 ```
 
-`by_creation_time` が生成型で使えない場合の**代替（決定済み・実装者が判断しない）**: `ctx.db.query("notifications").take(NOTIFICATION_PURGE_BATCH)` は既定の作成時刻昇順なので、最古の200件を取り TypeScript 側で `_creationTime < cutoff` を絞る。`.filter()` は書かない（CVX-10）。`.take` による上限は CVX-11 の許容手段。
+`withIndex("by_creation_time", (q) => q.lt("_creationTime", cutoff))` が生成型で通るならそちらでもよいが、**通らなくても実装が止まらないよう上の形を正とする**。`_creationTime` 用の独自 index は張らない（CVX-12）。
 
-### 7.3 公開 query / mutation
+### 8.3 公開 query / mutation
 
 | ファイル | export | 種別 | args | returns |
 | --- | --- | --- | --- | --- |
@@ -679,9 +719,10 @@ for (const doc of expired) {
 | `convex/queries/notifications/settings.ts` | `settings` | `ownerQuery` | `{}` | `notificationSettingsDtoValidator` |
 | `convex/mutations/notifications/saveSettings.ts` | `saveSettings` | `ownerMutation` | 下記 | `v.id("notificationSettings")` |
 | `convex/mutations/notifications/markRead.ts` | `markRead` | `ownerMutation` | `{ notificationIds: v.array(v.id("notifications")) }` | `v.null()` |
+| `convex/mutations/notifications/markAllRead.ts` | `markAllRead` | `ownerMutation` | `{}` | `v.null()` |
 | `convex/mutations/notifications/disconnectSlack.ts` | `disconnectSlack` | `ownerMutation` | `{}` | `v.null()` |
 
-`ownerQuery` / `ownerMutation` は `requireUser` 相当を内部で済ませる既存ラッパ（`convex/lib/ownerFunctions.ts`）。未認証は `UnauthenticatedError`（CVX-04）。全公開関数に args validator（CVX-03）。
+`ownerQuery` / `ownerMutation`（`convex/lib/ownerFunctions.ts`）は `convex-helpers` の `customQuery` / `customMutation` で `ctx.ownerId` を注入し、未認証なら `ownerFromIdentity` 由来の `UnauthenticatedError` を `throwDomain` する（CVX-04）。全公開関数に args validator（CVX-03）。
 
 ```ts
 // convex/mutations/notifications/saveSettings.ts
@@ -703,33 +744,55 @@ export const saveSettings = ownerMutation({
 
 **`list` は引数を取らない（CVX-14）**。`Date.now()` も `dateJst` も要らない — 未読かどうかは `readAt` の有無だけで決まり、相対時刻の表示（「3時間前」ではなく `M/D HH:mm`）はクライアントが `_creationTime` から作る。**query が時計を読む経路が構造的に無い。**
 
+**`list` の読みは1回**:
+
+```ts
+//? 在庫は TTL(30日) × 最大3通/日 = 理論上90件。所有者条件つきの collect で足りる(CVX-11)。
+const all = await ctx.db
+  .query("notifications")
+  .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+  .order("desc")
+  .collect();
+return {
+  items: all.slice(0, NOTIFICATION_LIST_LIMIT).map(toNotificationDto),
+  unreadCount: all.filter((doc) => doc.readAt === undefined).length,
+};
+```
+
+未読数は**在庫全件**から数えるので、表示が50件で打ち切られてもバッジの数は正しい。
+
 **`settings` は行が無いとき `NOTIFICATION_DEFAULTS` を返す**（`enabled: false`）。フォームの初期値がサーバ由来で1本になり、クライアントに既定値を書かない。
 
-`saveSettings` は upsert（`targets.save` と同じ流儀。1所有者1行は services 側で守る）。**行の作成 = オプトイン**なので、この mutation が「通知を有効にする」の入口も兼ねる。
+`saveSettings` は upsert（`targets.save` と同じ流儀。1所有者1行は services 側で守る）。**行の作成 = オプトイン**なので、この mutation が「通知を有効にする」の入口も兼ねる。保存自体は通知を発火させない（§6.3 最終行）。
 
-### 7.4 services（1関数1ファイル、CVX-20）
+**`markAllRead` を別 mutation にする理由**: `list` が返す `items` は最新50件なので、51件目以降の未読 id はクライアントに存在しない。「すべて既読にする」を id 配列で実装すると**画面に出ていない未読が既読にならず、バッジが下がらない**。所有者の未読を全件 patch する `{}` 引数の mutation にすれば、この不整合が構造的に起きない。`markRead` は行クリック（1件）用に残す。
+
+### 8.4 services（1関数1ファイル、CVX-20）
 
 | ファイル | 役割 |
 | --- | --- |
 | `services/notifications/evaluate.ts` | 評価の司令塔。時計を1回読み、所有者を列挙し、3評価器を回す |
-| `services/notifications/loadDueSettings.ts` | 発火対象の `notificationSettings` を index で引く（§7.5） |
+| `services/notifications/loadDueSettings.ts` | 発火対象の `notificationSettings` を index で引く（§8.5） |
 | `services/notifications/evaluateCheckpointDeadline.ts` | 期限接近の payload を作る（無ければ null） |
 | `services/notifications/evaluateWeeklyTargetMiss.ts` | 未達ターゲットの payload を作る |
 | `services/notifications/evaluateEveningUntouched.ts` | 夜の未着手の payload を作る |
 | `services/notifications/emitNotification.ts` | dedupe 確認 → insert → 押し出しの schedule |
+| `services/notifications/purgeExpired.ts` | TTL 超過の削除（§8.2） |
 | `services/notifications/list.ts` | 通知欄の DTO を組む |
+| `services/notifications/toNotificationDto.ts` | `Doc<"notifications">` → `NotificationDto`（`readAt` を `read` に畳む） |
 | `services/notifications/settings.ts` | 設定 DTO（Webhook URL を落とす） |
 | `services/notifications/saveSettings.ts` | upsert ＋ 値の検証 |
 | `services/notifications/markRead.ts` | 所有権確認 ＋ `readAt` の patch |
+| `services/notifications/markAllRead.ts` | 所有者の未読を全件 patch |
 | `services/notifications/disconnectSlack.ts` | `slackWebhookUrl` 削除 ＋ `slackEnabled: false` ＋ streak リセット |
 | `services/notifications/markSlackDelivered.ts` | 配信結果の記録 ＋ 連続失敗の自動停止 |
 | `services/notifications/deliveryPayload.ts` | 通知 → `{ text, webhookUrl }` |
-| `services/notifications/requireOwnedNotification.ts` | `requireOwnedGoal` と同じ形の所有権ガード |
+| `services/notifications/requireOwnedNotification.ts` | `requireOwnedGoal` / `requireOwnedRow` と同じ形の所有権ガード |
 | `services/notifications/getOwnerSettings.ts` | `by_owner` で1行引く（無ければ null） |
 
 `ctx.runQuery` / `ctx.runMutation` は**query / mutation の中では使わない**（CVX-08）。すべて同一トランザクション内の素の関数呼び出し。`ctx.run*` を使うのは `deliverSlack`（action）だけで、これは CVX-07 が認める「読みを1本の internalQuery に、書きを1本の internalMutation に畳み、その間に外部呼び出しを置く」形。
 
-### 7.5 評価器のデータ読み（CVX-10/11）
+### 8.5 評価器のデータ読み（CVX-10/11）
 
 ```ts
 // convex/services/notifications/evaluate.ts（骨格）
@@ -737,7 +800,10 @@ export async function evaluate(ctx: MutationCtx, args: { now?: number } = {}): P
   const now = args.now ?? Date.now();               //? mutation なので時計を読んでよい(CVX-14)
   const { dateJst, hourJst: hour } = nowJst(now);
   const due = dueFixedTriggers(dateJst, hour);
-  const settings = await loadDueSettings(ctx, { fixedDue: due.checkpointDeadline || due.weeklyTargetMiss, hour });
+  const settings = await loadDueSettings(ctx, {
+    fixedDue: due.checkpointDeadline || due.weeklyTargetMiss,
+    hour,
+  });
 
   for (const setting of settings) {
     const payloads = [
@@ -787,7 +853,9 @@ export async function loadDueSettings(
 }
 ```
 
-24回のうち22回は下側（時が一致する所有者だけ）を通る。上側を通るのは 08時と土曜09時。**`.collect()` の対象は「通知を有効にした所有者」で、`enabled` の index 条件がある**。スケーリングの注記: 有効所有者が数百人規模になったら、この1トランザクションを `ctx.scheduler.runAfter(0, internal...evaluateOwner, { ownerId })` に fan out する（scheduler は CVX-05 の対象で `internal.*` を指すので規約内）。v1 では**しない**。
+24回のうち22回は下側（時が一致する所有者だけ）を通る。上側を通るのは 08時と土曜09時。**`.collect()` の対象は「通知を有効にした所有者」で、`enabled` の index 条件がある**（`.filter` は使わない）。
+
+スケーリングの注記: 有効所有者が数百人規模になったら、この1トランザクションを `ctx.scheduler.runAfter(0, internal.mutations.notifications.evaluateOwner.evaluateOwner, { ownerId })` に fan out する（scheduler は `internal.*` を指すので CVX-05 内）。**v1 ではしない**（§15 反論13）。
 
 **各評価器の読み**
 
@@ -795,17 +863,17 @@ export async function loadDueSettings(
 | --- | --- | --- |
 | `evaluateCheckpointDeadline` | `goals`（`ownerId` + `type: "mastery"`）→ TS で `deadline !== undefined && achievedAt === undefined && isDeadlineNear(...)` | `by_owner_and_type` |
 | `evaluateWeeklyTargetMiss` | 既存 `services/targets/listWithProgress(ctx, ownerId, { weekStartJst: mondayOfWeek(dateJst) })` を呼ぶ | 既存実装（`targets` / `rows` / `days` を週範囲で narrow） |
-| `evaluateEveningUntouched` | `getLiveDay(ctx, ownerId, dateJst)` → あれば `liveRowsForDay(ctx, day._id)` で `status === "未着手"` を数える。無ければ `presets`（`ownerId` + `weekday`）の `lines.length` | `by_owner_and_date` / `by_day` / `by_owner_and_weekday` |
+| `evaluateEveningUntouched` | `getLiveDay(ctx, ownerId, dateJst)` → あれば `liveRowsForDay(ctx, day._id)` で `status === "未着手"` を数える。無ければ `presets`（`ownerId` + `weekday: weekdayFromDateJst(dateJst)`）の `lines.length` | `by_owner_and_date` / `by_day` / `by_owner_and_weekday` |
 
-すべて既存サービスと既存 index の再利用で、**新しい読み方を発明しない**。`.filter()` は使わない（CVX-10）。
+すべて既存サービスと既存 index の再利用で、**新しい読み方を発明しない**。`.filter()` は使わない（CVX-10。`liveRowsForDay` 内の `Array.prototype.filter` は取得後の TS 側の絞り込みで、これは CVX-10 が認める形）。
 
 **OCC について**: 21時台の評価は所有者が記録を確定している最中に走り得るので、`rows` の読みが書き込みと衝突して OCC 再試行になる可能性がある。Convex は mutation を自動再試行するので実害はなく、再試行後も dedupeKey で二重生成しない。**再試行安全性が dedupe に集約されていること**が、この設計で OCC を気にしなくていい理由。
 
 ---
 
-## 8. Slack 配信
+## 9. Slack 配信
 
-### 8.1 経路
+### 9.1 経路
 
 ```
 evaluate (internalMutation)
@@ -831,6 +899,7 @@ import { v } from "convex/values";
 
 import { internal } from "../../_generated/api";
 import { internalAction } from "../../_generated/server";
+import { SlackDeliveryError } from "../../lib/errors";
 
 export const deliverSlack = internalAction({
   args: { notificationId: v.id("notifications") },
@@ -858,17 +927,17 @@ export const deliverSlack = internalAction({
       : posted.value.ok
         ? undefined
         : `Slack から ${String(posted.value.status)} が返りました`;
-    await ctx.runMutation(
-      internal.mutations.notifications.markSlackDelivered.markSlackDelivered,
-      { error, notificationId: args.notificationId },
-    );
+    await ctx.runMutation(internal.mutations.notifications.markSlackDelivered.markSlackDelivered, {
+      error,
+      notificationId: args.notificationId,
+    });
     return null;
   },
   returns: v.null(),
 });
 ```
 
-`SlackDeliveryError` は `convex/lib/errors.ts` に `TaggedError("SlackDelivery")` として足す（既存の `DomainError` union には**入れない** — これはドメインエラーではなく配信の失敗で、`throwDomain` の対象ではない）。
+`SlackDeliveryError` は `convex/lib/errors.ts` に `TaggedError("SlackDelivery")<{ cause?: unknown; message: string }>` として足す。**既存の `DomainError` union には入れない** — これはドメインエラーではなく配信の失敗で、`throwDomain` の対象ではない（`ConvexError` としてクライアントへ出さない）。
 
 **本文の組み立て**（`services/notifications/deliveryPayload.ts`）:
 
@@ -878,22 +947,22 @@ export const deliverSlack = internalAction({
 {SITE_URL}
 ```
 
-`SITE_URL` は既存の Convex deployment env（`spec.md` の秘密一覧に既にある）。`requireEnv("SITE_URL")` は使わず、未設定ならリンク行を省く（通知が env の欠落で落ちない）。
+`SITE_URL` は既存の Convex deployment env（`docs/spec.md` の秘密一覧にある）。`convex/lib/env.ts` の必須 env 取得は使わず、**未設定ならリンク行を省く**（通知が env の欠落で落ちない）。
 
 **リトライしない。** 通知はその時刻に意味があり、遅れて届く価値が低い。失敗は行（`slackError`）と設定（`slackFailureStreak`）に残す。
 
-### 8.2 Webhook URL の扱い
+### 9.2 Webhook URL の扱い
 
 `.claude/rules/common/security.md` は「秘密をソースに書かない」を禁じているが、これは**所有者が入力した所有者自身のデータ**であり、ソースにも env にも書かない。ただし bearer capability URL なので、次の4つを守る。
 
-1. **query では絶対に返さない。** `notificationSettingsDtoValidator` に `slackWebhookUrl` を入れない（§5.4）。DTO の形が SSoT なので、うっかり返す実装は validator で落ちる。返すのは `slackConfigured: boolean` だけ。
-2. **前置検証（SSRF 防止）。** `saveSettings` の services 側で `SLACK_WEBHOOK_PATTERN` に一致しなければ `ValidationFailedError`（`SLACK_WEBHOOK_MESSAGE`）。同じ正規表現を Valibot 側でも使う（§10）。任意のホストへ POST させない。
+1. **公開 query では絶対に返さない。** `notificationSettingsDtoValidator` に `slackWebhookUrl` を入れない（§5.4）。DTO の形が SSoT なので、うっかり返す実装は returns validator で落ちる。返すのは `slackConfigured: boolean` だけ。
+2. **前置検証（SSRF 防止）。** `saveSettings` の services 側で `SLACK_WEBHOOK_PATTERN` に一致しなければ `ValidationFailedError`（`SLACK_WEBHOOK_MESSAGE`）。同じ正規表現を Valibot 側でも使う（§11）。任意のホストへ POST させない。
 3. **解除できる。** `disconnectSlack` が `slackWebhookUrl: undefined` に patch し、`slackEnabled: false`、`slackFailureStreak: 0` に戻す。
 4. **UI に伏せる。** 設定済みなら `PasswordInput` に空の値と「設定済み（再入力で置き換え）」の description を出す。空のまま保存したときは既存 URL を保つ（`slackWebhookUrl` を送らない）。
 
 **譲歩（明記する）**: Convex の保存時暗号化に依り、アプリ側で追加の暗号化はしない。Webhook URL の漏洩リスクは「自分の Slack チャンネルに他人が投稿できる」で、学習ログのデータ流出ではない。1〜2人のアプリでこの残余リスクを受け入れる。
 
-### 8.3 失敗と自動停止
+### 9.3 失敗と自動停止
 
 `markSlackDelivered` の1トランザクションで（CVX-15）:
 
@@ -904,20 +973,23 @@ export const deliverSlack = internalAction({
 
 自動停止は Webhook が失効した（チャンネル削除・アプリ削除）ときに毎回無駄な fetch を打ち続けないため。停止したことは**通知にしない**（新しい kind を作らない）。設定画面に `Alert` で出す:「Slack への送信が3回続けて失敗したため、連携を停止しました。URL を確認してください。」
 
+`slackFailureStreak` は `saveSettings` で URL を入れ替えたときにも 0 に戻す（新しい URL に古い失敗回数を引き継がない）。
+
 ---
 
-## 9. UI 構造（Mantine 優先 / Paper Redesign）
+## 10. UI 構造（Mantine 優先 / Paper Redesign）
 
-### 9.1 通知ベルの置き場所
+### 10.1 通知ベルの置き場所
 
 ヘッダー（`src/components/app-shell.tsx`）のアカウントメニューの左。全画面共通。
 
-**`src/components/` に置く（`src/features/notifications/` を作らない）理由**: `app-shell.tsx` は共有ゾーンにあり、`.claude/rules/typescript/project-structure.md` の「shared code may not import features」に縛られる。`AppShell` を描くのは `features/auth/components/owner-gate.tsx` だけなので、prop で渡すと `features/auth → features/notifications` の feature 間依存になり、これも禁止。よって共有ゾーンが唯一の置き場であり、同時にそれが正しい — 通知欄はどの画面でも同じ形で出る全画面共通の部品である（`learning-date-navigation.tsx` / `condition-badge.tsx` と同じ位置づけ）。
+**`src/components/` に置く（`src/features/notifications/` を作らない）理由**: `app-shell.tsx` は共有ゾーンにあり、`.claude/rules/typescript/project-structure.md` の「shared code may not import features」に縛られる。`AppShell` を描くのは `features/auth/components/owner-gate.tsx` だけなので、`accountMenu` と同じように prop で渡すと `features/auth → features/notifications` の feature 間依存になり、これも禁止。よって共有ゾーンが唯一の置き場であり、同時にそれが正しい — 通知欄はどの画面でも同じ形で出る全画面共通の部品である（`learning-date-navigation.tsx` / `condition-badge.tsx` と同じ位置づけ）。
 
-`AppShell` は `OwnerGate` の中でしか描かれないので、ベルの中は**常に認証済み**。prop も条件分岐も追加しない。
+`AppShell` は `OwnerGate` が `session.data` を確認した後にしか描かれないので、ベルの中は**常に認証済み**。prop も条件分岐も追加しない。
+
+**差し替え箇所（正確に）**: `app-shell.tsx` のヘッダー `<Group align="center" gap="sm" justify="space-between" mb="lg" wrap="nowrap">` の中の、裸の `{accountMenu}` を次に置き換える。
 
 ```tsx
-// src/components/app-shell.tsx（ヘッダーの Group を差し替え）
 <Group align="center" gap="xs" wrap="nowrap">
   <Suspense fallback={<NotificationBellFallback />}>
     <NotificationBell />
@@ -928,7 +1000,7 @@ export const deliverSlack = internalAction({
 
 `Suspense` の fallback は**中身を描かない構造モック**（`.claude/rules/web/shimmer-from-structure.md` パターン2）。`NotificationBellFallback` は `useNotificationInbox()` を呼ばない。
 
-### 9.2 通知欄（`NotificationBell` / `NotificationTray`）
+### 10.2 通知欄（`NotificationBell` / `NotificationTray`）
 
 ```
 Indicator(color="orange", label=未読数, disabled=未読0)
@@ -952,7 +1024,8 @@ Indicator(color="orange", label=未読数, disabled=未読0)
       └ EmptyState(size="sm")                              ← 0件のとき。IconBellOff
 ```
 
-- **開いても既読にしない。** 行のクリック（= 遷移）で1件を既読、明示ボタンで全件既読。理由: 未読バッジは「まだ手を付けていない催促の数」であってほしい。ポップオーバーを開いた瞬間に0になると、催促の意味が消える。
+- **開いても既読にしない。** 行のクリック（= 遷移）で1件を既読（`markRead`）、明示ボタンで全件既読（`markAllRead`）。理由: 未読バッジは「まだ手を付けていない催促の数」であってほしい。ポップオーバーを開いた瞬間に0になると、催促の意味が消える。
+- `EmptyState` は Mantine core のコンポーネント（`error-state.tsx` / `not-found-state.tsx` と同じ使い方）。
 - リンク先（`src/lib/notification-link.ts` の純関数）:
 
 | kind | to |
@@ -962,10 +1035,20 @@ Indicator(color="orange", label=未読数, disabled=未読0)
 | `eveningUntouched` | `/`（日） |
 
   ルート文字列は UI の関心なので `convex/lib` には置かない。#52 が週次レビュー画面を作ったら `weeklyTargetMiss` の1行を差し替える。
-- 未読数のバッジは `color="orange"`（primary）。**赤は使わない** — 赤は削除・危険の予約色（`design-live-board.md` §2）。
-- 時刻は `NUMERAL_FONT`（数値は読める書体に分ける — 同 §3）。`dayjs` で `M/D HH:mm`。
-- ハードコードした hex は書かない。色は Mantine のトークン（`orange.5`）と `--cairn-*` 変数のみ。
+- 未読数のバッジは `color="orange"`（primary）。**赤は使わない** — 赤は削除・危険の予約色（`design-live-board.md`）。
+- 時刻は `NUMERAL_FONT`（`src/lib/theme.ts` から import。数値は読める書体に分ける）。`dayjs` で `M/D HH:mm`（`dayjs` は既存依存）。
+- ハードコードした hex は書かない。色は Mantine のトークン（`orange.5`）と `--cairn-*` 変数のみ。`SKETCH_RADIUS` / `PAPER_SHADOW` は `theme.ts` 内で `Card` に適用済みなので、コンポーネント側で再指定しない（`theme.ts` はこれらを export していない = 個別に使う必要がない、が現状の設計）。
 - `Popover.Target` に `Indicator` を包む形で ref 警告が出る場合は、`Indicator` を `Popover` の外に出して `ActionIcon` を直接 `Popover.Target` にする（見た目は同じ。実装者はこの2択のうち動く方を選べばよく、他の判断は不要）。
+
+**データ取得**（`src/hooks/use-notification-inbox.ts`）
+
+```ts
+export function useNotificationInbox() {
+  return useSuspenseQuery(convexQuery(api.queries.notifications.list.list, {}));
+}
+```
+
+`convexQuery` + `useSuspenseQuery`（`.claude/rules/web/convex-tanstack.md`）。ルートローダーで `ensureQueryData` しない（同ルールの禁止事項）。ミューテーションは `useConvexMutation`（`src/hooks/use-notification-mutations.ts`。既存 `goals-mutations.ts` と同じ流儀）。
 
 **アクセシビリティ**
 
@@ -974,9 +1057,9 @@ Indicator(color="orange", label=未読数, disabled=未読0)
 - 「すべて既読にする」は `Button`（`aria-label` 不要、文字が説明になっている）。
 - ポップオーバーは Mantine が `Escape` で閉じる。テストでは Floating UI が測れないので `getByRole(..., { hidden: true })` を使う（`.claude/rules/common/testing.md`）。
 
-### 9.3 マイページの通知設定セクション
+### 10.3 マイページの通知設定セクション
 
-`src/features/my-page/components/my-page.tsx` の `Stack` に `NotificationSettingsSection` を足す（`PasskeySection` の下、`TodaySummarySection` の上）。既存セクションと同じ `Card` + 見出しの形。
+`src/features/my-page/components/my-page.tsx` の `Stack` に `NotificationSettingsSection` を足す（`PasskeySection` の下、`TodaySummarySection`（`Suspense` 内）の上）。既存セクションと同じ `Card` + 見出しの形で、`Suspense fallback={<PendingComponent />}` に包む（`TodaySummarySection` と同じ）。
 
 ```
 Card
@@ -1008,10 +1091,12 @@ Card
 ```
 
 - **1つの Formisch フォーム＋保存ボタン**にする（`target-form.tsx` と同じ流儀）。Switch を押した瞬間に保存する方式は採らない — 「静穏の開始/終了」「Webhook URL」と混在すると、保存の粒度が2種類になって「どこまで保存されたか」が読めなくなる。
-- 「Slack 連携を解除」は `disconnectSlack` を直接叩く（フォームの外。`modals.openConfirmModal` で確認）。破壊的操作なので Confirm を出すのは既存の流儀（`design-live-board.md` の赤 = 削除）。
-- 時刻の Select は `NUMERAL_FONT` で「21時」のように出す。0〜23 の配列生成は `src/features/my-page/lib/hour-options.ts` の純関数。
+- 初期値は `settings` query の返り値を `useForm({ initialInput })` に渡す（`slackWebhookUrl` の初期値は常に `""`）。既定値をクライアントに書かない（§8.3）。
+- 「Slack 連携を解除」は `disconnectSlack` を直接叩く（フォームの外。`modals.openConfirmModal` で確認）。破壊的操作なので Confirm を出すのは既存の流儀。
+- 保存成功/失敗のトーストは既存 `notifySuccess` / `notifyError`（`src/lib/notify.ts`）。
+- 時刻の Select は `NUMERAL_FONT` で「21時」のように出す。0〜23 / 18〜23 の配列生成は `src/features/my-page/lib/hour-options.ts` の純関数。
 
-### 9.4 Shimmer
+### 10.4 Shimmer
 
 | 境界 | fallback |
 | --- | --- |
@@ -1020,7 +1105,7 @@ Card
 
 `ShimmerProvider` は `__root.tsx` に既にあるので色は指定しない。`React.memo` は付けない（React Compiler。`react-conventions.md`）。
 
-### 9.5 触るファイル一覧（実装チェックリスト）
+### 10.5 触るファイル一覧（実装チェックリスト）
 
 **Convex（新規）**
 
@@ -1036,8 +1121,9 @@ convex/mutations/notifications/purgeExpired.ts
 convex/mutations/notifications/markSlackDelivered.ts
 convex/mutations/notifications/saveSettings.ts
 convex/mutations/notifications/markRead.ts
+convex/mutations/notifications/markAllRead.ts
 convex/mutations/notifications/disconnectSlack.ts
-convex/services/notifications/*.ts   (§7.4 の15本)
+convex/services/notifications/*.ts   (§8.4 の17本)
 ```
 
 **Convex（変更）**
@@ -1047,7 +1133,7 @@ convex/schema.ts            2テーブル追加
 convex/lib/validators.ts    §5.4
 convex/lib/domain.ts        TARGET_METRIC_UNITS の追加のみ
                             (notifications.ts の再輸出はしない。循環 import になる。§5.6)
-convex/lib/errors.ts        SlackDeliveryError
+convex/lib/errors.ts        SlackDeliveryError（DomainError union には入れない）
 convex/crons.ts             2エントリ追加
 ```
 
@@ -1058,36 +1144,39 @@ src/components/notification-bell.tsx
 src/components/notification-tray.tsx
 src/components/notification-bell-fallback.tsx
 src/hooks/use-notification-inbox.ts
+src/hooks/use-notification-mutations.ts
 src/lib/notification-link.ts
 src/features/my-page/components/notification-settings-section.tsx
 src/features/my-page/components/notification-settings-form.tsx
 src/features/my-page/schemas/notification-settings-schema.ts
 src/features/my-page/lib/hour-options.ts
-src/features/my-page/hooks/notification-settings-mutations.ts
 src/features/my-page/types/notification-settings.ts
 ```
 
 **フロント（変更）**
 
 ```
-src/components/app-shell.tsx                        ヘッダーにベル + Suspense
+src/components/app-shell.tsx                        ヘッダーの {accountMenu} を Group で包む（§10.1）
 src/features/my-page/components/my-page.tsx         セクション追加
-src/features/goals/lib/target-metric-labels.ts      import 元を ~domain/domain へ
+src/features/goals/lib/target-metric-labels.ts      import 元を ~domain/domain へ（再輸出は維持）
 src/features/today/lib/target-remainder.ts          同上
 src/lib/target-metric-units.ts                      削除
+vite.config.ts                                      カバレッジ include に新規ファイルを追加（§13）
 ```
 
 ---
 
-## 10. フォーム（Valibot / Formisch）
+## 11. フォーム（Valibot / Formisch）
 
 ```ts
 // src/features/my-page/schemas/notification-settings-schema.ts
 import * as v from "valibot";
+
 import {
   EVENING_HOUR_MESSAGE,
   EVENING_HOUR_RANGE,
   QUIET_HOUR_MESSAGE,
+  QUIET_HOUR_RANGE,
   SLACK_WEBHOOK_MESSAGE,
   SLACK_WEBHOOK_PATTERN,
 } from "~domain/notifications";
@@ -1096,8 +1185,8 @@ import {
 const HourJstSchema = v.pipe(
   v.number(QUIET_HOUR_MESSAGE),
   v.integer(QUIET_HOUR_MESSAGE),
-  v.minValue(0, QUIET_HOUR_MESSAGE),
-  v.maxValue(23, QUIET_HOUR_MESSAGE),
+  v.minValue(QUIET_HOUR_RANGE.min, QUIET_HOUR_MESSAGE),
+  v.maxValue(QUIET_HOUR_RANGE.max, QUIET_HOUR_MESSAGE),
 );
 
 const EveningHourSchema = v.pipe(
@@ -1116,36 +1205,32 @@ const SlackWebhookSchema = v.pipe(
   v.transform((value) => (value === "" ? undefined : value)),
 );
 
-export const NotificationSettingsSchema = v.pipe(
-  v.object({
-    enabled: v.boolean(),
-    eveningHourJst: EveningHourSchema,
-    quietFromHourJst: HourJstSchema,
-    quietToHourJst: HourJstSchema,
-    slackEnabled: v.boolean(),
-    slackWebhookUrl: SlackWebhookSchema,
-    triggers: v.object({
-      checkpointDeadline: v.boolean(),
-      eveningUntouched: v.boolean(),
-      weeklyTargetMiss: v.boolean(),
-    }),
+export const NotificationSettingsSchema = v.object({
+  enabled: v.boolean(),
+  eveningHourJst: EveningHourSchema,
+  quietFromHourJst: HourJstSchema,
+  quietToHourJst: HourJstSchema,
+  slackEnabled: v.boolean(),
+  slackWebhookUrl: SlackWebhookSchema,
+  triggers: v.object({
+    checkpointDeadline: v.boolean(),
+    eveningUntouched: v.boolean(),
+    weeklyTargetMiss: v.boolean(),
   }),
-  //? Slack を有効にするなら URL が要る。既に設定済みなら空欄でよいので、
-  //? 「設定済みか」はフォームの外(props)から渡す — スキーマ単体では判定しない。
-);
+});
 
 export type NotificationSettingsFormOutput = v.InferOutput<typeof NotificationSettingsSchema>;
 ```
 
-**「Slack 有効 かつ URL 未設定」の検証をスキーマに入れない理由**: 既に設定済みなら空欄が正しい入力なので、スキーマだけでは判定できない（`slackConfigured` はサーバ由来）。フォーム側で `slackEnabled && !slackConfigured && slackWebhookUrl === undefined` のとき送信ボタンを `disabled` にし、`PasswordInput` に `error` を出す。**サーバ側でも同じ条件を services で拒否する**（`ValidationFailedError`）— 境界は二重に守る。
+**「Slack 有効 かつ URL 未設定」の検証をスキーマに入れない理由**: 既に設定済みなら空欄が正しい入力なので、スキーマだけでは判定できない（`slackConfigured` はサーバ由来）。フォーム側で `slackEnabled && !slackConfigured && slackWebhookUrl === undefined` のとき送信ボタンを `disabled` にし、`PasswordInput` に `error={SLACK_REQUIRED_MESSAGE}` を出す。**サーバ側でも同じ条件を services で拒否する**（`ValidationFailedError`、`SLACK_REQUIRED_MESSAGE`）— 境界は二重に守る。
 
 - Mantine の `Switch` は `onChange` が `ChangeEvent` なので `field.props` をそのまま spread できる（`formisch.md`「イベントベース」）。ただし値は `checked` に渡す: `checked={field.input}`。
-- `Select` は値ベースなので `onChange` を上書きし、`onRequiredSelect`（既存 `src/lib/select.ts`）で数値に戻す。
+- `Select` は値ベースなので `onChange` を上書きし、既存 `onRequiredSelect`（`src/lib/select.ts`。`(value: string) => void` を受ける）で null を弾いてから `Number(value)` に戻す。
 - 送信ペイロードの型は `FunctionArgs<typeof api.mutations.notifications.saveSettings.saveSettings>` から導出する（`src/features/my-page/types/notification-settings.ts`。既存 `src/features/goals/types/mutations.ts` と同じ流儀。手書きしない — CVX-16）。
 
 ---
 
-## 11. エッジケース決定表
+## 12. エッジケース決定表
 
 | # | 状況 | 決定 |
 | --- | --- | --- |
@@ -1162,43 +1247,77 @@ export type NotificationSettingsFormOutput = v.InferOutput<typeof NotificationSe
 | 11 | 親目標がカスケード削除された（#48 INV-6） | 子の通知は残る。payload の `content` が非正規化されているので読める。リンクは `/goals` |
 | 12 | 期限超過（`daysLeft < 0`） | 発火しない |
 | 13 | 期限が4日以上先 | 発火しない |
-| 14 | 週間ターゲットが0件 | 発火しない |
-| 15 | 週間ターゲットが全件達成 | 発火しない（祝わない） |
-| 16 | 今日の日がゴミ箱にある | 「日が無い」扱い（`getLiveDay` が null）→ プリセット分岐へ |
-| 17 | 今日の未着手が0件（全部 確定/スキップ/進行中） | 発火しない |
-| 18 | 進行中だけが残っている | 発火しない（手を動かしている人を急かさない） |
-| 19 | 日が無く、その曜日のプリセットも無い | 発火しない |
-| 20 | 未来の日 | 評価対象は常に今日だけ。未来は読まない |
-| 21 | `markRead` に他人の通知 id | `requireOwnedNotification` が `ForbiddenError`（IDOR 防止、CVX-04） |
-| 22 | `markRead` に既読の id | 何もしない（`readAt` を上書きしない） |
-| 23 | 通知0件 | `EmptyState`（`IconBellOff` +「通知はありません」） |
-| 24 | 未読が50件を超えた | `items` は最新50件。未読数は所有者の全件（30日 × 最大3通 = 理論上90件）から数えるので正確 |
-| 25 | Slack が非2xx / ネットワーク失敗 | リトライしない。`slackError` を記録し、streak を +1。3回で自動停止 |
-| 26 | Webhook URL が Slack 以外のホスト | `saveSettings` が `ValidationFailedError`（SSRF 防止） |
-| 27 | Slack 有効・URL 未設定 | フォームで送信不可。サーバ側でも拒否 |
-| 28 | `SITE_URL` が未設定 | Slack 本文からリンク行だけ落とす。通知は落とさない |
-| 29 | 夏時間 | JST に夏時間は無い。UTC+9:00 固定 |
-| 30 | 通知が30日を超えた | `purgeExpired` が削除。未読でも消す（読まれない催促を永久に溜めない） |
+| 14 | 期限つき習得に親が無い（#49 バックフィル前の孤児） | **発火する**（`parentGoalId` を判定に使わない。§4.2） |
+| 15 | 週間ターゲットが0件 | 発火しない |
+| 16 | 週間ターゲットが全件達成 | 発火しない（祝わない） |
+| 17 | 今日の日がゴミ箱にある | 「日が無い」扱い（`getLiveDay` が null）→ プリセット分岐へ |
+| 18 | 今日の未着手が0件（全部 確定/スキップ/進行中） | 発火しない |
+| 19 | 進行中だけが残っている | 発火しない（手を動かしている人を急かさない） |
+| 20 | 日が無く、その曜日のプリセットも無い | 発火しない |
+| 21 | 未来の日 | 評価対象は常に今日だけ。未来は読まない |
+| 22 | 明細が6件以上 | payload は全件保持。本文は先頭5行＋「…他N件」（§5.2） |
+| 23 | `markRead` に他人の通知 id | `requireOwnedNotification` が `ForbiddenError`（IDOR 防止、CVX-04） |
+| 24 | `markRead` に既読の id | 何もしない（`readAt` を上書きしない） |
+| 25 | `markRead` に空配列 | 何もしない（成功して `null` を返す） |
+| 26 | `markAllRead` で未読0件 | 何もしない（成功して `null` を返す） |
+| 27 | 通知0件 | `EmptyState`（`IconBellOff` +「通知はありません」） |
+| 28 | 未読が50件を超えた | `items` は最新50件。未読数は在庫全件から数えるので正確。「すべて既読にする」は `markAllRead` なので51件目以降も既読になる（§8.3） |
+| 29 | 通知を有効にした直後 | その回は発火しない。次の該当時刻から（§6.3） |
+| 30 | `slackEnabled` を off にした | `slackWebhookUrl` は保持（再開時に再入力不要）。解除は `disconnectSlack` だけ |
+| 31 | `saveSettings` で URL を差し替えた | `slackFailureStreak` を 0 に戻す（新 URL に古い失敗を引き継がない） |
+| 32 | Slack が非2xx / ネットワーク失敗 | リトライしない。`slackError` を記録し、streak を +1。3回で自動停止 |
+| 33 | Webhook URL が Slack 以外のホスト | `saveSettings` が `ValidationFailedError`（SSRF 防止） |
+| 34 | Slack 有効・URL 未設定 | フォームで送信不可。サーバ側でも拒否 |
+| 35 | `deliverSlack` 実行時に通知が purge されていた | `deliveryPayload` が null → 静かに終了 |
+| 36 | `SITE_URL` が未設定 | Slack 本文からリンク行だけ落とす。通知は落とさない |
+| 37 | 夏時間 | JST に夏時間は無い。UTC+9:00 固定（`JST_OFFSET_MS`） |
+| 38 | 通知が30日を超えた | `purgeExpired` が削除。未読でも消す（読まれない催促を永久に溜めない） |
+| 39 | 1回の purge で消し切れない（201件以上） | 翌日の cron が続きを消す。境界が1日ずれるだけ（§7） |
 
 ---
 
-## 12. テスト計画（CVX-19）
+## 13. カバレッジ設定（`vite.config.ts`）
 
-### 12.1 純関数（`convex-lib` プロジェクト / Node）
+`vite.config.ts` の `test.coverage` は **`include` を明示列挙する allowlist** で、しきい値は branches / functions / lines / statements すべて 80。列挙していないファイルは計測対象にならないため、**新規ファイルを include に足さないと「テストを書いたのにカバレッジに現れない」「書かなくても落ちない」の両方が起きる。** 実装セッションが忘れないよう、追加対象を決めておく。
+
+**include に追加する（テストを書く。§14 が対応）**
+
+```
+convex/lib/notifications.ts
+convex/lib/notificationCopy.ts
+convex/services/notifications/**/*.ts
+convex/queries/notifications/**/*.ts
+convex/mutations/notifications/**/*.ts
+src/lib/notification-link.ts
+src/features/my-page/lib/hour-options.ts
+```
+
+`src/features/**/schemas/**/*.ts` は既に include に入っているので、`notification-settings-schema.ts` は自動で対象になる。
+
+**include に追加しない（既存の慣習に合わせる）**
+
+- `convex/actions/notifications/deliverSlack.ts` — 外部 `fetch` の薄い wiring 層。既存の `convex/actions/**` も include されていない。
+- `src/components/notification-bell.tsx` / `notification-tray.tsx` / `notification-bell-fallback.tsx`、`src/hooks/use-notification-*.ts`、`src/features/my-page/components/notification-settings-*.tsx` — 既存の `*-page.tsx` / `*-mutations.ts` / hooks と同じ「薄い composition/wiring 層」の扱い。挙動は §14.3 の結合テストで確認する。
+
+---
+
+## 14. テスト計画（CVX-19）
+
+### 14.1 純関数（`convex-lib` プロジェクト / Node、`convex/lib/**/*.test.ts`）
 
 `convex/lib/notifications.test.ts`
 
 - `isQuietHourJst`: 同日窓（9→17）の内外、日付をまたぐ窓（22→7）の 23時 / 3時 / 7時 / 21時、`from === to` で常に false。
 - `dueFixedTriggers`: 08時で checkpoint のみ true、土曜09時で weekly のみ true、日曜09時で両方 false、その他の時で両方 false。
 - `isDeadlineNear` / `deadlineDaysLeft`: `daysLeft` = -1 / 0 / 3 / 4 の境界。
-- `hourJst`: JST の 00時 / 09時 / 23時に対応する epoch。
+- `hourJst`: JST の 00時 / 09時 / 23時に対応する epoch（`Date.UTC` で組む）。**深夜0時が 0 を返し 24 を返さないこと**を明示的に assert する。
 - `nowJst`: 日付境界（15:00 UTC = 翌日 00:00 JST）。
 
 `convex/lib/notificationCopy.test.ts`
 
-- 3種すべての `title` / `body`。`daysLeft === 0` が「今日まで」になること。`source === "preset"` の文言。複数件が改行で並ぶこと。単位（分/日/件）が `TARGET_METRIC_UNITS` から出ること。
+- 3種すべての `title` / `body`。`daysLeft === 0` が「今日まで」になること。`source === "preset"` の文言。複数件が改行で並ぶこと。**6件以上で先頭5行＋「…他1件」になること**。単位（分/日/件）が `TARGET_METRIC_UNITS` から出ること。
 
-### 12.2 Convex 統合（`convex-integration` / edge-runtime、`convexTest(schema)` + `t.withIdentity`）
+### 14.2 Convex 統合（`convex-integration` / edge-runtime、`convexTest(schema)` + `t.withIdentity`）
 
 `convex/notifications.test.ts`
 
@@ -1210,70 +1329,77 @@ export type NotificationSettingsFormOutput = v.InferOutput<typeof NotificationSe
 | 4 | 同じ `now` で `evaluate` を2回呼んでも1件のまま（dedupe） |
 | 5 | 期限が4日後 / 前日（超過）/ 達成済み では作られない |
 | 6 | 同日に接近が3件 → 通知は1件、payload の `items` が3要素 |
-| 7 | 土曜09時 JST → 未達ターゲット1件以上で1件。ターゲット0件・全件達成では0件 |
-| 8 | 日曜09時では weekly が作られない |
-| 9 | 21時 JST・今日の未着手2件 → `source: "day"` / `pendingCount: 2` |
-| 10 | 21時 JST・日なし・その曜日のプリセット3行 → `source: "preset"` / `pendingCount: 3` |
-| 11 | 21時 JST・日なし・プリセットなし → 0件 |
-| 12 | 21時 JST・未着手0件（確定とスキップだけ）→ 0件 |
-| 13 | 進行中だけが残っている → 0件 |
-| 14 | `eveningHourJst: 18` の所有者は 18時に発火し、21時には発火しない |
-| 15 | `triggers.eveningUntouched: false` で夜だけ止まり、期限接近は出る |
-| 16 | 静穏時間中の発火: 行は作られるが `scheduler` に何も積まれない |
-| 17 | `slackEnabled` かつ静穏外: `scheduler` に `deliverSlack` が1件積まれる |
-| 18 | `settings` query の返り値に `slackWebhookUrl` キーが存在しない |
-| 19 | `saveSettings` に Slack 以外のホストの URL → reject |
-| 20 | `saveSettings` で URL を省略しても既存 URL が保たれる（`slackConfigured` が true のまま） |
-| 21 | `disconnectSlack` 後に `slackConfigured: false` / `slackEnabled: false` |
-| 22 | `markSlackDelivered` の失敗3回で `slackEnabled: false` になる |
-| 23 | `markRead`: 他人の通知 id で reject（IDOR） |
-| 24 | `list`: `_creationTime` 降順、`unreadCount` が既読を除いた数 |
-| 25 | `purgeExpired`: 31日前は消え、29日前は残る |
-| 26 | 未認証で `list` / `settings` / `saveSettings` / `markRead` が throw（CVX-04） |
-| 27 | 所有者Aの `evaluate` が所有者Bの通知を作らない（`ownerIsolation.test.ts` の流儀） |
+| 7 | `parentGoalId` を持たない期限つき習得でも作られる（#49 前の孤児） |
+| 8 | 土曜09時 JST → 未達ターゲット1件以上で1件。ターゲット0件・全件達成では0件 |
+| 9 | 日曜09時では weekly が作られない |
+| 10 | 21時 JST・今日の未着手2件 → `source: "day"` / `pendingCount: 2` |
+| 11 | 21時 JST・日なし・その曜日のプリセット3行 → `source: "preset"` / `pendingCount: 3` |
+| 12 | 21時 JST・日なし・プリセットなし → 0件 |
+| 13 | 21時 JST・未着手0件（確定とスキップだけ）→ 0件 |
+| 14 | 進行中だけが残っている → 0件 |
+| 15 | 今日の日がゴミ箱にある → プリセット分岐に落ちる |
+| 16 | `eveningHourJst: 18` の所有者は 18時に発火し、21時には発火しない |
+| 17 | `triggers.eveningUntouched: false` で夜だけ止まり、期限接近は出る |
+| 18 | 静穏時間中の発火: 行は作られるが `scheduler` に何も積まれない |
+| 19 | `slackEnabled` かつ静穏外: `scheduler` に `deliverSlack` が1件積まれる |
+| 20 | `settings` query の返り値に `slackWebhookUrl` キーが存在しない |
+| 21 | `saveSettings` に Slack 以外のホストの URL → reject |
+| 22 | `saveSettings` で URL を省略しても既存 URL が保たれる（`slackConfigured` が true のまま） |
+| 23 | `saveSettings` で URL を差し替えると `slackFailureStreak` が 0 に戻る |
+| 24 | `slackEnabled: true` かつ URL 未設定の `saveSettings` → reject |
+| 25 | `disconnectSlack` 後に `slackConfigured: false` / `slackEnabled: false` |
+| 26 | `markSlackDelivered` の失敗3回で `slackEnabled: false` になる |
+| 27 | `markSlackDelivered` の成功で `slackFailureStreak` が 0 に戻る |
+| 28 | `markRead`: 他人の通知 id で reject（IDOR） |
+| 29 | `markRead`: 空配列で成功し何も変わらない |
+| 30 | `markAllRead`: 未読を全件既読にする（`NOTIFICATION_LIST_LIMIT` 超えを含む） |
+| 31 | `list`: `_creationTime` 降順、`items` が最大50件、`unreadCount` が在庫全件から数えられている |
+| 32 | `purgeExpired`: 31日前は消え、29日前は残る |
+| 33 | 未認証で `list` / `settings` / `saveSettings` / `markRead` / `markAllRead` / `disconnectSlack` が throw（CVX-04） |
+| 34 | 所有者Aの `evaluate` が所有者Bの通知を作らない（`ownerIsolation.test.ts` の流儀） |
 
 `now` はすべて引数注入（`{ now: Date.UTC(...) }`）。実時刻に依存するテストを書かない。
 
-### 12.3 UI（`frontend` / happy-dom、`renderWithMantine`）
+### 14.3 UI（`frontend` / happy-dom、`renderWithMantine`）
 
-- `notification-tray.test.tsx`: 未読が `aria-label` に出る / 0件で `EmptyState` / 行のクリックで `markRead` が呼ばれる / 「すべて既読にする」が全 id を渡す。Popover の中は `getByRole(..., { hidden: true })` で取る。
+- `notification-tray.test.tsx`: 未読が `aria-label` に出る / 0件で `EmptyState` / 行のクリックで `markRead` が呼ばれる / 「すべて既読にする」で `markAllRead` が呼ばれる。Popover の中は `getByRole(..., { hidden: true })` で取る。
 - `notification-link.test.ts`: 3種の to。
-- `notification-settings-form.test.tsx`: Slack 有効 + URL 未設定で保存不可 / Slack 以外のホストでエラー文言 / 静穏窓の中に夜の時刻を置くと警告 Alert が出る。ラベルは `getByLabelText(/…/)`（Mantine の必須アスタリスク対策）。
+- `notification-settings-form.test.tsx`: Slack 有効 + URL 未設定で保存不可 / Slack 以外のホストでエラー文言 / 静穏窓の中に夜の時刻を置くと警告 Alert が出る。ラベルは `getByLabelText(/…/)`（Mantine の必須アスタリスク対策）。`Select` のオプションは `{ hidden: true }`。
 - `hour-options.test.ts`: 18〜23 と 0〜23。
 
 **テストしないもの**: Slack への実 POST、`fetch` のベンダー挙動、Mantine の描画、`ctx.db` を直接読む assert。
 
 ---
 
-## 13. 実装順序と受け入れ条件
+## 15. 実装順序と受け入れ条件
 
 | 段 | 内容 | 受け入れ条件 |
 | --- | --- | --- |
-| 1 | `convex/lib/notifications.ts` + `notificationCopy.ts` + `TARGET_METRIC_UNITS` の移動 | §12.1 が緑。`vp check` と `vp run fallow` が緑（削除したファイルの参照残りが無い） |
-| 2 | schema 2テーブル + validators + `getOwnerSettings` / `settings` query / `saveSettings` / `disconnectSlack` | §12.2 の 18〜21、26 が緑 |
-| 3 | `emitNotification` + 3評価器 + `evaluate` + cron 1本 | §12.2 の 1〜17、27 が緑 |
-| 4 | `list` / `markRead` / `purgeExpired` + purge cron | §12.2 の 23〜25 が緑 |
-| 5 | 通知ベル + 通知欄（`app-shell.tsx` の差し替え） | §12.3 の tray / link が緑。既存の app-shell 関連テストが緑 |
-| 6 | マイページの通知設定セクション + フォーム | §12.3 の form が緑 |
-| 7 | `deliveryPayload` + `deliverSlack` + `markSlackDelivered` | §12.2 の 22 が緑。手動確認: 自分の Slack に1通届く |
+| 1 | `convex/lib/notifications.ts` + `notificationCopy.ts` + `TARGET_METRIC_UNITS` の移動 + カバレッジ include（§13） | §14.1 が緑。`vp check` と `vp run fallow` が緑（削除したファイルの参照残りが無い） |
+| 2 | schema 2テーブル + validators + `getOwnerSettings` / `settings` query / `saveSettings` / `disconnectSlack` | §14.2 の 20〜25、33 が緑 |
+| 3 | `emitNotification` + 3評価器 + `evaluate` + 評価 cron | §14.2 の 1〜19、34 が緑 |
+| 4 | `list` / `markRead` / `markAllRead` / `purgeExpired` + purge cron | §14.2 の 28〜32 が緑 |
+| 5 | 通知ベル + 通知欄（`app-shell.tsx` の差し替え） | §14.3 の tray / link が緑。既存の app-shell 関連テストが緑 |
+| 6 | マイページの通知設定セクション + フォーム | §14.3 の form が緑 |
+| 7 | `deliveryPayload` + `deliverSlack` + `markSlackDelivered` | §14.2 の 26〜27 が緑。手動確認: 自分の Slack に1通届く |
 
 **段3までで機能として成立する**（通知欄に出る）。段7（Slack）は独立して落とせる。
 
 **全体の受け入れ条件**
 
 - `vp check` / `vp test` / `vp build` / `vp run fallow` がすべて緑。
-- `convex:convex-reviewer` を `convex/` に走らせ、CVX チェックリスト（args validator / requireUser / `internal.*` / `.filter` なし / index 条件つき `.collect` / query 内 `Date.now()` なし / テーブル名第1引数 / `await` 漏れなし）を通す（CVX-18）。
+- `convex:convex-reviewer` を `convex/` に走らせ、CVX チェックリスト（args validator / `requireUser` 相当 / `internal.*` / `.filter` なし / index 条件つき `.collect` / query 内 `Date.now()` なし / テーブル名第1引数 / `await` 漏れなし）を通す（CVX-18）。
 - 既存所有者に通知が飛んでいない（`notificationSettings` が空のまま = オプトイン）。
 
 ---
 
-## 14. 検討した代替案（自己グリル）
+## 16. 検討した代替案（自己グリル）
 
 ### 反論1: 「アプリ内通知欄は通知ではない。Web Push こそが答えで、PWA を先にやるべきだ」
 
 **半分認める。** 「アプリを開かないと届かないもの」を通知と呼ぶのは語の拡張だ。ただし順序を入れ替えない理由がある: (a) マップの優先順は通知 → PWA で、これは所有者が決めた順序である。(b) #57 の調査によれば PWA 化は `vite-plugin-pwa` 非互換の回避（Serwist + 自作プラグイン + Nitro 出力配線）というまとまった工事で、通知の実装セッションに抱き合わせると両方が遅れる。(c) 通知の**難しい部分は配信ではなく「何をいつ知らせるか・二度知らせない・黙るべき時に黙る」**であり、そこは配信手段に依存しない。段3までで作るものは Web Push が来ても1行も捨てない。
 
-**譲歩の明示**: v1 の `eveningUntouched` は「その夜アプリを開いた人」にしか届かない。それでも in-app に出す価値はある（開いたときに「未着手2件」が催促として立っている）が、これは PWA 前の**縮退運転**だと認める。だから Slack を同時に入れる（反論2へ）。
+**譲歩の明示**: v1 の `eveningUntouched` は「その夜アプリを開いた人」にしか届かない（Slack を繋がない限り）。それでも in-app に出す価値はある（開いたときに「未着手2件」が催促として立っている）が、これは PWA 前の**縮退運転**だと認める。だから Slack を同時に入れる（反論2へ）。
 
 ### 反論2: 「Slack へ投げるのは学習ログの責務外。通知先が Slack なら学習ログではなく Slack ボットを作れ」
 
@@ -1287,11 +1413,11 @@ export type NotificationSettingsFormOutput = v.InferOutput<typeof NotificationSe
 
 ### 反論4: 「毎時 cron は無駄。3本の固定 cron で足りる」
 
-**却下、ただしコストは認める。** 3本にすると (a) 08:00 JST = 23:00 UTC（**前日**）、土曜09:00 JST = 土曜00:00 UTC という換算が cron 定義に埋まってテスト不能になる。(b) `eveningHourJst` の per-user 設定が表現できない（固定21時に落とすしかない）。(c) 時計を読む場所が3箇所に散る。毎時1本なら判定が `dueFixedTriggers` という純関数のテスト対象になる。
+**却下、ただしコストは認める。** 3本にすると (a) 08:00 JST = **前日** 23:00 UTC、土曜09:00 JST = 土曜00:00 UTC という換算が cron 定義に埋まってテスト不能になる。(b) `eveningHourJst` の per-user 設定が表現できない（固定21時に落とすしかない）。(c) 時計を読む場所が3箇所に散る。毎時1本なら判定が `dueFixedTriggers` という純関数のテスト対象になる。
 
 **譲歩**: 1日24回の invocation を払う。何もしない回のコストは index 1本の読み（多くは0件）で、1〜2人のアプリでは無視できる。
 
-### 反論5: 「夜の未着手は『日が無い暦日は休養』『開いていない日を失敗ログにしない』（User Story 20）と矛盾する」
+### 反論5: 「夜の未着手は『日が無い暦日は休養』『開いていない日を失敗ログにしない』と矛盾する」
 
 **却下。** CONTEXT.md「休養」は**過去**で日が無いことを指す。この通知は**今日**の 18〜23 時に出るので、対象の暦日はまだ終わっていない — 失敗の記録ではなく、まだ動ける時間帯への催促である。さらに通知は日ドキュメントを一切作らないので、休養の意味論に触れない（21時に催促して、結果その日を開かなければ、その日は普通に休養になる）。
 
@@ -1301,7 +1427,7 @@ export type NotificationSettingsFormOutput = v.InferOutput<typeof NotificationSe
 
 **却下。** 節目の等号判定（`daysLeft === 3` / `=== 0`）にすると cron が1回落ちた日の節目が永久に失われ、しかも「失われた」ことを誰も気づけない。範囲判定なら翌朝に自己修復する。**通知の設計で最も避けたいのは「静かに出なくなる」ことで、「1通多い」はその次の悪さでしかない。**
 
-数の上でも過剰ではない: 期限を切ったチェックポイントは同時に1〜2件の粒度（CONTEXT.md「チェックポイント」）で、複数件は1通に畳む。最悪でも最終3日間に4通（朝1通ずつ）。うるさければトリガー単位で off にできる。
+数の上でも過剰ではない: 期限を切ったチェックポイントは親ごとに同時1〜2件の粒度（CONTEXT.md「チェックポイント」）で、複数件は1通に畳む。最悪でも最終3日間に4通（朝1通ずつ）。うるさければトリガー単位で off にできる。
 
 ### 反論7: 「期限超過を通知しないのは不親切だ。過ぎたことを知らせないと放置される」
 
@@ -1315,7 +1441,7 @@ export type NotificationSettingsFormOutput = v.InferOutput<typeof NotificationSe
 
 ### 反論9: 「Webhook URL を DB に持つのは `security.md` の『秘密をハードコードするな』違反だ」
 
-**却下（ただし残余リスクは認める）。** あの規則が禁じているのはソースと（クライアントに配られる）env への埋め込みで、これは所有者が入力した所有者自身のデータである。env は per-user にできないので、DB 以外に置き場がない。守るのは4点（query で返さない・前置検証・解除できる・UI で伏せる）。
+**却下（ただし残余リスクは認める）。** あの規則が禁じているのはソースと（クライアントに配られる）env への埋め込みで、これは所有者が入力した所有者自身のデータである。env は per-user にできないので、DB 以外に置き場がない。守るのは4点（公開 query で返さない・前置検証・解除できる・UI で伏せる）。
 
 **譲歩**: アプリ層での追加暗号化はしない。漏洩時の被害は「自分の Slack チャンネルに他人が投稿できる」で、学習記録の流出ではない。1〜2人のアプリでこの残余リスクを受け入れる。
 
@@ -1327,7 +1453,7 @@ export type NotificationSettingsFormOutput = v.InferOutput<typeof NotificationSe
 2. **押し出しには「一度だけ送った」という永続的な発火記録が必要。** dedupe をメモリや導出でやる方法はない。
 3. **「その時点の事実」の保存。** 朝8時の「あと3日」を夜に読むとき、導出では「あと3日」ではなく「あと2日」になり得る（日付をまたぐ）。催促は発せられた時点の文脈を持つべきだ。
 
-**認める部分**: 通知欄は「画面を開けば分かること」を二重に見せる面がある。だから**通知欄をダッシュボードにしない**と決めた（CONTEXT 追記案の _Avoid_ に明記）。通知欄が持つのは発火した事実の履歴だけで、集計も現在値も出さない。集計は履歴画面と週次/月次レビュー（#52 / #54）の担当。
+**認める部分**: 通知欄は「画面を開けば分かること」を二重に見せる面がある。だから**通知欄をダッシュボードにしない**と決めた（§3 の _Avoid_ に明記）。通知欄が持つのは発火した事実の履歴だけで、集計も現在値も出さない。集計は履歴画面と週次/月次レビュー（#52 / #54）の担当。
 
 ### 反論11: 「Email の方が確実だ。Slack を持たない人はどうする」
 
@@ -1339,18 +1465,30 @@ export type NotificationSettingsFormOutput = v.InferOutput<typeof NotificationSe
 
 ### 反論13: 「1トランザクションで全所有者を評価すると OCC で落ちる」
 
-**認めるが、v1 では対処しない。** Convex は OCC 衝突時に mutation を自動再試行し、再試行後も dedupeKey が二重生成を防ぐ。所有者数が数百規模になったら `ctx.scheduler.runAfter` で所有者ごとに fan out する（§7.5 に明記済み）。いま fan out すると、失敗した所有者だけ通知が出ないという部分失敗をデバッグする必要が生まれ、利得を上回る。
+**認めるが、v1 では対処しない。** Convex は OCC 衝突時に mutation を自動再試行し、再試行後も dedupeKey が二重生成を防ぐ。所有者数が数百規模になったら `ctx.scheduler.runAfter` で所有者ごとに fan out する（§8.5 に明記済み）。いま fan out すると、失敗した所有者だけ通知が出ないという部分失敗をデバッグする必要が生まれ、利得を上回る。
 
 ### 反論14: 「Switch を押した瞬間に保存すべきだ。保存ボタンは古い」
 
 **却下。** 同じフォームに「静穏の開始/終了」と「Webhook URL」があり、これらは即時保存に向かない（入力途中の値が保存される）。保存の粒度が2種類あると「どこまで保存されたか」が読めなくなる。既存の `target-form.tsx` と同じ「1フォーム＋保存ボタン」に揃える。
 
+### 反論15: 「`markAllRead` は要らない。id 配列の `markRead` 一本でいい」
+
+**却下。** `list` が返すのは最新50件で、在庫は最大90件になり得る（30日 × 最大3通/日）。id 配列方式だと**画面に無い未読が既読にならず、バッジが下がらない**という目に見えるバグになる。`{}` 引数の `markAllRead` は所有者の未読を全件 patch するので、この不整合が構造的に起きない。関数が1本増えるコストより、バッジが下がらないバグの方が高い。
+
+### 反論16: 「JST の時を `Intl` で出さないのは車輪の再発明だ。`jst.ts` は `Intl` を使っている」
+
+**却下。** 日付側（`todayJst`）は既存の `Intl`（`en-CA`）をそのまま再利用する（作り直さない）。時だけ固定オフセット演算にする理由は、`hour: "2-digit"` + `hour12: false` の組み合わせが実装によって深夜0時を `"24"` と返し得ること（`hour12` が `hourCycle` を上書きして `h24` に落ちる経路）。`hourCycle: "h23"` の明示でも回避できるが、**JST が UTC+9:00 固定・夏時間なし**である以上、`getUTCHours()` の方が短く・決定的で・テストしやすい。ロケール依存の落とし穴を1つ減らす。
+
+### 反論17: 「`purgeExpired` を index なしのテーブルスキャンで書くのは CVX-11 違反だ」
+
+**却下。** CVX-11 が禁じているのは「結果が大きくなり得る・無制限の `.collect`」で、`.take(n)` は同ルールが明示的に認める上限手段である。素のスキャンは組み込み `by_creation_time` 昇順（= 最古から）なので、`.take(200)` は「最も古い200件」を読む正しい形になる。専用 index を張れば1回で正確に絞れるが、**`_creationTime` のための index は CVX-12 の趣旨（組み込みで足りるものに index を足さない）に反する**。1日1回・上限200件の掃除に、追加 index のストレージと書き込みコストを払う価値はない。
+
 ---
 
-## 15. 境界（このドキュメントが持たないもの）
+## 17. 境界（このドキュメントが持たないもの）
 
 - SW の生成・登録・更新フロー / manifest / iOS のホーム画面追加 → #58（Web Push のリスナーと購読表は #58 でも作らない。§2.4）
-- Web Push 一式（`pushSubscriptions` 表・`deliverWebPush` internalAction・`emitNotification` の schedule 行・権限要求 UI・SW の `push` / `notificationclick` / `pushsubscriptionchange` リスナー）→ **#58 完了後の後続チケット**（§2.4 / §17）
+- Web Push 一式（`pushSubscriptions` 表・`deliverWebPush` internalAction・`emitNotification` の schedule 行・権限要求 UI・SW の `push` / `notificationclick` / `pushsubscriptionchange` リスナー）→ **#58 完了後の後続チケット**（§2.4 / §18）
 - 週次レビュー画面の中身、`weeklyTargetMiss` のリンク先差し替え → #52
 - 月次レビュー → #54
 - 目標×記録の紐付け → #53
@@ -1360,26 +1498,16 @@ export type NotificationSettingsFormOutput = v.InferOutput<typeof NotificationSe
 
 ---
 
-## 16. CONTEXT.md / ADR / spec.md への影響
+## 18. CONTEXT.md / ADR / spec.md への影響と引き渡し
 
 | 対象 | 影響 |
 | --- | --- |
 | `CONTEXT.md` | §3 の5項目（通知 / 通知欄 / 押し出し / 静穏時間 / トースト）を追記。既存項目の書き換えは**不要**（「休養」「日」「週間ターゲット」「チェックポイント」の定義はそのまま使えることを §4.2 で確認済み） |
 | `docs/spec.md` | §Out of Scope の「ユーザー間のデータ共有、**通知**、AI 要約」から「通知」を削る改訂が必要。v1 の範囲外だった判断を、マップ #47 が覆した |
-| ADR | **ADR-0012 の新設を提案する**（本書では作らない）。題: 「通知はアプリ内通知欄を正とし、押し出しは Slack を暫定、Web Push は PWA の後」。ADR の3条件を満たす — 覆すのに費用がかかる（表と評価器の形が決まる）/ 文脈なしでは驚く（なぜ Web Push でないのか）/ 本物のトレードオフ（§2 と §14 反論1・2・11） |
-| ADR-0003 / 0006 / 0007 | 覆さない。ADR-0003 の「プロセス優先・成果目標での自動判定をしない」は §4.3（カウントダウン却下・祝い却下）で、ADR-0006 の「未達の自動失敗記録をしない」は §4.2（期限超過を通知しない）で、ADR-0007 の凍結の精神は §14 反論8で継承している |
+| ADR | **ADR-0012 の新設を提案する**（本書では作らない）。題: 「通知はアプリ内通知欄を正とし、押し出しは Slack を暫定、Web Push は PWA の後」。ADR の3条件を満たす — 覆すのに費用がかかる（表と評価器の形が決まる）/ 文脈なしでは驚く（なぜ Web Push でないのか）/ 本物のトレードオフ（§2 と §16 反論1・2・11） |
+| ADR-0003 / 0006 / 0007 | 覆さない。ADR-0003 の「プロセス優先・成果目標での自動判定をしない」は §4.3（カウントダウン却下・祝い却下）で、ADR-0006 の「未達の自動失敗記録をしない」は §4.2（期限超過を通知しない）で、ADR-0007 の凍結の精神は §16 反論8で継承している |
 
----
-
-## 17. 次チケットへの引き渡し
-
-- **#58（PWA・モバイル最適化）**: Web Push は #58 の範囲では**作らない**。#58 は SW の土台（生成・登録・更新フロー）とマイページの「アプリとして使う」セクションの存在までで、`push` / `notificationclick` / `pushsubscriptionchange` のリスナーも購読表も権限要求 UI も #58 では足さない。#56（本書）も作らない。**下の後続チケットが所有者である。**
-- **#58 完了後の後続チケット（Web Push 一式）**: 本書の設計を延長して1回で実装する。差分は「`convex/actions/notifications/deliverWebPush.ts` 1本 ＋ `pushSubscriptions` 表1つ ＋ `emitNotification` の schedule 行1つ ＋ SW の `push` / `notificationclick` / `pushsubscriptionchange` リスナー ＋ 権限要求 UI（#58 が作った「アプリとして使う」セクションに置く）」。静穏時間の判定（`isQuietHourJst`）と dedupe はそのまま使い回す。トリガー・ペイロード・通知欄 UI は触らない（設定に「Web Push へ送る」Switch が1つ増えるだけ）。
-
-- **#52（週次レビュー）**: `weeklyTargetMiss` のリンク先を `/goals` から週次レビュー画面へ差し替える（`src/lib/notification-link.ts` の1行）。「祝い」は通知ではなく週次レビューが担う（§4.3）。
-- **#50（目標階層のドキュメント確定）**: §3 の CONTEXT 追記案と §16 の ADR-0012 提案・`spec.md` の Out of Scope 改訂を、同じ工程で処理できる。
-
-### 17.1 Web Push の所有者表
+### 18.1 Web Push の所有者表
 
 `docs/specs/pwa-mobile.md` §22.1 はこの表と同一の内容にすること（§2.4 の確定に対応する唯一の割り当て表）。
 
@@ -1388,9 +1516,15 @@ export type NotificationSettingsFormOutput = v.InferOutput<typeof NotificationSe
 | `sw/service-worker.ts` の存在と「`serwist.addEventListeners()` の前に自前リスナーを足す」作法 | **作る** | — | その作法に従ってリスナーを足す |
 | SW の `push` / `notificationclick` / `pushsubscriptionchange` リスナー | 作らない | 作らない | **作る** |
 | `pushSubscriptions` 表（validator + index） | 作らない | 作らない | **作る**（本書 §5 のスキーマ規約に従う） |
-| `deliverWebPush` internalAction ＋ `emitNotification` の schedule 行 | — | 作らない（設計のみ・§2.4 / §7.2） | **作る** |
+| `deliverWebPush` internalAction ＋ `emitNotification` の schedule 行 | — | 作らない（設計のみ・§2.4 / §9.1） | **作る** |
 | 通知権限の要求 UI | 置き場所（マイページ「アプリとして使う」セクション）だけ作る | 作らない | **セクションの中身として作る** |
 | 通知欄・Slack 押し出し・トリガー・静穏時間・dedupe | — | **作る**（v1） | 触らない |
 | iOS 未インストール時のフォールバック | 事実の明示のみ | **通知欄と Slack がそのままフォールバックである**（§2.2 / §2.3） | 触らない |
 
-> `pwa-mobile.md` は #58 の所有ドキュメントなので本書からは書き換えない。**#58 の実装/改訂セッションは、`pwa-mobile.md` の §0.8「`pushSubscriptions` は #56 の所有物」・§1 の範囲表「`push` / `notificationclick` ハンドラは #56 が `sw/service-worker.ts` に追記」・§5 末尾の同旨の記述・§13.2 の表・§19-1・§22.1 の表を、上表と同じ「Web Push の所有者は #58 完了後の後続チケット」に揃えること。** それが済むまで、Web Push の所有者に関する正は本節と §2.4 である。
+> `pwa-mobile.md` は #58 の所有ドキュメントなので本書からは書き換えない。**#58 の実装/改訂セッションは、`pwa-mobile.md` の「`pushSubscriptions` は #56 の所有物」「`push` / `notificationclick` ハンドラは #56 が `sw/service-worker.ts` に追記」系の記述（§0.8 / §1 の範囲表 / §5 末尾 / §13.2 / §19-1 / §22.1）を、上表と同じ「Web Push の所有者は #58 完了後の後続チケット」に揃えること。** それが済むまで、Web Push の所有者に関する正は §2.4 と本節である。
+
+### 18.2 その他の引き渡し
+
+- **#52（週次レビュー）**: `weeklyTargetMiss` のリンク先を `/goals` から週次レビュー画面へ差し替える（`src/lib/notification-link.ts` の1行）。「祝い」は通知ではなく週次レビューが担う（§4.3）。
+- **#50（目標階層のドキュメント確定）**: §3 の CONTEXT 追記案と §18 の ADR-0012 提案・`spec.md` の Out of Scope 改訂を、同じ工程で処理できる。
+- **#48 / #49**: 本書は `parentGoalId` に依存しないので、順序の制約は無い（先後どちらでもよい）。
