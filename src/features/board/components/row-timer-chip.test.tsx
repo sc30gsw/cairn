@@ -127,7 +127,7 @@ test("確定ボタンは onConfirm を呼ぶ", () => {
     />,
   );
 
-  getByRole("button", { name: "確定" }).click();
+  getByRole("button", { name: "確定する" }).click();
 
   expect(onConfirm).toHaveBeenCalledTimes(1);
 });

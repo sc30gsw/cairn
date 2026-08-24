@@ -5,7 +5,5 @@ import { boardShimmerRows } from "~/features/board/lib/board-shimmer-template";
 export function BoardSchedulePending() {
   const view = useBoardView();
 
-  return (
-    <BoardSchedule blocks={[]} checkpoint={null} pending rows={boardShimmerRows} view={view} />
-  );
+  return <BoardSchedule blocks={[]} pending rows={boardShimmerRows} view={view} />;
 }

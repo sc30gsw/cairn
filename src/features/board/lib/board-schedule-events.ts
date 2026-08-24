@@ -1,7 +1,7 @@
 import type { ScheduleEventData } from "@mantine/schedule";
 
 import { dateToScheduleInstant } from "~/features/board/lib/schedule-instant";
-import type { BoardMastery, BoardRow, BoardScheduleBlock } from "~/features/board/types/board";
+import type { BoardRow, BoardScheduleBlock } from "~/features/board/types/board";
 import { RECORD_STATUS_UI } from "~/lib/record-status-ui";
 
 export const BOARD_ALL_DAY_VISIBLE_LIMIT = 2;
@@ -113,7 +113,6 @@ export function withAllDayOverflow(
 export function toBoardScheduleEvents(
   dateJst: string,
   rows: readonly BoardRow[],
-  checkpoint: BoardMastery | null,
   blocks: readonly BoardScheduleBlock[],
 ): ScheduleEventData[] {
   const recordEvents = rows.map((row) => ({
@@ -132,21 +131,7 @@ export function toBoardScheduleEvents(
     title: block.title,
   }));
 
-  if (checkpoint?.deadline === undefined) {
-    return [...recordEvents, ...blockEvents];
-  }
-
-  return [
-    ...recordEvents,
-    ...blockEvents,
-    {
-      color: "orange",
-      end: `${checkpoint.deadline}${ALL_DAY_END_SUFFIX}`,
-      id: checkpoint._id,
-      start: `${checkpoint.deadline}${ALL_DAY_START_SUFFIX}`,
-      title: checkpoint.content,
-    },
-  ];
+  return [...recordEvents, ...blockEvents];
 }
 
 export function boardScheduleBlockIds(blocks: readonly BoardScheduleBlock[]): ReadonlySet<string> {

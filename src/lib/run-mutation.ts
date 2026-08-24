@@ -6,6 +6,9 @@ import { notifyError, notifySuccess } from "~/lib/notify";
 
 type RunMutationOptions<T> = {
   errorMessage?: string;
+  //? ボードのカンバンのように、楽観更新の巻き戻り自体がフィードバックになる密な画面向け。
+  //? 成功・失敗・未保存警告のいずれの通知も出さない
+  silent?: boolean;
   //? 返り値で文言が変わるものがある(カスケード削除の件数)。string はそのまま使える
   successMessage?: ((value: T) => string) | string;
 };
@@ -18,8 +21,17 @@ const pending = new Set<symbol>();
 
 export async function runMutation<T>(
   operation: () => Promise<T>,
-  { errorMessage, successMessage }: RunMutationOptions<T> = {},
+  { errorMessage, silent = false, successMessage }: RunMutationOptions<T> = {},
 ): Promise<void> {
+  if (silent) {
+    await Result.tryPromise({
+      catch: (cause) =>
+        new MutationFailedError({ cause, message: errorMessage ?? "操作に失敗しました" }),
+      try: operation,
+    });
+    return;
+  }
+
   //? navigator.onLine は嘘をつく(LAN 接続だが到達不能)。だから「5秒未解決」という観測事実だけを条件にする。
   //? 送信自体は止めない — Convex は切断中の mutation をキューして再接続時に送る(pwa-mobile.md §9.2)。
   const token = Symbol("run-mutation");

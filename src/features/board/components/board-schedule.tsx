@@ -27,7 +27,7 @@ import {
   BOARD_MONTH_MAX_EVENTS_PER_DAY,
 } from "~/features/board/lib/board-schedule-layout";
 import { dateToScheduleInstant } from "~/features/board/lib/schedule-instant";
-import type { BoardMastery, BoardRow, BoardScheduleBlock } from "~/features/board/types/board";
+import type { BoardRow, BoardScheduleBlock } from "~/features/board/types/board";
 import { SCHEDULE_LABELS_JA } from "~/lib/schedule-labels";
 
 import classes from "~/features/board/components/board-schedule.module.css";
@@ -52,19 +52,12 @@ const BOARD_MONTH_VIEW_PROPS = {
 
 type BoardScheduleProps = {
   blocks: readonly BoardScheduleBlock[];
-  checkpoint: BoardMastery | null;
   pending?: boolean;
   rows: readonly BoardRow[];
   view: BoardViewState;
 };
 
-export function BoardSchedule({
-  blocks,
-  checkpoint,
-  pending = false,
-  rows,
-  view,
-}: BoardScheduleProps) {
+export function BoardSchedule({ blocks, pending = false, rows, view }: BoardScheduleProps) {
   const {
     monthDate,
     scheduleAnchor: anchorDateJst,
@@ -91,7 +84,6 @@ export function BoardSchedule({
   const ui = useBoardScheduleUi({
     anchorDateJst,
     blocks,
-    checkpoint,
     rows,
     scheduleRootRef,
     scheduleView,
