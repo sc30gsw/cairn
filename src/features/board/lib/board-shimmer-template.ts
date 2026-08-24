@@ -16,6 +16,7 @@ export const boardShimmerRows = [
     minutes: 30,
     sortOrder: 0,
     status: pending,
+    timer: null,
   },
   {
     _id: shimmerId<BoardRow["_id"]>("row-confirmed"),
@@ -27,6 +28,7 @@ export const boardShimmerRows = [
     minutes: 20,
     sortOrder: 1,
     status: confirmed,
+    timer: null,
   },
 ] as const satisfies readonly BoardRow[];
 

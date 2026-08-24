@@ -1,15 +1,18 @@
 import type { DropResult } from "@hello-pangea/dnd";
 import { ActionIcon, Badge, Card, Group, Stack, Text, Tooltip } from "@mantine/core";
+import { modals } from "@mantine/modals";
 import { IconGripVertical } from "@tabler/icons-react";
 import { Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import type { DateJst } from "~domain/jst";
+import { hasTimerState, measuredMs, timerMinutes, timerRunState } from "~domain/rowTimer";
 
 import { TruncatedText } from "~/components/truncated-text";
 import {
   BoardKanbanConfirmModal,
   needsKanbanConfirmEditor,
 } from "~/features/board/components/board-kanban-confirm-modal";
+import { RowTimerChip } from "~/features/board/components/row-timer-chip";
 import { useBoardKanbanActions } from "~/features/board/hooks/use-board-kanban-actions";
 import {
   computeOrderedRowIds,
@@ -22,6 +25,8 @@ import {
 import type { BoardObstacle, BoardRow } from "~/features/board/types/board";
 import { useDnd } from "~/hooks/use-dnd";
 import { RECORD_STATUS_UI, statusTooltip } from "~/lib/record-status-ui";
+import { serverNowMs } from "~/lib/server-clock";
+import { formatTimerClock } from "~/lib/timer-clock";
 
 type BoardKanbanProps = {
   checkpointLabel: string | null;
@@ -31,11 +36,42 @@ type BoardKanbanProps = {
   rows: readonly BoardRow[];
 };
 
+type ConfirmTarget = {
+  prefillMinutes: number | null;
+  row: BoardRow;
+};
+
+//* 計測を捨てる操作は必ず Confirm を通す(docs/specs/study-timer.md §13.4)。
+function requestDiscardMeasurement(options: {
+  confirmColor: string;
+  confirmLabel: string;
+  measuredMinutes: number;
+  onConfirm: () => void;
+  suffix: string;
+  title: string;
+}): void {
+  modals.openConfirmModal({
+    children: `計測した${String(options.measuredMinutes)}分は残りません。${options.suffix}`,
+    confirmProps: { color: options.confirmColor },
+    labels: { cancel: "キャンセル", confirm: options.confirmLabel },
+    onConfirm: options.onConfirm,
+    title: options.title,
+  });
+}
+
 function RecordCard({
+  disabled,
   dragHandleProps,
+  onConfirm,
+  onResume,
+  onStop,
   row,
 }: {
+  disabled: boolean;
   dragHandleProps: React.HTMLAttributes<HTMLElement> | undefined;
+  onConfirm: () => void;
+  onResume: () => void;
+  onStop: () => void;
   row: BoardRow;
 }) {
   const badge = RECORD_STATUS_UI[row.status];
@@ -69,6 +105,15 @@ function RecordCard({
           </Tooltip>
         </Stack>
       </Group>
+      {row.status === "進行中" ? (
+        <RowTimerChip
+          disabled={disabled}
+          onConfirm={onConfirm}
+          onResume={onResume}
+          onStop={onStop}
+          row={row}
+        />
+      ) : null}
     </Card>
   );
 }
@@ -86,6 +131,18 @@ function NextStepCard({ subtitle, title }: { subtitle: string; title: string }) 
   );
 }
 
+//* 進行中カラムの見出しに計測中の合計だけを添える。固定バーは置かない(#51 §13.3)。
+function columnHeadingLabel(status: KanbanColumn, rows: readonly BoardRow[]): string {
+  if (status !== "進行中") {
+    return status;
+  }
+  const measuring = rows.find((row) => timerRunState(row.timer) === "計測中");
+  if (measuring === undefined) {
+    return status;
+  }
+  return `${status} · 計測 ${formatTimerClock(measuredMs(measuring.timer, serverNowMs()))}`;
+}
+
 export function BoardKanban({
   checkpointLabel,
   dateJst,
@@ -93,11 +150,21 @@ export function BoardKanban({
   obstacles,
   rows,
 }: BoardKanbanProps) {
-  const { onApplyOrder, onConfirm, onPause, onReopen, onSkip, onStart, onUnconfirm, onUnskip } =
-    useBoardKanbanActions(dateJst);
+  const {
+    onApplyOrder,
+    onConfirm,
+    onPause,
+    onReopen,
+    onResumeTimer,
+    onSkip,
+    onStart,
+    onStopTimer,
+    onUnconfirm,
+    onUnskip,
+  } = useBoardKanbanActions(dateJst);
   const { DragDropContext, Draggable, Droppable } = useDnd();
   const grouped = groupRowsByKanbanColumn(rows);
-  const [confirmRow, setConfirmRow] = useState<BoardRow | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget | null>(null);
   const pendingOrderRef = useRef<{
     dateJst: DateJst;
     orderedRowIds: BoardRow["_id"][];
@@ -110,6 +177,19 @@ export function BoardKanban({
     }
     await onApplyOrder(pendingOrder);
     pendingOrderRef.current = null;
+  }
+
+  //* 確定は「先にサーバで区間を閉じる → 真値をモーダルに出す → 人が押した値を保存する」の順(§11.2)。
+  async function requestConfirm(row: BoardRow) {
+    const accumulatedMs = hasTimerState(row.timer) ? await onStopTimer(row._id) : null;
+    if (needsKanbanConfirmEditor(row) || accumulatedMs !== null) {
+      setConfirmTarget({
+        prefillMinutes: accumulatedMs === null ? null : timerMinutes(accumulatedMs),
+        row,
+      });
+      return;
+    }
+    await onConfirm({ content: row.content, minutes: row.minutes, rowId: row._id });
   }
 
   async function handleDragEnd(result: DropResult) {
@@ -142,18 +222,24 @@ export function BoardKanban({
       pendingOrderRef.current = { dateJst, orderedRowIds };
     }
 
+    const measuredMinutes = timerMinutes(measuredMs(row.timer, serverNowMs()));
+    const discardsMeasurement = hasTimerState(row.timer);
+
     if (statusMove === "confirm") {
-      if (needsKanbanConfirmEditor(row)) {
-        setConfirmRow(row);
-        return;
-      }
-      await onConfirm({
-        content: row.content,
-        minutes: row.minutes,
-        rowId: row._id,
-      });
+      await requestConfirm(row);
     } else if (statusMove === "skip") {
-      await onSkip({ rowId: row._id });
+      if (discardsMeasurement) {
+        requestDiscardMeasurement({
+          confirmColor: "yellow",
+          confirmLabel: "見送りにする",
+          measuredMinutes,
+          onConfirm: () => void onSkip({ rowId: row._id }),
+          suffix: "学習量からは外れます。",
+          title: "見送りにしますか？",
+        });
+      } else {
+        await onSkip({ rowId: row._id });
+      }
     } else if (statusMove === "unskip") {
       await onUnskip({ rowId: row._id });
     } else if (statusMove === "unconfirm") {
@@ -161,7 +247,18 @@ export function BoardKanban({
     } else if (statusMove === "start") {
       await onStart({ rowId: row._id });
     } else if (statusMove === "pause") {
-      await onPause({ rowId: row._id });
+      if (discardsMeasurement) {
+        requestDiscardMeasurement({
+          confirmColor: "red",
+          confirmLabel: "捨てて戻す",
+          measuredMinutes,
+          onConfirm: () => void onPause({ rowId: row._id }),
+          suffix: "",
+          title: "計測を捨てて未着手に戻しますか？",
+        });
+      } else {
+        await onPause({ rowId: row._id });
+      }
     } else if (statusMove === "reopen") {
       await onReopen({ rowId: row._id });
     }
@@ -176,15 +273,16 @@ export function BoardKanban({
     <>
       <BoardKanbanConfirmModal
         onClose={() => {
-          setConfirmRow(null);
+          setConfirmTarget(null);
           pendingOrderRef.current = null;
         }}
         onConfirm={async (input) => {
           await onConfirm(input);
           await applyPendingOrder();
         }}
-        opened={confirmRow !== null}
-        row={confirmRow}
+        opened={confirmTarget !== null}
+        prefillMinutes={confirmTarget?.prefillMinutes ?? null}
+        row={confirmTarget?.row ?? null}
       />
       <DragDropContext onDragEnd={(result) => void handleDragEnd(result)}>
         <div className="grid gap-3 md:grid-cols-5">
@@ -196,7 +294,7 @@ export function BoardKanban({
                   <Stack gap="xs" ref={provided.innerRef} {...provided.droppableProps}>
                     <Tooltip label={statusTooltip(status)} withArrow>
                       <Text fw={600} size="sm">
-                        {status}
+                        {columnHeadingLabel(status, columnRows)}
                       </Text>
                     </Tooltip>
                     {columnRows.length === 0 ? (
@@ -209,7 +307,11 @@ export function BoardKanban({
                           {(dragProvided) => (
                             <div ref={dragProvided.innerRef} {...dragProvided.draggableProps}>
                               <RecordCard
+                                disabled={!interactive}
                                 dragHandleProps={dragProvided.dragHandleProps ?? undefined}
+                                onConfirm={() => void requestConfirm(row)}
+                                onResume={() => void onResumeTimer({ rowId: row._id })}
+                                onStop={() => void onStopTimer(row._id)}
                                 row={row}
                               />
                             </div>

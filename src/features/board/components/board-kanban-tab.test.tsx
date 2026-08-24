@@ -29,6 +29,7 @@ vi.mock("~/hooks/use-open-and-load-day", () => ({
           minutes: 30,
           sortOrder: 0,
           status: "未着手",
+          timer: null,
         },
       ],
     },

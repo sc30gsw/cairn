@@ -20,6 +20,7 @@ function row(id: string, status: BoardRow["status"], sortOrder: number): BoardRo
     minutes: 0,
     sortOrder,
     status,
+    timer: null,
   };
 }
 

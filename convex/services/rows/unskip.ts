@@ -2,6 +2,7 @@ import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { NotFoundError, ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
+import { clearTimerFields } from "./clearTimerFields";
 import { requireOwnedRow } from "./requireOwnedRow";
 import { rowDayLiveness } from "./rowDayLiveness";
 
@@ -17,6 +18,6 @@ export async function unskip(
   if (row.status !== "スキップ") {
     throwDomain(new ValidationFailedError({ message: "見送りの記録だけ戻せます" }));
   }
-  await ctx.db.patch("rows", args.rowId, { status: "未着手" });
+  await ctx.db.patch("rows", args.rowId, { ...clearTimerFields(), status: "未着手" });
   return null;
 }

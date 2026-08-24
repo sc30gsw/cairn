@@ -17,6 +17,7 @@ export const dayBoardTestRow = {
   minutes: 30,
   sortOrder: 0,
   status: pending,
+  timer: null,
 } satisfies DayRow;
 
 export const dayBoardTestDay = {

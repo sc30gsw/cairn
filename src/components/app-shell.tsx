@@ -10,9 +10,13 @@ import {
 } from "@tabler/icons-react";
 import { CatchBoundary, Link, useRouterState } from "@tanstack/react-router";
 import { cn } from "cnfast";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
 import { RouteErrorComponent } from "~/components/error-state";
+import {
+  RunningTimerIndicator,
+  RunningTimerIndicatorFallback,
+} from "~/components/running-timer-indicator";
 import { DISPLAY_FONT } from "~/lib/theme";
 
 import classes from "~/components/app-shell.module.css";
@@ -152,7 +156,13 @@ export function AppShell({ accountMenu, children }: AppShellProps) {
                     cairn — 紙の記録
                   </Box>
                 </Group>
-                {accountMenu}
+                <Group gap="sm" wrap="nowrap">
+                  {/*? 計測中インジケータ。計測が無ければ null を返すので何も出ない(#51 §13.2) */}
+                  <Suspense fallback={<RunningTimerIndicatorFallback />}>
+                    <RunningTimerIndicator />
+                  </Suspense>
+                  {accountMenu}
+                </Group>
               </Group>
               {/*? ページ内のエラーはヘッダーとナビを残したまま出す。別の画面へ移れば解除される */}
               <CatchBoundary errorComponent={RouteErrorComponent} getResetKey={() => pathname}>

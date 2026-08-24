@@ -67,12 +67,23 @@ export default defineSchema({
     ownerId: v.string(),
     sortOrder: v.number(),
     status: statusValidator,
+    //* 計測(#51)。進行中のときだけ存在する(docs/specs/study-timer.md §4.3)。
+    timerAccumulatedMs: v.optional(v.number()),
+    //? 自動停止の目印。一時停止と区別して「分数を直してから確定して」と促すためだけに持つ。
+    timerAutoStoppedAt: v.optional(v.number()),
+    //? 走っている区間の開始時刻(サーバの epoch ms)。undefined = 計測していない。
+    timerStartedAt: v.optional(v.number()),
   })
     .index("by_day", ["dayId"])
     .index("by_item", ["itemId"])
     .index("by_owner_and_date", ["ownerId", "dateJst"])
     .index("by_owner_and_deletedAt", ["ownerId", "deletedAt"])
-    .index("by_deletedAt", ["deletedAt"]),
+    .index("by_deletedAt", ["deletedAt"])
+    //? 所有者の「いま計測中の1件」を引く(runningTimer / stopRunningTimer)。
+    .index("by_owner_and_timerStartedAt", ["ownerId", "timerStartedAt"])
+    //? cron の全所有者掃除。by_deletedAt / by_owner_and_deletedAt と同じ「全体用+所有者用」の対。
+    //? 先頭列が違うので CVX-12 のプレフィックス重複ではない。
+    .index("by_timerStartedAt", ["timerStartedAt"]),
 
   //? 今週専用の計器。1カテゴリ1件は services 側で upsert して守る。週次スナップショットは持たない。
   targets: defineTable({

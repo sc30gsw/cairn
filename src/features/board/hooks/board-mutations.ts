@@ -10,8 +10,10 @@ import {
   useOptimisticConfirmRow,
   useOptimisticPauseRow,
   useOptimisticReopenRow,
+  useOptimisticResumeRowTimer,
   useOptimisticSkipRow,
   useOptimisticStartRow,
+  useOptimisticStopRowTimer,
   useOptimisticUnconfirmRow,
   useOptimisticUnskipRow,
 } from "~/hooks/use-row-mutations";
@@ -24,6 +26,8 @@ export const useBoardPauseRow = useOptimisticPauseRow;
 export const useBoardReopenRow = useOptimisticReopenRow;
 export const useBoardApplyRowOrder = useOptimisticApplyRowOrder;
 export const useBoardConfirmRow = useOptimisticConfirmRow;
+export const useBoardStopRowTimer = useOptimisticStopRowTimer;
+export const useBoardResumeRowTimer = useOptimisticResumeRowTimer;
 
 export function useBoardScheduleCreate(
   anchorDateJst: DateJst,

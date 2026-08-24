@@ -4,6 +4,7 @@ import { MINUTES_MIN_MESSAGE } from "../../lib/domain";
 import { NotFoundError, ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { withMasteryProgressDelta } from "../goals/withMasteryProgressDelta";
+import { clearTimerFields } from "./clearTimerFields";
 import { requireOwnedRow } from "./requireOwnedRow";
 import { rowDayLiveness } from "./rowDayLiveness";
 
@@ -25,6 +26,7 @@ export async function confirm(
   //? 確定分数を動かすので、書き込みの前後を実測して習得目標のカウンタを動かす(CVX-15 / ADR-0007)。
   await withMasteryProgressDelta(ctx, ownerId, row, async () => {
     await ctx.db.patch("rows", args.rowId, {
+      ...clearTimerFields(),
       content,
       minutes: args.minutes,
       status: "確定",

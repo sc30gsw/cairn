@@ -25,6 +25,7 @@ function row(id: string, name: string, sortOrder: number): BoardRow {
     minutes: 30,
     sortOrder,
     status: confirmed,
+    timer: null,
   };
 }
 

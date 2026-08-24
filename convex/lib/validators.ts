@@ -176,6 +176,16 @@ export type WeekBreakdown = Infer<typeof weekBreakdownValidator>;
 export type MonthBreakdown = Infer<typeof monthBreakdownValidator>;
 export type YearHeatmapDto = Infer<typeof yearHeatmapValidator>;
 
+//* 進行中の記録が測っている経過。開始時刻はサーバが持ち(mutation の Date.now())、経過は画面が導出する(CVX-14)。
+//? DTO は null 正規化して全キーを必ず出す。dayDtoValidator の condition / memo と同じ規則。
+export const rowTimerDtoValidator = v.object({
+  accumulatedMs: v.number(),
+  autoStoppedAt: v.union(v.number(), v.null()),
+  startedAt: v.union(v.number(), v.null()),
+});
+
+export type RowTimerDto = Infer<typeof rowTimerDtoValidator>;
+
 export const rowDtoValidator = v.object({
   _id: v.id("rows"),
   category: v.string(),
@@ -186,7 +196,19 @@ export const rowDtoValidator = v.object({
   minutes: v.number(),
   sortOrder: v.number(),
   status: statusValidator,
+  //? 計測が無い行は null。進行中でないなら常に null(study-timer.md §4.3 の不変条件)。
+  timer: v.union(rowTimerDtoValidator, v.null()),
 });
+
+//* いま計測中の1件。どの画面にいても「計測中」を見せるため(study-timer.md §13.2)。
+export const runningTimerDtoValidator = v.object({
+  _id: v.id("rows"),
+  dateJst: v.string(),
+  itemName: v.string(),
+  timer: rowTimerDtoValidator,
+});
+
+export type RunningTimerDto = Infer<typeof runningTimerDtoValidator>;
 
 export const dayDtoValidator = v.object({
   _id: v.id("days"),
