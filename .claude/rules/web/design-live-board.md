@@ -22,11 +22,11 @@ Use the claude_design MCP (https://api.anthropic.com/v1/design/mcp, auth via /de
 ## Rules
 
 1. 全画面（Today/History/Items/Presets/Goals/Trash、新規ルートを含む）は Paper Redesign の言語に従う:
-   Flexoki Light の紙背景、手書きの本文/見出しフォント + 数字は別の可読フォント、右小口の縦インデックスタブ
+   Flexoki Light の紙背景、手書きの本文/見出し/数字フォント(統一)、右小口の縦インデックスタブ
    ナビ（モバイルでは**画面下端に固定した下小口タブ4本 + 「その他」メニュー**に置き換わる。
    `docs/specs/pwa-mobile.md` §10）、スケッチ風の不揃いな border-radius と紙影は要所（カード・ボタン・タブ）だけ。
 2. Colors come from `src/lib/theme.ts`'s Flexoki-derived Mantine color tuples (`orange` primary, `green` = success/complete, `red` = delete/danger, `blue`/`red` reserved for calendar Saturday/Sunday) plus the `--cairn-*` CSS variables (`--cairn-ink`, `--cairn-muted`, `--cairn-muted-2`, `--cairn-rule`, `--cairn-desk`, `--cairn-paper-2`). Never hardcode hex values in components — use theme colors, `var(--mantine-color-*)`, or the `--cairn-*` tokens.
-3. Fonts: `BODY_FONT`/`DISPLAY_FONT` (handwritten, both point at the same stack) for headings and body text; `NUMERAL_FONT` for numeric displays (dates, minutes, counts, percentages). All three are exported from `src/lib/theme.ts` — import them, don't redeclare font stacks locally.
+3. Fonts: `BODY_FONT`/`DISPLAY_FONT`/`NUMERAL_FONT` all point at the same handwritten stack — headings, body text, and numeric displays (dates, minutes, counts, percentages) are visually unified. All three are exported from `src/lib/theme.ts` — import them, don't redeclare font stacks locally. Keep `NUMERAL_FONT` as its own token (don't inline `BODY_FONT` at numeral call sites) so a future split stays a one-line change.
 4. Light-only. Do not add dark-mode handling — the paper/handwriting concept is light-only by design decision (`project/design-notes.md`).
 5. Do not invent new palettes or fonts for individual pages. Extend by reusing the existing tokens — the shared `SKETCH_RADIUS`/`PILL_RADIUS`/`PAPER_SHADOW` shape constants live in `src/lib/theme.ts`; export one only once a second file genuinely needs it (AHA, see `CODING_GUIDELINES.md`).
 6. Do NOT port any mock JS from the `.dc.html` file — it is a demo-only local state machine. Real state comes from Convex subscriptions, same as the rest of this app.

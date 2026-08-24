@@ -76,10 +76,11 @@ const orange = [
 //? Google Fonts に無い「851手書き雑フォント(Tegaki851)」は CDN ホストがネットワーク許可リストに無く取得不可だったため、
 //? デザイン側が元々フォールバックに指定していた Yomogi をそのまま本採用にしている(design-notes.md 参照)
 const HAND_FONT = '"Yomogi", sans-serif';
-export const NUMERAL_FONT = "'Zen Kaku Gothic New', sans-serif";
 //? 呼び出し側の import 名はそのまま流用(見出し・本文とも手書きフォントに統一する合意のため同値)
 export const BODY_FONT = HAND_FONT;
 export const DISPLAY_FONT = HAND_FONT;
+//? 数字も本文と同じ手書きフォントに統一(以前は可読性優先の別フォントだったが、意匠を優先する合意に更新)
+export const NUMERAL_FONT = HAND_FONT;
 
 //? 色の一次値は paper-tokens.ts が唯一の出所(pwa-mobile.md §9.3)。offline.html の生成スクリプトも同じ値を読む
 const INK = PAPER_TOKENS.ink;
