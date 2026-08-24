@@ -1,7 +1,9 @@
-import { Tabs, Text } from "@mantine/core";
+import { Tabs } from "@mantine/core";
 import { Suspense } from "react";
 
 import { PageTitle } from "~/components/page-title";
+import { MonthlyReviewTab } from "~/features/review/components/monthly-review-tab";
+import { MonthlyReviewTabPending } from "~/features/review/components/monthly-review-tab-pending";
 import { ReviewPending } from "~/features/review/components/review-pending";
 import { WeeklyReviewTab } from "~/features/review/components/weekly-review-tab";
 import { WeeklyReviewTabPending } from "~/features/review/components/weekly-review-tab-pending";
@@ -16,11 +18,6 @@ export function ReviewPage() {
       <ReviewReady />
     </Suspense>
   );
-}
-
-//? 月次タブの中身は別チケット。ReviewPage は月次側の実装を直接 import しない構造にしておく
-function MonthlyReviewPlaceholder() {
-  return <Text c="dimmed">月次レビューは準備中です。</Text>;
 }
 
 function ReviewReady() {
@@ -52,7 +49,11 @@ function ReviewReady() {
         </Tabs.Panel>
 
         <Tabs.Panel pt="md" value="monthly">
-          {tab === "monthly" ? <MonthlyReviewPlaceholder /> : null}
+          {tab === "monthly" ? (
+            <Suspense fallback={<MonthlyReviewTabPending />}>
+              <MonthlyReviewTab />
+            </Suspense>
+          ) : null}
         </Tabs.Panel>
       </Tabs>
     </>

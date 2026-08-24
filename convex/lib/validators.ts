@@ -580,3 +580,45 @@ export const weeklyReviewValidator = v.object({
 });
 
 export type WeeklyReviewDto = Infer<typeof weeklyReviewValidator>;
+
+//* 月内の週バケット1つ分の消化推移(digestRate と同じ定義)。
+//? weeklyDigestValidator を週バケットに使わない理由: 月境界で7日に満たないバケットは
+//? 「今日を含むから不完全」ではなく「暦週として不完全」という別の理由で isPartial になる
+//? (weeklyDigestValidator の isPartial は「今日/未来を数えられなかった」ことだけを意味する)。
+//? チャートが必要とするのは digestRate / isPartial / plannedCount(0件判定) だけなので最小形にする。
+export const monthlyDigestBucketValidator = v.object({
+  bucketEnd: v.string(),
+  bucketStart: v.string(),
+  confirmedCount: v.number(),
+  digestRate: v.number(),
+  //? 月境界の部分週(7日未満) or 当日/未来を含む進行中の週の両方で true。
+  isPartial: v.boolean(),
+  plannedCount: v.number(),
+});
+
+export type MonthlyDigestBucket = Infer<typeof monthlyDigestBucketValidator>;
+
+//* 月次レビュー画面1枚ぶんの集計。カテゴリ比較の delta%・ラベル付けはクライアントの純関数が担う。
+export const monthlyReviewValidator = v.object({
+  activeDays: v.number(),
+  byCategory: v.array(categoryBreakdownValidator),
+  confirmedMinutes: v.number(),
+  //? 月全体(今日を除く)の消化。weeklyDigestValidator をそのまま再利用する。
+  //? 週次レビューのサマリー「消化」タイルと同じ形にするための意図的な再利用(CVX-16 SSoT)。
+  digest: weeklyDigestValidator,
+  digestTrend: v.array(monthlyDigestBucketValidator),
+  //? 月内で今日以前の暦日数(過去月なら月の日数と同じ)。1日平均の分母。
+  elapsedDays: v.number(),
+  //? yearMonth が todayJst の月と一致するか。当月は「まだ途中」の注記に使う。
+  isCurrentMonth: v.boolean(),
+  monthEnd: v.string(),
+  monthStart: v.string(),
+  previousActiveDays: v.number(),
+  previousByCategory: v.array(categoryBreakdownValidator),
+  previousConfirmedMinutes: v.number(),
+  previousYearMonth: v.string(),
+  skippedMinutes: v.number(),
+  yearMonth: v.string(),
+});
+
+export type MonthlyReviewDto = Infer<typeof monthlyReviewValidator>;
