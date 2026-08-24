@@ -13,9 +13,9 @@ type FixedDue = ReturnType<typeof dueFixedTriggers>;
 async function evaluateOwner(
   ctx: MutationCtx,
   setting: Doc<"notificationSettings">,
-  args: { dateJst: string; due: FixedDue; hour: number; now: number },
+  args: { dateJst: string; due: FixedDue; hour: number },
 ): Promise<void> {
-  const { dateJst, due, hour, now } = args;
+  const { dateJst, due, hour } = args;
   const payloads = await Promise.all([
     due.checkpointDeadline && setting.triggers.checkpointDeadline
       ? evaluateCheckpointDeadline(ctx, setting.ownerId, dateJst)
@@ -31,7 +31,7 @@ async function evaluateOwner(
   await Promise.all(
     payloads.map(async (payload) => {
       if (payload !== null) {
-        await emitNotification(ctx, setting, payload, now);
+        await emitNotification(ctx, setting, payload);
       }
     }),
   );
@@ -48,8 +48,6 @@ export async function evaluate(ctx: MutationCtx, args: { now?: number } = {}): P
     fixedDue: due.checkpointDeadline || due.weeklyTargetMiss,
     hour,
   });
-  await Promise.all(
-    settings.map((setting) => evaluateOwner(ctx, setting, { dateJst, due, hour, now })),
-  );
+  await Promise.all(settings.map((setting) => evaluateOwner(ctx, setting, { dateJst, due, hour })));
   return null;
 }

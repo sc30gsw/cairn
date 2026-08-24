@@ -102,8 +102,6 @@ export default defineSchema({
     ownerId: v.string(),
     payload: notificationPayloadValidator,
     readAt: v.optional(v.number()),
-    slackDeliveredAt: v.optional(v.number()),
-    slackError: v.optional(v.string()),
   })
     //? 通知欄は _creationTime 降順で読む。CVX-12 の「特定の _creationTime 順が必要」例外に当たる。
     .index("by_owner", ["ownerId"])
@@ -115,12 +113,6 @@ export default defineSchema({
     enabled: v.boolean(),
     eveningHourJst: v.number(),
     ownerId: v.string(),
-    quietFromHourJst: v.number(),
-    quietToHourJst: v.number(),
-    slackEnabled: v.boolean(),
-    slackFailureStreak: v.number(),
-    //? 書き込み専用。公開 query の返り値に入れない。
-    slackWebhookUrl: v.optional(v.string()),
     triggers: notificationTriggerPrefsValidator,
   })
     .index("by_owner", ["ownerId"])

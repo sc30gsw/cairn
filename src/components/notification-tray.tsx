@@ -35,7 +35,7 @@ type NotificationRowProps = {
   onMarkRead: (notificationId: Id<"notifications">) => void;
 };
 
-//? 文言は convex/lib の共有純関数で組む。Slack 本文と通知欄が同じ関数を通る(CVX-16)。
+//? 文言は convex/lib の共有純関数で組む。保存するのは事実だけで、言い方は保存しない(CVX-16)。
 function NotificationRow({ notification, onMarkRead }: NotificationRowProps) {
   const { body, title } = notificationMessage(notification.payload);
 

@@ -33,9 +33,6 @@ export const WEEKLY_MISS_WEEKDAY = 6 satisfies Weekday;
 //* 夜の催促に選べる時刻。
 export const EVENING_HOUR_RANGE = { max: 23, min: 18 } as const satisfies Record<string, number>;
 
-//* 静穏時間に選べる時刻(0〜23)。
-export const QUIET_HOUR_RANGE = { max: 23, min: 0 } as const satisfies Record<string, number>;
-
 //* 通知の保持期間。ゴミ箱(TRASH_TTL_MS)と同じ30日。
 export const NOTIFICATION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -48,12 +45,6 @@ export const NOTIFICATION_LIST_LIMIT = 50;
 //* 本文に並べる明細の最大行数。超えた分は「…他N件」に畳む(§5.2)。
 export const NOTIFICATION_BODY_LINE_LIMIT = 5;
 
-//* Slack の Incoming Webhook 以外へは投げない(SSRF 防止。§9.2)。
-export const SLACK_WEBHOOK_PATTERN = /^https:\/\/hooks\.slack\.com\/services\/[A-Za-z0-9_/-]+$/;
-
-//* 連続失敗でオプトインを自動的に落とす回数(§9.3)。
-export const SLACK_FAILURE_STREAK_LIMIT = 3;
-
 //* JST は UTC+9:00 固定・夏時間なし。時の算出は Intl を使わずこのオフセットで行う。
 export const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
@@ -62,32 +53,11 @@ export const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 export const NOTIFICATION_DEFAULTS = {
   enabled: false,
   eveningHourJst: 21,
-  quietFromHourJst: 22,
-  quietToHourJst: 7,
-  slackConfigured: false,
-  slackEnabled: false,
-  slackFailureStreak: 0,
   triggers: { checkpointDeadline: true, eveningUntouched: true, weeklyTargetMiss: true },
 } as const satisfies NotificationSettingsDto;
 
 //* 検証メッセージ。services と Valibot が同じ文言を共有する(CVX-16)。
 export const EVENING_HOUR_MESSAGE = `夜の催促は${EVENING_HOUR_RANGE.min}〜${EVENING_HOUR_RANGE.max}時から選んでください`;
-export const QUIET_HOUR_MESSAGE = `静穏時間は${QUIET_HOUR_RANGE.min}〜${QUIET_HOUR_RANGE.max}時で指定してください`;
-export const SLACK_WEBHOOK_MESSAGE =
-  "Slack の Incoming Webhook URL（https://hooks.slack.com/services/…）を入力してください";
-export const SLACK_REQUIRED_MESSAGE = "Slack へ送るには Webhook URL が必要です";
-
-//* 静穏時間の判定。from === to は「静穏なし」(24時間の静穏で全部黙るのを避ける)。
-//? from > to は日付をまたぐ窓(既定の 22 → 7)。
-export function isQuietHourJst(hour: number, fromHourJst: number, toHourJst: number): boolean {
-  if (fromHourJst === toHourJst) {
-    return false;
-  }
-  if (fromHourJst < toHourJst) {
-    return hour >= fromHourJst && hour < toHourJst;
-  }
-  return hour >= fromHourJst || hour < toHourJst;
-}
 
 //* いま固定時刻トリガーの発火時刻か。cron の UTC 換算を関数側に閉じ込める。
 export function dueFixedTriggers(dateJst: string, hour: number) {

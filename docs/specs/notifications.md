@@ -11,6 +11,14 @@
 
 ---
 
+## 改訂（2026-08-24）: Slack 押し出しチャネルは実装から撤回
+
+2026-08-24 のオーナー判断で Slack 押し出しチャネルは実装から撤回。v1 のチャネルはアプリ内通知欄のみ。Web Push は従来どおり #58 後の後続チケット所有。
+
+以下の本文は Slack を含む当時の決定をそのまま残す（§ 番号の振り直しはしない）。Slack に属する記述 —— チャネル2本立て、`slackEnabled` / `slackWebhookUrl` / `slackFailureStreak` / `slackDeliveredAt` / `slackError`、`deliverSlack` / `deliveryPayload` / `markSlackDelivered` / `disconnectSlack`、および押し出しだけを止める静穏時間（`quietFromHourJst` / `quietToHourJst` / `isQuietHourJst`）—— はコードには存在しない。トリガー3種・`dedupeKey` の頻度上限・cron 2本・`eveningHourJst`・構造化ペイロードと共有純関数による文言生成は、記述どおり有効。
+
+---
+
 ## 0. 決定サマリ
 
 1. **チャネルは2本。アプリ内通知欄（必須・唯一の正）＋ Slack Incoming Webhook（オプトイン・押し出し）。** Web Push は **#58（PWA）完了後の後続チケット**が「同じ `notifications` 行を端末へ押し出すアダプタ」として足す（#56 も #58 も実装しない。所有者の確定は §2.4）。Email（`@convex-dev/resend`）は v1 不採用。

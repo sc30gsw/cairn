@@ -6,7 +6,6 @@ import {
   dueFixedTriggers,
   hourJst,
   isDeadlineNear,
-  isQuietHourJst,
   notificationDedupeKey,
   nowJst,
 } from "./notifications";
@@ -15,27 +14,6 @@ import {
 function jstInstant(year: number, month: number, day: number, hour: number): number {
   return Date.UTC(year, month - 1, day, hour - 9, 0, 0);
 }
-
-test("同日窓の静穏時間は from 以上 to 未満だけを静穏にする", () => {
-  expect(isQuietHourJst(9, 9, 17)).toBe(true);
-  expect(isQuietHourJst(16, 9, 17)).toBe(true);
-  expect(isQuietHourJst(17, 9, 17)).toBe(false);
-  expect(isQuietHourJst(8, 9, 17)).toBe(false);
-});
-
-test("日付をまたぐ静穏窓(22→7)は深夜を静穏にし、朝7時で解ける", () => {
-  expect(isQuietHourJst(23, 22, 7)).toBe(true);
-  expect(isQuietHourJst(3, 22, 7)).toBe(true);
-  expect(isQuietHourJst(22, 22, 7)).toBe(true);
-  expect(isQuietHourJst(7, 22, 7)).toBe(false);
-  expect(isQuietHourJst(21, 22, 7)).toBe(false);
-});
-
-test("from === to は静穏なし(24時間黙る状態を作らない)", () => {
-  for (const hour of [0, 7, 12, 22, 23]) {
-    expect(isQuietHourJst(hour, 22, 22)).toBe(false);
-  }
-});
 
 test("固定時刻トリガーは 08時で期限接近だけ、土曜09時で週間ターゲットだけ発火する", () => {
   //? 2026-08-22 は土曜、2026-08-23 は日曜。

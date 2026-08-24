@@ -1,24 +1,17 @@
 import { convexTest } from "convex-test";
-import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
+import { afterEach, expect, test, vi } from "vite-plus/test";
 
 import type { Doc, Id } from "./_generated/dataModel";
 import {
-  disconnectSlackRef,
   evaluateNotificationsRef,
   markAllNotificationsReadRef,
   markNotificationsReadRef,
-  markSlackDeliveredRef,
-  notificationDeliveryPayloadRef,
   notificationListRef,
   notificationSettingsRef,
   purgeExpiredNotificationsRef,
   saveNotificationSettingsRef as saveSettingsRef,
 } from "./lib/notificationRefs";
-import {
-  NOTIFICATION_LIST_LIMIT,
-  NOTIFICATION_TTL_MS,
-  SLACK_FAILURE_STREAK_LIMIT,
-} from "./lib/notifications";
+import { NOTIFICATION_LIST_LIMIT, NOTIFICATION_TTL_MS } from "./lib/notifications";
 import type { RowStatus } from "./lib/validators";
 import schema from "./schema";
 
@@ -42,7 +35,6 @@ const THURSDAY = "2026-08-20";
 const SATURDAY = "2026-08-22";
 const SUNDAY = "2026-08-23";
 const THURSDAY_WEEKDAY = 4;
-const WEBHOOK = "https://hooks.slack.com/services/T000/B000/abcdef";
 
 function raw() {
   return convexTest(schema, modules);
@@ -73,10 +65,6 @@ async function seedSettings(
       enabled: true,
       eveningHourJst: 21,
       ownerId,
-      quietFromHourJst: 22,
-      quietToHourJst: 7,
-      slackEnabled: false,
-      slackFailureStreak: 0,
       triggers: { checkpointDeadline: true, eveningUntouched: true, weeklyTargetMiss: true },
       ...overrides,
     }),
@@ -214,13 +202,6 @@ async function notificationsOf(
   );
 }
 
-async function scheduledNames(t: Harness): Promise<string[]> {
-  return await t.run(async (ctx) => {
-    const jobs = await ctx.db.system.query("_scheduled_functions").collect();
-    return jobs.map((job) => job.name);
-  });
-}
-
 async function settingsDoc(
   t: Harness,
   ownerId: string = OWNER.subject,
@@ -237,16 +218,7 @@ async function settingsDoc(
   return doc;
 }
 
-//? 押し出しは scheduler 経由で走るので、テスト中に本物の Slack を叩かせない。
-beforeEach(() => {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(() => Promise.resolve(new Response("ok", { status: 200 }))),
-  );
-});
-
 afterEach(() => {
-  vi.unstubAllGlobals();
   vi.useRealTimers();
 });
 
@@ -483,76 +455,12 @@ test("triggers.eveningUntouched: false で夜だけ止まり、期限接近は�
   expect(kinds).toEqual(["checkpointDeadline"]);
 });
 
-test("静穏時間中の発火では行は作られるが押し出しは積まれない", async () => {
-  const t = asOwner();
-  //? 夜の催促を23時にし、静穏は既定(22〜7)のまま。設定同士の衝突が実際に起きる場面。
-  await seedSettings(t, OWNER.subject, {
-    eveningHourJst: 23,
-    slackEnabled: true,
-    slackWebhookUrl: WEBHOOK,
-  });
-  await seedDay(t, { dateJst: THURSDAY, statuses: ["未着手"] });
-
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 23) });
-
-  expect(await notificationsOf(t)).toHaveLength(1);
-  expect(await scheduledNames(t)).toEqual([]);
-});
-
-test("slackEnabled かつ静穏外なら deliverSlack が1件積まれる", async () => {
-  const t = asOwner();
-  await seedSettings(t, OWNER.subject, { slackEnabled: true, slackWebhookUrl: WEBHOOK });
-  await seedDay(t, { dateJst: THURSDAY, statuses: ["未着手"] });
-
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 21) });
-
-  expect(await notificationsOf(t)).toHaveLength(1);
-  expect(await scheduledNames(t)).toEqual(["actions/notifications/deliverSlack:deliverSlack"]);
-});
-
-//* 積まれた job を実際に走らせる。deliverSlack が内部で引く2本の参照(deliveryPayload /
-//? markSlackDelivered)まで通るので、名前だけの一致では見つからない綴り違いもここで落ちる。
-test("積まれた deliverSlack を走らせると Webhook を叩き、配信済みが記録される", async () => {
-  vi.useFakeTimers();
-  const t = asOwner();
-  await seedSettings(t, OWNER.subject, { slackEnabled: true, slackWebhookUrl: WEBHOOK });
-  await seedDay(t, { dateJst: THURSDAY, statuses: ["未着手"] });
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 21) });
-
-  await t.finishAllScheduledFunctions(vi.runAllTimers);
-
-  const [notification] = await notificationsOf(t);
-  expect(notification?.slackDeliveredAt).toBeTypeOf("number");
-  expect(notification?.slackError).toBeUndefined();
-  expect(globalThis.fetch).toHaveBeenCalledWith(
-    WEBHOOK,
-    expect.objectContaining({ method: "POST" }),
-  );
-  //? 連続失敗カウンタは成功で 0 のまま。
-  expect((await settingsDoc(t)).slackFailureStreak).toBe(0);
-});
-
-test("settings query の返り値に slackWebhookUrl キーが存在しない", async () => {
-  const t = asOwner();
-  await seedSettings(t, OWNER.subject, { slackEnabled: true, slackWebhookUrl: WEBHOOK });
-
-  const settings = await t.query(notificationSettingsRef, {});
-
-  expect(Object.keys(settings)).not.toContain("slackWebhookUrl");
-  expect(settings.slackConfigured).toBe(true);
-});
-
 test("settings query は行が無いとき既定値(enabled: false)を返す", async () => {
   const settings = await asOwner().query(notificationSettingsRef, {});
 
   expect(settings).toEqual({
     enabled: false,
     eveningHourJst: 21,
-    quietFromHourJst: 22,
-    quietToHourJst: 7,
-    slackConfigured: false,
-    slackEnabled: false,
-    slackFailureStreak: 0,
     triggers: { checkpointDeadline: true, eveningUntouched: true, weeklyTargetMiss: true },
   });
 });
@@ -560,78 +468,29 @@ test("settings query は行が無いとき既定値(enabled: false)を返す", a
 const SAVE_BASE = {
   enabled: true,
   eveningHourJst: 21,
-  quietFromHourJst: 22,
-  quietToHourJst: 7,
-  slackEnabled: false,
   triggers: { checkpointDeadline: true, eveningUntouched: true, weeklyTargetMiss: true },
 };
-
-test("saveSettings は Slack 以外のホストの Webhook URL を拒否する", async () => {
-  await expect(
-    asOwner().mutation(saveSettingsRef, {
-      ...SAVE_BASE,
-      slackWebhookUrl: "https://evil.example.com/services/T000/B000/abc",
-    }),
-  ).rejects.toThrow();
-});
-
-test("saveSettings で URL を省略すると既存 URL が保たれる", async () => {
-  const t = asOwner();
-  await t.mutation(saveSettingsRef, { ...SAVE_BASE, slackWebhookUrl: WEBHOOK });
-
-  await t.mutation(saveSettingsRef, { ...SAVE_BASE, eveningHourJst: 19, slackEnabled: true });
-
-  const settings = await t.query(notificationSettingsRef, {});
-  expect(settings.slackConfigured).toBe(true);
-  expect(settings.eveningHourJst).toBe(19);
-  expect((await settingsDoc(t)).slackWebhookUrl).toBe(WEBHOOK);
-});
-
-test("saveSettings で URL を差し替えると slackFailureStreak が 0 に戻る", async () => {
-  const t = asOwner();
-  await seedSettings(t, OWNER.subject, {
-    slackEnabled: true,
-    slackFailureStreak: 2,
-    slackWebhookUrl: WEBHOOK,
-  });
-
-  await t.mutation(saveSettingsRef, {
-    ...SAVE_BASE,
-    slackEnabled: true,
-    slackWebhookUrl: "https://hooks.slack.com/services/T111/B111/zzzzzz",
-  });
-
-  expect((await settingsDoc(t)).slackFailureStreak).toBe(0);
-});
-
-test("slackEnabled: true で URL 未設定の saveSettings は拒否される", async () => {
-  await expect(
-    asOwner().mutation(saveSettingsRef, { ...SAVE_BASE, slackEnabled: true }),
-  ).rejects.toThrow();
-});
 
 test("saveSettings は範囲外の時刻を拒否する", async () => {
   const t = asOwner();
   await expect(t.mutation(saveSettingsRef, { ...SAVE_BASE, eveningHourJst: 9 })).rejects.toThrow();
-  await expect(
-    t.mutation(saveSettingsRef, { ...SAVE_BASE, quietFromHourJst: 24 }),
-  ).rejects.toThrow();
+  await expect(t.mutation(saveSettingsRef, { ...SAVE_BASE, eveningHourJst: 24 })).rejects.toThrow();
 });
 
-test("disconnectSlack のあと slackConfigured / slackEnabled が false になる", async () => {
+test("saveSettings は2回目以降も1行のまま上書きする(upsert)", async () => {
   const t = asOwner();
-  await seedSettings(t, OWNER.subject, {
-    slackEnabled: true,
-    slackFailureStreak: 2,
-    slackWebhookUrl: WEBHOOK,
+  const first = await t.mutation(saveSettingsRef, SAVE_BASE);
+
+  const second = await t.mutation(saveSettingsRef, {
+    ...SAVE_BASE,
+    eveningHourJst: 19,
+    triggers: { checkpointDeadline: false, eveningUntouched: true, weeklyTargetMiss: true },
   });
 
-  await t.mutation(disconnectSlackRef, {});
-
-  const settings = await t.query(notificationSettingsRef, {});
-  expect(settings.slackConfigured).toBe(false);
-  expect(settings.slackEnabled).toBe(false);
-  expect(settings.slackFailureStreak).toBe(0);
+  expect(second).toBe(first);
+  const doc = await settingsDoc(t);
+  expect(doc.eveningHourJst).toBe(19);
+  expect(doc.triggers.checkpointDeadline).toBe(false);
 });
 
 async function seedOneNotification(t: Harness, ownerId: string = OWNER.subject) {
@@ -648,38 +507,6 @@ async function seedOneNotification(t: Harness, ownerId: string = OWNER.subject) 
     }),
   );
 }
-
-test("markSlackDelivered の失敗3回で slackEnabled が false になる", async () => {
-  const t = asOwner();
-  await seedSettings(t, OWNER.subject, { slackEnabled: true, slackWebhookUrl: WEBHOOK });
-  const notificationId = await seedOneNotification(t);
-
-  for (const attempt of [1, 2, 3]) {
-    await t.mutation(markSlackDeliveredRef, { error: "失敗", notificationId });
-    const doc = await settingsDoc(t);
-    expect(doc.slackFailureStreak).toBe(attempt);
-    expect(doc.slackEnabled).toBe(attempt < SLACK_FAILURE_STREAK_LIMIT);
-  }
-  const notification = await t.run(async (ctx) => ctx.db.get("notifications", notificationId));
-  expect(notification?.slackError).toBe("失敗");
-});
-
-test("markSlackDelivered の成功で slackFailureStreak が 0 に戻る", async () => {
-  const t = asOwner();
-  await seedSettings(t, OWNER.subject, {
-    slackEnabled: true,
-    slackFailureStreak: 2,
-    slackWebhookUrl: WEBHOOK,
-  });
-  const notificationId = await seedOneNotification(t);
-
-  await t.mutation(markSlackDeliveredRef, { notificationId });
-
-  expect((await settingsDoc(t)).slackFailureStreak).toBe(0);
-  const notification = await t.run(async (ctx) => ctx.db.get("notifications", notificationId));
-  expect(notification?.slackDeliveredAt).toBeTypeOf("number");
-  expect(notification?.slackError).toBeUndefined();
-});
 
 test("markRead は他人の通知 id を拒否する(IDOR)", async () => {
   const other = asOwner(OTHER_OWNER);
@@ -805,7 +632,6 @@ test("未認証では通知の公開関数がすべて失敗する", async () =>
   await expect(t.mutation(saveSettingsRef, SAVE_BASE)).rejects.toThrow();
   await expect(t.mutation(markNotificationsReadRef, { notificationIds: [] })).rejects.toThrow();
   await expect(t.mutation(markAllNotificationsReadRef, {})).rejects.toThrow();
-  await expect(t.mutation(disconnectSlackRef, {})).rejects.toThrow();
 });
 
 test("所有者Aの評価は所有者Bの通知を作らない", async () => {
@@ -818,63 +644,6 @@ test("所有者Aの評価は所有者Bの通知を作らない", async () => {
 
   expect(await notificationsOf(t, OWNER.subject)).toHaveLength(1);
   expect(await notificationsOf(t, OTHER_OWNER.subject)).toEqual([]);
-});
-
-test("deliveryPayload は Slack 本文と宛先を組み、SITE_URL があればリンク行を足す", async () => {
-  const t = asOwner();
-  await seedSettings(t, OWNER.subject, { slackEnabled: true, slackWebhookUrl: WEBHOOK });
-  const notificationId = await seedOneNotification(t);
-
-  vi.stubEnv("SITE_URL", "");
-  const withoutSite = await t.query(notificationDeliveryPayloadRef, { notificationId });
-  expect(withoutSite).toEqual({
-    text: "今日の残りがあります\n未着手が1件残っています。",
-    webhookUrl: WEBHOOK,
-  });
-
-  vi.stubEnv("SITE_URL", "https://cairn.example.com");
-  const withSite = await t.query(notificationDeliveryPayloadRef, { notificationId });
-  expect(withSite?.text).toBe(
-    "今日の残りがあります\n未着手が1件残っています。\nhttps://cairn.example.com",
-  );
-});
-
-test("deliveryPayload は通知が消えている / Slack が解除済みなら null", async () => {
-  const t = asOwner();
-  await seedSettings(t, OWNER.subject, { slackEnabled: true, slackWebhookUrl: WEBHOOK });
-  const notificationId = await seedOneNotification(t);
-  await t.run(async (ctx) => {
-    await ctx.db.delete("notifications", notificationId);
-  });
-  expect(await t.query(notificationDeliveryPayloadRef, { notificationId })).toBeNull();
-
-  const disabled = asOwner();
-  await seedSettings(disabled, OWNER.subject, { slackEnabled: false, slackWebhookUrl: WEBHOOK });
-  const disabledId = await seedOneNotification(disabled);
-  expect(await disabled.query(notificationDeliveryPayloadRef, { notificationId: disabledId })).toBe(
-    null,
-  );
-
-  const noSettings = asOwner();
-  const orphanId = await seedOneNotification(noSettings);
-  expect(await noSettings.query(notificationDeliveryPayloadRef, { notificationId: orphanId })).toBe(
-    null,
-  );
-});
-
-test("disconnectSlack は設定行が無くても成功する", async () => {
-  await expect(asOwner().mutation(disconnectSlackRef, {})).resolves.toBeNull();
-});
-
-test("markSlackDelivered は通知が消えていれば何もしない", async () => {
-  const t = asOwner();
-  await seedSettings(t, OWNER.subject, { slackEnabled: true, slackWebhookUrl: WEBHOOK });
-  const notificationId = await seedOneNotification(t);
-  await t.run(async (ctx) => {
-    await ctx.db.delete("notifications", notificationId);
-  });
-
-  await expect(t.mutation(markSlackDeliveredRef, { notificationId })).resolves.toBeNull();
 });
 
 test("purgeExpired は now 省略時に現在時刻を使い、新しい通知を消さない", async () => {

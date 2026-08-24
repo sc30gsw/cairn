@@ -1,5 +1,4 @@
 import {
-  disconnectSlackRef,
   markAllNotificationsReadRef,
   markNotificationsReadRef,
   saveNotificationSettingsRef,
@@ -17,8 +16,4 @@ export function useMarkAllNotificationsRead() {
 
 export function useSaveNotificationSettings() {
   return useConvexMutation(saveNotificationSettingsRef);
-}
-
-export function useDisconnectSlack() {
-  return useConvexMutation(disconnectSlackRef);
 }

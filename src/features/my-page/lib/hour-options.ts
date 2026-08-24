@@ -1,4 +1,4 @@
-import { EVENING_HOUR_RANGE, QUIET_HOUR_RANGE } from "~domain/notifications";
+import { EVENING_HOUR_RANGE } from "~domain/notifications";
 
 export type HourOption = {
   label: string;
@@ -16,8 +16,4 @@ export function hourOptions(min: number, max: number): HourOption[] {
 
 export function eveningHourOptions(): HourOption[] {
   return hourOptions(EVENING_HOUR_RANGE.min, EVENING_HOUR_RANGE.max);
-}
-
-export function quietHourOptions(): HourOption[] {
-  return hourOptions(QUIET_HOUR_RANGE.min, QUIET_HOUR_RANGE.max);
 }

@@ -702,24 +702,11 @@ export const notificationPageValidator = v.object({
 
 export type NotificationPageDto = Infer<typeof notificationPageValidator>;
 
-//* 設定の DTO。**slackWebhookUrl は含めない**(§9.2)。設定済みかどうかだけを boolean で出す。
+//* 設定の DTO。v1 のチャネルはアプリ内通知欄だけなので、出す値は「使うか」「いつ」「何を」に尽きる。
 export const notificationSettingsDtoValidator = v.object({
   enabled: v.boolean(),
   eveningHourJst: v.number(),
-  quietFromHourJst: v.number(),
-  quietToHourJst: v.number(),
-  slackConfigured: v.boolean(),
-  slackEnabled: v.boolean(),
-  slackFailureStreak: v.number(),
   triggers: notificationTriggerPrefsValidator,
 });
 
 export type NotificationSettingsDto = Infer<typeof notificationSettingsDtoValidator>;
-
-//* Slack 配信の入力。internalQuery が返し、internalAction が使う。公開 query では返さない。
-export const slackDeliveryValidator = v.object({
-  text: v.string(),
-  webhookUrl: v.string(),
-});
-
-export type SlackDelivery = Infer<typeof slackDeliveryValidator>;
