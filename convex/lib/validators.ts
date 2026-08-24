@@ -520,3 +520,60 @@ export const boardScheduleViewValidator = v.union(
 );
 
 export type BoardScheduleEventDto = Infer<typeof boardScheduleEventDtoValidator>;
+
+//* 週の消化(CONTEXT「消化」: 確定 / 並んだ件数)。今日の行は数えないので、今日を含む週は isPartial=true。
+export const weeklyDigestValidator = v.object({
+  confirmedCount: v.number(),
+  //? 数えた範囲。UI の注記(「08/17〜08/22 を数えた」)にそのまま使う。
+  countedFrom: v.string(),
+  //? 1日も数えられないとき(週初日が今日 or 未来週)は null。
+  countedThrough: v.union(v.string(), v.null()),
+  digestRate: v.number(),
+  //? 週の全7日を数えられていない(今日を含む・未来を含む)ときに true。UI は注記を出す。
+  isPartial: v.boolean(),
+  leftoverCount: v.number(),
+  ongoingCount: v.number(),
+  plannedCount: v.number(),
+  skippedCount: v.number(),
+});
+
+export type WeeklyDigest = Infer<typeof weeklyDigestValidator>;
+
+//* 週次レビューの1日分。月〜日の7件固定。kind は既存の dayViewKind をそのまま使う(CVX-16)。
+export const weeklyReviewDayValidator = v.object({
+  condition: v.union(conditionValidator, v.null()),
+  confirmedCount: v.number(),
+  confirmedMinutes: v.number(),
+  dateJst: v.string(),
+  //? 今日・未記録・並んだ件数0 の日は消化を出さない(null)。0% と描くと「サボった」に見え、
+  //? CONTEXT「消化」の定義(計画が残ったかの指標。計画が無い日は指標そのものが無い)に反する。
+  digestRate: v.union(v.number(), v.null()),
+  kind: dayViewKindValidator,
+  plannedCount: v.number(),
+  skippedCount: v.number(),
+});
+
+export type WeeklyReviewDay = Infer<typeof weeklyReviewDayValidator>;
+
+//* 週次レビュー画面1枚ぶん。前週比のラベル整形はクライアントの純関数が担う。
+export const weeklyReviewValidator = v.object({
+  //? 確定記録が1件以上ある暦日数。週間ターゲットの days 計器と同じ「実施日」の定義。
+  activeDays: v.number(),
+  byDay: v.array(weeklyReviewDayValidator),
+  confirmedMinutes: v.number(),
+  digest: weeklyDigestValidator,
+  //? 週内で今日以前の暦日数(過去週なら7)。1日平均の分母。
+  elapsedDays: v.number(),
+  isCurrentWeek: v.boolean(),
+  previousActiveDays: v.number(),
+  previousConfirmedMinutes: v.number(),
+  previousWeekStart: v.string(),
+  shareMarkdown: v.string(),
+  skippedMinutes: v.number(),
+  //? 週間ターゲットは「今週専用の計器」(CONTEXT)。過去週は null を返し、UI は数値を描かない。
+  targets: v.union(v.array(targetProgressDtoValidator), v.null()),
+  weekEnd: v.string(),
+  weekStart: v.string(),
+});
+
+export type WeeklyReviewDto = Infer<typeof weeklyReviewValidator>;

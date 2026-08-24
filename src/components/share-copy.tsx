@@ -1,13 +1,24 @@
 import { Button, CopyButton, EmptyState, Stack, Textarea, Title } from "@mantine/core";
 import { IconShare } from "@tabler/icons-react";
 
-export function ShareCopy({ markdown }: Record<"markdown", string>) {
+type ShareCopyProps = {
+  emptyDescription?: string;
+  markdown: string;
+  title?: string;
+};
+
+//? 日ページと週次レビューの2箇所で使うので共有ゾーンに置く。文言だけ props で差し替える
+export function ShareCopy({
+  emptyDescription = "この日の記録を確定すると、共有文がここに生成されます。",
+  markdown,
+  title = "共有文",
+}: ShareCopyProps) {
   if (markdown === "") {
     return (
       <Stack gap="sm">
-        <Title order={3}>共有文</Title>
+        <Title order={3}>{title}</Title>
         <EmptyState
-          description="この日の記録を確定すると、共有文がここに生成されます。"
+          description={emptyDescription}
           icon={<IconShare aria-hidden />}
           title="共有文はまだありません"
         />
@@ -17,8 +28,8 @@ export function ShareCopy({ markdown }: Record<"markdown", string>) {
 
   return (
     <Stack gap="sm">
-      <Title order={3}>共有文</Title>
-      <Textarea label="共有文" minRows={6} readOnly value={markdown} />
+      <Title order={3}>{title}</Title>
+      <Textarea label={title} minRows={6} readOnly value={markdown} />
       <CopyButton value={markdown}>
         {({ copied, copy }) => (
           <Button onClick={copy} variant="light">

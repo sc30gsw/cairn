@@ -20,6 +20,7 @@ import { isDateJst, weekdayFromDateJst, type DateJst } from "~domain/jst";
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
 import { LearningDateNavigation } from "~/components/learning-date-navigation";
+import { ShareCopy } from "~/components/share-copy";
 import { AdhocRowForm } from "~/features/today/components/adhoc-row-form";
 import {
   useOptionalDayBoardContext,
@@ -28,7 +29,6 @@ import {
 import { DayBoardKanbanLink } from "~/features/today/components/day-board-kanban-link";
 import { DayMetaPanel } from "~/features/today/components/day-meta-panel";
 import { RowEditor } from "~/features/today/components/row-editor";
-import { ShareCopy } from "~/features/today/components/share-copy";
 import { useApplyPresetFromSearch } from "~/features/today/hooks/use-apply-preset-from-search";
 import { useDayBoardActions } from "~/features/today/hooks/use-day-board-actions";
 import { emptyDayCopy } from "~/features/today/lib/empty-day-copy";

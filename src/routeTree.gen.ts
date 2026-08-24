@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrashRouteImport } from './routes/trash'
+import { Route as ReviewRouteImport } from './routes/review'
 import { Route as PresetsRouteImport } from './routes/presets'
 import { Route as MyPageRouteImport } from './routes/my-page'
 import { Route as ItemsRouteImport } from './routes/items'
@@ -23,6 +24,11 @@ import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 const TrashRoute = TrashRouteImport.update({
   id: '/trash',
   path: '/trash',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PresetsRoute = PresetsRouteImport.update({
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/items': typeof ItemsRoute
   '/my-page': typeof MyPageRoute
   '/presets': typeof PresetsRoute
+  '/review': typeof ReviewRoute
   '/trash': typeof TrashRoute
   '/days/$dateJst': typeof DaysDateJstRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/items': typeof ItemsRoute
   '/my-page': typeof MyPageRoute
   '/presets': typeof PresetsRoute
+  '/review': typeof ReviewRoute
   '/trash': typeof TrashRoute
   '/days/$dateJst': typeof DaysDateJstRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/items': typeof ItemsRoute
   '/my-page': typeof MyPageRoute
   '/presets': typeof PresetsRoute
+  '/review': typeof ReviewRoute
   '/trash': typeof TrashRoute
   '/days/$dateJst': typeof DaysDateJstRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/items'
     | '/my-page'
     | '/presets'
+    | '/review'
     | '/trash'
     | '/days/$dateJst'
     | '/api/auth/$'
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/items'
     | '/my-page'
     | '/presets'
+    | '/review'
     | '/trash'
     | '/days/$dateJst'
     | '/api/auth/$'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/items'
     | '/my-page'
     | '/presets'
+    | '/review'
     | '/trash'
     | '/days/$dateJst'
     | '/api/auth/$'
@@ -155,6 +167,7 @@ export interface RootRouteChildren {
   ItemsRoute: typeof ItemsRoute
   MyPageRoute: typeof MyPageRoute
   PresetsRoute: typeof PresetsRoute
+  ReviewRoute: typeof ReviewRoute
   TrashRoute: typeof TrashRoute
   DaysDateJstRoute: typeof DaysDateJstRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -167,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/trash'
       fullPath: '/trash'
       preLoaderRoute: typeof TrashRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/presets': {
@@ -243,6 +263,7 @@ const rootRouteChildren: RootRouteChildren = {
   ItemsRoute: ItemsRoute,
   MyPageRoute: MyPageRoute,
   PresetsRoute: PresetsRoute,
+  ReviewRoute: ReviewRoute,
   TrashRoute: TrashRoute,
   DaysDateJstRoute: DaysDateJstRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

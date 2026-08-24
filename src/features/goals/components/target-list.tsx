@@ -1,11 +1,8 @@
 import { ActionIcon, Group, Paper, Progress, Stack, Text, VisuallyHidden } from "@mantine/core";
 import { IconCircleCheck, IconTrash } from "@tabler/icons-react";
 
-import {
-  TARGET_METRIC_LABELS,
-  TARGET_METRIC_UNITS,
-} from "~/features/goals/lib/target-metric-labels";
 import type { TargetId, TargetProgress } from "~/features/goals/types/target";
+import { TARGET_METRIC_LABELS, TARGET_METRIC_UNITS } from "~/lib/target-metric-labels";
 
 type TargetListProps = {
   onRemove: (targetId: TargetId) => void;

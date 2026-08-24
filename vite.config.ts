@@ -19,6 +19,7 @@ const FEATURE_NAMES = [
   "history",
   "my-page",
   "onboarding",
+  "review",
   "today",
   "trash",
 ] as const;
@@ -269,7 +270,7 @@ export default defineConfig({
         "src/features/goals/lib/goal-tier-transition.ts",
         "src/features/goals/lib/goal-tree.ts",
         "src/features/goals/lib/goal-type-labels.ts",
-        "src/features/goals/lib/target-metric-labels.ts",
+        "src/lib/target-metric-labels.ts",
         "src/features/goals/lib/weekly-trend-chart-data.ts",
         "src/features/goals/lib/weekly-trend-format.ts",
         "src/features/goals/lib/weekly-trend-streak.ts",

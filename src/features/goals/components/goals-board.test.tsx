@@ -1,4 +1,5 @@
 import { fireEvent, waitFor, within } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { ACHIEVED_SECTION_TITLE } from "~/features/goals/components/achieved-history-section";
@@ -29,6 +30,10 @@ import type { Goal } from "~/features/goals/types/goal";
 import type { TargetProgress } from "~/features/goals/types/target";
 import { renderWithMantine } from "~/test-utils/render";
 import type { CategoryDto } from "~/types/category";
+
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({ children }: Record<"children", ReactNode>) => <a href="/review">{children}</a>,
+}));
 
 const TODAY = "2026-08-17";
 const NEXT_SUNDAY = "2026-08-23";

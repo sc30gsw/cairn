@@ -1,4 +1,5 @@
 import type { Weekday } from "./catalog";
+import { completedCount, confirmedRatio } from "./completionRate";
 import { STATUSES, type Status } from "./domain";
 import { weekdayFromDateJst } from "./jst";
 
@@ -50,15 +51,11 @@ function emptyCounts(weekday: Weekday): WeekdayCounts {
 }
 
 export function plannedCount(counts: WeekdayCounts): number {
-  return counts.confirmed + counts.leftover + counts.ongoing + counts.skipped;
+  return completedCount(counts);
 }
 
 export function digestRate(counts: WeekdayCounts): number {
-  const planned = plannedCount(counts);
-  if (planned === 0) {
-    return 0;
-  }
-  return counts.confirmed / planned;
+  return confirmedRatio(counts);
 }
 
 export function countByWeekday(rows: readonly StatusedRow[]): WeekdayCounts[] {
