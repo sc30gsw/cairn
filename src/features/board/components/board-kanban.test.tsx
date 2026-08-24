@@ -4,7 +4,7 @@ import { beforeEach, expect, test, vi } from "vite-plus/test";
 import { STATUSES } from "~domain/domain";
 
 import { BoardKanban } from "~/features/board/components/board-kanban";
-import type { BoardObstacle, BoardRow } from "~/features/board/types/board";
+import type { BoardRow } from "~/features/board/types/board";
 import { renderWithMantine } from "~/test-utils/render";
 
 const [confirmed, pending, ongoing, skipped] = STATUSES;
@@ -70,18 +70,10 @@ function row(
   };
 }
 
-test("カンバンは未着手・進行中・確定・スキップとチェックポイントを並べる", () => {
-  const obstacle = {
-    _id: "o1" as BoardObstacle["_id"],
-    ifText: "眠い",
-    thenText: "金フレを1ページだけ開く",
-  } satisfies BoardObstacle;
-
+test("カンバンは未着手・進行中・確定・スキップを並べる", () => {
   const { getAllByText, getByLabelText, getByRole, getByText } = renderWithMantine(
     <BoardKanban
-      checkpointLabel="Part 2 を聞き取る（2026-08-20）"
       dateJst="2026-08-17"
-      obstacles={[obstacle]}
       rows={[
         row("r1", pending, "Distinction 2000"),
         row("r2", confirmed, "金のフレーズ"),
@@ -90,20 +82,14 @@ test("カンバンは未着手・進行中・確定・スキップとチェッ�
     />,
   );
 
-  expect(getAllByText("未着手").length).toBeGreaterThanOrEqual(2);
+  expect(getAllByText("未着手").length).toBeGreaterThanOrEqual(1);
   expect(getByText("進行中")).toBeDefined();
   expect(getByText("確定")).toBeDefined();
   expect(getByText("スキップ")).toBeDefined();
-  expect(getAllByText("チェックポイント").length).toBeGreaterThanOrEqual(2);
   expect(getByText("Distinction 2000")).toBeDefined();
   expect(getByText("金のフレーズ")).toBeDefined();
   expect(getByText("英会話")).toBeDefined();
-  expect(getByText("金フレを1ページだけ開く")).toBeDefined();
-  expect(getByText("Part 2 を聞き取る（2026-08-20）")).toBeDefined();
   expect(getByRole("link", { name: /Distinction 2000/ }).getAttribute("href")).toBe("/");
-  expect(getByRole("link", { name: /金フレを1ページだけ開く/ }).getAttribute("href")).toBe(
-    "/goals",
-  );
   expect(getByLabelText("Distinction 2000 の順序を変更")).toBeDefined();
 });
 
@@ -111,9 +97,7 @@ test("カンバンは未着手・進行中・確定・スキップとチェッ�
 test("列は名前付きの束で、各列に件数が付く", () => {
   const { getByLabelText, getByRole } = renderWithMantine(
     <BoardKanban
-      checkpointLabel={null}
       dateJst="2026-08-17"
-      obstacles={[]}
       rows={[row("r1", pending, "Distinction 2000"), row("r2", pending, "金のフレーズ")]}
     />,
   );
@@ -127,9 +111,7 @@ test("列は名前付きの束で、各列に件数が付く", () => {
 test("計測がある進行中の行を確定すると stopTimer が先に走り、モーダルが計測値で開く", async () => {
   const { findByLabelText, getByRole } = renderWithMantine(
     <BoardKanban
-      checkpointLabel={null}
       dateJst="2026-08-17"
-      obstacles={[]}
       rows={[
         row("r1", ongoing, "金のフレーズ", {
           content: "Unit 1",
@@ -140,7 +122,7 @@ test("計測がある進行中の行を確定すると stopTimer が先に走り
     />,
   );
 
-  getByRole("button", { name: "確定" }).click();
+  getByRole("button", { name: "確定する" }).click();
 
   const minutesInput = await findByLabelText("分数");
   expect(onStopTimerMock).toHaveBeenCalledWith({ rowId: "r1" });
@@ -152,14 +134,12 @@ test("計測がある進行中の行を確定すると stopTimer が先に走り
 test("計測が無く内容と分数が埋まった行はモーダルなしで確定する", async () => {
   const { getByRole, queryByLabelText } = renderWithMantine(
     <BoardKanban
-      checkpointLabel={null}
       dateJst="2026-08-17"
-      obstacles={[]}
       rows={[row("r2", ongoing, "Distinction 2000", { content: "Unit 1", minutes: 30 })]}
     />,
   );
 
-  getByRole("button", { name: "確定" }).click();
+  getByRole("button", { name: "確定する" }).click();
   await vi.waitFor(() => {
     expect(onConfirmMock).toHaveBeenCalledWith({
       content: "Unit 1",
@@ -177,9 +157,7 @@ test("計測が無く内容と分数が埋まった行はモーダルなしで�
 test("メニューから完了にすると、計測がある行は stopTimer の解決後に計測値でモーダルが開く", async () => {
   const { findByLabelText, getByRole } = renderWithMantine(
     <BoardKanban
-      checkpointLabel={null}
       dateJst="2026-08-17"
-      obstacles={[]}
       rows={[
         row("r1", ongoing, "金のフレーズ", {
           content: "Unit 1",
@@ -203,9 +181,7 @@ test("メニューから完了にすると、計測がある行は stopTimer の
 test("メニューから完了にすると、計測が無く埋まった行は直接確定される", async () => {
   const { getByRole, queryByLabelText } = renderWithMantine(
     <BoardKanban
-      checkpointLabel={null}
       dateJst="2026-08-17"
-      obstacles={[]}
       rows={[row("r2", pending, "Distinction 2000", { content: "Unit 1", minutes: 30 })]}
     />,
   );
@@ -228,9 +204,7 @@ test("メニューから完了にすると、計測が無く埋まった行は�
 test("メニューから見送りにすると、確認してからスキップされる", async () => {
   const { findByRole, getByRole } = renderWithMantine(
     <BoardKanban
-      checkpointLabel={null}
       dateJst="2026-08-17"
-      obstacles={[]}
       rows={[
         row("r1", ongoing, "金のフレーズ", {
           content: "Unit 1",
@@ -258,9 +232,7 @@ test("メニューから見送りにすると、確認してからスキップ�
 test("見送りの確認をキャンセルすると、スキップは走らない", async () => {
   const { findByRole, getByRole } = renderWithMantine(
     <BoardKanban
-      checkpointLabel={null}
       dateJst="2026-08-17"
-      obstacles={[]}
       rows={[
         row("r1", ongoing, "金のフレーズ", {
           content: "Unit 1",
@@ -289,9 +261,7 @@ test("見送りの確認をキャンセルすると、スキップは走らな�
 test("メニューの「下へ」は同じ列の並べ替えを送る", async () => {
   const { getByRole } = renderWithMantine(
     <BoardKanban
-      checkpointLabel={null}
       dateJst="2026-08-17"
-      obstacles={[]}
       rows={[row("r1", pending, "Distinction 2000"), row("r2", pending, "金のフレーズ")]}
     />,
   );

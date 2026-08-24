@@ -19,6 +19,9 @@ import type { KanbanStatusMove } from "~/features/board/lib/kanban-order";
 import type { BoardRow } from "~/features/board/types/board";
 import { runMutation } from "~/lib/run-mutation";
 
+//* ボードでは Toast を一切出さない。失敗は楽観更新の巻き戻りで伝わる(オーナー決定 2026-08-24)。
+const silent = { silent: true } as const;
+
 export function useBoardKanbanActions(dateJst: DateJst) {
   const today = todayJst();
   const applyOrder = useBoardApplyRowOrder(dateJst, today);
@@ -38,24 +41,24 @@ export function useBoardKanbanActions(dateJst: DateJst) {
     let accumulatedMs: number | null = null;
     await runMutation(async () => {
       accumulatedMs = await stopRowTimer.mutateAsync({ rowId });
-    });
+    }, silent);
     return accumulatedMs;
   }
 
   const onConfirm = (input: Parameters<typeof confirmRow.mutateAsync>[0]) =>
-    runMutation(() => confirmRow.mutateAsync(input)).then(() => undefined);
+    runMutation(() => confirmRow.mutateAsync(input), silent).then(() => undefined);
   const onSkip = (input: Parameters<typeof skipRow.mutateAsync>[0]) =>
-    runMutation(() => skipRow.mutateAsync(input)).then(() => undefined);
+    runMutation(() => skipRow.mutateAsync(input), silent).then(() => undefined);
   const onUnconfirm = (input: Parameters<typeof unconfirmRow.mutateAsync>[0]) =>
-    runMutation(() => unconfirmRow.mutateAsync(input)).then(() => undefined);
+    runMutation(() => unconfirmRow.mutateAsync(input), silent).then(() => undefined);
   const onUnskip = (input: Parameters<typeof unskipRow.mutateAsync>[0]) =>
-    runMutation(() => unskipRow.mutateAsync(input)).then(() => undefined);
+    runMutation(() => unskipRow.mutateAsync(input), silent).then(() => undefined);
   const onStart = (input: Parameters<typeof startRow.mutateAsync>[0]) =>
-    runMutation(() => startRow.mutateAsync(input)).then(() => undefined);
+    runMutation(() => startRow.mutateAsync(input), silent).then(() => undefined);
   const onPause = (input: Parameters<typeof pauseRow.mutateAsync>[0]) =>
-    runMutation(() => pauseRow.mutateAsync(input)).then(() => undefined);
+    runMutation(() => pauseRow.mutateAsync(input), silent).then(() => undefined);
   const onReopen = (input: Parameters<typeof reopenRow.mutateAsync>[0]) =>
-    runMutation(() => reopenRow.mutateAsync(input)).then(() => undefined);
+    runMutation(() => reopenRow.mutateAsync(input), silent).then(() => undefined);
 
   return {
     onStopTimer,
@@ -104,8 +107,8 @@ export function useBoardKanbanActions(dateJst: DateJst) {
       }
     },
     onResumeTimer: (input: Parameters<typeof resumeRowTimer.mutateAsync>[0]) =>
-      runMutation(() => resumeRowTimer.mutateAsync(input)).then(() => undefined),
+      runMutation(() => resumeRowTimer.mutateAsync(input), silent).then(() => undefined),
     onApplyOrder: (input: Parameters<typeof applyOrder.mutateAsync>[0]) =>
-      runMutation(() => applyOrder.mutateAsync(input)).then(() => undefined),
+      runMutation(() => applyOrder.mutateAsync(input), silent).then(() => undefined),
   };
 }

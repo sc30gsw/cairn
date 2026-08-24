@@ -5,12 +5,12 @@ import { MonthlyCategoryComparison } from "~/features/review/components/monthly-
 import { MonthlyDigestTrendChart } from "~/features/review/components/monthly-digest-trend-chart";
 import { MonthlyReviewMonthNav } from "~/features/review/components/monthly-review-month-nav";
 import { MonthlyReviewSummaryCards } from "~/features/review/components/monthly-review-summary-cards";
-import { useMonthlyReview } from "~/features/review/hooks/review-queries";
 import { useReviewView } from "~/features/review/hooks/use-review-view";
 import {
   historyMonthAnalysisLink,
   yearMonthLabel,
 } from "~/features/review/lib/monthly-review-labels";
+import { useMonthlyReview } from "~/hooks/review-queries";
 
 export function MonthlyReviewTab() {
   const { setMonth, today, yearMonth } = useReviewView();

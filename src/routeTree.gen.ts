@@ -18,6 +18,9 @@ import { Route as HistoryRouteImport } from './routes/history'
 import { Route as GoalsRouteImport } from './routes/goals'
 import { Route as BoardRouteImport } from './routes/board'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MyPageIndexRouteImport } from './routes/my-page.index'
+import { Route as MyPageStatusRouteImport } from './routes/my-page.status'
+import { Route as MyPageNotificationsRouteImport } from './routes/my-page.notifications'
 import { Route as DaysDateJstRouteImport } from './routes/days.$dateJst'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
@@ -66,6 +69,21 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MyPageIndexRoute = MyPageIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => MyPageRoute,
+} as any)
+const MyPageStatusRoute = MyPageStatusRouteImport.update({
+  id: '/status',
+  path: '/status',
+  getParentRoute: () => MyPageRoute,
+} as any)
+const MyPageNotificationsRoute = MyPageNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => MyPageRoute,
+} as any)
 const DaysDateJstRoute = DaysDateJstRouteImport.update({
   id: '/days/$dateJst',
   path: '/days/$dateJst',
@@ -83,11 +101,14 @@ export interface FileRoutesByFullPath {
   '/goals': typeof GoalsRoute
   '/history': typeof HistoryRoute
   '/items': typeof ItemsRoute
-  '/my-page': typeof MyPageRoute
+  '/my-page': typeof MyPageRouteWithChildren
   '/presets': typeof PresetsRoute
   '/review': typeof ReviewRoute
   '/trash': typeof TrashRoute
   '/days/$dateJst': typeof DaysDateJstRoute
+  '/my-page/notifications': typeof MyPageNotificationsRoute
+  '/my-page/status': typeof MyPageStatusRoute
+  '/my-page/': typeof MyPageIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
@@ -96,11 +117,13 @@ export interface FileRoutesByTo {
   '/goals': typeof GoalsRoute
   '/history': typeof HistoryRoute
   '/items': typeof ItemsRoute
-  '/my-page': typeof MyPageRoute
   '/presets': typeof PresetsRoute
   '/review': typeof ReviewRoute
   '/trash': typeof TrashRoute
   '/days/$dateJst': typeof DaysDateJstRoute
+  '/my-page/notifications': typeof MyPageNotificationsRoute
+  '/my-page/status': typeof MyPageStatusRoute
+  '/my-page': typeof MyPageIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
@@ -110,11 +133,14 @@ export interface FileRoutesById {
   '/goals': typeof GoalsRoute
   '/history': typeof HistoryRoute
   '/items': typeof ItemsRoute
-  '/my-page': typeof MyPageRoute
+  '/my-page': typeof MyPageRouteWithChildren
   '/presets': typeof PresetsRoute
   '/review': typeof ReviewRoute
   '/trash': typeof TrashRoute
   '/days/$dateJst': typeof DaysDateJstRoute
+  '/my-page/notifications': typeof MyPageNotificationsRoute
+  '/my-page/status': typeof MyPageStatusRoute
+  '/my-page/': typeof MyPageIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
@@ -130,6 +156,9 @@ export interface FileRouteTypes {
     | '/review'
     | '/trash'
     | '/days/$dateJst'
+    | '/my-page/notifications'
+    | '/my-page/status'
+    | '/my-page/'
     | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -138,11 +167,13 @@ export interface FileRouteTypes {
     | '/goals'
     | '/history'
     | '/items'
-    | '/my-page'
     | '/presets'
     | '/review'
     | '/trash'
     | '/days/$dateJst'
+    | '/my-page/notifications'
+    | '/my-page/status'
+    | '/my-page'
     | '/api/auth/$'
   id:
     | '__root__'
@@ -156,6 +187,9 @@ export interface FileRouteTypes {
     | '/review'
     | '/trash'
     | '/days/$dateJst'
+    | '/my-page/notifications'
+    | '/my-page/status'
+    | '/my-page/'
     | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
@@ -165,7 +199,7 @@ export interface RootRouteChildren {
   GoalsRoute: typeof GoalsRoute
   HistoryRoute: typeof HistoryRoute
   ItemsRoute: typeof ItemsRoute
-  MyPageRoute: typeof MyPageRoute
+  MyPageRoute: typeof MyPageRouteWithChildren
   PresetsRoute: typeof PresetsRoute
   ReviewRoute: typeof ReviewRoute
   TrashRoute: typeof TrashRoute
@@ -238,6 +272,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/my-page/': {
+      id: '/my-page/'
+      path: '/'
+      fullPath: '/my-page/'
+      preLoaderRoute: typeof MyPageIndexRouteImport
+      parentRoute: typeof MyPageRoute
+    }
+    '/my-page/status': {
+      id: '/my-page/status'
+      path: '/status'
+      fullPath: '/my-page/status'
+      preLoaderRoute: typeof MyPageStatusRouteImport
+      parentRoute: typeof MyPageRoute
+    }
+    '/my-page/notifications': {
+      id: '/my-page/notifications'
+      path: '/notifications'
+      fullPath: '/my-page/notifications'
+      preLoaderRoute: typeof MyPageNotificationsRouteImport
+      parentRoute: typeof MyPageRoute
+    }
     '/days/$dateJst': {
       id: '/days/$dateJst'
       path: '/days/$dateJst'
@@ -255,13 +310,28 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface MyPageRouteChildren {
+  MyPageNotificationsRoute: typeof MyPageNotificationsRoute
+  MyPageStatusRoute: typeof MyPageStatusRoute
+  MyPageIndexRoute: typeof MyPageIndexRoute
+}
+
+const MyPageRouteChildren: MyPageRouteChildren = {
+  MyPageNotificationsRoute: MyPageNotificationsRoute,
+  MyPageStatusRoute: MyPageStatusRoute,
+  MyPageIndexRoute: MyPageIndexRoute,
+}
+
+const MyPageRouteWithChildren =
+  MyPageRoute._addFileChildren(MyPageRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BoardRoute: BoardRoute,
   GoalsRoute: GoalsRoute,
   HistoryRoute: HistoryRoute,
   ItemsRoute: ItemsRoute,
-  MyPageRoute: MyPageRoute,
+  MyPageRoute: MyPageRouteWithChildren,
   PresetsRoute: PresetsRoute,
   ReviewRoute: ReviewRoute,
   TrashRoute: TrashRoute,

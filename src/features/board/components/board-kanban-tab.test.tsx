@@ -36,11 +36,6 @@ vi.mock("~/hooks/use-open-and-load-day", () => ({
   }),
 }));
 
-vi.mock("~/hooks/goals-queries", () => ({
-  useGoalsList: () => ({ data: [] }),
-  useObstaclesList: () => ({ data: [] }),
-}));
-
 vi.mock("~/features/board/hooks/use-board-kanban-actions", () => ({
   useBoardKanbanActions: () => ({
     onApplyOrder: vi.fn(),

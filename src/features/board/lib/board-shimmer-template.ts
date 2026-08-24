@@ -1,6 +1,6 @@
 import { STATUSES } from "~domain/domain";
 
-import type { BoardObstacle, BoardRow } from "~/features/board/types/board";
+import type { BoardRow } from "~/features/board/types/board";
 import { shimmerId } from "~/lib/shimmer-id";
 
 const [confirmed, pending] = STATUSES;
@@ -31,9 +31,3 @@ export const boardShimmerRows = [
     timer: null,
   },
 ] as const satisfies readonly BoardRow[];
-
-export const boardShimmerObstacle = {
-  _id: shimmerId<BoardObstacle["_id"]>("obstacle-1"),
-  ifText: "眠い",
-  thenText: "金フレを1ページだけ開く",
-} satisfies BoardObstacle;

@@ -1,4 +1,4 @@
-import { ActionIcon, Alert, Button, Group, Indicator, Paper, Text, Tooltip } from "@mantine/core";
+import { ActionIcon, Alert, Group, Indicator, Paper, Text, Tooltip } from "@mantine/core";
 import {
   IconAlertTriangle,
   IconCheck,
@@ -100,15 +100,18 @@ export function RowTimerChip({
               </ActionIcon>
             </Tooltip>
           )}
-          <Button
-            color="green"
-            disabled={disabled}
-            leftSection={<IconCheck aria-hidden size={14} />}
-            onClick={onConfirm}
-            size="compact-xs"
-          >
-            確定
-          </Button>
+          <Tooltip label="確定する" withArrow>
+            <ActionIcon
+              aria-label="確定する"
+              color="green"
+              disabled={disabled}
+              onClick={onConfirm}
+              size="md"
+              variant="filled"
+            >
+              <IconCheck aria-hidden size={14} />
+            </ActionIcon>
+          </Tooltip>
         </Group>
       </Group>
       {autoStopped ? (

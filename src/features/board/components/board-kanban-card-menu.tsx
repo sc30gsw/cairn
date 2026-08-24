@@ -1,4 +1,4 @@
-import { ActionIcon, Menu } from "@mantine/core";
+import { ActionIcon, Menu, Tooltip } from "@mantine/core";
 import {
   IconArrowBackUp,
   IconArrowDown,
@@ -66,16 +66,18 @@ export function BoardKanbanCardMenu({
   return (
     <Menu position="bottom-end" withinPortal>
       <Menu.Target>
-        <ActionIcon
-          aria-label={`${row.itemName} の操作`}
-          color="gray"
-          disabled={disabled}
-          loading={pending}
-          size="md"
-          variant="subtle"
-        >
-          <IconDotsVertical aria-hidden size={16} stroke={1.5} />
-        </ActionIcon>
+        <Tooltip label="移動・並べ替え" withArrow>
+          <ActionIcon
+            aria-label={`${row.itemName} の操作`}
+            color="gray"
+            disabled={disabled}
+            loading={pending}
+            size="md"
+            variant="subtle"
+          >
+            <IconDotsVertical aria-hidden size={16} stroke={1.5} />
+          </ActionIcon>
+        </Tooltip>
       </Menu.Target>
       <Menu.Dropdown>
         <Menu.Label>移動</Menu.Label>

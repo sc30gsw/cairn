@@ -2,7 +2,6 @@ import type { DropResult } from "@hello-pangea/dnd";
 import { ActionIcon, Badge, Box, Card, Group, Stack, Text, Tooltip } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { IconGripVertical } from "@tabler/icons-react";
-import { Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import type { DateJst } from "~domain/jst";
 import { hasTimerState, measuredMs, timerMinutes, timerRunState } from "~domain/rowTimer";
@@ -22,7 +21,7 @@ import {
   type KanbanStatusMove,
   resolveKanbanStatusMove,
 } from "~/features/board/lib/kanban-order";
-import type { BoardObstacle, BoardRow } from "~/features/board/types/board";
+import type { BoardRow } from "~/features/board/types/board";
 import { useDnd } from "~/hooks/use-dnd";
 import { RECORD_STATUS_UI, statusTooltip } from "~/lib/record-status-ui";
 import { serverNowMs } from "~/lib/server-clock";
@@ -31,10 +30,8 @@ import { formatTimerClock } from "~/lib/timer-clock";
 import classes from "~/features/board/components/board-kanban.module.css";
 
 type BoardKanbanProps = {
-  checkpointLabel: string | null;
   dateJst: DateJst;
   interactive?: boolean;
-  obstacles: readonly BoardObstacle[];
   rows: readonly BoardRow[];
 };
 
@@ -140,19 +137,6 @@ function RecordCard({
   );
 }
 
-function NextStepCard({ subtitle, title }: { subtitle: string; title: string }) {
-  return (
-    <Card component={Link} padding="sm" to="/goals" withBorder>
-      <TruncatedText fw={600} lineClamp={2} size="sm">
-        {title}
-      </TruncatedText>
-      <TruncatedText c="dimmed" lineClamp={2} size="xs">
-        {subtitle}
-      </TruncatedText>
-    </Card>
-  );
-}
-
 //* 進行中カラムの見出しに計測中の合計だけを添える。固定バーは置かない(#51 §13.3)。
 function columnHeadingLabel(status: KanbanColumn, rows: readonly BoardRow[]): string {
   if (status !== "進行中") {
@@ -165,13 +149,7 @@ function columnHeadingLabel(status: KanbanColumn, rows: readonly BoardRow[]): st
   return `${status} · 計測 ${formatTimerClock(measuredMs(measuring.timer, serverNowMs()))}`;
 }
 
-export function BoardKanban({
-  checkpointLabel,
-  dateJst,
-  interactive = true,
-  obstacles,
-  rows,
-}: BoardKanbanProps) {
+export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanProps) {
   const { onApplyOrder, onConfirm, onPause, onResumeTimer, onSkip, onStatusMove, onStopTimer } =
     useBoardKanbanActions(dateJst);
   const { DragDropContext, Draggable, Droppable } = useDnd();
@@ -346,28 +324,6 @@ export function BoardKanban({
               </Droppable>
             );
           })}
-          <Stack className={classes.column} gap="xs">
-            <Tooltip label="障害対策と次の一手" withArrow>
-              <Text fw={600} size="sm">
-                チェックポイント
-              </Text>
-            </Tooltip>
-            {obstacles.map((obstacle) => (
-              <NextStepCard
-                key={obstacle._id}
-                subtitle={obstacle.ifText}
-                title={obstacle.thenText}
-              />
-            ))}
-            {checkpointLabel === null ? null : (
-              <NextStepCard subtitle="チェックポイント" title={checkpointLabel} />
-            )}
-            {obstacles.length === 0 && checkpointLabel === null ? (
-              <Text c="dimmed" size="sm">
-                なし
-              </Text>
-            ) : null}
-          </Stack>
         </section>
       </DragDropContext>
     </>
