@@ -1,4 +1,4 @@
-import { fireEvent, waitFor } from "@testing-library/react";
+import { fireEvent, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
 import { STATUSES } from "~domain/domain";
@@ -13,6 +13,7 @@ const noop = vi.fn(async () => undefined);
 const onConfirmMock = vi.fn(async () => undefined);
 const onStopTimerMock = vi.fn(async () => 754_000);
 const onApplyOrderMock = vi.fn(async () => undefined);
+const onSkipMock = vi.fn(async () => undefined);
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, to }: { children?: ReactNode; to: string }) => <a href={to}>{children}</a>,
@@ -26,7 +27,7 @@ vi.mock("~/features/board/hooks/board-mutations", () => ({
   useBoardPauseRow: () => ({ mutateAsync: noop }),
   useBoardReopenRow: () => ({ mutateAsync: noop }),
   useBoardResumeRowTimer: () => ({ mutateAsync: noop }),
-  useBoardSkipRow: () => ({ mutateAsync: noop }),
+  useBoardSkipRow: () => ({ mutateAsync: onSkipMock }),
   useBoardStartRow: () => ({ mutateAsync: noop }),
   useBoardStopRowTimer: () => ({ mutateAsync: onStopTimerMock }),
   useBoardUnconfirmRow: () => ({ mutateAsync: noop }),
@@ -37,6 +38,7 @@ beforeEach(() => {
   noop.mockClear();
   onApplyOrderMock.mockClear();
   onConfirmMock.mockClear();
+  onSkipMock.mockClear();
   onStopTimerMock.mockClear();
 });
 
@@ -220,6 +222,68 @@ test("メニューから完了にすると、計測が無く埋まった行は�
   });
   expect(onStopTimerMock).not.toHaveBeenCalled();
   expect(queryByLabelText("分数")).toBeNull();
+});
+
+//* #51 §13.4 / #58 §11.3: 計測を捨てる移動は、メニュー経路でも必ず Confirm を通る。
+test("メニューから見送りにすると、確認してからスキップされる", async () => {
+  const { findByRole, getByRole } = renderWithMantine(
+    <BoardKanban
+      checkpointLabel={null}
+      dateJst="2026-08-17"
+      obstacles={[]}
+      rows={[
+        row("r1", ongoing, "金のフレーズ", {
+          content: "Unit 1",
+          timer: { accumulatedMs: 754_000, autoStoppedAt: null, startedAt: null },
+        }),
+      ]}
+    />,
+  );
+
+  fireEvent.click(getByRole("button", { name: "金のフレーズ の操作" }));
+  fireEvent.click(
+    await waitFor(() => getByRole("menuitem", { hidden: true, name: "見送りにする" })),
+  );
+
+  const dialog = await findByRole("dialog");
+  expect(within(dialog).getByText(/計測した13分は残りません/)).toBeDefined();
+  expect(onSkipMock).not.toHaveBeenCalled();
+
+  within(dialog).getByRole("button", { name: "見送りにする" }).click();
+  await vi.waitFor(() => {
+    expect(onSkipMock).toHaveBeenCalledWith({ rowId: "r1" });
+  });
+});
+
+test("見送りの確認をキャンセルすると、スキップは走らない", async () => {
+  const { findByRole, getByRole } = renderWithMantine(
+    <BoardKanban
+      checkpointLabel={null}
+      dateJst="2026-08-17"
+      obstacles={[]}
+      rows={[
+        row("r1", ongoing, "金のフレーズ", {
+          content: "Unit 1",
+          timer: { accumulatedMs: 754_000, autoStoppedAt: null, startedAt: null },
+        }),
+      ]}
+    />,
+  );
+
+  fireEvent.click(getByRole("button", { name: "金のフレーズ の操作" }));
+  fireEvent.click(
+    await waitFor(() => getByRole("menuitem", { hidden: true, name: "見送りにする" })),
+  );
+
+  const dialog = await findByRole("dialog");
+  within(dialog).getByRole("button", { name: "キャンセル" }).click();
+
+  await waitFor(() => {
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+  });
+  expect(onSkipMock).not.toHaveBeenCalled();
+  //? 並べ替えを預けるのはドラッグ経路だけ。取り消しでどちらも動かない。
+  expect(onApplyOrderMock).not.toHaveBeenCalled();
 });
 
 test("メニューの「下へ」は同じ列の並べ替えを送る", async () => {

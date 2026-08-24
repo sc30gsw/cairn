@@ -510,6 +510,28 @@ test("slackEnabled かつ静穏外なら deliverSlack が1件積まれる", asyn
   expect(await scheduledNames(t)).toEqual(["actions/notifications/deliverSlack:deliverSlack"]);
 });
 
+//* 積まれた job を実際に走らせる。deliverSlack が内部で引く2本の参照(deliveryPayload /
+//? markSlackDelivered)まで通るので、名前だけの一致では見つからない綴り違いもここで落ちる。
+test("積まれた deliverSlack を走らせると Webhook を叩き、配信済みが記録される", async () => {
+  vi.useFakeTimers();
+  const t = asOwner();
+  await seedSettings(t, OWNER.subject, { slackEnabled: true, slackWebhookUrl: WEBHOOK });
+  await seedDay(t, { dateJst: THURSDAY, statuses: ["未着手"] });
+  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 21) });
+
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+
+  const [notification] = await notificationsOf(t);
+  expect(notification?.slackDeliveredAt).toBeTypeOf("number");
+  expect(notification?.slackError).toBeUndefined();
+  expect(globalThis.fetch).toHaveBeenCalledWith(
+    WEBHOOK,
+    expect.objectContaining({ method: "POST" }),
+  );
+  //? 連続失敗カウンタは成功で 0 のまま。
+  expect((await settingsDoc(t)).slackFailureStreak).toBe(0);
+});
+
 test("settings query の返り値に slackWebhookUrl キーが存在しない", async () => {
   const t = asOwner();
   await seedSettings(t, OWNER.subject, { slackEnabled: true, slackWebhookUrl: WEBHOOK });

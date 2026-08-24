@@ -48,6 +48,7 @@ function requestDiscardMeasurement(options: {
   confirmColor: string;
   confirmLabel: string;
   measuredMinutes: number;
+  onCancel: () => void;
   onConfirm: () => void;
   suffix: string;
   title: string;
@@ -56,6 +57,7 @@ function requestDiscardMeasurement(options: {
     children: `計測した${String(options.measuredMinutes)}分は残りません。${options.suffix}`,
     confirmProps: { color: options.confirmColor },
     labels: { cancel: "キャンセル", confirm: options.confirmLabel },
+    onCancel: options.onCancel,
     onConfirm: options.onConfirm,
     title: options.title,
   });
@@ -77,7 +79,8 @@ function RecordCard({
   onConfirm: () => void;
   onResume: () => void;
   onShift: (direction: -1 | 1, row: BoardRow) => void;
-  onStatusMove: (move: Exclude<KanbanStatusMove, "noop">, row: BoardRow) => Promise<void>;
+  //? 戻り値は読まない(保留したかどうかを気にするのはドラッグ経路だけ)。
+  onStatusMove: (move: Exclude<KanbanStatusMove, "noop">, row: BoardRow) => Promise<unknown>;
   onStop: () => void;
   row: BoardRow;
   rows: readonly BoardRow[];
@@ -190,22 +193,35 @@ export function BoardKanban({
 
   //* ドラッグ経路とメニュー経路の唯一の合流点。判定と確定手順はフック側(onStatusMove)にあり、
   //? ここが持つのは「計測を捨てる操作の Confirm」だけ(#51 §13.4 をどちらの経路でも通すため)。
-  async function moveRow(move: Exclude<KanbanStatusMove, "noop">, row: BoardRow) {
+  //? 戻り値の true は「モーダルを開いて保留した」。ドラッグ経路はそのとき並べ替えを確定させず、
+  //? pendingOrderRef に預ける — 取り消されたら並べ替えも起きなかったことにする。
+  async function moveRow(move: Exclude<KanbanStatusMove, "noop">, row: BoardRow): Promise<boolean> {
     if ((move === "skip" || move === "pause") && hasTimerState(row.timer)) {
       const measuredMinutes = timerMinutes(measuredMs(row.timer, serverNowMs()));
       requestDiscardMeasurement({
         confirmColor: move === "skip" ? "yellow" : "red",
         confirmLabel: move === "skip" ? "見送りにする" : "捨てて戻す",
         measuredMinutes,
+        onCancel: () => {
+          pendingOrderRef.current = null;
+        },
         onConfirm: () => {
-          void (move === "skip" ? onSkip({ rowId: row._id }) : onPause({ rowId: row._id }));
+          void (async () => {
+            await (move === "skip" ? onSkip({ rowId: row._id }) : onPause({ rowId: row._id }));
+            await applyPendingOrder();
+          })();
         },
         suffix: move === "skip" ? "学習量からは外れます。" : "",
         title: move === "skip" ? "見送りにしますか？" : "計測を捨てて未着手に戻しますか？",
       });
-      return;
+      return true;
     }
-    await onStatusMove(move, row, setConfirmTarget);
+    let deferred = false;
+    await onStatusMove(move, row, (target) => {
+      deferred = true;
+      setConfirmTarget(target);
+    });
+    return deferred;
   }
 
   //* 進行中カラムの計測チップからの確定も、必ず同じ合流点を通す。
@@ -251,14 +267,12 @@ export function BoardKanban({
       pendingOrderRef.current = { dateJst, orderedRowIds };
     }
 
-    if (statusMove !== "noop") {
-      await moveRow(statusMove, row);
+    //? モーダルが開いたら並べ替えはまだ確定させない。取り消されれば並べ替えも起きなかったことになる。
+    if (statusMove !== "noop" && (await moveRow(statusMove, row))) {
+      return;
     }
 
-    if (orderChanged) {
-      await onApplyOrder({ dateJst, orderedRowIds });
-      pendingOrderRef.current = null;
-    }
+    await applyPendingOrder();
   }
 
   return (

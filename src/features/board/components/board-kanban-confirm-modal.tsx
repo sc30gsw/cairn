@@ -7,7 +7,7 @@ import { hasTimerState } from "~domain/rowTimer";
 import type { BoardRow } from "~/features/board/types/board";
 import { RowEditorSchema } from "~/lib/validation/row-editor-schema";
 
-export type KanbanConfirmInput = {
+type KanbanConfirmInput = {
   content: string;
   minutes: number;
   rowId: BoardRow["_id"];

@@ -23,7 +23,7 @@ type MoveItem = { column: KanbanColumn; move: Exclude<KanbanStatusMove, "noop"> 
 type BoardKanbanCardMenuProps = {
   disabled: boolean;
   //* ドラッグ経路と同じ合流点を呼ぶ。ここで onConfirm を直接呼んではいけない(pwa-mobile.md §11.2)。
-  onStatusMove: (move: Exclude<KanbanStatusMove, "noop">, row: BoardRow) => Promise<void>;
+  onStatusMove: (move: Exclude<KanbanStatusMove, "noop">, row: BoardRow) => Promise<unknown>;
   onShift: (direction: -1 | 1, row: BoardRow) => void;
   row: BoardRow;
   rows: readonly BoardRow[];
