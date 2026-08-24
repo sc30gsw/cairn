@@ -15,7 +15,7 @@ import {
 import { IconNotes } from "@tabler/icons-react";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { isDateJst, weekdayFromDateJst, type DateJst } from "~domain/jst";
+import { isDateJst, type DateJst } from "~domain/jst";
 
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
@@ -32,6 +32,7 @@ import { RowEditor } from "~/features/today/components/row-editor";
 import { useApplyPresetFromSearch } from "~/features/today/hooks/use-apply-preset-from-search";
 import { useDayBoardActions } from "~/features/today/hooks/use-day-board-actions";
 import { emptyDayCopy } from "~/features/today/lib/empty-day-copy";
+import { weekdayPresetId } from "~/features/today/lib/weekday-preset";
 import { onRequiredSelect } from "~/lib/select";
 import { BODY_FONT, NUMERAL_FONT } from "~/lib/theme";
 import type { PresetDto, PresetId } from "~/types/item";
@@ -51,10 +52,6 @@ function requireDayBoardField<K extends keyof DayBoardContextValue>(
     throw new Error(`DayBoard requires ${String(key)} via props or DayBoardProvider`);
   }
   return value;
-}
-
-export function weekdayPresetId(dateJst: DateJst, presets: PresetDto[]) {
-  return presets.find((preset) => preset.weekday === weekdayFromDateJst(dateJst))?._id ?? null;
 }
 
 function presetSelectData(presets: PresetDto[]): ComboboxItem[] {
