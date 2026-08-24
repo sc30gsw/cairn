@@ -18,7 +18,7 @@ vi.mock("~/features/review/hooks/use-review-view", () => ({
   useReviewView: useReviewViewMock,
 }));
 
-vi.mock("~/features/review/hooks/review-queries", () => ({
+vi.mock("~/hooks/review-queries", () => ({
   useWeeklyReview: useWeeklyReviewMock,
 }));
 

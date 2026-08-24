@@ -6,13 +6,13 @@ import { WeeklyReviewDayTable } from "~/features/review/components/weekly-review
 import { WeeklyReviewSummaryCards } from "~/features/review/components/weekly-review-summary-cards";
 import { WeeklyReviewTargets } from "~/features/review/components/weekly-review-targets";
 import { WeeklyReviewWeekNav } from "~/features/review/components/weekly-review-week-nav";
-import { useWeeklyReview } from "~/features/review/hooks/review-queries";
 import { useReviewView } from "~/features/review/hooks/use-review-view";
 import {
   historyWeekAnalysisLink,
   monthDayLabel,
   weekdayShortLabel,
 } from "~/features/review/lib/weekly-review-labels";
+import { useWeeklyReview } from "~/hooks/review-queries";
 import { dayPageLink } from "~/lib/board-day-links";
 
 export function WeeklyReviewTab() {
