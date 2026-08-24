@@ -53,6 +53,8 @@
 
 INV-4 と INV-5 の合わせ技で階層は最大2層に固定される。
 
+**最終形（Phase 5 後）**: validator の最終形は [#49 §3.2](checkpoint-parent-backfill.md) の2枝 union（checkpoint = `deadline` + `parentGoalId` 必須 / longTerm = どちらも無し）で、INV-1 は保存形としてはスキーマが機械的に守る。ただし **Phase 5 後も INV-2〜5 と入力段の INV-1 チェックは services に残す**（他人の親・チェーン・自己参照は DB を読まないと判定できない）。フロントの型は #49 §8 の改修表に従って `Checkpoint` / `LongTermGoal` に分岐する（判定は `goal-tree.ts` の `isCheckpointGoal`）。本仕様が新規作成する `goal-tree.ts` / `checkpoint-row.tsx` は、この分岐が来る前提で書く（§15-3）。
+
 ---
 
 ## 3. Convex スキーマ変更
@@ -77,6 +79,8 @@ const goalIdField = { _id: v.id("goals"), createdAt: v.number() };
 ```
 
 派生する `masteryGoalFields` / `masteryGoalDocumentFields` / `goalDocumentValidator` / `goalDtoValidator` / `goalInputValidator` はいずれも既存の `.extend` 連鎖のままで、`parentGoalId` と `createdAt` が自動で流れる（CVX-16: 形の SSoT は validators.ts 1箇所）。
+
+**この1枝のままの形は #49 Phase 5 までの過渡形。** 最終形は [#49 §3.2](checkpoint-parent-backfill.md) の2枝 union（checkpoint = `deadline` + `parentGoalId` 必須 / longTerm = どちらも無し）で、Phase 5 後も INV-2〜5 と入力段の INV-1 チェックは services に残す。フロントの `MasteryGoal` 型は #49 §8 の改修表に従って `Checkpoint` / `LongTermGoal` に分岐する（本仕様が新規作成する `goal-tree.ts` は `isCheckpointGoal` の置き場所、`checkpoint-row.tsx` は Phase 5 で `Checkpoint` を受け取る形に寄せられる想定で書く）。`optional → required` の昇格手順そのものは #49 の担当（§1 / §15-11）。
 
 ### 3.2 `convex/schema.ts`
 
@@ -187,10 +191,11 @@ export type ParentGroup = {
 };
 
 export type GoalTree = {
-  //? 達成済みで、かつ未達成の子を持たないもの。achievedAt 降順 → createdAt 降順
+  //? 孤児でないもののうち、達成済みで未達成の子を持たないもの。achievedAt 降順 → createdAt 降順
   achieved: MasteryGoal[];
   exam: ParentGroup | undefined;
-  //? 親が解決できないチェックポイント(バックフィル前の安全網。#49 完了後は常に空)
+  //? 親が解決できないチェックポイント(バックフィル前の安全網。#49 完了後は常に空)。
+  //? 達成済みでもここに入る(孤児判定が達成済み判定より先。#49 §8)
   orphans: MasteryGoal[];
   //? createdAt 昇順(= 作成順)
   longTerm: ParentGroup[];
@@ -205,13 +210,17 @@ export function parentGoalOptions(goals: readonly Goal[], input: {
 }): ComboboxData;
 ```
 
+**評価順は「孤児 → 達成済み → 親グループ / 長期目標（親グループの子は未達成のみ）」で、上から評価して最初に当たった規則だけを適用する**（この順序の SSoT は [#49 §8](checkpoint-parent-backfill.md)。達成済みの孤児を先に `achieved` へ落とすと、#49 §5 規則4 = `plan: "manual"`（マイグレーションが throw する唯一の当事者）が `OrphanCheckpointsAlert` に現れず、Phase 2〜4 で「人が先に手で直す機会を作る」という #49 のフェーズ順序の根拠が崩れる）。
+
 `buildGoalTree` の仕分け規則（テストで固定する）:
 
 1. `exam` 型は1件。あればトップの親。
-2. `mastery` かつ `deadline` あり → 親 id で親グループへ。親が `goals` に無い / 親がチェックポイント → `orphans`。
+2. `mastery` かつ `deadline` あり → 親 id で親グループへ。`parentGoalId` が無い / 親が `goals` に無い / 親がチェックポイント → `orphans`。**`achievedAt` の有無は問わない**（達成済みの孤児も `orphans` に入る）。
 3. `mastery` かつ `deadline` なし → 長期目標の親グループ。
-4. **達成済みの扱い**: `achievedAt` があり、かつ未達成の子を持たないものは `achieved` へ移す。未達成の子が残っている達成済み長期目標は `longTerm` に残し、カードに「達成済み」バッジを出す（子が親を失って浮かないようにする / 二重表示は「子なし」条件で防ぐ）。
+4. **達成済みの扱い**: 規則2で孤児に落ちなかったもののうち、`achievedAt` があり、かつ未達成の子を持たないものは `achieved` へ移す。未達成の子が残っている達成済み長期目標は `longTerm` に残し、カードに「達成済み」バッジを出す（子が親を失って浮かないようにする / 二重表示は「子なし」条件で防ぐ）。
 5. 親グループの `checkpoints` は未達成のみ（達成済みの子は `achieved` に居る）。
+
+規則2 と規則4 は排他なので、同じ目標が `orphans` と `achieved` の両方に現れることはない。
 
 `parentGoalOptions` は Mantine のグループ付き `ComboboxData` を返す:
 
@@ -796,6 +805,7 @@ type RunMutationOptions<T> = {
 ### 13.2 純関数（Node プロジェクト / フロント unit）
 
 - `goal-tree.test.ts`: 仕分け5規則（§6.1）を1ケースずつ。特に「達成済み親 + 未達成の子」がツリーに残り達成セクションに出ないこと、孤児が `orphans` に落ちること、並び順（期限昇順 → createdAt、achievedAt 降順）。
+  - **評価順のケース（#49 §10 のテスト19 と同一物）**: 達成済みの孤児（`achievedAt` あり + `deadline` あり + 親が解決できない）が `orphans` に入り、`achieved` には入らない（規則2 が規則4 より先）。このケースは #49 Phase 5 で `orphans` フィールドごと削除される（#49 §8）ので、削除時に一緒に落とす前提で書く。
 - `goal-tier-transition.test.ts`: 4種の遷移。
 - `goal-remove-confirm.test.ts`: 子0件 / 3件 / 5件（「ほか2件」）/ 達成済み内訳あり、本番目標と長期目標のタイトル差。
 - `goal-schema.test.ts`: 新規長期目標に `deadline` キーが無いこと、新規チェックポイントで期限・親が必須、編集で XOR が `parentGoalId` にフォワードされること。
@@ -840,7 +850,8 @@ type RunMutationOptions<T> = {
    設計ファイルは階層のない一覧なので、枠付き行が兄弟として並んでいた。階層では枠 in 枠になり、1.5px インク罫が二重に見える。「紙1枚に子を書き込む」方が Paper Redesign の比喩に合う。**却下**。ただし設計ファイルの行の内部構造（チェックボックス / 内容+基準 / 期限 orange / 確定の数値 / 操作アイコン）はそのまま踏襲し、外枠だけ落とす。設計ファイルに階層ケースの記述はないため、これは「言語の踏襲 + 最小の拡張」であり設計ファイルとの矛盾ではない。
 
 3. **validator を3分岐 union にして INV-1 を構造的に表現不能にする**（`exam` / 期限なし mastery / 期限+親 mastery）。
-   最強の強制になるが、(a) Valibot の `v.variant("type", …)` は判別子の値が一意でなければならず、mastery が2枝になると `v.union` へ落ちてフィールド単位のエラー対象付けを失う、(b) TypeScript 上 `goal.deadline` が union の片枝にしか存在せず `"deadline" in goal` narrowing が全箇所に伝播する、(c) それでも INV-2〜5（親の所有者・種別・自己参照・チェーン）は services でしか検査できないので不変条件は2箇所に分かれる。**却下**。代わりに INV-1 も services に集めて「不変条件は1箇所」を守る。
+   **この却下は「#49 Phase 5 までの過渡状態における validator 設計」の判断に限る**（`parentGoalId` が `optional` で、親のないチェックポイントが DTO に現れる期間の話）。最強の強制になるが、その期間に限れば (a) Valibot の `v.variant("type", …)` は判別子の値が一意でなければならず、mastery が2枝になると `v.union` へ落ちてフィールド単位のエラー対象付けを失う、(b) TypeScript 上 `goal.deadline` が union の片枝にしか存在せず `"deadline" in goal` narrowing が全箇所に伝播する、(c) それでも INV-2〜5（親の所有者・種別・自己参照・チェーン）は services でしか検査できないので不変条件は2箇所に分かれる。**過渡期は却下**。この期間は INV-1 も services に集めて「不変条件は1箇所」を守る。
+   **最終形は却下しない**: [#49 §3.2](checkpoint-parent-backfill.md) が Phase 5 で `goalDocumentValidator` / `goalDtoValidator` / `goalInputValidator` を2枝 union（checkpoint = `deadline` + `parentGoalId` 必須 / longTerm = どちらも無し）に締めることを決定済みで、上の (a) は #49 §8 の「画面のモードでスキーマを選び送信時に `type` を付ける」形、(b) は同 §8 の `isCheckpointGoal` + 8ファイルの narrowing 改修で解かれる。(c) は解かれない = **Phase 5 後も INV-2〜5 と入力段の INV-1 チェックは services に残る**（構造で守れるのは保存後の形だけで、他人の親・チェーン・自己参照は DB を読まないと分からない）。詳細は §2 / §3.1 の注記。
 
 4. **サーバでツリーを組んで返す（`api.queries.goals.tree`）。**
    購読数は変わらず、DTO の形が2層に固定されて #53・週次レビューでの再利用が難しくなる。ツリー構築は時刻に依存しない純粋な仕分けなのでクライアントで十分。**却下**。

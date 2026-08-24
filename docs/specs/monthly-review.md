@@ -18,7 +18,7 @@
 
 - §5〜§7 の大枠（スキーマ・純関数・query/service の構造）
 - §4 のスコープ表（見せる/見せない）
-- §12-1〜12-7（月間ターゲット・週間ターゲット月内集計・目標階層・コンディション別内訳・日次粒度・月境界の週バケット・YoY を却下した理由）
+- §13-1〜13-7（月間ターゲット・週間ターゲット月内集計・目標階層・コンディション別内訳・日次粒度・月境界の週バケット・YoY を却下した理由。旧版では §12-1〜12-7 だったが、本書では「検討した代替案」節が §13 のため §13-1〜13-7 に読み替える）
 
 ### 何を書き直したか（#52 の確定内容に合わせた変更）
 
@@ -28,13 +28,20 @@
 | 履歴画面のリンク先を `search={{ tab: "monthly" }}` で明示 | `weekly-review.md` §8.5 が履歴画面のリンクを**検索パラメータ無し（既定タブへ）**で確定し、`history-page.tsx` の当該箇所は #52 が実装する | §8.3 を全面差し替え。本書は `history-page.tsx` を改修しない（二重編集を避ける） |
 | サマリー3枚 = 確定分数 / 稼働日数 / **見送り件数** | `weekly-review.md` §9.3 のサマリー3枚 = 学習量 / 実施日 / **消化**（前週比は矢印+ミュート色、色だけで増減を伝えない） | §9.3 を「学習量 / 実施日 / 消化」に揃え、`weeklyDigestValidator` を月全体にも再利用（§5.1, §6.5） |
 | `monthlyDigestBucketValidator` が独自の6フィールド | — | 月全体の消化は `weeklyDigestValidator` を**そのまま**再利用（CVX-16 SSoT）。週バケットは月境界という月固有の事情があるため独自形を維持（§5.1 で理由を明示） |
-| ナビタブ8本目の是非を独立に再検討（§12-10） | `weekly-review.md` §8.5・§13-8 が「`NAV` は7本のまま。入口は履歴画面 + `/goals` の週間ターゲット節の2本」とすでに確定 | 本書は再検討しない。§8.3 で確定内容をそのまま採用するだけに留める（マップの「すでにロックされた決定は再審しない」に従う） |
+| ナビタブ8本目の是非を独立に再検討（旧版 §12-10、本書 §13-10） | `weekly-review.md` §8.5・§14-8 が「`NAV` は7本のまま。入口は履歴画面 + `/goals` の週間ターゲット節の2本」とすでに確定 | 本書は再検討しない。§8.3 で確定内容をそのまま採用するだけに留める（マップの「すでにロックされた決定は再審しない」に従う） |
 | `use-review-view.ts` を月次分だけ独自定義（§8.4） | `weekly-review.md` §8.4 が `deriveReviewWeek` と `deriveReviewMonth` を同居させた統合版をすでに確定（`yearMonth` / `setMonth` を含む） | §8.4 を削除し、「追加の実装は不要」と明記 |
 
 ### 人間の再確認ポイント（decisionComment 参照）
 
 - 月全体の消化を `weeklyDigestValidator`／`buildWeeklyDigest`（`convex/lib/weeklyReview.ts`）から**そのまま**再利用する設計（§5.1, §6.5, §13-13）。関数名・ファイル名が「weekly」のままで月次から呼ばれることになる。
 - 月次レビューへの専用ナビ導線を追加しない（週次と共有の2導線のみで足りるとした判断、§8.3, §13-14）。
+
+### 最終突き合わせ（本パス）
+
+本書はこの時点ですでに `weekly-review.md`（決定済み）の内容と全面的に整合していた。本パスでは追加で次の2点を検証・修正した:
+
+1. **実コードとの突き合わせ**: `convex/schema.ts`（`rows`/`days`/`targets` の型）、`convex/lib/historyBreakdown.ts`（`aggregateBreakdownRows` の戻り値形）、`convex/lib/validators.ts`（`categoryBreakdownValidator`/`targetProgressDtoValidator`）、`convex/lib/jst.ts`・`dateArgs.ts`・`domain.ts`・`dayView.ts`・`conditions.ts`・`services/history/shared.ts`・`lib/catalogLoader.ts`・`lib/ownerFunctions.ts` を実際に読み、本書 §5〜§7 が参照する既存シグネチャ・エクスポート名・フィールド名がすべて実装と一致することを確認した（ドリフトなし）。
+2. **`weekly-review.md` への内部参照の節番号ミス**: 本書の旧稿は「レビューをナビタブへ昇格させない」判断と「入口を2本にした」判断、および「前週比のラベルはクライアントの純関数に置く」判断を、それぞれ `weekly-review.md` §13-8 / §13-7 として引用していた。`weekly-review.md` 本文を確認したところ、これらは同書の**§13**（エッジケース表の行番号）ではなく**§14**（検討した代替案。§14-7・§14-8）の内容だったため、該当するすべての参照を §14-7・§14-8 に修正した（§0 の対応表、§8.3、§13-10、§13-14、§16 の計6箇所）。内容面の結論はどれも変更していない。
 
 ---
 
@@ -44,7 +51,7 @@
 2. **月次レビューは「トレンドと比較」に徹し、既存 履歴（`/history`）の分析タブと重複する軸（コンディション別内訳、日別ペースの生データ）は出さない。** 履歴が「任意の日/週/月を選んで内訳を見る」画面なのに対し、月次レビューは「今月というくくりでの変化」を見せる画面と役割分担する（§4, §13-4）。
 3. **サマリー3枚は週次レビューと完全に同じ形（学習量 / 実施日 / 消化）にする。** 前月比は矢印アイコン + ミュート色のテキストで表し、増減を色で評価しない（design-live-board.md #2、`weekly-review.md` §9.3 と同一ルール）。月全体の消化は `weeklyDigestValidator` をそのまま再利用する（§5.1, §6.5）。
 4. **月間の消化推移**は、月内の暦日を**月曜始まりの週でバケット化**（月境界は部分週として許容）し、週バケットごとに `確定 / (確定+未着手+進行中+スキップ)` の消化率を出す棒グラフ（§6.3, §9.4）。**この点だけは `weekly-review.md` の「チャートは使わない」方針から意図的に外れる**（理由は §13-2）。
-5. **カテゴリ内訳の月比較**は、今月と前月（暦月ベース、前年同月ではない）の `byCategory` を突き合わせ、カテゴリ名で対応させて増減を見せる（§6.4, §9.5）。突き合わせと delta% の計算は**クライアント側の純関数**に置く（サーバはカテゴリ別分数の生値だけ返す。§13-8、`weekly-review.md` §13-7 と同じ判断）。
+5. **カテゴリ内訳の月比較**は、今月と前月（暦月ベース、前年同月ではない）の `byCategory` を突き合わせ、カテゴリ名で対応させて増減を見せる（§6.4, §9.5）。突き合わせと delta% の計算は**クライアント側の純関数**に置く（サーバはカテゴリ別分数の生値だけ返す。§13-8、`weekly-review.md` §14-7 と同じ判断）。
 6. **月間ターゲット・週間ターゲットの月内達成回数・目標階層の件数は月次レビューに出さない。** 週間ターゲットは仕様上「今週専用の計器」でスナップショットを持たないため、過去週へ遡って正しく評価できない（§13-1, §13-2）。目標階層は現在値のスナップショットしか持たず、月内の変化を表せない（§13-3）。
 7. **消化率は「今日を含む部分週/月」から今日を除外して計算する。** CONTEXT「消化」の「今日の未着手を計画倒れに数えない」を月次のトレンドにもそのまま適用する（`weekly-review.md` §6.2 と同一規則。§6.3, §13-5）。
 8. **既存の `digestRate`（`convex/lib/presetDigest.ts`）と同じ計算式を再利用する。** 比率計算だけを `convex/lib/completionRate.ts` に切り出し、`presetDigest.ts` / `weekly-review.md` の週次レビュー / 月次レビューの三者で共有する（§6.1、`weekly-review.md` §6.1 と完全同一内容）。
@@ -280,10 +287,10 @@ export function buildMonthlyDigestTrend(
       bucketEnd: bucket.end,
       bucketStart: bucket.start,
       confirmedCount: counts.confirmed,
+      digestRate: confirmedRatio(counts),
       //? 月境界の部分週(7日未満) or 当日を含む進行中の週は「週全体を代表しない」印をつける。
       isPartial: includesToday || bucket.dates.length < 7,
       plannedCount: completedCount(counts),
-      digestRate: confirmedRatio(counts),
     };
   });
 }
@@ -603,33 +610,15 @@ export function MonthlyReviewTab() {
 
 `WeeklyReviewTab` 側の `Suspense` パターン（`weekly-review.md` §9.2）と完全に同じ形にする。`MonthlyReviewPlaceholder`（`Text c="dimmed"` 1つ）は不要になるため削除する。
 
-### 9.3 サマリー3枚（`weekly-review.md` §9.3 と同一の形）
+### 9.3 サマリー3枚（`weekly-review.md` §9.3 を再利用 — 差分のみ記載）
 
-```tsx
-// 骨子: 週次と同じ Grid 3枚。数値は NUMERAL_FONT、ラベルは本文フォント
-<Grid>
-  <Grid.Col span={{ base: 12, sm: 4 }}>
-    <Card padding="md">
-      <Text c="var(--cairn-muted-2)" size="sm">学習量</Text>
-      <Text ff={NUMERAL_FONT} fw={600} fz={32} lh={1.1}>{confirmedMinutes}分</Text>
-      <Text c="var(--cairn-muted-2)" ff={NUMERAL_FONT} size="xs">
-        1日平均 {dailyAverageMinutes(confirmedMinutes, elapsedDays)}分（{elapsedDays}日）
-      </Text>
-      <Group gap={4} wrap="nowrap">
-        <DeltaIcon direction={deltaDirection(confirmedMinutes, previousConfirmedMinutes)} />
-        <Text c="var(--cairn-muted-2)" ff={NUMERAL_FONT} size="xs">
-          {previousMonthLabel(confirmedMinutes, previousConfirmedMinutes, "分")}
-        </Text>
-      </Group>
-    </Card>
-  </Grid.Col>
-  {/* 実施日 / 消化 も同じ形（消化は digest.digestRate / digest.confirmedCount / digest.plannedCount / digest.isPartial を使う） */}
-</Grid>
-```
+**再利用（差分ゼロ）**: `Grid` 3枚のマークアップ、カードの内部構造（`Text` の `ff`/`fw`/`fz`/`c` 指定、`DeltaIcon` の配置）は `weekly-review.md` §9.3 のコードをそのまま流用する。ここに再掲しない。差し替わるのは値の出典（`confirmedMinutes` → 月次 DTO の同名フィールド、`elapsedDays` → 月内の経過日数）だけで、JSX構造そのものは1行も変えない。
 
-- **前月比に赤を使わない。** 減少を赤で塗るのは design-live-board.md #2（赤は削除・危険の予約色）に反する。`weekly-review.md` §9.3 と同じく **`IconArrowUpRight` / `IconArrowDownRight` / `IconMinus` + 符号つきテキスト**（`+160分` / `-40分` / `±0分`）で表し、色は `var(--cairn-muted-2)` 一色にする。
-- `DeltaIcon` / `dailyAverageMinutes` / `deltaDirection` は `weekly-review-labels.ts`（`weekly-review.md` §9.8）から import する（同一 feature 内なので project-structure.md の「Feature inter-dependencies forbidden」には抵触しない。§13-15）。`previousMonthLabel`（「先月」という文言差分のため月次専用）だけ `monthly-review-labels.ts` に新規で書く。
-- 消化タイルは `digest.digestRate*100` を大きく、その下に `{digest.confirmedCount}/{digest.plannedCount}件` と `digest.isPartial` のときだけ `今日は数えません`。`digest.plannedCount === 0` のときは `—` と `まだ数えられません`（`weekly-review.md` §9.3 と同一規則）。
+以下は月固有の差分（表示規則の確認と、月次だけの新規実装箇所）:
+
+- **前月比に赤を使わない。** `weekly-review.md` §9.3 と同じ規則（design-live-board.md #2、赤は削除・危険の予約色）で、**`IconArrowUpRight` / `IconArrowDownRight` / `IconMinus` + 符号つきテキスト**（`+160分` / `-40分` / `±0分`）を使い、色は `var(--cairn-muted-2)` 一色にする。
+- `DeltaIcon` / `dailyAverageMinutes` / `deltaDirection` は**新規に書かず** `weekly-review-labels.ts`（`weekly-review.md` §9.8）から import する（同一 feature 内なので project-structure.md の「Feature inter-dependencies forbidden」には抵触しない。§13-15）。**月固有で新規に書くのは `previousMonthLabel`（「先月」という文言差分）だけ**で、`monthly-review-labels.ts` に置く。
+- 消化タイルは `digest.digestRate*100` を大きく、その下に `{digest.confirmedCount}/{digest.plannedCount}件` と `digest.isPartial` のときだけ `今日は数えません`。`digest.plannedCount === 0` のときは `—` と `まだ数えられません`（`weekly-review.md` §9.3 と同一規則。月全体の `digest` が `weeklyDigestValidator` の形そのものなので、この分岐ロジックも週次と共有できる）。
 - 前月データが無い（利用開始1か月目、`previousConfirmedMinutes === 0 && previousActiveDays === 0`）ときは前月比の行を出さず、`先月の記録はありません` を1行出す（`weekly-review.md` §13-4 と同一パターン）。
 
 ### 9.4 月間の消化推移チャート（`weekly-review.md` の「チャート不使用」からの意図的な逸脱）
@@ -821,7 +810,7 @@ export type MonthlyCategoryBreakdown = MonthlyReview["byCategory"][number];
 
 ### 13-8. カテゴリ比較の delta% やラベルはサーバで計算して返すべきでは？
 
-**一部譲るが、却下（旧版から維持。`weekly-review.md` §13-7 と同一の結論に揃った）。** サーバは `byCategory` / `previousByCategory` という生の分数集計だけを返し、「新規」「先月のみ」等の表示ラベルや delta% はクライアントの純関数（`category-comparison.ts`）に置く。理由: ①表示文言（日本語ラベル、パーセント表記の丸め方）は UI の関心であり、`convex/lib` に置くべきではない（CVX-09 の精神は「ドメイン計算」と「表示整形」の分離にも及ぶ。`weekly-review.md` §13-7 の「前週比のラベルはクライアントの純関数に置く」と同じ判断）。②既存の `chart-data.ts`（履歴機能）も donut のセル生成や週タイトルの整形をクライアント側の純関数で行っており、月次レビューだけサーバ側で計算すると設計が割れる。
+**一部譲るが、却下（旧版から維持。`weekly-review.md` §14-7 と同一の結論に揃った）。** サーバは `byCategory` / `previousByCategory` という生の分数集計だけを返し、「新規」「先月のみ」等の表示ラベルや delta% はクライアントの純関数（`category-comparison.ts`）に置く。理由: ①表示文言（日本語ラベル、パーセント表記の丸め方）は UI の関心であり、`convex/lib` に置くべきではない（CVX-09 の精神は「ドメイン計算」と「表示整形」の分離にも及ぶ。`weekly-review.md` §14-7 の「前週比のラベルはクライアントの純関数に置く」と同じ判断）。②既存の `chart-data.ts`（履歴機能）も donut のセル生成や週タイトルの整形をクライアント側の純関数で行っており、月次レビューだけサーバ側で計算すると設計が割れる。
 
 一方で、**カテゴリ名ベースの突き合わせという「対応関係の決定」自体は月固有の新しいロジック**であり、これを毎回コンポーネント内に書くと画面ごとに実装がずれるリスクがあるため、`category-comparison.ts` という専用の純関数ファイルに切り出す（コンポーネントに直書きしない）。
 
@@ -833,7 +822,7 @@ export type MonthlyCategoryBreakdown = MonthlyReview["byCategory"][number];
 
 ### 13-10. レビューをナビタブ（8本目）へ昇格させるべきでは？
 
-**再審しない。** `weekly-review.md` §8.5・§13-8 がこの論点をすでに決着させている（`NAV` は7本のまま。CONTEXT.md「マイページ」の `_Avoid_`「8番目のナビタブ」と、それを前提に確定済みの `notifications.md`・`pwa-mobile.md` §10 を守る）。マップ運用ルール「ロック済みの決定を relitigate しない」に従い、本書は独自の再検討をしない。旧版が保持していた完全な検討過程（3案比較）は `weekly-review.md` §13-8・§8.5 側に一本化されたと理解する。
+**再審しない。** `weekly-review.md` §8.5・§14-8 がこの論点をすでに決着させている（`NAV` は7本のまま。CONTEXT.md「マイページ」の `_Avoid_`「8番目のナビタブ」と、それを前提に確定済みの `notifications.md`・`pwa-mobile.md` §10 を守る）。マップ運用ルール「ロック済みの決定を relitigate しない」に従い、本書は独自の再検討をしない。旧版が保持していた完全な検討過程（3案比較）は `weekly-review.md` §14-8・§8.5 側に一本化されたと理解する。
 
 ### 13-11. サマリー3枚を「学習量/実施日/消化」ではなく元の「確定分数/稼働日数/見送り件数」のままにすべきでは？
 
@@ -861,7 +850,7 @@ export type MonthlyCategoryBreakdown = MonthlyReview["byCategory"][number];
 
 ### 13-14. 月次レビューへの専用リンクを1本も持たないのは discoverability として弱すぎないか？
 
-**認めるが、現状維持とする。** `weekly-review.md` は週次レビューについて「週に1回」の頻度を理由に入口を2本（履歴 + `/goals`）に増やした（§13-8）。月次レビューは「月に1回」でさらに頻度が低く、`weekly-review.md` の同じ判断基準（pwa-mobile.md §10.2 の「毎日触らない機能は常設 UI 要素を専有しない」という基準）を当てはめると、**専用の3本目のリンクを持つ必要性は週次より低い**。
+**認めるが、現状維持とする。** `weekly-review.md` は週次レビューについて「週に1回」の頻度を理由に入口を2本（履歴 + `/goals`）に増やした（§14-8）。月次レビューは「月に1回」でさらに頻度が低く、`weekly-review.md` の同じ判断基準（pwa-mobile.md §10.2 の「毎日触らない機能は常設 UI 要素を専有しない」という基準）を当てはめると、**専用の3本目のリンクを持つ必要性は週次より低い**。
 
 加えて、`/review` に着地した利用者はタブが2つしかないため、月次タブへの到達コストは「タブを1回クリックする」だけであり、実質的に discoverability の悪化は小さい。
 
@@ -954,7 +943,7 @@ export type MonthlyCategoryBreakdown = MonthlyReview["byCategory"][number];
 **無変更（意図的）**:
 
 - `convex/schema.ts` — 新規テーブル・インデックスなし（§5）
-- `src/components/app-shell.tsx` — `NAV` は7本のまま（`weekly-review.md` §8.5・§13-8。本書は再審しない）
+- `src/components/app-shell.tsx` — `NAV` は7本のまま（`weekly-review.md` §8.5・§14-8。本書は再審しない）
 - `CONTEXT.md` — 語彙の追加・改訂なし（§17）
 - `src/features/history/components/history-page.tsx` — `weekly-review.md` が改修する。本書は触らない（§8.3。旧版の計画を撤回）
 - `docs/specs/pwa-mobile.md` §10・§17、`docs/specs/notifications.md` — 本書は改訂しない
@@ -968,7 +957,7 @@ export type MonthlyCategoryBreakdown = MonthlyReview["byCategory"][number];
 - `/review` の共有土台・週次タブの中身 → #52（`weekly-review.md`。本書は§2で全面採用）
 - 目標×記録の紐付け → #53（本書はこれに依存しない設計にした）
 - 通知（`weeklyTargetMiss` 等）のリンク先を `/review` に差し替える作業 → #52/#56 側の担当（`weekly-review.md` §8.5）
-- 月間ターゲットのスナップショット機構 → 未決（§13-1/14-2、openQuestions）
+- 月間ターゲットのスナップショット機構 → 未決（本書 §13-1、`weekly-review.md` §14-4 と同根の未決事項、openQuestions）
 - レビューをナビタブ（8本目）へ昇格させるかの判断 → `weekly-review.md` が既に「昇格させない」と確定済み。本書は再審しない（§8.3, §13-10）
 - PWA・オフライン対応 → #58
 - AI 月次/週次サマリー（振り返り文の自動生成） → マップの「Not yet specified」のまま
