@@ -1,5 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
   "entry": ["sw/service-worker.ts"],
-  "ignoreDependencies": ["better-typescript-lib"]
+  "ignoreDependencies": ["better-typescript-lib"],
+  "dynamicallyLoaded": ["doctor.config.ts"],
+  "ignoreFindings": ["**/*.module.css"],
+  "ignoreExports": [
+    { "file": "src/lib/calendar-day-style.ts", "exports": ["calendarDayStyleClasses"] }
+  ]
 }
