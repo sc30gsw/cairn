@@ -1,6 +1,12 @@
+import { Shimmer } from "@shimmer-from-structure/react";
 import { todayJst } from "~domain/jst";
 
 import { PeriodSummarySection } from "~/features/my-page/components/period-summary-section";
+import {
+  myPageShimmerActiveDays,
+  myPageShimmerConfirmedMinutes,
+  myPageShimmerPeriodDigest,
+} from "~/features/my-page/lib/my-page-shimmer-template";
 import { useMonthlyReview } from "~/hooks/review-queries";
 
 export function MonthSummarySection() {
@@ -15,5 +21,20 @@ export function MonthSummarySection() {
       reviewTab="monthly"
       title="今月の状況"
     />
+  );
+}
+
+//? MonthSummarySection 自身を fallback に入れない(再サスペンドする)。実コンポーネントにテンプレート値を渡すだけ
+export function MonthSummarySectionFallback() {
+  return (
+    <Shimmer loading>
+      <PeriodSummarySection
+        activeDays={myPageShimmerActiveDays}
+        confirmedMinutes={myPageShimmerConfirmedMinutes}
+        digest={myPageShimmerPeriodDigest}
+        reviewTab="monthly"
+        title="今月の状況"
+      />
+    </Shimmer>
   );
 }
