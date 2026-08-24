@@ -6,6 +6,8 @@ import {
   categoryValidator,
   conditionValidator,
   goalDocumentValidator,
+  notificationPayloadValidator,
+  notificationTriggerPrefsValidator,
   presetLineValidator,
   statusValidator,
   targetMetricValidator,
@@ -92,6 +94,38 @@ export default defineSchema({
     ownerId: v.string(),
     targetValue: v.number(),
   }).index("by_owner_and_category", ["ownerId", "categoryId"]),
+
+  //? サーバ発の通知1件。dedupeKey が「同じ事実を二度作らない」の唯一の保証。
+  //? 文言は保存しない — payload の数値と非正規化テキストから notificationMessage が組む。
+  notifications: defineTable({
+    dedupeKey: v.string(),
+    ownerId: v.string(),
+    payload: notificationPayloadValidator,
+    readAt: v.optional(v.number()),
+    slackDeliveredAt: v.optional(v.number()),
+    slackError: v.optional(v.string()),
+  })
+    //? 通知欄は _creationTime 降順で読む。CVX-12 の「特定の _creationTime 順が必要」例外に当たる。
+    .index("by_owner", ["ownerId"])
+    //? 発火時の重複確認。eq(ownerId).eq(dedupeKey) + take(1)。
+    .index("by_owner_and_dedupeKey", ["ownerId", "dedupeKey"]),
+
+  //? 通知のオプトイン設定。行が無い = 通知しない。評価器の所有者列挙もこの表から引く。
+  notificationSettings: defineTable({
+    enabled: v.boolean(),
+    eveningHourJst: v.number(),
+    ownerId: v.string(),
+    quietFromHourJst: v.number(),
+    quietToHourJst: v.number(),
+    slackEnabled: v.boolean(),
+    slackFailureStreak: v.number(),
+    //? 書き込み専用。公開 query の返り値に入れない。
+    slackWebhookUrl: v.optional(v.string()),
+    triggers: notificationTriggerPrefsValidator,
+  })
+    .index("by_owner", ["ownerId"])
+    //? cron の所有者列挙。夜の催促は時が一致する所有者だけに絞れる。
+    .index("by_enabled_and_eveningHourJst", ["enabled", "eveningHourJst"]),
 
   avatarUploadClaims: defineTable({
     ownerId: v.string(),

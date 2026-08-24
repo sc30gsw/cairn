@@ -7,6 +7,7 @@ import { CATEGORIES } from "./categories";
 import { CONDITIONS } from "./conditions";
 import { DAY_VIEW_KINDS } from "./dayView";
 import { CHECKPOINT_BACKFILL_PLANS, GOAL_TYPES, STATUSES, TARGET_METRICS } from "./domain";
+import { NOTIFICATION_KINDS, NOTIFICATION_PENDING_SOURCES } from "./notifications";
 import { PRESET_REVIEW_REASONS } from "./presetDigest";
 
 const [toeic, listening, reading, conversation, otherCategory] = CATEGORIES;
@@ -622,3 +623,103 @@ export const monthlyReviewValidator = v.object({
 });
 
 export type MonthlyReviewDto = Infer<typeof monthlyReviewValidator>;
+
+const [checkpointDeadlineKind, eveningUntouchedKind, weeklyTargetMissKind] = NOTIFICATION_KINDS;
+const [daySource, presetSource] = NOTIFICATION_PENDING_SOURCES;
+
+//* 通知の種類。UI のフィルタと設定のキー集合がここから派生する。
+export const notificationKindValidator = v.union(
+  v.literal(checkpointDeadlineKind),
+  v.literal(eveningUntouchedKind),
+  v.literal(weeklyTargetMissKind),
+);
+
+export type NotificationKindDto = Infer<typeof notificationKindValidator>;
+
+//? 参照先のテキストは生成時に写す。親目標がカスケード削除されても通知は読める(#48 INV-6)。
+//? goalId は残すが、リンク先はページ(/goals)なので「開けない」ことは起きない。
+const checkpointDeadlineItemValidator = v.object({
+  content: v.string(),
+  daysLeft: v.number(),
+  deadline: v.string(),
+  goalId: v.id("goals"),
+});
+
+const weeklyTargetShortfallValidator = v.object({
+  categoryName: v.string(),
+  current: v.number(),
+  metric: targetMetricValidator,
+  targetValue: v.number(),
+});
+
+//* 通知の中身。種類ごとに形が変わる discriminated union(目標の goalDocumentValidator と同じ流儀)。
+//? 「1発火単位 = 1通」なので、複数件は配列で1つの payload に入る。
+export const notificationPayloadValidator = v.union(
+  v.object({
+    dateJst: v.string(),
+    items: v.array(checkpointDeadlineItemValidator),
+    kind: v.literal(checkpointDeadlineKind),
+  }),
+  v.object({
+    dateJst: v.string(),
+    kind: v.literal(eveningUntouchedKind),
+    pendingCount: v.number(),
+    source: v.union(v.literal(daySource), v.literal(presetSource)),
+  }),
+  v.object({
+    kind: v.literal(weeklyTargetMissKind),
+    shortfalls: v.array(weeklyTargetShortfallValidator),
+    weekStartJst: v.string(),
+  }),
+);
+
+export type NotificationPayload = Infer<typeof notificationPayloadValidator>;
+
+//* トリガーごとのオプトイン。キー集合は NOTIFICATION_KINDS と一致する。
+//? 一致は評価器の `setting.triggers[kind]` アクセスで tsc が守る — キーを足し忘れると型エラーになる。
+export const notificationTriggerPrefsValidator = v.object({
+  checkpointDeadline: v.boolean(),
+  eveningUntouched: v.boolean(),
+  weeklyTargetMiss: v.boolean(),
+});
+
+export type NotificationTriggerPrefs = Infer<typeof notificationTriggerPrefsValidator>;
+
+//* 通知欄の1行。readAt は boolean に畳む(dayDtoValidator の null 正規化と同じ規則)。
+export const notificationDtoValidator = v.object({
+  _creationTime: v.number(),
+  _id: v.id("notifications"),
+  payload: notificationPayloadValidator,
+  read: v.boolean(),
+});
+
+export type NotificationDto = Infer<typeof notificationDtoValidator>;
+
+export const notificationPageValidator = v.object({
+  items: v.array(notificationDtoValidator),
+  unreadCount: v.number(),
+});
+
+export type NotificationPageDto = Infer<typeof notificationPageValidator>;
+
+//* 設定の DTO。**slackWebhookUrl は含めない**(§9.2)。設定済みかどうかだけを boolean で出す。
+export const notificationSettingsDtoValidator = v.object({
+  enabled: v.boolean(),
+  eveningHourJst: v.number(),
+  quietFromHourJst: v.number(),
+  quietToHourJst: v.number(),
+  slackConfigured: v.boolean(),
+  slackEnabled: v.boolean(),
+  slackFailureStreak: v.number(),
+  triggers: notificationTriggerPrefsValidator,
+});
+
+export type NotificationSettingsDto = Infer<typeof notificationSettingsDtoValidator>;
+
+//* Slack 配信の入力。internalQuery が返し、internalAction が使う。公開 query では返さない。
+export const slackDeliveryValidator = v.object({
+  text: v.string(),
+  webhookUrl: v.string(),
+});
+
+export type SlackDelivery = Infer<typeof slackDeliveryValidator>;

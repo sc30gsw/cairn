@@ -3,6 +3,7 @@ import { Suspense } from "react";
 
 import { PendingComponent } from "~/components/pending-component";
 import { AccountSection } from "~/features/my-page/components/account-section";
+import { NotificationSettingsSection } from "~/features/my-page/components/notification-settings-section";
 import { PasskeySection } from "~/features/my-page/components/passkey-section";
 import { ProfileSection } from "~/features/my-page/components/profile-section";
 import { TodaySummarySection } from "~/features/my-page/components/today-summary-section";
@@ -21,6 +22,9 @@ function MyPageContent() {
       <ProfileSection />
       <AccountSection />
       <PasskeySection />
+      <Suspense fallback={<PendingComponent />}>
+        <NotificationSettingsSection />
+      </Suspense>
       <Suspense fallback={<PendingComponent />}>
         <TodaySummarySection />
       </Suspense>

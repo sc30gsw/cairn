@@ -1,6 +1,4 @@
-import { TARGET_METRICS, type TargetMetric } from "~domain/domain";
-
-import { TARGET_METRIC_UNITS } from "~/lib/target-metric-units";
+import { TARGET_METRIC_UNITS, TARGET_METRICS, type TargetMetric } from "~domain/domain";
 
 //? 値の SSoT は ~domain/domain。ここが持つのは表示だけ(CVX-16)
 export const TARGET_METRIC_LABELS = {

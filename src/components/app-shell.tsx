@@ -13,6 +13,8 @@ import { cn } from "cnfast";
 import { Suspense, type ReactNode } from "react";
 
 import { RouteErrorComponent } from "~/components/error-state";
+import { NotificationBell } from "~/components/notification-bell";
+import { NotificationBellFallback } from "~/components/notification-bell-fallback";
 import {
   RunningTimerIndicator,
   RunningTimerIndicatorFallback,
@@ -161,7 +163,13 @@ export function AppShell({ accountMenu, children }: AppShellProps) {
                   <Suspense fallback={<RunningTimerIndicatorFallback />}>
                     <RunningTimerIndicator />
                   </Suspense>
-                  {accountMenu}
+                  <Group align="center" gap="xs" wrap="nowrap">
+                    {/*? 通知ベル。全画面共通で、未読件数を Indicator に出す(#56 §10.1) */}
+                    <Suspense fallback={<NotificationBellFallback />}>
+                      <NotificationBell />
+                    </Suspense>
+                    {accountMenu}
+                  </Group>
                 </Group>
               </Group>
               {/*? ページ内のエラーはヘッダーとナビを残したまま出す。別の画面へ移れば解除される */}

@@ -70,6 +70,14 @@ export const TARGET_METRICS = ["minutes", "days", "count"] as const satisfies re
 
 export type TargetMetric = (typeof TARGET_METRICS)[number];
 
+//* 週間ターゲットの単位。Slack 本文もサーバが組むので、単位はもう UI 専有の飾りではない。
+//? 表示ラベル(「件数 / 実施日 / 分」)は UI のまま(src/lib/target-metric-labels.ts)。
+export const TARGET_METRIC_UNITS = {
+  count: "件",
+  days: "日",
+  minutes: "分",
+} as const satisfies Record<TargetMetric, string>;
+
 //* 週間ターゲットの目標値。1以上の整数。days は1週=7日を超えられない。
 export const TARGET_VALUE_LIMITS = {
   maxDays: 7,
