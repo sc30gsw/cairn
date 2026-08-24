@@ -259,6 +259,9 @@ const masteryGoalInputFields = v.object({
   deadline: v.optional(v.string()),
   //? 必須化は既存データのバックフィル後(#49 Phase 5)。それまでは optional で受ける。
   parentGoalId: v.optional(v.id("goals")),
+  //? 実績に数える記録の範囲(対象項目)。省略 = すべての記録(ADR-0007 の元の意味そのまま)。
+  //? 空配列は services 側で省略に畳むので、保存済みドキュメントに [] は現れない(#53)。
+  scopeItemIds: v.optional(v.array(v.id("items"))),
   type: v.literal(masteryType),
 });
 

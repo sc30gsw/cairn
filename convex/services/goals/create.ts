@@ -6,8 +6,10 @@ import { throwDomain } from "../../lib/ownerFunctions";
 import type { GoalInput } from "../../lib/validators";
 import { assertCheckpointParent } from "./assertCheckpointParent";
 import { assertGoalInput } from "./assertGoalInput";
-import { loadDayTotals } from "./loadDayTotals";
-import { initialMasteryProgress } from "./masteryDayTotals";
+import { assertScopeItems } from "./assertScopeItems";
+import { loadDayItemTotals } from "./loadDayItemTotals";
+import { initialMasteryProgress, scopedDayTotals } from "./masteryDayTotals";
+import { normalizeScopeItemIds } from "./scopeItemIds";
 import { toGoalDocument } from "./toGoalDocument";
 
 export const SINGLE_EXAM_GOAL_MESSAGE = "本番目標は1件までです";
@@ -34,8 +36,15 @@ export async function create(
   }
   //? 期限を持つなら親の不変条件を確かめる。新規は子を持たないので INV-5 は不要。
   await assertCheckpointParent(ctx, ownerId, goal);
+  //? 保存形の一意性は正規化が担う(重複を落とし、空は「すべての記録」に畳む)。
+  const scopeItemIds = normalizeScopeItemIds(goal.scopeItemIds);
+  await assertScopeItems(ctx, ownerId, scopeItemIds);
   //? 学習量の実績は作成日を起点にする。作成と同じ暦日に既にある確定は実績に入る(ADR-0007)。
-  //? mutation なので Date.now() を読んでよい(CVX-14 は query だけの制約)。
-  const progress = initialMasteryProgress(await loadDayTotals(ctx, ownerId, todayJst()));
-  return await ctx.db.insert("goals", toGoalDocument({ ...goal, ...progress }, ownerId));
+  //? 対象項目で絞ってから初期値にする。mutation なので Date.now() を読んでよい(CVX-14 は query だけの制約)。
+  const totals = await loadDayItemTotals(ctx, ownerId, todayJst());
+  const progress = initialMasteryProgress(scopedDayTotals(totals, scopeItemIds));
+  return await ctx.db.insert(
+    "goals",
+    toGoalDocument({ ...goal, ...progress, scopeItemIds }, ownerId),
+  );
 }

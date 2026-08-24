@@ -170,3 +170,31 @@ test.each(["pace", "volume", "other"])("廃止した目標タイプ %s は union
   });
   expect(result.success).toBe(false);
 });
+
+test("送信ペイロードの対象項目は任意で、空配列は undefined に畳む", () => {
+  const withScope = v.safeParse(GoalSchema, {
+    content: "Unit 1-10 を音読する",
+    criterion: "止まらずに音読できる",
+    deadline: "",
+    scopeItemIds: ["item-kinfure", "item-official"],
+    type: "mastery",
+  });
+  expect(withScope.success).toBe(true);
+  expect(withScope.output).toEqual({
+    content: "Unit 1-10 を音読する",
+    criterion: "止まらずに音読できる",
+    deadline: undefined,
+    scopeItemIds: ["item-kinfure", "item-official"],
+    type: "mastery",
+  });
+
+  const emptyScope = v.safeParse(GoalSchema, {
+    content: "Unit 1-10 を音読する",
+    criterion: "止まらずに音読できる",
+    deadline: "",
+    scopeItemIds: [],
+    type: "mastery",
+  });
+  expect(emptyScope.success).toBe(true);
+  expect((emptyScope.output as Record<"scopeItemIds", unknown>).scopeItemIds).toBeUndefined();
+});

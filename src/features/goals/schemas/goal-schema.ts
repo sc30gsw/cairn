@@ -97,15 +97,24 @@ const ParentGoalIdSchema = v.custom<GoalId>(
   CHECKPOINT_PARENT_REQUIRED_MESSAGE,
 );
 
-//* 送信ペイロードの単一の真実。convex の goalInputValidator と同じ形になる(CVX-16)。
+//? 対象項目はフォームストアの外(useState)にあるので、フィールドスキーマではなく
+//? 送信ペイロードのスキーマにだけ現れる。空配列は undefined に畳む(サーバの正規化と同じ規則)。
+const ScopeItemIdsSchema = v.optional(
+  v.pipe(
+    v.array(v.string()),
+    v.transform((values) => (values.length === 0 ? undefined : values)),
+  ),
+);
+
+//* 送信ペイロードの形の確認用スキーマ。convex の goalInputValidator と同じ形になる(CVX-16)。
 //? type は v.variant の判別子なので mastery の枝は1本のまま(区分では枝を割らない)。
+//? 実際に onSubmit / mutation が使う型は GoalInputPayload(Convex 由来。ブランド付き Id を持つ)。
 export const GoalSchema = v.variant("type", [
   v.object({ ...ExamGoalFieldsSchema.entries, type: v.literal(examType) }),
   v.object({
     ...MasteryEditFieldsSchema.entries,
     parentGoalId: v.optional(ParentGoalIdSchema),
+    scopeItemIds: ScopeItemIdsSchema,
     type: v.literal(masteryType),
   }),
 ]);
-
-export type GoalFormOutput = v.InferOutput<typeof GoalSchema>;

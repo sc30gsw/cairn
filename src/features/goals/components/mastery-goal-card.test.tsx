@@ -5,6 +5,12 @@ import {
   LONG_TERM_CARD_TITLE,
   MasteryGoalBody,
 } from "~/features/goals/components/mastery-goal-card";
+import { ALL_RECORDS_LABEL } from "~/features/goals/lib/goal-scope";
+import {
+  KINFURE_ITEM,
+  scopeItemsFixture,
+  SHADOWING_ITEM,
+} from "~/features/goals/mocks/goal-scope-fixture";
 import type { MasteryGoal } from "~/features/goals/types/goal";
 import { renderWithMantine } from "~/test-utils/render";
 
@@ -32,6 +38,7 @@ const ACHIEVED_LONG_TERM = {
 function bodyProps(goal: MasteryGoal) {
   return {
     goal,
+    items: scopeItemsFixture,
     onEdit: vi.fn(),
     onRemove: vi.fn(),
     onSetAchieved: vi.fn(),
@@ -93,4 +100,27 @@ test("編集と削除のアクションが呼ばれる", () => {
   getByRole("button", { name: `${LONG_TERM.content}を削除` }).click();
   expect(onEdit).toHaveBeenCalledOnce();
   expect(onRemove).toHaveBeenCalledOnce();
+});
+
+test("対象項目が未指定なら「すべての記録」と書く", () => {
+  const { getByText } = renderWithMantine(<MasteryGoalBody {...bodyProps(LONG_TERM)} />);
+  expect(getByText(`対象: ${ALL_RECORDS_LABEL}`)).toBeDefined();
+});
+
+test("親カードは対象項目の全項目名を出す(短縮しない)", () => {
+  const { getByText } = renderWithMantine(
+    <MasteryGoalBody
+      {...bodyProps({ ...LONG_TERM, scopeItemIds: [KINFURE_ITEM._id, SHADOWING_ITEM._id] })}
+    />,
+  );
+  expect(getByText("対象: 金フレ / 音読パッケージ")).toBeDefined();
+  expect(getByText("確定 90分 / 2日")).toBeDefined();
+});
+
+test("親カードにも進捗バー・パーセンテージは出さない", () => {
+  const { queryByRole, queryByText } = renderWithMantine(
+    <MasteryGoalBody {...bodyProps({ ...LONG_TERM, scopeItemIds: [KINFURE_ITEM._id] })} />,
+  );
+  expect(queryByRole("progressbar")).toBeNull();
+  expect(queryByText(/%/)).toBeNull();
 });

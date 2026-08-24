@@ -39,6 +39,12 @@ export const CHECKPOINT_PARENT_KIND_MESSAGE = "チェックポイントの下に
 export const CHECKPOINT_HAS_CHILDREN_MESSAGE =
   "子チェックポイントを持つ長期目標は、チェックポイントにできません";
 
+//* 対象項目(習得が実績に数える記録の範囲)の検証メッセージ。services と Valibot が共有する(CVX-16)。
+export const GOAL_SCOPE_ITEM_UNKNOWN_MESSAGE = "選べない項目が含まれています";
+
+export const GOAL_SCOPE_FROZEN_MESSAGE =
+  "達成済みの目標では対象項目を変えられません。達成を外してから変更してください";
+
 //* 既存チェックポイントへの親バックフィル(#49)の監査。全所有者を横断するので上限で切る(CVX-11)。
 export const CHECKPOINT_AUDIT_LIMIT = 2000;
 

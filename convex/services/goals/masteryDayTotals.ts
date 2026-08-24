@@ -1,4 +1,4 @@
-import type { Doc } from "../../_generated/dataModel";
+import type { Doc, Id } from "../../_generated/dataModel";
 import type { MasteryProgress } from "../../lib/validators";
 
 //* 1暦日の確定実績。実施日は「確定記録が1件でもある暦日」なので分数だけでは足りず、件数も数える。
@@ -12,25 +12,74 @@ export const EMPTY_DAY_TOTALS = {
   confirmedMinutes: 0,
 } as const satisfies ConfirmedDayTotals;
 
-type DayRow = Pick<Doc<"rows">, "deletedAt" | "minutes" | "status">;
+//* 1暦日の「項目別」確定実績。対象項目の部分和を取れる最小の形(CVX-09: 純関数)。
+export type ItemConfirmedTotals = ReadonlyMap<Id<"items">, ConfirmedDayTotals>;
 
-//* その暦日の rows から確定実績を数える(CVX-09: 純関数)。
+type DayRow = Pick<Doc<"rows">, "deletedAt" | "itemId" | "minutes" | "status">;
+
+//* その暦日の rows から確定実績を項目別に数える(CVX-09: 純関数)。
 //? 日がゴミ箱にあると暦日ごと実績から外れる。history/shared.ts の liveRows と同じ規則。
-export function confirmedDayTotals(
+export function confirmedTotalsByItem(
   rows: readonly DayRow[],
   hasLiveDay: boolean,
-): ConfirmedDayTotals {
+): ItemConfirmedTotals {
+  const totals = new Map<Id<"items">, ConfirmedDayTotals>();
   if (!hasLiveDay) {
-    return EMPTY_DAY_TOTALS;
+    return totals;
   }
-  let confirmedCount = 0;
-  let confirmedMinutes = 0;
   for (const row of rows) {
     if (row.deletedAt !== undefined || row.status !== "確定") {
       continue;
     }
-    confirmedCount += 1;
-    confirmedMinutes += row.minutes;
+    const current = totals.get(row.itemId) ?? EMPTY_DAY_TOTALS;
+    totals.set(row.itemId, {
+      confirmedCount: current.confirmedCount + 1,
+      confirmedMinutes: current.confirmedMinutes + row.minutes,
+    });
+  }
+  return totals;
+}
+
+//* 早期リターンの十分条件。項目別合計が完全一致なら、どの対象項目の部分和も一致する(CVX-09: 純関数)。
+//? 日合計での判定では足りない — 同じ日に別項目の確定が入れ替わると合計は同じでも部分和は動く(#53 §6.3)。
+export function sameItemTotals(before: ItemConfirmedTotals, after: ItemConfirmedTotals): boolean {
+  if (before.size !== after.size) {
+    return false;
+  }
+  for (const [itemId, totals] of before) {
+    const other = after.get(itemId);
+    if (
+      other === undefined ||
+      other.confirmedCount !== totals.confirmedCount ||
+      other.confirmedMinutes !== totals.confirmedMinutes
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+//* 対象項目で絞った日合計。scopeItemIds が undefined ならすべての項目を足す(CVX-09: 純関数)。
+export function scopedDayTotals(
+  totals: ItemConfirmedTotals,
+  scopeItemIds: readonly Id<"items">[] | undefined,
+): ConfirmedDayTotals {
+  let confirmedCount = 0;
+  let confirmedMinutes = 0;
+  if (scopeItemIds === undefined) {
+    for (const entry of totals.values()) {
+      confirmedCount += entry.confirmedCount;
+      confirmedMinutes += entry.confirmedMinutes;
+    }
+    return { confirmedCount, confirmedMinutes };
+  }
+  for (const itemId of scopeItemIds) {
+    const entry = totals.get(itemId);
+    if (entry === undefined) {
+      continue;
+    }
+    confirmedCount += entry.confirmedCount;
+    confirmedMinutes += entry.confirmedMinutes;
   }
   return { confirmedCount, confirmedMinutes };
 }

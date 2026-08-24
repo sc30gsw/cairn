@@ -33,6 +33,7 @@ const ACHIEVED_ORPHAN = {
 function alertProps(overrides: Partial<Parameters<typeof OrphanCheckpointsAlert>[0]> = {}) {
   return {
     form: undefined,
+    items: [],
     onEditGoal: vi.fn(),
     onRemoveGoal: vi.fn(),
     onSetAchieved: vi.fn(),

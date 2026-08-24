@@ -9,10 +9,10 @@ import {
 } from "~/features/goals/hooks/goals-mutations";
 import { useRemoveTarget, useSaveTarget } from "~/features/goals/hooks/targets-mutations";
 import { GOAL_UPDATED_MESSAGE } from "~/features/goals/lib/goal-tier-transition";
-import type { GoalFormOutput } from "~/features/goals/schemas/goal-schema";
 import type { GoalId } from "~/features/goals/types/goal";
 import type {
   CreateObstacleInput,
+  GoalInputPayload,
   RemoveObstacleInput,
   SaveTargetInput,
   SetAchievedInput,
@@ -32,7 +32,7 @@ export function useGoalsBoardActions() {
   const removeObstacle = useRemoveObstacle();
 
   return {
-    onCreateGoal: (goal: GoalFormOutput) =>
+    onCreateGoal: (goal: GoalInputPayload) =>
       runMutation(() => createGoal.mutateAsync({ goal }), {
         successMessage: "目標を追加しました",
       }).then(() => undefined),

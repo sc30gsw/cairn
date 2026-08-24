@@ -9,6 +9,7 @@ import { MasteryGoalBody } from "~/features/goals/components/mastery-goal-card";
 import type { ExamGoal, Goal, MasteryGoal } from "~/features/goals/types/goal";
 import type { SetAchievedInput } from "~/features/goals/types/mutations";
 import { NUMERAL_FONT } from "~/lib/theme";
+import type { ItemDto } from "~/types/item";
 
 export const CHECKPOINT_GROUP_TITLE = "チェックポイント";
 export const CHECKPOINT_GROUP_EMPTY_MESSAGE = "チェックポイントなし";
@@ -21,6 +22,8 @@ type ParentGoalGroupCommonProps = {
   checkpoints: MasteryGoal[];
   //? 追加・編集フォームはヘッダ直下に開く
   form: ReactNode;
+  //? 対象項目のラベルを引き当てる一覧。親カードと子の行がそれぞれ自分で引く
+  items: ItemDto[];
   //? undefined ならこのグループの追加導線を出さない(フォームを開いている間)
   onAddCheckpoint: (() => void) | undefined;
   onEditGoal: (goal: Goal) => void;
@@ -40,6 +43,7 @@ export function ParentGoalGroup(props: ParentGoalGroupProps) {
   const {
     checkpoints,
     form,
+    items,
     onAddCheckpoint,
     onEditGoal,
     onRemoveGoal,
@@ -63,6 +67,7 @@ export function ParentGoalGroup(props: ParentGoalGroupProps) {
         ) : (
           <MasteryGoalBody
             goal={props.parent}
+            items={items}
             onEdit={() => onEditGoal(props.parent)}
             onRemove={() => onRemoveGoal(props.parent)}
             onSetAchieved={onSetAchieved}
@@ -107,6 +112,7 @@ export function ParentGoalGroup(props: ParentGoalGroupProps) {
                 <CheckpointRow
                   goal={goal}
                   isLast={index === checkpoints.length - 1}
+                  items={items}
                   key={goal._id}
                   onEdit={() => onEditGoal(goal)}
                   onRemove={() => onRemoveGoal(goal)}

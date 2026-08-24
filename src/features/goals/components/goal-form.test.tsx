@@ -3,6 +3,10 @@ import { expect, test, vi } from "vite-plus/test";
 
 import { GoalForm } from "~/features/goals/components/goal-form";
 import { GOAL_FORM_COPY } from "~/features/goals/lib/goal-form-copy";
+import {
+  scopeCategoriesFixture,
+  scopeItemsFixture,
+} from "~/features/goals/mocks/goal-scope-fixture";
 import type { ExamGoal, Goal, MasteryGoal } from "~/features/goals/types/goal";
 import { renderWithMantine } from "~/test-utils/render";
 
@@ -50,9 +54,11 @@ const GOALS: Goal[] = [EXAM_GOAL, LONG_TERM_GOAL, CHECKPOINT];
 function formProps(overrides: Partial<Parameters<typeof GoalForm>[0]> = {}) {
   return {
     activeCheckpointCount: 0,
+    categories: scopeCategoriesFixture,
     goal: undefined,
     goals: GOALS,
     hasChildCheckpoints: false,
+    items: scopeItemsFixture,
     onCancel: vi.fn(),
     onSubmit: vi.fn(),
     parent: undefined,

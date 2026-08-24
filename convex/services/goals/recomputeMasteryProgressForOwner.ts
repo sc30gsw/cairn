@@ -17,7 +17,13 @@ export async function recomputeMasteryProgressForOwner(
     .collect();
   const targets = goals.flatMap((goal) =>
     goal.type === "mastery" && goal.achievedAt === undefined
-      ? [{ goalId: goal._id, since: creationDateJst(goal._creationTime) }]
+      ? [
+          {
+            goalId: goal._id,
+            scopeItemIds: goal.scopeItemIds,
+            since: creationDateJst(goal._creationTime),
+          },
+        ]
       : [],
   );
   const earliest = targets.reduce<string | undefined>(
@@ -28,9 +34,10 @@ export async function recomputeMasteryProgressForOwner(
     return null;
   }
   const { rows } = await loadLiveRows(ctx, ownerId, { from: earliest });
+  //? 目標ごとの起点と対象項目で純関数側に絞らせる。rows は共有の1回読みのまま(#53 §7.3)。
   await Promise.all(
-    targets.map(({ goalId, since }) =>
-      ctx.db.patch("goals", goalId, masteryProgressSince(rows, since)),
+    targets.map(({ goalId, scopeItemIds, since }) =>
+      ctx.db.patch("goals", goalId, masteryProgressSince(rows, since, scopeItemIds)),
     ),
   );
   return null;

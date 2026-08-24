@@ -1,10 +1,12 @@
-import { Badge, Box, Checkbox, Group, Text } from "@mantine/core";
+import { Badge, Box, Checkbox, Group, Text, Tooltip } from "@mantine/core";
 import { compareDateJst, daysUntil, type DateJst } from "~domain/jst";
 
 import { GoalCardActions } from "~/features/goals/components/goal-card-actions";
+import { goalScopeLabel } from "~/features/goals/lib/goal-scope";
 import type { MasteryGoal } from "~/features/goals/types/goal";
 import type { SetAchievedInput } from "~/features/goals/types/mutations";
 import { NUMERAL_FONT } from "~/lib/theme";
+import type { ItemDto } from "~/types/item";
 
 export const OVERDUE_LABEL = "期限超過";
 
@@ -15,6 +17,8 @@ type CheckpointRowProps = {
   goal: MasteryGoal;
   //? 最後の行は下罫を出さない
   isLast: boolean;
+  //? 対象項目のラベルを引き当てる一覧。名前の真実は items.list だけが持つ(#53 §18-18)
+  items: ItemDto[];
   onEdit: () => void;
   onRemove: () => void;
   onSetAchieved: (input: SetAchievedInput) => void;
@@ -24,12 +28,14 @@ type CheckpointRowProps = {
 export function CheckpointRow({
   goal,
   isLast,
+  items,
   onEdit,
   onRemove,
   onSetAchieved,
   todayJst,
 }: CheckpointRowProps) {
   const achieved = goal.achievedAt !== undefined;
+  const scope = goalScopeLabel(goal.scopeItemIds, items);
   //? 期限切れは表示が変わるだけ。未達の自動失敗記録は残さない(CONTEXT.md「習得」)
   const overdue =
     !achieved && goal.deadline !== undefined && compareDateJst(goal.deadline, todayJst) < 0;
@@ -68,10 +74,14 @@ export function CheckpointRow({
           {OVERDUE_LABEL}
         </Badge>
       )}
-      {/*? 自己判定の較正のために学習量の実績を併記する(Kruger & Dunning 1999) */}
-      <Text c="dimmed" data-shimmer-no-children ff={NUMERAL_FONT} size="xs">
-        確定 {goal.confirmedMinutes}分 / {goal.activeDays}日
-      </Text>
+      {/*? 自己判定の較正のために対象項目の学習量の実績を併記する(Kruger & Dunning 1999) */}
+      {/*? Tooltip は補助。必須情報は含めない(タッチ端末では出ない前提。#53 §9.1) */}
+      <Tooltip disabled={scope.itemCount === 0} label={scope.full} withArrow>
+        <Text c="dimmed" data-shimmer-no-children ff={NUMERAL_FONT} size="xs">
+          {scope.itemCount === 0 ? "" : `${scope.short}・`}確定 {goal.confirmedMinutes}分 /{" "}
+          {goal.activeDays}日
+        </Text>
+      </Tooltip>
       <GoalCardActions goalName={goal.content} onEdit={onEdit} onRemove={onRemove} />
     </Group>
   );

@@ -4,6 +4,7 @@ import { GoalsBoard } from "~/features/goals/components/goals-board";
 import {
   goalsShimmerCategories,
   goalsShimmerGoals,
+  goalsShimmerItems,
   goalsShimmerObstacles,
   goalsShimmerTargets,
   goalsShimmerTodayJst,
@@ -15,6 +16,7 @@ export function GoalsPending() {
       <GoalsBoard
         categories={goalsShimmerCategories}
         goals={goalsShimmerGoals}
+        items={goalsShimmerItems}
         obstacles={goalsShimmerObstacles}
         targets={goalsShimmerTargets}
         todayJst={goalsShimmerTodayJst}

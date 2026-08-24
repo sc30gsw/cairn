@@ -1,11 +1,13 @@
-import { Accordion, Box, Card, Checkbox, Group, Stack, Text } from "@mantine/core";
+import { Accordion, Box, Card, Checkbox, Group, Stack, Text, Tooltip } from "@mantine/core";
 import type { ReactNode } from "react";
 import type { DateJst } from "~domain/jst";
 
 import { GoalCardActions } from "~/features/goals/components/goal-card-actions";
+import { goalScopeLabel } from "~/features/goals/lib/goal-scope";
 import type { MasteryGoal } from "~/features/goals/types/goal";
 import type { SetAchievedInput } from "~/features/goals/types/mutations";
 import { NUMERAL_FONT } from "~/lib/theme";
+import type { ItemDto } from "~/types/item";
 
 export const ACHIEVED_SECTION_TITLE = "達成した目標";
 
@@ -14,6 +16,8 @@ const ROW_BORDER = "1px dashed var(--cairn-desk)";
 type AchievedRowProps = {
   goal: MasteryGoal;
   isLast: boolean;
+  //? 対象項目のラベルを引き当てる一覧。凍結された実績なので、その時点の対象項目のまま出す
+  items: ItemDto[];
   onEdit: () => void;
   onRemove: () => void;
   onSetAchieved: (input: SetAchievedInput) => void;
@@ -26,12 +30,15 @@ type AchievedRowProps = {
 function AchievedRow({
   goal,
   isLast,
+  items,
   onEdit,
   onRemove,
   onSetAchieved,
   parentName,
   todayJst,
 }: AchievedRowProps) {
+  const scope = goalScopeLabel(goal.scopeItemIds, items);
+
   return (
     <Group
       component="li"
@@ -65,9 +72,12 @@ function AchievedRow({
       <Text c="dimmed" ff={NUMERAL_FONT} size="sm">
         達成 {goal.achievedAt}
       </Text>
-      <Text c="dimmed" data-shimmer-no-children ff={NUMERAL_FONT} size="xs">
-        確定 {goal.confirmedMinutes}分 / {goal.activeDays}日
-      </Text>
+      <Tooltip disabled={scope.itemCount === 0} label={scope.full} withArrow>
+        <Text c="dimmed" data-shimmer-no-children ff={NUMERAL_FONT} size="xs">
+          {scope.itemCount === 0 ? "" : `${scope.short}・`}確定 {goal.confirmedMinutes}分 /{" "}
+          {goal.activeDays}日
+        </Text>
+      </Tooltip>
       <GoalCardActions goalName={goal.content} onEdit={onEdit} onRemove={onRemove} />
     </Group>
   );
@@ -77,6 +87,7 @@ type AchievedHistorySectionProps = {
   achieved: MasteryGoal[];
   //? 編集フォームは一覧の上に開く(対象の行は隠れている)
   form: ReactNode;
+  items: ItemDto[];
   onEditGoal: (goal: MasteryGoal) => void;
   onRemoveGoal: (goal: MasteryGoal) => void;
   onSetAchieved: (input: SetAchievedInput) => void;
@@ -88,6 +99,7 @@ type AchievedHistorySectionProps = {
 export function AchievedHistorySection({
   achieved,
   form,
+  items,
   onEditGoal,
   onRemoveGoal,
   onSetAchieved,
@@ -114,6 +126,7 @@ export function AchievedHistorySection({
                   <AchievedRow
                     goal={goal}
                     isLast={index === achieved.length - 1}
+                    items={items}
                     key={goal._id}
                     onEdit={() => onEditGoal(goal)}
                     onRemove={() => onRemoveGoal(goal)}

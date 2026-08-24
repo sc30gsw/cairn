@@ -24,10 +24,11 @@ import {
   type ParentGoal,
   type ParentGroup,
 } from "~/features/goals/lib/goal-tree";
-import type { GoalFormOutput } from "~/features/goals/schemas/goal-schema";
 import type { Goal, MasteryGoal, Obstacle } from "~/features/goals/types/goal";
+import type { GoalInputPayload } from "~/features/goals/types/mutations";
 import type { TargetProgress } from "~/features/goals/types/target";
 import type { CategoryDto } from "~/types/category";
+import type { ItemDto } from "~/types/item";
 
 export const EXAM_GOAL_EMPTY_TITLE = "本番目標がまだありません";
 export const GOAL_HIERARCHY_HINT =
@@ -63,12 +64,21 @@ function editorVariant(editor: GoalEditor): GoalFormVariant {
 type GoalsBoardProps = {
   categories: CategoryDto[];
   goals: Goal[];
+  //? 対象項目の表示と選択に使う項目一覧。共有 hook から GoalsPage が渡す(#53 §9.3)
+  items: ItemDto[];
   obstacles: Obstacle[];
   targets: TargetProgress[];
   todayJst: DateJst;
 };
 
-export function GoalsBoard({ categories, goals, obstacles, targets, todayJst }: GoalsBoardProps) {
+export function GoalsBoard({
+  categories,
+  goals,
+  items,
+  obstacles,
+  targets,
+  todayJst,
+}: GoalsBoardProps) {
   const {
     onCreateGoal,
     onCreateObstacle,
@@ -113,7 +123,7 @@ export function GoalsBoard({ categories, goals, obstacles, targets, todayJst }: 
     });
   }
 
-  function submitGoal(goal: GoalFormOutput) {
+  function submitGoal(goal: GoalInputPayload) {
     if (editingGoal === undefined) {
       onCreateGoal(goal);
       closeEditor();
@@ -153,11 +163,13 @@ export function GoalsBoard({ categories, goals, obstacles, targets, todayJst }: 
                 (child) => child.achievedAt === undefined,
               ).length
         }
+        categories={categories}
         goal={editingGoal}
         goals={goals}
         hasChildCheckpoints={
           editingGoal !== undefined && childCheckpointsOf(goals, editingGoal._id).length > 0
         }
+        items={items}
         key={editorKey(editor)}
         onCancel={closeEditor}
         onSubmit={submitGoal}
@@ -202,6 +214,7 @@ export function GoalsBoard({ categories, goals, obstacles, targets, todayJst }: 
       <ParentGoalGroup
         checkpoints={visibleRows(group.checkpoints)}
         form={form}
+        items={items}
         key={group.parent._id}
         kind="longTerm"
         onAddCheckpoint={addCheckpointHandler(group.parent, form)}
@@ -245,6 +258,7 @@ export function GoalsBoard({ categories, goals, obstacles, targets, todayJst }: 
         checkpoints={visibleRows(group.checkpoints)}
         form={form}
         hasWeeklyTargets={targets.length > 0}
+        items={items}
         kind="exam"
         onAddCheckpoint={addCheckpointHandler(group.parent, form)}
         onEditGoal={openEdit}
@@ -284,6 +298,7 @@ export function GoalsBoard({ categories, goals, obstacles, targets, todayJst }: 
           <Grid.Col span={12}>
             <OrphanCheckpointsAlert
               form={formForRows(tree.orphans)}
+              items={items}
               onEditGoal={openEdit}
               onRemoveGoal={requestRemove}
               onSetAchieved={onSetAchieved}
@@ -302,6 +317,7 @@ export function GoalsBoard({ categories, goals, obstacles, targets, todayJst }: 
             <AchievedHistorySection
               achieved={visibleRows(tree.achieved)}
               form={formForRows(tree.achieved)}
+              items={items}
               onEditGoal={openEdit}
               onRemoveGoal={requestRemove}
               onSetAchieved={onSetAchieved}

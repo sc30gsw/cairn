@@ -1,6 +1,13 @@
 import { expect, test, vi } from "vite-plus/test";
 
 import { CheckpointRow, OVERDUE_LABEL } from "~/features/goals/components/checkpoint-row";
+import { ALL_RECORDS_SHORT } from "~/features/goals/lib/goal-scope";
+import {
+  KINFURE_ITEM,
+  OFFICIAL_ITEM,
+  scopeItemsFixture,
+  SHADOWING_ITEM,
+} from "~/features/goals/mocks/goal-scope-fixture";
 import type { MasteryGoal } from "~/features/goals/types/goal";
 import { renderWithMantine } from "~/test-utils/render";
 
@@ -29,6 +36,7 @@ function rowProps(goal: MasteryGoal) {
   return {
     goal,
     isLast: true,
+    items: scopeItemsFixture,
     onEdit: vi.fn(),
     onRemove: vi.fn(),
     onSetAchieved: vi.fn(),
@@ -87,4 +95,36 @@ test("達成チェックと編集・削除のアクションが呼ばれる", ()
   expect(onSetAchieved).toHaveBeenCalledWith({ achievedAt: TODAY, goalId: CHECKPOINT._id });
   expect(onEdit).toHaveBeenCalledOnce();
   expect(onRemove).toHaveBeenCalledOnce();
+});
+
+test("対象項目なしの行は接頭辞を出さず、実績だけを併記する", () => {
+  const { getByText, queryByText } = renderWithMantine(<CheckpointRow {...rowProps(CHECKPOINT)} />);
+  expect(getByText("確定 180分 / 4日")).toBeDefined();
+  expect(queryByText(new RegExp(ALL_RECORDS_SHORT))).toBeNull();
+});
+
+test("対象項目1件なら項目名、3件なら先頭 +2 を実績の前に出す", () => {
+  const single = renderWithMantine(
+    <CheckpointRow {...rowProps({ ...CHECKPOINT, scopeItemIds: [KINFURE_ITEM._id] })} />,
+  );
+  expect(single.getByText("金フレ・確定 180分 / 4日")).toBeDefined();
+  single.unmount();
+
+  const many = renderWithMantine(
+    <CheckpointRow
+      {...rowProps({
+        ...CHECKPOINT,
+        scopeItemIds: [KINFURE_ITEM._id, OFFICIAL_ITEM._id, SHADOWING_ITEM._id],
+      })}
+    />,
+  );
+  expect(many.getByText("金フレ +2・確定 180分 / 4日")).toBeDefined();
+});
+
+test("進捗バーもパーセンテージも出さない(分母を作らない)", () => {
+  const { queryByRole, queryByText } = renderWithMantine(
+    <CheckpointRow {...rowProps({ ...CHECKPOINT, scopeItemIds: [KINFURE_ITEM._id] })} />,
+  );
+  expect(queryByRole("progressbar")).toBeNull();
+  expect(queryByText(/%/)).toBeNull();
 });

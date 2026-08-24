@@ -9,7 +9,19 @@ import {
   LongTermGoalFields,
   MasteryEditFields,
 } from "~/features/goals/components/goal-form-fields";
-import { GOAL_FORM_COPY } from "~/features/goals/lib/goal-form-copy";
+import {
+  GOAL_FORM_COPY,
+  GOAL_SCOPE_FROZEN_HINT,
+  GOAL_SCOPE_HINT,
+} from "~/features/goals/lib/goal-form-copy";
+import {
+  INPUT_CATEGORY,
+  KINFURE_ITEM,
+  OUTPUT_CATEGORY,
+  scopeCategoriesFixture,
+  scopeItemsFixture,
+  SHADOWING_ITEM,
+} from "~/features/goals/mocks/goal-scope-fixture";
 import type { ExamGoal, Goal, MasteryGoal } from "~/features/goals/types/goal";
 import { renderWithMantine } from "~/test-utils/render";
 
@@ -57,10 +69,12 @@ const GOALS: Goal[] = [EXAM_GOAL, LONG_TERM_GOAL, CHECKPOINT];
 function fieldsProps(overrides: Partial<Parameters<typeof MasteryEditFields>[0]> = {}) {
   return {
     activeCheckpointCount: 0,
+    categories: scopeCategoriesFixture,
     copy: GOAL_FORM_COPY.checkpoint,
     goal: undefined,
     goals: GOALS,
     hasChildCheckpoints: false,
+    items: scopeItemsFixture,
     onCancel: vi.fn(),
     onSubmit: vi.fn(),
     parent: EXAM_GOAL,
@@ -229,4 +243,121 @@ test("子を持つ長期目標では期限が disabled になり、理由を出�
   );
   expect(getByText(CHECKPOINT_HAS_CHILDREN_MESSAGE)).toBeDefined();
   expect((getByLabelText(/期限/) as HTMLInputElement).disabled).toBe(true);
+});
+
+test("編集フォームの対象項目はカテゴリ見出し付きで、既存の選択で開く", () => {
+  const { getByRole } = renderWithMantine(
+    <MasteryEditFields
+      {...fieldsProps({
+        copy: GOAL_FORM_COPY.longTerm,
+        goal: { ...LONG_TERM_GOAL, scopeItemIds: [KINFURE_ITEM._id] },
+      })}
+    />,
+  );
+  //? Floating UI は happy-dom で位置を測れないので hidden: true で拾う
+  expect(getByRole("group", { hidden: true, name: INPUT_CATEGORY.name })).toBeDefined();
+  expect(getByRole("group", { hidden: true, name: OUTPUT_CATEGORY.name })).toBeDefined();
+  //? 既存の対象項目は選択済みで開く
+  expect(
+    getByRole("option", { hidden: true, name: KINFURE_ITEM.name }).getAttribute("aria-selected"),
+  ).toBe("true");
+  expect(
+    getByRole("option", { hidden: true, name: SHADOWING_ITEM.name }).getAttribute("aria-selected"),
+  ).toBe("false");
+});
+
+test("達成済みの目標では対象項目が disabled で、理由の説明が出る", () => {
+  const { getByRole, getByText } = renderWithMantine(
+    <MasteryEditFields
+      {...fieldsProps({
+        copy: GOAL_FORM_COPY.longTerm,
+        goal: { ...LONG_TERM_GOAL, achievedAt: "2026-08-09", scopeItemIds: [KINFURE_ITEM._id] },
+      })}
+    />,
+  );
+  const scope = getByRole("combobox", { name: /実績に数える項目/ }) as HTMLInputElement;
+  expect(scope.disabled).toBe(true);
+  expect(getByText(GOAL_SCOPE_FROZEN_HINT)).toBeDefined();
+});
+
+test("未達成の目標では対象項目を編集できる", () => {
+  const { getByRole, getByText } = renderWithMantine(
+    <MasteryEditFields {...fieldsProps({ copy: GOAL_FORM_COPY.longTerm, goal: LONG_TERM_GOAL })} />,
+  );
+  expect((getByRole("combobox", { name: /実績に数える項目/ }) as HTMLInputElement).disabled).toBe(
+    false,
+  );
+  expect(getByText(GOAL_SCOPE_HINT)).toBeDefined();
+});
+
+test("新規チェックポイントは長期目標の親の対象項目を初期選択する", () => {
+  const { getByRole } = renderWithMantine(
+    <CheckpointGoalFields
+      {...fieldsProps({
+        parent: { ...LONG_TERM_GOAL, scopeItemIds: [KINFURE_ITEM._id, SHADOWING_ITEM._id] },
+      })}
+    />,
+  );
+  for (const item of [KINFURE_ITEM, SHADOWING_ITEM]) {
+    expect(
+      getByRole("option", { hidden: true, name: item.name }).getAttribute("aria-selected"),
+    ).toBe("true");
+  }
+});
+
+test("本番目標が親のときは対象項目を継承しない(空で開く)", () => {
+  const { getByRole } = renderWithMantine(<CheckpointGoalFields {...fieldsProps()} />);
+  expect(
+    getByRole("option", { hidden: true, name: KINFURE_ITEM.name }).getAttribute("aria-selected"),
+  ).toBe("false");
+});
+
+test("編集は対象項目を Id つきのペイロードで送信する", async () => {
+  const onSubmit = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <MasteryEditFields
+      {...fieldsProps({
+        copy: GOAL_FORM_COPY.longTerm,
+        goal: { ...LONG_TERM_GOAL, scopeItemIds: [KINFURE_ITEM._id] },
+        onSubmit,
+      })}
+    />,
+  );
+  getByRole("button", { name: "保存" }).click();
+
+  await waitFor(() => {
+    expect(onSubmit).toHaveBeenCalledWith({
+      content: LONG_TERM_GOAL.content,
+      criterion: LONG_TERM_GOAL.criterion,
+      deadline: undefined,
+      parentGoalId: undefined,
+      scopeItemIds: [KINFURE_ITEM._id],
+      type: "mastery",
+    });
+  });
+});
+
+test("対象項目が未選択なら scopeItemIds を送らない(すべての記録)", async () => {
+  const onSubmit = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <LongTermGoalFields {...fieldsProps({ copy: GOAL_FORM_COPY.longTerm, onSubmit })} />,
+  );
+  fireEvent.change(getByRole("textbox", { name: "長期目標の内容" }), {
+    target: { value: "音読を毎日続けられる" },
+  });
+  fireEvent.change(getByRole("textbox", { name: "達成の基準" }), {
+    target: { value: "1週間続けられる" },
+  });
+  getByRole("button", { name: "保存" }).click();
+
+  await waitFor(() => {
+    expect(onSubmit).toHaveBeenCalledWith({
+      content: "音読を毎日続けられる",
+      criterion: "1週間続けられる",
+      deadline: undefined,
+      parentGoalId: undefined,
+      scopeItemIds: undefined,
+      type: "mastery",
+    });
+  });
 });

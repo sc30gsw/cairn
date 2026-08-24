@@ -26,6 +26,11 @@ import {
   CHECKPOINT_GROUP_EMPTY_MESSAGE,
   CHECKPOINT_GROUP_TITLE,
 } from "~/features/goals/components/parent-goal-group";
+import {
+  KINFURE_ITEM,
+  scopeCategoriesFixture,
+  scopeItemsFixture,
+} from "~/features/goals/mocks/goal-scope-fixture";
 import type { Goal } from "~/features/goals/types/goal";
 import type { TargetProgress } from "~/features/goals/types/target";
 import { renderWithMantine } from "~/test-utils/render";
@@ -184,8 +189,9 @@ const MINUTES_TARGET = {
 
 function goalsBoardProps(goals: Goal[], targets: TargetProgress[] = []) {
   return {
-    categories: [],
+    categories: scopeCategoriesFixture,
     goals,
+    items: scopeItemsFixture,
     obstacles: [],
     targets,
     todayJst: TODAY,
@@ -559,4 +565,28 @@ test("週間ターゲット設定ボタンで週間ターゲットへスクロ�
   const { getByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />);
   getByRole("button", { name: "週間ターゲットを設定する" }).click();
   expect(scrollIntoView).toHaveBeenCalledWith({ behavior: "smooth", block: "start" });
+});
+
+test("追加フォームには対象項目の欄が出て、カタログの項目から選べる", async () => {
+  const { getByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([EXAM_GOAL])} />);
+  getByRole("button", { name: LONG_TERM_ADD_LABEL }).click();
+
+  await waitFor(() => {
+    expect(getByRole("combobox", { name: /実績に数える項目/ })).toBeDefined();
+  });
+  //? Floating UI は happy-dom で位置を測れないので hidden: true で拾う
+  expect(getByRole("option", { hidden: true, name: KINFURE_ITEM.name })).toBeDefined();
+});
+
+test("対象項目つきのチェックポイント行は項目名を実績の前に出す", () => {
+  const { getByText } = renderWithMantine(
+    <GoalsBoard
+      {...goalsBoardProps([EXAM_GOAL, { ...SOON_CHECKPOINT, scopeItemIds: [KINFURE_ITEM._id] }])}
+    />,
+  );
+  expect(
+    getByText(
+      `${KINFURE_ITEM.name}・確定 ${String(SOON_CHECKPOINT.confirmedMinutes)}分 / ${String(SOON_CHECKPOINT.activeDays)}日`,
+    ),
+  ).toBeDefined();
 });

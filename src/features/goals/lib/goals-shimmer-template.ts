@@ -3,11 +3,32 @@ import type { DateJst } from "~domain/jst";
 import type { Goal, Obstacle } from "~/features/goals/types/goal";
 import type { TargetProgress } from "~/features/goals/types/target";
 import type { CategoryDto } from "~/types/category";
+import type { ItemDto } from "~/types/item";
 
 export const goalsShimmerTodayJst = "2026-08-17" satisfies DateJst;
 
 const EXAM_GOAL_ID = "shimmer-goal-exam" as Goal["_id"];
 const LONG_TERM_GOAL_ID = "shimmer-goal-long-term" as Goal["_id"];
+
+const INPUT_CATEGORY_ID = "shimmer-category-input" as CategoryDto["_id"];
+const OUTPUT_CATEGORY_ID = "shimmer-category-output" as CategoryDto["_id"];
+const KINFURE_ITEM_ID = "shimmer-item-kinfure" as ItemDto["_id"];
+
+//? 対象項目のラベルを引き当てる一覧。カテゴリ2つに分属させて MultiSelect の見出しも再現する
+export const goalsShimmerItems = [
+  {
+    _id: KINFURE_ITEM_ID,
+    categoryId: INPUT_CATEGORY_ID,
+    name: "金のフレーズ",
+    sortOrder: 0,
+  },
+  {
+    _id: "shimmer-item-shadowing" as ItemDto["_id"],
+    categoryId: OUTPUT_CATEGORY_ID,
+    name: "音読パッケージ",
+    sortOrder: 1,
+  },
+] satisfies ItemDto[];
 
 //? 実データと同じ階層・同じ件数にして、読み込み後のガタつきをなくす
 //? 本番目標1 + その子1 + 長期目標1 + その子1 + 達成済み1
@@ -31,6 +52,8 @@ export const goalsShimmerGoals = [
     criterion: "Unit 1-10 を止まらずに音読できる",
     deadline: "2026-08-23",
     parentGoalId: EXAM_GOAL_ID,
+    //? 対象項目つきの行を1件混ぜて、読み込み後のガタつきを消す(#53 §9.3)
+    scopeItemIds: [KINFURE_ITEM_ID],
     type: "mastery",
   },
   {
@@ -80,15 +103,15 @@ export const goalsShimmerObstacles = [
 ] satisfies Obstacle[];
 
 export const goalsShimmerCategories = [
-  { _id: "shimmer-category-input" as CategoryDto["_id"], name: "インプット", sortOrder: 0 },
-  { _id: "shimmer-category-output" as CategoryDto["_id"], name: "アウトプット", sortOrder: 1 },
+  { _id: INPUT_CATEGORY_ID, name: "インプット", sortOrder: 0 },
+  { _id: OUTPUT_CATEGORY_ID, name: "アウトプット", sortOrder: 1 },
 ] satisfies CategoryDto[];
 
 export const goalsShimmerTargets = [
   {
     _id: "shimmer-target-input" as TargetProgress["_id"],
     achieved: true,
-    categoryId: "shimmer-category-input" as CategoryDto["_id"],
+    categoryId: INPUT_CATEGORY_ID,
     categoryName: "インプット",
     current: 180,
     metric: "minutes",
@@ -97,7 +120,7 @@ export const goalsShimmerTargets = [
   {
     _id: "shimmer-target-output" as TargetProgress["_id"],
     achieved: false,
-    categoryId: "shimmer-category-output" as CategoryDto["_id"],
+    categoryId: OUTPUT_CATEGORY_ID,
     categoryName: "アウトプット",
     current: 2,
     metric: "days",

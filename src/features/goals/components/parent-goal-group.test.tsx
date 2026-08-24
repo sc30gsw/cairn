@@ -50,6 +50,7 @@ function commonProps() {
   return {
     checkpoints: [],
     form: undefined,
+    items: [],
     onAddCheckpoint: vi.fn(),
     onEditGoal: vi.fn(),
     onRemoveGoal: vi.fn(),

@@ -5,6 +5,7 @@ import {
   ACHIEVED_SECTION_TITLE,
   AchievedHistorySection,
 } from "~/features/goals/components/achieved-history-section";
+import { KINFURE_ITEM, scopeItemsFixture } from "~/features/goals/mocks/goal-scope-fixture";
 import type { MasteryGoal } from "~/features/goals/types/goal";
 import { renderWithMantine } from "~/test-utils/render";
 
@@ -35,6 +36,7 @@ function sectionProps(overrides: Partial<Parameters<typeof AchievedHistorySectio
   return {
     achieved: [ACHIEVED_CHECKPOINT, ACHIEVED_LONG_TERM],
     form: undefined,
+    items: scopeItemsFixture,
     onEditGoal: vi.fn(),
     onRemoveGoal: vi.fn(),
     onSetAchieved: vi.fn(),
@@ -125,4 +127,19 @@ test("編集と削除のアクションが呼ばれる", async () => {
 
   expect(onEditGoal).toHaveBeenCalledWith(ACHIEVED_CHECKPOINT);
   expect(onRemoveGoal).toHaveBeenCalledWith(ACHIEVED_CHECKPOINT);
+});
+
+test("達成履歴の行も、凍結時点の対象項目を短縮形で併記する", async () => {
+  const { getByRole, getByText } = renderWithMantine(
+    <AchievedHistorySection
+      {...sectionProps({
+        achieved: [{ ...ACHIEVED_CHECKPOINT, scopeItemIds: [KINFURE_ITEM._id] }],
+      })}
+    />,
+  );
+  getByRole("button", { name: new RegExp(ACHIEVED_SECTION_TITLE) }).click();
+
+  await waitFor(() => {
+    expect(getByText("金フレ・確定 300分 / 6日")).toBeDefined();
+  });
 });

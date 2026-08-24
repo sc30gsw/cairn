@@ -26,6 +26,8 @@ export function toGoalDto(goal: Doc<"goals">): GoalDto {
     criterion: goal.criterion,
     deadline: goal.deadline,
     parentGoalId: goal.parentGoalId,
+    //? 項目名は載せない。名前の真実を2箇所に置かず、クライアントが items.list から引く(#53 §18-18)。
+    scopeItemIds: goal.scopeItemIds,
     type: "mastery",
   };
 }
