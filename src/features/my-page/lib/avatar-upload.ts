@@ -80,5 +80,3 @@ export async function uploadAvatarBlob(
 export function avatarUploadErrorMessage(error: AvatarUploadError): string {
   return error.message;
 }
-
-export { MAX_AVATAR_BYTES };

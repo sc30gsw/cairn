@@ -93,9 +93,4 @@ export function resetDismissedSetupStoreForTests() {
   dismissedListeners.clear();
 }
 
-export {
-  DISMISSED_CHANGE_EVENT,
-  getDismissedSetupServerSnapshot,
-  getDismissedSetupSnapshot,
-  subscribeToDismissedSetup,
-};
+export { getDismissedSetupServerSnapshot, getDismissedSetupSnapshot, subscribeToDismissedSetup };

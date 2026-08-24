@@ -1,6 +1,6 @@
 import type { Id } from "~/../convex/_generated/dataModel";
 
-export const AVATAR_STORAGE_PREFIX = "convex-storage:";
+const AVATAR_STORAGE_PREFIX = "convex-storage:";
 
 export function encodeAvatarStorageRef(storageId: Id<"_storage">): string {
   return `${AVATAR_STORAGE_PREFIX}${storageId}`;

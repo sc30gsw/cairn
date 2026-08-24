@@ -1,5 +1,5 @@
 /** Neutral display labels for onboarding preview only — not app category IDs. */
-export type CatalogSampleDisplayCategory = "演習" | "試験対策" | "暗記" | "インプット" | "復習";
+type CatalogSampleDisplayCategory = "演習" | "試験対策" | "暗記" | "インプット" | "復習";
 
 /** Illustrative samples for onboarding preview; decoupled from Convex SEED_ITEMS. */
 export const ONBOARDING_CATALOG_SAMPLES = [

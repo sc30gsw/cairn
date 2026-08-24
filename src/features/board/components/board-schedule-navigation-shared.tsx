@@ -34,11 +34,11 @@ export function monthDateString(monthDate: Date): string {
   return `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}-01`;
 }
 
-export function sharedDatePickerProps(todayJst: DateJst) {
+function sharedDatePickerProps(todayJst: DateJst) {
   return learningDatePickerProps(todayJst);
 }
 
-export function pickDateInWeek(
+function pickDateInWeek(
   value: string | null,
   todayJst: DateJst,
   onDateChange: (dateJst: DateJst) => void,
