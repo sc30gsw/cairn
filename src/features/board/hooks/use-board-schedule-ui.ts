@@ -25,7 +25,6 @@ type UseBoardScheduleUiArgs = {
   blocks: readonly BoardScheduleBlock[];
   rows: readonly BoardRow[];
   scheduleRootRef: RefObject<HTMLDivElement | null>;
-  scheduleView: string;
   todayJst: string;
 };
 

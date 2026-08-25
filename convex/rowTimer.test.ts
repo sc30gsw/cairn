@@ -1,15 +1,9 @@
 import { convexTest } from "convex-test";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 
-import { api } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { TIMER_MAX_SEGMENT_MS } from "./lib/rowTimer";
-import {
-  autoStopTimersRef,
-  resumeTimerRef,
-  runningTimerRef,
-  stopTimerRef,
-} from "./lib/rowTimerRefs";
 import schema from "./schema";
 
 //? 計測(#51)の状態機械。純関数の網羅は convex/lib/rowTimer.test.ts に置く。
@@ -28,6 +22,7 @@ const modules = import.meta.glob([
 const OWNER = { email: "owner@example.com", subject: "owner-subject" };
 const OTHER_OWNER = { email: "other@example.com", subject: "other-subject" };
 const MONDAY = "2026-08-17";
+const SUNDAY = "2026-08-16";
 const BASE_MS = Date.UTC(2026, 7, 17, 1, 0, 0);
 
 function raw() {
@@ -90,7 +85,9 @@ test("T2→T3→T2: 2区間の合計が累積に積まれる", async () => {
   await t.mutation(api.mutations.rows.start.start, { rowId: row._id });
 
   vi.setSystemTime(BASE_MS + 600_000);
-  const afterFirst = await t.mutation(stopTimerRef, { rowId: row._id });
+  const afterFirst = await t.mutation(api.mutations.rows.stopTimer.stopTimer, {
+    rowId: row._id,
+  });
   expect(afterFirst).toBe(600_000);
   expect(await timerOf(t, row._id)).toEqual({
     accumulatedMs: 600_000,
@@ -99,9 +96,11 @@ test("T2→T3→T2: 2区間の合計が累積に積まれる", async () => {
   });
 
   vi.setSystemTime(BASE_MS + 900_000);
-  await t.mutation(resumeTimerRef, { rowId: row._id });
+  await t.mutation(api.mutations.rows.resumeTimer.resumeTimer, { rowId: row._id });
   vi.setSystemTime(BASE_MS + 900_000 + 120_000);
-  const afterSecond = await t.mutation(stopTimerRef, { rowId: row._id });
+  const afterSecond = await t.mutation(api.mutations.rows.stopTimer.stopTimer, {
+    rowId: row._id,
+  });
 
   expect(afterSecond).toBe(720_000);
   expect(await timerOf(t, row._id)).toEqual({
@@ -118,10 +117,10 @@ test("T2': 計測していない進行中の記録に stopTimer は失敗せず�
   vi.setSystemTime(BASE_MS);
   await t.mutation(api.mutations.rows.start.start, { rowId: row._id });
   vi.setSystemTime(BASE_MS + 300_000);
-  await t.mutation(stopTimerRef, { rowId: row._id });
+  await t.mutation(api.mutations.rows.stopTimer.stopTimer, { rowId: row._id });
 
   vi.setSystemTime(BASE_MS + 600_000);
-  const again = await t.mutation(stopTimerRef, { rowId: row._id });
+  const again = await t.mutation(api.mutations.rows.stopTimer.stopTimer, { rowId: row._id });
 
   expect(again).toBe(300_000);
 });
@@ -135,7 +134,7 @@ test("T4: autoStopTimers は240分を加算して自動停止の目印を立て�
   vi.useRealTimers();
 
   const now = BASE_MS + TIMER_MAX_SEGMENT_MS;
-  await t.mutation(autoStopTimersRef, { now });
+  await t.mutation(internal.mutations.rows.autoStopTimers.autoStopTimers, { now });
 
   const doc = await rowDoc(t, row._id);
   expect(doc.status).toBe("進行中");
@@ -152,7 +151,7 @@ test("T4: cron が遅れても加算値は240分のまま", async () => {
   await t.mutation(api.mutations.rows.start.start, { rowId: row._id });
   vi.useRealTimers();
 
-  await t.mutation(autoStopTimersRef, {
+  await t.mutation(internal.mutations.rows.autoStopTimers.autoStopTimers, {
     now: BASE_MS + TIMER_MAX_SEGMENT_MS + 30 * 60_000,
   });
 
@@ -167,7 +166,9 @@ test("T4: 240分に達していない計測は自動停止しない", async () =
   await t.mutation(api.mutations.rows.start.start, { rowId: row._id });
   vi.useRealTimers();
 
-  await t.mutation(autoStopTimersRef, { now: BASE_MS + TIMER_MAX_SEGMENT_MS - 60_000 });
+  await t.mutation(internal.mutations.rows.autoStopTimers.autoStopTimers, {
+    now: BASE_MS + TIMER_MAX_SEGMENT_MS - 60_000,
+  });
 
   expect((await rowDoc(t, row._id)).timerStartedAt).toBe(BASE_MS);
 });
@@ -288,14 +289,60 @@ test("T8/T10/T11/T12: 状態を動かす経路の後に計測フィールドは�
   expect(removed.timerAccumulatedMs).toBeUndefined();
 });
 
+test("copyYesterdayConfirmed: 重ねて消える記録は計測フィールドと予定も一緒に消える", async () => {
+  const t = asOwner();
+  const row = await firstRow(t);
+
+  //? 昨日側に同じ項目の確定記録を作る(コピー元)。
+  const yesterdayRowId = await t.mutation(api.mutations.rows.add.add, {
+    content: "Unit 1",
+    dateJst: SUNDAY,
+    itemId: row.itemId,
+    minutes: 0,
+    todayJst: MONDAY,
+  });
+  await t.mutation(api.mutations.rows.confirm.confirm, {
+    content: "Unit 1",
+    minutes: 30,
+    rowId: yesterdayRowId,
+  });
+
+  //? 今日側は同じ項目の記録を計測中にし、予定も紐づけておく(重なって消える側)。
+  await t.mutation(api.mutations.rows.start.start, { rowId: row._id });
+  await t.mutation(api.mutations.boardSchedule.create.create, {
+    endAt: `${MONDAY} 10:30:00`,
+    rowId: row._id,
+    startAt: `${MONDAY} 09:00:00`,
+  });
+
+  await t.mutation(api.mutations.rows.copyYesterdayConfirmed.copyYesterdayConfirmed, {
+    dateJst: MONDAY,
+    todayJst: MONDAY,
+  });
+
+  const overlapped = await rowDoc(t, row._id);
+  expect(overlapped.deletedAt).not.toBeUndefined();
+  expect(overlapped.timerStartedAt).toBeUndefined();
+  expect(overlapped.timerAccumulatedMs).toBeUndefined();
+  expect(overlapped.timerAutoStoppedAt).toBeUndefined();
+
+  const remainingBlocks = await t.run(async (ctx) =>
+    ctx.db
+      .query("boardScheduleEvents")
+      .withIndex("by_row", (q) => q.eq("rowId", row._id))
+      .collect(),
+  );
+  expect(remainingBlocks).toEqual([]);
+});
+
 test("runningTimer は計測が無ければ null、1件あれば項目名と日付を返す", async () => {
   const t = asOwner();
   const row = await firstRow(t);
 
-  expect(await t.query(runningTimerRef, {})).toBeNull();
+  expect(await t.query(api.queries.rows.runningTimer.runningTimer, {})).toBeNull();
 
   await t.mutation(api.mutations.rows.start.start, { rowId: row._id });
-  const running = await t.query(runningTimerRef, {});
+  const running = await t.query(api.queries.rows.runningTimer.runningTimer, {});
 
   expect(running?._id).toBe(row._id);
   expect(running?.dateJst).toBe(MONDAY);
@@ -310,7 +357,7 @@ test("runningTimer は他所有者の計測を返さない", async () => {
   const row = await firstRow(ownerA);
   await ownerA.mutation(api.mutations.rows.start.start, { rowId: row._id });
 
-  expect(await ownerB.query(runningTimerRef, {})).toBeNull();
+  expect(await ownerB.query(api.queries.rows.runningTimer.runningTimer, {})).toBeNull();
 });
 
 test("未認証では計測の関数は失敗する", async () => {
@@ -318,9 +365,13 @@ test("未認証では計測の関数は失敗する", async () => {
   const row = await firstRow(t);
   const anonymous = raw();
 
-  await expect(anonymous.query(runningTimerRef, {})).rejects.toThrow();
-  await expect(anonymous.mutation(stopTimerRef, { rowId: row._id })).rejects.toThrow();
-  await expect(anonymous.mutation(resumeTimerRef, { rowId: row._id })).rejects.toThrow();
+  await expect(anonymous.query(api.queries.rows.runningTimer.runningTimer, {})).rejects.toThrow();
+  await expect(
+    anonymous.mutation(api.mutations.rows.stopTimer.stopTimer, { rowId: row._id }),
+  ).rejects.toThrow();
+  await expect(
+    anonymous.mutation(api.mutations.rows.resumeTimer.resumeTimer, { rowId: row._id }),
+  ).rejects.toThrow();
 });
 
 test("日をゴミ箱に入れた記録の stopTimer は失敗する", async () => {
@@ -329,13 +380,19 @@ test("日をゴミ箱に入れた記録の stopTimer は失敗する", async () 
   await t.mutation(api.mutations.rows.start.start, { rowId: row._id });
   await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: MONDAY });
 
-  await expect(t.mutation(stopTimerRef, { rowId: row._id })).rejects.toThrow();
+  await expect(
+    t.mutation(api.mutations.rows.stopTimer.stopTimer, { rowId: row._id }),
+  ).rejects.toThrow();
 });
 
 test("進行中でない記録の計測は開始も停止もできない", async () => {
   const t = asOwner();
   const row = await firstRow(t);
 
-  await expect(t.mutation(resumeTimerRef, { rowId: row._id })).rejects.toThrow();
-  await expect(t.mutation(stopTimerRef, { rowId: row._id })).rejects.toThrow();
+  await expect(
+    t.mutation(api.mutations.rows.resumeTimer.resumeTimer, { rowId: row._id }),
+  ).rejects.toThrow();
+  await expect(
+    t.mutation(api.mutations.rows.stopTimer.stopTimer, { rowId: row._id }),
+  ).rejects.toThrow();
 });

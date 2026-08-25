@@ -3,6 +3,7 @@ import type { MutationCtx } from "../../_generated/server";
 import { NotFoundError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { keptRowsAfterSwitch } from "../../lib/preset";
+import { removeForRow as removeScheduleEventsForRow } from "../boardSchedule/blocks";
 import { liveRowsForDay } from "../days/liveRowsForDay";
 import { requireEditableDay } from "../days/requireEditableDay";
 import { requireLiveDay } from "../days/requireLiveDay";
@@ -24,8 +25,19 @@ export async function switchPreset(
   const kept = keptRowsAfterSwitch(rows);
   const startOrder = kept.reduce((max, row) => Math.max(max, row.sortOrder), -1);
   //? 消すのも足すのも未着手だけ。確定は残るので習得目標のカウンタは動かさない(ADR-0007)。
+  //? remove.ts と同じく、消す記録に紐づく予定(boardScheduleEvents)も一緒に消す。ここで消さないと
+  //? move -> requireLiveRowForSchedule が永遠に NotFound になる孤児が残る。
   await Promise.all(
-    rows.flatMap((row) => (row.status === "未着手" ? [ctx.db.delete("rows", row._id)] : [])),
+    rows.flatMap((row) =>
+      row.status === "未着手"
+        ? [
+            (async () => {
+              await ctx.db.delete("rows", row._id);
+              await removeScheduleEventsForRow(ctx, ownerId, row._id);
+            })(),
+          ]
+        : [],
+    ),
   );
   await Promise.all(
     preset.lines.map((line, index) =>

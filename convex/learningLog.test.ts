@@ -253,6 +253,70 @@ test("項目 CRUD・使用中削除失敗・プリセット切替", async () => 
   await expect(raw().query(api.queries.items.list.list, {})).rejects.toThrow();
 });
 
+test("項目名は前後空白を落として重複判定・保存する", async () => {
+  const t = await ownerWithCatalog();
+  const categories = await t.query(api.queries.categories.list.list, {});
+  const otherCategory = categories.find((category) => category.name === "その他");
+  if (otherCategory === undefined) {
+    throw new Error("カテゴリがない");
+  }
+  const firstId = await t.mutation(api.mutations.items.create.create, {
+    categoryId: otherCategory._id,
+    name: "  単語帳  ",
+  });
+  const items = await t.query(api.queries.items.list.list, {});
+  expect(items.find((item) => item._id === firstId)?.name).toBe("単語帳");
+
+  const secondId = await t.mutation(api.mutations.items.create.create, {
+    categoryId: otherCategory._id,
+    name: "熟語帳",
+  });
+  //? rename も trim 後の名前で重複判定する(create と同じ規則)
+  await expect(
+    t.mutation(api.mutations.items.rename.rename, {
+      categoryId: otherCategory._id,
+      itemId: secondId,
+      name: " 単語帳 ",
+    }),
+  ).rejects.toThrow();
+});
+
+test("プリセット行の分数が NaN/Infinity なら作成・更新を弾く", async () => {
+  const t = await ownerWithCatalog();
+  const items = await t.query(api.queries.items.list.list, {});
+  const distinction = items.find((item) => item.name === "Distinction 2000");
+  if (distinction === undefined) {
+    throw new Error("Distinction がない");
+  }
+  const seededSunday = (await t.query(api.queries.presets.list.list, {})).find(
+    (preset) => preset.weekday === 0,
+  );
+  if (seededSunday === undefined) {
+    throw new Error("日曜プリセットがない");
+  }
+  await t.mutation(api.mutations.presets.remove.remove, { presetId: seededSunday._id });
+  await expect(
+    t.mutation(api.mutations.presets.create.create, {
+      lines: [{ content: "x", itemId: distinction._id, minutes: Number.NaN }],
+      name: "不正",
+      weekday: 0,
+    }),
+  ).rejects.toThrow();
+  const presetId = await t.mutation(api.mutations.presets.create.create, {
+    lines: [{ content: "x", itemId: distinction._id, minutes: 10 }],
+    name: "正常",
+    weekday: 0,
+  });
+  await expect(
+    t.mutation(api.mutations.presets.update.update, {
+      lines: [{ content: "x", itemId: distinction._id, minutes: Number.POSITIVE_INFINITY }],
+      name: "正常",
+      presetId,
+      weekday: 0,
+    }),
+  ).rejects.toThrow();
+});
+
 test("カテゴリ CRUD・項目が残っていると削除失敗", async () => {
   const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
@@ -540,6 +604,42 @@ test("分析クエリと年ヒートマップが学習量を返す", async () =>
   const mondayHeat = heatmap.days.find((entry) => entry.dateJst === MONDAY);
   expect(mondayHeat?.minutes).toBe(45);
   expect(mondayHeat?.condition).toBeNull();
+});
+
+test("ゴミ箱の日の dayBreakdown は休養扱いで0分になる", async () => {
+  const t = owner();
+  const trashedDate = MONDAY;
+  const laterToday = "2026-08-19";
+  await t.run(async (ctx) => {
+    const itemId = await ctx.db.insert("items", {
+      name: "Distinction 2000",
+      ownerId: OWNER.subject,
+    });
+    const dayId = await ctx.db.insert("days", {
+      condition: "普通",
+      dateJst: trashedDate,
+      deletedAt: Date.now(),
+      ownerId: OWNER.subject,
+    });
+    await ctx.db.insert("rows", {
+      content: "",
+      dateJst: trashedDate,
+      dayId,
+      itemId,
+      minutes: 30,
+      ownerId: OWNER.subject,
+      sortOrder: 0,
+      status: "確定",
+    });
+  });
+  const dayBreakdown = await t.query(api.queries.history.dayBreakdown.dayBreakdown, {
+    dateJst: trashedDate,
+    todayJst: laterToday,
+  });
+  expect(dayBreakdown.confirmedMinutes).toBe(0);
+  expect(dayBreakdown.rows).toEqual([]);
+  expect(dayBreakdown.byCondition).toEqual([]);
+  expect(dayBreakdown.isRest).toBe(true);
 });
 
 test("分析内訳は同一項目の確定を合算し、未着手を載せない", async () => {

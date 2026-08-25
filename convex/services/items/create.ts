@@ -10,12 +10,13 @@ export async function create(
   args: { categoryId: Id<"categories">; name: string },
 ): Promise<Id<"items">> {
   await requireOwnedCategory(ctx, ownerId, args.categoryId);
-  if (args.name.trim() === "") {
+  const name = args.name.trim();
+  if (name === "") {
     throwDomain(new ValidationFailedError({ message: "項目名は必須です" }));
   }
   const duplicate = await ctx.db
     .query("items")
-    .withIndex("by_owner_and_name", (q) => q.eq("ownerId", ownerId).eq("name", args.name))
+    .withIndex("by_owner_and_name", (q) => q.eq("ownerId", ownerId).eq("name", name))
     .unique();
   if (duplicate !== null) {
     throwDomain(new ConflictError({ message: "同じ名前の項目があります" }));
@@ -23,7 +24,7 @@ export async function create(
   const sortOrder = await nextSortOrder(ctx, ownerId, args.categoryId);
   return await ctx.db.insert("items", {
     categoryId: args.categoryId,
-    name: args.name,
+    name,
     ownerId,
     sortOrder,
   });

@@ -3,6 +3,7 @@ import { Result } from "better-result";
 
 import type { Id } from "~/../convex/_generated/dataModel";
 import { MAX_AVATAR_BYTES } from "~/../convex/lib/avatarStorage";
+import { presentError } from "~/lib/error-presentation";
 import { AuthActionError } from "~/lib/errors";
 
 export class AvatarTooLargeError extends TaggedError("AvatarTooLarge")<{
@@ -14,6 +15,7 @@ export class AvatarUnsupportedTypeError extends TaggedError("AvatarUnsupportedTy
 }> {}
 
 export class AvatarUploadFailedError extends TaggedError("AvatarUploadFailed")<{
+  cause?: unknown;
   message: string;
 }> {}
 
@@ -51,8 +53,9 @@ export async function uploadAvatarBlob(
   }
 
   const uploadResult = await Result.tryPromise({
-    catch: () =>
+    catch: (cause) =>
       new AvatarUploadFailedError({
+        cause,
         message: "アップロードに失敗しました",
       }),
     try: async () => {
@@ -77,6 +80,12 @@ export async function uploadAvatarBlob(
   return uploadResult;
 }
 
+//* AvatarUploadFailedError の message は既定の一般文言なので、cause がサーバのドメインエラー
+//* (ConvexError の data に message/tag を持つもの)であれば presentError 経由で具体的な文言に差し替える。
+//* それ以外(fetch 失敗など)の cause は presentError が既定文言にフォールバックし、既存の挙動を保つ
 export function avatarUploadErrorMessage(error: AvatarUploadError): string {
+  if (error instanceof AvatarUploadFailedError) {
+    return presentError(error.cause, error.message).message;
+  }
   return error.message;
 }

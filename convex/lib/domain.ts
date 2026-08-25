@@ -1,8 +1,21 @@
+import { ValidationFailedError } from "./errors";
+import { throwDomain } from "./ownerFunctions";
+
 export const STATUSES = ["確定", "未着手", "進行中", "スキップ"] as const;
 
 export type Status = (typeof STATUSES)[number];
 
 export const MINUTES_MIN_MESSAGE = "分数は0以上です";
+
+//* rows / presets のどちらでも分数を確定・保存する前に必ず通す境界チェック。
+//? args.minutes < 0 は NaN/Infinity を素通しするので、Number.isFinite を先に見る。
+//? 整数強制は既存の UI/テストに影響が大きいので、ここでは要求しない(保守的)。
+export function requireValidMinutes(minutes: number): number {
+  if (!Number.isFinite(minutes) || minutes < 0) {
+    throwDomain(new ValidationFailedError({ message: MINUTES_MIN_MESSAGE }));
+  }
+  return minutes;
+}
 
 //* 目標タイプ。判定の入り方で切った固定2値 — docs/adr/0006-checkpoints-replace-weekly-goals.md
 //? 期限つき習得の呼び名が「チェックポイント」。独立したタイプではないので、ここには増えない。

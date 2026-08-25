@@ -86,7 +86,6 @@ export function BoardSchedule({ blocks, pending = false, rows, view }: BoardSche
     blocks,
     rows,
     scheduleRootRef,
-    scheduleView,
     todayJst,
   });
 
@@ -237,15 +236,12 @@ export function BoardSchedule({ blocks, pending = false, rows, view }: BoardSche
                   if (blockId === undefined) {
                     return;
                   }
-                  await onRemoveBlock({
-                    blockId: blockId as BoardScheduleBlock["_id"],
-                  });
+                  await onRemoveBlock({ blockId });
                   ui.setFormOpened(false);
                 }
           }
           onSubmit={async (values) => {
-            const blockId =
-              values.blockId ?? (ui.formValues?.blockId as BoardScheduleBlock["_id"] | undefined);
+            const blockId = values.blockId ?? ui.formValues?.blockId;
             const payload = {
               color: values.color,
               endAt: dateToScheduleInstant(values.end),
@@ -254,13 +250,13 @@ export function BoardSchedule({ blocks, pending = false, rows, view }: BoardSche
             if (blockId === undefined) {
               await onCreateBlock({
                 ...payload,
-                rowId: values.rowId as BoardRow["_id"],
+                rowId: values.rowId,
               });
               return;
             }
             await onUpdateBlock({
-              blockId: blockId as BoardScheduleBlock["_id"],
-              rowId: values.rowId as BoardRow["_id"],
+              blockId,
+              rowId: values.rowId,
               ...payload,
             });
           }}

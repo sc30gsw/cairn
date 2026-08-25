@@ -40,10 +40,11 @@ export type PaceChartPoint = {
   均: number;
 };
 
+//? teal は theme.ts のカラータプルに無い(design-live-board.md ルール2)。7日平均は green で表す
 export const PACE_CHART_SERIES = [
   { color: "blue.6", label: "完了", name: "完了", type: "bar" as const },
-  { color: "teal.5", label: "7日平均", name: "均", type: "area" as const },
-];
+  { color: "green.6", label: "7日平均", name: "均", type: "area" as const },
+] as const;
 
 /** X軸ラベル（例: 08/17） */
 export function paceChartDayLabel(dateJst: DateJst): string {

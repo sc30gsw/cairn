@@ -1,13 +1,14 @@
-import { useMutation } from "convex/react";
-
 import { api } from "~/../convex/_generated/api";
 import type { Id } from "~/../convex/_generated/dataModel";
+import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export function useAvatarUploadDeps() {
-  const generateUploadUrl = useMutation(
+  const generateUploadUrl = useConvexMutation(
     api.mutations.profile.generateAvatarUploadUrl.generateAvatarUploadUrl,
   );
-  const claimAvatarUpload = useMutation(api.mutations.profile.claimAvatarUpload.claimAvatarUpload);
+  const claimAvatarUpload = useConvexMutation(
+    api.mutations.profile.claimAvatarUpload.claimAvatarUpload,
+  );
 
   return {
     claimAvatarUpload: async (args: {

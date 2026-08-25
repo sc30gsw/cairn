@@ -17,6 +17,18 @@ export async function collapseExtraLiveDays(
   if (winner === undefined) {
     return null;
   }
-  await Promise.all(live.slice(1).map((day) => ctx.db.delete("days", day._id)));
+  const losers = live.slice(1);
+  //? 消える側(loser)の配下の記録を勝者の日へ付け替えてから日を消す。付け替えないと、消えた
+  //? dayId を指したまま孤児になった記録が日表示から見えなくなるのに集計には数え続けてしまう。
+  for (const loser of losers) {
+    const orphanedRows = await ctx.db
+      .query("rows")
+      .withIndex("by_day", (q) => q.eq("dayId", loser._id))
+      .collect();
+    await Promise.all(
+      orphanedRows.map((row) => ctx.db.patch("rows", row._id, { dayId: winner._id })),
+    );
+  }
+  await Promise.all(losers.map((day) => ctx.db.delete("days", day._id)));
   return winner;
 }

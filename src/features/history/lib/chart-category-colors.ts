@@ -1,4 +1,8 @@
-const CHART_CATEGORY_COLORS: Record<string, string> = {
+import type { Category } from "~domain/domain";
+
+//? 実データのカテゴリー名は appUsers ごとに増減しうる(初期シードのみ Category と一致)。
+//? リネーム/削除後の名前が来ても実行時 fallback(gray)で崩れないよう、Record<string,string> は保つ。
+const CHART_CATEGORY_COLORS = {
   TOEIC対策: "blue.6",
   多聴: "yellow.6",
   多読: "blue.4",
@@ -6,8 +10,11 @@ const CHART_CATEGORY_COLORS: Record<string, string> = {
   その他: "gray.6",
   不明: "gray.5",
   見送り: "yellow.4",
-};
+} as const satisfies Record<Category | "不明" | "見送り", string>;
 
 export function chartCategoryColor(category: string): string {
-  return CHART_CATEGORY_COLORS[category] ?? CHART_CATEGORY_COLORS["不明"] ?? "gray.5";
+  return (
+    (CHART_CATEGORY_COLORS as Record<string, string | undefined>)[category] ??
+    CHART_CATEGORY_COLORS["不明"]
+  );
 }

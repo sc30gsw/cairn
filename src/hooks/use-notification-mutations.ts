@@ -1,19 +1,14 @@
-import {
-  markAllNotificationsReadRef,
-  markNotificationsReadRef,
-  saveNotificationSettingsRef,
-} from "~domain/notificationRefs";
-
+import { api } from "~/../convex/_generated/api";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export function useMarkNotificationsRead() {
-  return useConvexMutation(markNotificationsReadRef);
+  return useConvexMutation(api.mutations.notifications.markRead.markRead);
 }
 
 export function useMarkAllNotificationsRead() {
-  return useConvexMutation(markAllNotificationsReadRef);
+  return useConvexMutation(api.mutations.notifications.markAllRead.markAllRead);
 }
 
 export function useSaveNotificationSettings() {
-  return useConvexMutation(saveNotificationSettingsRef);
+  return useConvexMutation(api.mutations.notifications.saveSettings.saveSettings);
 }

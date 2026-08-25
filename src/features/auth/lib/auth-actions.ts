@@ -1,3 +1,5 @@
+import { Result } from "better-result";
+
 import type {
   AccountLoginInput,
   AccountSignUpInput,
@@ -5,6 +7,7 @@ import type {
 import { isEmailAddress } from "~/features/auth/schemas/account-auth-schema";
 import { type AuthActionResult, runAuthAction } from "~/lib/auth-action-result";
 import { authClient } from "~/lib/auth-client";
+import { AuthActionError } from "~/lib/errors";
 import {
   PASSKEY_OAUTH_PENDING_KEY,
   PASSKEY_SIGNUP_PROMPT_KEY,
@@ -69,17 +72,37 @@ export async function signInWithPasskey(): Promise<AuthActionResult> {
   );
 }
 
-export function signInWithNotion() {
+export async function signInWithNotion(): Promise<AuthActionResult> {
   writePasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY, true);
-  void authClient.signIn.social({ provider: "notion" });
+  const result = await runAuthAction(async () => {
+    const authResult = await authClient.signIn.social({ provider: "notion" });
+    if (authResult.error) {
+      throw authActionError(authResult.error, "signIn");
+    }
+  }, "signIn");
+  if (Result.isError(result)) {
+    //? リダイレクトが起きなかったので、サインアップ後プロンプトへの誤昇格を防ぐ
+    writePasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY, false);
+  }
+  return result;
 }
 
-export function signOutAndReload() {
-  void authClient.signOut({
-    fetchOptions: {
-      onSuccess: reloadAfterAuth,
+export async function signOutAndReload(): Promise<AuthActionResult> {
+  return runAuthAction(
+    async () => {
+      const authResult = await authClient.signOut();
+      if (authResult.error) {
+        //? サインアウト専用の AuthErrorContext は未定義(auth-error-messages.ts は本タスクの所有ファイル外)。
+        //? ここは固定文言で通知する
+        throw new AuthActionError({
+          cause: authResult.error,
+          message: "ログアウトに失敗しました。時間をおいて、もう一度お試しください。",
+        });
+      }
     },
-  });
+    "signIn",
+    reloadAfterAuth,
+  );
 }
 
 export type { AuthActionResult } from "~/lib/auth-action-result";

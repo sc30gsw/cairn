@@ -8,6 +8,7 @@ import { useAvatarUploadDeps } from "~/features/my-page/hooks/use-avatar-upload-
 import { useMyPageUser } from "~/features/my-page/hooks/use-my-page-user";
 import { avatarUploadErrorMessage, uploadAvatarBlob } from "~/features/my-page/lib/avatar-upload";
 import { useAvatarDisplayUrl } from "~/hooks/use-avatar-display-url";
+import { notifyError } from "~/lib/notify";
 import { updateProfileImage } from "~/lib/profile-actions";
 import { userLabel } from "~/lib/user-label";
 
@@ -35,6 +36,9 @@ export function ProfileSection() {
         setPreviewSrc(reader.result);
         setCropOpen(true);
       }
+    };
+    reader.onerror = () => {
+      notifyError(reader.error, "画像の読み込みに失敗しました");
     };
     reader.readAsDataURL(file);
   }

@@ -6,8 +6,8 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { measuredMs, timerMinutes } from "~domain/rowTimer";
-import { runningTimerRef } from "~domain/rowTimerRefs";
 
+import { api } from "~/../convex/_generated/api";
 import { useStopRunningTimer } from "~/hooks/use-row-mutations";
 import { useTimerTick } from "~/hooks/use-timer-tick";
 import { useTodayJst } from "~/hooks/use-today-jst";
@@ -20,7 +20,9 @@ import { formatTimerClock } from "~/lib/timer-clock";
 //* ボードから離れても計測中が見えていること。放置対策として最も効く手当て(study-timer.md §13.2)。
 //? 置ける操作は ⏸ と「ボードへ」だけ。確定は項目名と分数を見ながらボードで行う。
 export function RunningTimerIndicator() {
-  const { data: running } = useSuspenseQuery(convexQuery(runningTimerRef, {}));
+  const { data: running } = useSuspenseQuery(
+    convexQuery(api.queries.rows.runningTimer.runningTimer, {}),
+  );
   const stopTimer = useStopRunningTimer();
   const startedAt = running?.timer.startedAt ?? null;
   const nowMs = useTimerTick(startedAt !== null);

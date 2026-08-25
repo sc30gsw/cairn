@@ -1,16 +1,29 @@
 import * as v from "valibot";
 import { BOARD_SCHEDULE_COLORS, type BoardScheduleColor } from "~domain/boardScheduleColors";
 
+import type { BoardRow, BoardScheduleBlock } from "~/features/board/types/board";
+
 export { BOARD_SCHEDULE_COLORS, type BoardScheduleColor };
 
 const BoardScheduleColorSchema = v.picklist(BOARD_SCHEDULE_COLORS);
 
+//? id はサーバ由来のブランド付き Id。goal-schema.ts の ParentGoalIdSchema と同じ型だけ検証する
+//? パターンで受け、呼び出し側で as を書かずに済ませる。
+const BlockIdSchema = v.custom<BoardScheduleBlock["_id"]>(
+  (value) => typeof value === "string" && value.length > 0,
+);
+
+const RowIdSchema = v.custom<BoardRow["_id"]>(
+  (value) => typeof value === "string" && value.length > 0,
+  "項目を選んでください",
+);
+
 export const BoardScheduleEventSchema = v.pipe(
   v.object({
-    blockId: v.optional(v.string()),
+    blockId: v.optional(BlockIdSchema),
     color: BoardScheduleColorSchema,
     end: v.date(),
-    rowId: v.pipe(v.string(), v.nonEmpty("項目を選んでください")),
+    rowId: RowIdSchema,
     start: v.date(),
   }),
   v.forward(

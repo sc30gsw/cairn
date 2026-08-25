@@ -1,11 +1,13 @@
 import type { MutationCtx } from "../../_generated/server";
 import { STATUSES } from "../../lib/domain";
 import { addDaysJst } from "../../lib/jst";
+import { removeForRow as removeScheduleEventsForRow } from "../boardSchedule/blocks";
 import { getLiveDay } from "../days/getLiveDay";
 import { liveRowsForDay } from "../days/liveRowsForDay";
 import { requireEditableDay } from "../days/requireEditableDay";
 import { requireLiveDay } from "../days/requireLiveDay";
 import { withMasteryProgressDelta } from "../goals/withMasteryProgressDelta";
+import { clearTimerFields } from "./clearTimerFields";
 
 export async function copyYesterdayConfirmed(
   ctx: MutationCtx,
@@ -36,7 +38,13 @@ export async function copyYesterdayConfirmed(
     //? 足すコピーは未着手なので、この包みの外に置く。
     await withMasteryProgressDelta(ctx, ownerId, { dateJst: args.dateJst }, async () => {
       await Promise.all(
-        overlapping.map((row) => ctx.db.patch("rows", row._id, { deletedAt: Date.now() })),
+        overlapping.map(async (row) => {
+          //? remove.ts と同じ手順(計測フィールドを消す+紐づく予定を消す)を踏む。ここだけ
+          //? bare patch にすると、走ったままの計測が残った行がゴミ箱に入ってしまう
+          //? (docs/specs/study-timer.md §4.3)。
+          await ctx.db.patch("rows", row._id, { ...clearTimerFields(), deletedAt: Date.now() });
+          await removeScheduleEventsForRow(ctx, ownerId, row._id);
+        }),
       );
     });
   }

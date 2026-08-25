@@ -20,13 +20,20 @@ const modules = import.meta.glob([
 const OWNER = { email: "owner@example.com", subject: "owner-subject" };
 const OTHER_OWNER = { email: "other@example.com", subject: "other-subject" };
 
+//? convex-test の storage/storeBlob は size と sha256 しか _storage に書かず、Blob の type を
+//? contentType に載せない(本番の Convex は載せる)。claim は contentType を検証するため、
+//? ここで本番同等のメタデータになるよう補う。system テーブルへの patch は convex-test 限定の便宜。
 async function storeTestBlob(
   t: ReturnType<typeof convexTest>,
   contentType = "image/png",
 ): Promise<Id<"_storage">> {
-  return await t.run(async (ctx) =>
-    ctx.storage.store(new Blob([new Uint8Array([1, 2, 3])], { type: contentType })),
-  );
+  return await t.run(async (ctx) => {
+    const storageId = await ctx.storage.store(
+      new Blob([new Uint8Array([1, 2, 3])], { type: contentType }),
+    );
+    await ctx.db.patch("_storage", storageId, { contentType });
+    return storageId;
+  });
 }
 
 async function registerStorageForOwner(
@@ -37,6 +44,11 @@ async function registerStorageForOwner(
   await t.run(async (ctx) => {
     await ctx.db.insert("avatarUploads", { ownerId: ownerSubject, storageId });
   });
+}
+
+//? ConvexError は throwDomain 経由なら .data.tag に元の DomainError の _tag が残る(CVX-03/18)。
+async function expectDomainError(promise: Promise<unknown>, tag: string, message: string) {
+  await expect(promise).rejects.toMatchObject({ data: { message, tag } });
 }
 
 test("未認証の profile.generateAvatarUploadUrl は throw する", async () => {
@@ -66,26 +78,38 @@ test("未認証の profile.getAvatarUrl は throw する", async () => {
   ).rejects.toThrow();
 });
 
-test("getAvatarUrl は claim 前の storage を拒否する", async () => {
+test("getAvatarUrl は未 claim の storage には null を返す(想定内の欠落)", async () => {
   const t = convexTest(schema, modules);
   const asOwner = t.withIdentity(OWNER);
   const storageId = await storeTestBlob(t);
 
-  await expect(
-    asOwner.query(api.queries.profile.getAvatarUrl.getAvatarUrl, { storageId }),
-  ).rejects.toThrow("この画像にアクセスする権限がありません");
+  const url = await asOwner.query(api.queries.profile.getAvatarUrl.getAvatarUrl, { storageId });
+  expect(url).toBeNull();
 });
 
-test("getAvatarUrl は他 owner が claim した storage を拒否する", async () => {
+test("getAvatarUrl は blob が既に削除された avatarUploads にも null を返す", async () => {
+  const t = convexTest(schema, modules);
+  const asOwner = t.withIdentity(OWNER);
+  const storageId = await storeTestBlob(t);
+  await registerStorageForOwner(t, OWNER.subject, storageId);
+  await t.run(async (ctx) => ctx.storage.delete(storageId));
+
+  const url = await asOwner.query(api.queries.profile.getAvatarUrl.getAvatarUrl, { storageId });
+  expect(url).toBeNull();
+});
+
+test("getAvatarUrl は他 owner が claim した storage を ForbiddenError で拒否する", async () => {
   const t = convexTest(schema, modules);
   const asOwner = t.withIdentity(OWNER);
   const storageId = await storeTestBlob(t);
 
   await registerStorageForOwner(t, OTHER_OWNER.subject, storageId);
 
-  await expect(
+  await expectDomainError(
     asOwner.query(api.queries.profile.getAvatarUrl.getAvatarUrl, { storageId }),
-  ).rejects.toThrow("この画像にアクセスする権限がありません");
+    "Forbidden",
+    "この画像にアクセスする権限がありません",
+  );
 });
 
 test("claim 後の getAvatarUrl は URL を返す", async () => {
@@ -99,7 +123,27 @@ test("claim 後の getAvatarUrl は URL を返す", async () => {
   expect(url).toMatch(/^https?:\/\//);
 });
 
-test("claimAvatarUpload は contentType 未設定の storage を拒否する", async () => {
+test("claimAvatarUpload は metadata の無い storage を NotFoundError で拒否する", async () => {
+  const t = convexTest(schema, modules);
+  const asOwner = t.withIdentity(OWNER);
+  const storageId = await storeTestBlob(t);
+  const { claimId } = await asOwner.mutation(
+    api.mutations.profile.generateAvatarUploadUrl.generateAvatarUploadUrl,
+    {},
+  );
+  await t.run(async (ctx) => ctx.storage.delete(storageId));
+
+  await expectDomainError(
+    asOwner.mutation(api.mutations.profile.claimAvatarUpload.claimAvatarUpload, {
+      claimId,
+      storageId,
+    }),
+    "NotFound",
+    "アップロードした画像が見つかりません",
+  );
+});
+
+test("claimAvatarUpload は contentType 未設定の storage を ValidationFailedError で拒否する", async () => {
   const t = convexTest(schema, modules);
   const asOwner = t.withIdentity(OWNER);
   const storageId = await t.run(async (ctx) =>
@@ -110,15 +154,17 @@ test("claimAvatarUpload は contentType 未設定の storage を拒否する", a
     {},
   );
 
-  await expect(
+  await expectDomainError(
     asOwner.mutation(api.mutations.profile.claimAvatarUpload.claimAvatarUpload, {
       claimId,
       storageId,
     }),
-  ).rejects.toThrow("JPEG または PNG");
+    "ValidationFailed",
+    "JPEG または PNG の画像を選んでください",
+  );
 });
 
-test("claimAvatarUpload は他人の claimId を拒否する", async () => {
+test("claimAvatarUpload は他人の claimId を ForbiddenError で拒否する", async () => {
   const t = convexTest(schema, modules);
   const asOwner = t.withIdentity(OWNER);
   const asOther = t.withIdentity(OTHER_OWNER);
@@ -129,10 +175,64 @@ test("claimAvatarUpload は他人の claimId を拒否する", async () => {
     {},
   );
 
-  await expect(
+  await expectDomainError(
     asOwner.mutation(api.mutations.profile.claimAvatarUpload.claimAvatarUpload, {
       claimId,
       storageId,
     }),
-  ).rejects.toThrow("アップロードの認可が無効です");
+    "Forbidden",
+    "アップロードの認可が無効です",
+  );
+});
+
+test("claimAvatarUpload は別アカウントに紐づく storage を ForbiddenError で拒否する", async () => {
+  const t = convexTest(schema, modules);
+  const asOwner = t.withIdentity(OWNER);
+  const storageId = await storeTestBlob(t);
+  await registerStorageForOwner(t, OTHER_OWNER.subject, storageId);
+
+  const { claimId } = await asOwner.mutation(
+    api.mutations.profile.generateAvatarUploadUrl.generateAvatarUploadUrl,
+    {},
+  );
+
+  await expectDomainError(
+    asOwner.mutation(api.mutations.profile.claimAvatarUpload.claimAvatarUpload, {
+      claimId,
+      storageId,
+    }),
+    "Forbidden",
+    "この画像は別のアカウントに紐づいています",
+  );
+});
+
+test("claimAvatarUpload は再 claim 時に旧アバターの行と blob を消す", async () => {
+  const t = convexTest(schema, modules);
+  const asOwner = t.withIdentity(OWNER);
+  const oldStorageId = await storeTestBlob(t);
+  await registerStorageForOwner(t, OWNER.subject, oldStorageId);
+
+  const newStorageId = await storeTestBlob(t);
+  const { claimId } = await asOwner.mutation(
+    api.mutations.profile.generateAvatarUploadUrl.generateAvatarUploadUrl,
+    {},
+  );
+
+  await asOwner.mutation(api.mutations.profile.claimAvatarUpload.claimAvatarUpload, {
+    claimId,
+    storageId: newStorageId,
+  });
+
+  //? 旧 avatarUploads 行が消えている。
+  const remaining = await t.run(async (ctx) =>
+    ctx.db
+      .query("avatarUploads")
+      .withIndex("by_owner_and_storage", (q) => q.eq("ownerId", OWNER.subject))
+      .collect(),
+  );
+  expect(remaining.map((row) => row.storageId)).toEqual([newStorageId]);
+
+  //? 旧 blob も storage から消えている(ストレージ漏れ対策)。
+  const oldMetadata = await t.run(async (ctx) => ctx.db.system.get("_storage", oldStorageId));
+  expect(oldMetadata).toBeNull();
 });

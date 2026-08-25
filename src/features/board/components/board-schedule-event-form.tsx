@@ -3,6 +3,7 @@ import type { SubmitHandler } from "@formisch/react";
 import { Button, ColorSwatch, Group, Modal, Select, Stack } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
 import { useEffect } from "react";
+import { DEFAULT_BOARD_SCHEDULE_COLOR } from "~domain/boardScheduleColors";
 
 import { boardScheduleColorCss } from "~/features/board/lib/board-schedule-color-ui";
 import { scheduleInstantToDate } from "~/features/board/lib/schedule-instant";
@@ -45,11 +46,13 @@ export function BoardScheduleEventForm({
 }: BoardScheduleEventFormProps) {
   const rowOptions = rows.map((row) => ({ label: row.itemName, value: row._id }));
   const form = useForm({
+    //? rows が空のときは選べる項目が無い(送信ボタンも disabled)。プレースホルダとして
+    //? 空文字を割り当てる — RowIdSchema の nonEmpty 相当チェックで弾かれるのが意図通り。
     initialInput: initialValues ?? {
       blockId: undefined,
-      color: "blue",
+      color: DEFAULT_BOARD_SCHEDULE_COLOR,
       end: new Date(),
-      rowId: rows[0]?._id ?? "",
+      rowId: (rows[0]?._id ?? "") as BoardRow["_id"],
       start: new Date(),
     },
     schema: BoardScheduleEventSchema,
@@ -193,7 +196,7 @@ function slotFormValues(
   }
   return {
     blockId: undefined,
-    color: "blue",
+    color: DEFAULT_BOARD_SCHEDULE_COLOR,
     end: scheduleInstantToDate(end),
     rowId: firstRow._id,
     start: scheduleInstantToDate(start),

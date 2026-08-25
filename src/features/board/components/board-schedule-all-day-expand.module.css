@@ -1,0 +1,8 @@
+/*? UnstyledButton は素のまま。色は Mantine の gray スケール(CSS 変数)で塗る(mantine-tailwind.md)。*/
+.editableItem {
+  background-color: var(--mantine-color-gray-1);
+}
+
+.editableItem:hover {
+  background-color: var(--mantine-color-gray-2);
+}

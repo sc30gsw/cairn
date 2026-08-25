@@ -11,12 +11,13 @@ export async function rename(
 ): Promise<null> {
   const item = await requireOwnedItem(ctx, ownerId, args.itemId);
   await requireOwnedCategory(ctx, ownerId, args.categoryId);
-  if (args.name.trim() === "") {
+  const name = args.name.trim();
+  if (name === "") {
     throwDomain(new ValidationFailedError({ message: "項目名は必須です" }));
   }
   const duplicate = await ctx.db
     .query("items")
-    .withIndex("by_owner_and_name", (q) => q.eq("ownerId", ownerId).eq("name", args.name))
+    .withIndex("by_owner_and_name", (q) => q.eq("ownerId", ownerId).eq("name", name))
     .unique();
   if (duplicate !== null && duplicate._id !== args.itemId) {
     throwDomain(new ConflictError({ message: "同じ名前の項目があります" }));
@@ -27,7 +28,7 @@ export async function rename(
     : (item.sortOrder ?? (await nextSortOrder(ctx, ownerId, args.categoryId)));
   await ctx.db.patch("items", args.itemId, {
     categoryId: args.categoryId,
-    name: args.name,
+    name,
     sortOrder,
   });
   return null;

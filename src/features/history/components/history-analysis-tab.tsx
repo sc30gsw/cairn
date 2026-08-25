@@ -1,17 +1,19 @@
-import { Card } from "@mantine/core";
+import { Anchor, Card } from "@mantine/core";
+import { useSuspenseQueries } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 
 import { HistoryAnalysisPanel } from "~/features/history/components/analysis/history-analysis-panel";
 import { PresetReviewPanel } from "~/features/history/components/analysis/preset-review-panel";
 import {
-  useHistoryDayBreakdown,
-  useHistoryMonthBreakdown,
-  useHistoryPresetReview,
-  useHistoryWeek,
-  useHistoryWeekBreakdown,
-  useHistoryYearHeatmap,
+  historyDayBreakdownQuery,
+  historyMonthBreakdownQuery,
+  historyPresetReviewQuery,
+  historyWeekBreakdownQuery,
+  historyWeekQuery,
+  historyYearHeatmapQuery,
 } from "~/features/history/hooks/history-queries";
 import { useHistoryView } from "~/features/history/hooks/use-history-view";
+import { parallelConvexQuery } from "~/lib/parallel-convex-query";
 
 export function HistoryAnalysisTab() {
   const {
@@ -23,12 +25,26 @@ export function HistoryAnalysisTab() {
     weekAnchor,
     yearMonth,
   } = useHistoryView();
-  const { data: monthBreakdown } = useHistoryMonthBreakdown(today, yearMonth);
-  const { data: yearHeatmap } = useHistoryYearHeatmap(today);
-  const { data: weekPage } = useHistoryWeek(weekAnchor, today);
-  const { data: weekBreakdown } = useHistoryWeekBreakdown(weekAnchor, today);
-  const { data: dayBreakdown } = useHistoryDayBreakdown(selectedDateJst, today);
-  const { data: presetReview } = useHistoryPresetReview(today);
+
+  //? 6本の useSuspenseQuery を直列に並べると6回分の往復が直列化するため、useSuspenseQueries で
+  //? 並列取得する(パフォーマンス)。引数の SSoT は history-queries.ts のクエリファクトリのまま。
+  const [
+    { data: monthBreakdown },
+    { data: yearHeatmap },
+    { data: weekPage },
+    { data: weekBreakdown },
+    { data: dayBreakdown },
+    { data: presetReview },
+  ] = useSuspenseQueries({
+    queries: [
+      parallelConvexQuery(historyMonthBreakdownQuery(today, yearMonth)),
+      parallelConvexQuery(historyYearHeatmapQuery(today)),
+      parallelConvexQuery(historyWeekQuery(weekAnchor, today)),
+      parallelConvexQuery(historyWeekBreakdownQuery(weekAnchor, today)),
+      parallelConvexQuery(historyDayBreakdownQuery(selectedDateJst, today)),
+      parallelConvexQuery(historyPresetReviewQuery(today)),
+    ],
+  });
 
   return (
     <>
@@ -50,14 +66,14 @@ export function HistoryAnalysisTab() {
           yearMonth={yearMonth}
         />
       </Card>
-      <Card mt="md" padding="md" className="text-center">
-        <Link
-          params={{ dateJst: selectedDateJst }}
-          to="/days/$dateJst"
-          className="text-primary-6 hover:underline"
+      <Card mt="md" padding="md" ta="center">
+        <Anchor
+          renderRoot={(props) => (
+            <Link {...props} params={{ dateJst: selectedDateJst }} to="/days/$dateJst" />
+          )}
         >
           選択中の日 ({selectedDateJst}) を編集
-        </Link>
+        </Anchor>
       </Card>
     </>
   );

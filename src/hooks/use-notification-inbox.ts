@@ -1,11 +1,12 @@
 import { convexQuery } from "@convex-dev/react-query";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { notificationListRef, notificationSettingsRef } from "~domain/notificationRefs";
+
+import { api } from "~/../convex/_generated/api";
 
 export function useNotificationInbox() {
-  return useSuspenseQuery(convexQuery(notificationListRef, {}));
+  return useSuspenseQuery(convexQuery(api.queries.notifications.list.list, {}));
 }
 
 export function useNotificationSettings() {
-  return useSuspenseQuery(convexQuery(notificationSettingsRef, {}));
+  return useSuspenseQuery(convexQuery(api.queries.notifications.settings.settings, {}));
 }

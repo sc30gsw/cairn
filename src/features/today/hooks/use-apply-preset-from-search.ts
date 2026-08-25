@@ -1,3 +1,4 @@
+import { Result } from "better-result";
 import { useEffect, useRef } from "react";
 import type { DateJst } from "~domain/jst";
 
@@ -8,7 +9,17 @@ import type { DaySearch } from "~/features/today/schemas/day-search-schema";
 import { useTodayJst } from "~/hooks/use-today-jst";
 import { runMutation } from "~/lib/run-mutation";
 import type { PresetId } from "~/types/item";
-import { parsePresetId, unwrapPresetId } from "~/types/item";
+import { parsePresetId } from "~/types/item";
+
+//? URL の preset は外部入力。不正な値(空文字はスキーマ側で undefined 化済み、それ以外の
+//? 実在しない id 文字列)は「指定なし」として扱う。unwrap で例外化して render を壊さない
+function presetIdFromSearch(presetFromSearch: DaySearch["preset"]): null | PresetId {
+  if (presetFromSearch === undefined) {
+    return null;
+  }
+  const parsed = parsePresetId(presetFromSearch);
+  return Result.isOk(parsed) ? parsed.value : null;
+}
 
 export function useApplyPresetFromSearch(
   dateJst: DateJst,
@@ -22,11 +33,11 @@ export function useApplyPresetFromSearch(
   const defaultPresetId = weekdayPresetId(dateJst, presets);
 
   useEffect(() => {
-    if (!isToday || presetFromSearch === undefined) {
+    if (!isToday) {
       return;
     }
-    const presetId = unwrapPresetId(parsePresetId(presetFromSearch));
-    if (appliedPresetRef.current === presetId) {
+    const presetId = presetIdFromSearch(presetFromSearch);
+    if (presetId === null || appliedPresetRef.current === presetId) {
       return;
     }
     appliedPresetRef.current = presetId;
@@ -42,8 +53,7 @@ export function useApplyPresetFromSearch(
   return {
     appliedPresetRef,
     defaultPresetId,
-    selectedPresetId:
-      presetFromSearch === undefined ? null : unwrapPresetId(parsePresetId(presetFromSearch)),
+    selectedPresetId: presetIdFromSearch(presetFromSearch),
     switchPreset,
   };
 }

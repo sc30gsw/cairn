@@ -10,9 +10,9 @@ import {
   Outlet,
   RouterProvider,
 } from "@tanstack/react-router";
-import { cleanup, render, type RenderOptions } from "@testing-library/react";
+import { act, cleanup, render, type RenderOptions } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
-import { Suspense } from "react";
+import { Suspense, useSyncExternalStore } from "react";
 import "dayjs/locale/ja";
 import { afterEach, vi } from "vite-plus/test";
 
@@ -83,18 +83,42 @@ export function renderWithMantine(ui: ReactElement, options?: Omit<RenderOptions
   return render(ui, { wrapper: Wrapper, ...options });
 }
 
+//? rerender は RouterProvider ごと差し替える必要がある(素の要素を render し直すと
+//? ルーター外になり getRouteApi().useSearch() が null store で落ちる)。外部ストアに
+//? 現在の要素を持たせ、Page がそれを購読することで memo 化に関係なく更新が届く。
+function createElementStore(initial: ReactElement) {
+  let current = initial;
+  const listeners = new Set<() => void>();
+  return {
+    get: () => current,
+    set(next: ReactElement) {
+      current = next;
+      for (const listener of listeners) {
+        listener();
+      }
+    },
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+}
+
 export async function renderWithMemoryRouter(
   ui: ReactElement,
   initialEntry = "/",
   options?: Omit<RenderOptions, "wrapper">,
 ) {
+  const store = createElementStore(ui);
   const rootRoute = createRootRoute({
     component: function Root() {
       return <Outlet />;
     },
   });
   function Page() {
-    return ui;
+    return useSyncExternalStore(store.subscribe, store.get, store.get);
   }
   const indexRoute = createRoute({
     component: Page,
@@ -116,5 +140,14 @@ export async function renderWithMemoryRouter(
   });
   await router.load();
 
-  return render(<RouterProvider router={router} />, { wrapper: Wrapper, ...options });
+  const result = render(<RouterProvider router={router} />, { wrapper: Wrapper, ...options });
+
+  return {
+    ...result,
+    rerender(next: ReactElement) {
+      act(() => {
+        store.set(next);
+      });
+    },
+  };
 }

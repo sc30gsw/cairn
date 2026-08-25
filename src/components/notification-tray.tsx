@@ -12,6 +12,7 @@ import {
   Stack,
   Text,
   UnstyledButton,
+  VisuallyHidden,
 } from "@mantine/core";
 import { IconBell, IconBellOff } from "@tabler/icons-react";
 import { Link } from "@tanstack/react-router";
@@ -50,8 +51,13 @@ function NotificationRow({ notification, onMarkRead }: NotificationRowProps) {
       to={notificationLink(notification.payload.kind)}
     >
       <Group align="flex-start" gap="xs" wrap="nowrap">
-        {/*? 未読の点。既読の行には出さない */}
-        {notification.read ? null : <Box bg="orange.5" h={6} mt={6} w={6} />}
+        {/*? 未読の点。既読の行には出さない。色だけに頼らず VisuallyHidden でも未読を伝える */}
+        {notification.read ? null : (
+          <>
+            <Box bg="orange.5" h={6} mt={6} w={6} />
+            <VisuallyHidden>未読</VisuallyHidden>
+          </>
+        )}
         <Stack gap={2} miw={0}>
           <Text fw={600} size="sm">
             {title}

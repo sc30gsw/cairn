@@ -18,12 +18,13 @@ export async function runAuthAction(
   context: AuthErrorContext,
   onSuccess?: () => void | Promise<void>,
 ): Promise<AuthActionResult> {
-  const result = await Result.tryPromise({
+  return Result.tryPromise({
     catch: (cause) => authActionErrorFromUnknown(cause, context),
-    try: action,
+    try: async () => {
+      await action();
+      if (onSuccess !== undefined) {
+        await onSuccess();
+      }
+    },
   });
-  if (Result.isOk(result) && onSuccess !== undefined) {
-    await onSuccess();
-  }
-  return result;
 }
