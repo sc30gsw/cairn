@@ -1,5 +1,4 @@
 import type { DateJst } from "~domain/jst";
-import { todayJst } from "~domain/jst";
 import { hasTimerState, timerMinutes } from "~domain/rowTimer";
 
 import {
@@ -24,6 +23,7 @@ import type {
   SetMemoInput,
   SkipRowInput,
 } from "~/features/today/types/mutations";
+import { useTodayJst } from "~/hooks/use-today-jst";
 import { runMutation } from "~/lib/run-mutation";
 import type { PresetId } from "~/types/item";
 
@@ -36,7 +36,7 @@ export function useDayBoardActions(
   rows: readonly Pick<DayRow, "_id" | "category" | "timer">[],
   options: UseDayBoardActionsOptions = {},
 ) {
-  const today = todayJst();
+  const today = useTodayJst();
   const confirm = useConfirmRow();
   const skip = useSkipRow();
   const unskip = useUnskipRow();

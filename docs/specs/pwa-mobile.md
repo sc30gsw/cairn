@@ -16,7 +16,7 @@
 3. **書き込みは止めない。5秒未解決なら警告する。** Convex クライアントは短時間の切断中の mutation をキューして再接続時に送る。ここを潰すと「地下鉄で10秒切れる」常用ケースが悪化する。`runMutation` に「5秒経っても未解決なら『まだ保存されていません』の永続通知」を足すだけにする。`navigator.onLine` はバナー表示のみに使い、送信判断には使わない（嘘をつくため。§9.2、§19-9）。
 4. **SW の更新は自動で奪わない。** `skipWaiting: false` / `clientsClaim: false`。新版を検知したら Mantine の通知に「更新する」ボタンを出し、押されたら `SKIP_WAITING` を postMessage → `controllerchange` → `location.reload()`（§8.2）。
 5. **モバイルナビは上部の横スクロール列を捨て、画面下端の下小口タブにする。** standalone 起動ではブラウザ枠が無く、画面最上部はノッチ側で親指から最も遠い。**日 / ボード / 履歴 / 目標** の4本 + 「その他」Menu（項目 / プリセット / ゴミ箱）を下端固定にする。デスクトップの右小口レールは**無変更**（§10）。
-6. **実行ボードのモバイルはドラッグを捨て、カード上の Menu で動かす。** 「5列縦積み + 長押しドラッグ + ページスクロール」は三重に衝突していて成立していない。列は**横スナップスクロール**（1画面1列）にし、各カードの `⋮` Menu から「移動」（状態遷移）と「上へ / 下へ」（並べ替え）を出す。**確定はドラッグ経路と1本に統合し、#51 が決めた `stopTimer` → 計測値プレフィル → 確定モーダル の順を必ず通す**（§11）。
+6. **実行ボードのモバイルはドラッグを捨て、カード上の Menu で動かす。** 「5列縦積み + 長押しドラッグ + ページスクロール」は三重に衝突していて成立していない。列は**横スナップスクロール**（1画面1列）にし、各カードの `⋮` Menu から「移動」（状態遷移）と「上へ / 下へ」（並べ替え）を出す。**確定はドラッグ経路と1本に統合し、#51 が決めた「計測があれば `stopTimer` → その値でそのまま確定」／「計測なし・分数0だけ確定エディタ」の順を必ず通す**（§11）。
 7. **スケジュールタブは「ドラッグを切るだけ」。作成用の新 UI は作らない。** コード確認の結果、`onTimeSlotClick` と `onDayClick`（月/年ビューは `onAdd`）で**タップからの作成経路が既に存在する**（`board-schedule.tsx` L117-141 / L196-202）。したがってモバイルでは `withEventsDragAndDrop` と `withDragSlotSelect` を落とすだけでよく、新しい純関数もボタンも要らない（§11.4。これは前版の設計から**削った**部分。§19-13）。
 8. **スプラッシュは所有者の実機1機種分だけ生成する。** iOS は Manifest 標準ではなく Apple 独自の `apple-touch-startup-image`。media query が一致しない機種は「画像なし」に落ちるだけで崩れないので、iPhone 1サイズ（縦・横）だけ用意する（§6.4、§19-11）。
 9. **Convex のスキーマ・関数は一切変えない。** PWA はクライアント側の話。`pushSubscriptions` 表も `deliverWebPush` も **#58 完了後の後続チケット**の所有物で、ここでも #56 でも作らない（§13、§22.1）。
@@ -880,15 +880,15 @@ function BottomIndexTabs({ pathname }: Record<"pathname", string>) {
 ```
 
 - ラベルは `RECORD_STATUS_UI` の表示名（完了 / 見送り）に合わせ、状態名の生値（確定 / スキップ）を UI に出さない。既存カンバンの列見出しは生値のままだが、それは既存の不整合であり本仕様では触らない。
-- **「完了にする」はドラッグと完全に同じ経路を通る（§11.3 の `onStatusMove`）。** すなわち「計測があれば先に `stopTimer` を await → 戻り値から `prefillMinutes` → `needsKanbanConfirmEditor(row)` または計測があれば確定モーダル → 無ければ `rows.confirm`」。#51（[study-timer.md](study-timer.md) §11.3 / §14）が `needsKanbanConfirmEditor` に `hasTimerState(row.timer)` を足して塞いだバグ（**目安分数のまま確定して計測結果を捨てる**）を、新設のメニュー経路で再導入しないための必須事項。`onStatusMove` に `row.minutes` を直渡しする分岐を**書いてはいけない**。
-- メニュー項目は `stopTimer` の解決を待つので、押した後は `loading` にする（study-timer.md §8.3 の「確定モーダルは `stopTimer` が解決してから開く」と同じ扱い）。
-- 破壊的な操作は無い（見送りは `unskip` で戻せる）ので Confirm は出さない。ADR-0011「カンバンのドラッグによる状態変更は即実行」と揃える。
+- **「完了にする」はドラッグと完全に同じ経路を通る（§11.3 の `onStatusMove`）。** すなわち「計測があれば先に `stopTimer` を await → その値でそのまま `rows.confirm` → Toast『学習時間 n分を記録しました』／計測が無く `needsKanbanConfirmEditor(row)` なら確定エディタ／どちらでもなければ既存 `minutes` で `rows.confirm`」。#51（[study-timer.md](study-timer.md) §11.3 / §14）が `needsKanbanConfirmEditor` に足した「計測なし かつ `minutes === 0`」の条件を、新設のメニュー経路で崩さないための必須事項。`onStatusMove` に `row.minutes` を直渡しする分岐を**書いてはいけない**。
+- メニュー項目は `stopTimer` の解決を待つので、押した後は `loading` にする（study-timer.md §8.3 の「確定は `stopTimer` が解決してから行う」と同じ扱い）。
+- **ボードは確認モーダルを出さない**（ADR-0014）。ドラッグ・メニューのどちらの経路でも即実行する。「未着手に戻す」が `確定 → 未着手`（`unconfirm`）のときは実行後に Toast「確定を取り消しました」、`進行中 → 未着手`（`pause`）で計測があるときは Toast「計測 n分を捨てました」（Undo は無い）。「見送りにする」も計測があれば同じ「計測 n分を捨てました」。ADR-0011「カンバンのドラッグによる状態変更は即実行」と、メニュー経路もここで揃える。
 
 ### 11.3 遷移の実行経路を1本にする
 
 現行 `handleDragEnd` に埋まっている `if (statusMove === "confirm") ... else if ...` の連鎖（`board-kanban.tsx` L145-167）を `use-board-kanban-actions.ts` に移す。**この関数がドラッグ経路とメニュー経路の唯一の合流点なので、#51 が決めた確定手順はここに1度だけ書く。**
 
-前提: 本チケットの着地時点で #51 は既に入っている（実装順は タイマー(#51) → PWA(#58)）。したがって `needsKanbanConfirmEditor(row)` は既に `hasTimerState(row.timer)` を含み、確定モーダルは `prefillMinutes: number | null` を受け取り、`rows.stopTimer` は加算後の `timerAccumulatedMs`（`v.number()`）を返す。
+前提: 本チケットの着地時点で #51 は既に入っている（実装順は タイマー(#51) → PWA(#58)）。したがって `needsKanbanConfirmEditor(row)` は既に「計測なし かつ `minutes === 0`」の条件を持ち、`rows.stopTimer` は加算後の `timerAccumulatedMs`（`v.number()`）を返す。ボードの確認モーダルは ADR-0014 で全廃済みなので、この関数が開くのは確定エディタ（分数0・計測なしのときだけ）に限られる。破壊的な移動（計測を捨てる `pause` / `skip`、確定を取り消す `unconfirm`）は Confirm を挟まず即実行し、結果を Toast だけで知らせる（study-timer.md §13.4）。
 
 ```ts
 // src/features/board/hooks/use-board-kanban-actions.ts に追加
@@ -896,7 +896,7 @@ import { hasTimerState, timerMinutes } from "~domain/rowTimer";
 
 return {
   /* 既存の onApplyOrder / onConfirm / ... はそのまま */
-  //* ドラッグ経路とメニュー経路の両方がここを通る。モーダルを開く side effect は呼び出し側の state なので callback で受ける。
+  //* ドラッグ経路とメニュー経路の両方がここを通る。確定エディタを開く side effect は呼び出し側の state なので callback で受ける。
   onStatusMove: async (
     move: KanbanStatusMove,
     row: BoardRow,
@@ -904,32 +904,39 @@ return {
   ) => {
     switch (move) {
       case "confirm": {
-        //? 先にサーバで区間を閉じる。目安分数のまま確定すると計測結果を捨てる(study-timer.md §11.3)。
-        const accumulatedMs = hasTimerState(row.timer)
-          ? await onStopTimer({ rowId: row._id })
-          : null;
-        if (needsKanbanConfirmEditor(row) || accumulatedMs !== null) {
-          openConfirmEditor({
-            prefillMinutes: accumulatedMs === null ? null : timerMinutes(accumulatedMs),
-            row,
+        //? 計測がある行は確認エディタを挟まない。stopTimer が返すサーバ真値の分数でそのまま確定する。
+        //? stopTimer 失敗(null)時だけ安全側でエディタを開く。
+        if (hasTimerState(row.timer)) {
+          const accumulatedMs = await onStopTimer(row._id);
+          if (accumulatedMs === null) {
+            openConfirmEditor({ prefillMinutes: null, row });
+            return;
+          }
+          return await onConfirm({
+            content: row.content,
+            minutes: timerMinutes(accumulatedMs),
+            rowId: row._id,
           });
+        }
+        //? 計測が無く minutes === 0 の行だけエディタを開く(「ひとこと」は確定ゲートにしない)。
+        if (needsKanbanConfirmEditor(row)) {
+          openConfirmEditor({ prefillMinutes: null, row });
           return;
         }
-        //? ここに来るのは「計測が無く、content と minutes が既に埋まっている行」だけ。
-        return onConfirm({ content: row.content, minutes: row.minutes, rowId: row._id });
+        return await onConfirm({ content: row.content, minutes: row.minutes, rowId: row._id });
       }
       case "skip":
-        return onSkip({ rowId: row._id });
+        return await onSkip({ rowId: row._id }); //? 呼び出し側(handleDragEnd)が計測ありのときだけ successMessage を渡す
       case "unskip":
-        return onUnskip({ rowId: row._id });
+        return await onUnskip({ rowId: row._id });
       case "unconfirm":
-        return onUnconfirm({ rowId: row._id });
+        return await onUnconfirm({ rowId: row._id }); //? 常に Toast「確定を取り消しました」
       case "start":
-        return onStart({ rowId: row._id });
+        return await onStart({ rowId: row._id });
       case "pause":
-        return onPause({ rowId: row._id });
+        return await onPause({ rowId: row._id }); //? 呼び出し側が計測ありのときだけ successMessage を渡す
       case "reopen":
-        return onReopen({ rowId: row._id });
+        return await onReopen({ rowId: row._id }); //? silent（Toast なし）
       case "noop":
         return;
     }
@@ -937,10 +944,13 @@ return {
 };
 ```
 
+`onConfirm` は `runMutation` に `successMessage: \`学習時間 ${input.minutes}分を記録しました\`` を渡し、計測あり/なしどちらの経路でも同じ文言で Toast を出す（CVX-16 により `rows.confirm` の戻り値は `v.null()` なので、分数はこの呼び出し時点の入力値から組み立てる）。`onPause` / `onSkip` は `successMessage` を第2引数に取り、`board-kanban.tsx` の `handleDragEnd` 側が `hasTimerState(row.timer)` のときだけ「計測 n分を捨てました」を渡す（計測が無ければ未指定 = silent）。
+
 - `board-kanban.tsx` の `handleDragEnd` と `BoardKanbanCardMenu` は、どちらも `onStatusMove(move, row, setConfirmRow)` を `await` で呼ぶだけになる。**`onConfirm` を直接呼ぶ呼び出し側は残さない**（残すと確定経路が2本に戻る）。
 - 並べ替え（`onApplyOrder`）の扱いは現行のまま。ドラッグは「状態遷移 + 並べ替え」が同時に起きうるが、メニューは「移動」と「上へ / 下へ」が別項目なので同時には起きない。`pendingOrderRef` の仕組みはドラッグ経路専用のまま残す。
-- `openConfirmEditor` を callback で渡すのは、モーダルの開閉 state が `board-kanban.tsx` にあるため（フックへ持ち上げると `confirmRow` の所有者が2箇所になる）。判定（`stopTimer` を呼ぶか、モーダルが必要か）は**すべてフック側**にあるので、呼び出し側が手順を間違える余地は無い。
+- `openConfirmEditor` を callback で渡すのは、確定エディタの開閉 state が `board-kanban.tsx` にあるため（フックへ持ち上げると `confirmRow` の所有者が2箇所になる）。判定（`stopTimer` を呼ぶか、確定エディタが要るか）は**すべてフック側**にあるので、呼び出し側が手順を間違える余地は無い。
 - `switch` を網羅させることで `KanbanStatusMove` に値が増えたときに型エラーで気づく。
+- Confirm は一切出さない。エラー Toast も出さない — mutation が失敗すれば reactive query が元の状態へ巻き戻すので、その巻き戻りだけがフィードバックになる（ADR-0014）。
 
 ### 11.4 スケジュールタブのモバイル: ドラッグを切るだけ
 
@@ -1070,7 +1080,7 @@ PWA は**新しい clock 依存を作らない**。`dateJst` はこれまでど�
 
 - インストールプロンプト、更新通知、オフラインバナー、カードの Menu、下小口タブはいずれも入力を取らない。
 - スケジュールの作成・編集は既存の `board-schedule-event-form.tsx` と既存の Valibot スキーマ `board-schedule-event-schema.ts` をそのまま開く。**スキーマは1行も変えない**（§11.4 でドラッグを切っても、作成に渡る値は既存の `slotFormValues` / `DEFAULT_DAY_BLOCK_*` のまま）。
-- 確定モーダルのスキーマ（`row-editor-schema.ts` / `validate-confirm-row.ts`）も変えない。`prefillMinutes` は #51 が既に足した props。
+- 確定エディタのスキーマ（`row-editor-schema.ts` / `validate-confirm-row.ts`）も変えない。`prefillMinutes` は #51 が既に足した props。
 - `localStorage` に持つ新しい状態も無い（インストールプロンプトの「あとで」を覚えない — 自動で出さないので覚える対象が無い）。
 
 ---
@@ -1151,9 +1161,9 @@ PWA は**新しい clock 依存を作らない**。`dateJst` はこれまでど�
 | `kanbanMoveMenuItems` | frontend（unit） | `未着手` → 進行中 / 確定 / スキップ の3件。`確定` → 進行中(reopen) / 未着手(unconfirm) / スキップ の3件。`スキップ` → 未着手(unskip) / 確定 / 進行中 で `"noop"` が落ちること |
 | `PAPER_TOKENS` | frontend（unit） | `orangeAccent === theme.colors.orange[5]`。`desk === manifest の theme_color / background_color` |
 | `AppShell`（新規テスト） | frontend | `getByRole("navigation", { name: /下小口/ })` の中に 日 / ボード / 履歴 / 目標 の4リンクがあり 項目 は無い。「その他」を押すと `getByRole("menuitem", { hidden: true, name: "項目" })` が出る。現在ページに `aria-current="page"` |
-| `BoardKanbanCardMenu` | frontend | `未着手` の行で「完了にする」を押すと `onStatusMove("confirm", row, ...)` が呼ばれる。`content` が空 or `minutes === 0` の行では確定モーダルが開く。「上へ」が先頭行では出ない |
-| **メニュー経由の確定（計測あり）** | frontend | `hasTimerState(row.timer) === true` の行で「完了にする」を押すと、(1) `onStopTimer` が `{ rowId }` で呼ばれ、(2) その解決**後**に確定モーダルが開き、(3) 分数の初期値が `timerMinutes(戻り値)`（`row.minutes` ではない）、(4) `rows.confirm` は `row.minutes` では呼ばれない。#51 が塞いだ「目安分数のまま確定して計測を捨てる」バグの回帰テスト（ドラッグ経路側は study-timer.md §17 が持つ） |
-| メニュー経由の確定（計測なし） | frontend | `hasTimerState(row.timer) === false` かつ `content` / `minutes` が埋まっている行では `onStopTimer` が呼ばれず、モーダルも開かず、`onConfirm({ content, minutes: row.minutes, rowId })` が直接呼ばれる |
+| `BoardKanbanCardMenu` | frontend | `未着手` の行で「完了にする」を押すと `onStatusMove("confirm", row, ...)` が呼ばれる。`minutes === 0` かつ計測なしの行では確定エディタが開く。「上へ」が先頭行では出ない |
+| **メニュー経由の確定（計測あり）** | frontend | `hasTimerState(row.timer) === true` の行で「完了にする」を押すと、(1) `onStopTimer` が `{ rowId }` で呼ばれ、(2) その解決**後**に確定エディタを開かず `rows.confirm` がそのまま呼ばれる、(3) 分数は `timerMinutes(戻り値)`（`row.minutes` ではない）、(4) Toast「学習時間 n分を記録しました」が出る。#51 が塞いだ「目安分数のまま確定して計測を捨てる」バグの回帰テスト（ドラッグ経路側は study-timer.md §17 が持つ） |
+| メニュー経由の確定（計測なし） | frontend | `hasTimerState(row.timer) === false` かつ `minutes` が埋まっている行では `onStopTimer` が呼ばれず、エディタも開かず、`onConfirm({ content, minutes: row.minutes, rowId })` が直接呼ばれる |
 | `OfflineBanner` | frontend | `useOnlineStatus` を `false` にモックしてメッセージが出る。`true` で何も描かない |
 | `runMutation` | frontend | `vi.useFakeTimers()` で5秒進めると警告通知が出る。解決後に `notifications.hide` が呼ばれる。4.9秒で解決したら出ない。**2本を並行させ、先に1本解決しても通知が消えず、2本目の解決で消えること**（§9.2 の参照カウント） |
 | `InstallAppSection` | frontend | `matchMedia("(display-mode: standalone)")` を true にモックすると「起動中」バッジ。`beforeinstallprompt` を発火させると「ホーム画面に追加」ボタンが出て、押すと `prompt()` が呼ばれる |
@@ -1375,7 +1385,7 @@ SSR HTML をキャッシュして app-shell 型にする案、オフライン時
 - 幅 375px で:
   - 下小口タブ4本 + 「その他」が親指の届く位置に出て、本文がバーに隠れない。「その他」側のページ（項目など）に居るとき「その他」が active に見える（E22）。
   - カンバンが横スナップで1画面1列。スワイプで「戻る」が発火しない。掴み手が見えない。
-  - カードの `⋮` から 進行中 / 完了 / 未着手 / 見送り / 上へ / 下へ が操作できる。「完了にする」で確定モーダルが開く行と開かない行の両方を確認。**計測中の行では、モーダルの分数が目安分数ではなく計測値（`stopTimer` の戻り値）で開くことを実機で確認する**（ドラッグ経路と同じ数字になること）。
+  - カードの `⋮` から 進行中 / 完了 / 未着手 / 見送り / 上へ / 下へ が操作できる。「完了にする」で確定エディタが開く行（分数0・計測なし）と開かない行の両方を確認。**計測中の行では、エディタを開かず計測値（`stopTimer` の戻り値）でそのまま確定し、Toast「学習時間 n分を記録しました」が出ることを実機で確認する**（ドラッグ経路と同じ数字になること）。
   - **スケジュールのスロットをタップすると作成フォームが開く**（§11.4 の前提の実測）。予定をタップすると編集フォームが開く。ドラッグでは何も起きない。
   - 入力にフォーカスしても iOS がズームしない。
 - 幅 1280px で右小口レール・5列カンバン・ドラッグが**現状のまま**であること。

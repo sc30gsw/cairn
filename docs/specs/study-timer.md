@@ -13,7 +13,7 @@
 1. **タイマーは「進行中」の副状態**であり、新しい記録の状態を作らない。`進行中` = 取り組み中（CONTEXT のまま）で、その内側に `計測中` / `一時停止` / `計測なし` の3つを持つ（§4）。
 2. **開始時刻はサーバが持ち、経過は画面が導出する。** `rows` に `timerStartedAt`（epoch ms, mutation で `Date.now()`）を保存し、query は時計を読まない（CVX-14）。表示は `Date.now() - timerStartedAt + timerAccumulatedMs` の派生値（§8）。
 3. **記録された分数の正は `rows.minutes` のまま。** タイマーは学習量の別系統を作らない。計測値は**確定時の分数の初期値**として使われるだけで、確定は今までどおり `rows.confirm({ content, minutes })` を通る（§11）。
-4. **確定前にサーバで区間を畳む。** 確定は `stopTimer`（サーバの `Date.now()` で区間を `timerAccumulatedMs` に加算し、加算後の ms を返す）→ プレフィルされた確定モーダル → `confirm` の順。これで**端末の時計ずれが記録値に入らない**（§8.3）。
+4. **確定前にサーバで区間を畳む。** 確定は `stopTimer`（サーバの `Date.now()` で区間を `timerAccumulatedMs` に加算し、加算後の ms を返す）→ その値でそのまま `confirm` の順。**確定エディタが挟まるのは計測が無く分数も無い行だけ**（§11.3）。これで**端末の時計ずれが記録値に入らない**（§8.3）。
 5. **複数タブ・リロードに専用機構を入れない。** Convex の reactive query が `timerStartedAt` を全タブへ配るので、全タブが同じサーバ値から同じ経過を導く。`BroadcastChannel` も `localStorage` 同期も持たない（§9）。
 6. **放置は決定的なクランプで潰す。** 1区間の上限は **240分**。上限は `timerStartedAt` だけから決まる純関数なので、掃除 cron が遅れても記録される値は変わらない。cron（15分間隔の `internalMutation`）は自動停止を書き込み、`timerAutoStoppedAt` を立てて画面に警告を出す。**自動確定はしない**（§10）。
 7. **同時に計測できるのは1件。** 進行中の記録は何件あってもよいが、`timerStartedAt` を持つのは所有者につき最大1件。別の記録の計測を始めると、走っていた計測は自動で一時停止する（エラーにしない）（§4.4）。
@@ -33,7 +33,7 @@
 | 確定→進行中 | `services/rows/reopen.ts` | `withMasteryProgressDelta` で囲んで status のみ patch。 |
 | 確定 | `services/rows/confirm.ts` | `content` / `minutes` / `status: "確定"` を patch。分数は**常に呼び出し側が渡した値**。 |
 | カンバンの遷移解決 | `src/features/board/lib/kanban-order.ts` | `resolveKanbanStatusMove` が `start` / `pause` / `reopen` / `confirm` / `skip` / `unskip` / `unconfirm` を返す純関数。 |
-| 確定モーダル | `src/features/board/components/board-kanban-confirm-modal.tsx` | `needsKanbanConfirmEditor(row)`（`content` が空 or `minutes === 0`）のときだけ開く。開かないときは**行の既存 `minutes` がそのまま確定される**。 |
+| 確定エディタ | `src/features/board/components/board-kanban-confirm-modal.tsx` | `needsKanbanConfirmEditor(row)`（計測なし かつ `minutes === 0`）のときだけ開く。開かないときは、計測があればその値で・無ければ**行の既存 `minutes` がそのまま**確定される。 |
 | 楽観更新 | `src/hooks/use-row-mutations.ts` / `src/lib/optimistic-day-rows.ts` | `setDayRowStatus` が `days.get` のキャッシュ内の `status` だけ差し替える。 |
 | 日ページの分数入力 | `src/features/today/components/row-editor.tsx` | Formisch + `RowEditorSchema`。`saveIfConfirmedDirty` は `row.status !== "確定"` なら早期 return（= 確定前の手入力はフォームのローカル状態）。Switch を入れるとフォームの `minutes` で確定する。 |
 | 掃除 cron の先例 | `convex/crons.ts` + `convex/mutations/trash/purgeExpired.ts` | `internalMutation({ args: { now: v.optional(v.number()) } })` を cron から呼び、サービス側で `args.now ?? Date.now()`。`rows` の疎インデックス `by_deletedAt` に `gte(0).lte(cutoff)` の範囲を当てて `.collect()`。 |
@@ -110,7 +110,7 @@ ADR の新規作成は不要。ADR-0007（実績カウンタの非正規化）�
 | T12 | ゴミ箱へ | 任意 | `rows.remove` | 変えない | 消す | 消す | 消す | 変えない |
 
 - **T9 が「手入力分数との併存」の要点**。確定済み 30分 の記録を進行中へ戻すと、計測は 30分 から続く。目安分数（プリセット由来）は実績ではないので、T1 では `0` から始める。この非対称は意図的。
-- **T7 は破壊的**（計測を捨てる）ので、UI 側で必ず Confirm を出す（§13.4）。
+- **T7 は破壊的**（計測を捨てる）。ボードでは Confirm を挟まず即実行し、計測があれば実行後に Toast「計測 n分 を捨てました」で知らせる。Undo は無い（§13.4）。
 - T4 は `status` を変えない。**自動確定・自動見送りはしない**（学習量は所有者の判断だけで動く）。
 
 ### 4.3 不変条件（実装が守り、テストが確認する）
@@ -130,7 +130,7 @@ ADR の新規作成は不要。ADR-0007（実績カウンタの非正規化）�
 
 `rows.start` / `rows.resumeTimer` / `rows.reopen` は、書き込みの前に共通ヘルパ `stopRunningTimer(ctx, ownerId, exceptRowId)` を呼ぶ。ヘルパは `by_owner_and_timerStartedAt` で走っている行を引き、あれば T5 を適用する。**同一 mutation トランザクション内**で行うので、二重計上の隙間はできない（CVX-15）。
 
-エラーにしない理由: 開始はカンバンのドラッグから起きる。ドラッグの途中で「他が計測中です」と失敗させると、行は進行中に移ったのに計測は始まらない、という半端な状態をユーザーに見せることになる。自動退避のうえでトースト（`notifySuccess`）で「〈項目名〉の計測を止めました」と伝える方が、実際の操作の意図に合う。
+エラーにしない理由: 開始はカンバンのドラッグから起きる。ドラッグの途中で「他が計測中です」と失敗させると、行は進行中に移ったのに計測は始まらない、という半端な状態をユーザーに見せることになる。自動退避は Toast の3種（§13.4）に含まれないので silent（表示は退避された側の行が自動で「一時停止」に変わることで伝わる）。
 
 ---
 
@@ -314,7 +314,7 @@ import { stopTimer as stopRowTimer } from "../../services/rows/stopTimer";
 export const stopTimer = ownerMutation({
   args: { rowId: v.id("rows") },
   handler: async (ctx, args) => stopRowTimer(ctx, ctx.ownerId, args),
-  //? 確定モーダルのプレフィルに使うので、加算後の値を返す(クライアント時計を使わせない)。
+  //? 確定にそのまま使う値なので、加算後の値を返す(クライアント時計を使わせない)。
   returns: v.number(),
 });
 ```
@@ -390,7 +390,7 @@ crons.interval(
 `rows.pause` は**一時停止ではなく「進行中の取り消し（未着手へ戻す）」**である（既にデプロイ済みの名前）。タイマーの一時停止は `rows.stopTimer` である。改名（`pause` → `unstart`）は `kanban-order.ts` の `KanbanStatusMove`、`use-row-mutations.ts`、既存テストに波及するので**今回は行わない**。代わりに次を必須とする。
 
 - `services/rows/pause.ts` の先頭に `//? 一時停止ではない。進行中の取り消し(未着手へ戻す)。計測の一時停止は stopTimer。` を書く。
-- UI の文言は関数名から離す。カンバンの `進行中 → 未着手` ドラッグの Confirm タイトルは「計測を捨てて未着手に戻しますか？」。
+- UI の文言は関数名から離す。カンバンの `進行中 → 未着手` ドラッグは Confirm を挟まず、計測があれば確定後に Toast「計測 n分を捨てました」を出す（§13.4）。
 
 ---
 
@@ -438,7 +438,7 @@ export function useTimerTick(active: boolean) {
 
 ### 8.3 端末の時計ずれ
 
-**記録される分数はクライアントの時計に依存しない。** 確定の直前に `stopTimer` を呼び、サーバの `Date.now()` で区間を畳んでから、その戻り値（サーバ真値）をモーダルの初期値にする。したがってずれるのは「走っている間の表示」だけである。
+**記録される分数はクライアントの時計に依存しない。** 確定の直前に `stopTimer` を呼び、サーバの `Date.now()` で区間を畳んでから、その戻り値（サーバ真値）でそのまま確定する（または確定エディタの初期値にする。§11.3）。したがってずれるのは「走っている間の表示」だけである。
 
 表示のずれも実用上は消す。`serverNowMs()` は保存済みオフセットで補正する。
 
@@ -469,10 +469,10 @@ export function recordServerInstant(serverMs: number, localBeforeMs: number): vo
 | --- | --- | --- |
 | タブA で開始、タブB を見ている | タブB の時計も即座に走り出す | `days.get` / `runningTimer` の reactive subscription が `timerStartedAt` を push。両タブが同じサーバ値から導出するので、表示は自動で一致する |
 | タブA で一時停止、タブB は計測中を表示中 | タブB も止まる | 同上。`timerStartedAt` が消えた行が push される |
-| タブB が古い状態で確定を押した | `stopTimer` は冪等（T2'）なので現在の accumulated が返り、モーダルはその値で開く。エラーにしない | §7.1 |
+| タブB が古い状態で確定を押した | `stopTimer` は冪等（T2'）なので現在の accumulated が返り、その値でそのまま確定される（トーストで通知）。エラーにしない | §7.1 |
 | タブB が古い状態で再開を押した（行は既に確定済み） | `resumeTimer` が `ValidationFailedError`（「進行中の記録だけ計測を再開できます」）→ 既存の `notifyError` でトースト。直後に reactive query が確定状態へ更新する | `presentError` 経由（生の message は出さない） |
 | リロード / 別端末 / スマホ | 計測は続いている。`timerStartedAt` は DB にあるので、再読込後そのまま走る | 専用の永続化は持たない。`localStorage` に置くのは時計オフセットだけ |
-| オフライン | 表示は最後に受け取った `timerStartedAt` から走り続ける。押した mutation は Convex クライアントが再送する | 確定モーダルは `stopTimer` が**解決してから**開く（ボタンは `loading`）。復帰後にサーバが決めた accumulated がそのままプレフィルになるので、表示と記録が食い違わない |
+| オフライン | 表示は最後に受け取った `timerStartedAt` から走り続ける。押した mutation は Convex クライアントが再送する | 確定は `stopTimer` が**解決してから**行う（ボタンは `loading`）。復帰後にサーバが決めた accumulated でそのまま確定するので、表示と記録が食い違わない |
 | 2つのタブが同時に開始 | Convex の mutation は直列化される。後勝ちで1件だけが計測中になり、もう一方は T5 で畳まれる | `stopRunningTimer` が同一トランザクションで走る（§4.4） |
 
 **`BroadcastChannel` / `storage` イベント / `SharedWorker` は使わない。** サーバが単一の真値を持ち、Convex がそれを全タブへ配るので、タブ間同期のレイヤは要らない（§17-1）。
@@ -532,35 +532,50 @@ export async function autoStopTimers(ctx: MutationCtx, args: { now?: number } = 
 
 ### 11.2 サーバで測り直さない理由
 
-`confirm` に `minutes` を渡さず「サーバが accumulated から計算する」設計は採らない。モーダルを開いている間も時間は流れるので、サーバが確定時に測り直すと**ユーザーが見て承諾した数字と保存される数字が違う**。「見た数字が保存される」を守るため、確定の直前に `stopTimer` で区間をサーバ側で閉じ（ここでサーバ時計が使われる）、閉じた値を人に見せ、人が押した値を保存する。
+`confirm` に `minutes` を渡さず「サーバが accumulated から計算する」設計は採らない。`stopTimer` の解決から `confirm` の呼び出しまでの間も時間は流れるので、サーバが確定時にもう一度測り直すと**見せた数字と保存される数字が違う**ことになりうる。「見た数字が保存される」を守るため、確定の直前に `stopTimer` で区間をサーバ側で1回だけ閉じ（ここでサーバ時計が使われる）、閉じた値をそのまま保存する（確定エディタが開くときは、その値を人に見せてから人が押した値を保存する）。
 
-### 11.3 確定モーダルは計測がある行では必ず開く（現状バグの修正）
+### 11.3 確定エディタは「計測なし・分数0」の行だけ開く（現状バグの修正）
+
+ボードの確認モーダルは全廃した。残るのは、計測が無く分数も無い行を確定列へ動かしたときに入力を求める**確定エディタ**だけである。計測がある行は、値を見せて確認を挟まず、`stopTimer` が返したサーバ真値でそのまま確定し、結果は Toast「学習時間 n分 を記録しました」で伝える（§13.4）。
 
 ```ts
 // src/features/board/components/board-kanban-confirm-modal.tsx
 import { hasTimerState } from "~domain/rowTimer";
 
 export function needsKanbanConfirmEditor(row: BoardRow): boolean {
-  //? 計測があるのにモーダルを開かないと、目安分数のまま確定して計測結果を捨てる(§2 の現状バグ)。
-  return row.content.trim() === "" || row.minutes === 0 || hasTimerState(row.timer);
+  //? 計測も分数も無い行は、入力してもらわないと0分で確定してしまう。それ以外は即確定できる。
+  return row.minutes === 0 && !hasTimerState(row.timer);
 }
 ```
 
-モーダルには `prefillMinutes: number | null` を props で足す。`board-kanban.tsx` の確定分岐:
+`use-board-kanban-actions.ts` の `onStatusMove` の確定分岐:
 
 ```ts
-if (statusMove === "confirm") {
-  //? 先にサーバで区間を閉じる。モーダルに出す分数はサーバ真値(§8.3)。
-  const accumulatedMs = hasTimerState(row.timer) ? await onStopTimer({ rowId: row._id }) : null;
-  if (needsKanbanConfirmEditor(row) || accumulatedMs !== null) {
-    setConfirmRow({ prefillMinutes: accumulatedMs === null ? null : timerMinutes(accumulatedMs), row });
+case "confirm": {
+  //? 計測がある行は確認エディタを挟まない。stopTimer が返すサーバ真値の分数でそのまま確定する。
+  //? stopTimer 失敗(null)時だけ安全側でエディタを開く。
+  if (hasTimerState(row.timer)) {
+    const accumulatedMs = await onStopTimer(row._id);
+    if (accumulatedMs === null) {
+      openConfirmEditor({ prefillMinutes: null, row });
+      return;
+    }
+    return await onConfirm({
+      content: row.content,
+      minutes: timerMinutes(accumulatedMs),
+      rowId: row._id,
+    });
+  }
+  //? 計測が無く minutes === 0 の行だけエディタを開く(「ひとこと」は確定ゲートにしない)。
+  if (needsKanbanConfirmEditor(row)) {
+    openConfirmEditor({ prefillMinutes: null, row });
     return;
   }
-  await onConfirm({ content: row.content, minutes: row.minutes, rowId: row._id });
+  return await onConfirm({ content: row.content, minutes: row.minutes, rowId: row._id });
 }
 ```
 
-モーダルの `initialInput.minutes` は `prefillMinutes ?? row.minutes`。`content` はいままでどおり `row.content`。**ユーザーは常に上書きできる**（「計測より短く申告する」を許す）。モーダルをキャンセルしたら行は進行中・一時停止のまま残り、計測値は失われない。
+`onConfirm` は計測あり/なしどちらの経路でも同じ文言で Toast「学習時間 n分を記録しました」を出す（分数は mutation の戻り値ではなく、この呼び出し時点の入力値から組み立てる。`rows.confirm` の戻り値は `v.null()` — CVX-16）。エディタの `initialInput` は `{ content: row.content, minutes: row.minutes }`（この経路に来る行は常に `minutes === 0` かつ計測なしなので `prefillMinutes` は実質使わない。`stopTimer` 失敗時の安全側フォールバックのためだけに props としては残す）。エディタをキャンセルしたら行は未着手・進行中のまま残る。
 
 ### 11.4 日ページ（`row-editor.tsx`）
 
@@ -578,12 +593,13 @@ CONTEXT「進行中」＝「記録が取り組み中である状態。実行ボ�
 
 | 実行ボードの操作 | 既存の遷移 | 計測への意味 |
 | --- | --- | --- |
-| 未着手 → 進行中（ドラッグ / ▶） | `rows.start` | **計測開始**（0分から） |
-| 進行中 → 確定（ドラッグ / 確定ボタン） | `stopTimer` → `rows.confirm` | 計測終了。計測値が分数の初期値 |
-| 進行中 → 未着手（ドラッグ） | `rows.pause` | **計測を捨てる**（Confirm 必須） |
-| 進行中 → スキップ（ドラッグ） | `rows.skip` | 計測を捨てる（Confirm 必須。既存の見送り Confirm に「計測 n分 を捨てます」を追記） |
-| 確定 → 進行中（ドラッグ） | `rows.reopen` | 確定分数から**計測を再開** |
-| カード内の ⏸ / ▶ | `stopTimer` / `resumeTimer` | 進行中のまま計測を止める / 続ける |
+| 未着手 → 進行中（ドラッグ / ▶） | `rows.start` | **計測開始**（0分から）。silent |
+| 進行中 → 確定（ドラッグ / 確定ボタン） | `stopTimer` → `rows.confirm` | 計測終了。計測値でそのまま確定し、Toast「学習時間 n分を記録しました」（§11.3） |
+| 進行中 → 未着手（ドラッグ） | `rows.pause` | **計測を捨てる**。Confirm は出さず即実行し、計測があれば Toast「計測 n分を捨てました」（Undo 無し）。計測が無ければ silent |
+| 進行中 → スキップ（ドラッグ） | `rows.skip` | 計測を捨てる。Confirm は出さず即実行し、計測があれば Toast「計測 n分を捨てました」。計測が無ければ silent |
+| 確定 → 未着手（ドラッグ） | `rows.unconfirm` | 確定を取り消す。Toast「確定を取り消しました」 |
+| 確定 → 進行中（ドラッグ） | `rows.reopen` | 確定分数から**計測を再開**。silent（「確定を取り消しました」は `unconfirm` 側の文言） |
+| カード内の ⏸ / ▶ | `stopTimer` / `resumeTimer` | 進行中のまま計測を止める / 続ける。silent |
 
 - 「進行中」カラムに**複数の行**が並ぶのは許す（既存の自由度を壊さない）。ただし時計が走っているのはそのうち1件だけで、他は「一時停止」で並ぶ（§4.4）。
 - 実行ボードは過去日も選べる（`use-board-view.ts`）。過去日の行でも計測は開始できる（過去の日は編集できる、CONTEXT「日」）。240分 の上限だけがかかる。
@@ -631,23 +647,27 @@ CONTEXT「進行中」＝「記録が取り組み中である状態。実行ボ�
 ```
 
 - `queries.rows.runningTimer` を `useSuspenseQuery(convexQuery(...))` で読む（`convex-tanstack.md`）。`Suspense` の fallback は構造モックの `<Shimmer loading>`（`shimmer-from-structure.md` のパターン2）。計測が無いときは `null` を返して何も描かない。
-- 置ける操作は **⏸（`stopTimer`）と「ボードへ」（`/board?date=<dateJst>` へのリンク）だけ**。確定はボードで行う。`src/components/` は feature を import できない（`project-structure.md`「Feature inter-dependencies forbidden」）ので、確定モーダルをここに持ち込めない。この制約が結果的に「確定は必ずボードで、項目名と分数を見ながら」という良い導線になる。
+- 置ける操作は **⏸（`stopTimer`）と「ボードへ」（`/board?date=<dateJst>` へのリンク）だけ**。確定はボードで行う。`src/components/` は feature を import できない（`project-structure.md`「Feature inter-dependencies forbidden」）ので、確定エディタをここに持ち込めない。この制約が結果的に「確定は必ずボードで、項目名と分数を見ながら」という良い導線になる。
 - 呼ぶ mutation フックは共有の `src/hooks/use-row-mutations.ts` に置く（`board-mutations.ts` は既存の慣習どおり再 export するだけ）。
 
 ### 13.3 実行ボードの「進行中」カラム見出し
 
 計測中の合計だけを見出しに添える（`進行中 · 計測 0:12:34`）。専用の大きな固定バーは置かない（§17-2）。
 
-### 13.4 破壊的操作の Confirm（Mantine `modals`）
+### 13.4 破壊的操作は Confirm を出さず Toast で知らせる
 
-`row-editor.tsx` の `requestSkip` と同じ `modals.openConfirmModal` を使う。
+ボードでは確認モーダルを一切出さない（`modals.openConfirmModal` は使わない）。日ページの見送り Confirm（`row-editor.tsx` の `requestSkip`）は対象外で現状のまま。ボードのドラッグ・カードメニュー・ボタンはすべて即実行し、結果を Toast（`notifySuccess`）だけで知らせる。エラー Toast は出さない — mutation が失敗すれば reactive query が元の状態へ巻き戻すので、その巻き戻りだけがフィードバックになる。
 
-| 操作 | タイトル | 本文 | confirm ラベル |
-| --- | --- | --- | --- |
-| 進行中 → 未着手（計測あり） | 計測を捨てて未着手に戻しますか？ | 計測した42分は残りません。 | 捨てて戻す（`color="red"`） |
-| 進行中 → スキップ（計測あり） | 見送りにしますか？ | 学習量からは外れます。計測した42分も残りません。 | 見送りにする（`color="yellow"`、既存のまま） |
+| 操作 | 条件 | Toast |
+| --- | --- | --- |
+| 進行中 → 確定 | 常に | 「学習時間 n分を記録しました」（§11.3） |
+| 確定 → 未着手（`unconfirm`） | 常に | 「確定を取り消しました」 |
+| 進行中 → 未着手（`pause`） | 計測あり | 「計測 n分を捨てました」 |
+| 進行中 → スキップ（`skip`） | 計測あり | 「計測 n分を捨てました」 |
+| 確定 → 進行中（`reopen`）、その他すべての遷移 | — | silent（Toast なし。「確定を取り消しました」は `unconfirm` 専用の文言） |
 
-計測が無い（`hasTimerState(row.timer) === false`）ときの文言と挙動は既存のまま変えない。
+- **計測破棄の Toast に Undo は無い。** 一時停止・見送りで捨てた計測は戻せない（元に戻したい場合は改めて開始する）。
+- 計測が無い（`hasTimerState(row.timer) === false`）ときの `pause` / `skip` は silent（Toast なし）。破壊するものが無いため。
 
 ### 13.5 触るファイル一覧（実装チェックリスト）
 
@@ -687,7 +707,7 @@ export const RowEditorSchema = v.object({
 });
 ```
 
-- 確定モーダルは `initialInput: { content, minutes: prefillMinutes ?? row.minutes }` で `reset(form, ...)` する（既存の `useEffect` の形をそのまま使う）。
+- 確定エディタは `initialInput: { content: row.content, minutes: row.minutes }` で `reset(form, ...)` する（既存の `useEffect` の形をそのまま使う）。この経路に来る行は常に `minutes === 0` かつ計測なしである（§11.3）。
 - 上限バリデーションは足さない。計測値は 240分 でクランプされているし、手入力の上限は現状も無い（一貫させる）。
 - `timerMinutes` は Valibot ではなく `convex/lib/rowTimer.ts` の純関数（フォームの検証ではなく初期値の計算だから）。
 
@@ -700,7 +720,7 @@ export const RowEditorSchema = v.object({
 | 1 | 計測中の行をゴミ箱へ | `rows.remove` が計測を消す。復元しても計測は戻らない（分数は残る） |
 | 2 | 計測中の日をゴミ箱へ（`trash.removeDay`） | 行の計測は残るが `rowDayLiveness !== "live"` になり、`stopTimer` / `resumeTimer` は `NotFoundError`（既存の日生存判定に相乗り）。cron が 240分 後に自動停止する |
 | 3 | 進行中の行があるままプリセット切替 | 差し替わるのは未着手だけ（既存仕様）。計測は残る |
-| 4 | 確定→進行中→未着手（`reopen` → `pause`） | `pause` は計測を消すが `minutes` は残す。確定していた30分は分数に残り、reopen 後に測った12分は捨てる。Confirm 文で「計測した12分」と明示する |
+| 4 | 確定→進行中→未着手（`reopen` → `pause`） | `pause` は計測を消すが `minutes` は残す。確定していた30分は分数に残り、reopen 後に測った12分は捨てる。Toast「計測 12分を捨てました」で明示する |
 | 5 | 目安分数30分の行を計測して5分で確定 | 分数は 5分。目安は上書きされる（実績が正） |
 | 6 | 20秒で確定 | `timerMinutes` により 1分。0分にはしない |
 | 7 | 計測中に別の記録の計測を始める | 前者は自動で一時停止（T5）。トーストで知らせる |
@@ -709,7 +729,7 @@ export const RowEditorSchema = v.object({
 | 10 | 8時間放置 | 表示は 4:00:00 で止まり、cron が 240分・自動停止で確定。警告が出る。学習量には自動で入らない |
 | 11 | 移行前から進行中の行 | `timer === null` = 計測なし。▶ で 0分 から始まる |
 | 12 | 未来日 | 日も行も無いので該当なし |
-| 13 | オフラインで ⏸ | 表示は楽観更新で止まる。復帰後にサーバの accumulated が真値になる。確定モーダルは `stopTimer` 解決後に開くので、食い違った数字を確定できない |
+| 13 | オフラインで ⏸ | 表示は楽観更新で止まる。復帰後にサーバの accumulated が真値になる。確定は `stopTimer` 解決後にその値でそのまま行われるので、食い違った数字が確定に使われることはない |
 | 14 | 共有文・履歴・週間ターゲット・習得の実績 | いっさい変わらない。すべて確定分数のみを読む（`formatShareMarkdown` / `confirmedVolumeMinutes` / `withMasteryProgressDelta`） |
 | 15 | 実行ボードの時間ブロック（`boardScheduleEvents`） | 変わらない。ブロックは**計画**で計測ログではない。計測から自動生成しない（§17-5） |
 
@@ -752,8 +772,9 @@ export const RowEditorSchema = v.object({
 
 **`src/features/board/components/board-kanban.test.tsx`（既存に追加）**
 
-- 計測がある行を確定へドラッグ → `stopTimer` が先に呼ばれ、確定モーダルが**計測値でプレフィルされて**開く
-- 計測が無く `content` と `minutes` が埋まった行はいままでどおりモーダルなしで確定する（既存の振る舞いの回帰）
+- 計測がある行を確定へドラッグ → `stopTimer` が先に呼ばれ、確定エディタを開かずに**計測値でそのまま確定**され、Toast「学習時間 n分を記録しました」が出る
+- 計測が無く `content` と `minutes` が埋まった行はいままでどおりエディタなしで確定する（既存の振る舞いの回帰）
+- 計測も分数も無い行だけ確定エディタが開く（`needsKanbanConfirmEditor` の新条件）
 
 テストしないもの: Mantine の描画、`setInterval` の間引き挙動、`localStorage` が壊れている環境の分岐（`safe-storage` の既存テストが担う）。
 
@@ -811,7 +832,7 @@ export const RowEditorSchema = v.object({
 5. `queries/rows/runningTimer.ts`
 6. `use-row-mutations.ts` の楽観更新フック（`setDayRowStatus` に `timer` を渡す）
 7. `row-timer-chip.tsx` + `use-timer-tick.ts` + `timer-clock.ts` → カンバンへ組み込み
-8. 確定モーダルのプレフィル（§11.3。**現状バグの修正を含むので回帰テストを先に書く**）
+8. 確定分岐（計測ありは即確定 + Toast／計測なし・分数0だけ確定エディタ）（§11.3。**現状バグの修正を含むので回帰テストを先に書く**）
 9. `running-timer-indicator.tsx` → `app-shell.tsx`
 10. `row-editor.tsx` の注記と Switch 確定（§11.4）
 
@@ -838,5 +859,5 @@ export const RowEditorSchema = v.object({
 ## 20. CONTEXT.md / ADR への影響
 
 - **CONTEXT.md**: §3 のとおり「計測」「自動停止」を追加し、「進行中」の _Avoid_ に1項追加する。「記録」「学習量」「実行ボード」の定義は**変更なし**。
-- **ADR**: 新規 ADR は不要。ADR-0002（1つの出来事は1つの日に寄せる）と ADR-0007（実績カウンタの非正規化）の判断に従っており、覆す ADR はない。
+- **ADR**: 本文の §13.4（ボードの破壊的操作は Confirm を出さず Toast で知らせる）は ADR-0014（ボードの移動は確認モーダルなし・3種 Toast）の決定を反映したものである。ADR-0002（1つの出来事は1つの日に寄せる）と ADR-0007（実績カウンタの非正規化）の判断にも従っており、これらを覆す変更はない。
 - **docs/spec.md**: v1 の範囲外だった機能なので、追記は不要（本ドキュメントが仕様の所在）。

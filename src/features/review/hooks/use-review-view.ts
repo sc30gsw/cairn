@@ -1,7 +1,8 @@
 import { getRouteApi } from "@tanstack/react-router";
-import { isFutureDateJst, mondayOfWeek, todayJst, type DateJst } from "~domain/jst";
+import { isFutureDateJst, mondayOfWeek, type DateJst } from "~domain/jst";
 
 import type { ReviewSearch, ReviewTab } from "~/features/review/schemas/review-search-schema";
+import { useTodayJst } from "~/hooks/use-today-jst";
 
 /** `/review` 専用 — ReviewPage 配下からのみ import すること */
 const reviewRoute = getRouteApi("/review");
@@ -31,7 +32,7 @@ export function deriveReviewWeek(search: ReviewSearch, today: DateJst): DateJst 
 export function useReviewView() {
   const search = reviewRoute.useSearch();
   const navigate = reviewRoute.useNavigate();
-  const today = todayJst();
+  const today = useTodayJst();
   const currentWeekStart = mondayOfWeek(today);
   const weekStart = deriveReviewWeek(search, today);
   const yearMonth = deriveReviewMonth(search, today);

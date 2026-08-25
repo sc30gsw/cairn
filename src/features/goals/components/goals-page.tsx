@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { mondayOfWeek, todayJst } from "~domain/jst";
+import { mondayOfWeek } from "~domain/jst";
 
 import { GoalsBoard } from "~/features/goals/components/goals-board";
 import { GoalsPending } from "~/features/goals/components/goals-pending";
@@ -7,6 +7,7 @@ import { useTargetsWithProgress } from "~/features/goals/hooks/targets-queries";
 import { useGoalsList, useObstaclesList } from "~/hooks/goals-queries";
 import { useCategoriesList } from "~/hooks/use-categories-list";
 import { useItemsList } from "~/hooks/use-items-list";
+import { useTodayJst } from "~/hooks/use-today-jst";
 
 export function GoalsPage() {
   return (
@@ -17,7 +18,7 @@ export function GoalsPage() {
 }
 
 function GoalsReady() {
-  const today = todayJst();
+  const today = useTodayJst();
   const weekStart = mondayOfWeek(today);
   const { data: categories } = useCategoriesList();
   const { data: goals } = useGoalsList();

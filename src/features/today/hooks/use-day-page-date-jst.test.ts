@@ -1,5 +1,5 @@
-import { renderHook } from "@testing-library/react";
-import { expect, test, vi } from "vite-plus/test";
+import { cleanup, renderHook } from "@testing-library/react";
+import { afterEach, expect, test, vi } from "vite-plus/test";
 
 import { useDayPageDateJst } from "~/features/today/hooks/use-day-page-date-jst";
 
@@ -15,6 +15,13 @@ vi.mock("~domain/jst", async (importOriginal) => {
     ...actual,
     todayJst: () => "2026-08-17",
   };
+});
+
+//? useDayPageDateJst は内部で useTodayJst(useSyncExternalStore)を呼ぶ。unmount せずに残すと
+//? モジュールスコープの単一ストアにタイマー/リスナーが残ったままになる(renderWithMantine を
+//? 使わないため自動 cleanup が登録されない — .claude/rules/common/testing.md 参照)。
+afterEach(() => {
+  cleanup();
 });
 
 test("useDayPageDateJst は /days/$dateJst の params を返す", () => {

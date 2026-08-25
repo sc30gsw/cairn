@@ -1,13 +1,13 @@
 import { Anchor } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
-import { todayJst } from "~domain/jst";
 
 import { useDayPageDateJst } from "~/features/today/hooks/use-day-page-date-jst";
+import { useTodayJst } from "~/hooks/use-today-jst";
 import { boardKanbanLink, boardKanbanLinkLabel } from "~/lib/board-day-links";
 
 export function DayBoardKanbanLink() {
   const dateJst = useDayPageDateJst();
-  const todayJstValue = todayJst();
+  const todayJstValue = useTodayJst();
   const label = boardKanbanLinkLabel(dateJst);
   const link = boardKanbanLink(dateJst, todayJstValue);
 

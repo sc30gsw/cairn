@@ -1,5 +1,4 @@
 import type { DateJst } from "~domain/jst";
-import { todayJst } from "~domain/jst";
 
 import {
   useBoardScheduleCreate,
@@ -8,13 +7,14 @@ import {
   useBoardScheduleUpdate,
 } from "~/features/board/hooks/board-mutations";
 import type { BoardScheduleView } from "~/features/board/schemas/board-search-schema";
+import { useTodayJst } from "~/hooks/use-today-jst";
 import { runMutation } from "~/lib/run-mutation";
 
 //* ボードでは Toast を一切出さない。結果は予定ブロックの見た目にそのまま現れる(オーナー決定 2026-08-24)。
 const silent = { silent: true } as const;
 
 export function useBoardScheduleActions(anchorDateJst: DateJst, view: BoardScheduleView) {
-  const today = todayJst();
+  const today = useTodayJst();
   const createBlock = useBoardScheduleCreate(anchorDateJst, today, view);
   const updateBlock = useBoardScheduleUpdate(anchorDateJst, today, view);
   const removeBlock = useBoardScheduleRemove(anchorDateJst, view);

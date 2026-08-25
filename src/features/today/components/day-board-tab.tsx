@@ -1,7 +1,7 @@
 import { Stack } from "@mantine/core";
 import { useState } from "react";
 import type { DateJst } from "~domain/jst";
-import { mondayOfWeek, todayJst } from "~domain/jst";
+import { mondayOfWeek } from "~domain/jst";
 
 import { DayBoard } from "~/features/today/components/day-board";
 import { DayBoardProvider } from "~/features/today/components/day-board-context";
@@ -13,6 +13,7 @@ import {
 import { targetRemainder, targetRemainderMessage } from "~/features/today/lib/target-remainder";
 import type { DaySearch } from "~/features/today/schemas/day-search-schema";
 import { useOpenAndLoadDay } from "~/hooks/use-open-and-load-day";
+import { useTodayJst } from "~/hooks/use-today-jst";
 
 type DayBoardTabProps = {
   dateJst: DateJst;
@@ -20,7 +21,7 @@ type DayBoardTabProps = {
 };
 
 export function DayBoardTab({ dateJst, presetFromSearch }: DayBoardTabProps) {
-  const today = todayJst();
+  const today = useTodayJst();
   const { data: day } = useOpenAndLoadDay(dateJst, today);
   const { data: items } = useItemsList();
   const { data: presets } = usePresetsList();

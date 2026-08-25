@@ -5,12 +5,12 @@ import { IconPlayerPauseFilled } from "@tabler/icons-react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { todayJst } from "~domain/jst";
 import { measuredMs, timerMinutes } from "~domain/rowTimer";
 import { runningTimerRef } from "~domain/rowTimerRefs";
 
 import { useStopRunningTimer } from "~/hooks/use-row-mutations";
 import { useTimerTick } from "~/hooks/use-timer-tick";
+import { useTodayJst } from "~/hooks/use-today-jst";
 import { boardKanbanLink } from "~/lib/board-day-links";
 import { runMutation } from "~/lib/run-mutation";
 import { recordServerInstant } from "~/lib/server-clock";
@@ -24,6 +24,7 @@ export function RunningTimerIndicator() {
   const stopTimer = useStopRunningTimer();
   const startedAt = running?.timer.startedAt ?? null;
   const nowMs = useTimerTick(startedAt !== null);
+  const today = useTodayJst();
 
   useEffect(() => {
     if (startedAt !== null) {
@@ -50,9 +51,7 @@ export function RunningTimerIndicator() {
       </Text>
       <Anchor
         c="var(--cairn-muted-2)"
-        renderRoot={(props) => (
-          <Link {...props} {...boardKanbanLink(running.dateJst, todayJst())} />
-        )}
+        renderRoot={(props) => <Link {...props} {...boardKanbanLink(running.dateJst, today)} />}
         size="xs"
         underline="hover"
       >

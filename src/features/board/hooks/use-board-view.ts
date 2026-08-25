@@ -1,5 +1,5 @@
 import type { ScheduleViewLevel } from "@mantine/schedule";
-import { isFutureDateJst, mondayOfWeek, todayJst, type DateJst } from "~domain/jst";
+import { isFutureDateJst, mondayOfWeek, type DateJst } from "~domain/jst";
 
 import { boardRoute } from "~/features/board/lib/board-route-api";
 import type {
@@ -7,6 +7,7 @@ import type {
   BoardSearch,
   BoardTab,
 } from "~/features/board/schemas/board-search-schema";
+import { useTodayJst } from "~/hooks/use-today-jst";
 
 function yearMonthFromDateJst(dateJst: DateJst): string {
   return dateJst.slice(0, 7);
@@ -80,7 +81,7 @@ export type BoardViewState = ReturnType<typeof deriveBoardView> & {
 export function useBoardView(): BoardViewState {
   const search = boardRoute.useSearch();
   const navigate = boardRoute.useNavigate();
-  const today = todayJst();
+  const today = useTodayJst();
   const view = deriveBoardView(search, today);
 
   return {
