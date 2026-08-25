@@ -19,10 +19,12 @@ export async function applyOrder(
     throwDomain(new ValidationFailedError({ message: "記録の並べ替えが不正です" }));
   }
   const liveIds = new Set(rows.map((row) => row._id));
+  const seenRowIds = new Set<Id<"rows">>();
   for (const rowId of args.orderedRowIds) {
-    if (!liveIds.has(rowId)) {
+    if (!liveIds.has(rowId) || seenRowIds.has(rowId)) {
       throwDomain(new ValidationFailedError({ message: "記録の並べ替えが不正です" }));
     }
+    seenRowIds.add(rowId);
   }
   await Promise.all(
     args.orderedRowIds.map(async (rowId, sortOrder) => {

@@ -2,6 +2,10 @@ import { Badge, Paper, Stack, Text, UnstyledButton } from "@mantine/core";
 import type { ScheduleEventData } from "@mantine/schedule";
 import type { CSSProperties } from "react";
 
+import { cn } from "~/lib/utils";
+
+import classes from "~/features/board/components/board-schedule-all-day-expand.module.css";
+
 export type BoardScheduleAllDayExpandAnchor = {
   dateJst: string;
   left: number;
@@ -23,6 +27,7 @@ export function BoardScheduleAllDayExpand({
   onEventClick,
 }: BoardScheduleAllDayExpandProps) {
   const style: CSSProperties = {
+    borderColor: "var(--mantine-color-orange-2)",
     left: anchor.left,
     position: "absolute",
     top: anchor.top,
@@ -33,10 +38,11 @@ export function BoardScheduleAllDayExpand({
   return (
     <Paper
       aria-label={`${anchor.dateJst} の終日記録`}
-      className="border-orange-2 bg-orange-0/95 border shadow-sm"
+      bg="var(--mantine-color-orange-0)"
       data-board-all-day-expand="true"
       p="sm"
       radius="sm"
+      shadow="sm"
       style={style}
       withBorder
     >
@@ -63,7 +69,7 @@ export function BoardScheduleAllDayExpand({
 
           return (
             <UnstyledButton
-              className="bg-gray-1 hover:bg-gray-2 w-full rounded-sm px-2 py-1 text-left text-sm"
+              className={cn(classes.editableItem, "w-full rounded-sm px-2 py-1 text-left text-sm")}
               key={String(event.id)}
               onClick={() => {
                 onEventClick(event);

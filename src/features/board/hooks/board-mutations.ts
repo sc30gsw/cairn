@@ -1,4 +1,4 @@
-import { useMutation } from "convex/react";
+import { DEFAULT_BOARD_SCHEDULE_COLOR } from "~domain/boardScheduleColors";
 import type { DateJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
@@ -17,6 +17,7 @@ import {
   useOptimisticUnconfirmRow,
   useOptimisticUnskipRow,
 } from "~/hooks/use-row-mutations";
+import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export const useBoardSkipRow = useOptimisticSkipRow;
 export const useBoardUnskipRow = useOptimisticUnskipRow;
@@ -34,30 +35,30 @@ export function useBoardScheduleCreate(
   todayJst: DateJst,
   view: BoardScheduleView,
 ) {
-  const mutateAsync = useMutation(api.mutations.boardSchedule.create.create).withOptimisticUpdate(
-    (localStore, args) => {
-      const day = localStore.getQuery(api.queries.days.get.get, {
-        dateJst: todayJst,
-        todayJst,
-      });
-      const row = day?.rows.find((entry) => entry._id === args.rowId);
-      patchBoardScheduleBlocks(localStore, {
-        anchorDateJst,
-        view,
-        updater: (blocks) => [
-          ...blocks,
-          {
-            _id: `optimistic-${crypto.randomUUID()}` as Id<"boardScheduleEvents">,
-            color: args.color ?? "blue",
-            endAt: args.endAt,
-            rowId: args.rowId,
-            startAt: args.startAt,
-            title: row?.itemName ?? "",
-          },
-        ],
-      });
-    },
-  );
+  const mutateAsync = useConvexMutation(
+    api.mutations.boardSchedule.create.create,
+  ).withOptimisticUpdate((localStore, args) => {
+    const day = localStore.getQuery(api.queries.days.get.get, {
+      dateJst: todayJst,
+      todayJst,
+    });
+    const row = day?.rows.find((entry) => entry._id === args.rowId);
+    patchBoardScheduleBlocks(localStore, {
+      anchorDateJst,
+      view,
+      updater: (blocks) => [
+        ...blocks,
+        {
+          _id: `optimistic-${crypto.randomUUID()}` as Id<"boardScheduleEvents">,
+          color: args.color ?? DEFAULT_BOARD_SCHEDULE_COLOR,
+          endAt: args.endAt,
+          rowId: args.rowId,
+          startAt: args.startAt,
+          title: row?.itemName ?? "",
+        },
+      ],
+    });
+  });
   return { mutateAsync };
 }
 
@@ -66,51 +67,51 @@ export function useBoardScheduleUpdate(
   todayJst: DateJst,
   view: BoardScheduleView,
 ) {
-  const mutateAsync = useMutation(api.mutations.boardSchedule.update.update).withOptimisticUpdate(
-    (localStore, args) => {
-      const day = localStore.getQuery(api.queries.days.get.get, {
-        dateJst: todayJst,
-        todayJst,
-      });
-      const row =
-        args.rowId === undefined ? undefined : day?.rows.find((entry) => entry._id === args.rowId);
-      patchBoardScheduleBlocks(localStore, {
-        anchorDateJst,
-        view,
-        updater: (blocks) =>
-          blocks.map((block) =>
-            block._id === args.blockId
-              ? {
-                  ...block,
-                  color: args.color ?? block.color,
-                  endAt: args.endAt,
-                  rowId: args.rowId ?? block.rowId,
-                  startAt: args.startAt,
-                  title: row?.itemName ?? block.title,
-                }
-              : block,
-          ),
-      });
-    },
-  );
+  const mutateAsync = useConvexMutation(
+    api.mutations.boardSchedule.update.update,
+  ).withOptimisticUpdate((localStore, args) => {
+    const day = localStore.getQuery(api.queries.days.get.get, {
+      dateJst: todayJst,
+      todayJst,
+    });
+    const row =
+      args.rowId === undefined ? undefined : day?.rows.find((entry) => entry._id === args.rowId);
+    patchBoardScheduleBlocks(localStore, {
+      anchorDateJst,
+      view,
+      updater: (blocks) =>
+        blocks.map((block) =>
+          block._id === args.blockId
+            ? {
+                ...block,
+                color: args.color ?? block.color,
+                endAt: args.endAt,
+                rowId: args.rowId ?? block.rowId,
+                startAt: args.startAt,
+                title: row?.itemName ?? block.title,
+              }
+            : block,
+        ),
+    });
+  });
   return { mutateAsync };
 }
 
 export function useBoardScheduleRemove(anchorDateJst: DateJst, view: BoardScheduleView) {
-  const mutateAsync = useMutation(api.mutations.boardSchedule.remove.remove).withOptimisticUpdate(
-    (localStore, args) => {
-      patchBoardScheduleBlocks(localStore, {
-        anchorDateJst,
-        view,
-        updater: (blocks) => blocks.filter((block) => block._id !== args.blockId),
-      });
-    },
-  );
+  const mutateAsync = useConvexMutation(
+    api.mutations.boardSchedule.remove.remove,
+  ).withOptimisticUpdate((localStore, args) => {
+    patchBoardScheduleBlocks(localStore, {
+      anchorDateJst,
+      view,
+      updater: (blocks) => blocks.filter((block) => block._id !== args.blockId),
+    });
+  });
   return { mutateAsync };
 }
 
 export function useBoardScheduleMove(anchorDateJst: DateJst, view: BoardScheduleView) {
-  const mutateAsync = useMutation(api.mutations.boardSchedule.move.move).withOptimisticUpdate(
+  const mutateAsync = useConvexMutation(api.mutations.boardSchedule.move.move).withOptimisticUpdate(
     (localStore, args) => {
       patchBoardScheduleBlocks(localStore, {
         anchorDateJst,

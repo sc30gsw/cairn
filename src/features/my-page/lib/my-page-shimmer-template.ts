@@ -1,12 +1,14 @@
 import type { FunctionReturnType } from "convex/server";
-import type { weeklyReviewRef } from "~domain/reviewRefs";
 
+import type { api } from "~/../convex/_generated/api";
 import type { ExamGoal } from "~/features/my-page/types/exam-goal";
 import type { TodaySummaryTarget } from "~/features/my-page/types/today-summary-target";
 
 //? PeriodSummarySection の digest 型は review 側 components/ の非公開型なので、feature-lib 境界(vite.config.ts)を跨がず
-//? review-queries.ts と同じ shared な reviewRefs から自前で導出する
-type PeriodDigest = FunctionReturnType<typeof weeklyReviewRef>["digest"];
+//? review-queries.ts と同じ生成済み api から自前で導出する
+type PeriodDigest = FunctionReturnType<
+  typeof api.queries.review.weeklyReview.weeklyReview
+>["digest"];
 
 //? 「試験目標あり」の分岐(残り日数の大きい数字が出る方)をテンプレートにする。目標未設定の分岐は Text 一行だけで構造差が小さい
 export const myPageShimmerExamGoal = {

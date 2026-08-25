@@ -1,11 +1,17 @@
 import * as v from "valibot";
+import {
+  PASSWORD_MIN_LENGTH,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+  USERNAME_PATTERN,
+} from "~domain/authFields";
 
 export const usernameField = v.pipe(
   v.string("ユーザー名を入力してください"),
   v.nonEmpty("ユーザー名を入力してください"),
-  v.minLength(3, "ユーザー名は3文字以上にしてください"),
-  v.maxLength(30, "ユーザー名は30文字以内にしてください"),
-  v.regex(/^[\dA-Za-z_]+$/, "ユーザー名は英数字とアンダースコアだけ使えます"),
+  v.minLength(USERNAME_MIN_LENGTH, `ユーザー名は${USERNAME_MIN_LENGTH}文字以上にしてください`),
+  v.maxLength(USERNAME_MAX_LENGTH, `ユーザー名は${USERNAME_MAX_LENGTH}文字以内にしてください`),
+  v.regex(USERNAME_PATTERN, "ユーザー名は英数字とアンダースコアだけ使えます"),
 );
 
 export const displayNameField = v.pipe(
@@ -17,7 +23,7 @@ export const displayNameField = v.pipe(
 export const passwordField = v.pipe(
   v.string("パスワードを入力してください"),
   v.nonEmpty("パスワードを入力してください"),
-  v.minLength(8, "パスワードは8文字以上にしてください"),
+  v.minLength(PASSWORD_MIN_LENGTH, `パスワードは${PASSWORD_MIN_LENGTH}文字以上にしてください`),
 );
 
 export const currentPasswordField = v.pipe(

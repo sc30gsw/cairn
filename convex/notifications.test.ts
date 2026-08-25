@@ -1,16 +1,8 @@
 import { convexTest } from "convex-test";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 
+import { api, internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
-import {
-  evaluateNotificationsRef,
-  markAllNotificationsReadRef,
-  markNotificationsReadRef,
-  notificationListRef,
-  notificationSettingsRef,
-  purgeExpiredNotificationsRef,
-  saveNotificationSettingsRef as saveSettingsRef,
-} from "./lib/notificationRefs";
 import { NOTIFICATION_LIST_LIMIT, NOTIFICATION_TTL_MS } from "./lib/notifications";
 import type { RowStatus } from "./lib/validators";
 import schema from "./schema";
@@ -226,7 +218,7 @@ test("設定行が無い所有者では通知が作られない(オプトイン)
   const t = asOwner();
   await seedCheckpoint(t, { deadline: SUNDAY });
 
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 8) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, { now: jstAt(THURSDAY, 8) });
 
   expect(await notificationsOf(t)).toEqual([]);
 });
@@ -236,7 +228,7 @@ test("enabled: false では通知が作られない", async () => {
   await seedSettings(t, OWNER.subject, { enabled: false });
   await seedCheckpoint(t, { deadline: SUNDAY });
 
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 8) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, { now: jstAt(THURSDAY, 8) });
 
   expect(await notificationsOf(t)).toEqual([]);
 });
@@ -246,7 +238,7 @@ test("08時 JST・期限3日後の未達成チェックポイントで1件作ら
   await seedSettings(t);
   await seedCheckpoint(t, { content: "音読を1周", deadline: SUNDAY });
 
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 8) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, { now: jstAt(THURSDAY, 8) });
 
   const [notification, ...rest] = await notificationsOf(t);
   expect(rest).toEqual([]);
@@ -264,8 +256,8 @@ test("同じ now で2回評価しても通知は1件のまま(dedupe)", async ()
   await seedSettings(t);
   await seedCheckpoint(t, { deadline: SUNDAY });
 
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 8) });
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 8) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, { now: jstAt(THURSDAY, 8) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, { now: jstAt(THURSDAY, 8) });
 
   expect(await notificationsOf(t)).toHaveLength(1);
 });
@@ -277,7 +269,7 @@ test("期限が4日後・前日(超過)・達成済みでは作られない", as
   await seedCheckpoint(t, { content: "超過", deadline: "2026-08-19" });
   await seedCheckpoint(t, { achievedAt: THURSDAY, content: "達成済み", deadline: SUNDAY });
 
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 8) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, { now: jstAt(THURSDAY, 8) });
 
   expect(await notificationsOf(t)).toEqual([]);
 });
@@ -289,7 +281,7 @@ test("同日に接近が3件でも通知は1件で、payload に3要素が入る
   await seedCheckpoint(t, { content: "あと1日", deadline: "2026-08-21" });
   await seedCheckpoint(t, { content: "あと2日", deadline: SATURDAY });
 
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 8) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, { now: jstAt(THURSDAY, 8) });
 
   const [notification] = await notificationsOf(t);
   if (notification?.payload.kind !== "checkpointDeadline") {
@@ -305,7 +297,7 @@ test("親を持たない期限つき習得(バックフィル前の孤児)でも
   const goal = await t.run(async (ctx) => ctx.db.get("goals", goalId));
   expect(goal?.type === "mastery" ? goal.parentGoalId : "unset").toBeUndefined();
 
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 8) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, { now: jstAt(THURSDAY, 8) });
 
   expect(await notificationsOf(t)).toHaveLength(1);
 });
@@ -314,7 +306,9 @@ test("土曜09時・未達ターゲットで1件。ターゲット0件と全件�
   const missed = asOwner();
   await seedSettings(missed);
   await seedTarget(missed, { confirmedMinutes: 60, targetValue: 180 });
-  await missed.mutation(evaluateNotificationsRef, { now: jstAt(SATURDAY, 9) });
+  await missed.mutation(internal.mutations.notifications.evaluate.evaluate, {
+    now: jstAt(SATURDAY, 9),
+  });
   const [notification] = await notificationsOf(missed);
   expect(notification?.dedupeKey).toBe(`weeklyTargetMiss:${MONDAY}`);
   if (notification?.payload.kind !== "weeklyTargetMiss") {
@@ -326,13 +320,17 @@ test("土曜09時・未達ターゲットで1件。ターゲット0件と全件�
 
   const noTargets = asOwner();
   await seedSettings(noTargets);
-  await noTargets.mutation(evaluateNotificationsRef, { now: jstAt(SATURDAY, 9) });
+  await noTargets.mutation(internal.mutations.notifications.evaluate.evaluate, {
+    now: jstAt(SATURDAY, 9),
+  });
   expect(await notificationsOf(noTargets)).toEqual([]);
 
   const achieved = asOwner();
   await seedSettings(achieved);
   await seedTarget(achieved, { confirmedMinutes: 200, targetValue: 180 });
-  await achieved.mutation(evaluateNotificationsRef, { now: jstAt(SATURDAY, 9) });
+  await achieved.mutation(internal.mutations.notifications.evaluate.evaluate, {
+    now: jstAt(SATURDAY, 9),
+  });
   expect(await notificationsOf(achieved)).toEqual([]);
 });
 
@@ -341,7 +339,7 @@ test("日曜09時では週間ターゲットの通知が作られない", async 
   await seedSettings(t);
   await seedTarget(t, { confirmedMinutes: 0, targetValue: 180 });
 
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(SUNDAY, 9) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, { now: jstAt(SUNDAY, 9) });
 
   expect(await notificationsOf(t)).toEqual([]);
 });
@@ -351,7 +349,9 @@ test("21時 JST・今日の未着手2件で source: day / pendingCount: 2", asyn
   await seedSettings(t);
   await seedDay(t, { dateJst: THURSDAY, statuses: ["未着手", "未着手", "確定"] });
 
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 21) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, {
+    now: jstAt(THURSDAY, 21),
+  });
 
   const [notification] = await notificationsOf(t);
   expect(notification?.dedupeKey).toBe(`eveningUntouched:${THURSDAY}`);
@@ -368,7 +368,9 @@ test("21時 JST・日なし・その曜日のプリセット3行で source: pres
   await seedSettings(t);
   await seedPreset(t, 3);
 
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 21) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, {
+    now: jstAt(THURSDAY, 21),
+  });
 
   const [notification] = await notificationsOf(t);
   expect(notification?.payload).toEqual({
@@ -383,7 +385,9 @@ test("21時 JST・日なし・プリセットなしでは作られない", async
   const t = asOwner();
   await seedSettings(t);
 
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 21) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, {
+    now: jstAt(THURSDAY, 21),
+  });
 
   expect(await notificationsOf(t)).toEqual([]);
 });
@@ -393,7 +397,9 @@ test("未着手0件(確定とスキップだけ)では作られない", async ()
   await seedSettings(t);
   await seedDay(t, { dateJst: THURSDAY, statuses: ["確定", "スキップ"] });
 
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 21) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, {
+    now: jstAt(THURSDAY, 21),
+  });
 
   expect(await notificationsOf(t)).toEqual([]);
 });
@@ -403,7 +409,9 @@ test("進行中だけが残っているときは催促しない", async () => {
   await seedSettings(t);
   await seedDay(t, { dateJst: THURSDAY, statuses: ["進行中"] });
 
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 21) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, {
+    now: jstAt(THURSDAY, 21),
+  });
 
   expect(await notificationsOf(t)).toEqual([]);
 });
@@ -414,7 +422,9 @@ test("今日の日がゴミ箱にあるときはプリセット分岐に落ち�
   await seedDay(t, { dateJst: THURSDAY, deletedAt: jstAt(THURSDAY, 10), statuses: ["未着手"] });
   await seedPreset(t, 2);
 
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 21) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, {
+    now: jstAt(THURSDAY, 21),
+  });
 
   const [notification] = await notificationsOf(t);
   expect(notification?.payload).toEqual({
@@ -429,13 +439,17 @@ test("eveningHourJst: 18 の所有者は18時に発火し、21時には発火し
   const early = asOwner();
   await seedSettings(early, OWNER.subject, { eveningHourJst: 18 });
   await seedDay(early, { dateJst: THURSDAY, statuses: ["未着手"] });
-  await early.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 18) });
+  await early.mutation(internal.mutations.notifications.evaluate.evaluate, {
+    now: jstAt(THURSDAY, 18),
+  });
   expect(await notificationsOf(early)).toHaveLength(1);
 
   const late = asOwner();
   await seedSettings(late, OWNER.subject, { eveningHourJst: 18 });
   await seedDay(late, { dateJst: THURSDAY, statuses: ["未着手"] });
-  await late.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 21) });
+  await late.mutation(internal.mutations.notifications.evaluate.evaluate, {
+    now: jstAt(THURSDAY, 21),
+  });
   expect(await notificationsOf(late)).toEqual([]);
 });
 
@@ -447,16 +461,18 @@ test("triggers.eveningUntouched: false で夜だけ止まり、期限接近は�
   await seedCheckpoint(t, { deadline: SUNDAY });
   await seedDay(t, { dateJst: THURSDAY, statuses: ["未着手"] });
 
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 21) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, {
+    now: jstAt(THURSDAY, 21),
+  });
   expect(await notificationsOf(t)).toEqual([]);
 
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 8) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, { now: jstAt(THURSDAY, 8) });
   const kinds = (await notificationsOf(t)).map((doc) => doc.payload.kind);
   expect(kinds).toEqual(["checkpointDeadline"]);
 });
 
 test("settings query は行が無いとき既定値(enabled: false)を返す", async () => {
-  const settings = await asOwner().query(notificationSettingsRef, {});
+  const settings = await asOwner().query(api.queries.notifications.settings.settings, {});
 
   expect(settings).toEqual({
     enabled: false,
@@ -473,15 +489,25 @@ const SAVE_BASE = {
 
 test("saveSettings は範囲外の時刻を拒否する", async () => {
   const t = asOwner();
-  await expect(t.mutation(saveSettingsRef, { ...SAVE_BASE, eveningHourJst: 9 })).rejects.toThrow();
-  await expect(t.mutation(saveSettingsRef, { ...SAVE_BASE, eveningHourJst: 24 })).rejects.toThrow();
+  await expect(
+    t.mutation(api.mutations.notifications.saveSettings.saveSettings, {
+      ...SAVE_BASE,
+      eveningHourJst: 9,
+    }),
+  ).rejects.toThrow();
+  await expect(
+    t.mutation(api.mutations.notifications.saveSettings.saveSettings, {
+      ...SAVE_BASE,
+      eveningHourJst: 24,
+    }),
+  ).rejects.toThrow();
 });
 
 test("saveSettings は2回目以降も1行のまま上書きする(upsert)", async () => {
   const t = asOwner();
-  const first = await t.mutation(saveSettingsRef, SAVE_BASE);
+  const first = await t.mutation(api.mutations.notifications.saveSettings.saveSettings, SAVE_BASE);
 
-  const second = await t.mutation(saveSettingsRef, {
+  const second = await t.mutation(api.mutations.notifications.saveSettings.saveSettings, {
     ...SAVE_BASE,
     eveningHourJst: 19,
     triggers: { checkpointDeadline: false, eveningUntouched: true, weeklyTargetMiss: true },
@@ -513,7 +539,9 @@ test("markRead は他人の通知 id を拒否する(IDOR)", async () => {
   const notificationId = await seedOneNotification(other, OTHER_OWNER.subject);
 
   await expect(
-    asOwner().mutation(markNotificationsReadRef, { notificationIds: [notificationId] }),
+    asOwner().mutation(api.mutations.notifications.markRead.markRead, {
+      notificationIds: [notificationId],
+    }),
   ).rejects.toThrow();
 });
 
@@ -521,7 +549,9 @@ test("markRead は空配列で成功し、何も変わらない", async () => {
   const t = asOwner();
   const notificationId = await seedOneNotification(t);
 
-  await expect(t.mutation(markNotificationsReadRef, { notificationIds: [] })).resolves.toBeNull();
+  await expect(
+    t.mutation(api.mutations.notifications.markRead.markRead, { notificationIds: [] }),
+  ).resolves.toBeNull();
 
   const notification = await t.run(async (ctx) => ctx.db.get("notifications", notificationId));
   expect(notification?.readAt).toBeUndefined();
@@ -530,10 +560,14 @@ test("markRead は空配列で成功し、何も変わらない", async () => {
 test("markRead は既読の行の readAt を上書きしない", async () => {
   const t = asOwner();
   const notificationId = await seedOneNotification(t);
-  await t.mutation(markNotificationsReadRef, { notificationIds: [notificationId] });
+  await t.mutation(api.mutations.notifications.markRead.markRead, {
+    notificationIds: [notificationId],
+  });
   const first = await t.run(async (ctx) => ctx.db.get("notifications", notificationId));
 
-  await t.mutation(markNotificationsReadRef, { notificationIds: [notificationId] });
+  await t.mutation(api.mutations.notifications.markRead.markRead, {
+    notificationIds: [notificationId],
+  });
 
   const second = await t.run(async (ctx) => ctx.db.get("notifications", notificationId));
   expect(second?.readAt).toBe(first?.readAt);
@@ -561,9 +595,9 @@ test("markAllRead は通知欄に出ていない未読も含めて全件既読�
   const total = NOTIFICATION_LIST_LIMIT + 5;
   await seedManyNotifications(t, total);
 
-  await t.mutation(markAllNotificationsReadRef, {});
+  await t.mutation(api.mutations.notifications.markAllRead.markAllRead, {});
 
-  const page = await t.query(notificationListRef, {});
+  const page = await t.query(api.queries.notifications.list.list, {});
   expect(page.unreadCount).toBe(0);
   const unread = (await notificationsOf(t)).filter((doc) => doc.readAt === undefined);
   expect(unread).toEqual([]);
@@ -571,14 +605,16 @@ test("markAllRead は通知欄に出ていない未読も含めて全件既読�
 });
 
 test("markAllRead は未読0件でも成功する", async () => {
-  await expect(asOwner().mutation(markAllNotificationsReadRef, {})).resolves.toBeNull();
+  await expect(
+    asOwner().mutation(api.mutations.notifications.markAllRead.markAllRead, {}),
+  ).resolves.toBeNull();
 });
 
 test("list は新しい順に最大50件を返し、未読数は在庫全件から数える", async () => {
   const t = asOwner();
   await seedManyNotifications(t, NOTIFICATION_LIST_LIMIT + 5);
 
-  const page = await t.query(notificationListRef, {});
+  const page = await t.query(api.queries.notifications.list.list, {});
 
   expect(page.items).toHaveLength(NOTIFICATION_LIST_LIMIT);
   expect(page.unreadCount).toBe(NOTIFICATION_LIST_LIMIT + 5);
@@ -591,7 +627,7 @@ test("list は他人の通知を返さない", async () => {
   const other = asOwner(OTHER_OWNER);
   await seedOneNotification(other, OTHER_OWNER.subject);
 
-  const page = await asOwner().query(notificationListRef, {});
+  const page = await asOwner().query(api.queries.notifications.list.list, {});
 
   expect(page.items).toEqual([]);
   expect(page.unreadCount).toBe(0);
@@ -619,7 +655,7 @@ test("purgeExpired は31日前を消し、29日前を残す", async () => {
     });
   });
 
-  await t.mutation(purgeExpiredNotificationsRef, { now });
+  await t.mutation(internal.mutations.notifications.purgeExpired.purgeExpired, { now });
 
   expect((await notificationsOf(t)).map((doc) => doc.dedupeKey)).toEqual(["recent"]);
 });
@@ -627,11 +663,17 @@ test("purgeExpired は31日前を消し、29日前を残す", async () => {
 test("未認証では通知の公開関数がすべて失敗する", async () => {
   const t = raw();
 
-  await expect(t.query(notificationListRef, {})).rejects.toThrow();
-  await expect(t.query(notificationSettingsRef, {})).rejects.toThrow();
-  await expect(t.mutation(saveSettingsRef, SAVE_BASE)).rejects.toThrow();
-  await expect(t.mutation(markNotificationsReadRef, { notificationIds: [] })).rejects.toThrow();
-  await expect(t.mutation(markAllNotificationsReadRef, {})).rejects.toThrow();
+  await expect(t.query(api.queries.notifications.list.list, {})).rejects.toThrow();
+  await expect(t.query(api.queries.notifications.settings.settings, {})).rejects.toThrow();
+  await expect(
+    t.mutation(api.mutations.notifications.saveSettings.saveSettings, SAVE_BASE),
+  ).rejects.toThrow();
+  await expect(
+    t.mutation(api.mutations.notifications.markRead.markRead, { notificationIds: [] }),
+  ).rejects.toThrow();
+  await expect(
+    t.mutation(api.mutations.notifications.markAllRead.markAllRead, {}),
+  ).rejects.toThrow();
 });
 
 test("所有者Aの評価は所有者Bの通知を作らない", async () => {
@@ -640,7 +682,7 @@ test("所有者Aの評価は所有者Bの通知を作らない", async () => {
   await seedCheckpoint(t, { deadline: SUNDAY, ownerId: OWNER.subject });
   await seedCheckpoint(t, { deadline: SUNDAY, ownerId: OTHER_OWNER.subject });
 
-  await t.mutation(evaluateNotificationsRef, { now: jstAt(THURSDAY, 8) });
+  await t.mutation(internal.mutations.notifications.evaluate.evaluate, { now: jstAt(THURSDAY, 8) });
 
   expect(await notificationsOf(t, OWNER.subject)).toHaveLength(1);
   expect(await notificationsOf(t, OTHER_OWNER.subject)).toEqual([]);
@@ -650,7 +692,7 @@ test("purgeExpired は now 省略時に現在時刻を使い、新しい通知�
   const t = asOwner();
   await seedOneNotification(t);
 
-  await t.mutation(purgeExpiredNotificationsRef, {});
+  await t.mutation(internal.mutations.notifications.purgeExpired.purgeExpired, {});
 
   expect(await notificationsOf(t)).toHaveLength(1);
 });

@@ -22,6 +22,7 @@ import {
 } from "~/features/board/lib/kanban-order";
 import type { BoardRow } from "~/features/board/types/board";
 import { useDnd } from "~/hooks/use-dnd";
+import { useTimerTick } from "~/hooks/use-timer-tick";
 import { RECORD_STATUS_UI, statusTooltip } from "~/lib/record-status-ui";
 import { serverNowMs } from "~/lib/server-clock";
 import { formatTimerClock } from "~/lib/timer-clock";
@@ -117,7 +118,13 @@ function RecordCard({
 }
 
 //* 進行中カラムの見出しに計測中の合計だけを添える。固定バーは置かない(#51 §13.3)。
-function columnHeadingLabel(status: KanbanColumn, rows: readonly BoardRow[]): string {
+//? nowMs は呼び出し側の useTimerTick から渡す — RowTimerChip と同じ秒刻みで動かし、
+//? 見出しの時計だけ固まって見えないようにする。
+function columnHeadingLabel(
+  status: KanbanColumn,
+  rows: readonly BoardRow[],
+  nowMs: number,
+): string {
   if (status !== "進行中") {
     return status;
   }
@@ -125,7 +132,7 @@ function columnHeadingLabel(status: KanbanColumn, rows: readonly BoardRow[]): st
   if (measuring === undefined) {
     return status;
   }
-  return `${status} · 計測 ${formatTimerClock(measuredMs(measuring.timer, serverNowMs()))}`;
+  return `${status} · 計測 ${formatTimerClock(measuredMs(measuring.timer, nowMs))}`;
 }
 
 export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanProps) {
@@ -133,6 +140,8 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
     useBoardKanbanActions(dateJst);
   const { DragDropContext, Draggable, Droppable } = useDnd();
   const grouped = groupRowsByKanbanColumn(rows);
+  const hasMeasuringRow = rows.some((row) => timerRunState(row.timer) === "計測中");
+  const nowMs = useTimerTick(hasMeasuringRow);
   const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget | null>(null);
   const pendingOrderRef = useRef<{
     dateJst: DateJst;
@@ -254,7 +263,7 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
                     <Group gap="xs" wrap="nowrap">
                       <Tooltip label={statusTooltip(status)} withArrow>
                         <Text fw={600} size="sm">
-                          {columnHeadingLabel(status, columnRows)}
+                          {columnHeadingLabel(status, columnRows, nowMs)}
                         </Text>
                       </Tooltip>
                       <Badge color="gray" size="sm" variant="light">

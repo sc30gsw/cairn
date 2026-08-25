@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense } from "react";
 
-import { PendingComponent } from "~/components/pending-component";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { SetupStepper } from "~/features/onboarding/components/setup-stepper";
 import { useSetupStatus } from "~/features/onboarding/hooks/use-setup-status";
@@ -29,7 +28,8 @@ function HomeSetupStepper() {
 function HomeRoute() {
   return (
     <OwnerGate>
-      <Suspense fallback={<PendingComponent />}>
+      {/*? セットアップ手順は任意の小さな付加物。ページ全体サイズの Pending フォールバックはレイアウトシフトが大きい */}
+      <Suspense fallback={null}>
         <HomeSetupStepper />
       </Suspense>
       <TodayDayPage />

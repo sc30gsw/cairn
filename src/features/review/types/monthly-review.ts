@@ -1,6 +1,8 @@
 import type { FunctionReturnType } from "convex/server";
-import type { monthlyReviewRef } from "~domain/reviewRefs";
 
-//? codegen が走ったら api.queries.review.monthlyReview.monthlyReview から派生させる(~domain/reviewRefs の注記参照)
-export type MonthlyReview = FunctionReturnType<typeof monthlyReviewRef>;
+import type { api } from "~/../convex/_generated/api";
+
+export type MonthlyReview = FunctionReturnType<
+  typeof api.queries.review.monthlyReview.monthlyReview
+>;
 export type MonthlyCategoryBreakdown = MonthlyReview["byCategory"][number];

@@ -67,10 +67,10 @@ export function formatHeatmapTooltip(
   return `${date} — ${minutes}分（均${Math.round(day.movingAverage)}分）`;
 }
 
-export const HEATMAP_LEGEND: HeatmapLegendEntry[] = [
+export const HEATMAP_LEGEND = [
   { backgroundColor: "var(--mantine-color-default-hover)", label: "休養（記録なし）" },
   { backgroundColor: "var(--mantine-color-blue-1)", label: "1〜29分" },
   { backgroundColor: "var(--mantine-color-blue-2)", label: "30〜59分" },
   { backgroundColor: "var(--mantine-color-blue-3)", label: "60〜119分" },
   { backgroundColor: "var(--mantine-color-blue-4)", label: "120分+" },
-];
+] as const satisfies readonly HeatmapLegendEntry[];

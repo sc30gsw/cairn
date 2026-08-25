@@ -10,38 +10,16 @@ import { CHECKPOINT_BACKFILL_PLANS, GOAL_TYPES, STATUSES, TARGET_METRICS } from 
 import { NOTIFICATION_KINDS, NOTIFICATION_PENDING_SOURCES } from "./notifications";
 import { PRESET_REVIEW_REASONS } from "./presetDigest";
 
-const [toeic, listening, reading, conversation, otherCategory] = CATEGORIES;
-const [good, ordinary, collapsed] = CONDITIONS;
-const [confirmed, pending, ongoing, skipped] = STATUSES;
+//? union はタプルを spread して組み立てる。ドメインのタプル(domain.ts 等)に値を足せば
+//? validator も自動で追随し、列挙漏れが構造的に起きない(CVX-16)。個別の literal が必要な
+//? 判別子(goalType)だけは分解した名前を残す。
 const [examType, masteryType] = GOAL_TYPES;
-const [minutesMetric, daysMetric, countMetric] = TARGET_METRICS;
-const [liveKind, todayEmptyKind, restKind, unrecordedKind] = DAY_VIEW_KINDS;
-const [sunday, monday, tuesday, wednesday, thursday, friday, saturday] = WEEKDAYS;
 
-export const categoryValidator = v.union(
-  v.literal(toeic),
-  v.literal(listening),
-  v.literal(reading),
-  v.literal(conversation),
-  v.literal(otherCategory),
-);
+export const categoryValidator = v.union(...CATEGORIES.map((category) => v.literal(category)));
 
-export const statusValidator = v.union(
-  v.literal(confirmed),
-  v.literal(pending),
-  v.literal(ongoing),
-  v.literal(skipped),
-);
+export const statusValidator = v.union(...STATUSES.map((status) => v.literal(status)));
 
-export const weekdayValidator = v.union(
-  v.literal(sunday),
-  v.literal(monday),
-  v.literal(tuesday),
-  v.literal(wednesday),
-  v.literal(thursday),
-  v.literal(friday),
-  v.literal(saturday),
-);
+export const weekdayValidator = v.union(...WEEKDAYS.map((weekday) => v.literal(weekday)));
 
 export type StatusDto = Infer<typeof statusValidator>;
 export type RowStatus = StatusDto;
@@ -76,11 +54,7 @@ export const shareRowValidator = v.object({
 
 export type ShareRow = Infer<typeof shareRowValidator>;
 
-export const conditionValidator = v.union(
-  v.literal(good),
-  v.literal(ordinary),
-  v.literal(collapsed),
-);
+export const conditionValidator = v.union(...CONDITIONS.map((condition) => v.literal(condition)));
 
 export const breakdownRowValidator = v.object({
   category: v.string(),
@@ -305,14 +279,8 @@ export const goalInputValidator = v.union(examGoalFields, masteryGoalInputFields
 export type GoalInput = Infer<typeof goalInputValidator>;
 
 //? 値の SSoT は domain.ts のタプル。ここは validator を組み立てるだけ(CVX-16)。
-const [examPlan, longTermPlan, promotePlan, manualPlan, nonePlan] = CHECKPOINT_BACKFILL_PLANS;
-
 export const checkpointBackfillPlanValidator = v.union(
-  v.literal(examPlan),
-  v.literal(longTermPlan),
-  v.literal(promotePlan),
-  v.literal(manualPlan),
-  v.literal(nonePlan),
+  ...CHECKPOINT_BACKFILL_PLANS.map((plan) => v.literal(plan)),
 );
 
 export const checkpointParentAuditOwnerValidator = v.object({
@@ -356,11 +324,7 @@ export type BackfillCheckpointParentsResult = Infer<
 >;
 
 //* 週間ターゲット。常設定義・週次スナップショットなしの「今週専用の計器」。
-export const targetMetricValidator = v.union(
-  v.literal(minutesMetric),
-  v.literal(daysMetric),
-  v.literal(countMetric),
-);
+export const targetMetricValidator = v.union(...TARGET_METRICS.map((metric) => v.literal(metric)));
 
 export type TargetMetricDto = Infer<typeof targetMetricValidator>;
 
@@ -417,12 +381,7 @@ export const presetApplyResultValidator = v.object({
 
 export type PresetApplyResult = Infer<typeof presetApplyResultValidator>;
 
-export const dayViewKindValidator = v.union(
-  v.literal(liveKind),
-  v.literal(todayEmptyKind),
-  v.literal(restKind),
-  v.literal(unrecordedKind),
-);
+export const dayViewKindValidator = v.union(...DAY_VIEW_KINDS.map((kind) => v.literal(kind)));
 
 export const dayPageValidator = v.object({
   canCopyYesterday: v.boolean(),
@@ -475,11 +434,8 @@ export const recentConcreteActionsValidator = v.array(v.string());
 
 export type RecentConcreteActions = Infer<typeof recentConcreteActionsValidator>;
 
-const [leftoverHeavyReason, skipHeavyReason] = PRESET_REVIEW_REASONS;
-
 export const presetReviewReasonValidator = v.union(
-  v.literal(leftoverHeavyReason),
-  v.literal(skipHeavyReason),
+  ...PRESET_REVIEW_REASONS.map((reason) => v.literal(reason)),
 );
 
 export const presetReviewWeekdayValidator = v.object({
@@ -517,10 +473,7 @@ export const boardScheduleEventDtoValidator = v.object({
 });
 
 export const boardScheduleViewValidator = v.union(
-  v.literal(BOARD_SCHEDULE_VIEWS[0]),
-  v.literal(BOARD_SCHEDULE_VIEWS[1]),
-  v.literal(BOARD_SCHEDULE_VIEWS[2]),
-  v.literal(BOARD_SCHEDULE_VIEWS[3]),
+  ...BOARD_SCHEDULE_VIEWS.map((view) => v.literal(view)),
 );
 
 export type BoardScheduleEventDto = Infer<typeof boardScheduleEventDtoValidator>;
@@ -625,9 +578,12 @@ export const monthlyReviewValidator = v.object({
 export type MonthlyReviewDto = Infer<typeof monthlyReviewValidator>;
 
 const [checkpointDeadlineKind, eveningUntouchedKind, weeklyTargetMissKind] = NOTIFICATION_KINDS;
-const [daySource, presetSource] = NOTIFICATION_PENDING_SOURCES;
 
 //* 通知の種類。UI のフィルタと設定のキー集合がここから派生する。
+//? ここだけタプルの spread ではなく個別の literal を並べる。この validator は
+//? notificationPayloadValidator の判別子で、spread(配列由来)だと各メンバーのリテラル型が
+//? 保たれず payload の絞り込みが効かなくなる(kind: any に落ちる)。列挙漏れは
+//? validators.test.ts の NOTIFICATION_KINDS との1:1一致テストが検知する。
 export const notificationKindValidator = v.union(
   v.literal(checkpointDeadlineKind),
   v.literal(eveningUntouchedKind),
@@ -664,7 +620,7 @@ export const notificationPayloadValidator = v.union(
     dateJst: v.string(),
     kind: v.literal(eveningUntouchedKind),
     pendingCount: v.number(),
-    source: v.union(v.literal(daySource), v.literal(presetSource)),
+    source: v.union(...NOTIFICATION_PENDING_SOURCES.map((source) => v.literal(source))),
   }),
   v.object({
     kind: v.literal(weeklyTargetMissKind),

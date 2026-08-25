@@ -223,3 +223,76 @@ test("ゴミ箱に入れた記録の boardScheduleEvents は削除される", as
     }),
   ).rejects.toThrow();
 });
+
+test("ゴミ箱の日を完全削除すると、配下の記録の boardScheduleEvents も一緒に消える", async () => {
+  const t = await ownerWithDay();
+  const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  const row = day.rows[0];
+  if (row === undefined) {
+    throw new Error("expected a row");
+  }
+
+  await t.mutation(api.mutations.boardSchedule.create.create, {
+    color: "green",
+    endAt: "2026-08-17 10:30:00",
+    rowId: row._id,
+    startAt: "2026-08-17 09:00:00",
+  });
+
+  await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: MONDAY });
+  const trashedDay = (await t.query(api.queries.trash.list.list, {})).days.find(
+    (entry) => entry.dateJst === MONDAY,
+  );
+  if (trashedDay === undefined) {
+    throw new Error("expected the day to be trashed");
+  }
+
+  await t.mutation(api.mutations.trash.purgeDay.purgeDay, { dayId: trashedDay._id });
+
+  const remainingBlocks = await t.run(async (ctx) =>
+    ctx.db
+      .query("boardScheduleEvents")
+      .withIndex("by_row", (q) => q.eq("rowId", row._id))
+      .collect(),
+  );
+  expect(remainingBlocks).toEqual([]);
+});
+
+test("switchPreset で消える未着手の記録は boardScheduleEvents も一緒に消える", async () => {
+  const t = await ownerWithDay();
+  const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  const row = day.rows[0];
+  if (row === undefined) {
+    throw new Error("expected a row");
+  }
+
+  await t.mutation(api.mutations.boardSchedule.create.create, {
+    color: "green",
+    endAt: "2026-08-17 10:30:00",
+    rowId: row._id,
+    startAt: "2026-08-17 09:00:00",
+  });
+
+  //? catalog.ensure が全曜日のプリセットを配るため新規作成は Conflict になる。
+  //? 別曜日の既存プリセットへ切り替えれば未着手の記録は消えるので、それで十分。
+  const presets = await t.query(api.queries.presets.list.list, {});
+  const otherPreset = presets.find((preset) => preset.weekday !== 1);
+  if (otherPreset === undefined) {
+    throw new Error("expected another weekday preset");
+  }
+  const presetId = otherPreset._id;
+
+  await t.mutation(api.mutations.rows.switchPreset.switchPreset, {
+    dateJst: MONDAY,
+    presetId,
+    todayJst: MONDAY,
+  });
+
+  const remainingBlocks = await t.run(async (ctx) =>
+    ctx.db
+      .query("boardScheduleEvents")
+      .withIndex("by_row", (q) => q.eq("rowId", row._id))
+      .collect(),
+  );
+  expect(remainingBlocks).toEqual([]);
+});

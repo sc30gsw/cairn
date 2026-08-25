@@ -1,7 +1,5 @@
-import { useMutation } from "convex/react";
 import type { DateJst } from "~domain/jst";
 import { measuredMs } from "~domain/rowTimer";
-import { resumeTimerRef, runningTimerRef, stopTimerRef } from "~domain/rowTimerRefs";
 
 import { api } from "~/../convex/_generated/api";
 import { getDayRow, patchDayRow, reorderDayRows, setDayRowStatus } from "~/lib/optimistic-day-rows";
@@ -49,7 +47,7 @@ export function useRemoveDay() {
 }
 
 export function useOptimisticSkipRow(dateJst: DateJst, todayJst: DateJst) {
-  const mutateAsync = useMutation(api.mutations.rows.skip.skip).withOptimisticUpdate(
+  const mutateAsync = useConvexMutation(api.mutations.rows.skip.skip).withOptimisticUpdate(
     (localStore, args) => {
       setDayRowStatus(localStore, {
         dateJst,
@@ -64,7 +62,7 @@ export function useOptimisticSkipRow(dateJst: DateJst, todayJst: DateJst) {
 }
 
 export function useOptimisticUnskipRow(dateJst: DateJst, todayJst: DateJst) {
-  const mutateAsync = useMutation(api.mutations.rows.unskip.unskip).withOptimisticUpdate(
+  const mutateAsync = useConvexMutation(api.mutations.rows.unskip.unskip).withOptimisticUpdate(
     (localStore, args) => {
       setDayRowStatus(localStore, {
         dateJst,
@@ -79,22 +77,22 @@ export function useOptimisticUnskipRow(dateJst: DateJst, todayJst: DateJst) {
 }
 
 export function useOptimisticUnconfirmRow(dateJst: DateJst, todayJst: DateJst) {
-  const mutateAsync = useMutation(api.mutations.rows.unconfirm.unconfirm).withOptimisticUpdate(
-    (localStore, args) => {
-      setDayRowStatus(localStore, {
-        dateJst,
-        rowId: args.rowId,
-        status: "未着手",
-        timer: null,
-        todayJst,
-      });
-    },
-  );
+  const mutateAsync = useConvexMutation(
+    api.mutations.rows.unconfirm.unconfirm,
+  ).withOptimisticUpdate((localStore, args) => {
+    setDayRowStatus(localStore, {
+      dateJst,
+      rowId: args.rowId,
+      status: "未着手",
+      timer: null,
+      todayJst,
+    });
+  });
   return { mutateAsync };
 }
 
 export function useOptimisticStartRow(dateJst: DateJst, todayJst: DateJst) {
-  const mutateAsync = useMutation(api.mutations.rows.start.start).withOptimisticUpdate(
+  const mutateAsync = useConvexMutation(api.mutations.rows.start.start).withOptimisticUpdate(
     (localStore, args) => {
       //? 着手はそのまま計測開始(T1)。サーバの startedAt が届くまで端末の補正時計で走らせる。
       setDayRowStatus(localStore, {
@@ -110,7 +108,7 @@ export function useOptimisticStartRow(dateJst: DateJst, todayJst: DateJst) {
 }
 
 export function useOptimisticPauseRow(dateJst: DateJst, todayJst: DateJst) {
-  const mutateAsync = useMutation(api.mutations.rows.pause.pause).withOptimisticUpdate(
+  const mutateAsync = useConvexMutation(api.mutations.rows.pause.pause).withOptimisticUpdate(
     (localStore, args) => {
       setDayRowStatus(localStore, {
         dateJst,
@@ -125,7 +123,7 @@ export function useOptimisticPauseRow(dateJst: DateJst, todayJst: DateJst) {
 }
 
 export function useOptimisticReopenRow(dateJst: DateJst, todayJst: DateJst) {
-  const mutateAsync = useMutation(api.mutations.rows.reopen.reopen).withOptimisticUpdate(
+  const mutateAsync = useConvexMutation(api.mutations.rows.reopen.reopen).withOptimisticUpdate(
     (localStore, args) => {
       const row = getDayRow(localStore, { dateJst, rowId: args.rowId, todayJst });
       //? 確定分数から計測を続ける(T9)。目安分数ではなく実績を引き継ぐ非対称は意図的。
@@ -146,20 +144,20 @@ export function useOptimisticReopenRow(dateJst: DateJst, todayJst: DateJst) {
 }
 
 export function useOptimisticApplyRowOrder(dateJst: DateJst, todayJst: DateJst) {
-  const mutateAsync = useMutation(api.mutations.rows.applyOrder.applyOrder).withOptimisticUpdate(
-    (localStore, args) => {
-      reorderDayRows(localStore, {
-        dateJst,
-        orderedRowIds: args.orderedRowIds,
-        todayJst,
-      });
-    },
-  );
+  const mutateAsync = useConvexMutation(
+    api.mutations.rows.applyOrder.applyOrder,
+  ).withOptimisticUpdate((localStore, args) => {
+    reorderDayRows(localStore, {
+      dateJst,
+      orderedRowIds: args.orderedRowIds,
+      todayJst,
+    });
+  });
   return { mutateAsync };
 }
 
 export function useOptimisticConfirmRow(dateJst: DateJst, todayJst: DateJst) {
-  const mutateAsync = useMutation(api.mutations.rows.confirm.confirm).withOptimisticUpdate(
+  const mutateAsync = useConvexMutation(api.mutations.rows.confirm.confirm).withOptimisticUpdate(
     (localStore, args) => {
       patchDayRow(localStore, {
         dateJst,
@@ -173,7 +171,9 @@ export function useOptimisticConfirmRow(dateJst: DateJst, todayJst: DateJst) {
 }
 
 export function useOptimisticStopRowTimer(dateJst: DateJst, todayJst: DateJst) {
-  const mutateAsync = useMutation(stopTimerRef).withOptimisticUpdate((localStore, args) => {
+  const mutateAsync = useConvexMutation(
+    api.mutations.rows.stopTimer.stopTimer,
+  ).withOptimisticUpdate((localStore, args) => {
     const row = getDayRow(localStore, { dateJst, rowId: args.rowId, todayJst });
     if (row !== undefined) {
       patchDayRow(localStore, {
@@ -191,15 +191,17 @@ export function useOptimisticStopRowTimer(dateJst: DateJst, todayJst: DateJst) {
       });
     }
     //? ヘッダのインジケータは「いま計測中の1件」だけを見ているので、同時に消す。
-    if (localStore.getQuery(runningTimerRef, {})?._id === args.rowId) {
-      localStore.setQuery(runningTimerRef, {}, null);
+    if (localStore.getQuery(api.queries.rows.runningTimer.runningTimer, {})?._id === args.rowId) {
+      localStore.setQuery(api.queries.rows.runningTimer.runningTimer, {}, null);
     }
   });
   return { mutateAsync };
 }
 
 export function useOptimisticResumeRowTimer(dateJst: DateJst, todayJst: DateJst) {
-  const mutateAsync = useMutation(resumeTimerRef).withOptimisticUpdate((localStore, args) => {
+  const mutateAsync = useConvexMutation(
+    api.mutations.rows.resumeTimer.resumeTimer,
+  ).withOptimisticUpdate((localStore, args) => {
     const row = getDayRow(localStore, { dateJst, rowId: args.rowId, todayJst });
     if (row === undefined) {
       return;
@@ -223,9 +225,11 @@ export function useOptimisticResumeRowTimer(dateJst: DateJst, todayJst: DateJst)
 //* どの画面にいても計測中を止められるインジケータ用(docs/specs/study-timer.md §13.2)。
 //? 日ページのキャッシュを持たない画面から呼ばれるので、行の楽観更新はしない。
 export function useStopRunningTimer() {
-  const mutateAsync = useMutation(stopTimerRef).withOptimisticUpdate((localStore, args) => {
-    if (localStore.getQuery(runningTimerRef, {})?._id === args.rowId) {
-      localStore.setQuery(runningTimerRef, {}, null);
+  const mutateAsync = useConvexMutation(
+    api.mutations.rows.stopTimer.stopTimer,
+  ).withOptimisticUpdate((localStore, args) => {
+    if (localStore.getQuery(api.queries.rows.runningTimer.runningTimer, {})?._id === args.rowId) {
+      localStore.setQuery(api.queries.rows.runningTimer.runningTimer, {}, null);
     }
   });
   return { mutateAsync };

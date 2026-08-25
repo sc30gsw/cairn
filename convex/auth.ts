@@ -11,6 +11,12 @@ import type { DataModel } from "./_generated/dataModel";
 import authConfig from "./auth.config";
 import authSchema from "./betterAuth/schema";
 import {
+  PASSWORD_MIN_LENGTH,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+  USERNAME_PATTERN,
+} from "./lib/authFields";
+import {
   notionOAuthConfigured,
   requireEnv,
   signUpDisabledFromEnv,
@@ -40,6 +46,7 @@ const isLiveConvexCtx = (ctx: GenericCtx<DataModel>) => isQueryCtx(ctx) || isAct
 export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
   const siteUrl = process.env.SITE_URL;
   const notionAuth = notionOAuthConfigured();
+  const signUpDisabled = signUpDisabledFromEnv();
   return {
     account: {
       encryptOAuthTokens: notionAuth,
@@ -47,12 +54,17 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
     baseURL: siteUrl,
     database: authComponent.adapter(ctx),
     emailAndPassword: {
-      disableSignUp: signUpDisabledFromEnv(),
+      disableSignUp: signUpDisabled,
       enabled: true,
+      minPasswordLength: PASSWORD_MIN_LENGTH,
     },
     plugins: [
       convex({ authConfig }),
-      username(),
+      username({
+        maxUsernameLength: USERNAME_MAX_LENGTH,
+        minUsernameLength: USERNAME_MIN_LENGTH,
+        usernameValidator: (candidate) => USERNAME_PATTERN.test(candidate),
+      }),
       passkey({
         rpID: passkeyRpId(siteUrl),
         rpName: "Cairn",
@@ -71,6 +83,10 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
           notion: {
             clientId: process.env.NOTION_CLIENT_ID ?? "",
             clientSecret: process.env.NOTION_CLIENT_SECRET ?? "",
+            // emailAndPassword.disableSignUp だけでは OAuth コールバックの暗黙サインアップは
+            // 止まらない(better-auth 1.6.28: api/routes/callback.mjs は
+            // provider.options?.disableSignUp だけを見る)。プロバイダ単位で明示的に渡す。
+            disableSignUp: signUpDisabled,
           },
         }
       : undefined,

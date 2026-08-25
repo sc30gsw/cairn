@@ -1,6 +1,8 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
-import { NotFoundError, ValidationFailedError } from "../../lib/errors";
+import { requireDateJst } from "../../lib/dateArgs";
+import { requireValidMinutes } from "../../lib/domain";
+import { NotFoundError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { liveRowsForDay } from "../days/liveRowsForDay";
 import { requireEditableDay } from "../days/requireEditableDay";
@@ -17,24 +19,24 @@ export async function add(
     todayJst: string;
   },
 ): Promise<Id<"rows">> {
-  await requireEditableDay(ctx, ownerId, args.dateJst, args.todayJst);
-  if (args.minutes < 0) {
-    throwDomain(new ValidationFailedError({ message: "分数は0以上です" }));
-  }
+  const dateJst = requireDateJst(args.dateJst);
+  const todayJst = requireDateJst(args.todayJst);
+  await requireEditableDay(ctx, ownerId, dateJst, todayJst);
+  const minutes = requireValidMinutes(args.minutes);
   const item = await ctx.db.get("items", args.itemId);
   if (item === null || item.ownerId !== ownerId) {
     throwDomain(new NotFoundError({ message: "項目が見つかりません", resource: "項目" }));
   }
-  const day = await requireLiveDay(ctx, ownerId, args.dateJst);
+  const day = await requireLiveDay(ctx, ownerId, dateJst);
   const rows = await liveRowsForDay(ctx, day._id);
   const sortOrder = rows.reduce((max, row) => Math.max(max, row.sortOrder), -1) + 1;
   //? 追加は未着手なので確定分数を動かさない。習得目標のカウンタ更新は confirm 側の担当(ADR-0007)。
   return await ctx.db.insert("rows", {
     content: args.content,
-    dateJst: args.dateJst,
+    dateJst,
     dayId: day._id,
     itemId: args.itemId,
-    minutes: args.minutes,
+    minutes,
     ownerId,
     sortOrder,
     status: "未着手",

@@ -101,3 +101,24 @@ test("進行中以外に pause は失敗する", async () => {
 
   await expect(t.mutation(api.mutations.rows.pause.pause, { rowId: row._id })).rejects.toThrow();
 });
+
+test("applyOrder は同じ記録IDの重複を拒否する", async () => {
+  const t = asOwner();
+  const row = await firstRow(t);
+  const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  if (day.rows.length < 2) {
+    throw new Error("expected at least two rows");
+  }
+  const duplicated = [row._id, row._id, ...day.rows.slice(2).map((entry) => entry._id)];
+
+  await expect(
+    t.mutation(api.mutations.rows.applyOrder.applyOrder, {
+      dateJst: MONDAY,
+      orderedRowIds: duplicated,
+    }),
+  ).rejects.toThrow();
+
+  //? 拒否された並べ替えで sortOrder が動いていないことも確認する。
+  const after = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  expect(after.rows.map((entry) => entry._id)).toEqual(day.rows.map((entry) => entry._id));
+});

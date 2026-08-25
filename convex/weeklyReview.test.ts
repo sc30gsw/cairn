@@ -3,7 +3,6 @@ import { expect, test } from "vite-plus/test";
 
 import { api } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
-import { weeklyReviewRef } from "./lib/reviewRefs";
 import schema from "./schema";
 
 const modules = import.meta.glob([
@@ -84,7 +83,10 @@ async function seedCategory(
 
 test("未認証で週次レビューを読むと拒否される", async () => {
   await expect(
-    raw().query(weeklyReviewRef, { todayJst: TODAY_AFTER_WEEK, weekStartJst: MONDAY }),
+    raw().query(api.queries.review.weeklyReview.weeklyReview, {
+      todayJst: TODAY_AFTER_WEEK,
+      weekStartJst: MONDAY,
+    }),
   ).rejects.toThrow();
 });
 
@@ -98,7 +100,10 @@ test("他の所有者のデータは週次レビューに混ざらない", async
 
   const other = await raw()
     .withIdentity(OTHER_OWNER)
-    .query(weeklyReviewRef, { todayJst: TODAY_AFTER_WEEK, weekStartJst: MONDAY });
+    .query(api.queries.review.weeklyReview.weeklyReview, {
+      todayJst: TODAY_AFTER_WEEK,
+      weekStartJst: MONDAY,
+    });
   expect(other.confirmedMinutes).toBe(0);
   expect(other.activeDays).toBe(0);
   expect(other.shareMarkdown).toBe("");
@@ -120,7 +125,7 @@ test("対象週と前週の実績が状態ごとに分かれる", async () => {
     sortOrder: 0,
   });
 
-  const review = await t.query(weeklyReviewRef, {
+  const review = await t.query(api.queries.review.weeklyReview.weeklyReview, {
     todayJst: TODAY_AFTER_WEEK,
     weekStartJst: MONDAY,
   });
@@ -146,7 +151,7 @@ test("対象週と前週の実績が状態ごとに分かれる", async () => {
 
 test("週の途中の日付を渡してもその週の月曜に正規化される", async () => {
   const t = owner();
-  const review = await t.query(weeklyReviewRef, {
+  const review = await t.query(api.queries.review.weeklyReview.weeklyReview, {
     todayJst: TODAY_AFTER_WEEK,
     weekStartJst: "2026-08-20",
   });
@@ -171,7 +176,7 @@ test("今週はターゲットが配列で返り、今日の行は消化に数�
     targetValue: 100,
   });
 
-  const review = await t.query(weeklyReviewRef, {
+  const review = await t.query(api.queries.review.weeklyReview.weeklyReview, {
     todayJst: TODAY_IN_WEEK,
     weekStartJst: MONDAY,
   });
@@ -200,7 +205,7 @@ test("過去週はターゲットが null になり、7日すべてを数える"
     targetValue: 100,
   });
 
-  const review = await t.query(weeklyReviewRef, {
+  const review = await t.query(api.queries.review.weeklyReview.weeklyReview, {
     todayJst: TODAY_AFTER_WEEK,
     weekStartJst: MONDAY,
   });
@@ -211,7 +216,7 @@ test("過去週はターゲットが null になり、7日すべてを数える"
 });
 
 test("ターゲットが0件のままの今週は空配列(null ではない)", async () => {
-  const review = await owner().query(weeklyReviewRef, {
+  const review = await owner().query(api.queries.review.weeklyReview.weeklyReview, {
     todayJst: TODAY_IN_WEEK,
     weekStartJst: MONDAY,
   });
@@ -246,7 +251,7 @@ test("ゴミ箱の記録と日は集計・消化・byDay・共有文・ターゲ
     }
   });
 
-  const review = await t.query(weeklyReviewRef, {
+  const review = await t.query(api.queries.review.weeklyReview.weeklyReview, {
     todayJst: TODAY_IN_WEEK,
     weekStartJst: MONDAY,
   });
@@ -264,7 +269,7 @@ test("前週に記録が無ければ前週比の生値は0", async () => {
     rows: [{ dateJst: MONDAY, minutes: 60, status: "確定" }],
     sortOrder: 0,
   });
-  const review = await t.query(weeklyReviewRef, {
+  const review = await t.query(api.queries.review.weeklyReview.weeklyReview, {
     todayJst: TODAY_AFTER_WEEK,
     weekStartJst: MONDAY,
   });
@@ -289,7 +294,7 @@ test("共有文は見出し行+カテゴリ+項目行の週版になり、確定
     sortOrder: 1,
   });
 
-  const review = await t.query(weeklyReviewRef, {
+  const review = await t.query(api.queries.review.weeklyReview.weeklyReview, {
     todayJst: TODAY_AFTER_WEEK,
     weekStartJst: MONDAY,
   });
@@ -300,7 +305,7 @@ test("共有文は見出し行+カテゴリ+項目行の週版になり、確定
     "- 英会話 30分",
   ]);
 
-  const empty = await t.query(weeklyReviewRef, {
+  const empty = await t.query(api.queries.review.weeklyReview.weeklyReview, {
     todayJst: TODAY_AFTER_WEEK,
     weekStartJst: "2026-08-10",
   });
@@ -309,13 +314,19 @@ test("共有文は見出し行+カテゴリ+項目行の週版になり、確定
 
 test("週の指定が日付形式でなければ拒否される", async () => {
   await expect(
-    owner().query(weeklyReviewRef, { todayJst: TODAY_AFTER_WEEK, weekStartJst: "今週" }),
+    owner().query(api.queries.review.weeklyReview.weeklyReview, {
+      todayJst: TODAY_AFTER_WEEK,
+      weekStartJst: "今週",
+    }),
   ).rejects.toThrow();
 });
 
 test("今日の指定が日付形式でなければ拒否される", async () => {
   await expect(
-    owner().query(weeklyReviewRef, { todayJst: "きょう", weekStartJst: MONDAY }),
+    owner().query(api.queries.review.weeklyReview.weeklyReview, {
+      todayJst: "きょう",
+      weekStartJst: MONDAY,
+    }),
   ).rejects.toThrow();
 });
 
@@ -336,7 +347,7 @@ test("byDay は月曜から日曜の7件で、コンディション未選択は 
     }
   });
 
-  const review = await t.query(weeklyReviewRef, {
+  const review = await t.query(api.queries.review.weeklyReview.weeklyReview, {
     todayJst: TODAY_IN_WEEK,
     weekStartJst: MONDAY,
   });

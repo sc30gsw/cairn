@@ -14,11 +14,16 @@ export function useAuthActionTransition() {
 
   function run(action: () => Promise<AuthActionResult>): Promise<AuthActionResult> {
     setResult(null);
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       startTransition(async () => {
-        const next = await action();
-        setResult(next);
-        resolve(next);
+        //? action() が(規約違反で)例外を投げても run() の Promise は必ず settle させる
+        try {
+          const next = await action();
+          setResult(next);
+          resolve(next);
+        } catch (error) {
+          reject(error);
+        }
       });
     });
   }

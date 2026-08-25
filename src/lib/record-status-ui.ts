@@ -1,7 +1,8 @@
+import type { MantineColor } from "@mantine/core";
 import type { Status } from "~domain/domain";
 
 type StatusUi = {
-  color: string;
+  color: MantineColor;
   label: string;
 };
 

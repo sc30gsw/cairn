@@ -1,10 +1,16 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { ValidationFailedError } from "../../lib/errors";
-import type { SaveNotificationSettingsArgs } from "../../lib/notificationRefs";
 import { EVENING_HOUR_MESSAGE, EVENING_HOUR_RANGE } from "../../lib/notifications";
 import { throwDomain } from "../../lib/ownerFunctions";
+import type { NotificationSettingsDto } from "../../lib/validators";
 import { getOwnerSettings } from "./getOwnerSettings";
+
+//? 送信ペイロードの型はこの mutation の args と同形の DTO 型(NotificationSettingsDto)から借りる。
+//? api からの FunctionArgs<typeof api.mutations...> は使わない — その mutation のハンドラーが
+//? この関数を呼ぶため、api の型 → この関数の型 → api の型…という自己参照になり circularly
+//? references itself エラーになる(convex/mutations/notifications/saveSettings.ts 参照)。
+type SaveNotificationSettingsArgs = NotificationSettingsDto;
 
 function requireHour(hour: number, range: { max: number; min: number }, message: string): void {
   if (!Number.isInteger(hour) || hour < range.min || hour > range.max) {

@@ -1,6 +1,7 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { isWeekday, type Weekday } from "../../lib/catalog";
+import { requireValidMinutes } from "../../lib/domain";
 import { NotFoundError, ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { assertOwnedLines, assertWeekdayFree } from "./helpers";
@@ -28,8 +29,12 @@ export async function update(
   if (!isWeekday(args.weekday)) {
     throwDomain(new ValidationFailedError({ message: "曜日が不正です" }));
   }
-  //? rows/confirm.ts と同じく trim 後の内容を検証し、検証した値をそのまま保存する
-  const lines = args.lines.map((line) => ({ ...line, content: line.content.trim() }));
+  //? rows/confirm.ts と同じく trim 後の内容・検証済みの分数だけを保存する
+  const lines = args.lines.map((line) => ({
+    ...line,
+    content: line.content.trim(),
+    minutes: requireValidMinutes(line.minutes),
+  }));
   await assertWeekdayFree(ctx, ownerId, args.weekday, args.presetId);
   await assertOwnedLines(ctx, ownerId, lines);
   await ctx.db.patch("presets", args.presetId, {

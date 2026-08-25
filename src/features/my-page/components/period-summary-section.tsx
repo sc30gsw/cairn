@@ -1,12 +1,14 @@
 import { Anchor, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
 import type { FunctionReturnType } from "convex/server";
-import type { weeklyReviewRef } from "~domain/reviewRefs";
 
+import type { api } from "~/../convex/_generated/api";
 import { NUMERAL_FONT } from "~/lib/theme";
 
 //? 週次・月次で digest の形は同じ(convex/lib/validators.ts の ReviewDto 系)。週次の型から借りる
-type PeriodDigest = FunctionReturnType<typeof weeklyReviewRef>["digest"];
+type PeriodDigest = FunctionReturnType<
+  typeof api.queries.review.weeklyReview.weeklyReview
+>["digest"];
 
 type PeriodSummarySectionProps = {
   activeDays: number;

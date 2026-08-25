@@ -1,8 +1,8 @@
 import { convexTest } from "convex-test";
 import { expect, test } from "vite-plus/test";
 
+import { api } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
-import { monthlyReviewRef } from "./lib/reviewRefs";
 import schema from "./schema";
 
 const modules = import.meta.glob([
@@ -80,7 +80,10 @@ async function seedCategory(
 
 test("未認証で月次レビューを読むと拒否される", async () => {
   await expect(
-    raw().query(monthlyReviewRef, { todayJst: TODAY_AFTER_MONTH, yearMonth: YEAR_MONTH }),
+    raw().query(api.queries.review.monthlyReview.monthlyReview, {
+      todayJst: TODAY_AFTER_MONTH,
+      yearMonth: YEAR_MONTH,
+    }),
   ).rejects.toThrow();
 });
 
@@ -94,7 +97,10 @@ test("他の所有者のデータは月次レビューに混ざらない", async
 
   const other = await raw()
     .withIdentity(OTHER_OWNER)
-    .query(monthlyReviewRef, { todayJst: TODAY_AFTER_MONTH, yearMonth: YEAR_MONTH });
+    .query(api.queries.review.monthlyReview.monthlyReview, {
+      todayJst: TODAY_AFTER_MONTH,
+      yearMonth: YEAR_MONTH,
+    });
   expect(other.confirmedMinutes).toBe(0);
   expect(other.activeDays).toBe(0);
   expect(other.byCategory).toEqual([]);
@@ -116,7 +122,7 @@ test("対象月と前月の実績が状態ごとに分かれる", async () => {
     sortOrder: 0,
   });
 
-  const review = await t.query(monthlyReviewRef, {
+  const review = await t.query(api.queries.review.monthlyReview.monthlyReview, {
     todayJst: TODAY_AFTER_MONTH,
     yearMonth: YEAR_MONTH,
   });
@@ -164,7 +170,7 @@ test("消化推移は月曜始まりの週バケットになり、月境界は�
     sortOrder: 0,
   });
 
-  const review = await t.query(monthlyReviewRef, {
+  const review = await t.query(api.queries.review.monthlyReview.monthlyReview, {
     todayJst: TODAY_AFTER_MONTH,
     yearMonth: YEAR_MONTH,
   });
@@ -201,7 +207,7 @@ test("当月レビューでは今日以降を消化に数えない", async () =>
     sortOrder: 0,
   });
 
-  const review = await t.query(monthlyReviewRef, {
+  const review = await t.query(api.queries.review.monthlyReview.monthlyReview, {
     todayJst: TODAY_IN_MONTH,
     yearMonth: YEAR_MONTH,
   });
@@ -243,7 +249,7 @@ test("ゴミ箱の記録と日は集計・消化・推移から除かれる", as
     }
   });
 
-  const review = await t.query(monthlyReviewRef, {
+  const review = await t.query(api.queries.review.monthlyReview.monthlyReview, {
     todayJst: TODAY_AFTER_MONTH,
     yearMonth: YEAR_MONTH,
   });
@@ -261,7 +267,7 @@ test("前月に記録が無ければ前月比の生値は0", async () => {
     sortOrder: 0,
   });
 
-  const review = await t.query(monthlyReviewRef, {
+  const review = await t.query(api.queries.review.monthlyReview.monthlyReview, {
     todayJst: TODAY_AFTER_MONTH,
     yearMonth: YEAR_MONTH,
   });
@@ -281,7 +287,7 @@ test("年をまたぐ1月は前月が前年12月になる", async () => {
     sortOrder: 0,
   });
 
-  const review = await t.query(monthlyReviewRef, {
+  const review = await t.query(api.queries.review.monthlyReview.monthlyReview, {
     todayJst: "2026-02-01",
     yearMonth: "2026-01",
   });
@@ -291,7 +297,7 @@ test("年をまたぐ1月は前月が前年12月になる", async () => {
 });
 
 test("月の指定が壊れていれば空の DTO を返す(throw しない)", async () => {
-  const review = await owner().query(monthlyReviewRef, {
+  const review = await owner().query(api.queries.review.monthlyReview.monthlyReview, {
     todayJst: TODAY_AFTER_MONTH,
     yearMonth: "こんげつ",
   });

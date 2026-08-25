@@ -13,10 +13,12 @@
     box-shadow 120ms ease;
 }
 
+/* theme.ts の Tabs[data-active] と同じオレンジ系に揃える(design-live-board.md ルール2: blue は
+   カレンダーの土日専用) */
 .tabBar :global(.mantine-Tabs-tab[data-active]) {
-  background: var(--mantine-color-blue-light);
-  box-shadow: inset 0 0 0 1px var(--mantine-color-blue-outline);
-  color: var(--mantine-color-blue-light-color);
+  background: rgba(188, 82, 21, 0.08);
+  box-shadow: inset 0 0 0 1px var(--mantine-color-orange-6);
+  color: var(--mantine-color-orange-6);
   font-weight: 600;
 }
 

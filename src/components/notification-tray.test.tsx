@@ -88,6 +88,17 @@ test("「すべて既読にする」で markAllRead が呼ばれる", async () =
   expect(props.onMarkAllRead).toHaveBeenCalledTimes(1);
 });
 
+test("未読の行には色だけでなく文字でも未読と分かる印がある", async () => {
+  const props = trayProps([EVENING], 1);
+  const { getByRole, getByText } = renderWithMantine(<NotificationTray {...props} />);
+
+  fireEvent.click(getByRole("button", { name: /通知/ }));
+
+  await waitFor(() => {
+    expect(getByText("未読")).toBeDefined();
+  });
+});
+
 test("未読0件のときは「すべて既読にする」を出さない", async () => {
   const props = trayProps([{ ...EVENING, read: true }], 0);
   const { getByRole, queryByRole } = renderWithMantine(<NotificationTray {...props} />);

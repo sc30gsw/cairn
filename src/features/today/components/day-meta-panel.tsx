@@ -1,5 +1,6 @@
-import { Field, Form, useForm } from "@formisch/react";
+import { Field, Form, reset, useForm } from "@formisch/react";
 import { Button, Group, Radio, Stack, Textarea, Title } from "@mantine/core";
+import { useEffect } from "react";
 import type { Condition } from "~domain/conditions";
 import { CONDITIONS } from "~domain/conditions";
 
@@ -18,6 +19,14 @@ export function DayMetaPanel({ condition, memo, onSaveCondition, onSaveMemo }: D
     initialInput: { memo: memo ?? "" },
     schema: MemoSchema,
   });
+
+  //? 2端末で編集されうる(CONTEXT)。未編集(clean)のときだけサーバー値へ追従する(row-editor.tsx と同じ方針)
+  useEffect(() => {
+    if (form.isDirty) {
+      return;
+    }
+    reset(form, { initialInput: { memo: memo ?? "" } });
+  }, [form, memo]);
 
   return (
     <section aria-label="コンディションとメモ">

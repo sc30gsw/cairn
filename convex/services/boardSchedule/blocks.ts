@@ -5,6 +5,7 @@ import {
   type BoardScheduleColor,
 } from "../../lib/boardScheduleColors";
 import { type BoardScheduleView, scheduleListRange } from "../../lib/boardScheduleRange";
+import { requireDateJst } from "../../lib/dateArgs";
 import { NotFoundError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { assertScheduleRange, requireScheduleInstant } from "../../lib/scheduleInstant";
@@ -62,7 +63,8 @@ export async function listForWeek(
     title: string;
   }>
 > {
-  const { rangeEndExclusive, rangeStart } = scheduleListRange(args.view, args.anchorDateJst);
+  const anchorDateJst = requireDateJst(args.anchorDateJst);
+  const { rangeEndExclusive, rangeStart } = scheduleListRange(args.view, anchorDateJst);
   const candidateBlocks = await ctx.db
     .query("boardScheduleEvents")
     .withIndex("by_owner_and_startAt", (q) =>
@@ -118,7 +120,7 @@ export async function update(
     startAt: string;
   },
 ): Promise<null> {
-  await requireOwnedBlock(ctx, ownerId, args.blockId);
+  const block = await requireOwnedBlock(ctx, ownerId, args.blockId);
   const { endAt, startAt } = normalizeRange(args.startAt, args.endAt);
   const patch: {
     color?: BoardScheduleColor;
@@ -137,6 +139,9 @@ export async function update(
     const { itemName, rowId } = await requireLiveRowForSchedule(ctx, ownerId, args.rowId);
     patch.rowId = rowId;
     patch.title = itemName;
+  } else {
+    //? move と同じく、行を差し替えない更新でも既存 rowId が今も生存記録か再検証する。
+    await requireLiveRowForSchedule(ctx, ownerId, block.rowId);
   }
   await ctx.db.patch("boardScheduleEvents", args.blockId, patch);
   return null;

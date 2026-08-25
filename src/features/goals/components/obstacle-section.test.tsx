@@ -139,3 +139,32 @@ test("既存プランの内容を更新できる", async () => {
     });
   });
 });
+
+test("未編集(clean)のときは別端末での更新に追従する", () => {
+  const plan = { _id: "o1" as Obstacle["_id"], ifText: "眠い", thenText: THEN_ACTION };
+  const { getByRole, rerender } = renderWithMantine(
+    <ObstacleSection {...sectionProps({ obstacles: [plan] })} />,
+  );
+  expect((getByRole("textbox", { name: "眠いのもし" }) as HTMLInputElement).value).toBe("眠い");
+
+  const updatedPlan = { ...plan, ifText: "眠気" };
+  rerender(<ObstacleSection {...sectionProps({ obstacles: [updatedPlan] })} />);
+
+  expect((getByRole("textbox", { name: "眠気のもし" }) as HTMLInputElement).value).toBe("眠気");
+});
+
+test("編集中(dirty)のときは別端末での更新で上書きしない", () => {
+  const plan = { _id: "o1" as Obstacle["_id"], ifText: "眠い", thenText: THEN_ACTION };
+  const { getByRole, rerender } = renderWithMantine(
+    <ObstacleSection {...sectionProps({ obstacles: [plan] })} />,
+  );
+  fireEvent.change(getByRole("textbox", { name: "眠いのもし" }), {
+    target: { value: "編集中" },
+  });
+
+  //? aria-label は plan.ifText 由来なので rerender 後は追従するが、フォームの値自体は上書きされない
+  const updatedPlan = { ...plan, ifText: "眠気" };
+  rerender(<ObstacleSection {...sectionProps({ obstacles: [updatedPlan] })} />);
+
+  expect((getByRole("textbox", { name: "眠気のもし" }) as HTMLInputElement).value).toBe("編集中");
+});

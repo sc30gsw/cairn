@@ -119,9 +119,10 @@ export default defineSchema({
     //? cron の所有者列挙。夜の催促は時が一致する所有者だけに絞れる。
     .index("by_enabled_and_eveningHourJst", ["enabled", "eveningHourJst"]),
 
+  //? by_owner は死索引だった(誰も withIndex していない)ので落とした(CVX-12)。
   avatarUploadClaims: defineTable({
     ownerId: v.string(),
-  }).index("by_owner", ["ownerId"]),
+  }),
 
   avatarUploads: defineTable({
     ownerId: v.string(),
@@ -138,7 +139,7 @@ export default defineSchema({
     startAt: v.string(),
     title: v.string(),
   })
-    .index("by_owner", ["ownerId"])
+    //? by_owner は by_owner_and_startAt の純粋なプレフィックスで死索引だった(CVX-12)。
     .index("by_owner_and_startAt", ["ownerId", "startAt"])
     .index("by_row", ["rowId"]),
 });

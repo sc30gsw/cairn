@@ -10,14 +10,19 @@ export function ServiceWorkerRegistrar() {
     }
     if (import.meta.env.DEV) {
       //* dev には SW を作らない。本番を開いた端末で dev を触ったときの残骸も掃除する。
-      void navigator.serviceWorker.getRegistrations().then((registrations) => {
-        for (const registration of registrations) {
-          void registration.unregister();
-        }
-      });
+      //? SW はプログレッシブエンハンスメント。失敗しても機能に影響しないので握りつぶす。
+      navigator.serviceWorker
+        .getRegistrations()
+        .then((registrations) => {
+          for (const registration of registrations) {
+            void registration.unregister();
+          }
+        })
+        .catch(() => {});
       return;
     }
-    void registerServiceWorker();
+    //? SW はプログレッシブエンハンスメント。sw.js の 404 やストレージ逼迫での失敗は握りつぶして良い。
+    registerServiceWorker().catch(() => {});
   }, []);
 
   return null;

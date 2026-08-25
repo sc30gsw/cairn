@@ -1,7 +1,7 @@
 import { expect, test, beforeEach, vi } from "vite-plus/test";
 
 import {
-  consumeSignupPasskeyPromptOpen,
+  consumeSignupPasskeyPromptFlags,
   PASSKEY_MYPAGE_REPROMPTED_KEY,
   PASSKEY_OAUTH_PENDING_KEY,
   PASSKEY_SIGNUP_PROMPT_KEY,
@@ -9,6 +9,7 @@ import {
   readPasskeyFlag,
   readPasskeySessionFlag,
   shouldOpenMyPagePasskeyPrompt,
+  shouldOpenSignupPasskeyPrompt,
   shouldShowMyPagePasskeyPrompt,
   writePasskeyFlag,
   writePasskeySessionFlag,
@@ -62,10 +63,33 @@ test("shouldOpenMyPagePasskeyPrompt は skipped かつ未 reprompt のとき tru
   vi.unstubAllGlobals();
 });
 
-test("consumeSignupPasskeyPromptOpen は OAuth pending を signup prompt に昇格する", () => {
+test("shouldOpenSignupPasskeyPrompt は OAuth pending 中なら true(書き込みなし)", () => {
   mockStorage();
   writePasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY, true);
-  expect(consumeSignupPasskeyPromptOpen()).toBe(true);
+  expect(shouldOpenSignupPasskeyPrompt()).toBe(true);
+  //? peek は純粋な読み取り。呼んだだけではフラグは消えない
+  expect(readPasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY)).toBe(true);
+  vi.unstubAllGlobals();
+});
+
+test("shouldOpenSignupPasskeyPrompt は signup prompt フラグ単体でも true", () => {
+  mockStorage();
+  writePasskeyFlag(PASSKEY_SIGNUP_PROMPT_KEY, true);
+  expect(shouldOpenSignupPasskeyPrompt()).toBe(true);
+  vi.unstubAllGlobals();
+});
+
+test("shouldOpenSignupPasskeyPrompt はどちらも立っていなければ false", () => {
+  mockStorage();
+  expect(shouldOpenSignupPasskeyPrompt()).toBe(false);
+  vi.unstubAllGlobals();
+});
+
+test("consumeSignupPasskeyPromptFlags は OAuth pending と signup prompt を両方クリアする", () => {
+  mockStorage();
+  writePasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY, true);
+  writePasskeyFlag(PASSKEY_SIGNUP_PROMPT_KEY, true);
+  consumeSignupPasskeyPromptFlags();
   expect(readPasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY)).toBe(false);
   expect(readPasskeyFlag(PASSKEY_SIGNUP_PROMPT_KEY)).toBe(false);
   vi.unstubAllGlobals();

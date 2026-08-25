@@ -1,4 +1,5 @@
 import { Result } from "better-result";
+import { ConvexError } from "convex/values";
 import { expect, test, vi } from "vite-plus/test";
 
 import {
@@ -105,4 +106,51 @@ test("avatarUploadErrorMessage は AuthActionError も表示できる", () => {
   expect(
     avatarUploadErrorMessage(new AuthActionError({ cause: null, message: "認証エラー" })),
   ).toBe("認証エラー");
+});
+
+test("claimAvatarUpload がドメインエラーで失敗したら AvatarUploadFailedError に cause を積む", async () => {
+  const blob = new Blob(["jpeg"], { type: "image/jpeg" });
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => ({
+      json: async () => ({ storageId: STORAGE_ID }),
+      ok: true,
+    })),
+  );
+  const domainError = new ConvexError({ message: "すでに確定済みです。", tag: "Conflict" });
+
+  const result = await uploadAvatarBlob(blob, {
+    claimAvatarUpload: async () => {
+      throw domainError;
+    },
+    generateUploadUrl: uploadDeps.generateUploadUrl,
+  });
+
+  expect(Result.isError(result)).toBe(true);
+  if (Result.isError(result)) {
+    expect(result.error).toBeInstanceOf(AvatarUploadFailedError);
+    if (result.error instanceof AvatarUploadFailedError) {
+      expect(result.error.cause).toBe(domainError);
+    }
+  }
+  vi.unstubAllGlobals();
+});
+
+test("avatarUploadErrorMessage は AvatarUploadFailedError の cause がドメインエラーならその文言に差し替える", () => {
+  const domainError = new ConvexError({ message: "すでに確定済みです。", tag: "Conflict" });
+  const error = new AvatarUploadFailedError({
+    cause: domainError,
+    message: "アップロードに失敗しました",
+  });
+
+  expect(avatarUploadErrorMessage(error)).toBe("すでに確定済みです。");
+});
+
+test("avatarUploadErrorMessage は AvatarUploadFailedError の cause がドメインエラーでなければ既定文言を使う", () => {
+  const error = new AvatarUploadFailedError({
+    cause: new Error("network down"),
+    message: "アップロードに失敗しました",
+  });
+
+  expect(avatarUploadErrorMessage(error)).toBe("アップロードに失敗しました");
 });

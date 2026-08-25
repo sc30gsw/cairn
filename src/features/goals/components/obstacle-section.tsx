@@ -1,5 +1,6 @@
 import { Field, Form, reset, useForm, type FormStore } from "@formisch/react";
 import { Box, Button, Card, Grid, Group, Stack, Text, TextInput, Title } from "@mantine/core";
+import { useEffect } from "react";
 import { OBSTACLE_THEN_PLACEHOLDER } from "~domain/concreteActionCore";
 
 import { ConcreteActionField } from "~/components/concrete-action-field";
@@ -108,6 +109,14 @@ function ObstacleEditor({ onRemove, onUpdate, plan }: ObstacleEditorProps) {
     initialInput: { ifText: plan.ifText, thenText: plan.thenText },
     schema: ObstacleSchema,
   });
+
+  //? 2端末で編集されうる。未編集(clean)のときだけサーバー値へ追従する(row-editor.tsx と同じ方針)
+  useEffect(() => {
+    if (form.isDirty) {
+      return;
+    }
+    reset(form, { initialInput: { ifText: plan.ifText, thenText: plan.thenText } });
+  }, [form, plan.ifText, plan.thenText]);
 
   return (
     <Card padding="md">

@@ -1,4 +1,5 @@
 import type { MutationCtx } from "../../_generated/server";
+import { requireDateJst } from "../../lib/dateArgs";
 import type { Condition } from "../../lib/domain";
 import { requireEditableDay } from "./requireEditableDay";
 import { requireLiveDay } from "./requireLiveDay";
@@ -8,8 +9,10 @@ export async function setCondition(
   ownerId: string,
   args: { condition: Condition; dateJst: string; todayJst: string },
 ): Promise<null> {
-  await requireEditableDay(ctx, ownerId, args.dateJst, args.todayJst);
-  const day = await requireLiveDay(ctx, ownerId, args.dateJst);
+  const dateJst = requireDateJst(args.dateJst);
+  const todayJst = requireDateJst(args.todayJst);
+  await requireEditableDay(ctx, ownerId, dateJst, todayJst);
+  const day = await requireLiveDay(ctx, ownerId, dateJst);
   await ctx.db.patch("days", day._id, { condition: args.condition });
   return null;
 }

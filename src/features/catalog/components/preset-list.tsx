@@ -1,4 +1,4 @@
-import { Field, FieldArray, Form, insert, remove, useField, useForm } from "@formisch/react";
+import { Field, FieldArray, Form, insert, remove, reset, useField, useForm } from "@formisch/react";
 import {
   Accordion,
   ActionIcon,
@@ -17,6 +17,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { IconTemplate, IconTrash } from "@tabler/icons-react";
+import { useEffect } from "react";
 import { WEEKDAYS, WEEKDAY_NAMES, isWeekday, type Weekday } from "~domain/catalog";
 
 import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action-field-with-suggestions";
@@ -34,7 +35,7 @@ import type { PresetLineInput } from "~/features/catalog/schemas/preset-schema";
 import { weekdayFromSelect } from "~/features/catalog/schemas/weekday-schema";
 import { presetWeekdayHash } from "~/lib/preset-weekday-hash";
 import { onRequiredSelect } from "~/lib/select";
-import type { ItemDto, ItemId, PresetDto } from "~/types/item";
+import type { ItemDto, PresetDto } from "~/types/item";
 import { parseItemId, unwrapItemId } from "~/types/item";
 
 type PresetLineDto = PresetDto["lines"][number];
@@ -52,6 +53,18 @@ function weekdaySelectOptions(weekdays: readonly Weekday[]) {
 }
 
 const WEEKDAY_OPTIONS = weekdaySelectOptions(WEEKDAYS);
+
+function presetEditorInitialInput(preset: PresetDto) {
+  return {
+    lines: preset.lines.map((line: PresetLineDto) => ({
+      content: line.content,
+      itemId: line.itemId as string,
+      minutes: line.minutes,
+    })),
+    name: preset.name,
+    weekday: preset.weekday,
+  };
+}
 
 function parsedLines(lines: PresetLineInput[]) {
   return lines.map((line) => ({
@@ -268,19 +281,19 @@ function PresetEditor({
 }) {
   //? 雛形行もフォーム状態(PresetSchema)が SSoT。行単位のエラーは Field の errors で表示する(formisch.md)
   const form = useForm({
-    initialInput: {
-      lines: preset.lines.map((line: PresetLineDto) => ({
-        content: line.content,
-        itemId: line.itemId as string,
-        minutes: line.minutes,
-      })),
-      name: preset.name,
-      weekday: preset.weekday,
-    },
+    initialInput: presetEditorInitialInput(preset),
     schema: PresetSchema,
   });
   const linesField = useField(form, { path: ["lines"] });
   const lines = linesField.input;
+
+  //? 2端末で編集されうる。未編集(clean)のときだけサーバー値へ追従する(row-editor.tsx と同じ方針)
+  useEffect(() => {
+    if (form.isDirty) {
+      return;
+    }
+    reset(form, { initialInput: presetEditorInitialInput(preset) });
+  }, [form, preset]);
 
   return (
     <Card p="md" withBorder={false}>
@@ -386,7 +399,7 @@ function PresetEditor({
                               aria-label={`${preset.name}の雛形${index + 1}のひとこと`}
                               error={field.errors?.[0]}
                               //? itemId は Select の選択肢由来で常に有効な項目 id(firstAvailableItem で補充)。parseItemId の実行時ガードは submit 時のみ必要
-                              itemId={lineItemId as ItemId}
+                              itemId={unwrapItemId(parseItemId(lineItemId ?? ""))}
                               itemName={itemName}
                               label={index === 0 ? "ひとこと" : undefined}
                               onValueChange={(value) => field.onChange(value)}
