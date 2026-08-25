@@ -101,6 +101,8 @@ export function BoardKanbanConfirmModal({
 }
 
 export function needsKanbanConfirmEditor(row: BoardRow): boolean {
-  //? 計測があるのにモーダルを開かないと、目安分数のまま確定して計測結果を捨てる(#51 §2 の現状バグ)。
-  return row.content.trim() === "" || row.minutes === 0 || hasTimerState(row.timer);
+  //? 計測がある行は onStatusMove が stopTimer の結果で直接確定するため、ここでは判定しない
+  //? (オーナー決定 2026-08-25)。「ひとこと」の空欄は確定ゲートにしない(CONTEXT.md「ひとこと」参照)。
+  //? 唯一エディタが要るのは「計測が無く、目安分数も未入力(0分)」の行だけ。
+  return row.minutes === 0 && !hasTimerState(row.timer);
 }

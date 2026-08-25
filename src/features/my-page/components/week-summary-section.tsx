@@ -1,5 +1,5 @@
 import { Shimmer } from "@shimmer-from-structure/react";
-import { mondayOfWeek, todayJst } from "~domain/jst";
+import { mondayOfWeek } from "~domain/jst";
 
 import { PeriodSummarySection } from "~/features/my-page/components/period-summary-section";
 import {
@@ -8,9 +8,10 @@ import {
   myPageShimmerPeriodDigest,
 } from "~/features/my-page/lib/my-page-shimmer-template";
 import { useWeeklyReview } from "~/hooks/review-queries";
+import { useTodayJst } from "~/hooks/use-today-jst";
 
 export function WeekSummarySection() {
-  const today = todayJst();
+  const today = useTodayJst();
   const { data } = useWeeklyReview(mondayOfWeek(today), today);
 
   return (

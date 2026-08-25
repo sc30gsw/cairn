@@ -1,6 +1,5 @@
 import type { DropResult } from "@hello-pangea/dnd";
 import { ActionIcon, Badge, Box, Card, Group, Stack, Text, Tooltip } from "@mantine/core";
-import { modals } from "@mantine/modals";
 import { IconGripVertical } from "@tabler/icons-react";
 import { useRef, useState } from "react";
 import type { DateJst } from "~domain/jst";
@@ -39,26 +38,6 @@ type ConfirmTarget = {
   prefillMinutes: number | null;
   row: BoardRow;
 };
-
-//* 計測を捨てる操作は必ず Confirm を通す(docs/specs/study-timer.md §13.4)。
-function requestDiscardMeasurement(options: {
-  confirmColor: string;
-  confirmLabel: string;
-  measuredMinutes: number;
-  onCancel: () => void;
-  onConfirm: () => void;
-  suffix: string;
-  title: string;
-}): void {
-  modals.openConfirmModal({
-    children: `計測した${String(options.measuredMinutes)}分は残りません。${options.suffix}`,
-    confirmProps: { color: options.confirmColor },
-    labels: { cancel: "キャンセル", confirm: options.confirmLabel },
-    onCancel: options.onCancel,
-    onConfirm: options.onConfirm,
-    title: options.title,
-  });
-}
 
 function RecordCard({
   disabled,
@@ -104,7 +83,7 @@ function RecordCard({
           </Tooltip>
         </Box>
         <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
-          <TruncatedText fw={600} lineClamp={1} size="sm" to="/">
+          <TruncatedText fw={600} lineClamp={1} size="sm">
             {row.itemName}
           </TruncatedText>
           <TruncatedText c="dimmed" lineClamp={1} size="xs">
@@ -170,29 +149,18 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
   }
 
   //* ドラッグ経路とメニュー経路の唯一の合流点。判定と確定手順はフック側(onStatusMove)にあり、
-  //? ここが持つのは「計測を捨てる操作の Confirm」だけ(#51 §13.4 をどちらの経路でも通すため)。
-  //? 戻り値の true は「モーダルを開いて保留した」。ドラッグ経路はそのとき並べ替えを確定させず、
-  //? pendingOrderRef に預ける — 取り消されたら並べ替えも起きなかったことにする。
+  //? 戻り値の true は「エディタを開いて保留した」(確定・計測なし・minutes===0 のときだけ)。
+  //? ドラッグ経路はそのとき並べ替えを確定させず、pendingOrderRef に預ける — 取り消されたら
+  //? 並べ替えも起きなかったことにする。計測を捨てる skip/pause は Confirm を挟まず即実行する
+  //? (オーナー決定 2026-08-25。Undo なし、代わりに Toast で「XX分を捨てました」と伝える)。
   async function moveRow(move: Exclude<KanbanStatusMove, "noop">, row: BoardRow): Promise<boolean> {
     if ((move === "skip" || move === "pause") && hasTimerState(row.timer)) {
       const measuredMinutes = timerMinutes(measuredMs(row.timer, serverNowMs()));
-      requestDiscardMeasurement({
-        confirmColor: move === "skip" ? "yellow" : "red",
-        confirmLabel: move === "skip" ? "見送りにする" : "捨てて戻す",
-        measuredMinutes,
-        onCancel: () => {
-          pendingOrderRef.current = null;
-        },
-        onConfirm: () => {
-          void (async () => {
-            await (move === "skip" ? onSkip({ rowId: row._id }) : onPause({ rowId: row._id }));
-            await applyPendingOrder();
-          })();
-        },
-        suffix: move === "skip" ? "学習量からは外れます。" : "",
-        title: move === "skip" ? "見送りにしますか？" : "計測を捨てて未着手に戻しますか？",
-      });
-      return true;
+      const successMessage = `計測 ${String(measuredMinutes)}分を捨てました`;
+      await (move === "skip"
+        ? onSkip({ rowId: row._id }, successMessage)
+        : onPause({ rowId: row._id }, successMessage));
+      return false;
     }
     let deferred = false;
     await onStatusMove(move, row, (target) => {

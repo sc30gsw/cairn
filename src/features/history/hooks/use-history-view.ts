@@ -1,9 +1,10 @@
 import { getRouteApi } from "@tanstack/react-router";
 import type { DateJst } from "~domain/jst";
-import { isFutureDateJst, mondayOfWeek, todayJst } from "~domain/jst";
+import { isFutureDateJst, mondayOfWeek } from "~domain/jst";
 
 import type { AnalysisScope } from "~/features/history/schemas/analysis-scope-schema";
 import type { HistorySearch, HistoryTab } from "~/features/history/schemas/history-search-schema";
+import { useTodayJst } from "~/hooks/use-today-jst";
 
 /** `/history` 専用 — HistoryPage 配下からのみ import すること */
 const historyRoute = getRouteApi("/history");
@@ -45,7 +46,7 @@ export function deriveHistoryView(search: HistorySearch, today: DateJst) {
 export function useHistoryView() {
   const search = historyRoute.useSearch();
   const navigate = historyRoute.useNavigate();
-  const today = todayJst();
+  const today = useTodayJst();
   const view = deriveHistoryView(search, today);
 
   return {

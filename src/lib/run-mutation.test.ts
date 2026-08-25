@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
+import { notifyError, notifySuccess } from "~/lib/notify";
 import { runMutation } from "~/lib/run-mutation";
 
 const { hideMock, showMock } = vi.hoisted(() => ({
@@ -19,6 +20,8 @@ vi.mock("~/lib/notify", () => ({
 beforeEach(() => {
   hideMock.mockClear();
   showMock.mockClear();
+  vi.mocked(notifyError).mockClear();
+  vi.mocked(notifySuccess).mockClear();
   vi.useFakeTimers();
 });
 
@@ -31,6 +34,40 @@ function unsavedWarning() {
     (call) => (call[0] as { id?: string }).id === "run-mutation-unsaved",
   );
 }
+
+//* オーナー決定 2026-08-25: ボードのカンバンのように silent でもエラー Toast と未保存警告だけ抑え、
+//? successMessage を指定したときは成功 Toast は出す。
+test("silent かつ successMessage 指定時は成功 Toast だけ出す", async () => {
+  await runMutation(async () => "ok", { silent: true, successMessage: "記録しました" });
+
+  expect(notifySuccess).toHaveBeenCalledWith("記録しました");
+  expect(unsavedWarning()).toBeUndefined();
+});
+
+test("silent かつ successMessage 未指定なら Toast を出さない", async () => {
+  await runMutation(async () => "ok", { silent: true });
+
+  expect(notifySuccess).not.toHaveBeenCalled();
+});
+
+test("silent でも失敗時はエラー Toast を出さない", async () => {
+  await runMutation(() => Promise.reject(new Error("boom")), {
+    silent: true,
+    successMessage: "記録しました",
+  });
+
+  expect(notifyError).not.toHaveBeenCalled();
+  expect(notifySuccess).not.toHaveBeenCalled();
+});
+
+test("silent かつ関数型 successMessage は mutation の戻り値を受け取る", async () => {
+  await runMutation(async () => 3, {
+    silent: true,
+    successMessage: (count) => `${String(count)}件削除しました`,
+  });
+
+  expect(notifySuccess).toHaveBeenCalledWith("3件削除しました");
+});
 
 //* #58 §9.2: 送信は止めない。5秒未解決という観測事実だけで警告する。
 test("5秒経っても未解決なら未保存警告を出す", async () => {

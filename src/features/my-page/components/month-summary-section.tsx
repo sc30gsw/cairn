@@ -1,5 +1,4 @@
 import { Shimmer } from "@shimmer-from-structure/react";
-import { todayJst } from "~domain/jst";
 
 import { PeriodSummarySection } from "~/features/my-page/components/period-summary-section";
 import {
@@ -8,9 +7,10 @@ import {
   myPageShimmerPeriodDigest,
 } from "~/features/my-page/lib/my-page-shimmer-template";
 import { useMonthlyReview } from "~/hooks/review-queries";
+import { useTodayJst } from "~/hooks/use-today-jst";
 
 export function MonthSummarySection() {
-  const today = todayJst();
+  const today = useTodayJst();
   const { data } = useMonthlyReview(today.slice(0, 7), today);
 
   return (

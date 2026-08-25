@@ -1,7 +1,7 @@
 import { convexQuery } from "@convex-dev/react-query";
 import { Shimmer } from "@shimmer-from-structure/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { mondayOfWeek, todayJst } from "~domain/jst";
+import { mondayOfWeek } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
 import { TodaySummaryContent } from "~/features/my-page/components/today-summary-content";
@@ -11,9 +11,10 @@ import {
   myPageShimmerToday,
 } from "~/features/my-page/lib/my-page-shimmer-template";
 import type { ExamGoal } from "~/features/my-page/types/exam-goal";
+import { useTodayJst } from "~/hooks/use-today-jst";
 
 export function TodaySummarySection() {
-  const today = todayJst();
+  const today = useTodayJst();
   const weekStart = mondayOfWeek(today);
   const { data: goals } = useSuspenseQuery(convexQuery(api.queries.goals.list.list, {}));
   const { data: targets } = useSuspenseQuery(

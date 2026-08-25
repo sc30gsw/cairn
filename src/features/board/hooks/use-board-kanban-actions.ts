@@ -1,5 +1,4 @@
 import type { DateJst } from "~domain/jst";
-import { todayJst } from "~domain/jst";
 import { hasTimerState, timerMinutes } from "~domain/rowTimer";
 
 import { needsKanbanConfirmEditor } from "~/features/board/components/board-kanban-confirm-modal";
@@ -17,13 +16,15 @@ import {
 } from "~/features/board/hooks/board-mutations";
 import type { KanbanStatusMove } from "~/features/board/lib/kanban-order";
 import type { BoardRow } from "~/features/board/types/board";
+import { useTodayJst } from "~/hooks/use-today-jst";
 import { runMutation } from "~/lib/run-mutation";
 
-//* ボードでは Toast を一切出さない。失敗は楽観更新の巻き戻りで伝わる(オーナー決定 2026-08-24)。
+//* silent はエラー Toast と未保存警告だけを抑える。successMessage を指定した3操作
+//* (確定/確定取消/計測破棄)だけ成功 Toast を出す(ADR-0014)。
 const silent = { silent: true } as const;
 
 export function useBoardKanbanActions(dateJst: DateJst) {
-  const today = todayJst();
+  const today = useTodayJst();
   const applyOrder = useBoardApplyRowOrder(dateJst, today);
   const confirmRow = useBoardConfirmRow(dateJst, today);
   const skipRow = useBoardSkipRow(dateJst, today);
@@ -45,18 +46,32 @@ export function useBoardKanbanActions(dateJst: DateJst) {
     return accumulatedMs;
   }
 
+  //* 確定は計測あり/なしどちらの経路でも同じ文言(オーナー決定 2026-08-25)。分数は戻り値でなく
+  //? 呼び出し時の入力値から組み立てる(confirm mutation の戻り値は null — CVX-16)。
   const onConfirm = (input: Parameters<typeof confirmRow.mutateAsync>[0]) =>
-    runMutation(() => confirmRow.mutateAsync(input), silent).then(() => undefined);
-  const onSkip = (input: Parameters<typeof skipRow.mutateAsync>[0]) =>
-    runMutation(() => skipRow.mutateAsync(input), silent).then(() => undefined);
+    runMutation(() => confirmRow.mutateAsync(input), {
+      silent: true,
+      successMessage: `学習時間 ${String(input.minutes)}分を記録しました`,
+    }).then(() => undefined);
+  //? 計測を捨てる skip/pause だけ successMessage を持つ(呼び出し側 moveRow が計測ありのときだけ渡す)。
+  //? 計測なしは successMessage 未指定のまま silent。
+  const onSkip = (input: Parameters<typeof skipRow.mutateAsync>[0], successMessage?: string) =>
+    runMutation(() => skipRow.mutateAsync(input), { silent: true, successMessage }).then(
+      () => undefined,
+    );
   const onUnconfirm = (input: Parameters<typeof unconfirmRow.mutateAsync>[0]) =>
-    runMutation(() => unconfirmRow.mutateAsync(input), silent).then(() => undefined);
+    runMutation(() => unconfirmRow.mutateAsync(input), {
+      silent: true,
+      successMessage: "確定を取り消しました",
+    }).then(() => undefined);
   const onUnskip = (input: Parameters<typeof unskipRow.mutateAsync>[0]) =>
     runMutation(() => unskipRow.mutateAsync(input), silent).then(() => undefined);
   const onStart = (input: Parameters<typeof startRow.mutateAsync>[0]) =>
     runMutation(() => startRow.mutateAsync(input), silent).then(() => undefined);
-  const onPause = (input: Parameters<typeof pauseRow.mutateAsync>[0]) =>
-    runMutation(() => pauseRow.mutateAsync(input), silent).then(() => undefined);
+  const onPause = (input: Parameters<typeof pauseRow.mutateAsync>[0], successMessage?: string) =>
+    runMutation(() => pauseRow.mutateAsync(input), { silent: true, successMessage }).then(
+      () => undefined,
+    );
   const onReopen = (input: Parameters<typeof reopenRow.mutateAsync>[0]) =>
     runMutation(() => reopenRow.mutateAsync(input), silent).then(() => undefined);
 
@@ -78,16 +93,25 @@ export function useBoardKanbanActions(dateJst: DateJst) {
     ) => {
       switch (move) {
         case "confirm": {
-          //? 先にサーバで区間を閉じる。目安分数のまま確定すると計測結果を捨てる(study-timer.md §11.3)。
-          const accumulatedMs = hasTimerState(row.timer) ? await onStopTimer(row._id) : null;
-          if (needsKanbanConfirmEditor(row) || accumulatedMs !== null) {
-            openConfirmEditor({
-              prefillMinutes: accumulatedMs === null ? null : timerMinutes(accumulatedMs),
-              row,
+          //? 計測がある行は確認モーダルを挟まない。stopTimer が返すサーバ真値の分数でそのまま確定する
+          //? (オーナー決定 2026-08-25)。stopTimer 失敗(null)時だけ安全側でエディタを開く。
+          if (hasTimerState(row.timer)) {
+            const accumulatedMs = await onStopTimer(row._id);
+            if (accumulatedMs === null) {
+              openConfirmEditor({ prefillMinutes: null, row });
+              return;
+            }
+            return await onConfirm({
+              content: row.content,
+              minutes: timerMinutes(accumulatedMs),
+              rowId: row._id,
             });
+          }
+          //? 計測が無く minutes===0 の行だけエディタを開く(「ひとこと」は確定ゲートにしない)。
+          if (needsKanbanConfirmEditor(row)) {
+            openConfirmEditor({ prefillMinutes: null, row });
             return;
           }
-          //? ここに来るのは「計測が無く、content と minutes が既に埋まっている行」だけ。
           return await onConfirm({ content: row.content, minutes: row.minutes, rowId: row._id });
         }
         case "skip":

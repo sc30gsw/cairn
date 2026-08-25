@@ -7,7 +7,8 @@ import { notifyError, notifySuccess } from "~/lib/notify";
 type RunMutationOptions<T> = {
   errorMessage?: string;
   //? ボードのカンバンのように、楽観更新の巻き戻り自体がフィードバックになる密な画面向け。
-  //? 成功・失敗・未保存警告のいずれの通知も出さない
+  //? エラー Toast と「まだ保存されていません」警告は出さない。successMessage を指定したときだけ、
+  //? 成功時の Toast は出す(ボードの「学習時間 XX分を記録しました」等 — オーナー決定 2026-08-25)。
   silent?: boolean;
   //? 返り値で文言が変わるものがある(カスケード削除の件数)。string はそのまま使える
   successMessage?: ((value: T) => string) | string;
@@ -24,11 +25,18 @@ export async function runMutation<T>(
   { errorMessage, silent = false, successMessage }: RunMutationOptions<T> = {},
 ): Promise<void> {
   if (silent) {
-    await Result.tryPromise({
+    const result = await Result.tryPromise({
       catch: (cause) =>
         new MutationFailedError({ cause, message: errorMessage ?? "操作に失敗しました" }),
       try: operation,
     });
+    if (Result.isOk(result) && successMessage !== undefined) {
+      const message =
+        typeof successMessage === "string" ? successMessage : successMessage(result.value);
+      if (message) {
+        notifySuccess(message);
+      }
+    }
     return;
   }
 

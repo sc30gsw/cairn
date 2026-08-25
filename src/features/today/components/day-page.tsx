@@ -1,13 +1,13 @@
 import { Suspense } from "react";
-import { todayJst } from "~domain/jst";
 
 import { DayBoardTab } from "~/features/today/components/day-board-tab";
 import { DayPagePending } from "~/features/today/components/day-page-pending";
 import { datedDayRoute, indexDayRoute } from "~/features/today/lib/day-route-api";
+import { useTodayJst } from "~/hooks/use-today-jst";
 
 /** `/` 専用 entry。`indexDayRoute` はこのコンポーネントからのみ使う。 */
 export function TodayDayPage() {
-  const dateJst = todayJst();
+  const dateJst = useTodayJst();
   const { preset } = indexDayRoute.useSearch();
 
   return (
