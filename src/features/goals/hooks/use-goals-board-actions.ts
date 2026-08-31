@@ -40,7 +40,6 @@ export function useGoalsBoardActions() {
       runMutation(() => createObstacle.mutateAsync(input), {
         successMessage: "障害プランを追加しました",
       }).then(() => undefined),
-    //? 削除件数はサーバの返り値(カスケードで消えた子の件数)を使う。購読値では数え違える
     onRemoveGoal: (goalId: GoalId) =>
       runMutation(() => removeGoal.mutateAsync({ goalId }), {
         successMessage: (removedChildren) =>
@@ -56,7 +55,6 @@ export function useGoalsBoardActions() {
       runMutation(() => setAchieved.mutateAsync(input), {
         successMessage: input.achievedAt === undefined ? "達成を取り消しました" : "達成にしました",
       }).then(() => undefined),
-    //? 区分移行では行き先を文言に出す。呼び出し側が tierTransitionToast で組む
     onUpdateGoal: (input: UpdateGoalInput, successMessage: string = GOAL_UPDATED_MESSAGE) =>
       runMutation(() => updateGoal.mutateAsync(input), { successMessage }).then(() => undefined),
     onUpdateObstacle: (input: UpdateObstacleInput) =>

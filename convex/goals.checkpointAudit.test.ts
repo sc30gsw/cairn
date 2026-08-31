@@ -6,7 +6,6 @@ import { CHECKPOINT_AUDIT_LIMIT } from "./lib/domain";
 import type { CheckpointParentAudit } from "./lib/validators";
 import schema from "./schema";
 
-//? 親バックフィル(#49)の監査。所有者を横断するので internalQuery からしか読めない。
 const modules = import.meta.glob([
   "./**/*.ts",
   "!./**/*.test.ts",
@@ -19,7 +18,6 @@ const modules = import.meta.glob([
   "!./migrations.ts",
 ]);
 
-//? codegen(デプロイメント接続が必要)をこの環境で走らせられないため、内部関数は名前で参照する。
 const auditRef = makeFunctionReference<"query", Record<string, never>, CheckpointParentAudit>(
   "queries/goals/auditCheckpointParents:auditCheckpointParents",
 );
@@ -51,14 +49,12 @@ test("孤児・dangling・chained・self・cross-owner・親あり期限なし�
       content: "他人の長期目標",
       ownerId: OTHER_OWNER,
     });
-    //? 孤児: 期限あり・親なし
     await ctx.db.insert("goals", {
       ...MASTERY_FIELDS,
       content: "孤児",
       deadline: "2026-09-06",
       ownerId: OWNER,
     });
-    //? dangling: 親が消えた後の id を指している
     const removedParentId = await ctx.db.insert("goals", {
       ...MASTERY_FIELDS,
       content: "消える親",
@@ -72,7 +68,6 @@ test("孤児・dangling・chained・self・cross-owner・親あり期限なし�
       ownerId: OWNER,
       parentGoalId: removedParentId,
     });
-    //? chained: 親自身が親を持つ
     const chainedParentId = await ctx.db.insert("goals", {
       ...MASTERY_FIELDS,
       content: "親が親を持つ",
@@ -87,7 +82,6 @@ test("孤児・dangling・chained・self・cross-owner・親あり期限なし�
       ownerId: OWNER,
       parentGoalId: chainedParentId,
     });
-    //? cross-owner: 親の所有者が違う
     await ctx.db.insert("goals", {
       ...MASTERY_FIELDS,
       content: "cross-owner",
@@ -95,14 +89,12 @@ test("孤児・dangling・chained・self・cross-owner・親あり期限なし�
       ownerId: OWNER,
       parentGoalId: otherLongTermId,
     });
-    //? 親あり・期限なし
     await ctx.db.insert("goals", {
       ...MASTERY_FIELDS,
       content: "期限を外し忘れた",
       ownerId: OWNER,
       parentGoalId: longTermId,
     });
-    //? 壊れた期限
     await ctx.db.insert("goals", {
       ...MASTERY_FIELDS,
       content: "壊れた期限",
@@ -119,7 +111,6 @@ test("孤児・dangling・chained・self・cross-owner・親あり期限なし�
   expect(audit.malformedDeadlineCount).toBe(1);
   expect(audit.selfParentCount).toBe(0);
   expect(audit.truncated).toBe(false);
-  //? 孤児は「期限あり・親なし」= 「孤児」と「壊れた期限」の2件。dangling は親 id を持つので数えない
   expect(audit.orphanCount).toBe(2);
   expect(audit.owners.map((owner) => owner.ownerId)).toEqual([OTHER_OWNER, OWNER]);
 });
@@ -143,7 +134,6 @@ test("自分自身を親にした目標を selfParentCount が拾う", async () 
 test("所有者ごとの plan と失う期限を出す", async () => {
   const t = raw();
   await t.run(async (ctx) => {
-    //? 親候補が無く未達成の孤児が2件 → 規則3(promote)。期限がもっとも遠い1件を昇格させる
     await ctx.db.insert("goals", {
       ...MASTERY_FIELDS,
       content: "近い孤児",

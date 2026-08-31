@@ -19,11 +19,8 @@ const modules = import.meta.glob([
 
 const OWNER = { email: "owner@example.com", subject: "owner-subject" };
 const OTHER_OWNER = { email: "other@example.com", subject: "other-owner-subject" };
-//? 対象月は 2026-08(8/1 土 〜 8/31 月)。前月は 2026-07
 const YEAR_MONTH = "2026-08";
-//? 月が丸ごと過去になった状態の今日
 const TODAY_AFTER_MONTH = "2026-09-10";
-//? 当月レビュー中の今日(水)
 const TODAY_IN_MONTH = "2026-08-19";
 
 function raw() {
@@ -145,7 +142,6 @@ test("対象月と前月の実績が状態ごとに分かれる", async () => {
   expect(review.previousByCategory).toEqual([
     { category: "TOEIC対策", categorySortOrder: 0, minutes: 150 },
   ]);
-  //? 月全体の消化は今日(月の外)より前の31日すべてを数える
   expect(review.digest).toMatchObject({
     confirmedCount: 2,
     countedFrom: "2026-08-01",
@@ -191,7 +187,6 @@ test("消化推移は月曜始まりの週バケットになり、月境界は�
     isPartial: false,
     plannedCount: 2,
   });
-  //? 記録が並んでいない週は plannedCount 0(UI は棒を描かない)
   expect(review.digestTrend[2]).toMatchObject({ isPartial: false, plannedCount: 0 });
 });
 
@@ -213,11 +208,9 @@ test("当月レビューでは今日以降を消化に数えない", async () =>
   });
   expect(review.isCurrentMonth).toBe(true);
   expect(review.digest.isPartial).toBe(true);
-  //? 今日(8/19)の2件は数えない。数えるのは 8/17 の1件だけ
   expect(review.digest.plannedCount).toBe(1);
   expect(review.digest.countedThrough).toBe("2026-08-18");
   expect(review.elapsedDays).toBe(19);
-  //? 学習量には今日の確定も入る
   expect(review.confirmedMinutes).toBe(120);
   const currentBucket = review.digestTrend[3];
   expect(currentBucket?.bucketStart).toBe("2026-08-17");
@@ -236,7 +229,6 @@ test("ゴミ箱の記録と日は集計・消化・推移から除かれる", as
     ],
     sortOrder: 0,
   });
-  //? 8/5 は日ごと削除。行が生きていても日が消えていれば実績に入らない
   await t.run(async (ctx) => {
     const day = await ctx.db
       .query("days")

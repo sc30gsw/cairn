@@ -19,11 +19,8 @@ const modules = import.meta.glob([
 
 const OWNER = { email: "owner@example.com", subject: "owner-subject" };
 const OTHER_OWNER = { email: "other@example.com", subject: "other-owner-subject" };
-//? 対象週は 2026-08-17(月)〜2026-08-23(日)。前週は 2026-08-10〜2026-08-16
 const MONDAY = "2026-08-17";
-//? 「今週」を見ている状態を作るための今日(木曜)
 const TODAY_IN_WEEK = "2026-08-20";
-//? 週がすべて過去になった状態の今日
 const TODAY_AFTER_WEEK = "2026-08-31";
 
 function raw() {
@@ -184,11 +181,9 @@ test("今週はターゲットが配列で返り、今日の行は消化に数�
   expect(review.targets).toHaveLength(1);
   expect(review.targets?.[0]).toMatchObject({ achieved: true, current: 120 });
   expect(review.digest.isPartial).toBe(true);
-  //? 今日(木)の3件は数えない。数えるのは月〜水の1件だけ
   expect(review.digest.plannedCount).toBe(1);
   expect(review.digest.countedThrough).toBe("2026-08-19");
   expect(review.elapsedDays).toBe(4);
-  //? 学習量には今日の確定も入る
   expect(review.confirmedMinutes).toBe(120);
 });
 
@@ -238,7 +233,6 @@ test("ゴミ箱の記録と日は集計・消化・byDay・共有文・ターゲ
     metric: "minutes",
     targetValue: 100,
   });
-  //? 火曜の日ごと削除。行が生きていても日が消えていれば実績に入らない
   await t.run(async (ctx) => {
     const day = await ctx.db
       .query("days")
@@ -363,6 +357,5 @@ test("byDay は月曜から日曜の7件で、コンディション未選択は 
   ]);
   expect(review.byDay[0]?.condition).toBe("好調");
   expect(review.byDay[1]?.condition).toBeNull();
-  //? 未来日は未記録
   expect(review.byDay[6]?.kind).toBe("unrecorded");
 });

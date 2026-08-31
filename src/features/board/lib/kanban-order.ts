@@ -103,8 +103,6 @@ export function resolveKanbanStatusMove(
   return "noop";
 }
 
-//* モバイルのドラッグ代替。同一列内で1つ動かした順序を返す。端なら null(pwa-mobile.md §15)。
-//? 実体は列内 index を求めて computeOrderedRowIds に委譲するだけ — 並べ替えの規則を二重に持たない。
 export function shiftRowWithinColumn(
   rows: readonly BoardRow[],
   rowId: Id<"rows">,
@@ -132,7 +130,6 @@ export function shiftRowWithinColumn(
   );
 }
 
-//* カードの ⋮ Menu に出す「移動」項目。noop の列を落とすだけで、遷移の規則は resolveKanbanStatusMove に残す。
 export function kanbanMoveMenuItems(
   status: BoardRow["status"],
 ): { column: KanbanColumn; move: Exclude<KanbanStatusMove, "noop"> }[] {

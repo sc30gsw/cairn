@@ -25,7 +25,6 @@ const MONDAY = "2026-08-17";
 const SATURDAY = "2026-08-15";
 const FUTURE = "2026-08-20";
 
-//? 週間ターゲットの集計窓は「今週」に閉じているので、現在時刻を MONDAY の週に固定する。
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(`${MONDAY}T12:00:00+09:00`));
@@ -271,7 +270,6 @@ test("項目名は前後空白を落として重複判定・保存する", async
     categoryId: otherCategory._id,
     name: "熟語帳",
   });
-  //? rename も trim 後の名前で重複判定する(create と同じ規則)
   await expect(
     t.mutation(api.mutations.items.rename.rename, {
       categoryId: otherCategory._id,
@@ -396,7 +394,6 @@ test("目標・障害プラン。行の状態は変えない", async () => {
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const before = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   expect(await t.query(api.queries.goals.list.list, {})).toEqual([]);
-  //? 目標は記録と独立。作っても行の状態には波及しない
   await t.mutation(api.mutations.goals.create.create, {
     goal: {
       content: "音読を止まらずにできる",

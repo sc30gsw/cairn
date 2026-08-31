@@ -9,7 +9,6 @@ import { loadDueSettings } from "./loadDueSettings";
 
 type FixedDue = ReturnType<typeof dueFixedTriggers>;
 
-//? 1所有者ぶんの評価。3トリガーは互いに独立なので同時に測り、作る通知だけ emit する。
 async function evaluateOwner(
   ctx: MutationCtx,
   setting: Doc<"notificationSettings">,
@@ -27,7 +26,6 @@ async function evaluateOwner(
       ? evaluateEveningUntouched(ctx, setting.ownerId, dateJst)
       : null,
   ]);
-  //? dedupeKey が種類ごとに違うので、同時に emit しても互いを潰さない。
   await Promise.all(
     payloads.map(async (payload) => {
       if (payload !== null) {
@@ -37,10 +35,7 @@ async function evaluateOwner(
   );
 }
 
-//* 評価の司令塔。毎時0分の cron から1本だけ走る。時計はここで1回読み、以降はその値を配る。
-//? 3トリガーの「いま発火すべきか」は JST の暦日・時・曜日から純関数で決める(UTC 換算を埋めない)。
 export async function evaluate(ctx: MutationCtx, args: { now?: number } = {}): Promise<null> {
-  //? mutation なので時計を読んでよい(CVX-14)。
   const now = args.now ?? Date.now();
   const { dateJst, hourJst: hour } = nowJst(now);
   const due = dueFixedTriggers(dateJst, hour);

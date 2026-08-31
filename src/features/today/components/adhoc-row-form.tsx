@@ -24,7 +24,6 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
     },
     schema: AdhocRowSchema,
   });
-  //? 選択中の項目名はフォーム状態(SSoT)から導出する。useState で二重管理しない(formisch.md)
   const itemIdField = useField(form, { path: ["itemId"] });
   const selectedItemName = items.find((item) => item._id === itemIdField.input)?.name;
 

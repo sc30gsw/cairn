@@ -13,11 +13,9 @@ export async function skip(
   args: { rowId: Id<"rows"> },
 ): Promise<null> {
   const row = await requireOwnedRow(ctx, ownerId, args.rowId);
-  //? 日の生存判定は暦日で引く共通規則(rowDayLiveness)。confirm と同じ規則・同じエラー。
   if ((await rowDayLiveness(ctx, ownerId, row)) !== "live") {
     throwDomain(new NotFoundError({ message: "日が見つかりません", resource: "日" }));
   }
-  //? 確定をスキップに戻すと確定分数が減る。差分は書き込みの前後を実測して出す(ADR-0007)。
   await withMasteryProgressDelta(ctx, ownerId, row, async () => {
     await ctx.db.patch("rows", args.rowId, { ...clearTimerFields(), status: "スキップ" });
   });

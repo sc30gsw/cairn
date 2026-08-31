@@ -39,7 +39,6 @@ test("未着手の行は 進行中 / 完了 / 見送り を出し、状態の生
   });
   expect(getByRole("menuitem", { hidden: true, name: "完了にする" })).toBeDefined();
   expect(getByRole("menuitem", { hidden: true, name: "見送りにする" })).toBeDefined();
-  //? 「未着手」自身は移動先に出ない(noop)。生値の「確定」「スキップ」も出さない。
   expect(queryByRole("menuitem", { hidden: true, name: "確定にする" })).toBeNull();
   expect(queryByRole("menuitem", { hidden: true, name: "スキップにする" })).toBeNull();
 });

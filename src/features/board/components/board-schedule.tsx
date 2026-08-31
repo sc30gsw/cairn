@@ -76,8 +76,6 @@ export function BoardSchedule({ blocks, pending = false, rows, view }: BoardSche
     scheduleView,
   );
   const scheduleRootRef = useRef<HTMLDivElement | null>(null);
-  //? @mantine/schedule の props を切るため CSS では表現できない。getInitialValueInEffect: true で
-  //? SSR は常に false(= ドラッグ有効)→ ハイドレーション不一致を避け、effect 後にモバイルなら無効化する。
   const isCompact = useMediaQuery("(max-width: 47.9375em)", false, {
     getInitialValueInEffect: true,
   });
@@ -208,8 +206,6 @@ export function BoardSchedule({ blocks, pending = false, rows, view }: BoardSche
               view={scheduleView}
               weekViewProps={BOARD_WEEK_VIEW_PROPS}
               yearViewProps={yearViewProps}
-              //? モバイルはドラッグを切るだけ。作成/編集のタップ経路(onTimeSlotClick / onDayClick /
-              //? 年ビューの onAdd)は既にあるので、新しい UI は作らない(#58 §11.4)。
               withDragSlotSelect={!pending && rows.length > 0 && !isCompact}
               withEventsDragAndDrop={!pending && !isCompact}
             />

@@ -19,7 +19,6 @@ vi.mock("@tanstack/react-router", () => ({
   useRouterState: () => pathnameRef.current,
 }));
 
-//? ベル/計測インジケータ/オフラインバナーは Convex 購読や navigator に依存する。ナビの検証には要らない。
 vi.mock("~/components/notification-bell", () => ({ NotificationBell: () => null }));
 vi.mock("~/components/notification-bell-fallback", () => ({
   NotificationBellFallback: () => null,
@@ -35,9 +34,6 @@ const MOBILE_WIDTH = 375;
 
 type HappyWindow = { happyDOM?: { setViewport: (viewport: { width: number }) => void } };
 
-//? Mantine の hiddenFrom / visibleFrom は CSS のメディアクエリ。happy-dom は既定 1024px 幅で
-//? それを評価するので、幅を変えないと下小口バーが display:none になり、アクセシブル名が空になって
-//? role 検索から落ちる。#58 §21.2 の「幅 375px で」と同じ条件を作る。
 function setViewportWidth(width: number) {
   (window as unknown as HappyWindow).happyDOM?.setViewport({ width });
 }
@@ -56,7 +52,6 @@ function renderShell(pathname: string, width = MOBILE_WIDTH) {
   );
 }
 
-//* #58 §10: モバイルは下小口タブ4本 + 「その他」。項目 / プリセット / ゴミ箱は Menu の中。
 test("下小口ナビは 日 / ボード / 履歴 / 目標 の4本で、項目は含まない", () => {
   const { getByRole } = renderShell("/");
   const bottom = getByRole("navigation", { name: /下小口/ });
@@ -91,7 +86,6 @@ test("デスクトップ幅では右小口レールが残り、下小口は DOM 
   const { getByRole } = renderShell("/", DESKTOP_WIDTH);
 
   expect(getByRole("navigation", { name: /右小口/ })).toBeDefined();
-  //? 下小口は CSS で消えるだけ(§10.3)。role からは落ちるので DOM を直接見る。
   expect(document.querySelector('nav[aria-label*="下小口"]')).not.toBeNull();
 });
 
@@ -104,7 +98,6 @@ test("現在ページのタブに aria-current が付く", () => {
   expect(current[0]?.getAttribute("href")).toBe("/board");
 });
 
-//* E22: 「その他」側のページに居るときは「その他」自体を active に見せる。
 test("項目ページでは 4本に aria-current が付かず、「その他」が強調される", () => {
   const { getByRole } = renderShell("/items");
   const bottom = getByRole("navigation", { name: /下小口/ });
@@ -112,6 +105,5 @@ test("項目ページでは 4本に aria-current が付かず、「その他」�
   const plainTab = bottom.querySelector<HTMLAnchorElement>('a[href="/"]');
 
   expect(bottom.querySelectorAll('[aria-current="page"]').length).toBe(0);
-  //? active は CSS モジュールのクラス。クラス名はハッシュされるので、素の4本と違うことだけを見る。
   expect(other.className).not.toBe(plainTab?.className);
 });

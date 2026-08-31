@@ -273,8 +273,6 @@ test("switchPreset で消える未着手の記録は boardScheduleEvents も一�
     startAt: "2026-08-17 09:00:00",
   });
 
-  //? catalog.ensure が全曜日のプリセットを配るため新規作成は Conflict になる。
-  //? 別曜日の既存プリセットへ切り替えれば未着手の記録は消えるので、それで十分。
   const presets = await t.query(api.queries.presets.list.list, {});
   const otherPreset = presets.find((preset) => preset.weekday !== 1);
   if (otherPreset === undefined) {

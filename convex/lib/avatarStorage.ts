@@ -10,8 +10,6 @@ export type AvatarStorageMetadata = {
   size: number;
 };
 
-//* claim 時に _storage のメタデータを検証する。想定内の失敗はドメインエラーとして投げる。
-//? 素の Error は Convex が本番でメッセージを握りつぶすので、必ず throwDomain 経由にする。
 export function assertAvatarStorageMetadata(metadata: AvatarStorageMetadata | null): void {
   if (metadata === null) {
     throwDomain(

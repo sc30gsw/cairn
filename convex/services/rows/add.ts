@@ -30,7 +30,6 @@ export async function add(
   const day = await requireLiveDay(ctx, ownerId, dateJst);
   const rows = await liveRowsForDay(ctx, day._id);
   const sortOrder = rows.reduce((max, row) => Math.max(max, row.sortOrder), -1) + 1;
-  //? 追加は未着手なので確定分数を動かさない。習得目標のカウンタ更新は confirm 側の担当(ADR-0007)。
   return await ctx.db.insert("rows", {
     content: args.content,
     dateJst,

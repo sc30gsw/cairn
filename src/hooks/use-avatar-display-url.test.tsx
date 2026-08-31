@@ -64,8 +64,6 @@ test("クエリが失敗してもクラッシュせずフォールバックの�
   );
 
   expect(await findByText("none")).toBeDefined();
-  //? rethrow しないことの検証: クエリが error 状態に落ち着いた後もレンダリングは
-  //? クラッシュせずフォールバック表示のまま(convex/react の useQuery なら例外が render を巻き込む)
   await waitFor(() => {
     expect(queryClient.isFetching()).toBe(0);
   });

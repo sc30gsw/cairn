@@ -65,9 +65,6 @@ export function deriveBoardView(search: BoardSearch, today: DateJst) {
   };
 }
 
-/**
- * `/board` ルート上でのみ使う。search の read/write と derive を集約する。
- */
 export type BoardViewState = ReturnType<typeof deriveBoardView> & {
   setDate: (dateJst: DateJst) => void;
   setMonth: (yearMonth: string) => void;

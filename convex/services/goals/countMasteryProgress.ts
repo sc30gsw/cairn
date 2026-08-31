@@ -9,9 +9,6 @@ export type CountMasteryProgressArgs = {
   since: string;
 };
 
-//* 目標1件ぶんのカウンタを rows から数え直す唯一の口(再計算と対象項目の変更が共有する)。
-//? 上端を開いた範囲読みなので読み取り量は目標の寿命とともに増える。低頻度の操作(達成解除 / 修復 /
-//? 対象項目の変更)だけが通る前提で許容する判断は ADR-0007 の追記に記録した(CVX-11)。
 export async function countMasteryProgress(
   ctx: QueryCtx,
   ownerId: string,

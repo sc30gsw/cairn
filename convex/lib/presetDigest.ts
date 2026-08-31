@@ -5,16 +5,12 @@ import { weekdayFromDateJst } from "./jst";
 
 const [confirmedStatus, leftoverStatus, ongoingStatus, skippedStatus] = STATUSES;
 
-//? 今日を除く過去28暦日。今日の未着手は計画倒れではない。
 export const PRESET_REVIEW_WINDOW_DAYS = 28;
 
-//? 件数が少なすぎる曜日は、消化の差がノイズになる。
 export const PRESET_REVIEW_MIN_PLANNED = 3;
 
-//? 消化が半分未満なら、他曜日との差がなくても提案する。
 export const PRESET_REVIEW_DIGEST_FLOOR = 0.5;
 
-//? 他曜日の平均よりこの幅以上低いときだけ「低い」とみなす。
 export const PRESET_REVIEW_DIGEST_GAP = 0.15;
 
 export const PRESET_REVIEW_MAX_SUGGESTIONS = 2;

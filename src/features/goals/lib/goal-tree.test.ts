@@ -182,7 +182,6 @@ test("達成済みで子が全部達成済みの長期目標は達成の一覧�
   ]);
 });
 
-//? #49 §10 のテスト19。孤児判定が達成済み判定より先に来る(Phase 5 でこのケースごと消える)
 test("達成済みの孤児は achieved ではなく orphans に入る", () => {
   const tree = buildGoalTree([
     mastery({ achievedAt: "2026-08-09", id: "achievedOrphan", deadline: "2026-08-09" }),

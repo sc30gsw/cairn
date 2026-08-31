@@ -9,8 +9,6 @@ export type ClaimAvatarUploadArgs = {
   storageId: Id<"_storage">;
 };
 
-//* アップロード済み blob を自分の avatarUploads に確定する。同じ owner の旧アバターが
-//? 残っていれば置き換え、行と blob の両方を消す(消さないと _storage に孤児が溜まり続ける)。
 export async function claimAvatarUpload(
   ctx: MutationCtx,
   ownerId: string,
@@ -33,8 +31,6 @@ export async function claimAvatarUpload(
   assertAvatarStorageMetadata(metadata);
 
   if (existing === null) {
-    //? by_owner_and_storage は ownerId だけの前方一致でも引ける。件数は owner 1人分なので
-    //? インデックスつきの .collect は CVX-11 の許容範囲。
     const previous = await ctx.db
       .query("avatarUploads")
       .withIndex("by_owner_and_storage", (q) => q.eq("ownerId", ownerId))
@@ -42,8 +38,6 @@ export async function claimAvatarUpload(
 
     await ctx.db.insert("avatarUploads", { ownerId, storageId: args.storageId });
 
-    //? 新しい storageId に置き換わった旧アバターだけ掃除する(ストレージ漏れ対策)。
-    //? 各行は独立しているので Promise.all でまとめて実行する(react-doctor: async-await-in-loop)。
     const staleRows = previous.filter((row) => row.storageId !== args.storageId);
     await Promise.all(
       staleRows.flatMap((row) => [

@@ -23,7 +23,6 @@ function scoreMessage(score: number): string | null {
   return null;
 }
 
-//? タイプごとの値制約。違反した最初の1件だけを日本語メッセージで返す(CVX-09: 純関数)。
 function goalInputMessage(input: GoalInput): string | null {
   const contentMessage = validateConcreteAction(input.content);
   if (contentMessage !== null) {
@@ -46,14 +45,12 @@ function goalInputMessage(input: GoalInput): string | null {
   if (input.criterion.trim().length === 0) {
     return MASTERY_CRITERION_MESSAGE;
   }
-  //? 期限は任意。入っているときだけ暦日として実在するかを見る(期限つき習得 = チェックポイント)。
   if (input.deadline !== undefined && !isDateJst(input.deadline)) {
     return GOAL_DATE_MESSAGE;
   }
   return null;
 }
 
-//* 目標入力の検証。想定内の失敗なので型付きエラーを Result で返し、投げるのは mutation の境界に任せる。
 export function validateGoalInput(input: GoalInput): Result<null, ValidationFailedError> {
   const message = goalInputMessage(input);
   return message === null ? Result.ok(null) : Result.err(new ValidationFailedError({ message }));

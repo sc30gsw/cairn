@@ -98,7 +98,6 @@ const EXAM_GOAL = {
   type: "exam",
 } satisfies Goal;
 
-//? SOON のほうが期限が早い
 const SOON_CHECKPOINT = {
   _id: "goal-soon" as Goal["_id"],
   achievedAt: undefined,
@@ -285,7 +284,6 @@ test("達成したチェックポイントは親グループから消え、達�
 
   const accordion = getByRole("button", { name: new RegExp(ACHIEVED_SECTION_TITLE) });
   expect(within(accordion).getByText("1")).toBeDefined();
-  //? 既定は閉じている
   expect(queryByRole("region", { name: new RegExp(ACHIEVED_SECTION_TITLE) })).toBeNull();
 });
 
@@ -574,7 +572,6 @@ test("追加フォームには対象項目の欄が出て、カタログの項�
   await waitFor(() => {
     expect(getByRole("combobox", { name: /実績に数える項目/ })).toBeDefined();
   });
-  //? Floating UI は happy-dom で位置を測れないので hidden: true で拾う
   expect(getByRole("option", { hidden: true, name: KINFURE_ITEM.name })).toBeDefined();
 });
 

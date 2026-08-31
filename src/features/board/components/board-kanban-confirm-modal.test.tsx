@@ -19,9 +19,6 @@ function row(overrides: Partial<BoardRow> = {}): BoardRow {
   };
 }
 
-//* オーナー決定 2026-08-25: エディタが要るのは「計測が無く minutes===0」の行だけ。
-//? content の空欄はゲートにしない(CONTEXT.md「ひとこと」)。計測がある行は onStatusMove が
-//? stopTimer の結果で直接確定するため、minutes===0 でも false になる。
 test("needsKanbanConfirmEditor is true only when minutes is 0 and there is no measurement", () => {
   expect(needsKanbanConfirmEditor(row())).toBe(true);
   expect(needsKanbanConfirmEditor(row({ content: "done", minutes: 0 }))).toBe(true);

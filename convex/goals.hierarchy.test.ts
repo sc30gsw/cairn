@@ -5,7 +5,6 @@ import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import schema from "./schema";
 
-//? 目標階層の不変条件(INV-1〜6)。作成・編集・削除の一般的な検証は goals.test.ts に置く。
 const modules = import.meta.glob([
   "./**/*.ts",
   "!./**/*.test.ts",
@@ -72,13 +71,11 @@ test("期限だけ・親だけの入力は create でも update でも拒否さ�
   const t = owner();
   const parentId = await createLongTerm(t, "長期目標");
 
-  //? 期限だけ
   await expect(
     t.mutation(api.mutations.goals.create.create, {
       goal: { ...LONG_TERM_GOAL, content: "期限だけ", deadline: "2026-09-06" },
     }),
   ).rejects.toThrow();
-  //? 親だけ
   await expect(
     t.mutation(api.mutations.goals.create.create, {
       goal: { ...LONG_TERM_GOAL, content: "親だけ", parentGoalId: parentId },

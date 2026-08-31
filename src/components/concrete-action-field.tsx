@@ -15,11 +15,9 @@ import { ConcreteActionLabel } from "~/components/concrete-action-label";
 export type ConcreteActionFieldProps = Omit<TextInputProps, "description" | "label"> & {
   itemName?: string;
   label?: ReactNode;
-  //? 値ベースの変更通知(formisch.md)。suggestions あり(Autocomplete)では唯一の変更経路
   onValueChange?: (value: string) => void;
   suggestions?: string[];
   tooltipExample?: string;
-  //? true なら label を ConcreteActionLabel(ツールチップ付き)で包む。false なら渡された label をそのまま使う
   wrapLabel?: boolean;
 };
 
@@ -54,11 +52,9 @@ export function ConcreteActionField({
     return (
       <Autocomplete
         {...props}
-        //? StylesApi の型は TextInput/Autocomplete それぞれの factory に紐づくが、実体は同じ Input.Wrapper のスタイル名を含む
         classNames={classNames as AutocompleteProps["classNames"]}
         data={suggestions}
         label={resolvedLabel}
-        //? Autocomplete の onChange は値ベース(formisch.md)。ChangeEvent は偽装しない
         onChange={onValueChange}
         placeholder={resolvedPlaceholder}
         styles={styles as AutocompleteProps["styles"]}

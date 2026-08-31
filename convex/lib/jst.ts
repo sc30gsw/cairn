@@ -1,5 +1,3 @@
-//* 日は JST の暦日。クエリ内では Date.now() を呼ばず、呼び出し側が dateJst を渡す。
-
 import { isWeekday, type Weekday } from "./catalog";
 import { DATE_JST_PATTERN } from "./domain";
 
@@ -14,11 +12,8 @@ export function todayJst(now = new Date()): string {
   return JST_CALENDAR_DATE.format(now);
 }
 
-/** JST 暦日 `YYYY-MM-DD`。`todayJst()` の戻り値から派生する。 */
 export type DateJst = ReturnType<typeof todayJst>;
 
-//* 形式(YYYY-MM-DD)と実在する暦日の両方を満たすか。
-//? 素通しすると "2026-02-31" が 3/3 に転がり、パースできない文字列は Intl が RangeError を投げる。
 export function isDateJst(value: string): boolean {
   if (!DATE_JST_PATTERN.test(value)) {
     return false;
@@ -77,7 +72,6 @@ export function calendarDatesInMonth(yearMonth: string): string[] {
   return dates;
 }
 
-//* yearMonth(`YYYY-MM`)の月算術。負数で過去へ、年またぎも正しく処理する。addDaysJst と対になる。
 export function addMonthsJst(yearMonth: string, months: number): string {
   const [yearText, monthText] = yearMonth.split("-");
   const year = Number(yearText);

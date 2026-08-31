@@ -6,8 +6,6 @@ import type { Id } from "./_generated/dataModel";
 import { GOAL_SCOPE_FROZEN_MESSAGE, GOAL_SCOPE_ITEM_UNKNOWN_MESSAGE } from "./lib/domain";
 import schema from "./schema";
 
-//? 対象項目(scopeItemIds)で絞った学習量の実績(#53)。差分更新の経路別テストは
-//? goals.masteryProgress.test.ts、凍結と修復は goals.masteryProgressRepair.test.ts に置く。
 const modules = import.meta.glob([
   "./**/*.ts",
   "!./**/*.test.ts",
@@ -25,7 +23,6 @@ const OTHER_OWNER = { email: "other@example.com", subject: "other-owner-subject"
 const TODAY = "2026-08-17";
 const YESTERDAY = "2026-08-16";
 
-//? 実績の起点は目標の作成日なので、サーバが見る現在時刻を固定する。
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(`${TODAY}T12:00:00+09:00`));
@@ -53,8 +50,6 @@ const MASTERY_GOAL = {
 
 const CONCRETE_ACTION = "Unit 1 を音読する";
 
-//? 実績は保存カウンタなので、テストは rows を直接 insert せず必ず本物の mutation を通す。
-//? 対象項目の効果を見るために、カテゴリ1つに項目2つを用意する。
 async function seedItems(t: Client, ownerId: string = OWNER.subject) {
   return await t.run(async (ctx) => {
     const categoryId = await ctx.db.insert("categories", {
@@ -133,8 +128,6 @@ async function updateScope(
   });
 }
 
-//? 「数え直しが走っていない」ことを確かめるために、保存カウンタを意図的に狂わせる。
-//? 数え直しが走れば実測値に戻り、走らなければ狂った値が残る。
 async function driftCounter(t: Client, goalId: Id<"goals">) {
   await t.run(async (ctx) => {
     await ctx.db.patch("goals", goalId, { activeDays: 99, confirmedMinutes: 9999 });
@@ -150,7 +143,6 @@ async function liveDayId(t: Client, dateJst: string) {
   return dayId;
 }
 
-//? カウンタ漂流時の修復手段(ADR-0007)。対象項目つきでも同じ入口で数え直せることを確かめる。
 async function repair(t: Client) {
   await t.mutation(internal.mutations.goals.recomputeMasteryProgress.recomputeMasteryProgress, {
     ownerId: OWNER.subject,
@@ -165,7 +157,6 @@ test("対象項目つきで作成すると、作成日の対象内の確定だ�
 
   const goalId = await createScopedGoal(t, [inScope]);
   expect(await progressOf(t, goalId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
-  //? 重複は落ち、保存形は正規化された配列になる
   expect((await masteryGoalOf(t, goalId)).scopeItemIds).toEqual([inScope]);
 });
 
@@ -231,7 +222,6 @@ test("対象外の確定を取り消し・見送り・削除・復元しても�
   await t.mutation(api.mutations.rows.restore.restore, { rowId: removed });
   expect(await progressOf(t, goalId)).toEqual(expected);
 
-  //? 修復と一致する = 差分更新が実測とずれていない
   await repair(t);
   expect(await progressOf(t, goalId)).toEqual(expected);
 });
@@ -241,7 +231,6 @@ test("1トランザクションで対象内・対象外が同時に動いても�
   const { inScope, outOfScope } = await seedItems(t);
   const scopedId = await createScopedGoal(t, [inScope]);
   const allId = await createScopedGoal(t, undefined);
-  //? 昨日にも同じ2項目の確定を置くと、コピーが今日の確定2件を1トランザクションで消す
   await addConfirmedRow(t, inScope, { dateJst: YESTERDAY, minutes: 15 });
   await addConfirmedRow(t, outOfScope, { dateJst: YESTERDAY, minutes: 15 });
   await addConfirmedRow(t, inScope, { dateJst: TODAY, minutes: 30 });
@@ -296,7 +285,6 @@ test("対象項目の順序だけを変えた編集では数え直さない", as
   await driftCounter(t, goalId);
 
   await updateScope(t, goalId, [outOfScope, inScope]);
-  //? 数え直しが走っていれば実測に戻る。走らないので狂った値が残る
   expect(await progressOf(t, goalId)).toEqual({ activeDays: 99, confirmedMinutes: 9999 });
 });
 
@@ -312,7 +300,6 @@ test("達成済みの目標では対象項目を変えられず、内容の編�
   );
   await expect(updateScope(t, goalId, undefined)).rejects.toThrow(GOAL_SCOPE_FROZEN_MESSAGE);
 
-  //? 対象項目が同じなら内容の編集は通り、凍結された実績はそのまま
   await t.mutation(api.mutations.goals.update.update, {
     goal: { ...MASTERY_GOAL, criterion: "1分間で150語", scopeItemIds: [inScope] },
     goalId,
@@ -327,7 +314,6 @@ test("達成を外すと、そのときの対象項目で数え直される", as
   const goalId = await createScopedGoal(t, [inScope]);
   await addConfirmedRow(t, inScope, { dateJst: TODAY, minutes: 30 });
   await t.mutation(api.mutations.goals.setAchieved.setAchieved, { achievedAt: TODAY, goalId });
-  //? 凍結中の確定はどちらの項目でも実績を動かさない
   await addConfirmedRow(t, inScope, { dateJst: TODAY, minutes: 20 });
   await addConfirmedRow(t, outOfScope, { dateJst: TODAY, minutes: 240 });
   expect(await progressOf(t, goalId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
@@ -347,7 +333,6 @@ test("他人の項目・存在しない項目を対象項目に指定すると�
     GOAL_SCOPE_ITEM_UNKNOWN_MESSAGE,
   );
 
-  //? 実在しない id(作って消した項目)
   const goneId = await asOwner.run(async (ctx) => {
     const item = await ctx.db.insert("items", {
       categoryId: (await ctx.db.get("items", inScope))?.categoryId,

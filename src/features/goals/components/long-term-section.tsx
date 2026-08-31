@@ -10,16 +10,11 @@ export const LONG_TERM_EMPTY_MESSAGE =
   "長期目標はまだありません。期限のない「〜できる」を1件置くと、その下に期限を刻めます。";
 
 type LongTermSectionProps = {
-  //? 新規長期目標フォーム。見出し直下に開く
   form: ReactNode;
-  //? 親カード(ParentGoalGroup)の並び。編集中の親はフォームに差し替わっている
   groups: ReactNode[];
-  //? undefined なら追加導線を出さない(フォームを開いている間)
   onAdd: (() => void) | undefined;
 };
 
-//? 0件でも見出しと追加導線は常に出す(本番目標から独立した導線という確定事項の受け皿)。
-//? EmptyState はページに1つ = 本番目標なしのときだけなので、ここは薄字1行にする(#48 §7.3.3)
 export function LongTermSection({ form, groups, onAdd }: LongTermSectionProps) {
   return (
     <Stack aria-label={LONG_TERM_SECTION_TITLE} component="section" gap="md">

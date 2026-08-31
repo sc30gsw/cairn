@@ -6,7 +6,6 @@ import type { api } from "~/../convex/_generated/api";
 import { ValidationFailedError } from "~/lib/errors";
 import type { CategoryId } from "~/types/category";
 
-//? catalog と today の両方が使う共有の型。features 間 import を避けてここに置く
 export type ItemDto = FunctionReturnType<typeof api.queries.items.list.list>[number];
 export type PresetDto = FunctionReturnType<typeof api.queries.presets.list.list>[number];
 export type ItemId = ItemDto["_id"];

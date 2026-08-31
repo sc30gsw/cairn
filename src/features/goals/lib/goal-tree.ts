@@ -3,26 +3,19 @@ import { compareDateJst } from "~domain/jst";
 
 import type { ExamGoal, Goal, GoalId, MasteryGoal } from "~/features/goals/types/goal";
 
-//* 習得の区分。判別子は期限の有無だけ(docs/adr/0005・0006)。
 export type GoalTier = "checkpoint" | "longTerm";
 
-//? 親になれるのはトップ層(本番目標 / 長期目標)だけ。階層は最大2層(INV-4/5)。
 export type ParentGoal = ExamGoal | MasteryGoal;
 
 export type ParentGroup<TParent extends ParentGoal = ParentGoal> = {
-  //? 未達成の子だけ。期限昇順 → createdAt 昇順
   checkpoints: MasteryGoal[];
   parent: TParent;
 };
 
 export type GoalTree = {
-  //? 孤児でないもののうち、達成済みで未達成の子を持たないもの。achievedAt 降順 → createdAt 降順
   achieved: MasteryGoal[];
   exam: ParentGroup<ExamGoal> | undefined;
-  //? createdAt 昇順(= 作成順)
   longTerm: ParentGroup<MasteryGoal>[];
-  //? 親が解決できないチェックポイント(バックフィル前の安全網。#49 完了後は常に空)。
-  //? 達成済みでもここに入る(孤児判定が達成済み判定より先。#49 §8)
   orphans: MasteryGoal[];
 };
 
@@ -56,8 +49,6 @@ function byAchievedDesc(left: MasteryGoal, right: MasteryGoal): number {
   );
 }
 
-//* ある目標を親に持つチェックポイントを期限昇順で返す(達成済みも含む)。
-//? カスケード削除の Confirm と crowded 助言が同じ並びを見るように、ここ1箇所で数える。
 export function childCheckpointsOf(goals: readonly Goal[], parentId: GoalId): MasteryGoal[] {
   const children: MasteryGoal[] = [];
   for (const goal of goals) {
@@ -69,11 +60,8 @@ export function childCheckpointsOf(goals: readonly Goal[], parentId: GoalId): Ma
   return children.sort(byDeadlineThenCreated);
 }
 
-//* フラットな一覧を「親カード + 子チェックポイントの行」の2層に仕分ける(CVX-09 の思想をフロントへ)。
-//? 評価順は 孤児 → 達成済み → 親グループ。上から評価して最初に当たった規則だけを適用する(#49 §8)。
 export function buildGoalTree(goals: readonly Goal[]): GoalTree {
   const exam = goals.find((goal): goal is ExamGoal => goal.type === "exam");
-  //? 親になれるのはトップ層だけ。ここに居ない親を指す子は孤児(規則2)
   const parentIds = new Set<GoalId>(exam === undefined ? [] : [exam._id]);
   const longTermGoals: MasteryGoal[] = [];
   const orphans: MasteryGoal[] = [];
@@ -95,7 +83,6 @@ export function buildGoalTree(goals: readonly Goal[]): GoalTree {
       linked.push(goal);
       continue;
     }
-    //? achievedAt の有無は問わない。達成済みの孤児もここに入る(#49 §8)
     orphans.push(goal);
   }
   const openChildrenOf = (parentId: GoalId) => {
@@ -108,7 +95,6 @@ export function buildGoalTree(goals: readonly Goal[]): GoalTree {
 
     return children.sort(byDeadlineThenCreated);
   };
-  //? 未達成の子が残っている達成済み長期目標はツリーに残す(子が親を失って浮かないように)
   const achieved: MasteryGoal[] = [];
   const achievedParentIds = new Set<GoalId>();
   for (const goal of longTermGoals) {
@@ -146,8 +132,6 @@ type ParentGoalOptionsInput = {
   selfId: GoalId | undefined;
 };
 
-//* 親の選択肢。本番目標 + 未達成の長期目標 +(現在の親が上記に無ければその親)。self は除外。
-//? Mantine の Select は value が data に無いと空表示になるので、現在の親は必ず残す。
 export function parentGoalOptions(
   goals: readonly Goal[],
   { currentParentId, selfId }: ParentGoalOptionsInput,

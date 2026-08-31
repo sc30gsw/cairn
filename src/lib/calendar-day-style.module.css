@@ -1,7 +1,6 @@
 .saturdayDay,
 .sundayDay,
 .holidayDay {
-  /* Marker classes applied via getDayProps. */
 }
 
 .unrecordedDay::after {
@@ -13,10 +12,6 @@
   line-height: 1.2;
 }
 
-/* @mantine/schedule exposes stable `mantine-MonthView-*` classes, but @mantine/dates names its
-   day/weekday classes after the root component (`mantine-DatePickerInput-day`, …), so the dates
-   calendar is matched by table structure instead. Its own `[data-weekend]` rule is beaten by
-   specificity; `:not()` keeps outside/selected/disabled days on Mantine's colors. */
 .japaneseCalendar :global(.mantine-Schedule-monthViewWeekday:nth-child(6)),
 .japaneseCalendar :global(.mantine-MonthView-monthViewWeekday:nth-child(6)),
 .japaneseCalendar th:nth-child(6) {

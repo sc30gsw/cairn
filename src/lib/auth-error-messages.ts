@@ -182,7 +182,6 @@ function messageFromEnglishText(message: string, context: AuthErrorContext): str
   return messageFromCode(code, context);
 }
 
-//* Better Auth / パスキーの生エラーを、利用者が次に何をすべきか分かる日本語に変換する唯一の入口
 export function presentAuthError(error: unknown, context: AuthErrorContext): string {
   const fallback = CONTEXT_FALLBACKS[context];
   const authError = extractAuthClientError(error);

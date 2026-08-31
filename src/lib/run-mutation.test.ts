@@ -35,8 +35,6 @@ function unsavedWarning() {
   );
 }
 
-//* オーナー決定 2026-08-25: ボードのカンバンのように silent でもエラー Toast と未保存警告だけ抑え、
-//? successMessage を指定したときは成功 Toast は出す。
 test("silent かつ successMessage 指定時は成功 Toast だけ出す", async () => {
   await runMutation(async () => "ok", { silent: true, successMessage: "記録しました" });
 
@@ -69,7 +67,6 @@ test("silent かつ関数型 successMessage は mutation の戻り値を受け�
   expect(notifySuccess).toHaveBeenCalledWith("3件削除しました");
 });
 
-//* #58 §9.2: 送信は止めない。5秒未解決という観測事実だけで警告する。
 test("5秒経っても未解決なら未保存警告を出す", async () => {
   let resolve = () => undefined as void;
   const running = runMutation(
@@ -107,7 +104,6 @@ test("4.9秒で解決したら警告は出ない", async () => {
   expect(unsavedWarning()).toBeUndefined();
 });
 
-//* 参照カウント: 先に1本解決しても、残っている分の警告を消さない。
 test("2本並行して先に1本解決しても通知は消えず、2本目の解決で消える", async () => {
   let resolveFirst = () => undefined as void;
   let resolveSecond = () => undefined as void;

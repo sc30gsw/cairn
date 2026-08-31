@@ -254,10 +254,8 @@ test("編集フォームの対象項目はカテゴリ見出し付きで、既�
       })}
     />,
   );
-  //? Floating UI は happy-dom で位置を測れないので hidden: true で拾う
   expect(getByRole("group", { hidden: true, name: INPUT_CATEGORY.name })).toBeDefined();
   expect(getByRole("group", { hidden: true, name: OUTPUT_CATEGORY.name })).toBeDefined();
-  //? 既存の対象項目は選択済みで開く
   expect(
     getByRole("option", { hidden: true, name: KINFURE_ITEM.name }).getAttribute("aria-selected"),
   ).toBe("true");

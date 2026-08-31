@@ -12,7 +12,6 @@ vi.mock("~/features/history/hooks/use-history-view", () => ({
   useHistoryView: () => ({ setTab: vi.fn(), tab: "month" }),
 }));
 
-//? タブ本体は Convex 購読を持つので、外枠(見出し + タブ + 導線)だけを見る
 vi.mock("~/features/history/components/history-month-tab", () => ({
   HistoryMonthTab: () => <div>月タブ</div>,
 }));

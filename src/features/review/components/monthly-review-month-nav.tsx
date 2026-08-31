@@ -11,7 +11,6 @@ type MonthlyReviewMonthNavProps = {
   yearMonth: string;
 };
 
-//? 月単位の移動に月ピッカーは過剰。◀ ▶ +「今月へ」で足りる(週次の WeekNav と同じ形)
 export function MonthlyReviewMonthNav({
   currentYearMonth,
   onMonthChange,
@@ -31,7 +30,6 @@ export function MonthlyReviewMonthNav({
         </ActionIcon>
       </Tooltip>
       <Tooltip label="次の月" withArrow>
-        {/*? disabled な ActionIcon には Tooltip が効かないので span で包む(既存実装と同じ回避) */}
         <Box component="span" display="inline-flex">
           <ActionIcon
             aria-label="次の月"

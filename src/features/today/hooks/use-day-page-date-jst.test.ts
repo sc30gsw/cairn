@@ -17,9 +17,6 @@ vi.mock("~domain/jst", async (importOriginal) => {
   };
 });
 
-//? useDayPageDateJst は内部で useTodayJst(useSyncExternalStore)を呼ぶ。unmount せずに残すと
-//? モジュールスコープの単一ストアにタイマー/リスナーが残ったままになる(renderWithMantine を
-//? 使わないため自動 cleanup が登録されない — .claude/rules/common/testing.md 参照)。
 afterEach(() => {
   cleanup();
 });

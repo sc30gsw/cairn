@@ -124,9 +124,6 @@ export default defineConfig({
       ".scratch/**",
       "docs/**",
       "**/*.md",
-      //? WebWorker ランタイム前提の宣言(self / ServiceWorkerGlobalScope)が oxlint の env と噛み合わず、
-      //? Serwist の declaration merging が interface を要求する(docs/specs/pwa-mobile.md §4.3 / §19-14)。
-      //? 整形は掛けるので fmt.ignorePatterns には入れない。
       "sw/**",
     ],
     jsPlugins: [{ name: "react-doctor", specifier: "oxlint-plugin-react-doctor" }],
@@ -183,7 +180,6 @@ export default defineConfig({
     rules: {
       ...reactDoctorRules,
       "no-default-export": "error",
-      //? React Compiler がメモ化する。Mantine の onClick / data / fallback と相性が悪い。
       "react-doctor/jsx-max-depth": "off",
       "react-doctor/jsx-no-jsx-as-prop": "off",
       "react-doctor/jsx-no-new-array-as-prop": "off",
@@ -199,9 +195,7 @@ export default defineConfig({
   },
   plugins: [
     tailwindcss(),
-    //? Vitest では tanstackStart / nitro が React の CJS を edge-runtime に引き込み、`module is not defined` とプロセス残留を起こす。
     ...(isVitest ? [] : [tanstackStart()]),
-    // react's vite plugin must come after start's vite plugin
     react({
       include: /\.[jt]sx$/,
     }),
@@ -220,12 +214,8 @@ export default defineConfig({
         "**/_generated/**",
         "**/*.test.ts",
         "**/*.test.tsx",
-        //? 薄い composition/wiring 層(hooks 経由の呼び出しのみ)。他フィーチャの
-        //? *-page.tsx / *-pending.tsx / *-mutations.ts / *-queries.ts / *-shimmer-template.ts と同様、
-        //? リポジトリ全体でユニットテスト対象外の慣習(GoalsBoard 等の結合テストで間接的に確認)。
         "src/features/goals/components/goals-page.tsx",
         "src/features/goals/components/goals-pending.tsx",
-        //? Formisch Field の render prop が branch 数を水増しする。挙動は各 *.test.tsx で確認済み。
         "src/features/goals/components/obstacle-section.tsx",
         "src/features/goals/components/goal-form-fields.tsx",
         "src/features/goals/components/target-form.tsx",

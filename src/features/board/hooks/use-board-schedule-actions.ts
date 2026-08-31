@@ -10,7 +10,6 @@ import type { BoardScheduleView } from "~/features/board/schemas/board-search-sc
 import { useTodayJst } from "~/hooks/use-today-jst";
 import { runMutation } from "~/lib/run-mutation";
 
-//* ボードでは Toast を一切出さない。結果は予定ブロックの見た目にそのまま現れる(オーナー決定 2026-08-24)。
 const silent = { silent: true } as const;
 
 export function useBoardScheduleActions(anchorDateJst: DateJst, view: BoardScheduleView) {

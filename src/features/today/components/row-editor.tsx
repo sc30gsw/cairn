@@ -83,8 +83,6 @@ function RowStatusSwitch({
   );
 }
 
-//* 日ページには開始・停止を置かない(CONTEXT「進行中」)。分数の食い違いだけを注記で防ぐ。
-//? 1秒刻みでは動かさない。時計は実行ボードだけが持つ(docs/specs/study-timer.md §11.4)。
 function measurementNote(row: DayRow): string | undefined {
   const runState = timerRunState(row.timer);
   if (runState === "計測中") {

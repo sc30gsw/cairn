@@ -10,7 +10,6 @@ test("正規化は重複を落とし、空を undefined に畳む", () => {
   expect(normalizeScopeItemIds([KINFURE, TADOKU, KINFURE])).toEqual([KINFURE, TADOKU]);
   expect(normalizeScopeItemIds([])).toBeUndefined();
   expect(normalizeScopeItemIds(undefined)).toBeUndefined();
-  //? 順序は入力のまま(最初に現れた位置を残す)
   expect(normalizeScopeItemIds([TADOKU, KINFURE])).toEqual([TADOKU, KINFURE]);
 });
 

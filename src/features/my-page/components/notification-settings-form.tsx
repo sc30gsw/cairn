@@ -11,8 +11,6 @@ import type { SaveNotificationSettingsInput } from "~/features/my-page/types/not
 import { onRequiredSelect } from "~/lib/select";
 import { NUMERAL_FONT } from "~/lib/theme";
 
-//* 1フォーム＋保存ボタン(target-form.tsx と同じ流儀)。Switch の即時保存は採らない —
-//? トリガーの取捨と夜の時刻が同じフォームにあり、保存の粒度が2種類になると読めなくなる。
 export function NotificationSettingsForm({
   onSave,
   settings,
@@ -34,7 +32,6 @@ export function NotificationSettingsForm({
   const eveningField = useField(form, { path: ["triggers", "eveningUntouched"] });
   const eveningHourField = useField(form, { path: ["eveningHourJst"] });
 
-  //? 初期描画では field.input が未確定になり得るので、フォールバックはサーバ由来の設定値にする。
   const enabled = enabledField.input ?? settings.enabled;
   const eveningHour = eveningHourField.input ?? settings.eveningHourJst;
 

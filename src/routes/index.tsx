@@ -28,7 +28,6 @@ function HomeSetupStepper() {
 function HomeRoute() {
   return (
     <OwnerGate>
-      {/*? セットアップ手順は任意の小さな付加物。ページ全体サイズの Pending フォールバックはレイアウトシフトが大きい */}
       <Suspense fallback={null}>
         <HomeSetupStepper />
       </Suspense>

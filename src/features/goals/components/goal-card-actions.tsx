@@ -7,7 +7,6 @@ type GoalCardActionsProps = {
   onRemove: () => void;
 };
 
-//? 目標名をアクセシブル名に入れて、カードが並んでもボタンを取り違えないようにする
 export function GoalCardActions({ goalName, onEdit, onRemove }: GoalCardActionsProps) {
   return (
     <Group gap={4} wrap="nowrap">

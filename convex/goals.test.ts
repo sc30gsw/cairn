@@ -4,8 +4,6 @@ import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { api } from "./_generated/api";
 import schema from "./schema";
 
-//? 目標の作成・編集・削除・達成日と認可。学習量の実績カウンタは
-//? goals.masteryProgress.test.ts / goals.masteryProgressRepair.test.ts に置く。
 const modules = import.meta.glob([
   "./**/*.ts",
   "!./**/*.test.ts",
@@ -22,7 +20,6 @@ const OWNER = { email: "owner@example.com", subject: "owner-subject" };
 const OTHER_OWNER = { email: "other@example.com", subject: "other-owner-subject" };
 const TODAY = "2026-08-17";
 
-//? 習得の学習量実績は目標の作成日を起点にするので、サーバが見る現在時刻を固定する。
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(`${TODAY}T12:00:00+09:00`));
@@ -61,9 +58,7 @@ test("試験・習得の2タイプを作成でき、list に反映される", as
 
   const goals = await t.query(api.queries.goals.list.list, {});
   expect(goals).toHaveLength(2);
-  //? createdAt は _creationTime。並び順をクライアントの index 順に依存させないため DTO に載る
   expect(goals).toContainEqual({ _id: examId, createdAt: expect.any(Number), ...EXAM_GOAL });
-  //? 習得には達成日(未達成なら undefined)と学習量の実績、親(未設定なら undefined)が載る
   expect(goals).toContainEqual({
     _id: masteryId,
     achievedAt: undefined,
@@ -78,7 +73,6 @@ test("試験・習得の2タイプを作成でき、list に反映される", as
 
 test("期限つきの習得(チェックポイント)は同じタイプとして保存される", async () => {
   const t = owner();
-  //? 期限を持つなら親が必要(INV-1)。親子の不変条件そのものは goals.hierarchy.test.ts で網羅する
   const parentGoalId = await t.mutation(api.mutations.goals.create.create, {
     goal: { ...MASTERY_GOAL, content: "長期目標として親になる" },
   });
@@ -221,7 +215,6 @@ test("setAchieved は習得を達成にし、undefined で取り消せる", asyn
   const achievedGoal = achieved.find((goal) => goal._id === masteryId);
   expect(achievedGoal?.type === "mastery" && achievedGoal.achievedAt).toBe(TODAY);
 
-  //? 達成しても目標は消えない(達成済みの一覧が達成の履歴になる)
   expect(achieved).toHaveLength(1);
 
   await t.mutation(api.mutations.goals.setAchieved.setAchieved, { goalId: masteryId });
@@ -301,7 +294,6 @@ test("他人の目標は取得できず、更新・削除・達成も拒否さ�
     asOther.mutation(api.mutations.goals.remove.remove, { goalId: masteryId }),
   ).rejects.toThrow();
 
-  //? 所有者本人には影響していない
   const goals = await asOwner.query(api.queries.goals.list.list, {});
   const goal = goals.find((entry) => entry._id === masteryId);
   expect(goal?.type === "mastery" && goal.content).toBe(MASTERY_GOAL.content);

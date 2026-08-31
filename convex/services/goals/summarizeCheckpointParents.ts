@@ -22,13 +22,11 @@ function ownerSummary(ownerId: string, goals: readonly Doc<"goals">[]): Checkpoi
       .length,
     ownerId,
     plan: plan.plan,
-    //? 規則3 で失う期限を名指しする。所有者が Phase 2 の UI で先に手当てできるようにする。
     promoteLosesDeadline:
       promoted !== undefined && promoted.type === "mastery" ? (promoted.deadline ?? null) : null,
   };
 }
 
-//* 監査の集計(CVX-09: 純関数)。実行と同じ規則を planCheckpointParents から借りる(二重化しない)。
 export function summarizeCheckpointParents(
   goals: readonly Doc<"goals">[],
   truncated: boolean,
@@ -51,7 +49,6 @@ export function summarizeCheckpointParents(
   }));
 
   return {
-    //? 親自身が親を持つ = チェーン。最大2層の不変条件(INV-4/5)の破れ。
     chainedCount: parents.filter(
       ({ parent }) => parent?.type === "mastery" && parent.parentGoalId !== undefined,
     ).length,

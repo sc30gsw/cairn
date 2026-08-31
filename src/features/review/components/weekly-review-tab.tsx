@@ -18,7 +18,6 @@ import { dayPageLink } from "~/lib/board-day-links";
 export function WeeklyReviewTab() {
   const { currentWeekStart, setWeek, today, weekStart } = useReviewView();
   const { data: review } = useWeeklyReview(weekStart, today);
-  //? 掘りたい日は「週の中で記録が確定しうる最後の日」。今週なら今日、過去週なら日曜
   const editDateJst = review.isCurrentWeek ? today : review.weekEnd;
 
   return (

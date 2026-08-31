@@ -101,7 +101,6 @@ const NAV: {
   },
 ];
 
-//* 下小口タブに出す4本。残りは「その他」Menu(docs/specs/pwa-mobile.md §10.2)。並べ替えはこの1行で済む。
 const MOBILE_PRIMARY = ["/", "/board", "/history", "/goals"] as const satisfies readonly NavRoute[];
 
 function isMobilePrimary(to: NavRoute): boolean {
@@ -140,11 +139,9 @@ function IndexTabs({ pathname }: Record<"pathname", string>) {
   );
 }
 
-//* モバイルは画面下端の固定バー。standalone 起動では画面最上部が親指から最も遠い(§10.1)。
 function BottomIndexTabs({ pathname }: Record<"pathname", string>) {
   const primary = NAV.filter((entry) => isMobilePrimary(entry.to));
   const overflow = NAV.filter((entry) => !isMobilePrimary(entry.to));
-  //? 「その他」側のページに居るときは「その他」自体を active にする(E22)。
   const overflowActive = overflow.some((entry) => entry.match(pathname));
 
   return (
@@ -235,12 +232,10 @@ export function AppShell({ accountMenu, children }: AppShellProps) {
                   </Box>
                 </Group>
                 <Group gap="sm" wrap="nowrap">
-                  {/*? 計測中インジケータ。計測が無ければ null を返すので何も出ない(#51 §13.2) */}
                   <Suspense fallback={<RunningTimerIndicatorFallback />}>
                     <RunningTimerIndicator />
                   </Suspense>
                   <Group align="center" gap="xs" wrap="nowrap">
-                    {/*? 通知ベル。全画面共通で、未読件数を Indicator に出す(#56 §10.1) */}
                     <Suspense fallback={<NotificationBellFallback />}>
                       <NotificationBell />
                     </Suspense>
@@ -248,9 +243,7 @@ export function AppShell({ accountMenu, children }: AppShellProps) {
                   </Group>
                 </Group>
               </Group>
-              {/*? オフラインでは書けないことを全画面で同じ位置に出す(#58 §9.1) */}
               <OfflineBanner />
-              {/*? ページ内のエラーはヘッダーとナビを残したまま出す。別の画面へ移れば解除される */}
               <CatchBoundary errorComponent={RouteErrorComponent} getResetKey={() => pathname}>
                 {children}
               </CatchBoundary>

@@ -22,9 +22,6 @@ type DayBoardTabProps = {
 export function DayBoardTab({ dateJst, presetFromSearch }: DayBoardTabProps) {
   const today = useTodayJst();
   const { data: day } = useOpenAndLoadDay(dateJst, today);
-  //? items/presets/targets の3本は互いに独立なので useSuspenseQueries でまとめて並列取得する
-  //? (パフォーマンス)。引数の SSoT は day-queries.ts / targets-queries.ts のクエリファクトリのまま。
-  //? useOpenAndLoadDay は day.open のミューテーション待ちを含むため、この3本とは別枠のまま。
   const [{ data: items }, { data: presets }, { data: targets }] = useSuspenseQueries({
     queries: [
       parallelConvexQuery(itemsListQuery()),

@@ -52,19 +52,16 @@ test("対象項目を渡すと、対象外の確定は分数にも実施日に�
   const rows = [
     { dateJst: SINCE, itemId: KINFURE, minutes: 30, status: "確定" as const },
     { dateJst: SINCE, itemId: TADOKU, minutes: 20, status: "確定" as const },
-    //? この暦日は対象外の項目だけ。実施日にも数えない
     { dateJst: "2026-08-18", itemId: TADOKU, minutes: 240, status: "確定" as const },
   ];
   expect(masteryProgressSince(rows, SINCE, [KINFURE])).toEqual({
     activeDays: 1,
     confirmedMinutes: 30,
   });
-  //? 未指定なら従来どおり全項目を数える
   expect(masteryProgressSince(rows, SINCE, undefined)).toEqual({
     activeDays: 2,
     confirmedMinutes: 290,
   });
-  //? 該当が1件も無ければゼロ
   expect(masteryProgressSince(rows, SINCE, ["item-none" as Id<"items">])).toEqual({
     activeDays: 0,
     confirmedMinutes: 0,
@@ -73,6 +70,5 @@ test("対象項目を渡すと、対象外の確定は分数にも実施日に�
 
 test("_creationTime は JST 暦日に写る(UTC 日跨ぎでも JST の日になる)", () => {
   expect(creationDateJst(new Date("2026-08-17T15:30:00+09:00").getTime())).toBe("2026-08-17");
-  //? JST 00:30 は UTC ではまだ前日。JST 側の暦日を返す。
   expect(creationDateJst(new Date("2026-08-17T00:30:00+09:00").getTime())).toBe("2026-08-17");
 });

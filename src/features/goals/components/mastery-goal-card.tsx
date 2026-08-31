@@ -19,7 +19,6 @@ const TIER_TITLES = {
 
 type MasteryGoalBodyProps = {
   goal: MasteryGoal;
-  //? 対象項目のラベルを引き当てる一覧。名前の真実は items.list だけが持つ(#53 §18-18)
   items: ItemDto[];
   onEdit: () => void;
   onRemove: () => void;
@@ -27,8 +26,6 @@ type MasteryGoalBodyProps = {
   todayJst: DateJst;
 };
 
-//? 親カードの中身だけ。枠(Card)と子チェックポイントは ParentGoalGroup が持つ
-//? 期限を持つ習得の呼び名がチェックポイント。データ上は同じタイプ(docs/adr/0006)
 export function MasteryGoalBody({
   goal,
   items,
@@ -72,8 +69,6 @@ export function MasteryGoalBody({
           達成 {goal.achievedAt}
         </Text>
       )}
-      {/*? 自己判定の較正のために対象項目の学習量の実績を併記する(Kruger & Dunning 1999) */}
-      {/*? 親カードは全項目名を出す。分母(達成率・進捗バー)は作らない(#53 §5.2) */}
       <Text c="dimmed" size="xs">
         対象: {scope.full}
       </Text>

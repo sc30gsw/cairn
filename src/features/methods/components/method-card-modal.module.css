@@ -1,0 +1,42 @@
+.content :global(.ProseMirror) {
+  min-height: calc(5.5rem * var(--mantine-scale));
+}
+
+.content :global(.ProseMirror) ul:not([data-type="taskList"]) {
+  list-style-type: disc;
+}
+
+.content :global(.ProseMirror) ol {
+  list-style-type: decimal;
+}
+
+.content :global(.ProseMirror) ul ul:not([data-type="taskList"]) {
+  list-style-type: circle;
+}
+
+.content :global(.ProseMirror) ul[data-type="taskList"] li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--mantine-spacing-xs);
+}
+
+.content :global(.ProseMirror) ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  margin-block-start: calc(0.1875rem * var(--mantine-scale));
+  user-select: none;
+}
+
+.content :global(.ProseMirror) ul[data-type="taskList"] li > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.content :global(.ProseMirror) ul[data-type="taskList"] input[type="checkbox"] {
+  accent-color: var(--mantine-color-green-6);
+  cursor: pointer;
+}
+
+.content :global(.ProseMirror) ul[data-type="taskList"] li[data-checked="true"] > div {
+  color: var(--cairn-muted);
+  text-decoration: line-through;
+}

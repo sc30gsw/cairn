@@ -18,8 +18,6 @@ import { percentOf } from "~/features/review/lib/weekly-review-labels";
 import type { WeeklyReview, WeeklyReviewTarget } from "~/features/review/types/weekly-review";
 import { TARGET_METRIC_LABELS, TARGET_METRIC_UNITS } from "~/lib/target-metric-labels";
 
-//? 達成の判別を色に載せない(達成の緑と未達のオレンジは protan で事実上同色)。
-//? IconCircleCheck・VisuallyHidden の文言・(100%) の数値が判別子であり、この3つは省略不可。
 function TargetRow({ target }: Record<"target", WeeklyReviewTarget>) {
   const percent = percentOf(target.current, target.targetValue);
 

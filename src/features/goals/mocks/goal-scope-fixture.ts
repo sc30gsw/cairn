@@ -1,7 +1,6 @@
 import type { CategoryDto } from "~/types/category";
 import type { ItemDto } from "~/types/item";
 
-//? 対象項目の表示・選択を確かめるテスト用の一覧。カテゴリ2つに分属させて見出しも再現する
 export const INPUT_CATEGORY = {
   _id: "category-input" as CategoryDto["_id"],
   name: "インプット",

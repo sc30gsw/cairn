@@ -10,13 +10,11 @@ import {
   nowJst,
 } from "./notifications";
 
-//? JST の epoch を組む。JST は UTC+9:00 固定なので UTC 側で9時間引いて置く。
 function jstInstant(year: number, month: number, day: number, hour: number): number {
   return Date.UTC(year, month - 1, day, hour - 9, 0, 0);
 }
 
 test("固定時刻トリガーは 08時で期限接近だけ、土曜09時で週間ターゲットだけ発火する", () => {
-  //? 2026-08-22 は土曜、2026-08-23 は日曜。
   expect(dueFixedTriggers("2026-08-20", 8)).toEqual({
     checkpointDeadline: true,
     weeklyTargetMiss: false,

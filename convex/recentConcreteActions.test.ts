@@ -107,7 +107,6 @@ test("存在しない項目には NotFound を投げる", async () => {
 test("ゴミ箱の日に属する行はサジェストに出さない", async () => {
   const t = newTest();
   const itemId = await seedItemWithRows(t, [{ content: "確定済みの内容", status: "確定" }]);
-  //? removeDay と同じく day の deletedAt だけを立てる(行は生きたまま)
   await t.run(async (ctx) => {
     const days = await ctx.db
       .query("days")

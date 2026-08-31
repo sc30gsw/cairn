@@ -3,11 +3,8 @@ import { expect, test } from "vite-plus/test";
 import { calendarDatesInMonth } from "./jst";
 import { bucketDatesByWeek, buildMonthlyDigestTrend, type DateStatusRow } from "./monthlyReview";
 
-//? 2026-08 は 8/1(土) 始まり・8/31(月) 終わり。両端が部分週になる月
 const AUGUST = calendarDatesInMonth("2026-08");
-//? 2026-02 は 2/1(日) 始まり・2/28(土) 終わりの28日の月
 const FEBRUARY = calendarDatesInMonth("2026-02");
-//? 2026-06 は 6/1(月) 始まりで、第1週が月曜からそろう月
 const JUNE = calendarDatesInMonth("2026-06");
 
 function bucketShape(dates: readonly string[]) {
@@ -25,7 +22,6 @@ test("月初が月曜でない月は先頭が部分週になる", () => {
     { end: "2026-08-16", length: 7, start: "2026-08-10" },
     { end: "2026-08-23", length: 7, start: "2026-08-17" },
     { end: "2026-08-30", length: 7, start: "2026-08-24" },
-    //? 月末が月曜なのでその1日だけの部分週になる
     { end: "2026-08-31", length: 1, start: "2026-08-31" },
   ]);
 });
@@ -36,7 +32,6 @@ test("28日の2月も月内の日だけでバケット化する", () => {
     { end: "2026-02-08", length: 7, start: "2026-02-02" },
     { end: "2026-02-15", length: 7, start: "2026-02-09" },
     { end: "2026-02-22", length: 7, start: "2026-02-16" },
-    //? 2/28(土) 終わりなので最後は6日の部分週
     { end: "2026-02-28", length: 6, start: "2026-02-23" },
   ]);
 });
@@ -44,7 +39,6 @@ test("28日の2月も月内の日だけでバケット化する", () => {
 test("月初が月曜の月は先頭から7日そろう", () => {
   const buckets = bucketShape(JUNE);
   expect(buckets[0]).toEqual({ end: "2026-06-07", length: 7, start: "2026-06-01" });
-  //? 6/30(火) 終わりなので最後は2日の部分週
   expect(buckets.at(-1)).toEqual({ end: "2026-06-30", length: 2, start: "2026-06-29" });
 });
 
@@ -64,7 +58,6 @@ function row(dateJst: string, status: DateStatusRow["status"]): DateStatusRow {
 }
 
 test("当日を含む週は当日の行を数えない", () => {
-  //? 今日 = 2026-08-19(水)。第3週(8/17〜8/23)は 8/17・8/18 だけを数える
   const trend = buildMonthlyDigestTrend(
     AUGUST,
     [
@@ -90,11 +83,9 @@ test("記録が並んでいない週は plannedCount 0・digestRate 0 になる"
 });
 
 test("isPartial は月境界の部分週と当日以降を含む週の両方で立つ", () => {
-  //? 月が丸ごと過去なら、7日そろった週だけ isPartial=false
   const past = buildMonthlyDigestTrend(AUGUST, [], "2026-09-01");
   expect(past.map((bucket) => bucket.isPartial)).toEqual([true, false, false, false, false, true]);
 
-  //? 今日が 2026-08-19 なら、第3週(当日を含む)以降はすべて数えきれていない
   const current = buildMonthlyDigestTrend(AUGUST, [], "2026-08-19");
   expect(current.map((bucket) => bucket.isPartial)).toEqual([true, false, false, true, true, true]);
 });

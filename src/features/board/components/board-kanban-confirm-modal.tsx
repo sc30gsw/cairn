@@ -17,7 +17,6 @@ type BoardKanbanConfirmModalProps = {
   onClose: () => void;
   onConfirm: (input: KanbanConfirmInput) => void | Promise<void>;
   opened: boolean;
-  //? 計測がある行はサーバで畳んだ真値を初期値にする(docs/specs/study-timer.md §11.3)。
   prefillMinutes: number | null;
   row: BoardRow | null;
 };
@@ -101,8 +100,5 @@ export function BoardKanbanConfirmModal({
 }
 
 export function needsKanbanConfirmEditor(row: BoardRow): boolean {
-  //? 計測がある行は onStatusMove が stopTimer の結果で直接確定するため、ここでは判定しない
-  //? (オーナー決定 2026-08-25)。「ひとこと」の空欄は確定ゲートにしない(CONTEXT.md「ひとこと」参照)。
-  //? 唯一エディタが要るのは「計測が無く、目安分数も未入力(0分)」の行だけ。
   return row.minutes === 0 && !hasTimerState(row.timer);
 }

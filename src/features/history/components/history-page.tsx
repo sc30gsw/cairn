@@ -30,7 +30,6 @@ function HistoryReady() {
     <>
       <Group align="center" justify="space-between" mb="md">
         <PageTitle>履歴</PageTitle>
-        {/*? /review への入口。ナビタブは増やさない。既定タブ(weekly)へ飛ばす */}
         <Anchor component={Link} to="/review">
           レビューを見る
         </Anchor>

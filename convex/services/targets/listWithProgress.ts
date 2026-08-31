@@ -6,8 +6,6 @@ import type { TargetProgressDto } from "../../lib/validators";
 import { liveDayDatesFrom, liveRows } from "../history/shared";
 import { buildTargetProgress } from "./buildTargetProgress";
 
-//* 今週(weekStartJst 〜 +6日)のカテゴリ別実績をターゲットに突き合わせる。
-//? 週は引数で受け取る(CVX-14)が、月曜への正規化はサーバが担う。今週専用の計器で、過去週には出さない。
 export async function listWithProgress(
   ctx: QueryCtx,
   ownerId: string,

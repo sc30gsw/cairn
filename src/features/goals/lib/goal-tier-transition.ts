@@ -1,5 +1,3 @@
-//* 編集フォームの入力から、保存したときに起きる区分の変化を出す。表示専用の判定。
-//? 区分移行は可逆なので Confirm は出さない。ライブ予告と行き先入りトーストだけで足りる(#48 §0-8)。
 export type TierTransition = "none" | "reparent" | "toCheckpoint" | "toLongTerm";
 
 type TierTransitionInput = {
@@ -7,7 +5,6 @@ type TierTransitionInput = {
   before: { deadline: string | undefined; parentGoalId: string | undefined };
 };
 
-//? Select の未選択は "" で返る。空文字は「親なし」として畳む
 function parentOf(parentGoalId: string | undefined): string | undefined {
   return parentGoalId === undefined || parentGoalId === "" ? undefined : parentGoalId;
 }
@@ -36,7 +33,6 @@ export function tierTransition({ after, before }: TierTransitionInput): TierTran
   return "none";
 }
 
-//* フォーム内のライブ予告(押しても止めない情報)。親名が要る移行は名前が引けるときだけ出す。
 export function tierTransitionAlert(
   transition: TierTransition,
   parentName: string | undefined,
@@ -56,7 +52,6 @@ export function tierTransitionAlert(
 
 export const GOAL_UPDATED_MESSAGE = "目標を更新しました";
 
-//* 保存後トーストの行き先表示。移行が起きなかったときは既存の文言に戻す。
 export function tierTransitionToast(
   transition: TierTransition,
   parentName: string | undefined,

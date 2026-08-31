@@ -80,9 +80,6 @@ export async function uploadAvatarBlob(
   return uploadResult;
 }
 
-//* AvatarUploadFailedError の message は既定の一般文言なので、cause がサーバのドメインエラー
-//* (ConvexError の data に message/tag を持つもの)であれば presentError 経由で具体的な文言に差し替える。
-//* それ以外(fetch 失敗など)の cause は presentError が既定文言にフォールバックし、既存の挙動を保つ
 export function avatarUploadErrorMessage(error: AvatarUploadError): string {
   if (error instanceof AvatarUploadFailedError) {
     return presentError(error.cause, error.message).message;

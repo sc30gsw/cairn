@@ -25,7 +25,6 @@ type TargetRowProps = {
 };
 
 function TargetRow({ onRemove, target }: TargetRowProps) {
-  //? 超過分は 100% で止める。棒が伸び続けても「達成した」以上の情報にならない
   const percent =
     target.targetValue <= 0
       ? 0
@@ -40,7 +39,6 @@ function TargetRow({ onRemove, target }: TargetRowProps) {
             {target.achieved && (
               <>
                 <IconCircleCheck aria-hidden color="var(--mantine-color-green-6)" size={18} />
-                {/*? チェックマークは色と形だけの情報なので、読み上げ用の文言を添える */}
                 <VisuallyHidden>{target.categoryName}は達成</VisuallyHidden>
               </>
             )}

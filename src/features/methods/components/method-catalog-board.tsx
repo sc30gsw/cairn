@@ -37,7 +37,6 @@ const METHOD_CATALOG_HINT =
   "「勉強方法どうやるのが効率なんだっけ」を思い出すための参照専用カタログ。今日の記録やプリセットには何も起こしません。";
 export const METHOD_CATALOG_EMPTY =
   "まだ空のカタログです。まずレーン(例: 模試レーン / 単語レーン)を追加します。";
-//? レーン(列)ドラッグと方法カードドラッグを同じ DragDropContext 内で区別する type
 const LANE_DROP_TYPE = "LANE";
 
 export function MethodCatalogBoard({ catalog }: Record<"catalog", MethodCatalog>) {
@@ -48,9 +47,7 @@ export function MethodCatalogBoard({ catalog }: Record<"catalog", MethodCatalog>
   const methodsByLane = mapValues(groupBy(catalog.methods, prop("laneId")), (laneMethods) =>
     sortBy(laneMethods, prop("sortOrder")),
   );
-  //? いま見るはカタログの正面(サーバが所有者ごとに高々1件を保証する)
   const nowViewing = catalog.methods.find((method) => method.nowViewing);
-  //? 開いたカードは常に購読中のカタログから読む(別端末の編集にも追従する)
   const openedMethod = catalog.methods.find((method) => method._id === openedMethodId);
 
   async function handleDragEnd(result: DropResult) {
@@ -59,7 +56,6 @@ export function MethodCatalogBoard({ catalog }: Record<"catalog", MethodCatalog>
       return;
     }
 
-    //? レーン(列)自体のドラッグ。type で方法カードのドロップと区別する
     if (type === LANE_DROP_TYPE) {
       if (destination.index === source.index) {
         return;
@@ -111,8 +107,6 @@ export function MethodCatalogBoard({ catalog }: Record<"catalog", MethodCatalog>
     });
   }
 
-  //? ドラッグできない操作(キーボード・モバイル)向けの移動。移動先レーンの末尾に付ける
-  //? (項目ページの「移動」メニューと同じ扱い)。並びの計算はドラッグと同じ applyMethodOrder に流す。
   async function moveMethodToLane(method: Method, destinationLaneId: MethodLane["_id"]) {
     const sourceMethods = (methodsByLane[method.laneId] ?? []).filter(
       (entry) => entry._id !== method._id,
@@ -194,7 +188,6 @@ export function MethodCatalogBoard({ catalog }: Record<"catalog", MethodCatalog>
   );
 }
 
-//* カタログの正面。いま見ると印を付けた1件をレーンの上に大きく出す(進行中でも採用中でもない)。
 function NowViewingCard({ method, onOpen }: { method: Method; onOpen: () => void }) {
   return (
     <Paper p="md" radius="sm" style={{ borderColor: "var(--mantine-color-orange-4)" }} withBorder>
@@ -260,7 +253,6 @@ function AddLaneForm({ onCreate }: Record<"onCreate", MethodCatalogActions["onCr
   );
 }
 
-//* レーン(列)の横並び。横方向の Droppable がレーンドラッグの受け皿になる(方法カードとは type で区別)。
 function LaneRow({ children }: Record<"children", (provided: DroppableProvided) => ReactNode>) {
   const { Droppable } = useDnd();
 

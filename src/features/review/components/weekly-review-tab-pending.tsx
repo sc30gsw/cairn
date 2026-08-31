@@ -9,7 +9,6 @@ import { reviewShimmerWeekly } from "~/features/review/lib/review-shimmer-templa
 import { weekRangeLabel } from "~/features/review/lib/weekly-review-labels";
 import { NUMERAL_FONT } from "~/lib/theme";
 
-//? WeeklyReviewTab 自身を fallback に入れない(再サスペンドする)。構造モックだけを描く
 export function WeeklyReviewTabPending() {
   return (
     <Shimmer loading>

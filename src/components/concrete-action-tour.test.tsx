@@ -80,11 +80,6 @@ test("コンポーネント内部に付けた data 属性は FocusReveal され�
 });
 
 test("render-prop（Formisch Field 相当）はコンポーネント境界の内側に置けば安全", async () => {
-  // ライブラリの wrapChildren は data-onboarding-tour-id を持たない要素を
-  // React.Children.map で再帰的に書き換えるため、function-as-children (Field 相当) が
-  // コンポーネント境界の外(直接 JSX に書かれた状態)にあると "children is not a function" で
-  // クラッシュする。境界の内側(自身の props.children を持たないコンポーネント)に
-  // 隠せば再帰が及ばず安全になる — goals-board.tsx の ExamGoalForm 等と同じパターン。
   function InnerFieldLike({ children }: { children: (value: string) => ReactNode }) {
     return <>{children("値")}</>;
   }

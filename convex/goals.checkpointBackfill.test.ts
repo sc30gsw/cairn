@@ -6,8 +6,6 @@ import type { Doc } from "./_generated/dataModel";
 import type { BackfillCheckpointParentsResult } from "./lib/validators";
 import schema from "./schema";
 
-//? 既存チェックポイントへの親バックフィル(#49 Phase 3)。規則そのものの網羅は
-//? services/goals/planCheckpointParents.test.ts に置く。
 const modules = import.meta.glob([
   "./**/*.ts",
   "!./**/*.test.ts",
@@ -20,7 +18,6 @@ const modules = import.meta.glob([
   "!./migrations.ts",
 ]);
 
-//? codegen(デプロイメント接続が必要)をこの環境で走らせられないため、内部関数は名前で参照する。
 const backfillRef = makeFunctionReference<
   "mutation",
   Record<"ownerId", string>,
@@ -114,7 +111,6 @@ test("親候補が無ければ期限がもっとも遠い孤児が長期目標�
   const goals = await goalsOf(t, OWNER);
   const promoted = goals.find((goal) => goal.content === "遠い");
   const child = goals.find((goal) => goal.content === "近い");
-  //? 昇格は期限を外すだけ。トップ層なので親も持たない
   expect(promoted?.type === "mastery" && promoted.deadline).toBeUndefined();
   expect(promoted?.type === "mastery" && promoted.parentGoalId).toBeUndefined();
   expect(child?.type === "mastery" && child.parentGoalId).toBe(promoted?._id);

@@ -13,12 +13,8 @@ const TITLE_ID = "monthly-digest-trend";
 
 type MonthlyDigestTrendChartProps = Pick<MonthlyReview, "digestTrend">;
 
-//* 月の中で尻すぼみか尻上がりかを見るための1枚。曜日別の消化(履歴)とは役割が違う。
-//? 週次レビューは表で足りたが、週バケット4〜6本のトレンドは既存のどこにも無い絵なので
-//? この画面だけ @mantine/charts を使う。数値は棒の上のラベルにも出し、絵だけで伝えない。
 export function MonthlyDigestTrendChart({ digestTrend }: MonthlyDigestTrendChartProps) {
   const countedBuckets = digestTrend.filter((bucket) => bucket.plannedCount > 0);
-  //? 棒が描かれない週に注記を付けても読み手は照らし合わせられないので、数えた週だけを挙げる
   const partialBuckets = countedBuckets.filter((bucket) => bucket.isPartial);
 
   return (
@@ -37,8 +33,6 @@ export function MonthlyDigestTrendChart({ digestTrend }: MonthlyDigestTrendChart
           <BarChart
             data={digestTrend.map((bucket, index) => ({
               label: monthlyDigestBucketLabel(index, bucket.isPartial),
-              //? 記録が1件も並んでいない週は棒を描かない。0% と描くと「サボった」に見えてしまい、
-              //? 消化(計画が残ったかの指標)の定義に反する
               消化率: bucket.plannedCount === 0 ? null : Math.round(bucket.digestRate * 100),
             }))}
             dataKey="label"
@@ -50,7 +44,6 @@ export function MonthlyDigestTrendChart({ digestTrend }: MonthlyDigestTrendChart
             valueFormatter={(value) => `${value}%`}
             withBarValueLabel
             withLegend={false}
-            //? 月をまたいでも軸のスケールが変わらないように 0〜100% 固定
             yAxisProps={{ domain: [0, 100] }}
           />
         </Card>

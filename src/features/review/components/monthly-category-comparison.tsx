@@ -10,7 +10,6 @@ import { yearMonthLabel } from "~/features/review/lib/monthly-review-labels";
 import type { MonthlyReview } from "~/features/review/types/monthly-review";
 import { NUMERAL_FONT } from "~/lib/theme";
 
-//? 今月 = アクセント色、先月 = 灰(過去の期間)。増減の良し悪しは色で評価しない
 const COMPARISON_SERIES = [
   { color: "orange.5", name: "今月" },
   { color: "gray.6", name: "先月" },
@@ -67,7 +66,6 @@ export function MonthlyCategoryComparison({
             </Card>
           )}
 
-          {/*? 数値は必ず表で併記する。チャートだけで数値を伝えない */}
           <Table.ScrollContainer minWidth={420}>
             <Table highlightOnHover striped="odd" verticalSpacing="xs">
               <Table.Thead>

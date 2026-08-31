@@ -3,8 +3,6 @@ import { mondayOfWeek } from "../../lib/jst";
 import type { NotificationPayload } from "../../lib/validators";
 import { listWithProgress } from "../targets/listWithProgress";
 
-//* 週間ターゲット未達。画面が見せている数字と同じ関数(listWithProgress)から出す。
-//? ターゲット0件では発火しない(設定の不足はセットアップの担当)。全件達成でも発火しない — 祝わない。
 export async function evaluateWeeklyTargetMiss(
   ctx: MutationCtx,
   ownerId: string,
@@ -15,7 +13,6 @@ export async function evaluateWeeklyTargetMiss(
   if (targets.length === 0) {
     return null;
   }
-  //? remaining は保存しない(引き算はいつでも同じ答えになる)。文言側で引く。
   const shortfalls = targets.flatMap((target) =>
     target.achieved
       ? []

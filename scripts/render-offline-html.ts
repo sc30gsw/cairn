@@ -1,7 +1,3 @@
-//* オフライン貼り紙(docs/specs/pwa-mobile.md §9.3)。Mantine の外側なのでテーマ変数が使えず、
-//? 色は paper-tokens.ts を唯一の出所として文字列に焼き込む。外部リソース参照はゼロ
-//? (favicon.svg すら参照しない) — オフラインで待たされるものを1つも置かないため。
-//? scripts/ は tsconfig の include 外で `~` alias が効かないので相対 import を使う(§4.4)。
 import { PAPER_TOKENS } from "../src/lib/paper-tokens.ts";
 
 export function renderOfflineHtml(): string {

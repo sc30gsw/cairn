@@ -1,4 +1,3 @@
-/*? 計測中の点滅は「動きを減らす」設定では止める。分数は role="status" 側が読み上げる */
 @media (prefers-reduced-motion: reduce) {
   .indicator :global(.mantine-Indicator-processing) {
     animation: none;

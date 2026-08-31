@@ -1,6 +1,5 @@
 import { type GoalType } from "~domain/domain";
 
-//? 値の SSoT は ~domain/domain。ここが持つのは表示だけ(CVX-16)
 export const GOAL_TYPE_LABELS = {
   exam: "試験",
   mastery: "習得",

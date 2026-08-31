@@ -78,7 +78,6 @@ function itemOptions(items: ItemDto[]) {
   return items.map((item) => ({ label: item.name, value: item._id }));
 }
 
-//? lines はフォーム状態(PartialValues)から渡されるため、各フィールドは undefined になりうる
 function availableItemOptions(
   items: ItemDto[],
   lines: readonly Partial<PresetLineInput>[],
@@ -129,7 +128,6 @@ export function PresetList({ items, presets }: PresetListProps) {
         </Group>
         <PresetCreateForm key={createFormKey} onCreate={onCreate} presets={presets} />
         {presets.length === 0 ? (
-          //? 直上に PresetCreateForm があるので、ここに作成ボタンは置かない
           <EmptyState
             description="よく使う手順をプリセットにすると、記録から呼び出せます。"
             icon={<IconTemplate aria-hidden />}
@@ -279,7 +277,6 @@ function PresetEditor({
   onUpdate: CatalogPresetActions["onUpdate"];
   preset: PresetDto;
 }) {
-  //? 雛形行もフォーム状態(PresetSchema)が SSoT。行単位のエラーは Field の errors で表示する(formisch.md)
   const form = useForm({
     initialInput: presetEditorInitialInput(preset),
     schema: PresetSchema,
@@ -287,7 +284,6 @@ function PresetEditor({
   const linesField = useField(form, { path: ["lines"] });
   const lines = linesField.input;
 
-  //? 2端末で編集されうる。未編集(clean)のときだけサーバー値へ追従する(row-editor.tsx と同じ方針)
   useEffect(() => {
     if (form.isDirty) {
       return;
@@ -398,7 +394,6 @@ function PresetEditor({
                               {...field.props}
                               aria-label={`${preset.name}の雛形${index + 1}のひとこと`}
                               error={field.errors?.[0]}
-                              //? itemId は Select の選択肢由来で常に有効な項目 id(firstAvailableItem で補充)。parseItemId の実行時ガードは submit 時のみ必要
                               itemId={unwrapItemId(parseItemId(lineItemId ?? ""))}
                               itemName={itemName}
                               label={index === 0 ? "ひとこと" : undefined}

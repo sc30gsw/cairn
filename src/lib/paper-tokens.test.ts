@@ -6,7 +6,6 @@ import { expect, test } from "vite-plus/test";
 import { PAPER_TOKENS } from "~/lib/paper-tokens";
 import { theme } from "~/lib/theme";
 
-//? public/ の manifest は静的 JSON。トークンと二重管理にならないことをここで縛る(pwa-mobile.md §9.3)
 const manifest = JSON.parse(
   readFileSync(resolve(process.cwd(), "public/manifest.webmanifest"), "utf8"),
 ) as Record<string, unknown>;

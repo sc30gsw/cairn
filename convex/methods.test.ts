@@ -4,7 +4,6 @@ import { expect, test } from "vite-plus/test";
 import { api } from "./_generated/api";
 import schema from "./schema";
 
-//? 方法カタログ(参照専用)。並べ替え規則そのものの網羅は lib/methodOrder.test.ts に置く。
 const modules = import.meta.glob([
   "./**/*.ts",
   "!./**/*.test.ts",
@@ -155,7 +154,6 @@ test("いま見るは所有者ごとに1件だけ(別の方法に立てると前
     secondId,
   ]);
 
-  //? 外すと正面は空になる(いま見る0件は正常な状態)
   await t.mutation(api.mutations.methods.setNowViewing.setNowViewing, {
     methodId: secondId,
     nowViewing: false,
@@ -178,11 +176,9 @@ test("参照専用: カタログ操作は日・記録・プリセットに何も
     nowViewing: true,
   });
 
-  //? いま見るを立てても今日のボードは変わらない: 日は作られず、記録は0件のまま
   const dayPage = await t.query(api.queries.days.get.get, { dateJst: TODAY, todayJst: TODAY });
   expect(dayPage.day).toBeNull();
   expect(dayPage.rows).toEqual([]);
-  //? プリセットにも触れない
   expect(await t.query(api.queries.presets.list.list, {})).toEqual([]);
 });
 
@@ -203,7 +199,6 @@ test("方法をドラッグで並べ替え・レーン間移動できる", async
     name: "全文精読",
   });
 
-  //? レーン内の並べ替え
   await t.mutation(api.mutations.methods.applyMethodOrder.applyMethodOrder, {
     updates: [{ laneId: examLaneId, orderedMethodIds: [secondId, firstId] }],
   });
@@ -215,7 +210,6 @@ test("方法をドラッグで並べ替え・レーン間移動できる", async
     { _id: firstId, sortOrder: 1 },
   ]);
 
-  //? レーン間の移動(移動元・移動先の両方を同じバッチで指定する)
   await t.mutation(api.mutations.methods.applyMethodOrder.applyMethodOrder, {
     updates: [
       { laneId: examLaneId, orderedMethodIds: [secondId] },
@@ -225,7 +219,6 @@ test("方法をドラッグで並べ替え・レーン間移動できる", async
   catalog = await t.query(api.queries.methods.list.list, {});
   expect(catalog.methods.find((method) => method._id === firstId)?.laneId).toBe(wordLaneId);
 
-  //? レーンの既存の方法が黙って消える指定は拒否する
   await expect(
     t.mutation(api.mutations.methods.applyMethodOrder.applyMethodOrder, {
       updates: [{ laneId: examLaneId, orderedMethodIds: [] }],
@@ -255,7 +248,6 @@ test("レーン(列)自体をドラッグで並べ替えられる。全量指定
     { _id: wordLaneId, name: "単語レーン", sortOrder: 2 },
   ]);
 
-  //? 一部だけの指定・重複を含む指定は不正(黙って消えるレーンを作らない)
   await expect(
     t.mutation(api.mutations.methods.applyLaneOrder.applyLaneOrder, {
       orderedLaneIds: [examLaneId],
@@ -280,7 +272,6 @@ test("他人のレーンを含む並べ替えは拒否される", async () => {
     name: "よそのレーン",
   });
 
-  //? 自分のレーンと同数でも、他人のレーン id は自分の全量と一致しないので不正
   await expect(
     asOwner.mutation(api.mutations.methods.applyLaneOrder.applyLaneOrder, {
       orderedLaneIds: [othersLaneId],

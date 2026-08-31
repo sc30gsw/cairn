@@ -12,7 +12,6 @@ export const ORPHAN_CHECKPOINTS_MESSAGE =
   "親が見つからないチェックポイントがあります。編集で親を選び直してください。";
 
 type OrphanCheckpointsAlertProps = {
-  //? 編集フォームは一覧の上に開く(対象の行は隠れている)
   form: ReactNode;
   items: ItemDto[];
   onEditGoal: (goal: MasteryGoal) => void;
@@ -22,7 +21,6 @@ type OrphanCheckpointsAlertProps = {
   todayJst: DateJst;
 };
 
-//? 親バックフィル(#49)前の安全網。移行が終われば常に空になり、この区画ごと撤去される
 export function OrphanCheckpointsAlert({
   form,
   items,

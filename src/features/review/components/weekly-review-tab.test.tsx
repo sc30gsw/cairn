@@ -198,7 +198,6 @@ test("過去週はターゲットの数値を1つも描かず、今週だけの�
 
 test("週の表は7行で、休養日と今日の消化を書き分ける", () => {
   const { getAllByRole, getByText } = renderTab(CURRENT_WEEK_REVIEW, TODAY_IN_WEEK);
-  //? 見出し行 + 7日
   expect(getAllByRole("row")).toHaveLength(8);
   expect(getByText("休養")).toBeDefined();
   expect(getByText("—（今日）")).toBeDefined();

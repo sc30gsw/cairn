@@ -65,7 +65,6 @@ test("編集中(dirty)のプリセット編集フォームは別端末での更�
     />,
   );
 
-  //? aria-label は preset.name 由来なので rerender 後は追従するが、フォームの値自体は上書きされない
   expect((getByRole("textbox", { name: "月曜授業の新しい名前" }) as HTMLInputElement).value).toBe(
     "編集中の名前",
   );

@@ -35,8 +35,6 @@ vi.mock("~/features/my-page/hooks/use-my-page-user", () => ({
   })),
 }));
 
-//? happy-dom の FileReader は正常系しか通らないため、onerror 経路を検証するには読み取り失敗を
-//? 起こす FileReader スタブに差し替える
 class FailingFileReader {
   error: DOMException | null = new DOMException("boom");
   onerror: (() => void) | null = null;

@@ -1,8 +1,6 @@
 import type { MantineColor } from "@mantine/core";
 import { v } from "convex/values";
 
-// export type DefaultMantineColor = 'dark' | 'gray' | 'red' | 'pink' | 'grape' | 'violet' | 'indigo' | 'blue' | 'cyan' | 'green' | 'lime' | 'yellow' | 'orange' | 'teal'
-
 export const BOARD_SCHEDULE_COLORS = [
   "blue",
   "cyan",
@@ -20,8 +18,6 @@ export const BOARD_SCHEDULE_COLORS = [
 
 export type BoardScheduleColor = (typeof BOARD_SCHEDULE_COLORS)[number];
 
-//? タプルを spread して union を組み立てる。色を1つ足したらこの validator も自動で追随し、
-//? 列挙漏れが構造的に起きない(CVX-16)。
 export const boardScheduleColorValidator = v.union(
   ...BOARD_SCHEDULE_COLORS.map((color) => v.literal(color)),
 );

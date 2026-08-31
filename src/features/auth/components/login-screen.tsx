@@ -9,8 +9,6 @@ import { DISPLAY_FONT } from "~/lib/theme";
 
 export function LoginScreen() {
   const passkeyAction = useAuthActionTransition();
-  //? standalone では Notion のドメインが scope 外なので iOS がシステムブラウザに投げうる。
-  //? 認証フローは変えず、並びと注記だけ変える(docs/specs/pwa-mobile.md E7)。
   const { standalone } = useInstallPrompt();
 
   return (

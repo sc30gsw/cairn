@@ -20,7 +20,6 @@ export async function updateMethod(
   if (name === "") {
     throwDomain(new ValidationFailedError({ message: "方法のタイトルは必須です" }));
   }
-  //? 本文・完了条件・メモは空でよい(参照専用のカタログ。確定ゲートのような検証は持たない)。
   await ctx.db.patch("methods", args.methodId, {
     bodyText: args.bodyText,
     completionHtml: args.completionHtml,

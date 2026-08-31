@@ -1,19 +1,14 @@
-//? 今月/先月の byCategory の突き合わせと delta% はクライアントの純関数に置く。
-//? サーバはカテゴリ別分数の生値だけを返し、日本語ラベルや丸め方という表示の関心は持たない。
-
 import type { MonthlyCategoryBreakdown } from "~/features/review/types/monthly-review";
 
 export type CategoryComparisonRow = {
   category: string;
   categorySortOrder: number;
   currentMinutes: number;
-  /** 「+80分（+15%）」「新規」「先月のみ」「変化なし」 */
   deltaLabel: string;
   deltaMinutes: number;
   previousMinutes: number;
 };
 
-//? 先月だけにあるカテゴリは一覧の末尾に固定する(使わなくなったカテゴリが自然に下へ落ちる)
 const PREVIOUS_ONLY_SORT_ORDER = Number.MAX_SAFE_INTEGER;
 
 function deltaLabel(current: number, previous: number): string {
@@ -32,7 +27,6 @@ function deltaLabel(current: number, previous: number): string {
   return `${sign}${delta}分（${sign}${percent}%）`;
 }
 
-//* カテゴリ名で今月と先月を突き合わせる。名前ベースなのは byCategory 自体が名前集計だから(履歴全体と同じ設計)。
 export function buildCategoryComparisonRows(
   current: readonly MonthlyCategoryBreakdown[],
   previous: readonly Pick<MonthlyCategoryBreakdown, "category" | "minutes">[],
@@ -67,7 +61,6 @@ export function buildCategoryComparisonRows(
         ],
   );
 
-  //? sort するのはこの行で作った新しい配列だけ。引数の配列は触らない
   return [...currentRows, ...previousOnlyRows].sort(
     (left, right) =>
       left.categorySortOrder - right.categorySortOrder ||
@@ -75,7 +68,6 @@ export function buildCategoryComparisonRows(
   );
 }
 
-//* グラフは今月・先月ともに0分の行を落とす(表には出すが、グラフのノイズにはしない)。
 export function categoryComparisonChartRows(
   rows: readonly CategoryComparisonRow[],
 ): CategoryComparisonRow[] {

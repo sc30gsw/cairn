@@ -6,9 +6,6 @@ import { segmentElapsedMs } from "../../lib/rowTimer";
 import { requireOwnedRow } from "./requireOwnedRow";
 import { rowDayLiveness } from "./rowDayLiveness";
 
-//* 計測を止める(T2)。サーバの Date.now() で区間を畳むので、端末の時計ずれが記録値に入らない
-//? (study-timer.md §8.3)。戻り値は加算後の accumulated — 確定モーダルのプレフィルに使う。
-//? 計測していない進行中行への呼び出しは冪等(T2')。古いタブが押しても失敗させず現在値を返す。
 export async function stopTimer(
   ctx: MutationCtx,
   ownerId: string,

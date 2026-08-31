@@ -7,9 +7,6 @@ import { liveRowsForDay } from "../days/liveRowsForDay";
 
 const [, pendingStatus] = STATUSES;
 
-//* 夜の未着手。進行中は催促しない(手を動かしている人を急かさない)。
-//? 日が無ければ今日の曜日のプリセット行数を数える。プリセットも無ければ黙る
-//? (計画が無い日に催促するのは「休養を計画倒れに数える」こと)。
 export async function evaluateEveningUntouched(
   ctx: MutationCtx,
   ownerId: string,

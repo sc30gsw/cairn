@@ -7,8 +7,6 @@ import schema from "./schema";
 import { creationDateJst } from "./services/goals/masteryProgress";
 import { recomputeMasteryProgress } from "./services/goals/recomputeMasteryProgress";
 
-//? 達成時の凍結・解除時の再計算・カウンタ漂流の修復(ADR-0007)。差分更新そのものの経路別テストは
-//? goals.masteryProgress.test.ts に置く。
 const modules = import.meta.glob([
   "./**/*.ts",
   "!./**/*.test.ts",
@@ -25,7 +23,6 @@ const OWNER = { email: "owner@example.com", subject: "owner-subject" };
 const TODAY = "2026-08-17";
 const YESTERDAY = "2026-08-16";
 
-//? 習得の学習量実績は目標の作成日を起点にするので、サーバが見る現在時刻を固定する。
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(`${TODAY}T12:00:00+09:00`));
@@ -51,7 +48,6 @@ const MASTERY_GOAL = {
 
 const CONCRETE_ACTION = "Unit 1 を音読する";
 
-//? 実績は保存カウンタなので、テストは rows を直接 insert せず必ず本物の mutation を通す。
 async function seedItemId(t: ReturnType<typeof owner>) {
   return await t.run(async (ctx) => {
     const categoryId = await ctx.db.insert("categories", {
@@ -110,8 +106,6 @@ async function liveDayId(t: ReturnType<typeof owner>, dateJst: string) {
   return dayId;
 }
 
-//? 実績の起点は目標の作成日なので、起点を作り分けるテストはまずこれで前提を確かめる。
-//? convex-test の _creationTime は挿入順に単調増加するため、作成順を崩すと起点が黙って今日に寄る。
 async function creationDateOf(t: ReturnType<typeof owner>, goalId: Id<"goals">) {
   return await t.run(async (ctx) => {
     const goal = await ctx.db.get("goals", goalId);
@@ -122,14 +116,12 @@ async function creationDateOf(t: ReturnType<typeof owner>, goalId: Id<"goals">) 
   });
 }
 
-//? カウンタ漂流時の修復手段(ADR-0007)。保存値が実測と一致しているかの確認にも使う。
 async function repair(t: ReturnType<typeof owner>) {
   await t.mutation(internal.mutations.goals.recomputeMasteryProgress.recomputeMasteryProgress, {
     ownerId: OWNER.subject,
   });
 }
 
-//? 同じ暦日に生きた日ドキュメントを1つ増やす(collapseExtraLiveDays が掃除する状態を作る)。
 async function insertExtraLiveDay(t: ReturnType<typeof owner>, dateJst: string) {
   return await t.run(async (ctx) => ctx.db.insert("days", { dateJst, ownerId: OWNER.subject }));
 }
@@ -174,7 +166,6 @@ test("凍結中に確定が減っていれば、解除の再計算で実績も�
     goalId: masteryId,
   });
 
-  //? 凍結中はゴミ箱に入れても動かない
   await t.mutation(api.mutations.rows.remove.remove, { rowId: droppedId });
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 50 });
 
@@ -189,14 +180,11 @@ test("日ドキュメントが入れ替わった記録でも、実績は暦日�
   const rowId = await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
   const staleDayId = await liveDayId(t, TODAY);
 
-  //? collapseExtraLiveDays は余剰の日を配下の記録ごと消さずに落とす。その結果あり得る
-  //? 「記録の dayId だけが消え、暦日には別の生きた日がある」状態を作って再現する。
   await insertExtraLiveDay(t, TODAY);
   await t.run(async (ctx) => {
     await ctx.db.delete("days", staleDayId);
   });
 
-  //? 実測(暦日に生きた日がある = 確定は実績に入る)と保存カウンタは一致したまま
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
 
   await t.mutation(api.mutations.rows.remove.remove, { rowId });
@@ -212,8 +200,6 @@ test("暦日に生きた日が2つあるとき、日をゴミ箱に入れても�
   const masteryId = await createMasteryGoal(t);
   const rowId = await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
 
-  //? 同じ暦日に生きた日が2つある状態を作り、確定記録を後から作った側にぶら下げる。removeDay が
-  //? ゴミ箱に入れるのは古い方だけなので、暦日にはまだ生きた日が残り実績は動かないのが正しい。
   const extraDayId = await insertExtraLiveDay(t, TODAY);
   await t.run(async (ctx) => {
     await ctx.db.patch("rows", rowId, { dayId: extraDayId });
@@ -222,7 +208,6 @@ test("暦日に生きた日が2つあるとき、日をゴミ箱に入れても�
   await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: TODAY });
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
 
-  //? 数え直しても同じ値 = カウンタが漂流していない
   await repair(t);
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
 });
@@ -235,7 +220,6 @@ test("暦日に生きた日が残っているとき、ゴミ箱の日を戻し�
   const dayId = await liveDayId(t, TODAY);
 
   await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: TODAY });
-  //? 日を戻す前に同じ暦日の生きた日ができた状態。実測では確定が実績に戻るので先に修復しておく。
   await insertExtraLiveDay(t, TODAY);
   await repair(t);
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
@@ -258,7 +242,6 @@ test("暦日に生きた日が残っているゴミ箱の日を完全削除す�
   await repair(t);
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
 
-  //? 完全削除で配下の確定記録も消えるので、実績から外れる
   await t.mutation(api.mutations.trash.purgeDay.purgeDay, { dayId });
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
   await repair(t);
@@ -271,7 +254,6 @@ test("内部の再計算ミューテーションは漂流したカウンタを�
   const masteryId = await createMasteryGoal(t);
   await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
 
-  //? 差分更新の経路漏れを模してカウンタだけ壊す
   await t.run(async (ctx) => {
     await ctx.db.patch("goals", masteryId, { activeDays: 9, confirmedMinutes: 999 });
   });
@@ -283,8 +265,6 @@ test("内部の再計算ミューテーションは漂流したカウンタを�
 
 test("再計算は作成日の違う複数の習得目標をそれぞれの起点で数え直す", async () => {
   const t = owner();
-  //? 作成日が違う2件を用意する(rows は一度だけ読み、起点ごとに絞られるのが正しい)。
-  //? convex-test の _creationTime は単調増加なので、古い方をいちばん最初に作る。
   vi.setSystemTime(new Date(`${YESTERDAY}T12:00:00+09:00`));
   const olderId = await createMasteryGoal(t);
   vi.setSystemTime(new Date(`${TODAY}T12:00:00+09:00`));

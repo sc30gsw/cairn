@@ -2,8 +2,6 @@ import { TARGET_METRIC_UNITS } from "./domain";
 import { NOTIFICATION_BODY_LINE_LIMIT } from "./notifications";
 import type { NotificationPayload } from "./validators";
 
-//? 明細が多いときは先頭 N 行だけ並べ、残りを「…他N件」に畳む。
-//? 通知欄の1件が長大化するのを防ぐ。件数は items.length から導出するので保存しない。
 function joinLines(lines: readonly string[]): string {
   if (lines.length <= NOTIFICATION_BODY_LINE_LIMIT) {
     return lines.join("\n");
@@ -12,9 +10,6 @@ function joinLines(lines: readonly string[]): string {
   return [...shown, `…他${String(lines.length - NOTIFICATION_BODY_LINE_LIMIT)}件`].join("\n");
 }
 
-//* 通知の文言はここだけで組む。通知欄の表示は必ずこの関数を通る(CVX-16)。
-//? 保存するのは数値と非正規化した参照先テキストだけ。文言そのものは保存しない —
-//? 誤字の修正が過去分にも及ぶのが望ましい(凍結すべきは「事実」で「言い方」ではない)。
 export function notificationMessage(payload: NotificationPayload): {
   body: string;
   title: string;

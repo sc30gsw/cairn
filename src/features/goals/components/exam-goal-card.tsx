@@ -11,7 +11,6 @@ export const EXAM_GOAL_SECTION_TITLE = "本番目標";
 
 type ExamGoalBodyProps = {
   goal: ExamGoal;
-  //? プロセス目標の担い手は週間ターゲット。1件も無い本番目標は未完成(docs/adr/0006)
   hasWeeklyTargets: boolean;
   onEdit: () => void;
   onRemove: () => void;
@@ -19,8 +18,6 @@ type ExamGoalBodyProps = {
   todayJst: DateJst;
 };
 
-//? 親カードの中身だけ。枠(Card)と子チェックポイントは ParentGoalGroup が持つ
-//? カウントダウンはクライアント計算。クエリで Date.now() を読まない(CVX-14)
 export function ExamGoalBody({
   goal,
   hasWeeklyTargets,
@@ -54,7 +51,6 @@ export function ExamGoalBody({
         {goal.minScore}〜{goal.maxScore}。
       </Text>
       {!hasWeeklyTargets && (
-        //? 本番日だけの目標は行動に落ちない。週のノルマとセットにする(docs/adr/0006)
         <Alert color="yellow" title={EXAM_GOAL_INCOMPLETE_TITLE} variant="light">
           <Stack align="flex-start" gap="xs">
             <Text size="sm">

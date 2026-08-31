@@ -56,7 +56,6 @@ function RecordCard({
   onConfirm: () => void;
   onResume: () => void;
   onShift: (direction: -1 | 1, row: BoardRow) => void;
-  //? 戻り値は読まない(保留したかどうかを気にするのはドラッグ経路だけ)。
   onStatusMove: (move: Exclude<KanbanStatusMove, "noop">, row: BoardRow) => Promise<unknown>;
   onStop: () => void;
   row: BoardRow;
@@ -68,8 +67,6 @@ function RecordCard({
   return (
     <Card padding="sm" withBorder>
       <Group align="flex-start" gap="xs" wrap="nowrap">
-        {/*? 掴み手は DOM から消さない。dragHandleProps が実 DOM に付いていることが Draggable の前提で、
-             条件分岐で外すと警告が出る。visibleFrom は CSS クラスなので DOM は残る(#58 §11.2) */}
         <Box visibleFrom="md">
           <Tooltip label="ドラッグして並べ替え・移動" withArrow>
             <ActionIcon
@@ -117,9 +114,6 @@ function RecordCard({
   );
 }
 
-//* 進行中カラムの見出しに計測中の合計だけを添える。固定バーは置かない(#51 §13.3)。
-//? nowMs は呼び出し側の useTimerTick から渡す — RowTimerChip と同じ秒刻みで動かし、
-//? 見出しの時計だけ固まって見えないようにする。
 function columnHeadingLabel(
   status: KanbanColumn,
   rows: readonly BoardRow[],
@@ -157,11 +151,6 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
     pendingOrderRef.current = null;
   }
 
-  //* ドラッグ経路とメニュー経路の唯一の合流点。判定と確定手順はフック側(onStatusMove)にあり、
-  //? 戻り値の true は「エディタを開いて保留した」(確定・計測なし・minutes===0 のときだけ)。
-  //? ドラッグ経路はそのとき並べ替えを確定させず、pendingOrderRef に預ける — 取り消されたら
-  //? 並べ替えも起きなかったことにする。計測を捨てる skip/pause は Confirm を挟まず即実行する
-  //? (オーナー決定 2026-08-25。Undo なし、代わりに Toast で「XX分を捨てました」と伝える)。
   async function moveRow(move: Exclude<KanbanStatusMove, "noop">, row: BoardRow): Promise<boolean> {
     if ((move === "skip" || move === "pause") && hasTimerState(row.timer)) {
       const measuredMinutes = timerMinutes(measuredMs(row.timer, serverNowMs()));
@@ -179,7 +168,6 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
     return deferred;
   }
 
-  //* 進行中カラムの計測チップからの確定も、必ず同じ合流点を通す。
   async function requestConfirm(row: BoardRow) {
     await onStatusMove("confirm", row, setConfirmTarget);
   }
@@ -222,7 +210,6 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
       pendingOrderRef.current = { dateJst, orderedRowIds };
     }
 
-    //? モーダルが開いたら並べ替えはまだ確定させない。取り消されれば並べ替えも起きなかったことになる。
     if (statusMove !== "noop" && (await moveRow(statusMove, row))) {
       return;
     }
@@ -246,7 +233,6 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
         row={confirmTarget?.row ?? null}
       />
       <DragDropContext onDragEnd={(result) => void handleDragEnd(result)}>
-        {/*? モバイルは横スナップで1画面1列。名前付き section にして支援技術から列の束と分かるようにする */}
         <section aria-label="カンバンの列" className={classes.columns}>
           {KANBAN_COLUMNS.map((status) => {
             const columnRows = grouped[status];

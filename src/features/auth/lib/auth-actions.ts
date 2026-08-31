@@ -81,7 +81,6 @@ export async function signInWithNotion(): Promise<AuthActionResult> {
     }
   }, "signIn");
   if (Result.isError(result)) {
-    //? リダイレクトが起きなかったので、サインアップ後プロンプトへの誤昇格を防ぐ
     writePasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY, false);
   }
   return result;
@@ -92,8 +91,6 @@ export async function signOutAndReload(): Promise<AuthActionResult> {
     async () => {
       const authResult = await authClient.signOut();
       if (authResult.error) {
-        //? サインアウト専用の AuthErrorContext は未定義(auth-error-messages.ts は本タスクの所有ファイル外)。
-        //? ここは固定文言で通知する
         throw new AuthActionError({
           cause: authResult.error,
           message: "ログアウトに失敗しました。時間をおいて、もう一度お試しください。",

@@ -8,7 +8,6 @@ import { yearMonthLabel } from "~/features/review/lib/monthly-review-labels";
 import { reviewShimmerMonthly } from "~/features/review/lib/review-shimmer-template";
 import { NUMERAL_FONT } from "~/lib/theme";
 
-//? MonthlyReviewTab 自身を fallback に入れない(再サスペンドする)。構造モックだけを描く
 export function MonthlyReviewTabPending() {
   return (
     <Shimmer loading>

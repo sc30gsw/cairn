@@ -162,7 +162,6 @@ test("編集中(dirty)のときは別端末での更新で上書きしない", (
     target: { value: "編集中" },
   });
 
-  //? aria-label は plan.ifText 由来なので rerender 後は追従するが、フォームの値自体は上書きされない
   const updatedPlan = { ...plan, ifText: "眠気" };
   rerender(<ObstacleSection {...sectionProps({ obstacles: [updatedPlan] })} />);
 

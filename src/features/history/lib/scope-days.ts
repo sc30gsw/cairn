@@ -21,7 +21,6 @@ export function daysInAnalysisScope(
   }
 
   if (scope === "week") {
-    // Week page days include memo/condition for the full week; year heatmap only covers ~365 days.
     return [...weekDays];
   }
 

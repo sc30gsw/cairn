@@ -6,7 +6,6 @@ import type { AnalysisScope } from "~/features/history/schemas/analysis-scope-sc
 import type { HistorySearch, HistoryTab } from "~/features/history/schemas/history-search-schema";
 import { useTodayJst } from "~/hooks/use-today-jst";
 
-/** `/history` 専用 — HistoryPage 配下からのみ import すること */
 const historyRoute = getRouteApi("/history");
 
 function yearMonthFromDateJst(dateJst: DateJst): string {
@@ -40,9 +39,6 @@ export function deriveHistoryView(search: HistorySearch, today: DateJst) {
   };
 }
 
-/**
- * `/history` ルート上でのみ使う。search の read/write と derive を集約する。
- */
 export function useHistoryView() {
   const search = historyRoute.useSearch();
   const navigate = historyRoute.useNavigate();

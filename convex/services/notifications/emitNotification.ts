@@ -3,8 +3,6 @@ import type { MutationCtx } from "../../_generated/server";
 import { notificationDedupeKey } from "../../lib/notifications";
 import type { NotificationPayload } from "../../lib/validators";
 
-//* 通知の生成点。べき等性はこの1箇所に閉じている — dedupeKey が既にあれば何もしない。
-//? v1 のチャネルはアプリ内通知欄だけなので、行を作ればそれが配信そのもの。
 export async function emitNotification(
   ctx: MutationCtx,
   setting: Doc<"notificationSettings">,

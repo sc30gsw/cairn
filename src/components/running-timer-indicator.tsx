@@ -17,8 +17,6 @@ import { recordServerInstant } from "~/lib/server-clock";
 import { NUMERAL_FONT } from "~/lib/theme";
 import { formatTimerClock } from "~/lib/timer-clock";
 
-//* ボードから離れても計測中が見えていること。放置対策として最も効く手当て(study-timer.md §13.2)。
-//? 置ける操作は ⏸ と「ボードへ」だけ。確定は項目名と分数を見ながらボードで行う。
 export function RunningTimerIndicator() {
   const { data: running } = useSuspenseQuery(
     convexQuery(api.queries.rows.runningTimer.runningTimer, {}),
@@ -78,7 +76,6 @@ export function RunningTimerIndicator() {
   );
 }
 
-//* Suspense の fallback。計測中の構造だけを真似た静的モック(suspend する本体を入れない)。
 export function RunningTimerIndicatorFallback() {
   return (
     <Shimmer loading>

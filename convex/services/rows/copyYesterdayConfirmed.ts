@@ -34,14 +34,9 @@ export async function copyYesterdayConfirmed(
   const copiedItemIds = new Set(confirmed.map((row) => row.itemId));
   const overlapping = liveRows.filter((row) => copiedItemIds.has(row.itemId));
   if (overlapping.length > 0) {
-    //? 重ねた確定を消すので、書き込みの前後を実測して習得目標のカウンタを動かす(ADR-0007)。
-    //? 足すコピーは未着手なので、この包みの外に置く。
     await withMasteryProgressDelta(ctx, ownerId, { dateJst: args.dateJst }, async () => {
       await Promise.all(
         overlapping.map(async (row) => {
-          //? remove.ts と同じ手順(計測フィールドを消す+紐づく予定を消す)を踏む。ここだけ
-          //? bare patch にすると、走ったままの計測が残った行がゴミ箱に入ってしまう
-          //? (docs/specs/study-timer.md §4.3)。
           await ctx.db.patch("rows", row._id, { ...clearTimerFields(), deletedAt: Date.now() });
           await removeScheduleEventsForRow(ctx, ownerId, row._id);
         }),

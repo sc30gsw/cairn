@@ -41,7 +41,6 @@ type GoalEditor =
   | { kind: "createExam" }
   | { kind: "createLongTerm" };
 
-//? フォームは区分ごとに別ストア。対象が変わったら作り直す
 function editorKey(editor: GoalEditor): string {
   if (editor.kind === "createCheckpoint") {
     return `create-checkpoint-${editor.parent._id}`;
@@ -64,7 +63,6 @@ function editorVariant(editor: GoalEditor): GoalFormVariant {
 type GoalsBoardProps = {
   categories: CategoryDto[];
   goals: Goal[];
-  //? 対象項目の表示と選択に使う項目一覧。共有 hook から GoalsPage が渡す(#53 §9.3)
   items: ItemDto[];
   obstacles: Obstacle[];
   targets: TargetProgress[];
@@ -105,7 +103,6 @@ export function GoalsBoard({
     return goals.find((candidate) => candidate._id === goal.parentGoalId)?.content;
   }
 
-  //? 削除は不可逆(目標はゴミ箱に入らない)。子の件数と内訳を出してから確定させる
   function requestRemove(goal: Goal) {
     const children = childCheckpointsOf(goals, goal._id);
     const copy = removeConfirmCopy({
@@ -180,7 +177,6 @@ export function GoalsBoard({
     );
   }
 
-  //? フォームは常に対象の位置に開く。1箇所だけが受け取る(同時に開くのは1つ)
   function formForGroup(group: ParentGroup): ReactNode {
     if (editor.kind === "createCheckpoint" && editor.parent._id === group.parent._id) {
       return goalForm();
@@ -200,7 +196,6 @@ export function GoalsBoard({
   }
 
   function addCheckpointHandler(parent: ParentGoal, form: ReactNode) {
-    //? そのグループにフォームが開いている間は追加導線を出さない(同じ「作る」を二重に見せない)
     return form === undefined ? () => setEditor({ kind: "createCheckpoint", parent }) : undefined;
   }
 

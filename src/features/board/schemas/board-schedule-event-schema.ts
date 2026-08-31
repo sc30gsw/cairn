@@ -7,8 +7,6 @@ export { BOARD_SCHEDULE_COLORS, type BoardScheduleColor };
 
 const BoardScheduleColorSchema = v.picklist(BOARD_SCHEDULE_COLORS);
 
-//? id はサーバ由来のブランド付き Id。goal-schema.ts の ParentGoalIdSchema と同じ型だけ検証する
-//? パターンで受け、呼び出し側で as を書かずに済ませる。
 const BlockIdSchema = v.custom<BoardScheduleBlock["_id"]>(
   (value) => typeof value === "string" && value.length > 0,
 );

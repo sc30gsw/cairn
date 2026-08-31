@@ -92,7 +92,6 @@ test("hasRowOrderChanged は順序差分を検出する", () => {
   ).toBe(true);
 });
 
-//* #58 §15: モバイルのドラッグ代替。列内で1つ動かすか、端なら null。
 test("shiftRowWithinColumn は列の先頭で -1、末尾で +1 なら null", () => {
   const rows = [row("a", "未着手", 0), row("b", "未着手", 1), row("c", "確定", 2)];
 
@@ -122,7 +121,6 @@ test("shiftRowWithinColumn は知らない行なら null", () => {
   expect(shiftRowWithinColumn([row("a", "未着手", 0)], "zz" as Id<"rows">, 1)).toBeNull();
 });
 
-//* #58 §15: カードの ⋮ Menu に出す移動先。noop の列だけが落ちる。
 test("kanbanMoveMenuItems は noop の列を落として KANBAN_COLUMNS の順で返す", () => {
   expect(kanbanMoveMenuItems("未着手")).toEqual([
     { column: "進行中", move: "start" },

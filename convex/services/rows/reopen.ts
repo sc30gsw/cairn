@@ -21,7 +21,6 @@ export async function reopen(
   }
   await withMasteryProgressDelta(ctx, ownerId, row, async () => {
     await stopRunningTimer(ctx, ownerId, args.rowId);
-    //? 確定分数から計測を続ける(T9)。手入力・確定済みの分数を計測の初期値に引き継ぐ。
     await ctx.db.patch("rows", args.rowId, {
       status: "進行中",
       timerAccumulatedMs: row.minutes * 60_000,

@@ -24,7 +24,6 @@ type RowTimerChipProps = {
   row: BoardRow;
 };
 
-//* 進行中カードの時計(docs/specs/study-timer.md §13.1)。計測は記録の状態ではなく進行中の副状態。
 export function RowTimerChip({
   disabled = false,
   onConfirm,
@@ -38,7 +37,6 @@ export function RowTimerChip({
   const nowMs = useTimerTick(running);
   const startedAt = timer?.startedAt ?? null;
 
-  //? サーバ由来の開始時刻が端末の未来にあるなら端末の時計が遅れている。表示だけ合わせ直す(§8.3)。
   useEffect(() => {
     if (startedAt !== null) {
       recordServerInstant(startedAt, Date.now());
@@ -67,7 +65,6 @@ export function RowTimerChip({
               {formatTimerClock(elapsedMs)}
             </Text>
           )}
-          {/*? 1秒ごとに読み上げが走らないよう、時計は aria-hidden。読み上げは分単位だけ更新する */}
           <Text className="sr-only" component="output" size="xs">
             {runState === "計測なし" ? "計測なし" : `${runState} ${String(minutes)}分`}
           </Text>

@@ -5,8 +5,6 @@ import { throwDomain } from "../../lib/ownerFunctions";
 
 export type GetAvatarUrlArgs = { storageId: Id<"_storage"> };
 
-//* 未 claim / 削除済みは「ないもの」として null を返す(CVX-14 とは無関係の想定内の欠落)。
-//? 他 owner の avatarUploads に紐づく storageId だけは所有権違反として大声で弾く。
 export async function getAvatarUrl(
   ctx: QueryCtx,
   ownerId: string,
@@ -23,6 +21,5 @@ export async function getAvatarUrl(
     throwDomain(new ForbiddenError({ message: "この画像にアクセスする権限がありません" }));
   }
 
-  //? getUrl の null(blob が既に削除済み等)もまた想定内の欠落として素通しする。
   return await ctx.storage.getUrl(args.storageId);
 }

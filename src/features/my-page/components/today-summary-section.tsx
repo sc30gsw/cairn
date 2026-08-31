@@ -17,7 +17,6 @@ import { parallelConvexQuery } from "~/lib/parallel-convex-query";
 export function TodaySummarySection() {
   const today = useTodayJst();
   const weekStart = mondayOfWeek(today);
-  //? goals/targets を直列に待たず useSuspenseQueries で並列取得する(パフォーマンス)
   const [{ data: goals }, { data: targets }] = useSuspenseQueries({
     queries: [
       parallelConvexQuery(goalsListQuery()),
@@ -30,7 +29,6 @@ export function TodaySummarySection() {
   return <TodaySummaryContent examGoal={examGoal} targets={targets} today={today} />;
 }
 
-//? TodaySummarySection 自身を fallback に入れない(再サスペンドする)。実コンポーネントにテンプレート値を渡すだけ
 export function TodaySummarySectionFallback() {
   return (
     <Shimmer loading>

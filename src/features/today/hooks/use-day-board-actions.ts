@@ -54,8 +54,6 @@ export function useDayBoardActions(
       runMutation(() => add.mutateAsync({ ...input, dateJst, todayJst: today }), {
         successMessage: "記録を追加しました",
       }).then(() => undefined),
-    //? 日ページに開始・停止のボタンは置かないが、分数だけは食い違わせない。計測がある行は
-    //? stopTimer でサーバに区間を閉じさせ、その真値で確定する(docs/specs/study-timer.md §11.4)。
     onConfirm: (input: ConfirmRowInput) =>
       runMutation(
         async () => {

@@ -4,8 +4,6 @@ import type { RunningTimerDto } from "../../lib/validators";
 import { findRunningTimerRow } from "./findRunningTimerRow";
 import { toRowTimerDto } from "./toRowTimerDto";
 
-//* いま計測中の1件。どの画面にいても「計測中」を見せるため(study-timer.md §13.2)。
-//? Date.now() も dateJst も要らない — 走っているかどうかは保存フィールドだけで決まる(CVX-14)。
 export async function loadRunningTimer(
   ctx: MutationCtx | QueryCtx,
   ownerId: string,
