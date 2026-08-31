@@ -9,7 +9,7 @@ STATE_DIR="${CAIRN_VERIFY_DIR:-/tmp/cairn-verify-${RUN_ID}}"
 STATE_FILE="${STATE_DIR}/run.env"
 LOG_DIR="${STATE_DIR}/logs"
 ARTIFACT_DIR="${STATE_DIR}/artifacts"
-WEB_URL="${CAIRN_VERIFY_WEB_URL:-http://127.0.0.1:3000}"
+WEB_URL="${CAIRN_VERIFY_WEB_URL:-http://localhost:3000}"
 CONVEX_HTTP="${CAIRN_VERIFY_CONVEX_HTTP:-http://127.0.0.1:3210}"
 WEB_PORT="${CAIRN_VERIFY_WEB_PORT:-3000}"
 TMUX_CONF="/exec-daemon/tmux.portal.conf"
@@ -49,7 +49,7 @@ ensure_tmux_session() {
 
 http_code() {
   local url="$1"
-  curl -sS -o /dev/null -w '%{http_code}' --max-time 3 "${url}" || true
+  curl -sS -o /dev/null -w '%{http_code}' --max-time 3 "${url}" 2>/dev/null || true
 }
 
 wait_http() {
@@ -59,7 +59,7 @@ wait_http() {
   local i
   for ((i = 1; i <= attempts; i++)); do
     local code
-    code="$(http_code "${url}")"
+    code="$(http_code "${url}" 2>/dev/null || true)"
     if [[ "${code}" =~ ^[23] ]]; then
       echo "control-cairn: ${label} ready (${url} → ${code})"
       return 0
@@ -118,6 +118,8 @@ ensure_auth_env() {
     cd "${ROOT}"
     CONVEX_AGENT_MODE=anonymous vp exec convex -- env set BETTER_AUTH_SECRET "${secret}" >/dev/null
     CONVEX_AGENT_MODE=anonymous vp exec convex -- env set SITE_URL http://localhost:3000 >/dev/null
+    CONVEX_AGENT_MODE=anonymous vp exec convex -- env set BETTER_AUTH_TRUSTED_ORIGINS \
+      "http://localhost:3000,http://127.0.0.1:3000" >/dev/null
   )
 }
 

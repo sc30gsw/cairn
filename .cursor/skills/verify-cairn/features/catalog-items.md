@@ -23,9 +23,9 @@ Preconditions:
 - Desktop width so `項目` is a visible nav link.
 - Category name `検証カテゴリ` and item name `検証項目` are not already on this account.
 
-- **Open items.** Run `playwright-cli -s="$SESSION" click "getByRole('link', { name: '項目' })"`. The heading `項目` is visible and the URL is `/items`.
+- **Open items.** Run `playwright-cli -s="$SESSION" click "getByRole('link', { name: '項目', exact: true })"`. From a new account the stepper link `項目を登録する` is also valid. The heading `項目` is visible and the URL is `/items`.
 - **Add category.** Fill `新しいカテゴリー` with `検証カテゴリ`. Run `playwright-cli -s="$SESSION" click "getByRole('button', { name: 'カテゴリーを追加' })"`. A column titled `検証カテゴリ` appears with a textbox named `検証カテゴリに学習内容を追加`.
-- **Add item.** Fill that textbox with `検証項目`. Run `playwright-cli -s="$SESSION" click "getByRole('button', { name: '検証カテゴリに学習内容を追加' })"`. The column lists `検証項目`.
+- **Add item.** Run `playwright-cli -s="$SESSION" fill "getByRole('textbox', { name: '検証カテゴリに学習内容を追加' })" "検証項目"` then click the button with the same name. `getByLabel` is ambiguous here. The column lists `検証項目` (toast `項目を追加しました`).
 - **Confirm persistence.** Reload. Run `playwright-cli -s="$SESSION" reload`. The column `検証カテゴリ` still contains `検証項目`.
 - **Proof.** Capture the items board. Run `playwright-cli -s="$SESSION" --raw snapshot > "$ART/items.aria.yml"` and `playwright-cli -s="$SESSION" screenshot --filename="$ART/items.png"`. Both show heading `項目`, `検証カテゴリ`, and `検証項目`.
 

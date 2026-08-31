@@ -5,7 +5,7 @@ This directory is the maintained source for verifying user-facing behavior of �
 ## Baseline preconditions
 
 - Launch with `.cursor/skills/verify-cairn/bin/control-cairn launch` and require `control-cairn doctor` OK.
-- App URL is `http://127.0.0.1:3000/`. Document title is `学習ログ`.
+- App URL is `http://localhost:3000/` (not `127.0.0.1`). Document title is `学習ログ`.
 - Use a disposable account (`vfy_<runid>` / `vfy-<runid>@example.test` / `Verify1!cairn`). Do not reuse a human owner's session.
 - New accounts start with an empty catalog. Features that need an item say so in Preconditions.
 - Playwright session is `cairn-verify-$CAIRN_VERIFY_RUN_ID`. Resize to at least 1280×800 so the right-rail nav is visible.
@@ -14,7 +14,7 @@ This directory is the maintained source for verifying user-facing behavior of �
 ## Driving conventions
 
 - Start every recipe from the baseline unless its preconditions say otherwise.
-- Prefer ARIA roles and accessible names listed in the feature file.
+- Prefer ARIA roles and accessible names listed in the feature file. Use `exact: true` on short Japanese labels. For Mantine SegmentedControl / Switch, click the visible sibling from the snapshot.
 - Treat every command as literal. Keep Japanese labels unchanged.
 - Browser actions go through `playwright-cli -s=cairn-verify-$CAIRN_VERIFY_RUN_ID`.
 - After a mutation, wait for the next snapshot to show the new text. Convex updates are reactive; a fixed sleep is not proof.

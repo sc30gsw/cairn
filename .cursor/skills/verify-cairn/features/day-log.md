@@ -23,11 +23,11 @@ Preconditions:
 - Today is writable (not a future `未記録` day).
 - `control-cairn doctor` is OK. Session is on desktop width.
 
-- **Open today.** Run `playwright-cli -s="$SESSION" goto http://127.0.0.1:3000/` or click the `日` link. The 記録 card is visible. Empty today shows `この日の記録はありません` (or preset rows if a weekday preset already applied). A setup alert may be dismissed with `あとで設定`.
+- **Open today.** Run `playwright-cli -s="$SESSION" goto http://localhost:3000/` or `playwright-cli -s="$SESSION" click "getByRole('link', { name: '日', exact: true })"`. The 記録 card is visible. Empty today shows `この日の記録はありません` (or preset rows if a weekday preset already applied). `あとで設定` dismisses one setup step only; repeat or ignore. Scroll `検証項目の記録` into view before a screenshot — the stepper can push the row below the fold.
 - **Choose item.** On `その日限りの項目`, select `検証項目` (the combobox option whose name is the item). The field value is `検証項目`.
-- **Enter note and minutes.** Fill `その日限りのひとこと` with `検証のひとこと`. Set `分数` to `25`.
+- **Enter note and minutes.** Run `playwright-cli -s="$SESSION" fill "getByRole('textbox', { name: 'その日限りのひとこと' })" "検証のひとこと"` and `playwright-cli -s="$SESSION" fill "getByRole('textbox', { name: '分数' })" "25"`. `分数` is a textbox.
 - **Add record.** Run `playwright-cli -s="$SESSION" click "getByRole('button', { name: '記録を足す' })"`. A form named `検証項目の記録` appears. Volume is still `0分` until confirm. Badge on the row reads `未着手`.
-- **Confirm.** Run `playwright-cli -s="$SESSION" click "getByRole('switch', { name: '記録を確定' })"`. The row badge reads `完了`. The volume title shows `25` and `分`.
+- **Confirm.** Snapshot the form `検証項目の記録`. Click the visible track immediately after switch `記録を確定` (the `[cursor=pointer]` sibling). `getByRole('switch')` hits a hidden input whose track label intercepts the click. After Convex updates: the switch is `[checked]`, the badge reads `完了`, the volume heading is `25分`, toast `記録を確定しました`, and 共有文 contains `検証項目`.
 - **Second view.** Reload `/`. The same `検証項目の記録` form remains, badge `完了`, volume `25分`.
 - **Proof.** Capture the confirmed day. Run `playwright-cli -s="$SESSION" --raw snapshot > "$ART/day-confirmed.aria.yml"` and `playwright-cli -s="$SESSION" screenshot --filename="$ART/day-confirmed.png"`. Artifacts show 学習量 `25分` and `検証項目`. Write `proof.txt` with feature ID `day-confirm` and entry `/`.
 
