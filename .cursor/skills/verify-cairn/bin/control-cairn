@@ -1,0 +1,269 @@
+#!/usr/bin/env bash
+# Launch / doctor / cleanup for live verification of 学習ログ (cairn).
+# Invocation is documented in .cursor/skills/verify-cairn/SKILL.md.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+RUN_ID="${CAIRN_VERIFY_RUN_ID:-default}"
+STATE_DIR="${CAIRN_VERIFY_DIR:-/tmp/cairn-verify-${RUN_ID}}"
+STATE_FILE="${STATE_DIR}/run.env"
+LOG_DIR="${STATE_DIR}/logs"
+ARTIFACT_DIR="${STATE_DIR}/artifacts"
+WEB_URL="${CAIRN_VERIFY_WEB_URL:-http://127.0.0.1:3000}"
+CONVEX_HTTP="${CAIRN_VERIFY_CONVEX_HTTP:-http://127.0.0.1:3210}"
+WEB_PORT="${CAIRN_VERIFY_WEB_PORT:-3000}"
+TMUX_CONF="/exec-daemon/tmux.portal.conf"
+CONVEX_SESSION="cairn-convex"
+WEB_SESSION="cairn-web"
+
+ensure_node() {
+  if [[ -s "${HOME}/.nvm/nvm.sh" ]]; then
+    # shellcheck disable=SC1091
+    . "${HOME}/.nvm/nvm.sh"
+    nvm use 24.17.0 >/dev/null 2>&1 || true
+  fi
+  export PATH="${ROOT}/node_modules/.bin:${PATH}"
+  local major
+  major="$(node -p "process.versions.node.split('.')[0]")"
+  if ((major < 24)); then
+    echo "control-cairn: need Node >= 24.17.0, got $(node -v)" >&2
+    exit 1
+  fi
+}
+
+tmux_bin() {
+  if [[ -f "${TMUX_CONF}" ]]; then
+    tmux -f "${TMUX_CONF}" "$@"
+  else
+    tmux "$@"
+  fi
+}
+
+ensure_tmux_session() {
+  local name="$1"
+  if tmux_bin has-session -t "=${name}" 2>/dev/null; then
+    return 0
+  fi
+  tmux_bin new-session -d -s "${name}" -c "${ROOT}" -- "${SHELL:-bash}" -l
+}
+
+http_code() {
+  local url="$1"
+  curl -sS -o /dev/null -w '%{http_code}' --max-time 3 "${url}" || true
+}
+
+wait_http() {
+  local url="$1"
+  local label="$2"
+  local attempts="${3:-60}"
+  local i
+  for ((i = 1; i <= attempts; i++)); do
+    local code
+    code="$(http_code "${url}")"
+    if [[ "${code}" =~ ^[23] ]]; then
+      echo "control-cairn: ${label} ready (${url} → ${code})"
+      return 0
+    fi
+    sleep 1
+  done
+  echo "control-cairn: ${label} did not become ready at ${url}" >&2
+  return 1
+}
+
+write_state() {
+  mkdir -p "${STATE_DIR}" "${LOG_DIR}" "${ARTIFACT_DIR}"
+  cat >"${STATE_FILE}" <<EOF
+CAIRN_VERIFY_RUN_ID=${RUN_ID}
+CAIRN_VERIFY_DIR=${STATE_DIR}
+CAIRN_VERIFY_WEB_URL=${WEB_URL}
+CAIRN_VERIFY_CONVEX_HTTP=${CONVEX_HTTP}
+CAIRN_STARTED_CONVEX=${CAIRN_STARTED_CONVEX:-0}
+CAIRN_STARTED_WEB=${CAIRN_STARTED_WEB:-0}
+CAIRN_CONVEX_SESSION=${CONVEX_SESSION}
+CAIRN_WEB_SESSION=${WEB_SESSION}
+EOF
+}
+
+load_state() {
+  if [[ -f "${STATE_FILE}" ]]; then
+    # shellcheck disable=SC1090
+    . "${STATE_FILE}"
+  fi
+}
+
+ensure_site_url() {
+  local env_file="${ROOT}/.env.local"
+  if [[ ! -f "${env_file}" ]]; then
+    echo "control-cairn: missing ${env_file} after Convex launch" >&2
+    return 1
+  fi
+  if ! grep -q '^VITE_SITE_URL=' "${env_file}"; then
+    printf '\nVITE_SITE_URL=http://localhost:3000\n' >>"${env_file}"
+  fi
+  if ! grep -q '^SITE_URL=' "${env_file}"; then
+    printf 'SITE_URL=http://localhost:3000\n' >>"${env_file}"
+  fi
+}
+
+ensure_auth_env() {
+  local secret
+  if [[ -f "${STATE_DIR}/better-auth.secret" ]]; then
+    secret="$(cat "${STATE_DIR}/better-auth.secret")"
+  else
+    secret="$(openssl rand -hex 32)"
+    umask 077
+    printf '%s\n' "${secret}" >"${STATE_DIR}/better-auth.secret"
+  fi
+  (
+    cd "${ROOT}"
+    CONVEX_AGENT_MODE=anonymous vp exec convex -- env set BETTER_AUTH_SECRET "${secret}" >/dev/null
+    CONVEX_AGENT_MODE=anonymous vp exec convex -- env set SITE_URL http://localhost:3000 >/dev/null
+  )
+}
+
+cmd_launch() {
+  ensure_node
+  mkdir -p "${STATE_DIR}" "${LOG_DIR}" "${ARTIFACT_DIR}"
+  cd "${ROOT}"
+
+  CAIRN_STARTED_CONVEX=0
+  CAIRN_STARTED_WEB=0
+
+  if [[ "$(http_code "${CONVEX_HTTP}/version")" =~ ^[23] ]] || [[ "$(http_code "${CONVEX_HTTP}")" =~ ^[23] ]]; then
+    echo "control-cairn: reusing Convex at ${CONVEX_HTTP}"
+  else
+    ensure_tmux_session "${CONVEX_SESSION}"
+    tmux_bin send-keys -t "${CONVEX_SESSION}:0.0" C-c
+    sleep 0.3
+    tmux_bin send-keys -t "${CONVEX_SESSION}:0.0" \
+      "cd ${ROOT} && export CONVEX_AGENT_MODE=anonymous PATH=\"${ROOT}/node_modules/.bin:\$PATH\" && printf 'n\\n' | vp exec convex -- dev 2>&1 | tee ${LOG_DIR}/convex.log" \
+      C-m
+    CAIRN_STARTED_CONVEX=1
+    wait_http "${CONVEX_HTTP}/version" "Convex" 90 || wait_http "${CONVEX_HTTP}" "Convex" 30
+  fi
+
+  ensure_site_url
+  ensure_auth_env
+
+  if [[ "$(http_code "${WEB_URL}/")" =~ ^[23] ]]; then
+    echo "control-cairn: reusing web at ${WEB_URL}"
+  else
+    ensure_tmux_session "${WEB_SESSION}"
+    tmux_bin send-keys -t "${WEB_SESSION}:0.0" C-c
+    sleep 0.3
+    tmux_bin send-keys -t "${WEB_SESSION}:0.0" \
+      "cd ${ROOT} && export PATH=\"${ROOT}/node_modules/.bin:\$PATH\" && vp dev --host 127.0.0.1 --port ${WEB_PORT} 2>&1 | tee ${LOG_DIR}/web.log" \
+      C-m
+    CAIRN_STARTED_WEB=1
+    wait_http "${WEB_URL}/" "web" 90
+  fi
+
+  write_state
+  echo "control-cairn: launch ok"
+  echo "  web     ${WEB_URL}"
+  echo "  convex  ${CONVEX_HTTP}"
+  echo "  state   ${STATE_FILE}"
+  echo "  artifacts ${ARTIFACT_DIR}"
+}
+
+cmd_doctor() {
+  ensure_node
+  load_state
+  local failed=0
+
+  echo "control-cairn doctor (run ${RUN_ID})"
+  echo "  node     $(node -v) at $(command -v node)"
+  echo "  vp       $(command -v vp || echo MISSING)"
+  echo "  web      ${WEB_URL} → $(http_code "${WEB_URL}/")"
+  echo "  convex   ${CONVEX_HTTP} → $(http_code "${CONVEX_HTTP}/version")"
+
+  if [[ ! -f "${ROOT}/.env.local" ]]; then
+    echo "  env      MISSING .env.local" >&2
+    failed=1
+  elif ! grep -q '^VITE_CONVEX_URL=' "${ROOT}/.env.local"; then
+    echo "  env      VITE_CONVEX_URL missing" >&2
+    failed=1
+  else
+    echo "  env      .env.local has VITE_CONVEX_URL"
+  fi
+
+  if [[ ! "$(http_code "${WEB_URL}/")" =~ ^[23] ]]; then
+    echo "  health   web is not answering" >&2
+    failed=1
+  fi
+  if [[ ! "$(http_code "${CONVEX_HTTP}/version")" =~ ^[23] ]] && [[ ! "$(http_code "${CONVEX_HTTP}")" =~ ^[23] ]]; then
+    echo "  health   Convex is not answering" >&2
+    failed=1
+  fi
+
+  if ! command -v playwright-cli >/dev/null 2>&1 && ! command -v playwright >/dev/null 2>&1; then
+    echo "  drive    playwright-cli not on PATH (install @playwright/cli before driving)" >&2
+    failed=1
+  else
+    echo "  drive    $(command -v playwright-cli 2>/dev/null || command -v playwright)"
+  fi
+
+  echo "  artifacts ${ARTIFACT_DIR}"
+  mkdir -p "${ARTIFACT_DIR}"
+
+  if ((failed)); then
+    echo "control-cairn: doctor FAIL — do not drive this instance"
+    exit 1
+  fi
+  echo "control-cairn: doctor OK"
+}
+
+cmd_cleanup() {
+  load_state
+  local started_convex="${CAIRN_STARTED_CONVEX:-0}"
+  local started_web="${CAIRN_STARTED_WEB:-0}"
+
+  if command -v playwright-cli >/dev/null 2>&1; then
+    playwright-cli -s="cairn-verify-${RUN_ID}" close >/dev/null 2>&1 || true
+  fi
+
+  if [[ "${started_web}" == "1" ]] && tmux_bin has-session -t "=${WEB_SESSION}" 2>/dev/null; then
+    tmux_bin send-keys -t "${WEB_SESSION}:0.0" C-c
+    sleep 0.4
+    tmux_bin kill-session -t "${WEB_SESSION}" 2>/dev/null || true
+  fi
+  if [[ "${started_convex}" == "1" ]] && tmux_bin has-session -t "=${CONVEX_SESSION}" 2>/dev/null; then
+    tmux_bin send-keys -t "${CONVEX_SESSION}:0.0" C-c
+    sleep 0.4
+    tmux_bin kill-session -t "${CONVEX_SESSION}" 2>/dev/null || true
+  fi
+
+  echo "control-cairn: cleanup done (artifacts kept at ${ARTIFACT_DIR})"
+  if [[ -d "${ARTIFACT_DIR}" ]]; then
+    ls -la "${ARTIFACT_DIR}" || true
+  fi
+}
+
+usage() {
+  cat <<'EOF'
+usage: control-cairn <launch|doctor|cleanup>
+
+  launch   start or reuse Convex (3210) and vp dev (3000); write run state
+  doctor   read-only health check — exit 1 if the instance is not worth driving
+  cleanup  stop processes this run started; keep artifacts
+
+Env:
+  CAIRN_VERIFY_RUN_ID   default: default
+  CAIRN_VERIFY_DIR      default: /tmp/cairn-verify-$CAIRN_VERIFY_RUN_ID
+EOF
+}
+
+main() {
+  mkdir -p "${STATE_DIR}" "${LOG_DIR}" "${ARTIFACT_DIR}"
+  case "${1:-}" in
+    launch) cmd_launch ;;
+    doctor) cmd_doctor ;;
+    cleanup) cmd_cleanup ;;
+    *)
+      usage >&2
+      exit 2
+      ;;
+  esac
+}
+
+main "$@"
