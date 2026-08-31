@@ -17,6 +17,7 @@ const FEATURE_NAMES = [
   "catalog",
   "goals",
   "history",
+  "methods",
   "my-page",
   "onboarding",
   "review",
