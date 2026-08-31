@@ -8,6 +8,7 @@ import {
   Grid,
   Group,
   Input,
+  Menu,
   Paper,
   ScrollArea,
   Stack,
@@ -91,6 +92,24 @@ export function MethodCatalogBoard({ catalog }: Record<"catalog", MethodCatalog>
     });
   }
 
+  //? ドラッグできない操作(キーボード・モバイル)向けの移動。移動先レーンの末尾に付ける
+  //? (項目ページの「移動」メニューと同じ扱い)。並びの計算はドラッグと同じ applyMethodOrder に流す。
+  async function moveMethodToLane(method: Method, destinationLaneId: MethodLane["_id"]) {
+    const sourceMethods = (methodsByLane[method.laneId] ?? []).filter(
+      (entry) => entry._id !== method._id,
+    );
+    const destinationMethods = [...(methodsByLane[destinationLaneId] ?? []), method];
+    await actions.onApplyMethodOrder({
+      updates: [
+        { laneId: method.laneId, orderedMethodIds: sourceMethods.map((entry) => entry._id) },
+        {
+          laneId: destinationLaneId,
+          orderedMethodIds: destinationMethods.map((entry) => entry._id),
+        },
+      ],
+    });
+  }
+
   return (
     <Card>
       <Stack gap="md">
@@ -98,6 +117,9 @@ export function MethodCatalogBoard({ catalog }: Record<"catalog", MethodCatalog>
           <Title order={2}>{METHOD_CATALOG_TITLE}</Title>
           <Text c="dimmed" size="sm">
             {METHOD_CATALOG_HINT}
+          </Text>
+          <Text c="dimmed" size="sm">
+            カードをドラッグして並べ替え・レーン移動。キーボード操作は各カードの「移動」メニューから。
           </Text>
         </Stack>
         {nowViewing !== undefined && (
@@ -116,8 +138,10 @@ export function MethodCatalogBoard({ catalog }: Record<"catalog", MethodCatalog>
                   <LaneColumn
                     key={lane._id}
                     lane={lane}
+                    lanes={sortedLanes}
                     methods={methodsByLane[lane._id] ?? []}
                     onCreateMethod={actions.onCreateMethod}
+                    onMoveMethod={moveMethodToLane}
                     onOpenMethod={setOpenedMethodId}
                     onRemoveLane={actions.onRemoveLane}
                     onRenameLane={actions.onRenameLane}
@@ -213,8 +237,10 @@ function AddLaneForm({ onCreate }: Record<"onCreate", MethodCatalogActions["onCr
 
 type LaneColumnProps = {
   lane: MethodLane;
+  lanes: MethodLane[];
   methods: Method[];
   onCreateMethod: MethodCatalogActions["onCreateMethod"];
+  onMoveMethod: (method: Method, destinationLaneId: MethodLane["_id"]) => void;
   onOpenMethod: (methodId: Method["_id"]) => void;
   onRemoveLane: MethodCatalogActions["onRemoveLane"];
   onRenameLane: MethodCatalogActions["onRenameLane"];
@@ -223,14 +249,17 @@ type LaneColumnProps = {
 
 function LaneColumn({
   lane,
+  lanes,
   methods,
   onCreateMethod,
+  onMoveMethod,
   onOpenMethod,
   onRemoveLane,
   onRenameLane,
   onSetNowViewing,
 }: LaneColumnProps) {
   const { Draggable, Droppable } = useDnd();
+  const moveTargets = lanes.filter((candidate) => candidate._id !== lane._id);
 
   return (
     <Paper miw={300} p="md" radius="sm" withBorder>
@@ -300,6 +329,30 @@ function LaneColumn({
                             )}
                           </ActionIcon>
                         </Tooltip>
+                        {moveTargets.length > 0 && (
+                          <Menu withinPortal>
+                            <Menu.Target>
+                              <Button
+                                aria-label={`${method.name}を別のレーンへ移動`}
+                                size="compact-sm"
+                                type="button"
+                                variant="default"
+                              >
+                                移動
+                              </Button>
+                            </Menu.Target>
+                            <Menu.Dropdown>
+                              {moveTargets.map((target) => (
+                                <Menu.Item
+                                  key={target._id}
+                                  onClick={() => onMoveMethod(method, target._id)}
+                                >
+                                  {target.name}
+                                </Menu.Item>
+                              ))}
+                            </Menu.Dropdown>
+                          </Menu>
+                        )}
                         <Button
                           aria-label={`${method.name}を開く`}
                           onClick={() => onOpenMethod(method._id)}
