@@ -1,5 +1,6 @@
 import { AppShell as Shell, Box, Group, Menu, Stack, Title, UnstyledButton } from "@mantine/core";
 import {
+  IconBulb,
   IconCalendarEvent,
   IconChartBar,
   IconColumns3,
@@ -32,7 +33,16 @@ type AppShellProps = {
 
 type NavIcon = typeof IconCalendarEvent;
 
-const NAV_ROUTES = ["/", "/board", "/history", "/items", "/presets", "/goals", "/trash"] as const;
+const NAV_ROUTES = [
+  "/",
+  "/board",
+  "/history",
+  "/items",
+  "/presets",
+  "/goals",
+  "/methods",
+  "/trash",
+] as const;
 type NavRoute = (typeof NAV_ROUTES)[number];
 
 const NAV: {
@@ -76,6 +86,12 @@ const NAV: {
     label: "目標",
     match: (path) => path.startsWith("/goals"),
     to: "/goals",
+  },
+  {
+    Icon: IconBulb,
+    label: "方法",
+    match: (path) => path.startsWith("/methods"),
+    to: "/methods",
   },
   {
     Icon: IconTrash,

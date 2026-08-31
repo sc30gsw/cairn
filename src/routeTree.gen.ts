@@ -13,6 +13,7 @@ import { Route as TrashRouteImport } from './routes/trash'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as PresetsRouteImport } from './routes/presets'
 import { Route as MyPageRouteImport } from './routes/my-page'
+import { Route as MethodsRouteImport } from './routes/methods'
 import { Route as ItemsRouteImport } from './routes/items'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as GoalsRouteImport } from './routes/goals'
@@ -42,6 +43,11 @@ const PresetsRoute = PresetsRouteImport.update({
 const MyPageRoute = MyPageRouteImport.update({
   id: '/my-page',
   path: '/my-page',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MethodsRoute = MethodsRouteImport.update({
+  id: '/methods',
+  path: '/methods',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ItemsRoute = ItemsRouteImport.update({
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/goals': typeof GoalsRoute
   '/history': typeof HistoryRoute
   '/items': typeof ItemsRoute
+  '/methods': typeof MethodsRoute
   '/my-page': typeof MyPageRouteWithChildren
   '/presets': typeof PresetsRoute
   '/review': typeof ReviewRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/goals': typeof GoalsRoute
   '/history': typeof HistoryRoute
   '/items': typeof ItemsRoute
+  '/methods': typeof MethodsRoute
   '/presets': typeof PresetsRoute
   '/review': typeof ReviewRoute
   '/trash': typeof TrashRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/goals': typeof GoalsRoute
   '/history': typeof HistoryRoute
   '/items': typeof ItemsRoute
+  '/methods': typeof MethodsRoute
   '/my-page': typeof MyPageRouteWithChildren
   '/presets': typeof PresetsRoute
   '/review': typeof ReviewRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/history'
     | '/items'
+    | '/methods'
     | '/my-page'
     | '/presets'
     | '/review'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/history'
     | '/items'
+    | '/methods'
     | '/presets'
     | '/review'
     | '/trash'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/goals'
     | '/history'
     | '/items'
+    | '/methods'
     | '/my-page'
     | '/presets'
     | '/review'
@@ -199,6 +211,7 @@ export interface RootRouteChildren {
   GoalsRoute: typeof GoalsRoute
   HistoryRoute: typeof HistoryRoute
   ItemsRoute: typeof ItemsRoute
+  MethodsRoute: typeof MethodsRoute
   MyPageRoute: typeof MyPageRouteWithChildren
   PresetsRoute: typeof PresetsRoute
   ReviewRoute: typeof ReviewRoute
@@ -235,6 +248,13 @@ declare module '@tanstack/react-router' {
       path: '/my-page'
       fullPath: '/my-page'
       preLoaderRoute: typeof MyPageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/methods': {
+      id: '/methods'
+      path: '/methods'
+      fullPath: '/methods'
+      preLoaderRoute: typeof MethodsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/items': {
@@ -331,6 +351,7 @@ const rootRouteChildren: RootRouteChildren = {
   GoalsRoute: GoalsRoute,
   HistoryRoute: HistoryRoute,
   ItemsRoute: ItemsRoute,
+  MethodsRoute: MethodsRoute,
   MyPageRoute: MyPageRouteWithChildren,
   PresetsRoute: PresetsRoute,
   ReviewRoute: ReviewRoute,
