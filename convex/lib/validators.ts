@@ -340,7 +340,6 @@ export const targetProgressDtoValidator = v.object({
 
 export type TargetProgressDto = Infer<typeof targetProgressDtoValidator>;
 
-//* 方法カタログ(参照専用)。レーンは方法の親グループで、カテゴリとは別概念(CONTEXT「レーン」)。
 export const methodLaneDtoValidator = v.object({
   _id: v.id("methodLanes"),
   name: v.string(),
@@ -349,7 +348,6 @@ export const methodLaneDtoValidator = v.object({
 
 export type MethodLaneDto = Infer<typeof methodLaneDtoValidator>;
 
-//? 本文はプレーンテキスト、完了条件・メモは TipTap の HTML を文字列のまま持つ。
 export const methodDtoValidator = v.object({
   _id: v.id("methods"),
   bodyText: v.string(),

@@ -34,7 +34,6 @@ export function useSetNowViewing() {
 export function useApplyLaneOrder() {
   const mutation = useConvexMutation(api.mutations.methods.applyLaneOrder.applyLaneOrder);
 
-  //? レーン(列)のドラッグも楽観更新で即反映する。計算は services 層と同じ共有の純関数(SSoT)。
   return mutation.withOptimisticUpdate((localStore, args) => {
     const current = localStore.getQuery(api.queries.methods.list.list, {});
     if (current === undefined) {
@@ -51,7 +50,6 @@ export function useApplyLaneOrder() {
 export function useApplyMethodOrder() {
   const mutation = useConvexMutation(api.mutations.methods.applyMethodOrder.applyMethodOrder);
 
-  //? ドラッグの並べ替えは楽観更新で即反映する。計算は services 層と同じ共有の純関数(SSoT)。
   return mutation.withOptimisticUpdate((localStore, args) => {
     const current = localStore.getQuery(api.queries.methods.list.list, {});
     if (current === undefined) {

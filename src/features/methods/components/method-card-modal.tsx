@@ -19,15 +19,11 @@ type MethodCardModalProps = {
   onUpdate: (input: UpdateMethodInput) => void;
 };
 
-//* 開いたカード。タイトル + 本文(textarea) + 完了条件(タスクリスト) + メモ(リンク可)の4欄だけ。
-//? タイトルと本文は Formisch(Valibot が SSoT)。完了条件・メモは TipTap が持ち、保存時に
-//? getHTML() を合流させる。カレントの値は購読中のカタログから来る(親が method を渡し直す)。
 export function MethodCardModal({ method, onClose, onRemove, onUpdate }: MethodCardModalProps) {
   const form = useForm({
     initialInput: { bodyText: method.bodyText, name: method.name },
     schema: MethodEditSchema,
   });
-  //? SSR では描画しない(TanStack Start。エディタはクライアントで開くモーダル内だけに現れる)
   const completionEditor = useEditor({
     content: method.completionHtml === "" ? undefined : method.completionHtml,
     extensions: [
@@ -39,7 +35,6 @@ export function MethodCardModal({ method, onClose, onRemove, onUpdate }: MethodC
   });
   const memoEditor = useEditor({
     content: method.memoHtml === "" ? undefined : method.memoHtml,
-    //? StarterKit v3 は link を内蔵する。Mantine の Link(コントロール連携つき)と二重登録しない
     extensions: [StarterKit.configure({ link: false }), Link],
     immediatelyRender: false,
   });

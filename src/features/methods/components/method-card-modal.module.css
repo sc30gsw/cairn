@@ -1,17 +1,7 @@
-/*? TipTap は CSS を持たず、ProseMirror が描くコンテンツの見た目は各アプリの担当。
-    このアプリでは Mantine の typography(RichTextEditor の withTypographyStyles 既定 on)が
-    段落とリストの余白・字下げまでは当ててくれるが、`list-style-type` は当てない。そのため
-    Tailwind の preflight(@layer base)の `ol, ul { list-style: none }` が残り、リストにしても
-    点も番号も出ない = 「何も起きていない」ように見えていた。足りないぶんだけをここで補う。
-    このファイルはレイヤー外なので、特異度を上げずに preflight を上書きできる。 */
-
-/*? 空でも「書ける箱」に見える高さ。本文の Textarea(minRows=4)と釣り合わせる */
 .content :global(.ProseMirror) {
   min-height: calc(5.5rem * var(--mantine-scale));
 }
 
-/*? 余白・字下げ・list-style-position は Mantine の typography が持っているので重ねない。
-    タスクリストを除くのは Mantine の除外条件と同じ(印はチェックボックスが担うため) */
 .content :global(.ProseMirror) ul:not([data-type="taskList"]) {
   list-style-type: disc;
 }
@@ -20,13 +10,10 @@
   list-style-type: decimal;
 }
 
-/*? 入れ子は親と印を変えて階層が見えるようにする */
 .content :global(.ProseMirror) ul ul:not([data-type="taskList"]) {
   list-style-type: circle;
 }
 
-/*? 完了条件のタスクリストは Mantine の typography から除外されていて、TipTap も CSS を持たない。
-    チェックボックスと本文の横並びはここでしか作られない(素だとチェックの下に本文が回り込む) */
 .content :global(.ProseMirror) ul[data-type="taskList"] li {
   display: flex;
   align-items: flex-start;
@@ -34,7 +21,6 @@
 }
 
 .content :global(.ProseMirror) ul[data-type="taskList"] li > label {
-  /*? チェックボックスは本文と一緒に折り返さない。1行目の高さに合わせて少し下げる */
   flex: 0 0 auto;
   margin-block-start: calc(0.1875rem * var(--mantine-scale));
   user-select: none;
@@ -46,13 +32,10 @@
 }
 
 .content :global(.ProseMirror) ul[data-type="taskList"] input[type="checkbox"] {
-  /*? チェックは「完了」の印なので green(design-live-board.md の success/complete)。
-      素のチェックボックスのまま色だけ合わせる。ライト固定なので dark 分岐は持たない */
   accent-color: var(--mantine-color-green-6);
   cursor: pointer;
 }
 
-/*? 済みは薄く見せて、残っている条件だけが目に入るようにする */
 .content :global(.ProseMirror) ul[data-type="taskList"] li[data-checked="true"] > div {
   color: var(--cairn-muted);
   text-decoration: line-through;

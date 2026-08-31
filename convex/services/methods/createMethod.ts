@@ -15,7 +15,6 @@ export async function createMethod(
     throwDomain(new ValidationFailedError({ message: "方法のタイトルは必須です" }));
   }
   const sortOrder = await nextMethodSortOrder(ctx, args.laneId);
-  //? 本文・完了条件・メモは開いたカードで書く。作成時は空で始める(空のカタログから育てる)。
   return await ctx.db.insert("methods", {
     bodyText: "",
     completionHtml: "",

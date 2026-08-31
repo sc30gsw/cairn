@@ -1,8 +1,6 @@
 import { Badge, Button, Card, Group, Paper, Stack, Text, TextInput, Title } from "@mantine/core";
 import { Shimmer } from "@shimmer-from-structure/react";
 
-//* Suspense fallback。suspend するコンポーネント自身は描かず、構造のモックを Shimmer が測る
-//* (.claude/rules/web/shimmer-from-structure.md §2)。
 export function MethodCatalogPending() {
   return (
     <Shimmer loading>

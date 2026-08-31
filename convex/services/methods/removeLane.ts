@@ -10,7 +10,6 @@ export async function removeLane(
   args: { laneId: Id<"methodLanes"> },
 ): Promise<null> {
   await requireOwnedLane(ctx, ownerId, args.laneId);
-  //? 残存有無だけ知りたいので先頭1件で判定する(CVX-11)。カテゴリ削除の項目ガードと同じ規則。
   const methodInLane = await ctx.db
     .query("methods")
     .withIndex("by_lane_and_sortOrder", (q) => q.eq("laneId", args.laneId))

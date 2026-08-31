@@ -46,15 +46,12 @@ export default defineSchema({
     .index("by_owner_and_name", ["ownerId", "name"])
     .index("by_category_and_sortOrder", ["categoryId", "sortOrder"]),
 
-  //* 方法カタログのレーン(親グループ)。カテゴリ(共有文の見出し)とは別概念で、リンクも持たない。
   methodLanes: defineTable({
     name: v.string(),
     ownerId: v.string(),
     sortOrder: v.number(),
   }).index("by_owner_and_sortOrder", ["ownerId", "sortOrder"]),
 
-  //* 方法。参照専用 — 記録・プリセット・目標のどれにも FK を張らない(CONTEXT「方法」)。
-  //? いま見るは所有者ごとに高々1件。setNowViewing が同一トランザクションで他を消して守る(CVX-15)。
   methods: defineTable({
     bodyText: v.string(),
     completionHtml: v.string(),
@@ -65,7 +62,6 @@ export default defineSchema({
     ownerId: v.string(),
     sortOrder: v.number(),
   })
-    //? レーン内の並びと「レーンが空か」の判定用。by_owner とは先頭列が違うので CVX-12 の重複ではない。
     .index("by_lane_and_sortOrder", ["laneId", "sortOrder"])
     .index("by_owner", ["ownerId"]),
 

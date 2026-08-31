@@ -31,8 +31,6 @@ vi.mock("~/hooks/use-dnd", async () => {
   };
 });
 
-//? TipTap の contenteditable は happy-dom で測れないため、開いたカードは差し替える。
-//? モーダル自体の欄構成(タイトル/本文/完了条件/メモ)は目視とレビューで担保する。
 vi.mock("~/features/methods/components/method-card-modal", () => ({
   MethodCardModal: ({ method }: Record<"method", Method>) => (
     <dialog aria-label={`${method.name}の開いたカード`} open />
@@ -80,15 +78,12 @@ test("レーンの下に方法カードが並び、いま見るの方法は正�
 
   expect(getByRole("button", { name: "模試レーンを保存" })).toBeDefined();
   expect(getByRole("button", { name: "単語レーンを削除" })).toBeDefined();
-  //? レーン(列)自体のドラッグつまみ
   expect(getByRole("button", { name: "模試レーンをドラッグ" })).toBeDefined();
   expect(getByRole("button", { name: "単語レーンをドラッグ" })).toBeDefined();
   expect(getByRole("button", { name: "公式問題集の3回法を開く" })).toBeDefined();
   expect(getByRole("button", { name: "金フレ高速回転をいま見るにする" })).toBeDefined();
   expect(getByRole("button", { name: "公式問題集の3回法のいま見るを外す" })).toBeDefined();
-  //? 正面カード + レーン内カードのバッジで2回現れる
   expect(getAllByText("いま見る").length).toBeGreaterThanOrEqual(2);
-  //? 正面カードは本文の先頭を見せる
   expect(getAllByText("1回目は本番通り2時間で解く").length).toBeGreaterThanOrEqual(1);
 });
 
@@ -120,7 +115,6 @@ test("移動メニューはドラッグと同じ applyMethodOrder に流す(移�
   const { getByRole } = renderWithMantine(<MethodCatalogBoard catalog={catalog} />);
 
   fireEvent.click(getByRole("button", { name: "公式問題集の3回法を別のレーンへ移動" }));
-  //? Floating UI のドロップダウンは happy-dom では hidden のまま(testing.md)
   await waitFor(() => {
     expect(getByRole("menuitem", { hidden: true, name: "単語レーン" })).toBeDefined();
   });

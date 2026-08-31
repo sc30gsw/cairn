@@ -31,7 +31,6 @@ export async function nextMethodSortOrder(
   ctx: MutationCtx,
   laneId: Id<"methodLanes">,
 ): Promise<number> {
-  //? レーン内は数十件想定。index で絞った上での collect(CVX-11)。
   const methods = await ctx.db
     .query("methods")
     .withIndex("by_lane_and_sortOrder", (q) => q.eq("laneId", laneId))
