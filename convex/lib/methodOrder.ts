@@ -1,6 +1,37 @@
-import type { LaneMethodOrder, MethodDto } from "./validators";
+import type { LaneMethodOrder, MethodDto, MethodLaneDto } from "./validators";
 
 export type { LaneMethodOrder };
+
+//* レーン(列)自体の並べ替え。orderedLaneIds は所有者の全レーンの置換(全量指定)で、
+//* index がそのまま sortOrder になる。services とフロントの楽観更新が同じ計算を使う(SSoT)。
+export function applyLaneOrderToList(
+  lanes: readonly MethodLaneDto[],
+  orderedLaneIds: readonly MethodLaneDto["_id"][],
+): MethodLaneDto[] {
+  const orderById = new Map(orderedLaneIds.map((laneId, index) => [laneId, index]));
+  return lanes.map((lane) => {
+    const sortOrder = orderById.get(lane._id);
+    return sortOrder === undefined ? lane : { ...lane, sortOrder };
+  });
+}
+
+//* 全量指定の検証: 既存レーンと過不足なく1:1で対応しないなら不正(黙って消えるレーンを作らない)。
+export function validateLaneOrder(
+  lanes: readonly { _id: MethodLaneDto["_id"] }[],
+  orderedLaneIds: readonly MethodLaneDto["_id"][],
+): string | null {
+  const requested = new Set(orderedLaneIds);
+  if (requested.size !== orderedLaneIds.length) {
+    return "レーンの並べ替えが不正です";
+  }
+  if (lanes.length !== orderedLaneIds.length) {
+    return "レーンの並べ替えが不正です";
+  }
+  if (lanes.some((lane) => !requested.has(lane._id))) {
+    return "レーンの並べ替えが不正です";
+  }
+  return null;
+}
 
 //* 方法のドラッグ並べ替え(レーン内・レーン間)の検証。itemOrder.ts と同じ「全量指定」規則:
 //* 更新対象レーンの既存の方法は、同じレーンの並びに残るか、同じバッチで別レーンへ動くかの

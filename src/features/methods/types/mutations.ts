@@ -20,3 +20,6 @@ export type SetNowViewingInput = FunctionArgs<
 export type ApplyMethodOrderInput = FunctionArgs<
   typeof api.mutations.methods.applyMethodOrder.applyMethodOrder
 >;
+export type ApplyLaneOrderInput = FunctionArgs<
+  typeof api.mutations.methods.applyLaneOrder.applyLaneOrder
+>;

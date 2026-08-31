@@ -74,7 +74,7 @@ test("下小口ナビは 日 / ボード / 履歴 / 目標 の4本で、項目�
   expect(bottom.querySelectorAll("a").length).toBe(4);
 });
 
-test("「その他」を押すと 項目 / プリセット / ゴミ箱 が出る", async () => {
+test("「その他」を押すと 項目 / プリセット / 方法 / ゴミ箱 が出る", async () => {
   const { getByRole } = renderShell("/");
 
   fireEvent.click(getByRole("button", { name: "その他の画面" }));
@@ -83,6 +83,7 @@ test("「その他」を押すと 項目 / プリセット / ゴミ箱 が出る
     expect(getByRole("menuitem", { hidden: true, name: "項目" })).toBeDefined();
   });
   expect(getByRole("menuitem", { hidden: true, name: "プリセット" })).toBeDefined();
+  expect(getByRole("menuitem", { hidden: true, name: "方法" })).toBeDefined();
   expect(getByRole("menuitem", { hidden: true, name: "ゴミ箱" })).toBeDefined();
 });
 
