@@ -12,7 +12,6 @@ type LinkProps = {
   to: string;
 } & Record<string, unknown>;
 
-//? Link はルーターに依存するので差し替える。onClick を落とさないよう rest はそのまま渡す。
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, to, ...rest }: LinkProps) => (
     <a href={to} {...rest}>

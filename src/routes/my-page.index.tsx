@@ -13,7 +13,6 @@ function MyPageAccountRoute() {
   return (
     <Stack gap="md">
       <MyPageAccount />
-      {/*? オンボーディングの補助情報は任意の小さな付加物。ページ全体サイズの Pending フォールバックはレイアウトシフトが大きい */}
       <Suspense fallback={null}>
         <MyPageOnboardingExtras />
       </Suspense>

@@ -15,13 +15,11 @@ import { buildTargetProgress } from "../targets/buildTargetProgress";
 
 const WEEK_LENGTH = 7;
 
-//* 週次レビュー1画面ぶん。対象週+前週を1本のレンジ読みでそろえ、消化・ターゲット・共有文まで組む。
 export async function weeklyReview(
   ctx: QueryCtx,
   ownerId: string,
   args: { todayJst: string; weekStartJst: string },
 ): Promise<WeeklyReviewDto> {
-  //? 形が壊れた引数はここで弾く。非月曜は月曜へ正規化する(listWithProgress と同じ規則)。
   const todayJst = requireDateJst(args.todayJst);
   const weekStart = requireWeekStartJst(args.weekStartJst);
   const weekEnd = addDaysJst(weekStart, 6);
@@ -32,8 +30,6 @@ export async function weeklyReview(
   const previousWeekEnd = addDaysJst(weekStart, -1);
   const isCurrentWeek = weekStart === mondayOfWeek(todayJst);
 
-  //? 対象週+前週の14日を1本のレンジクエリで読む(CVX-10: withIndex のみ、filter なし)。
-  //? targets は今週だけ必要なので、過去週では読まない(無駄な購読を増やさない)。
   const [rows, days, catalog, targets] = await Promise.all([
     ctx.db
       .query("rows")
@@ -56,8 +52,6 @@ export async function weeklyReview(
       : Promise.resolve([]),
   ]);
 
-  //? ゴミ箱の記録・日を必ず除く(presetReview / listWithProgress / computeWeekPage と同じ前提)。
-  //? 忘れると削除した記録が週の実績に残り続けるバグになる。
   const liveDayDates = liveDayDatesFrom(days);
   const live = liveRows(rows, liveDayDates);
   const currentRows = live.filter((row) => row.dateJst >= weekStart && row.dateJst <= weekEnd);
@@ -67,7 +61,6 @@ export async function weeklyReview(
 
   const current = aggregateBreakdownRows(currentRows, catalog.itemById, catalog.categoryById);
   const previous = aggregateBreakdownRows(previousRows, catalog.itemById, catalog.categoryById);
-  //? 確定記録が1件以上ある暦日数。1パスで日付だけを集める
   const activeDaysOf = (targetRows: readonly (typeof live)[number][]) => {
     const dates = new Set<string>();
     for (const row of targetRows) {
@@ -108,7 +101,6 @@ export async function weeklyReview(
       weekStart,
     }),
     skippedMinutes: current.skippedMinutes,
-    //? 今週専用の計器(CONTEXT「週間ターゲット」)。過去週は null にして UI に数値を出させない。
     targets: isCurrentWeek
       ? buildTargetProgress({
           categoryById: catalog.categoryById,

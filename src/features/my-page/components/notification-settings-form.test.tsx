@@ -42,7 +42,6 @@ test("保存するとサーバ由来の設定をそのまま送る", async () =>
   });
 });
 
-//? 押し出しチャネルを撤回したので、入力は「使うか」「何を」「いつ」の3つだけ。
 test("入力はトリガー3種と夜の時刻だけで、押し出し先の入力は無い", () => {
   const props = formProps(BASE);
   const { getByRole, queryByLabelText } = renderWithMantine(

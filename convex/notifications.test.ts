@@ -7,7 +7,6 @@ import { NOTIFICATION_LIST_LIMIT, NOTIFICATION_TTL_MS } from "./lib/notification
 import type { RowStatus } from "./lib/validators";
 import schema from "./schema";
 
-//? 通知(#56)の評価器・設定・通知欄。純関数の網羅は convex/lib/notifications.test.ts に置く。
 const modules = import.meta.glob([
   "./**/*.ts",
   "!./**/*.test.ts",
@@ -38,7 +37,6 @@ function asOwner(identity: typeof OWNER = OWNER) {
 
 type Harness = ReturnType<typeof asOwner>;
 
-//? JST の任意の時刻を epoch へ。UTC 換算を手で書かない。
 function jstAt(dateJst: string, hour: number): number {
   return new Date(`${dateJst}T${String(hour).padStart(2, "0")}:00:00+09:00`).getTime();
 }

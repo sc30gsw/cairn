@@ -14,7 +14,6 @@ const INPUT_CATEGORY_ID = "shimmer-category-input" as CategoryDto["_id"];
 const OUTPUT_CATEGORY_ID = "shimmer-category-output" as CategoryDto["_id"];
 const KINFURE_ITEM_ID = "shimmer-item-kinfure" as ItemDto["_id"];
 
-//? 対象項目のラベルを引き当てる一覧。カテゴリ2つに分属させて MultiSelect の見出しも再現する
 export const goalsShimmerItems = [
   {
     _id: KINFURE_ITEM_ID,
@@ -30,8 +29,6 @@ export const goalsShimmerItems = [
   },
 ] satisfies ItemDto[];
 
-//? 実データと同じ階層・同じ件数にして、読み込み後のガタつきをなくす
-//? 本番目標1 + その子1 + 長期目標1 + その子1 + 達成済み1
 export const goalsShimmerGoals = [
   {
     _id: EXAM_GOAL_ID,
@@ -52,7 +49,6 @@ export const goalsShimmerGoals = [
     criterion: "Unit 1-10 を止まらずに音読できる",
     deadline: "2026-08-23",
     parentGoalId: EXAM_GOAL_ID,
-    //? 対象項目つきの行を1件混ぜて、読み込み後のガタつきを消す(#53 §9.3)
     scopeItemIds: [KINFURE_ITEM_ID],
     type: "mastery",
   },

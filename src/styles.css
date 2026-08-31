@@ -15,7 +15,6 @@ body {
   color: var(--mantine-color-black);
 }
 
-/*? 「机の上に置かれた紙」の質感。罫線+左に赤い綴じ線を敷いたシートで各画面を包む(app-shell.tsx) */
 .cairn-paper-sheet {
   background-color: var(--mantine-color-white);
   background-image:
@@ -34,8 +33,6 @@ body {
     );
 }
 
-/*? iOS Safari は 16px 未満の入力にフォーカスすると自動ズームして戻らない。モバイルだけ底上げする
-    (docs/specs/pwa-mobile.md §12.1)。Mantine の内部セレクタは叩かず、ネイティブ要素にだけ当てる */
 @media (max-width: 47.9375em) {
   input:not([type="checkbox"]):not([type="radio"]),
   select,

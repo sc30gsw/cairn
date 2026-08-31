@@ -27,7 +27,6 @@ export function MyPagePasskeyReprompt() {
       }
       return result;
     });
-    // Mount-only passkey gate; storage flags are read synchronously on first paint.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only
   }, []);
 

@@ -1,6 +1,5 @@
 import { Title, type TitleProps } from "@mantine/core";
 
-//? 履歴/項目/プリセット/目標/ゴミ箱の見出しに共通する波下線(Paper Redesign)。3箇所目の重複で共通化(AHA)
 export function PageTitle({ children, ...props }: TitleProps) {
   return (
     <Title

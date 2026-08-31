@@ -22,8 +22,6 @@ export function GoalsPage() {
 function GoalsReady() {
   const today = useTodayJst();
   const weekStart = mondayOfWeek(today);
-  //? 5本の useSuspenseQuery を直列に並べると5回分の往復が直列化するため、useSuspenseQueries で
-  //? 並列取得する(パフォーマンス)。引数の SSoT は各 hooks のクエリファクトリのまま。
   const [
     { data: categories },
     { data: goals },

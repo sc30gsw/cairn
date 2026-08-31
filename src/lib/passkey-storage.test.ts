@@ -67,7 +67,6 @@ test("shouldOpenSignupPasskeyPrompt は OAuth pending 中なら true(書き込�
   mockStorage();
   writePasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY, true);
   expect(shouldOpenSignupPasskeyPrompt()).toBe(true);
-  //? peek は純粋な読み取り。呼んだだけではフラグは消えない
   expect(readPasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY)).toBe(true);
   vi.unstubAllGlobals();
 });

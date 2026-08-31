@@ -18,7 +18,6 @@ const DELTA_ICON = {
   up: IconArrowUpRight,
 } as const satisfies Record<ReturnType<typeof deltaDirection>, ComponentType<IconProps>>;
 
-//? 増減は矢印と符号つきテキストだけで表す。赤は削除・危険の予約色なので減少に使わない
 function DeltaLine({
   current,
   previous,
@@ -72,7 +71,6 @@ type MonthlyReviewSummaryCardsProps = Pick<
   | "previousConfirmedMinutes"
 >;
 
-//? 3枚の並びと文言規則は週次レビューのサマリーと同じ。違うのは前月比の文言と値の出典だけ
 export function MonthlyReviewSummaryCards({
   activeDays,
   confirmedMinutes,

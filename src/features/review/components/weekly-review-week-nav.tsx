@@ -12,7 +12,6 @@ type WeeklyReviewWeekNavProps = {
   weekStart: DateJst;
 };
 
-//? 週単位の移動に日ピッカーは過剰。◀ ▶ +「今週へ」で足りる
 export function WeeklyReviewWeekNav({
   currentWeekStart,
   onWeekChange,
@@ -33,7 +32,6 @@ export function WeeklyReviewWeekNav({
         </ActionIcon>
       </Tooltip>
       <Tooltip label="次の週" withArrow>
-        {/*? disabled な ActionIcon には Tooltip が効かないので span で包む(既存実装と同じ回避) */}
         <Box component="span" display="inline-flex">
           <ActionIcon
             aria-label="次の週"

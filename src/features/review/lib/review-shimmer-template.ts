@@ -1,7 +1,6 @@
 import type { MonthlyReview } from "~/features/review/types/monthly-review";
 import type { WeeklyReview, WeeklyReviewTarget } from "~/features/review/types/weekly-review";
 
-//? 実データと同じ配列長(7日 / ターゲット3件)にしてレイアウトシフトを防ぐ
 const SHIMMER_WEEK_DATES = [
   "2026-08-17",
   "2026-08-18",
@@ -58,7 +57,6 @@ export const reviewShimmerWeekly = {
   weekStart: "2026-08-17",
 } satisfies WeeklyReview;
 
-//? 週バケット5件・カテゴリ3件と、実データに近い配列長にしてレイアウトシフトを防ぐ
 const SHIMMER_MONTH_BUCKETS = [
   { bucketEnd: "2026-08-02", bucketStart: "2026-08-01", isPartial: true },
   { bucketEnd: "2026-08-09", bucketStart: "2026-08-03", isPartial: false },

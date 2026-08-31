@@ -40,13 +40,11 @@ export type PaceChartPoint = {
   均: number;
 };
 
-//? teal は theme.ts のカラータプルに無い(design-live-board.md ルール2)。7日平均は green で表す
 export const PACE_CHART_SERIES = [
   { color: "blue.6", label: "完了", name: "完了", type: "bar" as const },
   { color: "green.6", label: "7日平均", name: "均", type: "area" as const },
 ] as const;
 
-/** X軸ラベル（例: 08/17） */
 export function paceChartDayLabel(dateJst: DateJst): string {
   return `${dateJst.slice(5, 7)}/${dateJst.slice(8)}`;
 }
@@ -55,7 +53,6 @@ function weekOfMonthIndex(dateJst: DateJst): number {
   return Math.ceil(Number(dateJst.slice(8)) / 7);
 }
 
-/** 週チャートの見出し（例: 8月第3週） */
 export function paceChartWeekTitle(weekStart: DateJst, weekEnd: DateJst): string {
   const startMonth = Number(weekStart.slice(5, 7));
   const endMonth = Number(weekEnd.slice(5, 7));
@@ -65,7 +62,6 @@ export function paceChartWeekTitle(weekStart: DateJst, weekEnd: DateJst): string
   return `${paceChartDayLabel(weekStart)}〜${paceChartDayLabel(weekEnd)}`;
 }
 
-/** 月チャートの見出し（例: 8月） */
 export function paceChartMonthTitle(yearMonth: string): string {
   const month = Number(yearMonth.split("-")[1]);
   return `${month}月`;

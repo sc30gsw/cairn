@@ -29,10 +29,7 @@ type TargetFormProps = {
   targets: TargetProgress[];
 };
 
-//? 1カテゴリ1件なので、カテゴリ選択がそのまま「新規/編集」の切り替えになる。
-//? 選ばれたカテゴリの既存値を初期値にするため、値のフォームはカテゴリごとに貼り替える。
 export function TargetForm({ categories, onSave, targets }: TargetFormProps) {
-  //? 状態はユーザーが選んだカテゴリーだけを持つ。未選択とカテゴリー一覧の入れ替わりは先頭に寄せる
   const [categoryId, setCategoryId] = useState<CategoryDto["_id"]>();
   const [firstCategory] = categories;
   const selectedCategory =
@@ -59,7 +56,6 @@ export function TargetForm({ categories, onSave, targets }: TargetFormProps) {
             : "このカテゴリーには既にターゲットがあります。保存すると置き換わります。"
         }
         label="カテゴリー"
-        //? Select が返すのはただの文字列。一覧から引き当てて Id のブランドを取り戻す
         onChange={onRequiredSelect((value) => {
           setCategoryId(categories.find((category) => category._id === value)?._id);
         })}
@@ -100,7 +96,6 @@ function TargetValueForm({ category, existing, onSave }: TargetValueFormProps) {
             <SegmentedControl
               data={TARGET_METRIC_SEGMENTS}
               fullWidth
-              //? SegmentedControl は値ベースの onChange。ドメイン値かどうかは guard で確かめる
               onChange={(value) => {
                 if (isTargetMetric(value)) {
                   metricField.onChange(value);
@@ -138,7 +133,6 @@ function TargetValueField({ form, metric }: TargetValueFieldProps) {
       {...field.props}
       error={field.errors?.[0]}
       label="目標値"
-      //? 1週は7日しかない。実施日のときだけ上限を出す
       max={metric === "days" ? TARGET_VALUE_LIMITS.maxDays : undefined}
       min={TARGET_VALUE_LIMITS.min}
       onChange={(value) => field.onChange(value === "" ? undefined : Number(value))}

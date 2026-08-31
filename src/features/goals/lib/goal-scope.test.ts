@@ -83,7 +83,6 @@ test("選択肢はカテゴリ見出し付きで、空グループは含めな�
       items: [{ label: "音読パッケージ", value: SHADOWING_ITEM._id }],
     },
   ]);
-  //? 項目が1件も無いカテゴリは見出しごと出さない
   expect(goalScopeOptions([KINFURE_ITEM], scopeCategoriesFixture)).toEqual([
     { group: INPUT_CATEGORY.name, items: [{ label: "金フレ", value: KINFURE_ITEM._id }] },
   ]);

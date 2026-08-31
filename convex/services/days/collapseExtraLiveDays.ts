@@ -18,8 +18,6 @@ export async function collapseExtraLiveDays(
     return null;
   }
   const losers = live.slice(1);
-  //? 消える側(loser)の配下の記録を勝者の日へ付け替えてから日を消す。付け替えないと、消えた
-  //? dayId を指したまま孤児になった記録が日表示から見えなくなるのに集計には数え続けてしまう。
   for (const loser of losers) {
     const orphanedRows = await ctx.db
       .query("rows")

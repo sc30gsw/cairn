@@ -11,8 +11,6 @@ import { runMutation } from "~/lib/run-mutation";
 import type { PresetId } from "~/types/item";
 import { parsePresetId } from "~/types/item";
 
-//? URL の preset は外部入力。不正な値(空文字はスキーマ側で undefined 化済み、それ以外の
-//? 実在しない id 文字列)は「指定なし」として扱う。unwrap で例外化して render を壊さない
 function presetIdFromSearch(presetFromSearch: DaySearch["preset"]): null | PresetId {
   if (presetFromSearch === undefined) {
     return null;

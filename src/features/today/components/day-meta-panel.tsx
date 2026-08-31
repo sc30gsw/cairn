@@ -20,7 +20,6 @@ export function DayMetaPanel({ condition, memo, onSaveCondition, onSaveMemo }: D
     schema: MemoSchema,
   });
 
-  //? 2端末で編集されうる(CONTEXT)。未編集(clean)のときだけサーバー値へ追従する(row-editor.tsx と同じ方針)
   useEffect(() => {
     if (form.isDirty) {
       return;

@@ -7,7 +7,6 @@ type ShareCopyProps = {
   title?: string;
 };
 
-//? 日ページと週次レビューの2箇所で使うので共有ゾーンに置く。文言だけ props で差し替える
 export function ShareCopy({
   emptyDescription = "この日の記録を確定すると、共有文がここに生成されます。",
   markdown,

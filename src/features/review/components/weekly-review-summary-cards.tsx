@@ -22,7 +22,6 @@ const DELTA_ICON = {
   up: IconArrowUpRight,
 } as const satisfies Record<ReturnType<typeof deltaDirection>, ComponentType<IconProps>>;
 
-//? 増減は矢印と符号つきテキストだけで表す。赤は削除・危険の予約色なので減少に使わない
 function DeltaLine({
   current,
   previous,

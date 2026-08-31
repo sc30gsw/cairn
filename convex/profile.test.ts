@@ -20,9 +20,6 @@ const modules = import.meta.glob([
 const OWNER = { email: "owner@example.com", subject: "owner-subject" };
 const OTHER_OWNER = { email: "other@example.com", subject: "other-subject" };
 
-//? convex-test の storage/storeBlob は size と sha256 しか _storage に書かず、Blob の type を
-//? contentType に載せない(本番の Convex は載せる)。claim は contentType を検証するため、
-//? ここで本番同等のメタデータになるよう補う。system テーブルへの patch は convex-test 限定の便宜。
 async function storeTestBlob(
   t: ReturnType<typeof convexTest>,
   contentType = "image/png",
@@ -46,7 +43,6 @@ async function registerStorageForOwner(
   });
 }
 
-//? ConvexError は throwDomain 経由なら .data.tag に元の DomainError の _tag が残る(CVX-03/18)。
 async function expectDomainError(promise: Promise<unknown>, tag: string, message: string) {
   await expect(promise).rejects.toMatchObject({ data: { message, tag } });
 }
@@ -223,7 +219,6 @@ test("claimAvatarUpload は再 claim 時に旧アバターの行と blob を消�
     storageId: newStorageId,
   });
 
-  //? 旧 avatarUploads 行が消えている。
   const remaining = await t.run(async (ctx) =>
     ctx.db
       .query("avatarUploads")
@@ -232,7 +227,6 @@ test("claimAvatarUpload は再 claim 時に旧アバターの行と blob を消�
   );
   expect(remaining.map((row) => row.storageId)).toEqual([newStorageId]);
 
-  //? 旧 blob も storage から消えている(ストレージ漏れ対策)。
   const oldMetadata = await t.run(async (ctx) => ctx.db.system.get("_storage", oldStorageId));
   expect(oldMetadata).toBeNull();
 });

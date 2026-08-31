@@ -5,8 +5,6 @@ import type { NotificationPayload } from "../../lib/validators";
 
 const [, masteryType] = GOAL_TYPES;
 
-//* チェックポイント期限接近。parentGoalId は見ない — 期限を自分で置いた事実だけが催促の根拠(§4.2)。
-//? 期限超過(daysLeft < 0)では発火しない。達成済みも対象外。複数件は1通に畳む。
 export async function evaluateCheckpointDeadline(
   ctx: MutationCtx,
   ownerId: string,

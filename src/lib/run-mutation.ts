@@ -6,18 +6,12 @@ import { notifyError, notifySuccess } from "~/lib/notify";
 
 type RunMutationOptions<T> = {
   errorMessage?: string;
-  //? ボードのカンバンのように、楽観更新の巻き戻り自体がフィードバックになる密な画面向け。
-  //? エラー Toast と「まだ保存されていません」警告は出さない。successMessage を指定したときだけ、
-  //? 成功時の Toast は出す(ボードの「学習時間 XX分を記録しました」等 — オーナー決定 2026-08-25)。
   silent?: boolean;
-  //? 返り値で文言が変わるものがある(カスケード削除の件数)。string はそのまま使える
   successMessage?: ((value: T) => string) | string;
 };
 
 const UNSAVED_WARNING_MS = 5_000;
 const UNSAVED_NOTIFICATION_ID = "run-mutation-unsaved";
-//* 同時に複数の mutation が詰まっても通知は1枚、かつ「最後の1本が解決するまで消えない」。
-//? id 固定だけで参照カウントを持たないと、先に解決した mutation が未解決分の警告を消してしまう。
 const pending = new Set<symbol>();
 
 export async function runMutation<T>(
@@ -40,8 +34,6 @@ export async function runMutation<T>(
     return;
   }
 
-  //? navigator.onLine は嘘をつく(LAN 接続だが到達不能)。だから「5秒未解決」という観測事実だけを条件にする。
-  //? 送信自体は止めない — Convex は切断中の mutation をキューして再接続時に送る(pwa-mobile.md §9.2)。
   const token = Symbol("run-mutation");
   pending.add(token);
   const timer = setTimeout(() => {

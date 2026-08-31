@@ -16,7 +16,6 @@ const KIND_TEXT = {
   unrecorded: "未記録",
 } as const;
 
-//? バーは装飾。値は隣のテキストが担う(チャートだけで数値を伝えない)
 function MinutesCell({ day, maxMinutes }: { day: WeeklyReviewDay; maxMinutes: number }) {
   if (day.confirmedMinutes === 0) {
     const text = day.kind === "rest" || day.kind === "unrecorded" ? KIND_TEXT[day.kind] : "0分";
@@ -29,7 +28,6 @@ function MinutesCell({ day, maxMinutes }: { day: WeeklyReviewDay; maxMinutes: nu
         aria-hidden
         color="orange.5"
         miw={64}
-        //? スケールの基準はその週の最大確定分数。固定軸にせず週の中の山谷を見せる
         value={maxMinutes === 0 ? 0 : Math.round((day.confirmedMinutes / maxMinutes) * 100)}
         w="100%"
       />
@@ -64,7 +62,6 @@ export function WeeklyReviewDayTable({ byDay, todayJst }: WeeklyReviewDayTablePr
           <Table.Tbody>
             {byDay.map((day) => (
               <Table.Tr key={day.dateJst}>
-                {/*? 土=青 / 日=赤 / 祝日 は既存の calendar-day-style のクラスを流用(新色を作らない) */}
                 <Table.Td className={calendarDayClassName(day.dateJst) ?? undefined}>
                   {weekdayShortLabel(day.dateJst)}
                 </Table.Td>

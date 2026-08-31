@@ -5,7 +5,6 @@ export type HourOption = {
   value: string;
 };
 
-//? Select は文字列しか扱えないので、value は String(hour)。戻すのは呼び出し側の Number(value)。
 export function hourOptions(min: number, max: number): HourOption[] {
   const options: HourOption[] = [];
   for (let hour = min; hour <= max; hour += 1) {

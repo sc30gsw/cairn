@@ -56,7 +56,6 @@ test("isToday が false なら mutation は発火しない", () => {
   );
 
   expect(mutateAsync).not.toHaveBeenCalled();
-  //? isToday=false でも selectedPresetId 自体は URL の指定を反映する(表示用)
   expect(result.current.selectedPresetId).toBe("preset-1");
 });
 

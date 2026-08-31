@@ -36,7 +36,6 @@ type NotificationRowProps = {
   onMarkRead: (notificationId: Id<"notifications">) => void;
 };
 
-//? 文言は convex/lib の共有純関数で組む。保存するのは事実だけで、言い方は保存しない(CVX-16)。
 function NotificationRow({ notification, onMarkRead }: NotificationRowProps) {
   const { body, title } = notificationMessage(notification.payload);
 
@@ -51,7 +50,6 @@ function NotificationRow({ notification, onMarkRead }: NotificationRowProps) {
       to={notificationLink(notification.payload.kind)}
     >
       <Group align="flex-start" gap="xs" wrap="nowrap">
-        {/*? 未読の点。既読の行には出さない。色だけに頼らず VisuallyHidden でも未読を伝える */}
         {notification.read ? null : (
           <>
             <Box bg="orange.5" h={6} mt={6} w={6} />
@@ -74,7 +72,6 @@ function NotificationRow({ notification, onMarkRead }: NotificationRowProps) {
   );
 }
 
-//* ヘッダーのベルと通知欄。開いただけでは既読にしない — バッジは「まだ手を付けていない催促の数」。
 export function NotificationTray({
   items,
   onMarkAllRead,

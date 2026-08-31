@@ -14,17 +14,12 @@ import type { ItemDto } from "~/types/item";
 export const CHECKPOINT_GROUP_TITLE = "チェックポイント";
 export const CHECKPOINT_GROUP_EMPTY_MESSAGE = "チェックポイントなし";
 
-//? 子グループの破線左罫。親カードだけがスケッチ枠と紙影を持つ = 「1枚の紙に子を書き込んだ」形
 const CHILD_BORDER = "1px dashed var(--cairn-desk)";
 
 type ParentGoalGroupCommonProps = {
-  //? 未達成の子だけ。期限昇順
   checkpoints: MasteryGoal[];
-  //? 追加・編集フォームはヘッダ直下に開く
   form: ReactNode;
-  //? 対象項目のラベルを引き当てる一覧。親カードと子の行がそれぞれ自分で引く
   items: ItemDto[];
-  //? undefined ならこのグループの追加導線を出さない(フォームを開いている間)
   onAddCheckpoint: (() => void) | undefined;
   onEditGoal: (goal: Goal) => void;
   onRemoveGoal: (goal: Goal) => void;
@@ -32,7 +27,6 @@ type ParentGoalGroupCommonProps = {
   todayJst: DateJst;
 };
 
-//? 本番目標のときだけ週間ターゲットの未完成アラートを持つ。長期目標には無い概念なので型で分ける
 type ParentGoalGroupProps = ParentGoalGroupCommonProps &
   (
     | { hasWeeklyTargets: boolean; kind: "exam"; onShowWeeklyTargets: () => void; parent: ExamGoal }

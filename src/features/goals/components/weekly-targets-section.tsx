@@ -28,7 +28,6 @@ export function WeeklyTargetsSection({
             </Badge>
           )}
         </Group>
-        {/*? 週の締めは /review。ここは常設の入口2本目 */}
         <Anchor component={Link} to="/review">
           今週のレビュー
         </Anchor>

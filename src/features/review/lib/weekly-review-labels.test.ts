@@ -64,14 +64,12 @@ test("digestCellLabel は4分岐を書き分ける", () => {
       "2026-08-23",
     ),
   ).toBe("4/5（80%）");
-  //? 今日は数えないので「—（今日）」
   expect(
     digestCellLabel(
       { confirmedCount: 1, dateJst: "2026-08-23", digestRate: null, plannedCount: 1 },
       "2026-08-23",
     ),
   ).toBe("—（今日）");
-  //? 休養日・未記録日は指標そのものが無い
   expect(
     digestCellLabel(
       { confirmedCount: 0, dateJst: "2026-08-18", digestRate: null, plannedCount: 0 },

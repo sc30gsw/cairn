@@ -13,7 +13,6 @@ import {
 test("isDateJst は YYYY-MM-DD の実在する暦日だけを通す", () => {
   expect(isDateJst("2026-08-17")).toBe(true);
   expect(isDateJst("2026-02-28")).toBe(true);
-  //? 形式だけ正しく実在しない日は 3/3 に転がるので弾く
   expect(isDateJst("2026-02-31")).toBe(false);
   expect(isDateJst("2026/08/17")).toBe(false);
   expect(isDateJst("2026-8-17")).toBe(false);

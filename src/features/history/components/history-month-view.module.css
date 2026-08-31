@@ -58,7 +58,6 @@
   color: var(--mantine-primary-color-contrast);
 }
 
-/* マス上に学習量と均。MonthView は children を上書きするので data 属性経由 */
 .compactMonthView :global(.mantine-Schedule-monthViewDay[data-volume])::after,
 .compactMonthView :global(.mantine-MonthView-monthViewDay[data-volume])::after {
   color: var(--mantine-color-dimmed);

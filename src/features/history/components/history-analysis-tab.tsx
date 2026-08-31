@@ -26,8 +26,6 @@ export function HistoryAnalysisTab() {
     yearMonth,
   } = useHistoryView();
 
-  //? 6本の useSuspenseQuery を直列に並べると6回分の往復が直列化するため、useSuspenseQueries で
-  //? 並列取得する(パフォーマンス)。引数の SSoT は history-queries.ts のクエリファクトリのまま。
   const [
     { data: monthBreakdown },
     { data: yearHeatmap },

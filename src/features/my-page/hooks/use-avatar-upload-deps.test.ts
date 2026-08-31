@@ -4,9 +4,6 @@ import { afterEach, expect, test, vi } from "vite-plus/test";
 import type { Id } from "~/../convex/_generated/dataModel";
 import { useAvatarUploadDeps } from "~/features/my-page/hooks/use-avatar-upload-deps";
 
-//? useAvatarUploadDeps は generateUploadUrl → claimAvatarUpload の順に useConvexMutation を呼ぶ
-//? (use-avatar-upload-deps.ts の実装順)。呼び出し順序で、どちらのミューテーションを模した
-//? モックを返すかを切り替える
 const { generateUploadUrlMock, claimAvatarUploadMock } = vi.hoisted(() => ({
   claimAvatarUploadMock: vi.fn(async () => undefined),
   generateUploadUrlMock: vi.fn(async () => ({

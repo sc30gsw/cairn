@@ -1,7 +1,5 @@
 import type { Category } from "~domain/domain";
 
-//? 実データのカテゴリー名は appUsers ごとに増減しうる(初期シードのみ Category と一致)。
-//? リネーム/削除後の名前が来ても実行時 fallback(gray)で崩れないよう、Record<string,string> は保つ。
 const CHART_CATEGORY_COLORS = {
   TOEIC対策: "blue.6",
   多聴: "yellow.6",

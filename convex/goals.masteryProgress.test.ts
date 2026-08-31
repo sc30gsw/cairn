@@ -6,8 +6,6 @@ import type { Id } from "./_generated/dataModel";
 import { TRASH_TTL_MS } from "./lib/trash";
 import schema from "./schema";
 
-//? 習得目標に併記する学習量の実績(保存カウンタ)を、記録側の書き込み経路が正しく差分更新するか。
-//? 凍結・達成解除の再計算・カウンタ修復は goals.masteryProgressRepair.test.ts に置く。
 const modules = import.meta.glob([
   "./**/*.ts",
   "!./**/*.test.ts",
@@ -25,7 +23,6 @@ const OTHER_OWNER = { email: "other@example.com", subject: "other-owner-subject"
 const TODAY = "2026-08-17";
 const YESTERDAY = "2026-08-16";
 
-//? 習得の学習量実績は目標の作成日を起点にするので、サーバが見る現在時刻を固定する。
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(`${TODAY}T12:00:00+09:00`));
@@ -51,8 +48,6 @@ const MASTERY_GOAL = {
 
 const CONCRETE_ACTION = "Unit 1 を音読する";
 
-//? 学習量の実績は保存カウンタで、記録側の書き込み経路が差分更新する(ADR-0007)。
-//? したがってテストは rows を直接 insert せず、必ず本物の mutation を通す。
 async function seedItemId(t: ReturnType<typeof owner>, ownerId: string = OWNER.subject) {
   return await t.run(async (ctx) => {
     const categoryId = await ctx.db.insert("categories", {
@@ -115,7 +110,6 @@ async function liveDayId(t: ReturnType<typeof owner>, dateJst: string) {
   return dayId;
 }
 
-//? 保存カウンタの修復手段(ADR-0007)。実測と一致しているかの確認にも使う。
 async function repair(t: ReturnType<typeof owner>) {
   await t.mutation(internal.mutations.goals.recomputeMasteryProgress.recomputeMasteryProgress, {
     ownerId: OWNER.subject,
@@ -125,13 +119,10 @@ async function repair(t: ReturnType<typeof owner>) {
 test("習得には目標作成以降の確定分数と実施日数が併記される", async () => {
   const t = owner();
   const itemId = await seedItemId(t);
-  //? 目標を作る前の日の記録は入らない
   await addConfirmedRow(t, itemId, { dateJst: YESTERDAY, minutes: 90 });
   const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
-  //? 同じ日に何件あっても実施日は1日
   await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
   await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 20 });
-  //? 確定以外は学習量に入らない
   await addRow(t, itemId, TODAY);
   const skipped = await addRow(t, itemId, TODAY);
   await t.mutation(api.mutations.rows.skip.skip, { rowId: skipped });
@@ -147,7 +138,6 @@ test("記録の確定で学習量の実績が増え、分数の編集にも追�
   const rowId = await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
 
-  //? 確定済みの分数を直しても実施日は増えず、分数だけ差し替わる
   await confirmRow(t, rowId, 45);
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 45 });
 });
@@ -190,7 +180,6 @@ test("確定記録をゴミ箱に入れると実績が減り、戻すと実績�
   const itemId = await seedItemId(t);
   const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
   const rowId = await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 30 });
-  //? 同じ日にもう1件残しておくと、実施日は減らずに分数だけ減る
   await addConfirmedRow(t, itemId, { dateJst: TODAY, minutes: 20 });
 
   await t.mutation(api.mutations.rows.remove.remove, { rowId });
@@ -253,13 +242,11 @@ test("ゴミ箱の日に属する確定記録は、消しても実績を動か�
   await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: TODAY });
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
 
-  //? 日ごと実績から外れているので、配下の記録を消しても差分は出ない
   await t.mutation(api.mutations.rows.remove.remove, { rowId });
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
 
   await expect(t.mutation(api.mutations.rows.restore.restore, { rowId })).rejects.toThrow();
 
-  //? 日を戻しても記録はゴミ箱のままなので実績はまだ0
   await t.mutation(api.mutations.trash.restoreDay.restoreDay, { dayId });
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
 
@@ -270,7 +257,6 @@ test("ゴミ箱の日に属する確定記録は、消しても実績を動か�
 test("未着手だけを入れ替えるプリセット切替では実績が動かない", async () => {
   const t = owner();
   await t.mutation(api.mutations.catalog.ensure.ensure, {});
-  //? 既定のカタログとプリセットを用意するために先に日を開く
   await t.mutation(api.mutations.days.open.open, { dateJst: TODAY, todayJst: TODAY });
   const itemId = await seedItemId(t);
   const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
@@ -301,7 +287,6 @@ test("ゴミ箱の完全削除では実績が動かない", async () => {
   await t.mutation(api.mutations.rows.remove.remove, { rowId: purgedId });
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
 
-  //? ゴミ箱の記録は既に実績の外。完全削除では差分が出ない
   await t.mutation(api.mutations.trash.purgeRow.purgeRow, { rowId: purgedId });
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 30 });
 
@@ -358,9 +343,7 @@ test("作成日の確定は複数件でも初期値に入り、前日ぶんと�
   await addRow(t, itemId, TODAY);
 
   const masteryId = await t.mutation(api.mutations.goals.create.create, { goal: MASTERY_GOAL });
-  //? 同じ暦日なので実施日は1日ぶん、分数は作成日の確定合計
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 50 });
-  //? 数え直しても同じ値 = 初期値が実測と一致している
   await repair(t);
   expect(await progressOf(t, masteryId)).toEqual({ activeDays: 1, confirmedMinutes: 50 });
 });

@@ -15,7 +15,6 @@ function dayQueryArgs(args: DayQueryArgs): DayQueryArgs {
   return { dateJst: args.dateJst, todayJst: args.todayJst };
 }
 
-//* 楽観更新でキャッシュ上の行を読む。計測の次の値は現在値から決まるので、書く前に一度読む。
 export function getDayRow(
   localStore: OptimisticLocalStore,
   args: DayQueryArgs & { rowId: Id<"rows"> },
@@ -24,7 +23,6 @@ export function getDayRow(
   return day?.rows.find((row) => row._id === args.rowId);
 }
 
-//? 計測(#51)は status と同じ楽観更新の器に乗せる。timer を省いた呼び出しは計測を触らない。
 export function setDayRowStatus(
   localStore: OptimisticLocalStore,
   args: DayQueryArgs & { rowId: Id<"rows">; status: Status; timer?: RowTimerDto | null },

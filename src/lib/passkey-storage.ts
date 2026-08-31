@@ -48,21 +48,12 @@ export function writePasskeySessionFlag(key: string, value: boolean): void {
   }
 }
 
-/**
- * Peeks whether the one-shot signup prompt should open. Pure read, no storage writes —
- * safe to call from a useState initializer, which React may invoke more than once
- * (StrictMode, a discarded render) without committing.
- */
 export function shouldOpenSignupPasskeyPrompt(): boolean {
   return (
     readPasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY) || readPasskeyFlag(PASSKEY_SIGNUP_PROMPT_KEY)
   );
 }
 
-/**
- * Clears the one-shot signup prompt flags. Call after shouldOpenSignupPasskeyPrompt()
- * has been read into committed state (e.g. a mount effect), not from the initializer itself.
- */
 export function consumeSignupPasskeyPromptFlags(): void {
   writePasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY, false);
   writePasskeyFlag(PASSKEY_SIGNUP_PROMPT_KEY, false);
@@ -74,7 +65,6 @@ export function shouldOpenMyPagePasskeyPrompt(): boolean {
   return skippedSignup && !reprompted;
 }
 
-/** Storage flags plus whether the user already has at least one passkey. */
 export function shouldShowMyPagePasskeyPrompt(hasRegisteredPasskeys: boolean): boolean {
   if (hasRegisteredPasskeys) {
     return false;

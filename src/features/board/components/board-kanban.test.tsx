@@ -16,15 +16,11 @@ const onSkipMock = vi.fn(async () => undefined);
 const onPauseMock = vi.fn(async () => undefined);
 const onUnconfirmMock = vi.fn(async () => undefined);
 
-//? Toast 検証は notifications.show を捕捉する(オーナー決定 2026-08-25)。~/lib/notify は実物のまま
-//? 動かし、文言(学習時間 XX分を記録しました 等)が正しく組み立てられることまで確認する。
 const { notificationsShowMock } = vi.hoisted(() => ({ notificationsShowMock: vi.fn() }));
 vi.mock("@mantine/notifications", () => ({
   notifications: { hide: vi.fn(), show: notificationsShowMock },
 }));
 
-//? フックそのものは実物を走らせる(確定手順は use-board-kanban-actions の onStatusMove が持つ ―
-//? #58 §11.3)。差し替えるのはその下の mutation 層だけ。
 vi.mock("~/features/board/hooks/board-mutations", () => ({
   useBoardApplyRowOrder: () => ({ mutateAsync: onApplyOrderMock }),
   useBoardConfirmRow: () => ({ mutateAsync: onConfirmMock }),
@@ -83,9 +79,6 @@ function successToasts() {
     .filter((args) => args.color === "green");
 }
 
-//? runMutation の成功 Toast は mutateAsync のモック呼び出しより後の microtask で発火する
-//? (Result.tryPromise の解決を待つため)。mutateAsync の呼び出しだけを条件に waitFor すると
-//? Toast がまだ飛ぶ前に判定が通ってしまうので、Toast の有無も同じ waitFor の中で確認する。
 function hasSuccessToast(message: string) {
   return successToasts().some((toast) => toast.message === message);
 }
@@ -112,7 +105,6 @@ test("カンバンは未着手・進行中・確定・スキップを並べる",
   expect(getByLabelText("Distinction 2000 の順序を変更")).toBeDefined();
 });
 
-//? #58 §11.1: モバイルは横スナップの列。支援技術からは名前付きの束と件数で見える。
 test("列は名前付きの束で、各列に件数が付く", () => {
   const { getByLabelText, getByRole } = renderWithMantine(
     <BoardKanban
@@ -126,8 +118,6 @@ test("列は名前付きの束で、各列に件数が付く", () => {
   expect(getByLabelText("確定 0件")).toBeDefined();
 });
 
-//* オーナー決定 2026-08-25: 計測がある行の確定は確認モーダルを挟まない。stopTimer のサーバ真値の
-//? 分数でそのまま確定し、「学習時間 XX分を記録しました」の Toast だけで伝える。
 test("計測がある進行中の行を確定すると、stopTimer の分数でモーダルなしに確定する", async () => {
   const { getByRole, queryByLabelText } = renderWithMantine(
     <BoardKanban
@@ -152,7 +142,6 @@ test("計測がある進行中の行を確定すると、stopTimer の分数で�
   expect(queryByLabelText("分数")).toBeNull();
 });
 
-//? stopTimer が失敗(null)したときだけ、安全側でエディタを開く。
 test("stopTimer が失敗したら安全側でエディタを開く", async () => {
   onStopTimerMock.mockResolvedValueOnce(null);
   const { findByLabelText, getByRole } = renderWithMantine(
@@ -175,7 +164,6 @@ test("stopTimer が失敗したら安全側でエディタを開く", async () =
   expect((minutesInput as HTMLInputElement).value).toBe("30");
 });
 
-//? 既存の振る舞いの回帰: 計測が無く content と minutes が埋まった行はモーダルなしで確定する。
 test("計測が無く内容と分数が埋まった行はモーダルなしで確定する", async () => {
   const { getByRole, queryByLabelText } = renderWithMantine(
     <BoardKanban
@@ -198,7 +186,6 @@ test("計測が無く内容と分数が埋まった行はモーダルなしで�
   expect(queryByLabelText("分数")).toBeNull();
 });
 
-//? 計測が無く minutes===0 の行だけがエディタを要求する。
 test("計測が無く分数が0の行は確定エディタを開く", async () => {
   const { findByLabelText, getByRole } = renderWithMantine(
     <BoardKanban
@@ -214,7 +201,6 @@ test("計測が無く分数が0の行は確定エディタを開く", async () =
   expect((minutesInput as HTMLInputElement).value).toBe("0");
 });
 
-//* #58 §11.2 / §17: メニュー経路の確定はドラッグ経路と同じ手順を通る。
 test("メニューから完了にすると、計測がある行は stopTimer の分数でモーダルなしに確定する", async () => {
   const { getByRole, queryByLabelText } = renderWithMantine(
     <BoardKanban
@@ -261,8 +247,6 @@ test("メニューから完了にすると、計測が無く埋まった行は�
   expect(queryByLabelText("分数")).toBeNull();
 });
 
-//* オーナー決定 2026-08-25: 計測を捨てる skip/pause は確認モーダルを挟まず即実行、Undo もない。
-//? 代わりに「計測 XX分を捨てました」の Toast だけで伝える。
 test("メニューから見送りにすると、確認なしで即座にスキップされ、破棄分数を Toast で伝える", async () => {
   const { getByRole } = renderWithMantine(
     <BoardKanban
@@ -313,8 +297,6 @@ test("メニューから未着手に戻すと、確認なしで即座に一時�
   expect(document.querySelector('[role="dialog"]')).toBeNull();
 });
 
-//* オーナー決定 2026-08-25: 確定→未着手(unconfirm)は確認なしで即実行し、「確定を取り消しました」の
-//? Toast で伝える。ラベルは pause と同じ「未着手に戻す」だが、確定行では unconfirm が呼ばれる。
 test("確定した行のメニューから未着手に戻すと、確認なしで即座に確定が取り消される", async () => {
   const { getByRole } = renderWithMantine(
     <BoardKanban dateJst="2026-08-17" rows={[row("r1", confirmed, "金のフレーズ")]} />,
@@ -333,7 +315,6 @@ test("確定した行のメニューから未着手に戻すと、確認なし�
   expect(document.querySelector('[role="dialog"]')).toBeNull();
 });
 
-//? 計測が無いスキップ・並べ替えなどは silent のまま(Toast なし)。
 test("計測が無いスキップは Toast を出さない", async () => {
   const { getByRole } = renderWithMantine(
     <BoardKanban dateJst="2026-08-17" rows={[row("r1", pending, "Distinction 2000")]} />,

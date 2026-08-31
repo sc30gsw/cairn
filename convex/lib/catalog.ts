@@ -5,7 +5,6 @@ export type SeedItem = {
   name: string;
 };
 
-//* 模試を除く Notion の種類。カテゴリ対応は CONTEXT どおり。
 export const SEED_ITEMS = [
   { category: "多聴", name: "Distinction 2000" },
   { category: "英会話", name: "英会話" },

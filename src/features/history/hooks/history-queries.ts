@@ -4,8 +4,6 @@ import type { DateJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
 
-//? 並列取得(useSuspenseQueries)側もこれらのファクトリを使う。convexQuery(...) の引数を
-//? コンポーネントに散らさないための SSoT。
 export function historyMonthBreakdownQuery(todayJst: DateJst, yearMonth: string) {
   return convexQuery(api.queries.history.monthBreakdown.monthBreakdown, { todayJst, yearMonth });
 }

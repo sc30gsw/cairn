@@ -9,8 +9,6 @@ import { throwDomain } from "../../lib/ownerFunctions";
 import type { BackfillCheckpointParentsResult } from "../../lib/validators";
 import { planCheckpointParents } from "./planCheckpointParents";
 
-//* 所有者1人ぶんの孤児を1トランザクションで解決する(CVX-15)。規則は純関数側が SSoT。
-//? 壊れた期限は黙って直さず throw する。バッチは1トランザクションなので部分適用は起きない。
 export async function backfillCheckpointParents(
   ctx: MutationCtx,
   ownerId: string,
@@ -32,7 +30,6 @@ export async function backfillCheckpointParents(
     return { assigned: 0, plan: plan.plan, promoted: 0 };
   }
   if (plan.promoteGoalId !== null) {
-    //? 昇格は期限を外すだけ。トップ層なので親は持たない(両方 undefined で落とす)。
     await ctx.db.patch("goals", plan.promoteGoalId, {
       deadline: undefined,
       parentGoalId: undefined,

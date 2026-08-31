@@ -6,15 +6,12 @@ import type { ItemDto, ItemId } from "~/types/item";
 export const ALL_RECORDS_LABEL = "すべての記録";
 export const ALL_RECORDS_SHORT = "すべて";
 
-//? 項目が一覧から引けないとき(別デバイスの操作・楽観キャッシュのズレ)の安全網。件数だけを出す
 function unresolvedLabel(count: number): string {
   return `不明な項目${String(count)}件`;
 }
 
 export type GoalScopeLabel = { full: string; itemCount: number; short: string };
 
-//* 対象項目のラベル。full は全項目名、short は行に収まる短縮形(CVX-09 相当: 純関数)。
-//? items は sortOrder 昇順で渡ってくる(items.list の並び)。表示順はその順に従う。
 export function goalScopeLabel(
   scopeItemIds: readonly ItemId[] | undefined,
   items: readonly ItemDto[],
@@ -32,13 +29,11 @@ export function goalScopeLabel(
   return {
     full,
     itemCount: scope.size,
-    //? 行に収まるのは先頭1件 + 残り件数まで。全項目名は親カードと編集フォームで読める
     short:
       first === undefined || labels.length === 1 ? full : `${first} +${String(labels.length - 1)}`,
   };
 }
 
-//* カテゴリ見出し付きの MultiSelect データ。空グループは含めない(純関数)。
 export function goalScopeOptions(
   items: readonly ItemDto[],
   categories: readonly CategoryDto[],
@@ -62,7 +57,6 @@ export function goalScopeOptions(
   });
 }
 
-//* MultiSelect が返すのはただの文字列。一覧から引き当てて Id のブランドを取り戻す(as は書かない)。
 export function resolveScopeItemIds(
   values: readonly string[],
   items: readonly ItemDto[],

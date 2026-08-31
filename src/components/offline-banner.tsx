@@ -3,7 +3,6 @@ import { IconWifiOff } from "@tabler/icons-react";
 
 import { useOnlineStatus } from "~/hooks/use-online-status";
 
-//* 「オフラインでも書けそう」に見せないための3点のうちの1つ(docs/specs/pwa-mobile.md §3.3 / §9.1)。
 export function OfflineBanner() {
   const online = useOnlineStatus();
   if (online) {

@@ -25,7 +25,6 @@ export function WeekSummarySection() {
   );
 }
 
-//? WeekSummarySection 自身を fallback に入れない(再サスペンドする)。実コンポーネントにレビューと同じテンプレート値を渡すだけ
 export function WeekSummarySectionFallback() {
   return (
     <Shimmer loading>

@@ -7,7 +7,6 @@ import {
 } from "~/hooks/use-notification-mutations";
 import { runMutation } from "~/lib/run-mutation";
 
-//* 全画面共通の通知ベル。AppShell は認証確認の後にしか描かれないので、中は常に認証済み。
 export function NotificationBell() {
   const { data } = useNotificationInbox();
   const markRead = useMarkNotificationsRead();

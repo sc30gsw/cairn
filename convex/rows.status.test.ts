@@ -118,7 +118,6 @@ test("applyOrder は同じ記録IDの重複を拒否する", async () => {
     }),
   ).rejects.toThrow();
 
-  //? 拒否された並べ替えで sortOrder が動いていないことも確認する。
   const after = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   expect(after.rows.map((entry) => entry._id)).toEqual(day.rows.map((entry) => entry._id));
 });

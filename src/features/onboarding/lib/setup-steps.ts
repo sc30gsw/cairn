@@ -75,7 +75,6 @@ export function firstIncompleteSetupStep(
   return null;
 }
 
-/** Falls back to the first incomplete step when every step was dismissed. */
 export function visibleSetupStep(
   status: SetupStatus,
   dismissed: ReadonlySet<SetupStepId>,

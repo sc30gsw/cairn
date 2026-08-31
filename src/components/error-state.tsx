@@ -25,7 +25,6 @@ type ErrorStateProps = {
 type RecoveryProps = Record<"recovery", ErrorRecovery>;
 
 function reloadPage() {
-  //? SSR では window がないため何もしない
   if (typeof window !== "undefined") {
     window.location.reload();
   }
@@ -48,8 +47,6 @@ function RecoveryButton({ onRetry, recovery }: Pick<ErrorStateProps, "onRetry"> 
   );
 }
 
-//* ページの一部が失敗したときの表示。EmptyState ではなく Alert なのは、
-//* 「データが無い」ではなく「失敗した」を伝える必要があるため
 export function ErrorState({ error, fallbackMessage, onRetry }: ErrorStateProps) {
   const { message, recovery, title } = presentError(error, fallbackMessage);
 
@@ -68,19 +65,16 @@ export function ErrorState({ error, fallbackMessage, onRetry }: ErrorStateProps)
   );
 }
 
-//* ルーターのエラー境界(CatchBoundary / route の errorComponent)にそのまま渡せる形
 export function RouteErrorComponent({ error, reset }: ErrorComponentProps) {
   return <ErrorState error={error} onRetry={reset} />;
 }
 
-//* ルートのエラー境界など、アプリの外枠ごと差し替わる場面向けの全画面表示
 export function FullPageErrorState({ error, fallbackMessage, onRetry }: ErrorStateProps) {
   const { message, recovery, title } = presentError(error, fallbackMessage);
 
   return (
     <Center h="100dvh" p="md">
       <Card maw={420} padding="xl" shadow="sm" w="100%">
-        {/*? 全画面時はこれがページの主見出しなので、order を渡して実際の heading にする */}
         <EmptyState color={recovery === "signIn" ? "yellow" : "red"} size="md" variant="light">
           <EmptyState.Indicator>
             <IconAlertTriangle aria-hidden />

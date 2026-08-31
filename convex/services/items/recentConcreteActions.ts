@@ -17,7 +17,6 @@ export async function recentConcreteActions(
     .order("desc")
     .take(ROWS_SCAN_LIMIT);
 
-  //? 日単位のゴミ箱(removeDay)は day.deletedAt のみ更新するため、行の deletedAt だけでは不足
   const dayCache = new Map<Id<"days">, Doc<"days"> | null>();
   async function isLiveDay(dayId: Id<"days">): Promise<boolean> {
     const cached = dayCache.get(dayId);
@@ -29,7 +28,6 @@ export async function recentConcreteActions(
   const seen = new Set<string>();
   const suggestions: string[] = [];
   for (const row of rows) {
-    //? ゴミ箱の行・ゴミ箱の日の行は提案対象にしない(history/shared.ts の liveRows と同じ判定)
     if (row.deletedAt !== undefined || row.status !== "確定" || row.ownerId !== ownerId) {
       continue;
     }

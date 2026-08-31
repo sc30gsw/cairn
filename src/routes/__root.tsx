@@ -62,8 +62,6 @@ export const Route = createRootRouteWithContext<{
       { href: "/favicon.svg", rel: "icon", type: "image/svg+xml" },
       { href: "/manifest.webmanifest", rel: "manifest" },
       { href: "/icons/apple-touch-icon-180.png", rel: "apple-touch-icon", sizes: "180x180" },
-      //? iOS は Manifest 標準ではなく Apple 独自のスプラッシュ。media が一致しない機種は
-      //? 「画像なし」に落ちるだけで崩れないので、所有者の実機1機種分だけ置く(#58 §6.4)。
       {
         href: "/icons/splash-1179x2556.png",
         media:
@@ -86,17 +84,11 @@ export const Route = createRootRouteWithContext<{
     ],
     meta: [
       { charSet: "utf-8" },
-      //? viewport-fit=cover でノッチ下まで机色を敷き、safe-area-inset-* を有効化する(#58 §12.2)。
-      //? maximum-scale / user-scalable は付けない(ピンチズームを塞がない)。
       { content: "width=device-width, initial-scale=1, viewport-fit=cover", name: "viewport" },
       { title: "学習ログ" },
-      //* 机色。manifest の theme_color と一致させる(値は PAPER_TOKENS.desk が唯一の出所)。
       { content: PAPER_TOKENS.desk, name: "theme-color" },
       { content: "yes", name: "mobile-web-app-capable" },
-      //? 旧 iOS 向けの別名。両方出す。
       { content: "yes", name: "apple-mobile-web-app-capable" },
-      //? ライト固定なので default(暗い文字・コンテンツはステータスバーの下から始まる) が正しい。
-      //? black-translucent は使わない(コンテンツがノッチ下に潜り safe-area 依存が増える)。
       { content: "default", name: "apple-mobile-web-app-status-bar-style" },
       { content: "学習ログ", name: "apple-mobile-web-app-title" },
     ],
@@ -113,7 +105,6 @@ function RootDocument({ children }: Record<"children", ReactNode>) {
         <HeadContent />
       </head>
       <body>
-        {/*? どちらも DOM を描かない。SW 登録(#58 §8.1)と JST 日付ロールオーバーの検知(#58 §12.4) */}
         <ServiceWorkerRegistrar />
         <DayRolloverGuard />
         <MantineProvider
@@ -133,7 +124,6 @@ function RootDocument({ children }: Record<"children", ReactNode>) {
             <ModalsProvider labels={{ cancel: "キャンセル", confirm: "見送りにする" }}>
               <DatesProvider settings={{ locale: "ja" }}>{children}</DatesProvider>
             </ModalsProvider>
-            {/*? apple-mobile-web-app-status-bar-style: default では iOS の inset-top は 0。実質 Android 用の保険 */}
             <Notifications
               position="top-center"
               style={{ marginTop: "env(safe-area-inset-top)" }}
@@ -155,7 +145,6 @@ function RootComponent() {
   const context = useRouteContext({ from: Route.id });
   return (
     <ConvexBetterAuthProvider
-      //? Better Auth の client ジェネリクスと Provider の AuthClient が食い違う。
       authClient={authClient as unknown as AuthClient}
       client={context.convexQueryClient.convexClient}
       initialToken={context.token}
@@ -167,7 +156,6 @@ function RootComponent() {
   );
 }
 
-//? 生の error.message は Convex の内部ログやスタックを含むため描画しない(FullPageErrorState が文言を決める)
 function RootErrorComponent({ error, reset }: ErrorComponentProps) {
   return (
     <RootDocument>

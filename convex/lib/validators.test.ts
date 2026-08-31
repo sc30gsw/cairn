@@ -31,9 +31,6 @@ import {
   weekdayValidator,
 } from "./validators";
 
-//? タプルから map → spread で組んだ union の "members" は、タプルの要素とそのまま1対1対応する
-//? (v.union(...TUPLE.map((x) => v.literal(x))) の構造そのもの)。要素を足し忘れる/減らす回帰を
-//? ここで検知する。型の網羅性は下の "_check" (コンパイル時のみ) が担う。
 function literalValues(members: readonly { value: unknown }[]) {
   return members.map((member) => member.value);
 }
@@ -84,8 +81,6 @@ test("notificationKindValidator は NOTIFICATION_KINDS と1対1対応する", ()
   expect(literalValues(notificationKindValidator.members)).toEqual([...NOTIFICATION_KINDS]);
 });
 
-//* コンパイル時の網羅性チェック。TUPLE に要素を足しても validator が v.literal を並べ切る旧パターン
-//? のままだと、Infer<> がタプル全体の union に届かず、ここが型エラーになる(実行時テストはしない)。
 type ExhaustiveCheck<Inferred, Domain> = [Inferred] extends [Domain]
   ? [Domain] extends [Inferred]
     ? true

@@ -21,8 +21,6 @@ export const EMPTY_CATEGORY_AGGREGATE = {
   minutes: 0,
 } as const satisfies CategoryAggregate;
 
-//* 今週の行をカテゴリ別に集計する。rows→item→categoryId 経由で辿り、確定行だけを見る(CVX-09: 純関数)。
-//? days は「そのカテゴリの確定記録が1件以上ある暦日数」。最低分数のフロアは持たない(CONTEXT.md「週間ターゲット」)。
 export function aggregateByCategory(
   rows: readonly TargetRow[],
   categoryIdByItemId: ReadonlyMap<Id<"items">, Id<"categories">>,
@@ -54,7 +52,6 @@ export function aggregateByCategory(
   );
 }
 
-//* 計器ごとに読み取る値を選ぶ。記録の無いカテゴリは 0(CVX-09: 純関数)。
 export function currentForMetric(
   aggregate: CategoryAggregate | undefined,
   metric: TargetMetric,

@@ -5,7 +5,6 @@ import { ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { listChildCheckpoints } from "./listChildCheckpoints";
 
-//* INV-5: 子チェックポイントを持つ長期目標はチェックポイントにできない(階層は最大2層)。
 export async function assertNoChildCheckpoints(
   ctx: MutationCtx,
   ownerId: string,

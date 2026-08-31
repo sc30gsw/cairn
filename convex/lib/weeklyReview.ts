@@ -36,9 +36,6 @@ function countRows(rows: readonly WeeklyStatusRow[]): CompletionCounts {
   return rows.reduce((counts, row) => addRow(counts, row.status), emptyCounts());
 }
 
-//* 消化に数える暦日: 週内で「今日より前」の日だけ。
-//? 今日の未着手を計画倒れに数えない(CONTEXT「消化」_Avoid_)。未来の日はそもそも記録が無い。
-//? 既存 presetReview(今日を除く直近28日)と月次レビューの週バケットと同じ規則にそろえる。
 export function digestCountedDates(
   weekDates: readonly string[],
   todayJst: string,
@@ -67,7 +64,6 @@ export function buildWeeklyDigest(
   };
 }
 
-//* 週の7日分。学習量・コンディション・消化を1日1行にまとめる。
 export function buildWeeklyReviewDays(args: {
   conditionByDate: Readonly<Record<string, Condition | null | undefined>>;
   liveDayDates: ReadonlySet<string>;
@@ -103,7 +99,6 @@ export function buildWeeklyReviewDays(args: {
         0,
       ),
       dateJst,
-      //? 数えない日(今日・未来)と、並んだ件数0 の日は null。
       digestRate: countedSet.has(dateJst) && planned > 0 ? confirmedRatio(counts) : null,
       kind,
       plannedCount: planned,
@@ -112,7 +107,6 @@ export function buildWeeklyReviewDays(args: {
   });
 }
 
-//* 週内で今日以前の暦日数。1日平均の分母(過去週は常に7)。
 export function elapsedDaysInWeek(weekDates: readonly string[], todayJst: string): number {
   return weekDates.filter((dateJst) => dateJst <= todayJst).length;
 }

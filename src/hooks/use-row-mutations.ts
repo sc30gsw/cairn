@@ -94,7 +94,6 @@ export function useOptimisticUnconfirmRow(dateJst: DateJst, todayJst: DateJst) {
 export function useOptimisticStartRow(dateJst: DateJst, todayJst: DateJst) {
   const mutateAsync = useConvexMutation(api.mutations.rows.start.start).withOptimisticUpdate(
     (localStore, args) => {
-      //? 着手はそのまま計測開始(T1)。サーバの startedAt が届くまで端末の補正時計で走らせる。
       setDayRowStatus(localStore, {
         dateJst,
         rowId: args.rowId,
@@ -126,7 +125,6 @@ export function useOptimisticReopenRow(dateJst: DateJst, todayJst: DateJst) {
   const mutateAsync = useConvexMutation(api.mutations.rows.reopen.reopen).withOptimisticUpdate(
     (localStore, args) => {
       const row = getDayRow(localStore, { dateJst, rowId: args.rowId, todayJst });
-      //? 確定分数から計測を続ける(T9)。目安分数ではなく実績を引き継ぐ非対称は意図的。
       setDayRowStatus(localStore, {
         dateJst,
         rowId: args.rowId,
@@ -178,7 +176,6 @@ export function useOptimisticStopRowTimer(dateJst: DateJst, todayJst: DateJst) {
     if (row !== undefined) {
       patchDayRow(localStore, {
         dateJst,
-        //? 走っていた区間を端末側でも畳んで時計を止める。真値はサーバの戻り値で上書きされる。
         patch: {
           timer: {
             accumulatedMs: measuredMs(row.timer, serverNowMs()),
@@ -190,7 +187,6 @@ export function useOptimisticStopRowTimer(dateJst: DateJst, todayJst: DateJst) {
         todayJst,
       });
     }
-    //? ヘッダのインジケータは「いま計測中の1件」だけを見ているので、同時に消す。
     if (localStore.getQuery(api.queries.rows.runningTimer.runningTimer, {})?._id === args.rowId) {
       localStore.setQuery(api.queries.rows.runningTimer.runningTimer, {}, null);
     }
@@ -222,8 +218,6 @@ export function useOptimisticResumeRowTimer(dateJst: DateJst, todayJst: DateJst)
   return { mutateAsync };
 }
 
-//* どの画面にいても計測中を止められるインジケータ用(docs/specs/study-timer.md §13.2)。
-//? 日ページのキャッシュを持たない画面から呼ばれるので、行の楽観更新はしない。
 export function useStopRunningTimer() {
   const mutateAsync = useConvexMutation(
     api.mutations.rows.stopTimer.stopTimer,

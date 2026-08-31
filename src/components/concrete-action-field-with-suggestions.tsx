@@ -18,12 +18,10 @@ function SuggestingField({ itemId, ...props }: ConcreteActionFieldWithSuggestion
   return <ConcreteActionField {...props} suggestions={suggestions} />;
 }
 
-//? フォールバックは suggestions なしの同フィールド。suspend する内側コンポーネントを描画しない(shimmer-from-structure.md パターン2)
 export function ConcreteActionFieldWithSuggestions({
   itemId,
   ...props
 }: ConcreteActionFieldWithSuggestionsProps) {
-  //? shimmer テンプレートの疑似 id は v.id("items") を満たさないため、問い合わせず候補なしで描画する
   if (isShimmerId(itemId)) {
     return <ConcreteActionField {...props} />;
   }

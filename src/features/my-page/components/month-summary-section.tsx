@@ -24,7 +24,6 @@ export function MonthSummarySection() {
   );
 }
 
-//? MonthSummarySection 自身を fallback に入れない(再サスペンドする)。実コンポーネントにテンプレート値を渡すだけ
 export function MonthSummarySectionFallback() {
   return (
     <Shimmer loading>

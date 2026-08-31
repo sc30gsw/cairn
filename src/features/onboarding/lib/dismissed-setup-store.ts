@@ -87,7 +87,6 @@ export function notifyDismissedSetupChanged() {
   }
 }
 
-/** Resets module state — tests only. */
 export function resetDismissedSetupStoreForTests() {
   dismissedSnapshot = "";
   dismissedListeners.clear();

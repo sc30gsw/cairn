@@ -3,7 +3,6 @@ import type { MutationCtx } from "../../_generated/server";
 import { NotFoundError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 
-//* 所有権ガード(IDOR 防止、CVX-04)。requireOwnedGoal / requireOwnedRow と同じ形。
 export async function requireOwnedNotification(
   ctx: MutationCtx,
   ownerId: string,

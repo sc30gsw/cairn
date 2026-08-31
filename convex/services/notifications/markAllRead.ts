@@ -1,7 +1,5 @@
 import type { MutationCtx } from "../../_generated/server";
 
-//* 所有者の未読を全件既読にする。通知欄は最新50件しか返さないので、id 配列方式では
-//? 画面に無い未読が既読にならずバッジが下がらない。この不整合を構造的に消すための別 mutation。
 export async function markAllRead(
   ctx: MutationCtx,
   ownerId: string,

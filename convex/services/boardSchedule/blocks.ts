@@ -140,7 +140,6 @@ export async function update(
     patch.rowId = rowId;
     patch.title = itemName;
   } else {
-    //? move と同じく、行を差し替えない更新でも既存 rowId が今も生存記録か再検証する。
     await requireLiveRowForSchedule(ctx, ownerId, block.rowId);
   }
   await ctx.db.patch("boardScheduleEvents", args.blockId, patch);

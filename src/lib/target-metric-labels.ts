@@ -1,6 +1,5 @@
 import { TARGET_METRIC_UNITS, TARGET_METRICS, type TargetMetric } from "~domain/domain";
 
-//? 値の SSoT は ~domain/domain。ここが持つのは表示だけ(CVX-16)
 export const TARGET_METRIC_LABELS = {
   count: "件数",
   days: "実施日",

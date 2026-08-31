@@ -22,14 +22,12 @@ type MoveItem = { column: KanbanColumn; move: Exclude<KanbanStatusMove, "noop"> 
 
 type BoardKanbanCardMenuProps = {
   disabled: boolean;
-  //* ドラッグ経路と同じ合流点を呼ぶ。ここで onConfirm を直接呼んではいけない(pwa-mobile.md §11.2)。
   onStatusMove: (move: Exclude<KanbanStatusMove, "noop">, row: BoardRow) => Promise<unknown>;
   onShift: (direction: -1 | 1, row: BoardRow) => void;
   row: BoardRow;
   rows: readonly BoardRow[];
 };
 
-//? 状態名の生値(確定 / スキップ)は UI に出さず、RECORD_STATUS_UI と同じ表示名に寄せる(§11.2)。
 const MOVE_LABEL = {
   スキップ: "見送りにする",
   未着手: "未着手に戻す",
@@ -49,7 +47,6 @@ function moveIcon({ column }: MoveItem) {
   return <Icon aria-hidden size={16} stroke={1.5} />;
 }
 
-//* モバイルのドラッグ代替。列間ドラッグを捨てた代わりに、移動と並べ替えをここから出す(§11.2)。
 export function BoardKanbanCardMenu({
   disabled,
   onStatusMove,
@@ -57,7 +54,6 @@ export function BoardKanbanCardMenu({
   row,
   rows,
 }: BoardKanbanCardMenuProps) {
-  //? 確定は stopTimer の解決を待つので、押した後は loading にする(study-timer.md §8.3 と同じ扱い)。
   const [pending, setPending] = useState(false);
   const moves = kanbanMoveMenuItems(row.status);
   const canShiftUp = shiftRowWithinColumn(rows, row._id, -1) !== null;

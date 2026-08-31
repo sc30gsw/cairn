@@ -49,8 +49,6 @@ HTMLElement.prototype.releasePointerCapture ??= () => undefined;
 HTMLElement.prototype.scrollIntoView ??= () => undefined;
 HTMLElement.prototype.setPointerCapture ??= () => undefined;
 
-//? happy-dom has no FontFaceSet. Mantine's autosizing Textarea (react-textarea-autosize)
-//? listens for `document.fonts.loadingdone` unconditionally, which otherwise throws on mount.
 (document as unknown as { fonts: Document["fonts"] }).fonts ??= {
   addEventListener: () => undefined,
   removeEventListener: () => undefined,
@@ -83,9 +81,6 @@ export function renderWithMantine(ui: ReactElement, options?: Omit<RenderOptions
   return render(ui, { wrapper: Wrapper, ...options });
 }
 
-//? rerender は RouterProvider ごと差し替える必要がある(素の要素を render し直すと
-//? ルーター外になり getRouteApi().useSearch() が null store で落ちる)。外部ストアに
-//? 現在の要素を持たせ、Page がそれを購読することで memo 化に関係なく更新が届く。
 function createElementStore(initial: ReactElement) {
   let current = initial;
   const listeners = new Set<() => void>();

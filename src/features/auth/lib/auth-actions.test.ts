@@ -65,7 +65,6 @@ test("signInWithNotion は失敗時に Result.err を返し、pending フラグ�
 });
 
 test("signInWithNotion は redirect 前に pending フラグを立てる", async () => {
-  //? 実際は social() が redirect して以降のコードは実行されない。ここではフラグの立ち上げだけ検証する
   vi.mocked(authClient.signIn.social).mockImplementation(async () => {
     expect(readPasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY)).toBe(true);
     return { data: {}, error: undefined };

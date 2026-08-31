@@ -59,7 +59,6 @@ const green = [
   "#1C2803",
 ] as const satisfies MantineColorsTuple;
 
-//? Flexoki orange。#4 と #5 は「紙×手書き」デザイン合意(design-notes.md)のアクセント2色にそのまま合わせる
 const orange = [
   "#FDEEE4",
   "#FBDCC7",
@@ -73,16 +72,11 @@ const orange = [
   "#3D1A07",
 ] as const satisfies MantineColorsTuple;
 
-//? Google Fonts に無い「851手書き雑フォント(Tegaki851)」は CDN ホストがネットワーク許可リストに無く取得不可だったため、
-//? デザイン側が元々フォールバックに指定していた Yomogi をそのまま本採用にしている(design-notes.md 参照)
 const HAND_FONT = '"Yomogi", sans-serif';
-//? 呼び出し側の import 名はそのまま流用(見出し・本文とも手書きフォントに統一する合意のため同値)
 export const BODY_FONT = HAND_FONT;
 export const DISPLAY_FONT = HAND_FONT;
-//? 数字も本文と同じ手書きフォントに統一(以前は可読性優先の別フォントだったが、意匠を優先する合意に更新)
 export const NUMERAL_FONT = HAND_FONT;
 
-//? 色の一次値は paper-tokens.ts が唯一の出所(pwa-mobile.md §9.3)。offline.html の生成スクリプトも同じ値を読む
 const INK = PAPER_TOKENS.ink;
 const PAPER = PAPER_TOKENS.paper;
 const PAPER_2 = PAPER_TOKENS.paper2;
@@ -90,12 +84,9 @@ const RULE = PAPER_TOKENS.rule;
 const MUTED = PAPER_TOKENS.muted;
 const MUTED_2 = PAPER_TOKENS.muted2;
 
-//? スケッチ風の不揃いな輪郭(要所のカードのみ)。CSS の border-radius 8値+slash 記法で手描き感を出す
 const SKETCH_RADIUS = "8px 14px 9px 16px/16px 9px 14px 8px";
-//? ピル/スタンプ状の不揃い輪郭(タブ・ボタン・バッジ共通)
 const PILL_RADIUS = "255px 15px 225px 15px/15px 225px 15px 255px";
 const PAPER_SHADOW = "2px 3px 0 rgba(16,15,15,.12)";
-//? チェックボックスだけの小さな手描き角丸(設計ファイル由来)
 const CHECK_RADIUS = "6px 10px 7px 11px/11px 7px 10px 6px";
 
 export const cssVariablesResolver: CSSVariablesResolver = () => ({
@@ -161,7 +152,6 @@ export const theme = createTheme({
         },
       }),
     },
-    //? 手描き風の不揃いな角丸(設計ファイルのチェックボックス)。2箇所目の需要が出るまで export しない
     Checkbox: {
       styles: { input: { border: `1.5px solid ${INK}`, borderRadius: CHECK_RADIUS } },
     },
@@ -180,7 +170,6 @@ export const theme = createTheme({
         },
       },
     },
-    //? 空表示の見た目はここで一括して決める。呼び出し側は icon / title / description だけ渡す
     EmptyState: {
       defaultProps: {
         size: "sm",

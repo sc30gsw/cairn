@@ -123,7 +123,6 @@ test("消化推移の見出しと計算の注記が出る", () => {
   const { getByRole, getByText } = renderTab(REVIEW, TODAY_IN_MONTH);
   expect(getByRole("heading", { name: "月間の消化推移" })).toBeDefined();
   expect(getByText(/確定 ÷ 並んだ件数。今日の行は数えません。/)).toBeDefined();
-  //? 数えた週のうち部分週だけを注記に挙げる(8/10〜8/16 は plannedCount 0 なので挙げない)
   expect(getByText(/08\/01〜08\/02/)).toBeDefined();
 });
 
@@ -139,12 +138,10 @@ test("カテゴリ比較表に今月・先月・増減が併記される", () =>
   const { getAllByRole, getByRole, getByText } = renderTab(REVIEW, TODAY_AFTER_MONTH);
   expect(getByRole("heading", { name: "カテゴリ内訳の月比較" })).toBeDefined();
   expect(getByText("先月は 2026年7月。確定した記録の分数で比べます。")).toBeDefined();
-  //? 見出し行 + 今月2カテゴリ + 先月のみ1カテゴリ
   const rows = getAllByRole("row");
   expect(rows).toHaveLength(4);
   expect(rows[1]?.textContent).toContain("+80分（+15%）");
   expect(getByText("新規")).toBeDefined();
-  //? 先月にしか無いカテゴリは末尾に落ちる
   expect(rows[3]?.textContent).toContain("英会話");
   expect(rows[3]?.textContent).toContain("先月のみ");
 });
@@ -160,7 +157,6 @@ test("記録が無い月はカテゴリ比較の空状態を出す", () => {
 test("月の前後移動と履歴への導線を持つ", () => {
   const { getByRole, getByText, queryByRole } = renderTab(REVIEW, TODAY_IN_MONTH);
   expect(getByRole("button", { name: "前の月" })).toBeDefined();
-  //? 当月を見ているので次の月へは進めず、「今月へ戻る」も出ない
   expect((getByRole("button", { name: "次の月" }) as HTMLButtonElement).disabled).toBe(true);
   expect(queryByRole("button", { name: "今月へ戻る" })).toBeNull();
   expect(getByText("2026年8月を履歴で掘る")).toBeDefined();

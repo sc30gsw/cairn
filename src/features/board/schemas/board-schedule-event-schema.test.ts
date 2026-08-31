@@ -54,8 +54,5 @@ test("blockId は省略できる", () => {
     start,
   });
   expect(result.success).toBe(true);
-  //? v.safeParse(...) の呼び出し site で TSchema を推論させると InferOutput が `{}` に潰れる
-  //? (vp のタイプチェッカーの推論の限界と見られる)。schema.ts が export 済みの
-  //? BoardScheduleEventOutput 型(このスキーマの InferOutput と同一)にキャストして回避する。
   expect((result.output as BoardScheduleEventOutput | undefined)?.blockId).toBeUndefined();
 });

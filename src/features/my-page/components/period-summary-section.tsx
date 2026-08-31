@@ -5,7 +5,6 @@ import type { FunctionReturnType } from "convex/server";
 import type { api } from "~/../convex/_generated/api";
 import { NUMERAL_FONT } from "~/lib/theme";
 
-//? 週次・月次で digest の形は同じ(convex/lib/validators.ts の ReviewDto 系)。週次の型から借りる
 type PeriodDigest = FunctionReturnType<
   typeof api.queries.review.weeklyReview.weeklyReview
 >["digest"];
@@ -31,7 +30,6 @@ function PeriodStat({ label, value }: { label: string; value: string }) {
   );
 }
 
-//* 状況ページの週・月サマリー。詳しい内訳はレビューに任せ、ここは3つの数字だけを出す。
 export function PeriodSummarySection({
   activeDays,
   confirmedMinutes,

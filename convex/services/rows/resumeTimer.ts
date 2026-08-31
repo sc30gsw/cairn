@@ -6,7 +6,6 @@ import { requireOwnedRow } from "./requireOwnedRow";
 import { rowDayLiveness } from "./rowDayLiveness";
 import { stopRunningTimer } from "./stopRunningTimer";
 
-//* 計測を(再)開始する(T3)。累積は残したまま新しい区間を開く。自動停止の目印は消す。
 export async function resumeTimer(
   ctx: MutationCtx,
   ownerId: string,
@@ -22,7 +21,6 @@ export async function resumeTimer(
   if (row.timerStartedAt !== undefined) {
     return null;
   }
-  //? 同時計測は1件だけ。走っている別の行を同一トランザクションで畳む(§4.4)。
   await stopRunningTimer(ctx, ownerId, args.rowId);
   await ctx.db.patch("rows", args.rowId, {
     timerAccumulatedMs: row.timerAccumulatedMs ?? 0,

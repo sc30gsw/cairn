@@ -14,8 +14,6 @@ import {
   WeekSummarySectionFallback,
 } from "~/features/my-page/components/week-summary-section";
 
-//? 各セクションを独立した Suspense 境界にして、遅い集計が他のカードを塞がないようにする
-//? fallback は各セクション専用の構造モック(実表示とズレる汎用 PendingComponent は使わない)
 export function MyPageStatus() {
   return (
     <Stack gap="md">

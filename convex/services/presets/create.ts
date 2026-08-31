@@ -22,7 +22,6 @@ export async function create(
   if (!isWeekday(args.weekday)) {
     throwDomain(new ValidationFailedError({ message: "曜日が不正です" }));
   }
-  //? rows/confirm.ts と同じく trim 後の内容・検証済みの分数だけを保存する
   const lines = args.lines.map((line) => ({
     ...line,
     content: line.content.trim(),

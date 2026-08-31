@@ -32,7 +32,6 @@ function owner() {
 
 type SeedRow = Pick<Doc<"rows">, "dateJst" | "minutes" | "status">;
 
-//? カタログ(カテゴリ + 項目)を1つ作り、指定した行を確定状態で流し込む。
 async function seedCategory(
   t: ReturnType<typeof owner>,
   name: string,
@@ -181,7 +180,6 @@ test("週の途中の日を渡してもその週の月曜〜日曜で集計す�
     targetValue: 40,
   });
 
-  //? 木曜を渡しても 8/17〜8/23 の窓のまま。2週にまたがった 7日窓にはならない
   const targets = await t.query(api.queries.targets.listWithProgress.listWithProgress, {
     weekStartJst: "2026-08-20",
   });
@@ -317,7 +315,6 @@ test("未認証では読み書きできない", async () => {
 });
 
 test("他人のカテゴリやターゲットは操作できない", async () => {
-  //? 同じインスタンスから2人分の identity を作り、同じ DB を見る。
   const shared = raw();
   const t = shared.withIdentity(OWNER);
   const categoryId = await seedCategory(t, "TOEIC対策", 0);

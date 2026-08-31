@@ -8,8 +8,6 @@ import { useConvexMutation } from "~/lib/use-convex-mutation";
 export function useOpenAndLoadDay(dateJst: DateJst, today: DateJst) {
   const open = useConvexMutation(api.mutations.days.open.open);
 
-  // React throws away hook state when a component suspends before it mounts, so useState
-  // cannot hold this promise: the query cache is what keeps `open` to a single call.
   useSuspenseQuery({
     gcTime: Number.POSITIVE_INFINITY,
     queryFn: async () => {

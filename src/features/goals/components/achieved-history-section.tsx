@@ -16,17 +16,14 @@ const ROW_BORDER = "1px dashed var(--cairn-desk)";
 type AchievedRowProps = {
   goal: MasteryGoal;
   isLast: boolean;
-  //? 対象項目のラベルを引き当てる一覧。凍結された実績なので、その時点の対象項目のまま出す
   items: ItemDto[];
   onEdit: () => void;
   onRemove: () => void;
   onSetAchieved: (input: SetAchievedInput) => void;
-  //? 親があれば添える。カスケード削除で消える範囲が読めるようにする
   parentName: string | undefined;
   todayJst: DateJst;
 };
 
-//? CheckpointRow と同じ骨格。期限の代わりに達成日と親名を出す
 function AchievedRow({
   goal,
   isLast,
@@ -47,7 +44,6 @@ function AchievedRow({
       style={{ borderBottom: isLast ? undefined : ROW_BORDER }}
       wrap="wrap"
     >
-      {/*? 外すと現在進行形に戻り、ツリーへ帰る */}
       <Checkbox
         aria-label={`${goal.content}の達成`}
         checked={goal.achievedAt !== undefined}
@@ -85,7 +81,6 @@ function AchievedRow({
 
 type AchievedHistorySectionProps = {
   achieved: MasteryGoal[];
-  //? 編集フォームは一覧の上に開く(対象の行は隠れている)
   form: ReactNode;
   items: ItemDto[];
   onEditGoal: (goal: MasteryGoal) => void;
@@ -95,7 +90,6 @@ type AchievedHistorySectionProps = {
   todayJst: DateJst;
 };
 
-//? 達成の履歴は時系列で読むもの。親ごとに折りたたむのではなくページ下部に1本だけ置く(#48 §15-5)
 export function AchievedHistorySection({
   achieved,
   form,
@@ -108,7 +102,6 @@ export function AchievedHistorySection({
 }: AchievedHistorySectionProps) {
   return (
     <Card>
-      {/*? 既定は閉じる(defaultValue を渡さない) */}
       <Accordion variant="contained">
         <Accordion.Item value="achieved">
           <Accordion.Control>

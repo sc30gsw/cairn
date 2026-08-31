@@ -6,7 +6,6 @@ import type { Doc, Id } from "./_generated/dataModel";
 import { TIMER_MAX_SEGMENT_MS } from "./lib/rowTimer";
 import schema from "./schema";
 
-//? 計測(#51)の状態機械。純関数の網羅は convex/lib/rowTimer.test.ts に置く。
 const modules = import.meta.glob([
   "./**/*.ts",
   "!./**/*.test.ts",
@@ -273,7 +272,6 @@ test("T8/T10/T11/T12: 状態を動かす経路の後に計測フィールドは�
     minutes: 20,
     rowId: second._id,
   });
-  //? 不変条件では確定行に計測は残らないが、残っていたら unconfirm が消すことを確認する(T10 の防御)。
   await t.run(async (ctx) =>
     ctx.db.patch("rows", second._id, { timerAccumulatedMs: 60_000, timerAutoStoppedAt: 1 }),
   );
@@ -293,7 +291,6 @@ test("copyYesterdayConfirmed: 重ねて消える記録は計測フィールド�
   const t = asOwner();
   const row = await firstRow(t);
 
-  //? 昨日側に同じ項目の確定記録を作る(コピー元)。
   const yesterdayRowId = await t.mutation(api.mutations.rows.add.add, {
     content: "Unit 1",
     dateJst: SUNDAY,
@@ -307,7 +304,6 @@ test("copyYesterdayConfirmed: 重ねて消える記録は計測フィールド�
     rowId: yesterdayRowId,
   });
 
-  //? 今日側は同じ項目の記録を計測中にし、予定も紐づけておく(重なって消える側)。
   await t.mutation(api.mutations.rows.start.start, { rowId: row._id });
   await t.mutation(api.mutations.boardSchedule.create.create, {
     endAt: `${MONDAY} 10:30:00`,

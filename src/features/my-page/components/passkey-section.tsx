@@ -28,7 +28,6 @@ export function PasskeySection() {
 
   useEffect(() => {
     void list.run(() => listPasskeys());
-    // Mount-only passkey list load; `list.run` is stable enough for a single fetch.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only
   }, []);
 

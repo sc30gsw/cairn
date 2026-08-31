@@ -6,10 +6,6 @@ import { throwDomain } from "../../lib/ownerFunctions";
 import type { NotificationSettingsDto } from "../../lib/validators";
 import { getOwnerSettings } from "./getOwnerSettings";
 
-//? 送信ペイロードの型はこの mutation の args と同形の DTO 型(NotificationSettingsDto)から借りる。
-//? api からの FunctionArgs<typeof api.mutations...> は使わない — その mutation のハンドラーが
-//? この関数を呼ぶため、api の型 → この関数の型 → api の型…という自己参照になり circularly
-//? references itself エラーになる(convex/mutations/notifications/saveSettings.ts 参照)。
 type SaveNotificationSettingsArgs = NotificationSettingsDto;
 
 function requireHour(hour: number, range: { max: number; min: number }, message: string): void {
@@ -18,8 +14,6 @@ function requireHour(hour: number, range: { max: number; min: number }, message:
   }
 }
 
-//* 1所有者1行の upsert。行の作成 = オプトインなので、この mutation が通知の入口も兼ねる。
-//? 保存そのものは通知を発火させない(次の該当時刻から出る)。
 export async function saveSettings(
   ctx: MutationCtx,
   ownerId: string,

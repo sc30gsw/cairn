@@ -16,7 +16,6 @@ export type SaveTargetArgs = {
   targetValue: number;
 };
 
-//* 1カテゴリ1件。既存があれば上書き(upsert)し、行を増やさない。
 export async function save(
   ctx: MutationCtx,
   ownerId: string,

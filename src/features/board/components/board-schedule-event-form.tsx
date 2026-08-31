@@ -46,8 +46,6 @@ export function BoardScheduleEventForm({
 }: BoardScheduleEventFormProps) {
   const rowOptions = rows.map((row) => ({ label: row.itemName, value: row._id }));
   const form = useForm({
-    //? rows が空のときは選べる項目が無い(送信ボタンも disabled)。プレースホルダとして
-    //? 空文字を割り当てる — RowIdSchema の nonEmpty 相当チェックで弾かれるのが意図通り。
     initialInput: initialValues ?? {
       blockId: undefined,
       color: DEFAULT_BOARD_SCHEDULE_COLOR,

@@ -2,9 +2,6 @@ import type { Doc } from "../../_generated/dataModel";
 import type { GoalDto } from "../../lib/validators";
 import { masteryProgressOf } from "./masteryProgressOf";
 
-//* ドキュメントから ownerId を落として DTO にする(CVX-16: 形は validators が SSoT)。
-//? 学習量の実績は保存値なので masteryProgressOf でそのまま載せるだけ(導出は書き込み側の責務)。
-//? createdAt は _creationTime。並び順を index 順の偶然に頼らないため DTO に載せる。
 export function toGoalDto(goal: Doc<"goals">): GoalDto {
   if (goal.type === "exam") {
     return {
@@ -26,7 +23,6 @@ export function toGoalDto(goal: Doc<"goals">): GoalDto {
     criterion: goal.criterion,
     deadline: goal.deadline,
     parentGoalId: goal.parentGoalId,
-    //? 項目名は載せない。名前の真実を2箇所に置かず、クライアントが items.list から引く(#53 §18-18)。
     scopeItemIds: goal.scopeItemIds,
     type: "mastery",
   };

@@ -24,9 +24,6 @@ export async function switchPreset(
   const rows = await liveRowsForDay(ctx, day._id);
   const kept = keptRowsAfterSwitch(rows);
   const startOrder = kept.reduce((max, row) => Math.max(max, row.sortOrder), -1);
-  //? 消すのも足すのも未着手だけ。確定は残るので習得目標のカウンタは動かさない(ADR-0007)。
-  //? remove.ts と同じく、消す記録に紐づく予定(boardScheduleEvents)も一緒に消す。ここで消さないと
-  //? move -> requireLiveRowForSchedule が永遠に NotFound になる孤児が残る。
   await Promise.all(
     rows.flatMap((row) =>
       row.status === "未着手"

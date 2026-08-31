@@ -106,11 +106,8 @@ test("buildWeeklyReviewDays は7件返し、休養・未記録・今日を書き
     plannedCount: 2,
   });
   expect(days[0]?.digestRate).toBeCloseTo(0.5);
-  //? 火曜は記録が無い過去日 → 休養。並んだ件数0 なので消化は出さない
   expect(days[1]).toMatchObject({ condition: null, digestRate: null, kind: "rest" });
-  //? 今日は学習量を出すが消化は出さない
   expect(days[3]).toMatchObject({ confirmedMinutes: 30, digestRate: null, kind: "live" });
-  //? 未来日は未記録
   expect(days[6]).toMatchObject({ digestRate: null, kind: "unrecorded" });
 });
 

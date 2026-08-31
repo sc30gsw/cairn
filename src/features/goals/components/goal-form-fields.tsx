@@ -53,30 +53,20 @@ const PARENT_LABEL = "親";
 const DEADLINE_LABEL = "期限";
 const OPTIONAL_DEADLINE_LABEL = "期限（任意）";
 
-//* 同時に追いかけるチェックポイントの目安。超えても止めない非ブロッキングの助言(docs/adr/0006)。
 const CHECKPOINT_CROWDED_THRESHOLD = 2;
 export const CHECKPOINT_CROWDED_MESSAGE = "同時に追いかけるチェックポイントは1〜2件が目安です";
 const PARENT_NOT_FOUND_MESSAGE = "親の目標が見つかりません。選び直してください";
 
-//? どのフォームも props は共通。GoalForm が variant から部品を引けるようにする
 export type GoalFieldsProps = {
-  //? その親の未達成チェックポイント数。3件目を作るときだけ助言を出す(親ごとに数える)
   activeCheckpointCount: number;
-  //? 対象項目の MultiSelect の見出し
   categories: CategoryDto[];
-  //? フォームの語。GoalForm が variant から引いて渡す
   copy: GoalFormCopy;
-  //? 編集対象。undefined なら新規作成
   goal: Goal | undefined;
-  //? 親候補の引き当て(Select が返す文字列から Id のブランドを取り戻す)
   goals: Goal[];
-  //? 子チェックポイントを持つ長期目標は期限を付けられない(INV-5)
   hasChildCheckpoints: boolean;
-  //? 対象項目の選択肢と引き当て(MultiSelect が返す文字列から Id のブランドを取り戻す)
   items: ItemDto[];
   onCancel: () => void;
   onSubmit: (goal: GoalInputPayload) => void;
-  //? 新規チェックポイントの親。導線から確定するので Select は出さない
   parent: ParentGoal | undefined;
   todayJst: DateJst;
 };
@@ -85,7 +75,6 @@ const SCOPE_LABEL = "実績に数える項目";
 
 type GoalScopeFieldProps = {
   categories: CategoryDto[];
-  //? 達成済みは実績が凍結されている。対象を変えると凍結値の意味が壊れる(#53 §7.2)
   disabled: boolean;
   error: string | undefined;
   items: ItemDto[];
@@ -93,8 +82,6 @@ type GoalScopeFieldProps = {
   values: string[];
 };
 
-//? 対象項目は Formisch のストアに載せない。MultiSelect の値は1入力の配列で、
-//? クロスフィールド検証も無いので TargetForm の categoryId と同じ useState 管理にする(#53 §10.1)
 function GoalScopeField({
   categories,
   disabled,
@@ -119,8 +106,6 @@ function GoalScopeField({
   );
 }
 
-//? 新規チェックポイントの初期値は親の対象項目(親が長期目標のときだけ)。継承は初期値のコピーで、
-//? 以後は連動しない(#53 §18-16)。本番目標は対象項目を持たないので空になる。
 function initialScopeValues(goal: MasteryGoal | undefined, parent: ParentGoal | undefined) {
   if (goal !== undefined) {
     return goal.scopeItemIds ?? [];
@@ -128,7 +113,6 @@ function initialScopeValues(goal: MasteryGoal | undefined, parent: ParentGoal | 
   return (parent?.type === "mastery" ? parent.scopeItemIds : undefined) ?? [];
 }
 
-//* 送信時に MultiSelect の文字列を Id へ引き当てる。引けない値が混ざっていたら送らせない。
 function scopePayload(
   values: readonly string[],
   items: readonly ItemDto[],
@@ -149,7 +133,6 @@ type GoalFieldsSchema =
   | typeof LongTermGoalFieldsSchema
   | typeof MasteryEditFieldsSchema;
 
-//? どのスキーマでも文字列フィールドの FieldStore は同じ形。path だけ違うので落として使い回す
 type GoalTextFieldStore = Omit<FieldStore<GoalFieldsSchema, ["content"]>, "path">;
 
 type GoalDateFieldProps = {
@@ -202,7 +185,6 @@ function GoalDateField({
     <DatePickerInput
       classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
       clearable={clearable}
-      //? クリアボタンは既定でアクセシブル名を持たない。色や位置だけに頼らない(#48 §12)
       clearButtonProps={{ "aria-label": `${label}を消す` }}
       description={description}
       disabled={disabled}
@@ -236,7 +218,6 @@ function GoalFormActions({ onCancel, submitLabel }: GoalFormActionsProps) {
   );
 }
 
-//? 止めない。列やチェーンにせず件数を絞るための助言だけ(Rai et al. 2023)
 function CheckpointCrowdedAlert({ count }: Record<"count", number>) {
   return (
     <Alert color="yellow" title={CHECKPOINT_CROWDED_MESSAGE} variant="light">
@@ -310,7 +291,6 @@ export function ExamGoalFields({ copy, goal, onCancel, onSubmit, todayJst }: Goa
   );
 }
 
-//* 新規長期目標。期限欄は出さない(期限を切りたくなったら編集で付ける = そのとき親が必要になる)。
 export function LongTermGoalFields({
   categories,
   copy,
@@ -376,7 +356,6 @@ export function LongTermGoalFields({
   );
 }
 
-//* 新規チェックポイント。親は押した導線が決めるので読み取り専用、期限は必須(既定は次の日曜)。
 export function CheckpointGoalFields({
   activeCheckpointCount,
   categories,
@@ -460,7 +439,6 @@ export function CheckpointGoalFields({
   );
 }
 
-//* 習得の編集(長期目標 / チェックポイント共通)。期限の付け外しが区分の移行そのものになる。
 export function MasteryEditFields({
   categories,
   copy,
@@ -507,11 +485,9 @@ export function MasteryEditFields({
           return;
         }
         if (output.deadline === undefined) {
-          //? 期限を外すと親も落ちる(INV-1)。replace なので同時に消える
           onSubmit({ ...output, ...scope, parentGoalId: undefined, type: "mastery" });
           return;
         }
-        //? Select が返すのはただの文字列。一覧から引き当てて Id のブランドを取り戻す
         const nextParent = goals.find((candidate) => candidate._id === output.parentGoalId);
         if (nextParent === undefined) {
           setErrors(form, { errors: [PARENT_NOT_FOUND_MESSAGE], path: ["parentGoalId"] });
@@ -541,7 +517,6 @@ export function MasteryEditFields({
             todayJst={todayJst}
           />
         </Grid.Col>
-        {/*? 期限なし = 長期目標には親がない。期限が入っているときだけ親を選ばせる */}
         {deadline !== "" && !hasChildCheckpoints && (
           <Grid.Col span={12}>
             <Select
@@ -570,7 +545,6 @@ export function MasteryEditFields({
         </Grid.Col>
         {alert !== undefined && (
           <Grid.Col span={12}>
-            {/*? 可逆な操作なので止めない。行き先だけを先に見せる */}
             <Alert color="blue" variant="light">
               {alert}
             </Alert>

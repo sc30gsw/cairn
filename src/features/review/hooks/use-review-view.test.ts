@@ -8,7 +8,6 @@ test("deriveReviewWeek は未指定時に今週の月曜を返す", () => {
 
 test("deriveReviewWeek は月曜以外を渡されてもその週の月曜に正規化する", () => {
   expect(deriveReviewWeek({ week: "2026-08-22" }, "2026-08-31")).toBe("2026-08-17");
-  //? 日曜は前の月曜に寄せる(月曜始まりの週)
   expect(deriveReviewWeek({ week: "2026-08-23" }, "2026-08-31")).toBe("2026-08-17");
 });
 

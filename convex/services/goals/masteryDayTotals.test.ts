@@ -78,7 +78,6 @@ test("項目別合計が完全一致なら同一、どこか1つでも違えば�
       ]),
     ),
   ).toBe(true);
-  //? 分数だけ違う
   expect(
     sameItemTotals(
       before,
@@ -88,7 +87,6 @@ test("項目別合計が完全一致なら同一、どこか1つでも違えば�
       ]),
     ),
   ).toBe(false);
-  //? 件数だけ違う
   expect(
     sameItemTotals(
       before,
@@ -98,9 +96,7 @@ test("項目別合計が完全一致なら同一、どこか1つでも違えば�
       ]),
     ),
   ).toBe(false);
-  //? キーが減った
   expect(sameItemTotals(before, totalsOf([[KINFURE, 1, 30]]))).toBe(false);
-  //? キーが増えた
   expect(sameItemTotals(totalsOf([[KINFURE, 1, 30]]), before)).toBe(false);
 });
 
@@ -150,7 +146,6 @@ test("差分は前後の実測の引き算で、前後が同じなら0", () => {
       { confirmedCount: 0, confirmedMinutes: 0 },
     ),
   ).toEqual({ activeDays: -1, confirmedMinutes: -30 });
-  //? 前後が同じ = その書き込みは実績を動かしていない(重複した日ドキュメントでの漂流防止)
   expect(
     masteryProgressDelta(
       { confirmedCount: 1, confirmedMinutes: 30 },

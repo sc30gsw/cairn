@@ -83,9 +83,6 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
           notion: {
             clientId: process.env.NOTION_CLIENT_ID ?? "",
             clientSecret: process.env.NOTION_CLIENT_SECRET ?? "",
-            // emailAndPassword.disableSignUp だけでは OAuth コールバックの暗黙サインアップは
-            // 止まらない(better-auth 1.6.28: api/routes/callback.mjs は
-            // provider.options?.disableSignUp だけを見る)。プロバイダ単位で明示的に渡す。
             disableSignUp: signUpDisabled,
           },
         }
