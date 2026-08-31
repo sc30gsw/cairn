@@ -9,6 +9,7 @@ import type { Method, MethodCatalog } from "~/features/methods/types/method";
 import { renderWithMantine } from "~/test-utils/render";
 
 const catalogActions = vi.hoisted(() => ({
+  onApplyLaneOrder: vi.fn(),
   onApplyMethodOrder: vi.fn(),
   onCreateLane: vi.fn(),
   onCreateMethod: vi.fn(),
@@ -79,6 +80,9 @@ test("レーンの下に方法カードが並び、いま見るの方法は正�
 
   expect(getByRole("button", { name: "模試レーンを保存" })).toBeDefined();
   expect(getByRole("button", { name: "単語レーンを削除" })).toBeDefined();
+  //? レーン(列)自体のドラッグつまみ
+  expect(getByRole("button", { name: "模試レーンをドラッグ" })).toBeDefined();
+  expect(getByRole("button", { name: "単語レーンをドラッグ" })).toBeDefined();
   expect(getByRole("button", { name: "公式問題集の3回法を開く" })).toBeDefined();
   expect(getByRole("button", { name: "金フレ高速回転をいま見るにする" })).toBeDefined();
   expect(getByRole("button", { name: "公式問題集の3回法のいま見るを外す" })).toBeDefined();

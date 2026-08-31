@@ -1,8 +1,9 @@
 import { Field, Form, reset, useForm } from "@formisch/react";
-import type { DropResult } from "@hello-pangea/dnd";
+import type { DroppableProvided, DropResult } from "@hello-pangea/dnd";
 import {
   ActionIcon,
   Badge,
+  Box,
   Button,
   Card,
   Grid,
@@ -18,7 +19,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { IconEye, IconEyeOff, IconGripVertical, IconTrash } from "@tabler/icons-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { groupBy, mapValues, prop, sortBy } from "remeda";
 
 import { MethodCardModal } from "~/features/methods/components/method-card-modal";
@@ -36,6 +37,8 @@ const METHOD_CATALOG_HINT =
   "「勉強方法どうやるのが効率なんだっけ」を思い出すための参照専用カタログ。今日の記録やプリセットには何も起こしません。";
 export const METHOD_CATALOG_EMPTY =
   "まだ空のカタログです。まずレーン(例: 模試レーン / 単語レーン)を追加します。";
+//? レーン(列)ドラッグと方法カードドラッグを同じ DragDropContext 内で区別する type
+const LANE_DROP_TYPE = "LANE";
 
 export function MethodCatalogBoard({ catalog }: Record<"catalog", MethodCatalog>) {
   const actions = useMethodCatalogActions();
@@ -51,10 +54,26 @@ export function MethodCatalogBoard({ catalog }: Record<"catalog", MethodCatalog>
   const openedMethod = catalog.methods.find((method) => method._id === openedMethodId);
 
   async function handleDragEnd(result: DropResult) {
-    const { destination, draggableId, source } = result;
+    const { destination, draggableId, source, type } = result;
     if (destination === null) {
       return;
     }
+
+    //? レーン(列)自体のドラッグ。type で方法カードのドロップと区別する
+    if (type === LANE_DROP_TYPE) {
+      if (destination.index === source.index) {
+        return;
+      }
+      const reordered = [...sortedLanes];
+      const [movedLane] = reordered.splice(source.index, 1);
+      if (movedLane === undefined) {
+        return;
+      }
+      reordered.splice(destination.index, 0, movedLane);
+      await actions.onApplyLaneOrder({ orderedLaneIds: reordered.map((lane) => lane._id) });
+      return;
+    }
+
     const sourceLaneId = source.droppableId as MethodLane["_id"];
     const destinationLaneId = destination.droppableId as MethodLane["_id"];
     const sourceMethods = [...(methodsByLane[sourceLaneId] ?? [])];
@@ -119,7 +138,7 @@ export function MethodCatalogBoard({ catalog }: Record<"catalog", MethodCatalog>
             {METHOD_CATALOG_HINT}
           </Text>
           <Text c="dimmed" size="sm">
-            カードをドラッグして並べ替え・レーン移動。キーボード操作は各カードの「移動」メニューから。
+            カードをドラッグして並べ替え・レーン移動、レーンも見出し横のつまみでドラッグして並べ替え。キーボード操作は各カードの「移動」メニューから。
           </Text>
         </Stack>
         {nowViewing !== undefined && (
@@ -133,22 +152,28 @@ export function MethodCatalogBoard({ catalog }: Record<"catalog", MethodCatalog>
         ) : (
           <DragDropContext onDragEnd={handleDragEnd}>
             <ScrollArea offsetScrollbars type="auto">
-              <Group align="flex-start" gap="md" wrap="nowrap">
-                {sortedLanes.map((lane) => (
-                  <LaneColumn
-                    key={lane._id}
-                    lane={lane}
-                    lanes={sortedLanes}
-                    methods={methodsByLane[lane._id] ?? []}
-                    onCreateMethod={actions.onCreateMethod}
-                    onMoveMethod={moveMethodToLane}
-                    onOpenMethod={setOpenedMethodId}
-                    onRemoveLane={actions.onRemoveLane}
-                    onRenameLane={actions.onRenameLane}
-                    onSetNowViewing={actions.onSetNowViewing}
-                  />
-                ))}
-              </Group>
+              <LaneRow>
+                {(laneProvided) => (
+                  <>
+                    {sortedLanes.map((lane, index) => (
+                      <LaneColumn
+                        index={index}
+                        key={lane._id}
+                        lane={lane}
+                        lanes={sortedLanes}
+                        methods={methodsByLane[lane._id] ?? []}
+                        onCreateMethod={actions.onCreateMethod}
+                        onMoveMethod={moveMethodToLane}
+                        onOpenMethod={setOpenedMethodId}
+                        onRemoveLane={actions.onRemoveLane}
+                        onRenameLane={actions.onRenameLane}
+                        onSetNowViewing={actions.onSetNowViewing}
+                      />
+                    ))}
+                    {laneProvided.placeholder}
+                  </>
+                )}
+              </LaneRow>
             </ScrollArea>
           </DragDropContext>
         )}
@@ -235,7 +260,29 @@ function AddLaneForm({ onCreate }: Record<"onCreate", MethodCatalogActions["onCr
   );
 }
 
+//* レーン(列)の横並び。横方向の Droppable がレーンドラッグの受け皿になる(方法カードとは type で区別)。
+function LaneRow({ children }: Record<"children", (provided: DroppableProvided) => ReactNode>) {
+  const { Droppable } = useDnd();
+
+  return (
+    <Droppable direction="horizontal" droppableId="method-lanes" type={LANE_DROP_TYPE}>
+      {(provided) => (
+        <Group
+          align="flex-start"
+          gap="md"
+          ref={provided.innerRef}
+          {...provided.droppableProps}
+          wrap="nowrap"
+        >
+          {children(provided)}
+        </Group>
+      )}
+    </Droppable>
+  );
+}
+
 type LaneColumnProps = {
+  index: number;
   lane: MethodLane;
   lanes: MethodLane[];
   methods: Method[];
@@ -248,6 +295,7 @@ type LaneColumnProps = {
 };
 
 function LaneColumn({
+  index,
   lane,
   lanes,
   methods,
@@ -262,118 +310,148 @@ function LaneColumn({
   const moveTargets = lanes.filter((candidate) => candidate._id !== lane._id);
 
   return (
-    <Paper miw={300} p="md" radius="sm" withBorder>
-      <Stack gap="md">
-        <LaneEditor lane={lane} onRemove={onRemoveLane} onRename={onRenameLane} />
-        <Droppable droppableId={lane._id}>
-          {(provided) => (
-            <Stack gap="sm" ref={provided.innerRef} {...provided.droppableProps} mih={48}>
-              {methods.length === 0 ? (
-                <Text c="dimmed" size="sm">
-                  ここにドロップするか、下の欄から追加
-                </Text>
-              ) : null}
-              {methods.map((method, index) => (
-                <Draggable draggableId={method._id} index={index} key={method._id}>
-                  {(dragProvided) => (
-                    <Card padding="sm" ref={dragProvided.innerRef} {...dragProvided.draggableProps}>
-                      <Group align="center" gap="xs" wrap="nowrap">
-                        <Tooltip label="ドラッグして並べ替え・移動" withArrow>
-                          <ActionIcon
-                            aria-label={`${method.name}をドラッグ`}
-                            color="gray"
-                            size="sm"
-                            variant="subtle"
-                            {...dragProvided.dragHandleProps}
-                          >
-                            <IconGripVertical aria-hidden size={16} stroke={1.5} />
-                          </ActionIcon>
-                        </Tooltip>
-                        <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-                          <Text fw={600} size="sm" truncate>
-                            {method.name}
-                          </Text>
-                          {method.nowViewing && (
-                            <Badge color="orange" size="sm" variant="filled" w="fit-content">
-                              いま見る
-                            </Badge>
-                          )}
-                        </Stack>
-                        <Tooltip
-                          label={
-                            method.nowViewing ? "いま見るを外す" : "いま見るにする(正面に置く)"
-                          }
-                          withArrow
+    <Draggable draggableId={`lane-${lane._id}`} index={index}>
+      {(laneDragProvided) => (
+        <Paper
+          miw={300}
+          p="md"
+          radius="sm"
+          ref={laneDragProvided.innerRef}
+          withBorder
+          {...laneDragProvided.draggableProps}
+        >
+          <Stack gap="md">
+            <Group align="flex-start" gap="xs" wrap="nowrap">
+              <Tooltip label="ドラッグしてレーンを並べ替え" withArrow>
+                <ActionIcon
+                  aria-label={`${lane.name}をドラッグ`}
+                  color="gray"
+                  size="sm"
+                  variant="subtle"
+                  {...laneDragProvided.dragHandleProps}
+                >
+                  <IconGripVertical aria-hidden size={16} stroke={1.5} />
+                </ActionIcon>
+              </Tooltip>
+              <Box style={{ flex: 1, minWidth: 0 }}>
+                <LaneEditor lane={lane} onRemove={onRemoveLane} onRename={onRenameLane} />
+              </Box>
+            </Group>
+            <Droppable droppableId={lane._id}>
+              {(provided) => (
+                <Stack gap="sm" ref={provided.innerRef} {...provided.droppableProps} mih={48}>
+                  {methods.length === 0 ? (
+                    <Text c="dimmed" size="sm">
+                      ここにドロップするか、下の欄から追加
+                    </Text>
+                  ) : null}
+                  {methods.map((method, index) => (
+                    <Draggable draggableId={method._id} index={index} key={method._id}>
+                      {(dragProvided) => (
+                        <Card
+                          padding="sm"
+                          ref={dragProvided.innerRef}
+                          {...dragProvided.draggableProps}
                         >
-                          <ActionIcon
-                            aria-label={
-                              method.nowViewing
-                                ? `${method.name}のいま見るを外す`
-                                : `${method.name}をいま見るにする`
-                            }
-                            color="orange"
-                            onClick={() =>
-                              onSetNowViewing({
-                                methodId: method._id,
-                                nowViewing: !method.nowViewing,
-                              })
-                            }
-                            size="sm"
-                            type="button"
-                            variant={method.nowViewing ? "filled" : "subtle"}
-                          >
-                            {method.nowViewing ? (
-                              <IconEyeOff aria-hidden size={16} stroke={1.5} />
-                            ) : (
-                              <IconEye aria-hidden size={16} stroke={1.5} />
-                            )}
-                          </ActionIcon>
-                        </Tooltip>
-                        {moveTargets.length > 0 && (
-                          <Menu withinPortal>
-                            <Menu.Target>
-                              <Button
-                                aria-label={`${method.name}を別のレーンへ移動`}
-                                size="compact-sm"
-                                type="button"
-                                variant="default"
+                          <Group align="center" gap="xs" wrap="nowrap">
+                            <Tooltip label="ドラッグして並べ替え・移動" withArrow>
+                              <ActionIcon
+                                aria-label={`${method.name}をドラッグ`}
+                                color="gray"
+                                size="sm"
+                                variant="subtle"
+                                {...dragProvided.dragHandleProps}
                               >
-                                移動
-                              </Button>
-                            </Menu.Target>
-                            <Menu.Dropdown>
-                              {moveTargets.map((target) => (
-                                <Menu.Item
-                                  key={target._id}
-                                  onClick={() => onMoveMethod(method, target._id)}
-                                >
-                                  {target.name}
-                                </Menu.Item>
-                              ))}
-                            </Menu.Dropdown>
-                          </Menu>
-                        )}
-                        <Button
-                          aria-label={`${method.name}を開く`}
-                          onClick={() => onOpenMethod(method._id)}
-                          size="compact-sm"
-                          type="button"
-                          variant="default"
-                        >
-                          開く
-                        </Button>
-                      </Group>
-                    </Card>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </Stack>
-          )}
-        </Droppable>
-        <AddMethodToLaneForm lane={lane} onCreate={onCreateMethod} />
-      </Stack>
-    </Paper>
+                                <IconGripVertical aria-hidden size={16} stroke={1.5} />
+                              </ActionIcon>
+                            </Tooltip>
+                            <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+                              <Text fw={600} size="sm" truncate>
+                                {method.name}
+                              </Text>
+                              {method.nowViewing && (
+                                <Badge color="orange" size="sm" variant="filled" w="fit-content">
+                                  いま見る
+                                </Badge>
+                              )}
+                            </Stack>
+                            <Tooltip
+                              label={
+                                method.nowViewing ? "いま見るを外す" : "いま見るにする(正面に置く)"
+                              }
+                              withArrow
+                            >
+                              <ActionIcon
+                                aria-label={
+                                  method.nowViewing
+                                    ? `${method.name}のいま見るを外す`
+                                    : `${method.name}をいま見るにする`
+                                }
+                                color="orange"
+                                onClick={() =>
+                                  onSetNowViewing({
+                                    methodId: method._id,
+                                    nowViewing: !method.nowViewing,
+                                  })
+                                }
+                                size="sm"
+                                type="button"
+                                variant={method.nowViewing ? "filled" : "subtle"}
+                              >
+                                {method.nowViewing ? (
+                                  <IconEyeOff aria-hidden size={16} stroke={1.5} />
+                                ) : (
+                                  <IconEye aria-hidden size={16} stroke={1.5} />
+                                )}
+                              </ActionIcon>
+                            </Tooltip>
+                            {moveTargets.length > 0 && (
+                              <Menu withinPortal>
+                                <Menu.Target>
+                                  <Button
+                                    aria-label={`${method.name}を別のレーンへ移動`}
+                                    size="compact-sm"
+                                    type="button"
+                                    variant="default"
+                                  >
+                                    移動
+                                  </Button>
+                                </Menu.Target>
+                                <Menu.Dropdown>
+                                  {moveTargets.map((target) => (
+                                    <Menu.Item
+                                      key={target._id}
+                                      onClick={() => onMoveMethod(method, target._id)}
+                                    >
+                                      {target.name}
+                                    </Menu.Item>
+                                  ))}
+                                </Menu.Dropdown>
+                              </Menu>
+                            )}
+                            <Button
+                              aria-label={`${method.name}を開く`}
+                              onClick={() => onOpenMethod(method._id)}
+                              size="compact-sm"
+                              type="button"
+                              variant="default"
+                            >
+                              開く
+                            </Button>
+                          </Group>
+                        </Card>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </Stack>
+              )}
+            </Droppable>
+            <AddMethodToLaneForm lane={lane} onCreate={onCreateMethod} />
+          </Stack>
+        </Paper>
+      )}
+    </Draggable>
   );
 }
 

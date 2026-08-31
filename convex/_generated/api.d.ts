@@ -73,6 +73,7 @@ import type * as mutations_items_applyOrder from "../mutations/items/applyOrder.
 import type * as mutations_items_create from "../mutations/items/create.js";
 import type * as mutations_items_remove from "../mutations/items/remove.js";
 import type * as mutations_items_rename from "../mutations/items/rename.js";
+import type * as mutations_methods_applyLaneOrder from "../mutations/methods/applyLaneOrder.js";
 import type * as mutations_methods_applyMethodOrder from "../mutations/methods/applyMethodOrder.js";
 import type * as mutations_methods_createLane from "../mutations/methods/createLane.js";
 import type * as mutations_methods_createMethod from "../mutations/methods/createMethod.js";
@@ -216,6 +217,7 @@ import type * as services_items_list from "../services/items/list.js";
 import type * as services_items_recentConcreteActions from "../services/items/recentConcreteActions.js";
 import type * as services_items_remove from "../services/items/remove.js";
 import type * as services_items_rename from "../services/items/rename.js";
+import type * as services_methods_applyLaneOrder from "../services/methods/applyLaneOrder.js";
 import type * as services_methods_applyMethodOrder from "../services/methods/applyMethodOrder.js";
 import type * as services_methods_createLane from "../services/methods/createLane.js";
 import type * as services_methods_createMethod from "../services/methods/createMethod.js";
@@ -359,6 +361,7 @@ declare const fullApi: ApiFromModules<{
   "mutations/items/create": typeof mutations_items_create;
   "mutations/items/remove": typeof mutations_items_remove;
   "mutations/items/rename": typeof mutations_items_rename;
+  "mutations/methods/applyLaneOrder": typeof mutations_methods_applyLaneOrder;
   "mutations/methods/applyMethodOrder": typeof mutations_methods_applyMethodOrder;
   "mutations/methods/createLane": typeof mutations_methods_createLane;
   "mutations/methods/createMethod": typeof mutations_methods_createMethod;
@@ -502,6 +505,7 @@ declare const fullApi: ApiFromModules<{
   "services/items/recentConcreteActions": typeof services_items_recentConcreteActions;
   "services/items/remove": typeof services_items_remove;
   "services/items/rename": typeof services_items_rename;
+  "services/methods/applyLaneOrder": typeof services_methods_applyLaneOrder;
   "services/methods/applyMethodOrder": typeof services_methods_applyMethodOrder;
   "services/methods/createLane": typeof services_methods_createLane;
   "services/methods/createMethod": typeof services_methods_createMethod;

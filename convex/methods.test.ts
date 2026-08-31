@@ -233,6 +233,64 @@ test("方法をドラッグで並べ替え・レーン間移動できる", async
   ).rejects.toThrow();
 });
 
+test("レーン(列)自体をドラッグで並べ替えられる。全量指定でないと拒否する", async () => {
+  const t = owner();
+  const examLaneId = await t.mutation(api.mutations.methods.createLane.createLane, {
+    name: "模試レーン",
+  });
+  const wordLaneId = await t.mutation(api.mutations.methods.createLane.createLane, {
+    name: "単語レーン",
+  });
+  const readingLaneId = await t.mutation(api.mutations.methods.createLane.createLane, {
+    name: "多読レーン",
+  });
+
+  await t.mutation(api.mutations.methods.applyLaneOrder.applyLaneOrder, {
+    orderedLaneIds: [readingLaneId, examLaneId, wordLaneId],
+  });
+  const catalog = await t.query(api.queries.methods.list.list, {});
+  expect(catalog.lanes).toEqual([
+    { _id: readingLaneId, name: "多読レーン", sortOrder: 0 },
+    { _id: examLaneId, name: "模試レーン", sortOrder: 1 },
+    { _id: wordLaneId, name: "単語レーン", sortOrder: 2 },
+  ]);
+
+  //? 一部だけの指定・重複を含む指定は不正(黙って消えるレーンを作らない)
+  await expect(
+    t.mutation(api.mutations.methods.applyLaneOrder.applyLaneOrder, {
+      orderedLaneIds: [examLaneId],
+    }),
+  ).rejects.toThrow();
+  await expect(
+    t.mutation(api.mutations.methods.applyLaneOrder.applyLaneOrder, {
+      orderedLaneIds: [examLaneId, examLaneId, wordLaneId],
+    }),
+  ).rejects.toThrow();
+});
+
+test("他人のレーンを含む並べ替えは拒否される", async () => {
+  const shared = raw();
+  const asOwner = shared.withIdentity(OWNER);
+  const asOther = shared.withIdentity(OTHER_OWNER);
+
+  const ownersLaneId = await asOwner.mutation(api.mutations.methods.createLane.createLane, {
+    name: "模試レーン",
+  });
+  const othersLaneId = await asOther.mutation(api.mutations.methods.createLane.createLane, {
+    name: "よそのレーン",
+  });
+
+  //? 自分のレーンと同数でも、他人のレーン id は自分の全量と一致しないので不正
+  await expect(
+    asOwner.mutation(api.mutations.methods.applyLaneOrder.applyLaneOrder, {
+      orderedLaneIds: [othersLaneId],
+    }),
+  ).rejects.toThrow();
+
+  const catalog = await asOwner.query(api.queries.methods.list.list, {});
+  expect(catalog.lanes).toEqual([{ _id: ownersLaneId, name: "模試レーン", sortOrder: 0 }]);
+});
+
 test("方法が残っているレーンは消せない。空にすれば消せる", async () => {
   const t = owner();
   const laneId = await t.mutation(api.mutations.methods.createLane.createLane, {

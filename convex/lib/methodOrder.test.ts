@@ -1,7 +1,12 @@
 import { expect, test } from "vite-plus/test";
 
-import { applyMethodOrderToList, validateLaneOrderUpdates } from "./methodOrder";
-import type { MethodDto } from "./validators";
+import {
+  applyLaneOrderToList,
+  applyMethodOrderToList,
+  validateLaneOrder,
+  validateLaneOrderUpdates,
+} from "./methodOrder";
+import type { MethodDto, MethodLaneDto } from "./validators";
 
 function method(id: string, laneId: string, sortOrder: number): MethodDto {
   return {
@@ -72,4 +77,30 @@ test("存在しない方法 id を含む指定は不正", () => {
       { laneId: laneA, orderedMethodIds: [methods[0]!._id, "ghost" as MethodDto["_id"]] },
     ]),
   ).toBe("方法の並べ替えが不正です");
+});
+
+function lane(id: string, sortOrder: number): MethodLaneDto {
+  return { _id: id as MethodLaneDto["_id"], name: `レーン${id}`, sortOrder };
+}
+
+test("レーンの並べ替えは orderedLaneIds の index が sortOrder になる", () => {
+  const lanes = [lane("l1", 0), lane("l2", 1), lane("l3", 2)];
+  const next = applyLaneOrderToList(lanes, [lanes[2]!._id, lanes[0]!._id, lanes[1]!._id]);
+  expect(next.map(({ _id, sortOrder }) => ({ _id, sortOrder }))).toEqual([
+    { _id: lanes[0]!._id, sortOrder: 1 },
+    { _id: lanes[1]!._id, sortOrder: 2 },
+    { _id: lanes[2]!._id, sortOrder: 0 },
+  ]);
+});
+
+test("レーンの全量指定でない並べ替えは不正(不足・重複・未知の id)", () => {
+  const lanes = [lane("l1", 0), lane("l2", 1)];
+  expect(validateLaneOrder(lanes, [lanes[0]!._id])).toBe("レーンの並べ替えが不正です");
+  expect(validateLaneOrder(lanes, [lanes[0]!._id, lanes[0]!._id])).toBe(
+    "レーンの並べ替えが不正です",
+  );
+  expect(validateLaneOrder(lanes, [lanes[0]!._id, "ghost" as MethodLaneDto["_id"]])).toBe(
+    "レーンの並べ替えが不正です",
+  );
+  expect(validateLaneOrder(lanes, [lanes[1]!._id, lanes[0]!._id])).toBeNull();
 });

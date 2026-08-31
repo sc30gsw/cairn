@@ -1,4 +1,5 @@
 import {
+  useApplyLaneOrder,
   useApplyMethodOrder,
   useCreateLane,
   useCreateMethod,
@@ -9,6 +10,7 @@ import {
   useUpdateMethod,
 } from "~/features/methods/hooks/method-catalog-mutations";
 import type {
+  ApplyLaneOrderInput,
   ApplyMethodOrderInput,
   CreateLaneInput,
   CreateMethodInput,
@@ -31,8 +33,13 @@ export function useMethodCatalogActions() {
   const removeMethod = useRemoveMethod();
   const setNowViewing = useSetNowViewing();
   const applyMethodOrder = useApplyMethodOrder();
+  const applyLaneOrder = useApplyLaneOrder();
 
   return {
+    onApplyLaneOrder: (input: ApplyLaneOrderInput) =>
+      runMutation(() => applyLaneOrder(input), {
+        successMessage: "レーンの並びを更新しました",
+      }).then(() => undefined),
     onApplyMethodOrder: (input: ApplyMethodOrderInput) =>
       runMutation(() => applyMethodOrder(input), { successMessage: "並び順を更新しました" }).then(
         () => undefined,

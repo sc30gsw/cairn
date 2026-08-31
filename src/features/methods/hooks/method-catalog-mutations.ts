@@ -1,4 +1,4 @@
-import { applyMethodOrderToList } from "~domain/methodOrder";
+import { applyLaneOrderToList, applyMethodOrderToList } from "~domain/methodOrder";
 
 import { api } from "~/../convex/_generated/api";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
@@ -29,6 +29,23 @@ export function useRemoveMethod() {
 
 export function useSetNowViewing() {
   return useConvexMutation(api.mutations.methods.setNowViewing.setNowViewing);
+}
+
+export function useApplyLaneOrder() {
+  const mutation = useConvexMutation(api.mutations.methods.applyLaneOrder.applyLaneOrder);
+
+  //? レーン(列)のドラッグも楽観更新で即反映する。計算は services 層と同じ共有の純関数(SSoT)。
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.methods.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.methods.list.list,
+      {},
+      { lanes: applyLaneOrderToList(current.lanes, args.orderedLaneIds), methods: current.methods },
+    );
+  });
 }
 
 export function useApplyMethodOrder() {
