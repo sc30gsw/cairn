@@ -9,6 +9,9 @@ dist
 # generated tool dirs
 .tanstack
 
+# playwright-cli session dumps from verify-cairn (not a first-party suite)
+.playwright-cli/
+
 # Service Worker の中間バンドル出力(scripts/build-sw.ts)
 .pwa
 
