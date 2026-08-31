@@ -10,6 +10,8 @@ import { MethodEditSchema } from "~/features/methods/schemas/method-schema";
 import type { Method } from "~/features/methods/types/method";
 import type { RemoveMethodInput, UpdateMethodInput } from "~/features/methods/types/mutations";
 
+import classes from "~/features/methods/components/method-card-modal.module.css";
+
 type MethodCardModalProps = {
   method: Method;
   onClose: () => void;
@@ -82,7 +84,7 @@ export function MethodCardModal({ method, onClose, onRemove, onUpdate }: MethodC
             )}
           </Field>
           <Input.Wrapper label="完了条件">
-            <RichTextEditor editor={completionEditor}>
+            <RichTextEditor classNames={{ content: classes.content }} editor={completionEditor}>
               <RichTextEditor.Toolbar>
                 <RichTextEditor.ControlsGroup>
                   <RichTextEditor.TaskList />
@@ -94,7 +96,7 @@ export function MethodCardModal({ method, onClose, onRemove, onUpdate }: MethodC
             </RichTextEditor>
           </Input.Wrapper>
           <Input.Wrapper label="メモ">
-            <RichTextEditor editor={memoEditor}>
+            <RichTextEditor classNames={{ content: classes.content }} editor={memoEditor}>
               <RichTextEditor.Toolbar>
                 <RichTextEditor.ControlsGroup>
                   <RichTextEditor.Bold />
