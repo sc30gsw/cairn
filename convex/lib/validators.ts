@@ -683,7 +683,62 @@ export type NotificationPageDto = Infer<typeof notificationPageValidator>;
 export const notificationSettingsDtoValidator = v.object({
   enabled: v.boolean(),
   eveningHourJst: v.number(),
+  quietFromHourJst: v.number(),
+  quietToHourJst: v.number(),
   triggers: notificationTriggerPrefsValidator,
 });
 
 export type NotificationSettingsDto = Infer<typeof notificationSettingsDtoValidator>;
+
+//? PushSubscription.toJSON() の形をそのまま保存する（endpoint / keys.p256dh / keys.auth / expirationTime）
+export const pushSubscriptionKeysValidator = v.object({
+  auth: v.string(),
+  p256dh: v.string(),
+});
+
+export const pushSubscriptionInputValidator = v.object({
+  endpoint: v.string(),
+  expirationTime: v.optional(v.number()),
+  keys: pushSubscriptionKeysValidator,
+});
+
+export type PushSubscriptionInput = Infer<typeof pushSubscriptionInputValidator>;
+
+export const pushSubscriptionDtoValidator = v.object({
+  _creationTime: v.number(),
+  _id: v.id("pushSubscriptions"),
+  endpoint: v.string(),
+});
+
+export type PushSubscriptionDto = Infer<typeof pushSubscriptionDtoValidator>;
+
+export const webPushMessageValidator = v.object({
+  body: v.string(),
+  tag: v.string(),
+  title: v.string(),
+  url: v.string(),
+});
+
+export type WebPushMessage = Infer<typeof webPushMessageValidator>;
+
+export const webPushDeliveryValidator = v.union(
+  v.object({
+    message: webPushMessageValidator,
+    subscriptions: v.array(
+      v.object({
+        _id: v.id("pushSubscriptions"),
+        endpoint: v.string(),
+        keys: pushSubscriptionKeysValidator,
+      }),
+    ),
+  }),
+  v.null(),
+);
+
+export type WebPushDelivery = Infer<typeof webPushDeliveryValidator>;
+
+export const webPushConfigValidator = v.object({
+  publicKey: v.union(v.string(), v.null()),
+});
+
+export type WebPushConfigDto = Infer<typeof webPushConfigValidator>;

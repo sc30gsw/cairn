@@ -9,6 +9,7 @@ import {
   notificationPayloadValidator,
   notificationTriggerPrefsValidator,
   presetLineValidator,
+  pushSubscriptionKeysValidator,
   statusValidator,
   targetMetricValidator,
 } from "./lib/validators";
@@ -124,10 +125,19 @@ export default defineSchema({
     enabled: v.boolean(),
     eveningHourJst: v.number(),
     ownerId: v.string(),
+    quietFromHourJst: v.optional(v.number()),
+    quietToHourJst: v.optional(v.number()),
     triggers: notificationTriggerPrefsValidator,
   })
     .index("by_owner", ["ownerId"])
     .index("by_enabled_and_eveningHourJst", ["enabled", "eveningHourJst"]),
+  //? 1端末 = 1行。所有者は複数端末を持てる。by_owner は by_owner_and_endpoint の接頭辞なので張らない（CVX-12）
+  pushSubscriptions: defineTable({
+    endpoint: v.string(),
+    expirationTime: v.optional(v.number()),
+    keys: pushSubscriptionKeysValidator,
+    ownerId: v.string(),
+  }).index("by_owner_and_endpoint", ["ownerId", "endpoint"]),
 
   avatarUploadClaims: defineTable({
     ownerId: v.string(),

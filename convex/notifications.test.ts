@@ -475,6 +475,8 @@ test("settings query は行が無いとき既定値(enabled: false)を返す", a
   expect(settings).toEqual({
     enabled: false,
     eveningHourJst: 21,
+    quietFromHourJst: 22,
+    quietToHourJst: 7,
     triggers: { checkpointDeadline: true, eveningUntouched: true, weeklyTargetMiss: true },
   });
 });
@@ -482,6 +484,8 @@ test("settings query は行が無いとき既定値(enabled: false)を返す", a
 const SAVE_BASE = {
   enabled: true,
   eveningHourJst: 21,
+  quietFromHourJst: 22,
+  quietToHourJst: 7,
   triggers: { checkpointDeadline: true, eveningUntouched: true, weeklyTargetMiss: true },
 };
 

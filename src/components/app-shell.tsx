@@ -19,6 +19,7 @@ import { RouteErrorComponent } from "~/components/error-state";
 import { NotificationBell } from "~/components/notification-bell";
 import { NotificationBellFallback } from "~/components/notification-bell-fallback";
 import { OfflineBanner } from "~/components/offline-banner";
+import { PushSubscriptionSync } from "~/components/push-subscription-sync";
 import {
   RunningTimerIndicator,
   RunningTimerIndicatorFallback,
@@ -252,6 +253,7 @@ export function AppShell({ accountMenu, children }: AppShellProps) {
                 </Group>
               </Group>
               <OfflineBanner />
+              <PushSubscriptionSync />
               <CatchBoundary errorComponent={RouteErrorComponent} getResetKey={() => pathname}>
                 {children}
               </CatchBoundary>

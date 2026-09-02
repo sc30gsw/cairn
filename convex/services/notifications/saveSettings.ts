@@ -1,7 +1,12 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { ValidationFailedError } from "../../lib/errors";
-import { EVENING_HOUR_MESSAGE, EVENING_HOUR_RANGE } from "../../lib/notifications";
+import {
+  EVENING_HOUR_MESSAGE,
+  EVENING_HOUR_RANGE,
+  QUIET_HOUR_MESSAGE,
+  QUIET_HOUR_RANGE,
+} from "../../lib/notifications";
 import { throwDomain } from "../../lib/ownerFunctions";
 import type { NotificationSettingsDto } from "../../lib/validators";
 import { getOwnerSettings } from "./getOwnerSettings";
@@ -20,9 +25,13 @@ export async function saveSettings(
   args: SaveNotificationSettingsArgs,
 ): Promise<Id<"notificationSettings">> {
   requireHour(args.eveningHourJst, EVENING_HOUR_RANGE, EVENING_HOUR_MESSAGE);
+  requireHour(args.quietFromHourJst, QUIET_HOUR_RANGE, QUIET_HOUR_MESSAGE);
+  requireHour(args.quietToHourJst, QUIET_HOUR_RANGE, QUIET_HOUR_MESSAGE);
   const fields = {
     enabled: args.enabled,
     eveningHourJst: args.eveningHourJst,
+    quietFromHourJst: args.quietFromHourJst,
+    quietToHourJst: args.quietToHourJst,
     triggers: args.triggers,
   };
   const existing = await getOwnerSettings(ctx, ownerId);

@@ -6,6 +6,7 @@ import {
   dueFixedTriggers,
   hourJst,
   isDeadlineNear,
+  isQuietHourJst,
   notificationDedupeKey,
   nowJst,
 } from "./notifications";
@@ -83,4 +84,15 @@ test("dedupeKey は日次トリガーが暦日、週次トリガーが週開始�
       weekStartJst: "2026-08-17",
     }),
   ).toBe("weeklyTargetMiss:2026-08-17");
+});
+
+test("静穏時間: from > to は日付をまたぎ、from === to は静穏なし", () => {
+  expect(isQuietHourJst(23, 22, 7)).toBe(true);
+  expect(isQuietHourJst(3, 22, 7)).toBe(true);
+  expect(isQuietHourJst(7, 22, 7)).toBe(false);
+  expect(isQuietHourJst(21, 22, 7)).toBe(false);
+  expect(isQuietHourJst(13, 12, 14)).toBe(true);
+  expect(isQuietHourJst(14, 12, 14)).toBe(false);
+  expect(isQuietHourJst(12, 12, 12)).toBe(false);
+  expect(isQuietHourJst(0, 12, 12)).toBe(false);
 });

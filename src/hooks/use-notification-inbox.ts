@@ -10,3 +10,13 @@ export function useNotificationInbox() {
 export function useNotificationSettings() {
   return useSuspenseQuery(convexQuery(api.queries.notifications.settings.settings, {}));
 }
+
+export function usePushSubscriptions() {
+  return useSuspenseQuery(
+    convexQuery(api.queries.notifications.pushSubscriptions.pushSubscriptions, {}),
+  );
+}
+
+export function useWebPushConfig() {
+  return useSuspenseQuery(convexQuery(api.queries.notifications.webPushConfig.webPushConfig, {}));
+}

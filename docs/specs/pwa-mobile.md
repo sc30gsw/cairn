@@ -1446,3 +1446,10 @@ SSR HTML をキャッシュして app-shell 型にする案、オフライン時
 - `MOBILE_PRIMARY` は4本のまま。「その他」メニューは レビュー / 項目 / プリセット / 方法 / ゴミ箱 の5本。
 - §17 のテスト期待値: 下小口は4本で `/review` を含まない、「その他」にレビューが出る、右小口では `/review` が `/history` の直後に並ぶ（`src/components/app-shell.test.tsx`）。
 - `CONTEXT.md`「ホーム画面アプリ」の _Avoid_「8番目のナビタブ」は「ホーム画面アプリをナビタブにすること」に書き換えた（本数の上限ではなく、インストール導線をタブにしないという意図）。
+
+---
+
+## 改訂（2026-09-02）— #68 Web Push
+
+- §22.1 の「#58 完了後の後続チケット」の列は #68 が実装した（[web-push.md](web-push.md)）。SW の `push` / `notificationclick` / `pushsubscriptionchange` は §5 の作法どおり `serwist.addEventListeners()` の前に置いた。
+- §8.3 の「アプリとして使う」セクションは #58 の実装では作られなかった（`useInstallPrompt` はログイン画面だけが使っている）。Web Push の権限要求 UI は、通知の一部としてマイページ**通知タブ**の `WebPushSection` に置き、iOS の前提（ホーム画面追加）はそのカード内の一文で示す。§8.3 のインストール導線そのものは未実装のまま（必要なら別チケット）。
