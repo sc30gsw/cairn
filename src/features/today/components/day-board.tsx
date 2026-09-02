@@ -123,12 +123,14 @@ export function DayBoard(props: DayBoardProps) {
     onAddRow,
     onConfirm,
     onCopyYesterday,
+    onFlagReview,
     onRemoveDay,
     onRemoveRow,
     onSaveCondition,
     onSaveMemo,
     onSkip,
     onSwitchPreset,
+    onUnflagReview,
     onUnskip,
   } = useDayBoardActions(dateJst, day.rows, { onConfirmedCategory });
   const { appliedPresetRef, selectedPresetId } = useApplyPresetFromSearch(
@@ -214,10 +216,13 @@ export function DayBoard(props: DayBoardProps) {
                   <RowEditor
                     disabled={!canEdit || !interactive}
                     onConfirm={interactive ? onConfirm : () => {}}
+                    onFlagReview={interactive ? onFlagReview : () => {}}
                     onRemove={interactive ? onRemoveRow : () => {}}
                     onSkip={interactive ? onSkip : () => {}}
+                    onUnflagReview={interactive ? onUnflagReview : () => {}}
                     onUnskip={interactive ? onUnskip : () => {}}
                     row={row}
+                    todayJst={todayJst}
                   />
                 </Box>
               ) : (
@@ -225,10 +230,13 @@ export function DayBoard(props: DayBoardProps) {
                   key={row._id}
                   disabled={!canEdit || !interactive}
                   onConfirm={interactive ? onConfirm : () => {}}
+                  onFlagReview={interactive ? onFlagReview : () => {}}
                   onRemove={interactive ? onRemoveRow : () => {}}
                   onSkip={interactive ? onSkip : () => {}}
+                  onUnflagReview={interactive ? onUnflagReview : () => {}}
                   onUnskip={interactive ? onUnskip : () => {}}
                   row={row}
+                  todayJst={todayJst}
                 />
               ),
             )}

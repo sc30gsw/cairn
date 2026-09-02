@@ -5,6 +5,7 @@ import {
   useAddRow,
   useConfirmRow,
   useCopyYesterdayConfirmed,
+  useFlagReview,
   useOptimisticStopRowTimer,
   useRemoveDay,
   useRemoveRow,
@@ -12,12 +13,14 @@ import {
   useSetDayMemo,
   useSkipRow,
   useSwitchPreset,
+  useUnflagReview,
   useUnskipRow,
 } from "~/features/today/hooks/day-mutations";
 import type { DayRow } from "~/features/today/types/day";
 import type {
   AddRowInput,
   ConfirmRowInput,
+  FlagReviewInput,
   RemoveRowInput,
   SetConditionInput,
   SetMemoInput,
@@ -48,6 +51,8 @@ export function useDayBoardActions(
   const copyYesterday = useCopyYesterdayConfirmed();
   const switchPreset = useSwitchPreset();
   const stopTimer = useOptimisticStopRowTimer(dateJst, today);
+  const flagReview = useFlagReview();
+  const unflagReview = useUnflagReview();
 
   return {
     onAddRow: (input: AddRowInput) =>
@@ -77,6 +82,15 @@ export function useDayBoardActions(
               : `計測した${String(measuredMinutes)}分で確定しました`,
         },
       ).then(() => undefined),
+    onFlagReview: (input: FlagReviewInput) =>
+      runMutation(() => flagReview.mutateAsync({ ...input, todayJst: today }), {
+        successMessage:
+          input.dueJst === undefined ? "復習に回しました" : `復習に回しました（${input.dueJst}）`,
+      }).then(() => undefined),
+    onUnflagReview: (rowId: RemoveRowInput["rowId"]) =>
+      runMutation(() => unflagReview.mutateAsync({ rowId }), {
+        successMessage: "復習をやめました",
+      }).then(() => undefined),
     onCopyYesterday: () =>
       runMutation(() => copyYesterday.mutateAsync({ dateJst, todayJst: today }), {
         successMessage: "昨日の確定をコピーしました",

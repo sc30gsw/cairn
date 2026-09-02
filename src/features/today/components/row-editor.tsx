@@ -1,31 +1,49 @@
 import { Field, Form, reset, useForm } from "@formisch/react";
-import { ActionIcon, Badge, Grid, Group, Input, NumberInput, Switch, Tooltip } from "@mantine/core";
+import {
+  ActionIcon,
+  Badge,
+  Grid,
+  Group,
+  Input,
+  Menu,
+  NumberInput,
+  Switch,
+  Tooltip,
+} from "@mantine/core";
 import { useFocusWithin } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
-import { IconArrowBackUp, IconPlayerSkipForward, IconTrash } from "@tabler/icons-react";
+import { IconArrowBackUp, IconPlayerSkipForward, IconRepeat, IconTrash } from "@tabler/icons-react";
 import { useEffect, type ChangeEvent } from "react";
 import { concreteActionPlaceholder } from "~domain/concreteActionCore";
+import type { DateJst } from "~domain/jst";
 import { measuredMs, timerMinutes, timerRunState } from "~domain/rowTimer";
 
 import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action-field-with-suggestions";
+import { ReviewBadge } from "~/components/review-badge";
+import { ReviewMenuItems } from "~/components/review-menu-items";
 import { validateConfirmRow } from "~/features/today/lib/validate-confirm-row";
 import type { DayRow } from "~/features/today/types/day";
 import type {
   ConfirmRowInput,
+  FlagReviewInput,
   RemoveRowInput,
   SkipRowInput,
 } from "~/features/today/types/mutations";
 import { RECORD_STATUS_UI, statusTooltip } from "~/lib/record-status-ui";
+import { REVIEW_MENU_LABEL } from "~/lib/review-ui";
 import { serverNowMs } from "~/lib/server-clock";
 import { RowEditorSchema } from "~/lib/validation/row-editor-schema";
 
 type RowEditorProps = {
   disabled?: boolean;
   onConfirm: (input: ConfirmRowInput) => void;
+  onFlagReview: (input: FlagReviewInput) => void;
   onRemove: (rowId: RemoveRowInput["rowId"]) => void;
   onSkip: (rowId: SkipRowInput["rowId"]) => void;
+  onUnflagReview: (rowId: RemoveRowInput["rowId"]) => void;
   onUnskip: (rowId: SkipRowInput["rowId"]) => void;
   row: DayRow;
+  todayJst: DateJst;
 };
 
 function CheckIcon({ size = 14 }: { size?: number }) {
@@ -119,10 +137,13 @@ function requestUnskip(
 export function RowEditor({
   disabled = false,
   onConfirm,
+  onFlagReview,
   onRemove,
   onSkip,
+  onUnflagReview,
   onUnskip,
   row,
+  todayJst,
 }: RowEditorProps) {
   const form = useForm({
     initialInput: { content: row.content, minutes: row.minutes },
@@ -132,6 +153,8 @@ export function RowEditor({
   const canSkipDirectly = row.status === "未着手" || row.status === "進行中";
   const canUnskip = row.status === "スキップ";
   const badge = RECORD_STATUS_UI[row.status];
+  //? 復習の印は確定した記録にだけ付けられる。復習の記録そのものは確定で次へ進むので出さない
+  const canReview = isDone && row.review?.kind !== "review";
 
   async function saveIfConfirmedDirty() {
     if (row.status !== "確定") {
@@ -272,6 +295,34 @@ export function RowEditor({
                 >
                   {badge.label}
                 </Badge>
+                <ReviewBadge review={row.review} />
+                {canReview ? (
+                  <Menu position="bottom-end" withinPortal>
+                    <Menu.Target>
+                      <Tooltip label={REVIEW_MENU_LABEL}>
+                        <ActionIcon
+                          aria-label={`${row.itemName}を復習に回す`}
+                          color="orange"
+                          disabled={disabled}
+                          size="lg"
+                          type="button"
+                          variant={row.review === null ? "light" : "filled"}
+                        >
+                          <IconRepeat aria-hidden size={16} stroke={1.5} />
+                        </ActionIcon>
+                      </Tooltip>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                      <ReviewMenuItems
+                        onFlag={(dueJst) => onFlagReview({ dueJst, rowId: row._id })}
+                        onUnflag={() => onUnflagReview(row._id)}
+                        review={row.review}
+                        status={row.status}
+                        todayJst={todayJst}
+                      />
+                    </Menu.Dropdown>
+                  </Menu>
+                ) : null}
                 <Tooltip label="ゴミ箱へ">
                   <ActionIcon
                     aria-label="ゴミ箱へ"

@@ -34,7 +34,14 @@ export async function update(
   }
   assertGoalInput(goal);
   if (goal.type === "exam") {
-    await ctx.db.replace("goals", existing._id, toGoalDocument(goal, ownerId));
+    if (existing.type !== "exam") {
+      throwDomain(new ValidationFailedError({ message: GOAL_TYPE_IMMUTABLE_MESSAGE }));
+    }
+    //? 本番の結果は編集で消えない（達成日と同じ扱い）
+    await ctx.db.replace("goals", existing._id, {
+      ...toGoalDocument(goal, ownerId),
+      result: existing.result,
+    });
     return null;
   }
   if (existing.type !== "mastery") {
@@ -56,6 +63,7 @@ export async function update(
   await ctx.db.replace("goals", existing._id, {
     ...toGoalDocument({ ...goal, ...progress, scopeItemIds }, ownerId),
     achievedAt: existing.achievedAt,
+    reflection: existing.reflection,
   });
   return null;
 }

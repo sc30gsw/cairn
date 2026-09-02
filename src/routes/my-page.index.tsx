@@ -13,6 +13,7 @@ function MyPageAccountRoute() {
   return (
     <Stack gap="md">
       <MyPageAccount />
+      {/*? checklist とカタログ例は条件付きで出る補助なので、骨組みを見せる Shimmer は置かない（#80） */}
       <Suspense fallback={null}>
         <MyPageOnboardingExtras />
       </Suspense>

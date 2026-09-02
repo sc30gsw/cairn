@@ -20,3 +20,5 @@ export type YearHeatmap = FunctionReturnType<typeof api.queries.history.yearHeat
 export type YearHeatmapDay = YearHeatmap["days"][number];
 export type HeatmapDay = YearHeatmapDay;
 export type PresetReview = FunctionReturnType<typeof api.queries.history.presetReview.presetReview>;
+export type HistorySearchResult = FunctionReturnType<typeof api.queries.history.search.search>;
+export type HistorySearchHit = HistorySearchResult["hits"][number];

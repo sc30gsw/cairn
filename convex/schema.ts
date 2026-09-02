@@ -9,6 +9,7 @@ import {
   notificationPayloadValidator,
   notificationTriggerPrefsValidator,
   presetLineValidator,
+  pushSubscriptionKeysValidator,
   statusValidator,
   targetMetricValidator,
 } from "./lib/validators";
@@ -70,6 +71,11 @@ export default defineSchema({
     thenText: v.string(),
   }).index("by_owner", ["ownerId"]),
 
+  presetSettings: defineTable({
+    holidayAsSunday: v.boolean(),
+    ownerId: v.string(),
+  }).index("by_owner", ["ownerId"]),
+
   presets: defineTable({
     lines: v.array(presetLineValidator),
     name: v.string(),
@@ -119,10 +125,41 @@ export default defineSchema({
     enabled: v.boolean(),
     eveningHourJst: v.number(),
     ownerId: v.string(),
+    quietFromHourJst: v.optional(v.number()),
+    quietToHourJst: v.optional(v.number()),
     triggers: notificationTriggerPrefsValidator,
   })
     .index("by_owner", ["ownerId"])
     .index("by_enabled_and_eveningHourJst", ["enabled", "eveningHourJst"]),
+  //? 復習の印。元の記録とは別の表に持ち、期日は「今日を開いたときに並べる条件」としてだけ使う
+  //? （未来の暦日に日を作らない、という days の規則に触れない）
+  reviewFlags: defineTable({
+    content: v.string(),
+    dueJst: v.string(),
+    itemId: v.id("items"),
+    ownerId: v.string(),
+    reviewRowId: v.optional(v.id("rows")),
+    sourceRowId: v.id("rows"),
+    stage: v.number(),
+  })
+    .index("by_owner_and_dueJst", ["ownerId", "dueJst"])
+    .index("by_sourceRow", ["sourceRowId"])
+    .index("by_reviewRow", ["reviewRowId"]),
+  //? 1端末 = 1行。所有者は複数端末を持てる。by_owner は by_owner_and_endpoint の接頭辞なので張らない（CVX-12）
+  pushSubscriptions: defineTable({
+    endpoint: v.string(),
+    expirationTime: v.optional(v.number()),
+    keys: pushSubscriptionKeysValidator,
+    ownerId: v.string(),
+  }).index("by_owner_and_endpoint", ["ownerId", "endpoint"]),
+
+  //? カレンダー購読の capability URL。所有者につき1本。再発行で古いトークンは 404 になる
+  calendarFeedTokens: defineTable({
+    ownerId: v.string(),
+    token: v.string(),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_token", ["token"]),
 
   avatarUploadClaims: defineTable({
     ownerId: v.string(),

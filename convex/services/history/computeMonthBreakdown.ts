@@ -1,8 +1,11 @@
 import type { QueryCtx } from "../../_generated/server";
 import { loadCatalog } from "../../lib/catalogLoader";
+import { requireYearMonth } from "../../lib/dateArgs";
+import { YEAR_MONTH_MESSAGE } from "../../lib/domain";
+import { ValidationFailedError } from "../../lib/errors";
 import { aggregateBreakdownRows, aggregateByCondition } from "../../lib/historyBreakdown";
-import { calendarDatesInMonth } from "../../lib/jst";
-import { addDaysJst } from "../../lib/jst";
+import { addDaysJst, calendarDatesInMonth } from "../../lib/jst";
+import { throwDomain } from "../../lib/ownerFunctions";
 import {
   buildConditionByDate,
   buildHeatmapDays,
@@ -17,19 +20,12 @@ export async function computeMonthBreakdown(
   ownerId: string,
   args: { todayJst: string; yearMonth: string },
 ) {
-  const dates = calendarDatesInMonth(args.yearMonth);
+  //? 壊れた月は throw（日・週の引数と同じ規則。dateArgs.ts のコメント参照）
+  const dates = calendarDatesInMonth(requireYearMonth(args.yearMonth));
   const start = dates[0];
   const end = dates[dates.length - 1];
   if (start === undefined || end === undefined) {
-    return {
-      byCategory: [],
-      byCondition: [],
-      confirmedMinutes: 0,
-      days: [],
-      events: [],
-      rows: [],
-      skippedMinutes: 0,
-    };
+    throwDomain(new ValidationFailedError({ message: YEAR_MONTH_MESSAGE }));
   }
   const lookbackStart = addDaysJst(start, -6);
   const [rows, days, catalog] = await Promise.all([

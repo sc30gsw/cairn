@@ -4,24 +4,12 @@ import { validateConcreteAction } from "../../lib/concreteActionCore";
 import {
   GOAL_DATE_MESSAGE,
   MASTERY_CRITERION_MESSAGE,
-  TOEIC_SCORE,
   TOEIC_SCORE_ORDER_MESSAGE,
-  TOEIC_SCORE_RANGE_MESSAGE,
-  TOEIC_SCORE_STEP_MESSAGE,
 } from "../../lib/domain";
 import { ValidationFailedError } from "../../lib/errors";
 import { isDateJst } from "../../lib/jst";
+import { toeicScoreMessage } from "../../lib/toeicScore";
 import type { GoalInput } from "../../lib/validators";
-
-function scoreMessage(score: number): string | null {
-  if (!Number.isInteger(score) || score < TOEIC_SCORE.min || score > TOEIC_SCORE.max) {
-    return TOEIC_SCORE_RANGE_MESSAGE;
-  }
-  if (score % TOEIC_SCORE.step !== 0) {
-    return TOEIC_SCORE_STEP_MESSAGE;
-  }
-  return null;
-}
 
 function goalInputMessage(input: GoalInput): string | null {
   const contentMessage = validateConcreteAction(input.content);
@@ -32,11 +20,11 @@ function goalInputMessage(input: GoalInput): string | null {
     if (!isDateJst(input.examDate)) {
       return GOAL_DATE_MESSAGE;
     }
-    const minMessage = scoreMessage(input.minScore);
+    const minMessage = toeicScoreMessage(input.minScore);
     if (minMessage !== null) {
       return minMessage;
     }
-    const maxMessage = scoreMessage(input.maxScore);
+    const maxMessage = toeicScoreMessage(input.maxScore);
     if (maxMessage !== null) {
       return maxMessage;
     }

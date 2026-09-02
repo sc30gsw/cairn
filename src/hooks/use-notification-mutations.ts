@@ -12,3 +12,11 @@ export function useMarkAllNotificationsRead() {
 export function useSaveNotificationSettings() {
   return useConvexMutation(api.mutations.notifications.saveSettings.saveSettings);
 }
+
+export function useSubscribePush() {
+  return useConvexMutation(api.mutations.notifications.subscribePush.subscribePush);
+}
+
+export function useUnsubscribePush() {
+  return useConvexMutation(api.mutations.notifications.unsubscribePush.unsubscribePush);
+}

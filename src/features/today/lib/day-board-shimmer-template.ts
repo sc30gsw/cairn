@@ -18,6 +18,7 @@ const dayBoardShimmerRow = {
   itemId: shimmerItemId,
   itemName: "Distinction 2000",
   minutes: 30,
+  review: null,
   sortOrder: 0,
   status: pendingStatus,
   timer: null,

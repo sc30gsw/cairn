@@ -1,7 +1,5 @@
 import * as v from "valibot";
-import { DATE_JST_PATTERN } from "~domain/domain";
-
-const YEAR_MONTH_PATTERN = /^\d{4}-(?:0[1-9]|1[0-2])$/;
+import { DATE_JST_PATTERN, YEAR_MONTH_MESSAGE, YEAR_MONTH_PATTERN } from "~domain/domain";
 
 function isCalendarDate(value: string): boolean {
   if (!DATE_JST_PATTERN.test(value)) {
@@ -22,7 +20,4 @@ export const DateJstSchema = v.pipe(
   v.check(isCalendarDate, "日付は YYYY-MM-DD 形式で指定してください"),
 );
 
-export const YearMonthSchema = v.pipe(
-  v.string(),
-  v.regex(YEAR_MONTH_PATTERN, "月は YYYY-MM 形式で指定してください"),
-);
+export const YearMonthSchema = v.pipe(v.string(), v.regex(YEAR_MONTH_PATTERN, YEAR_MONTH_MESSAGE));

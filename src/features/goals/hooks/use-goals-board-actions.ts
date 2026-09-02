@@ -3,11 +3,13 @@ import {
   useCreateObstacle,
   useRemoveGoal,
   useRemoveObstacle,
+  useSetExamResult,
   useSetGoalAchieved,
   useUpdateGoal,
   useUpdateObstacle,
 } from "~/features/goals/hooks/goals-mutations";
 import { useRemoveTarget, useSaveTarget } from "~/features/goals/hooks/targets-mutations";
+import { EXAM_RESULT_RECORDED_MESSAGE } from "~/features/goals/lib/exam-result-copy";
 import { GOAL_UPDATED_MESSAGE } from "~/features/goals/lib/goal-tier-transition";
 import type { GoalId } from "~/features/goals/types/goal";
 import type {
@@ -16,6 +18,7 @@ import type {
   RemoveObstacleInput,
   SaveTargetInput,
   SetAchievedInput,
+  SetExamResultInput,
   UpdateGoalInput,
   UpdateObstacleInput,
 } from "~/features/goals/types/mutations";
@@ -27,6 +30,7 @@ export function useGoalsBoardActions() {
   const updateGoal = useUpdateGoal();
   const removeGoal = useRemoveGoal();
   const setAchieved = useSetGoalAchieved();
+  const setExamResult = useSetExamResult();
   const createObstacle = useCreateObstacle();
   const updateObstacle = useUpdateObstacle();
   const removeObstacle = useRemoveObstacle();
@@ -55,6 +59,11 @@ export function useGoalsBoardActions() {
       runMutation(() => setAchieved.mutateAsync(input), {
         successMessage: input.achievedAt === undefined ? "達成を取り消しました" : "達成にしました",
       }).then(() => undefined),
+    onSetExamResult: (
+      input: SetExamResultInput,
+      successMessage: string = EXAM_RESULT_RECORDED_MESSAGE,
+    ) =>
+      runMutation(() => setExamResult.mutateAsync(input), { successMessage }).then(() => undefined),
     onUpdateGoal: (input: UpdateGoalInput, successMessage: string = GOAL_UPDATED_MESSAGE) =>
       runMutation(() => updateGoal.mutateAsync(input), { successMessage }).then(() => undefined),
     onUpdateObstacle: (input: UpdateObstacleInput) =>

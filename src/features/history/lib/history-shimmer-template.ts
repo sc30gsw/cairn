@@ -4,6 +4,7 @@ import { WEEKDAY_DISPLAY_ORDER } from "~domain/presetDigest";
 import type {
   DayBreakdown,
   HeatmapDay,
+  HistorySearchHit,
   MonthBreakdown,
   MonthEvent,
   PresetReview,
@@ -127,3 +128,30 @@ export const historyShimmerPresetReview = {
   windowEnd: "2026-08-16",
   windowStart: "2026-07-20",
 } satisfies PresetReview;
+
+export const historyShimmerSearchHits = [
+  {
+    category: "インプット",
+    dateJst: "2026-08-16",
+    kind: "hitokoto",
+    minutes: 30,
+    rowId: "shimmer-search-row-1" as NonNullable<HistorySearchHit["rowId"]>,
+    text: "金フレの音読を30分。Unit 5 まで",
+    title: "金のフレーズ",
+  },
+  {
+    dateJst: "2026-08-15",
+    kind: "memo",
+    text: "朝の音読が続いている。夜は眠くて集中が切れる",
+    title: "メモ",
+  },
+  {
+    category: "アウトプット",
+    dateJst: "2026-08-14",
+    kind: "hitokoto",
+    minutes: 20,
+    rowId: "shimmer-search-row-2" as NonNullable<HistorySearchHit["rowId"]>,
+    text: "音読パッケージ Chapter 2",
+    title: "音読パッケージ",
+  },
+] satisfies HistorySearchHit[];

@@ -2,6 +2,7 @@ export {
   useAddRow,
   useConfirmRow,
   useCopyYesterdayConfirmed,
+  useFlagReview,
   useRemoveDay,
   useRemoveRow,
   useSetDayCondition,
@@ -9,5 +10,6 @@ export {
   useOptimisticStopRowTimer,
   useSkipRow,
   useSwitchPreset,
+  useUnflagReview,
   useUnskipRow,
 } from "~/hooks/use-row-mutations";

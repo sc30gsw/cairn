@@ -3,6 +3,7 @@ import { expect, test } from "vite-plus/test";
 
 import { api } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
+import { YEAR_MONTH_MESSAGE } from "./lib/domain";
 import schema from "./schema";
 
 const modules = import.meta.glob([
@@ -288,20 +289,17 @@ test("年をまたぐ1月は前月が前年12月になる", async () => {
   expect(review.confirmedMinutes).toBe(40);
 });
 
-test("月の指定が壊れていれば空の DTO を返す(throw しない)", async () => {
-  const review = await owner().query(api.queries.review.monthlyReview.monthlyReview, {
-    todayJst: TODAY_AFTER_MONTH,
-    yearMonth: "こんげつ",
-  });
-  expect(review).toMatchObject({
-    activeDays: 0,
-    byCategory: [],
-    confirmedMinutes: 0,
-    digestTrend: [],
-    elapsedDays: 0,
-    isCurrentMonth: false,
-    previousByCategory: [],
-    yearMonth: "こんげつ",
-  });
-  expect(review.digest.plannedCount).toBe(0);
+test("月の指定が壊れていれば日・週の引数と同じく throw する", async () => {
+  await expect(
+    owner().query(api.queries.review.monthlyReview.monthlyReview, {
+      todayJst: TODAY_AFTER_MONTH,
+      yearMonth: "こんげつ",
+    }),
+  ).rejects.toThrow(YEAR_MONTH_MESSAGE);
+  await expect(
+    owner().query(api.queries.history.monthBreakdown.monthBreakdown, {
+      todayJst: TODAY_AFTER_MONTH,
+      yearMonth: "2026-13",
+    }),
+  ).rejects.toThrow(YEAR_MONTH_MESSAGE);
 });

@@ -6,7 +6,7 @@ import { clearTimerFields } from "./clearTimerFields";
 import { requireOwnedRow } from "./requireOwnedRow";
 import { rowDayLiveness } from "./rowDayLiveness";
 
-export async function pause(
+export async function unstart(
   ctx: MutationCtx,
   ownerId: string,
   args: { rowId: Id<"rows"> },

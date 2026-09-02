@@ -59,6 +59,10 @@ export function useUpdatePreset() {
   return useConvexMutation(api.mutations.presets.update.update);
 }
 
+export function useSavePresetSettings() {
+  return useConvexMutation(api.mutations.presets.saveSettings.saveSettings);
+}
+
 export function useRemovePreset() {
   return useConvexMutation(api.mutations.presets.remove.remove);
 }

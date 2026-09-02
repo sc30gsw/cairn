@@ -5,7 +5,7 @@ import { needsKanbanConfirmEditor } from "~/features/board/components/board-kanb
 import {
   useBoardApplyRowOrder,
   useBoardConfirmRow,
-  useBoardPauseRow,
+  useBoardUnstartRow,
   useBoardReopenRow,
   useBoardResumeRowTimer,
   useBoardSkipRow,
@@ -16,6 +16,7 @@ import {
 } from "~/features/board/hooks/board-mutations";
 import type { KanbanStatusMove } from "~/features/board/lib/kanban-order";
 import type { BoardRow } from "~/features/board/types/board";
+import { useFlagReview, useUnflagReview } from "~/hooks/use-row-mutations";
 import { useTodayJst } from "~/hooks/use-today-jst";
 import { runMutation } from "~/lib/run-mutation";
 
@@ -29,10 +30,12 @@ export function useBoardKanbanActions(dateJst: DateJst) {
   const unskipRow = useBoardUnskipRow(dateJst, today);
   const unconfirmRow = useBoardUnconfirmRow(dateJst, today);
   const startRow = useBoardStartRow(dateJst, today);
-  const pauseRow = useBoardPauseRow(dateJst, today);
+  const pauseRow = useBoardUnstartRow(dateJst, today);
   const reopenRow = useBoardReopenRow(dateJst, today);
   const stopRowTimer = useBoardStopRowTimer(dateJst, today);
   const resumeRowTimer = useBoardResumeRowTimer(dateJst, today);
+  const flagReview = useFlagReview();
+  const unflagReview = useUnflagReview();
 
   async function onStopTimer(rowId: Parameters<typeof stopRowTimer.mutateAsync>[0]["rowId"]) {
     let accumulatedMs: number | null = null;
@@ -60,7 +63,7 @@ export function useBoardKanbanActions(dateJst: DateJst) {
     runMutation(() => unskipRow.mutateAsync(input), silent).then(() => undefined);
   const onStart = (input: Parameters<typeof startRow.mutateAsync>[0]) =>
     runMutation(() => startRow.mutateAsync(input), silent).then(() => undefined);
-  const onPause = (input: Parameters<typeof pauseRow.mutateAsync>[0], successMessage?: string) =>
+  const onUnstart = (input: Parameters<typeof pauseRow.mutateAsync>[0], successMessage?: string) =>
     runMutation(() => pauseRow.mutateAsync(input), { silent: true, successMessage }).then(
       () => undefined,
     );
@@ -68,13 +71,22 @@ export function useBoardKanbanActions(dateJst: DateJst) {
     runMutation(() => reopenRow.mutateAsync(input), silent).then(() => undefined);
 
   return {
+    today,
+    onFlagReview: (row: BoardRow, dueJst: DateJst) =>
+      runMutation(() => flagReview.mutateAsync({ dueJst, rowId: row._id, todayJst: today }), {
+        successMessage: `復習に回しました（${dueJst}）`,
+      }).then(() => undefined),
+    onUnflagReview: (row: BoardRow) =>
+      runMutation(() => unflagReview.mutateAsync({ rowId: row._id }), {
+        successMessage: "復習をやめました",
+      }).then(() => undefined),
     onStopTimer,
     onConfirm,
     onSkip,
     onUnconfirm,
     onUnskip,
     onStart,
-    onPause,
+    onUnstart,
     onReopen,
     onStatusMove: async (
       move: KanbanStatusMove,
@@ -109,8 +121,8 @@ export function useBoardKanbanActions(dateJst: DateJst) {
           return await onUnconfirm({ rowId: row._id });
         case "start":
           return await onStart({ rowId: row._id });
-        case "pause":
-          return await onPause({ rowId: row._id });
+        case "unstart":
+          return await onUnstart({ rowId: row._id });
         case "reopen":
           return await onReopen({ rowId: row._id });
         case "noop":

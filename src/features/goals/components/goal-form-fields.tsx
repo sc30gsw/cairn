@@ -173,7 +173,7 @@ function GoalCriterionField({ field }: Record<"field", GoalTextFieldStore>) {
   );
 }
 
-function GoalDateField({
+export function GoalDateField({
   clearable = false,
   description,
   disabled = false,

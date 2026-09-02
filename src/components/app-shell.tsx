@@ -6,6 +6,7 @@ import {
   IconColumns3,
   IconDots,
   IconLayoutKanban,
+  IconNotebook,
   IconTarget,
   IconTemplate,
   IconTrash,
@@ -18,6 +19,7 @@ import { RouteErrorComponent } from "~/components/error-state";
 import { NotificationBell } from "~/components/notification-bell";
 import { NotificationBellFallback } from "~/components/notification-bell-fallback";
 import { OfflineBanner } from "~/components/offline-banner";
+import { PushSubscriptionSync } from "~/components/push-subscription-sync";
 import {
   RunningTimerIndicator,
   RunningTimerIndicatorFallback,
@@ -37,6 +39,7 @@ const NAV_ROUTES = [
   "/",
   "/board",
   "/history",
+  "/review",
   "/items",
   "/presets",
   "/goals",
@@ -68,6 +71,12 @@ const NAV: {
     label: "履歴",
     match: (path) => path.startsWith("/history"),
     to: "/history",
+  },
+  {
+    Icon: IconNotebook,
+    label: "レビュー",
+    match: (path) => path.startsWith("/review"),
+    to: "/review",
   },
   {
     Icon: IconLayoutKanban,
@@ -244,6 +253,7 @@ export function AppShell({ accountMenu, children }: AppShellProps) {
                 </Group>
               </Group>
               <OfflineBanner />
+              <PushSubscriptionSync />
               <CatchBoundary errorComponent={RouteErrorComponent} getResetKey={() => pathname}>
                 {children}
               </CatchBoundary>

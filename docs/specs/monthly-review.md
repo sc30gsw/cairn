@@ -972,3 +972,13 @@ export type MonthlyCategoryBreakdown = MonthlyReview["byCategory"][number];
 **変更不要。** 月次レビューは CONTEXT.md の既存語彙（「履歴」「消化」「学習量」「週間ターゲット」）の定義を変えず、新しい語も導入しない（「月次レビュー」自体は #47 のタイトルに既出の機能名であり、画面の実装であって新概念ではない）。ADR-0005〜0011 のいずれとも矛盾しない。新規 ADR は不要。
 
 **「マイページ」の _Avoid_「8番目のナビタブ」も無変更**（§8.3, §13-10）。本書は `weekly-review.md` が確定した「`NAV` を7本のまま据え置き、`/review` の入口は履歴画面 + `/goals` のリンクにする」という判断をそのまま受け入れる。この `_Avoid_` の意図確定作業（マイページ限定の禁止か `NAV` の本数上限か）は CONTEXT.md の語彙改訂であり、#50 相当の独立工程として引き続き未着手のまま据え置く。
+
+---
+
+## 改訂（2026-09-02）— #81 日付系引数の検証規則を throw に統一
+
+- §13-9 の「月の引数は空 DTO を返す」を**撤回**し、日・週（`requireDateJst` / `requireWeekStartJst`）と同じく **throw に統一**した。`convex/lib/dateArgs.ts` に `requireYearMonth` を足し、`computeMonthBreakdown` と `monthlyReview` は壊れた `yearMonth` で `ValidationFailedError`（`YEAR_MONTH_MESSAGE`）を投げる。`emptyMonthlyReview` は削除。
+- 理由: 壊れた引数は URL 改変時にしか起きず、画面側には `ErrorState` がある。空 DTO は「データが無い月」と「壊れた引数」を見分けられず、0 埋めの `digest` が正しい値のように見える。
+- クライアントの `validateSearch`（`YearMonthSchema`）は `YEAR_MONTH_PATTERN` / `YEAR_MONTH_MESSAGE` を `~domain/domain` から読み、サーバーと同じ正規表現・文言になった。
+- 規則の置き場所: `convex/lib/dateArgs.ts` 冒頭のコメントと `.claude/rules/convex-rules.md` CVX-03 の補足。
+- §13-13 の `buildWeeklyDigest` / `elapsedDaysInWeek` は `buildDigest` / `elapsedDaysInRange` に改名した（ファイルは `convex/lib/weeklyReview.ts` のまま）。

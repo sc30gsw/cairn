@@ -4,6 +4,7 @@ import {
   buildGoalTree,
   childCheckpointsOf,
   goalTier,
+  latestFinishedExam,
   PARENT_GOAL_OPTION_GROUPS,
   parentGoalOptions,
 } from "~/features/goals/lib/goal-tree";
@@ -52,6 +53,10 @@ function exam(id = "exam", createdAt = 1): ExamGoal {
     minScore: 850,
     type: "exam",
   };
+}
+
+function finishedExam(id: string, recordedAt: string, createdAt = 1): ExamGoal {
+  return { ...exam(id, createdAt), result: { recordedAt, score: 875 } };
 }
 
 test("goalTier は期限の有無で区分を決める", () => {
@@ -254,4 +259,67 @@ test("現在の親は候補条件を満たさなくても残り、自分自身�
 
 test("候補が無いグループは含めない", () => {
   expect(parentGoalOptions([], { currentParentId: undefined, selfId: undefined })).toEqual([]);
+});
+
+test("結果が入った本番は exam から外れ、子が残っていなければ examHistory に入る", () => {
+  const tree = buildGoalTree([
+    finishedExam("old", "2026-08-16"),
+    mastery({
+      achievedAt: "2026-08-01",
+      id: "doneChild",
+      deadline: "2026-08-01",
+      parentGoalId: goalId("old"),
+    }),
+  ]);
+
+  expect(tree.exam).toBeUndefined();
+  expect(tree.finishedExams).toEqual([]);
+  expect(tree.examHistory.map((goal) => goal._id)).toEqual([goalId("old")]);
+  expect(tree.achieved.map((goal) => goal._id)).toEqual([goalId("doneChild")]);
+  expect(tree.orphans).toEqual([]);
+});
+
+test("未達成の子が残る終了した本番は finishedExams としてツリーに残る", () => {
+  const tree = buildGoalTree([
+    finishedExam("old", "2026-08-16"),
+    exam("next", 2),
+    mastery({ id: "leftover", deadline: "2026-09-06", parentGoalId: goalId("old") }),
+  ]);
+
+  expect(tree.exam?.parent._id).toBe(goalId("next"));
+  expect(tree.finishedExams.map((group) => group.parent._id)).toEqual([goalId("old")]);
+  expect(tree.finishedExams[0]?.checkpoints.map((goal) => goal._id)).toEqual([goalId("leftover")]);
+  expect(tree.examHistory).toEqual([]);
+  expect(tree.orphans).toEqual([]);
+});
+
+test("終了した本番は結果を入れた日の新しい順に並び、latestFinishedExam はその先頭", () => {
+  const goals: Goal[] = [
+    finishedExam("older", "2026-03-15", 1),
+    finishedExam("newer", "2026-08-16", 2),
+  ];
+
+  expect(buildGoalTree(goals).examHistory.map((goal) => goal._id)).toEqual([
+    goalId("newer"),
+    goalId("older"),
+  ]);
+  expect(latestFinishedExam(goals)?._id).toBe(goalId("newer"));
+  expect(latestFinishedExam([exam()])).toBeUndefined();
+});
+
+test("親の候補に終了した本番は出ない。ただし今の親なら残る", () => {
+  const goals: Goal[] = [finishedExam("old", "2026-08-16"), exam("next", 2)];
+
+  expect(parentGoalOptions(goals, { currentParentId: undefined, selfId: undefined })).toEqual([
+    { group: PARENT_GOAL_OPTION_GROUPS.exam, items: [{ label: "next の内容", value: "next" }] },
+  ]);
+  expect(parentGoalOptions(goals, { currentParentId: goalId("old"), selfId: undefined })).toEqual([
+    {
+      group: PARENT_GOAL_OPTION_GROUPS.exam,
+      items: [
+        { label: "old の内容", value: "old" },
+        { label: "next の内容", value: "next" },
+      ],
+    },
+  ]);
 });

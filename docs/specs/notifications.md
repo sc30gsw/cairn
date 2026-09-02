@@ -11,6 +11,10 @@
 
 ---
 
+## 改訂（2026-09-02）: Web Push を後続チケット #68 で実装
+
+§2.4 / §18.1 が「#58 完了後の後続チケット」に委ねた Web Push 一式を [web-push.md](./web-push.md) の決定で実装した。`pushSubscriptions` 表・`deliverWebPush` internalAction・`emitNotification` の schedule 行・SW の `push` / `notificationclick` / `pushsubscriptionchange` リスナー・マイページ通知タブの「この端末に届ける」。あわせて §6.2 の静穏時間（`quietFromHourJst` / `quietToHourJst` / `isQuietHourJst`）を「押し出し（Web Push）だけを止める」意味論のままコードに入れた。Slack に属する記述は引き続きコードに存在しない。
+
 ## 改訂（2026-08-24）: Slack 押し出しチャネルは実装から撤回
 
 2026-08-24 のオーナー判断で Slack 押し出しチャネルは実装から撤回。v1 のチャネルはアプリ内通知欄のみ。Web Push は従来どおり #58 後の後続チケット所有。

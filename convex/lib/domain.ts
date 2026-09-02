@@ -65,6 +65,11 @@ export const CHECKPOINT_BACKFILL_MANUAL_MESSAGE =
 export const CHECKPOINT_DEADLINE_MALFORMED_MESSAGE =
   "期限の形式が壊れたチェックポイントがあります。手で直してから再実行してください";
 
+export const PRESET_SETTINGS_DEFAULTS = { holidayAsSunday: false } as const satisfies Record<
+  "holidayAsSunday",
+  boolean
+>;
+
 export const TARGET_METRICS = ["minutes", "days", "count"] as const satisfies readonly string[];
 
 export type TargetMetric = (typeof TARGET_METRICS)[number];
@@ -84,7 +89,22 @@ export const TARGET_VALUE_MESSAGE = `目標値は${TARGET_VALUE_LIMITS.min}以�
 
 export const TARGET_DAYS_MESSAGE = `実施日の目標は${TARGET_VALUE_LIMITS.maxDays}日までです`;
 
+export const ACHIEVEMENT_REFLECTION_MAX_LENGTH = 200;
+
+export const ACHIEVEMENT_REFLECTION_LENGTH_MESSAGE = `振り返りは${String(ACHIEVEMENT_REFLECTION_MAX_LENGTH)}字以内で入力してください`;
+
+export const SEARCH_QUERY_MIN_LENGTH = 2;
+
+export const SEARCH_QUERY_TOO_SHORT_MESSAGE = `検索語は${String(SEARCH_QUERY_MIN_LENGTH)}文字以上で入力してください`;
+
+//? 履歴検索は新しい順にこの件数まで返す。超えた分は「語を足して絞る」よう促す
+export const SEARCH_RESULT_LIMIT = 50;
+
 export const DATE_JST_PATTERN = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
+
+export const YEAR_MONTH_PATTERN = /^\d{4}-(?:0[1-9]|1[0-2])$/;
+
+export const YEAR_MONTH_MESSAGE = "月は YYYY-MM 形式で指定してください";
 
 export { CATEGORIES, type Category } from "./categories";
 export { CONDITIONS, type Condition } from "./conditions";

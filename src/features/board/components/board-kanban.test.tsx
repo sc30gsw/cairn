@@ -13,10 +13,15 @@ const onConfirmMock = vi.fn(async () => null);
 const onStopTimerMock = vi.fn(async (): Promise<number | null> => 754_000);
 const onApplyOrderMock = vi.fn(async () => undefined);
 const onSkipMock = vi.fn(async () => undefined);
-const onPauseMock = vi.fn(async () => undefined);
+const onUnstartMock = vi.fn(async () => undefined);
 const onUnconfirmMock = vi.fn(async () => undefined);
 
 const { notificationsShowMock } = vi.hoisted(() => ({ notificationsShowMock: vi.fn() }));
+vi.mock("~/hooks/use-row-mutations", () => ({
+  useFlagReview: () => ({ mutateAsync: vi.fn(async () => null) }),
+  useUnflagReview: () => ({ mutateAsync: vi.fn(async () => null) }),
+}));
+
 vi.mock("@mantine/notifications", () => ({
   notifications: { hide: vi.fn(), show: notificationsShowMock },
 }));
@@ -24,7 +29,7 @@ vi.mock("@mantine/notifications", () => ({
 vi.mock("~/features/board/hooks/board-mutations", () => ({
   useBoardApplyRowOrder: () => ({ mutateAsync: onApplyOrderMock }),
   useBoardConfirmRow: () => ({ mutateAsync: onConfirmMock }),
-  useBoardPauseRow: () => ({ mutateAsync: onPauseMock }),
+  useBoardUnstartRow: () => ({ mutateAsync: onUnstartMock }),
   useBoardReopenRow: () => ({ mutateAsync: noop }),
   useBoardResumeRowTimer: () => ({ mutateAsync: noop }),
   useBoardSkipRow: () => ({ mutateAsync: onSkipMock }),
@@ -38,7 +43,7 @@ beforeEach(() => {
   noop.mockClear();
   onApplyOrderMock.mockClear();
   onConfirmMock.mockClear();
-  onPauseMock.mockClear();
+  onUnstartMock.mockClear();
   onSkipMock.mockClear();
   onStopTimerMock.mockClear();
   onUnconfirmMock.mockClear();
@@ -66,6 +71,7 @@ function row(
     itemId: "i1" as BoardRow["itemId"],
     itemName: name,
     minutes: 30,
+    review: null,
     sortOrder: 0,
     status,
     timer: null,
@@ -126,6 +132,7 @@ test("計測がある進行中の行を確定すると、stopTimer の分数で�
         row("r1", ongoing, "金のフレーズ", {
           content: "Unit 1",
           minutes: 30,
+          review: null,
           timer: { accumulatedMs: 754_000, autoStoppedAt: null, startedAt: null },
         }),
       ]}
@@ -151,6 +158,7 @@ test("stopTimer が失敗したら安全側でエディタを開く", async () =
         row("r1", ongoing, "金のフレーズ", {
           content: "Unit 1",
           minutes: 30,
+          review: null,
           timer: { accumulatedMs: 754_000, autoStoppedAt: null, startedAt: null },
         }),
       ]}
@@ -209,6 +217,7 @@ test("メニューから完了にすると、計測がある行は stopTimer の
         row("r1", ongoing, "金のフレーズ", {
           content: "Unit 1",
           minutes: 30,
+          review: null,
           timer: { accumulatedMs: 754_000, autoStoppedAt: null, startedAt: null },
         }),
       ]}
@@ -291,7 +300,7 @@ test("メニューから未着手に戻すと、確認なしで即座に一時�
   );
 
   await vi.waitFor(() => {
-    expect(onPauseMock).toHaveBeenCalledWith({ rowId: "r1" });
+    expect(onUnstartMock).toHaveBeenCalledWith({ rowId: "r1" });
     expect(hasSuccessToast("計測 13分を捨てました")).toBe(true);
   });
   expect(document.querySelector('[role="dialog"]')).toBeNull();
@@ -311,7 +320,7 @@ test("確定した行のメニューから未着手に戻すと、確認なし�
     expect(onUnconfirmMock).toHaveBeenCalledWith({ rowId: "r1" });
     expect(hasSuccessToast("確定を取り消しました")).toBe(true);
   });
-  expect(onPauseMock).not.toHaveBeenCalled();
+  expect(onUnstartMock).not.toHaveBeenCalled();
   expect(document.querySelector('[role="dialog"]')).toBeNull();
 });
 

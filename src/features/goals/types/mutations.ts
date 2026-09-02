@@ -6,6 +6,9 @@ export type CreateGoalInput = FunctionArgs<typeof api.mutations.goals.create.cre
 export type GoalInputPayload = CreateGoalInput["goal"];
 export type UpdateGoalInput = FunctionArgs<typeof api.mutations.goals.update.update>;
 export type SetAchievedInput = FunctionArgs<typeof api.mutations.goals.setAchieved.setAchieved>;
+export type SetExamResultInput = FunctionArgs<
+  typeof api.mutations.goals.setExamResult.setExamResult
+>;
 export type SaveTargetInput = FunctionArgs<typeof api.mutations.targets.save.save>;
 export type CreateObstacleInput = FunctionArgs<
   typeof api.mutations.goals.createObstacle.createObstacle

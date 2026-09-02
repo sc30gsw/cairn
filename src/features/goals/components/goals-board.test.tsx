@@ -3,14 +3,27 @@ import type { ReactNode } from "react";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { ACHIEVED_SECTION_TITLE } from "~/features/goals/components/achieved-history-section";
-import { OVERDUE_LABEL } from "~/features/goals/components/checkpoint-row";
-import { EXAM_GOAL_INCOMPLETE_TITLE } from "~/features/goals/components/exam-goal-card";
-import { CHECKPOINT_CROWDED_MESSAGE } from "~/features/goals/components/goal-form-fields";
 import {
+  ACHIEVEMENT_REFLECTION_LABEL,
+  ACHIEVEMENT_REFLECTION_SUBMIT,
+} from "~/features/goals/components/achievement-reflection-modal";
+import { OVERDUE_LABEL } from "~/features/goals/components/checkpoint-row";
+import {
+  CREATE_EXAM_LABEL,
   EXAM_GOAL_EMPTY_TITLE,
-  GOAL_HIERARCHY_HINT,
-  GoalsBoard,
-} from "~/features/goals/components/goals-board";
+  NEXT_EXAM_TITLE,
+} from "~/features/goals/components/exam-empty-card";
+import {
+  EXAM_GOAL_FINISHED_BADGE,
+  EXAM_GOAL_INCOMPLETE_TITLE,
+  examResultActionName,
+} from "~/features/goals/components/exam-goal-card";
+import {
+  EXAM_RESULT_SCORE_LABEL,
+  EXAM_RESULT_SUBMIT,
+} from "~/features/goals/components/exam-result-modal";
+import { CHECKPOINT_CROWDED_MESSAGE } from "~/features/goals/components/goal-form-fields";
+import { GOAL_HIERARCHY_HINT, GoalsBoard } from "~/features/goals/components/goals-board";
 import {
   LONG_TERM_ADD_LABEL,
   LONG_TERM_EMPTY_MESSAGE,
@@ -26,6 +39,10 @@ import {
   CHECKPOINT_GROUP_EMPTY_MESSAGE,
   CHECKPOINT_GROUP_TITLE,
 } from "~/features/goals/components/parent-goal-group";
+import {
+  EXAM_RESULT_CORRECTED_MESSAGE,
+  EXAM_RESULT_RECORDED_MESSAGE,
+} from "~/features/goals/lib/exam-result-copy";
 import {
   KINFURE_ITEM,
   scopeCategoriesFixture,
@@ -50,6 +67,7 @@ const {
   onRemoveGoal,
   onRemoveObstacle,
   onSetAchieved,
+  onSetExamResult,
   onUpdateGoal,
   onUpdateObstacle,
 } = vi.hoisted(() => ({
@@ -58,6 +76,7 @@ const {
   onRemoveGoal: vi.fn(),
   onRemoveObstacle: vi.fn(),
   onSetAchieved: vi.fn(),
+  onSetExamResult: vi.fn(),
   onUpdateGoal: vi.fn(),
   onUpdateObstacle: vi.fn(),
 }));
@@ -69,6 +88,7 @@ vi.mock("~/features/goals/hooks/use-goals-board-actions", () => ({
     onRemoveGoal,
     onRemoveObstacle,
     onSetAchieved,
+    onSetExamResult,
     onUpdateGoal,
     onUpdateObstacle,
   }),
@@ -84,6 +104,7 @@ beforeEach(() => {
   onRemoveGoal.mockClear();
   onRemoveObstacle.mockClear();
   onSetAchieved.mockClear();
+  onSetExamResult.mockClear();
   onUpdateGoal.mockClear();
   onUpdateObstacle.mockClear();
 });
@@ -96,6 +117,16 @@ const EXAM_GOAL = {
   maxScore: 850,
   minScore: 730,
   type: "exam",
+} satisfies Goal;
+
+const PAST_EXAM_GOAL = {
+  ...EXAM_GOAL,
+  examDate: "2026-08-10",
+} satisfies Goal;
+
+const FINISHED_EXAM_GOAL = {
+  ...PAST_EXAM_GOAL,
+  result: { recordedAt: "2026-08-16", score: 875 },
 } satisfies Goal;
 
 const SOON_CHECKPOINT = {
@@ -264,14 +295,56 @@ test("期限を過ぎたチェックポイントは表示だけが変わる", ()
   expect(getByText(/期限 2026-08-10/)).toBeDefined();
 });
 
-test("達成チェックを入れると onSetAchieved が今日の日付つきで呼ばれる", () => {
+test("達成チェックを入れると振り返りを聞き、送ると onSetAchieved が今日の日付と振り返りつきで呼ばれる", async () => {
   const { getByRole } = renderWithMantine(
     <GoalsBoard {...goalsBoardProps([EXAM_GOAL, SOON_CHECKPOINT])} />,
   );
   getByRole("checkbox", { name: `${SOON_CHECKPOINT.content}の達成` }).click();
+  expect(onSetAchieved).not.toHaveBeenCalled();
+
+  const textbox = await waitFor(() =>
+    getByRole("textbox", { hidden: true, name: new RegExp(ACHIEVEMENT_REFLECTION_LABEL) }),
+  );
+  fireEvent.input(textbox, { target: { value: " 音読が効いた " } });
+  fireEvent.click(getByRole("button", { hidden: true, name: ACHIEVEMENT_REFLECTION_SUBMIT }));
+
+  await waitFor(() => {
+    expect(onSetAchieved).toHaveBeenCalledWith({
+      achievedAt: TODAY,
+      goalId: SOON_CHECKPOINT._id,
+      reflection: "音読が効いた",
+    });
+  });
+});
+
+test("振り返りを書かずに達成にすると reflection は undefined で呼ばれる", async () => {
+  const { getByRole } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, SOON_CHECKPOINT])} />,
+  );
+  getByRole("checkbox", { name: `${SOON_CHECKPOINT.content}の達成` }).click();
+  const submit = await waitFor(() =>
+    getByRole("button", { hidden: true, name: ACHIEVEMENT_REFLECTION_SUBMIT }),
+  );
+  fireEvent.click(submit);
+
+  await waitFor(() => {
+    expect(onSetAchieved).toHaveBeenCalledWith({
+      achievedAt: TODAY,
+      goalId: SOON_CHECKPOINT._id,
+      reflection: undefined,
+    });
+  });
+});
+
+test("達成の取り消しは振り返りを聞かずに即呼ばれる", () => {
+  const { getByRole } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, ACHIEVED_CHECKPOINT])} />,
+  );
+  getByRole("button", { name: new RegExp(ACHIEVED_SECTION_TITLE) }).click();
+  getByRole("checkbox", { hidden: true, name: `${ACHIEVED_CHECKPOINT.content}の達成` }).click();
   expect(onSetAchieved).toHaveBeenCalledWith({
-    achievedAt: TODAY,
-    goalId: SOON_CHECKPOINT._id,
+    achievedAt: undefined,
+    goalId: ACHIEVED_CHECKPOINT._id,
   });
 });
 
@@ -586,4 +659,62 @@ test("対象項目つきのチェックポイント行は項目名を実績の�
       `${KINFURE_ITEM.name}・確定 ${String(SOON_CHECKPOINT.confirmedMinutes)}分 / ${String(SOON_CHECKPOINT.activeDays)}日`,
     ),
   ).toBeDefined();
+});
+
+test("本番日を過ぎた本番目標は「結果を入れる」からモーダルで結果を記録する", async () => {
+  const { getByRole } = renderWithMantine(<GoalsBoard {...goalsBoardProps([PAST_EXAM_GOAL])} />);
+  getByRole("button", { name: examResultActionName(PAST_EXAM_GOAL) }).click();
+  const score = await waitFor(() =>
+    getByRole("textbox", { hidden: true, name: EXAM_RESULT_SCORE_LABEL }),
+  );
+  fireEvent.change(score, { target: { value: "855" } });
+  fireEvent.click(getByRole("button", { hidden: true, name: EXAM_RESULT_SUBMIT }));
+
+  await waitFor(() => {
+    expect(onSetExamResult).toHaveBeenCalledWith(
+      { goalId: PAST_EXAM_GOAL._id, result: { recordedAt: TODAY, score: 855 } },
+      EXAM_RESULT_RECORDED_MESSAGE,
+    );
+  });
+});
+
+test("終了した本番だけなら次の本番を作る導線が出て、本番は達成した目標に並ぶ", () => {
+  const { getByRole, getByText, queryByText } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([FINISHED_EXAM_GOAL, ACHIEVED_CHECKPOINT])} />,
+  );
+  expect(getByText(NEXT_EXAM_TITLE)).toBeDefined();
+  expect(getByText(/前回の本番（2026-08-10）の結果は 875 点でした/)).toBeDefined();
+  expect(getByRole("button", { name: CREATE_EXAM_LABEL })).toBeDefined();
+  expect(queryByText(EXAM_GOAL_INCOMPLETE_TITLE)).toBeNull();
+  expect(queryByText(EXAM_GOAL_FINISHED_BADGE)).toBeNull();
+  const control = getByRole("button", { name: new RegExp(ACHIEVED_SECTION_TITLE) });
+  expect(within(control).getByText("2")).toBeDefined();
+});
+
+test("未達成の子が残る終了した本番はツリーに残り、追加は出さず、訂正はモーダルを開く", async () => {
+  const { getByRole, getByText, queryByRole } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([FINISHED_EXAM_GOAL, SOON_CHECKPOINT])} />,
+  );
+  expect(getByText(NEXT_EXAM_TITLE)).toBeDefined();
+  expect(getByText(EXAM_GOAL_FINISHED_BADGE)).toBeDefined();
+  const group = within(
+    getByRole("region", { name: `${FINISHED_EXAM_GOAL.content}のチェックポイント` }),
+  );
+  expect(group.getByText(SOON_CHECKPOINT.content)).toBeDefined();
+  expect(queryByRole("button", { name: addCheckpointName(FINISHED_EXAM_GOAL.content) })).toBeNull();
+
+  getByRole("button", { name: examResultActionName(FINISHED_EXAM_GOAL) }).click();
+  const score = await waitFor(
+    () => getByRole("textbox", { hidden: true, name: EXAM_RESULT_SCORE_LABEL }) as HTMLInputElement,
+  );
+  expect(score.value).toBe("875");
+  fireEvent.change(score, { target: { value: "880" } });
+  fireEvent.click(getByRole("button", { hidden: true, name: EXAM_RESULT_SUBMIT }));
+
+  await waitFor(() => {
+    expect(onSetExamResult).toHaveBeenCalledWith(
+      { goalId: FINISHED_EXAM_GOAL._id, result: { recordedAt: "2026-08-16", score: 880 } },
+      EXAM_RESULT_CORRECTED_MESSAGE,
+    );
+  });
 });

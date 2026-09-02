@@ -16,7 +16,7 @@ import { ConcreteActionSchema } from "~/lib/validation/concrete-action";
 
 const [examType, masteryType] = GOAL_TYPES;
 
-const DateJstSchema = v.pipe(
+export const DateJstSchema = v.pipe(
   v.string(GOAL_DATE_MESSAGE),
   v.regex(DATE_JST_PATTERN, GOAL_DATE_MESSAGE),
 );
@@ -27,7 +27,7 @@ const OptionalDateJstSchema = v.pipe(
   v.transform((value) => (value === "" ? undefined : value)),
 );
 
-const ToeicScoreSchema = v.pipe(
+export const ToeicScoreSchema = v.pipe(
   v.number(TOEIC_SCORE_RANGE_MESSAGE),
   v.integer(TOEIC_SCORE_RANGE_MESSAGE),
   v.minValue(TOEIC_SCORE.min, TOEIC_SCORE_RANGE_MESSAGE),

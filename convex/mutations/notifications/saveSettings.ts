@@ -8,6 +8,8 @@ export const saveSettings = ownerMutation({
   args: {
     enabled: v.boolean(),
     eveningHourJst: v.number(),
+    quietFromHourJst: v.number(),
+    quietToHourJst: v.number(),
     triggers: notificationTriggerPrefsValidator,
   },
   handler: async (ctx, args) => saveNotificationSettings(ctx, ctx.ownerId, args),

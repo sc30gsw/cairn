@@ -65,6 +65,7 @@ test("本番目標の親カードは本番目標の本体と子グループを�
       {...commonProps()}
       hasWeeklyTargets
       kind="exam"
+      onRecordResult={vi.fn()}
       onShowWeeklyTargets={vi.fn()}
       parent={EXAM_GOAL}
     />,

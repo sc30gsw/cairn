@@ -11,6 +11,8 @@ export async function settings(ctx: QueryCtx, ownerId: string): Promise<Notifica
   return {
     enabled: row.enabled,
     eveningHourJst: row.eveningHourJst,
+    quietFromHourJst: row.quietFromHourJst ?? NOTIFICATION_DEFAULTS.quietFromHourJst,
+    quietToHourJst: row.quietToHourJst ?? NOTIFICATION_DEFAULTS.quietToHourJst,
     triggers: row.triggers,
   };
 }

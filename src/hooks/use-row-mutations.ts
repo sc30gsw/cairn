@@ -46,6 +46,14 @@ export function useRemoveDay() {
   return useConvexMutation(api.mutations.trash.removeDay.removeDay);
 }
 
+export function useFlagReview() {
+  return useConvexMutation(api.mutations.reviews.flag.flag);
+}
+
+export function useUnflagReview() {
+  return useConvexMutation(api.mutations.reviews.unflag.unflag);
+}
+
 export function useOptimisticSkipRow(dateJst: DateJst, todayJst: DateJst) {
   const mutateAsync = useConvexMutation(api.mutations.rows.skip.skip).withOptimisticUpdate(
     (localStore, args) => {
@@ -106,8 +114,8 @@ export function useOptimisticStartRow(dateJst: DateJst, todayJst: DateJst) {
   return { mutateAsync };
 }
 
-export function useOptimisticPauseRow(dateJst: DateJst, todayJst: DateJst) {
-  const mutateAsync = useConvexMutation(api.mutations.rows.pause.pause).withOptimisticUpdate(
+export function useOptimisticUnstartRow(dateJst: DateJst, todayJst: DateJst) {
+  const mutateAsync = useConvexMutation(api.mutations.rows.unstart.unstart).withOptimisticUpdate(
     (localStore, args) => {
       setDayRowStatus(localStore, {
         dateJst,

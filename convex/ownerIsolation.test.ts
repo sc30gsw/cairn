@@ -179,13 +179,13 @@ test("他人の行は start できない", async () => {
   await expect(ownerB.mutation(api.mutations.rows.start.start, { rowId })).rejects.toThrow();
 });
 
-test("他人の行は pause できない", async () => {
+test("他人の行は unstart できない", async () => {
   const ownerA = asOwner(OWNER_A);
   const rowId = await firstRowId(ownerA);
   await ownerA.mutation(api.mutations.rows.start.start, { rowId });
 
   const ownerB = asOwner(OWNER_B);
-  await expect(ownerB.mutation(api.mutations.rows.pause.pause, { rowId })).rejects.toThrow();
+  await expect(ownerB.mutation(api.mutations.rows.unstart.unstart, { rowId })).rejects.toThrow();
 });
 
 test("他人の行は reopen できない", async () => {

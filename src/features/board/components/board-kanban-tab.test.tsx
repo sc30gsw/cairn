@@ -27,6 +27,7 @@ vi.mock("~/hooks/use-open-and-load-day", () => ({
           itemId: "i1",
           itemName: "Distinction 2000",
           minutes: 30,
+          review: null,
           sortOrder: 0,
           status: "未着手",
           timer: null,
@@ -40,7 +41,7 @@ vi.mock("~/features/board/hooks/use-board-kanban-actions", () => ({
   useBoardKanbanActions: () => ({
     onApplyOrder: vi.fn(),
     onConfirm: vi.fn(),
-    onPause: vi.fn(),
+    onUnstart: vi.fn(),
     onReopen: vi.fn(),
     onSkip: vi.fn(),
     onStart: vi.fn(),

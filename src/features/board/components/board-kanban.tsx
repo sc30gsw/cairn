@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import type { DateJst } from "~domain/jst";
 import { hasTimerState, measuredMs, timerMinutes, timerRunState } from "~domain/rowTimer";
 
+import { ReviewBadge } from "~/components/review-badge";
 import { TruncatedText } from "~/components/truncated-text";
 import { BoardKanbanCardMenu } from "~/features/board/components/board-kanban-card-menu";
 import { BoardKanbanConfirmModal } from "~/features/board/components/board-kanban-confirm-modal";
@@ -44,22 +45,28 @@ function RecordCard({
   disabled,
   dragHandleProps,
   onConfirm,
+  onFlagReview,
   onResume,
   onShift,
   onStatusMove,
   onStop,
+  onUnflagReview,
   row,
   rows,
+  todayJst,
 }: {
   disabled: boolean;
   dragHandleProps: React.HTMLAttributes<HTMLElement> | undefined;
   onConfirm: () => void;
+  onFlagReview: (row: BoardRow, dueJst: DateJst) => void;
   onResume: () => void;
   onShift: (direction: -1 | 1, row: BoardRow) => void;
   onStatusMove: (move: Exclude<KanbanStatusMove, "noop">, row: BoardRow) => Promise<unknown>;
   onStop: () => void;
+  onUnflagReview: (row: BoardRow) => void;
   row: BoardRow;
   rows: readonly BoardRow[];
+  todayJst: DateJst;
 }) {
   const badge = RECORD_STATUS_UI[row.status];
   const detail = row.content === "" ? row.category : `${row.category} · ${row.content}`;
@@ -87,18 +94,24 @@ function RecordCard({
           <TruncatedText c="dimmed" lineClamp={1} size="xs">
             {detail}
           </TruncatedText>
-          <Tooltip label={statusTooltip(row.status)} withArrow>
-            <Badge color={badge.color} size="sm" variant="light">
-              {badge.label}
-            </Badge>
-          </Tooltip>
+          <Group gap={4} wrap="wrap">
+            <Tooltip label={statusTooltip(row.status)} withArrow>
+              <Badge color={badge.color} size="sm" variant="light">
+                {badge.label}
+              </Badge>
+            </Tooltip>
+            <ReviewBadge review={row.review} />
+          </Group>
         </Stack>
         <BoardKanbanCardMenu
           disabled={disabled}
+          onFlagReview={onFlagReview}
           onShift={onShift}
           onStatusMove={onStatusMove}
+          onUnflagReview={onUnflagReview}
           row={row}
           rows={rows}
+          todayJst={todayJst}
         />
       </Group>
       {row.status === "進行中" ? (
@@ -130,8 +143,18 @@ function columnHeadingLabel(
 }
 
 export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanProps) {
-  const { onApplyOrder, onConfirm, onPause, onResumeTimer, onSkip, onStatusMove, onStopTimer } =
-    useBoardKanbanActions(dateJst);
+  const {
+    onApplyOrder,
+    onConfirm,
+    onFlagReview,
+    onUnstart,
+    onResumeTimer,
+    onSkip,
+    onStatusMove,
+    onStopTimer,
+    onUnflagReview,
+    today,
+  } = useBoardKanbanActions(dateJst);
   const { DragDropContext, Draggable, Droppable } = useDnd();
   const grouped = groupRowsByKanbanColumn(rows);
   const hasMeasuringRow = rows.some((row) => timerRunState(row.timer) === "計測中");
@@ -152,12 +175,12 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
   }
 
   async function moveRow(move: Exclude<KanbanStatusMove, "noop">, row: BoardRow): Promise<boolean> {
-    if ((move === "skip" || move === "pause") && hasTimerState(row.timer)) {
+    if ((move === "skip" || move === "unstart") && hasTimerState(row.timer)) {
       const measuredMinutes = timerMinutes(measuredMs(row.timer, serverNowMs()));
       const successMessage = `計測 ${String(measuredMinutes)}分を捨てました`;
       await (move === "skip"
         ? onSkip({ rowId: row._id }, successMessage)
-        : onPause({ rowId: row._id }, successMessage));
+        : onUnstart({ rowId: row._id }, successMessage));
       return false;
     }
     let deferred = false;
@@ -269,12 +292,15 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
                                 disabled={!interactive}
                                 dragHandleProps={dragProvided.dragHandleProps ?? undefined}
                                 onConfirm={() => void requestConfirm(row)}
+                                onFlagReview={onFlagReview}
                                 onResume={() => void onResumeTimer({ rowId: row._id })}
                                 onShift={shiftRow}
                                 onStatusMove={moveRow}
                                 onStop={() => void onStopTimer(row._id)}
+                                onUnflagReview={onUnflagReview}
                                 row={row}
                                 rows={rows}
+                                todayJst={today}
                               />
                             </div>
                           )}

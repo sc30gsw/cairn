@@ -51,6 +51,8 @@ export async function start(ctx: MutationCtx, user: Doc<"appUsers">, args: Start
 
 Public functions can be called by anyone. Always declare `args: { ... }` with a validator (a return-value validator is also recommended). TypeScript type annotations alone are not enforced at runtime. This is enforced through manual review discipline: every `convex/` change must be checked against this file's checklist, and the `convex:convex-reviewer` subagent should be run on `convex/` code before merging.
 
+**Date-shaped arguments (this project)**: `dateJst` / `weekStartJst` / `yearMonth` strings are validated with the helpers in `convex/lib/dateArgs.ts` (`requireDateJst` / `requireWeekStartJst` / `requireYearMonth`), which **throw** `ValidationFailedError` on a malformed value. Do not return an empty DTO to tolerate a broken date argument — the client already rejects it in `validateSearch`, and the screen has `ErrorState` (decided in #81, `docs/specs/monthly-review.md` 改訂 2026-09-02).
+
 ### CVX-04: Add Access Control to Every Public Function 〔Official / Zenn〕
 
 At the start of every public function, perform verification based on `ctx.auth.getUserIdentity()`. In this project, every public function must call `requireUser(ctx)` from `convex/lib/auth.ts` (it throws for an unauthenticated or unregistered subject). **Never use spoofable arguments (email, role, isAdmin, etc.) for authorization decisions.** Authorization is based on the `role` on `appUsers`, resolved server-side.

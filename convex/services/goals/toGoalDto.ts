@@ -11,6 +11,7 @@ export function toGoalDto(goal: Doc<"goals">): GoalDto {
       examDate: goal.examDate,
       maxScore: goal.maxScore,
       minScore: goal.minScore,
+      result: goal.result,
       type: "exam",
     };
   }
@@ -23,6 +24,7 @@ export function toGoalDto(goal: Doc<"goals">): GoalDto {
     criterion: goal.criterion,
     deadline: goal.deadline,
     parentGoalId: goal.parentGoalId,
+    reflection: goal.reflection,
     scopeItemIds: goal.scopeItemIds,
     type: "mastery",
   };
