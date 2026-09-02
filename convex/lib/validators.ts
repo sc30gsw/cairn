@@ -438,6 +438,29 @@ export const historyWeekValidator = v.object({
 
 export type HistoryWeekDto = Infer<typeof historyWeekValidator>;
 
+export const historySearchKindValidator = v.union(v.literal("hitokoto"), v.literal("memo"));
+
+export type HistorySearchKind = Infer<typeof historySearchKindValidator>;
+
+export const historySearchHitValidator = v.object({
+  category: v.optional(v.string()),
+  dateJst: v.string(),
+  kind: historySearchKindValidator,
+  minutes: v.optional(v.number()),
+  rowId: v.optional(v.id("rows")),
+  text: v.string(),
+  title: v.string(),
+});
+
+export type HistorySearchHitDto = Infer<typeof historySearchHitValidator>;
+
+export const historySearchValidator = v.object({
+  hits: v.array(historySearchHitValidator),
+  truncated: v.boolean(),
+});
+
+export type HistorySearchDto = Infer<typeof historySearchValidator>;
+
 export const historyMonthValidator = v.object({
   days: v.array(monthDayValidator),
 });

@@ -3,7 +3,11 @@ import type { DateJst } from "~domain/jst";
 import { isFutureDateJst, mondayOfWeek } from "~domain/jst";
 
 import type { AnalysisScope } from "~/features/history/schemas/analysis-scope-schema";
-import type { HistorySearch, HistoryTab } from "~/features/history/schemas/history-search-schema";
+import type {
+  HistorySearch,
+  HistorySearchRange,
+  HistoryTab,
+} from "~/features/history/schemas/history-search-schema";
 import { useTodayJst } from "~/hooks/use-today-jst";
 
 const historyRoute = getRouteApi("/history");
@@ -32,6 +36,8 @@ export function deriveHistoryView(search: HistorySearch, today: DateJst) {
   return {
     analysisScope,
     monthDate: monthDateFromYearMonth(yearMonth),
+    searchQuery: search.q ?? "",
+    searchRange: search.range ?? "year",
     selectedDateJst,
     tab,
     weekAnchor,
@@ -75,6 +81,24 @@ export function useHistoryView() {
         search: (current) => ({
           ...current,
           month: yearMonth === yearMonthFromDateJst(today) ? undefined : yearMonth,
+        }),
+      });
+    },
+    //? 検索語は URL が唯一の出所。1打鍵ごとに replace で書き、履歴スタックを汚さない
+    setQuery: (query: string) => {
+      void navigate({
+        replace: true,
+        search: (current) => ({
+          ...current,
+          q: query === "" ? undefined : query,
+        }),
+      });
+    },
+    setRange: (range: HistorySearchRange) => {
+      void navigate({
+        search: (current) => ({
+          ...current,
+          range: range === "year" ? undefined : range,
         }),
       });
     },

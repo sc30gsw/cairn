@@ -47,6 +47,7 @@ import type * as lib_preset from "../lib/preset.js";
 import type * as lib_presetDigest from "../lib/presetDigest.js";
 import type * as lib_rowTimer from "../lib/rowTimer.js";
 import type * as lib_scheduleInstant from "../lib/scheduleInstant.js";
+import type * as lib_searchText from "../lib/searchText.js";
 import type * as lib_setupStatus from "../lib/setupStatus.js";
 import type * as lib_share from "../lib/share.js";
 import type * as lib_toeicScore from "../lib/toeicScore.js";
@@ -135,6 +136,7 @@ import type * as queries_history_dayBreakdown from "../queries/history/dayBreakd
 import type * as queries_history_month from "../queries/history/month.js";
 import type * as queries_history_monthBreakdown from "../queries/history/monthBreakdown.js";
 import type * as queries_history_presetReview from "../queries/history/presetReview.js";
+import type * as queries_history_search from "../queries/history/search.js";
 import type * as queries_history_week from "../queries/history/week.js";
 import type * as queries_history_weekBreakdown from "../queries/history/weekBreakdown.js";
 import type * as queries_history_yearHeatmap from "../queries/history/yearHeatmap.js";
@@ -216,6 +218,7 @@ import type * as services_history_month from "../services/history/month.js";
 import type * as services_history_monthBreakdown from "../services/history/monthBreakdown.js";
 import type * as services_history_presetReview from "../services/history/presetReview.js";
 import type * as services_history_rowToHistoryEvent from "../services/history/rowToHistoryEvent.js";
+import type * as services_history_search from "../services/history/search.js";
 import type * as services_history_shared from "../services/history/shared.js";
 import type * as services_history_week from "../services/history/week.js";
 import type * as services_history_weekBreakdown from "../services/history/weekBreakdown.js";
@@ -349,6 +352,7 @@ declare const fullApi: ApiFromModules<{
   "lib/presetDigest": typeof lib_presetDigest;
   "lib/rowTimer": typeof lib_rowTimer;
   "lib/scheduleInstant": typeof lib_scheduleInstant;
+  "lib/searchText": typeof lib_searchText;
   "lib/setupStatus": typeof lib_setupStatus;
   "lib/share": typeof lib_share;
   "lib/toeicScore": typeof lib_toeicScore;
@@ -437,6 +441,7 @@ declare const fullApi: ApiFromModules<{
   "queries/history/month": typeof queries_history_month;
   "queries/history/monthBreakdown": typeof queries_history_monthBreakdown;
   "queries/history/presetReview": typeof queries_history_presetReview;
+  "queries/history/search": typeof queries_history_search;
   "queries/history/week": typeof queries_history_week;
   "queries/history/weekBreakdown": typeof queries_history_weekBreakdown;
   "queries/history/yearHeatmap": typeof queries_history_yearHeatmap;
@@ -518,6 +523,7 @@ declare const fullApi: ApiFromModules<{
   "services/history/monthBreakdown": typeof services_history_monthBreakdown;
   "services/history/presetReview": typeof services_history_presetReview;
   "services/history/rowToHistoryEvent": typeof services_history_rowToHistoryEvent;
+  "services/history/search": typeof services_history_search;
   "services/history/shared": typeof services_history_shared;
   "services/history/week": typeof services_history_week;
   "services/history/weekBreakdown": typeof services_history_weekBreakdown;

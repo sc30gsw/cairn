@@ -93,6 +93,13 @@ export const ACHIEVEMENT_REFLECTION_MAX_LENGTH = 200;
 
 export const ACHIEVEMENT_REFLECTION_LENGTH_MESSAGE = `振り返りは${String(ACHIEVEMENT_REFLECTION_MAX_LENGTH)}字以内で入力してください`;
 
+export const SEARCH_QUERY_MIN_LENGTH = 2;
+
+export const SEARCH_QUERY_TOO_SHORT_MESSAGE = `検索語は${String(SEARCH_QUERY_MIN_LENGTH)}文字以上で入力してください`;
+
+//? 履歴検索は新しい順にこの件数まで返す。超えた分は「語を足して絞る」よう促す
+export const SEARCH_RESULT_LIMIT = 50;
+
 export const DATE_JST_PATTERN = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
 
 export { CATEGORIES, type Category } from "./categories";
