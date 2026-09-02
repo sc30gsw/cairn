@@ -43,7 +43,7 @@ export function digestCountedDates(
   return weekDates.filter((dateJst) => dateJst < todayJst);
 }
 
-export function buildWeeklyDigest(
+export function buildDigest(
   weekDates: readonly string[],
   rows: readonly WeeklyStatusRow[],
   todayJst: string,
@@ -107,6 +107,6 @@ export function buildWeeklyReviewDays(args: {
   });
 }
 
-export function elapsedDaysInWeek(weekDates: readonly string[], todayJst: string): number {
+export function elapsedDaysInRange(weekDates: readonly string[], todayJst: string): number {
   return weekDates.filter((dateJst) => dateJst <= todayJst).length;
 }

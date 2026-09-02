@@ -17,8 +17,8 @@ import {
 } from "~/lib/web-push";
 import type { SubscribePushInput } from "~/types/web-push";
 
-export const WEB_PUSH_SECTION_TITLE = "この端末に届ける";
-export const WEB_PUSH_DESCRIPTION =
+const WEB_PUSH_SECTION_TITLE = "この端末に届ける";
+const WEB_PUSH_DESCRIPTION =
   "通知欄に加えて、登録した端末へ通知を押し出します。端末ごとに登録し、静穏時間は端末への通知だけを止めます。";
 export const WEB_PUSH_ENABLE_LABEL = "この端末で通知を受け取る";
 export const WEB_PUSH_DISABLE_LABEL = "この端末への通知を止める";
@@ -30,8 +30,8 @@ export const WEB_PUSH_DENIED_MESSAGE =
   "通知がブラウザで拒否されています。ブラウザの設定から許可すると、ここで登録できます。";
 export const WEB_PUSH_IOS_HINT =
   "iPhone / iPad では、共有メニューから「ホーム画面に追加」して、そのアプリから開いたときだけ端末に通知を届けられます。";
-export const WEB_PUSH_SUBSCRIBED_MESSAGE = "この端末で通知を受け取ります";
-export const WEB_PUSH_UNSUBSCRIBED_MESSAGE = "この端末への通知を止めました";
+const WEB_PUSH_SUBSCRIBED_MESSAGE = "この端末で通知を受け取ります";
+const WEB_PUSH_UNSUBSCRIBED_MESSAGE = "この端末への通知を止めました";
 
 export function WebPushSection() {
   const { data: config } = useWebPushConfig();

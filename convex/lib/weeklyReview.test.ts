@@ -1,10 +1,10 @@
 import { expect, test } from "vite-plus/test";
 
 import {
-  buildWeeklyDigest,
+  buildDigest,
   buildWeeklyReviewDays,
   digestCountedDates,
-  elapsedDaysInWeek,
+  elapsedDaysInRange,
   type WeeklyStatusRow,
 } from "./weeklyReview";
 
@@ -34,8 +34,8 @@ test("digestCountedDates は過去週なら7日すべて残す", () => {
   expect(digestCountedDates(WEEK_DATES, "2026-08-31")).toHaveLength(7);
 });
 
-test("buildWeeklyDigest は今日の行を分母にも分子にも入れない", () => {
-  const digest = buildWeeklyDigest(
+test("buildDigest は今日の行を分母にも分子にも入れない", () => {
+  const digest = buildDigest(
     WEEK_DATES,
     [row("2026-08-17", "確定"), row("2026-08-18", "未着手"), row("2026-08-20", "確定")],
     "2026-08-20",
@@ -45,31 +45,31 @@ test("buildWeeklyDigest は今日の行を分母にも分子にも入れない",
   expect(digest.digestRate).toBeCloseTo(0.5);
 });
 
-test("buildWeeklyDigest は並んだ件数0なら digestRate 0", () => {
-  const digest = buildWeeklyDigest(WEEK_DATES, [], "2026-08-20");
+test("buildDigest は並んだ件数0なら digestRate 0", () => {
+  const digest = buildDigest(WEEK_DATES, [], "2026-08-20");
   expect(digest.plannedCount).toBe(0);
   expect(digest.digestRate).toBe(0);
 });
 
-test("buildWeeklyDigest は今週なら isPartial、過去週なら false", () => {
-  expect(buildWeeklyDigest(WEEK_DATES, [], "2026-08-20").isPartial).toBe(true);
-  expect(buildWeeklyDigest(WEEK_DATES, [], "2026-08-31").isPartial).toBe(false);
+test("buildDigest は今週なら isPartial、過去週なら false", () => {
+  expect(buildDigest(WEEK_DATES, [], "2026-08-20").isPartial).toBe(true);
+  expect(buildDigest(WEEK_DATES, [], "2026-08-31").isPartial).toBe(false);
 });
 
-test("buildWeeklyDigest は週初日が今日なら countedThrough が null", () => {
-  const digest = buildWeeklyDigest(WEEK_DATES, [], "2026-08-17");
+test("buildDigest は週初日が今日なら countedThrough が null", () => {
+  const digest = buildDigest(WEEK_DATES, [], "2026-08-17");
   expect(digest.countedThrough).toBeNull();
   expect(digest.countedFrom).toBe("2026-08-17");
 });
 
-test("buildWeeklyDigest は過去週で数えた範囲を週の両端にする", () => {
-  const digest = buildWeeklyDigest(WEEK_DATES, [], "2026-08-31");
+test("buildDigest は過去週で数えた範囲を週の両端にする", () => {
+  const digest = buildDigest(WEEK_DATES, [], "2026-08-31");
   expect(digest.countedFrom).toBe("2026-08-17");
   expect(digest.countedThrough).toBe("2026-08-23");
 });
 
-test("buildWeeklyDigest は状態ごとの件数を分ける", () => {
-  const digest = buildWeeklyDigest(
+test("buildDigest は状態ごとの件数を分ける", () => {
+  const digest = buildDigest(
     WEEK_DATES,
     [
       row("2026-08-17", "確定"),
@@ -122,7 +122,7 @@ test("buildWeeklyReviewDays は記録の無い今日を todayEmpty にする", (
   expect(days[0]?.kind).toBe("todayEmpty");
 });
 
-test("elapsedDaysInWeek は過去週で7、今週で経過日数", () => {
-  expect(elapsedDaysInWeek(WEEK_DATES, "2026-08-31")).toBe(7);
-  expect(elapsedDaysInWeek(WEEK_DATES, "2026-08-20")).toBe(4);
+test("elapsedDaysInRange は過去週で7、今週で経過日数", () => {
+  expect(elapsedDaysInRange(WEEK_DATES, "2026-08-31")).toBe(7);
+  expect(elapsedDaysInRange(WEEK_DATES, "2026-08-20")).toBe(4);
 });

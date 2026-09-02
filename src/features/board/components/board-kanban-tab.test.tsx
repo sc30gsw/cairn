@@ -41,7 +41,7 @@ vi.mock("~/features/board/hooks/use-board-kanban-actions", () => ({
   useBoardKanbanActions: () => ({
     onApplyOrder: vi.fn(),
     onConfirm: vi.fn(),
-    onPause: vi.fn(),
+    onUnstart: vi.fn(),
     onReopen: vi.fn(),
     onSkip: vi.fn(),
     onStart: vi.fn(),

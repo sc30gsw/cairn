@@ -121,7 +121,7 @@ import type * as mutations_rows_applyOrder from "../mutations/rows/applyOrder.js
 import type * as mutations_rows_autoStopTimers from "../mutations/rows/autoStopTimers.js";
 import type * as mutations_rows_confirm from "../mutations/rows/confirm.js";
 import type * as mutations_rows_copyYesterdayConfirmed from "../mutations/rows/copyYesterdayConfirmed.js";
-import type * as mutations_rows_pause from "../mutations/rows/pause.js";
+import type * as mutations_rows_unstart from "../mutations/rows/unstart.js";
 import type * as mutations_rows_remove from "../mutations/rows/remove.js";
 import type * as mutations_rows_reopen from "../mutations/rows/reopen.js";
 import type * as mutations_rows_restore from "../mutations/rows/restore.js";
@@ -315,7 +315,7 @@ import type * as services_rows_copyYesterdayConfirmed from "../services/rows/cop
 import type * as services_rows_findRunningTimerRow from "../services/rows/findRunningTimerRow.js";
 import type * as services_rows_loadLiveRows from "../services/rows/loadLiveRows.js";
 import type * as services_rows_loadRunningTimer from "../services/rows/loadRunningTimer.js";
-import type * as services_rows_pause from "../services/rows/pause.js";
+import type * as services_rows_unstart from "../services/rows/unstart.js";
 import type * as services_rows_remove from "../services/rows/remove.js";
 import type * as services_rows_reopen from "../services/rows/reopen.js";
 import type * as services_rows_requireOwnedRow from "../services/rows/requireOwnedRow.js";
@@ -464,7 +464,7 @@ declare const fullApi: ApiFromModules<{
   "mutations/rows/autoStopTimers": typeof mutations_rows_autoStopTimers;
   "mutations/rows/confirm": typeof mutations_rows_confirm;
   "mutations/rows/copyYesterdayConfirmed": typeof mutations_rows_copyYesterdayConfirmed;
-  "mutations/rows/pause": typeof mutations_rows_pause;
+  "mutations/rows/unstart": typeof mutations_rows_unstart;
   "mutations/rows/remove": typeof mutations_rows_remove;
   "mutations/rows/reopen": typeof mutations_rows_reopen;
   "mutations/rows/restore": typeof mutations_rows_restore;
@@ -658,7 +658,7 @@ declare const fullApi: ApiFromModules<{
   "services/rows/findRunningTimerRow": typeof services_rows_findRunningTimerRow;
   "services/rows/loadLiveRows": typeof services_rows_loadLiveRows;
   "services/rows/loadRunningTimer": typeof services_rows_loadRunningTimer;
-  "services/rows/pause": typeof services_rows_pause;
+  "services/rows/unstart": typeof services_rows_unstart;
   "services/rows/remove": typeof services_rows_remove;
   "services/rows/reopen": typeof services_rows_reopen;
   "services/rows/requireOwnedRow": typeof services_rows_requireOwnedRow;

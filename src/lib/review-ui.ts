@@ -1,7 +1,7 @@
 import { REVIEW_STAGE_COUNT } from "~domain/review";
 import type { RowReviewDto } from "~domain/validators";
 
-export const REVIEW_LABEL = "復習";
+const REVIEW_LABEL = "復習";
 export const REVIEW_MENU_LABEL = "復習";
 export const REVIEW_STOP_LABEL = "復習をやめる";
 

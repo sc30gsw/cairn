@@ -68,7 +68,7 @@ test("computeOrderedRowIds は列間移動後も全体順序を保つ", () => {
 test("resolveKanbanStatusMove は列間の状態遷移を解決する", () => {
   expect(resolveKanbanStatusMove("未着手", "確定")).toBe("confirm");
   expect(resolveKanbanStatusMove("未着手", "進行中")).toBe("start");
-  expect(resolveKanbanStatusMove("進行中", "未着手")).toBe("pause");
+  expect(resolveKanbanStatusMove("進行中", "未着手")).toBe("unstart");
   expect(resolveKanbanStatusMove("進行中", "確定")).toBe("confirm");
   expect(resolveKanbanStatusMove("確定", "進行中")).toBe("reopen");
   expect(resolveKanbanStatusMove("スキップ", "未着手")).toBe("unskip");
@@ -138,7 +138,7 @@ test("kanbanMoveMenuItems は noop の列を落として KANBAN_COLUMNS の順�
     { column: "確定", move: "confirm" },
   ]);
   expect(kanbanMoveMenuItems("進行中")).toEqual([
-    { column: "未着手", move: "pause" },
+    { column: "未着手", move: "unstart" },
     { column: "確定", move: "confirm" },
     { column: "スキップ", move: "skip" },
   ]);

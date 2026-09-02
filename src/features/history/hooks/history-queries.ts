@@ -28,7 +28,7 @@ export function historyPresetReviewQuery(todayJst: DateJst) {
   return convexQuery(api.queries.history.presetReview.presetReview, { todayJst });
 }
 
-export function historySearchQuery(query: string, fromJst: DateJst | undefined) {
+function historySearchQuery(query: string, fromJst: DateJst | undefined) {
   return convexQuery(api.queries.history.search.search, { fromJst, query });
 }
 

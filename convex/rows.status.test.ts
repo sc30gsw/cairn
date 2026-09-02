@@ -44,12 +44,12 @@ test("未着手の記録は start で進行中にできる", async () => {
   expect(day.rows.find((entry) => entry._id === row._id)?.status).toBe("進行中");
 });
 
-test("進行中の記録は pause で未着手に戻せる", async () => {
+test("進行中の記録は unstart で未着手に戻せる", async () => {
   const t = asOwner();
   const row = await firstRow(t);
   await t.mutation(api.mutations.rows.start.start, { rowId: row._id });
 
-  await t.mutation(api.mutations.rows.pause.pause, { rowId: row._id });
+  await t.mutation(api.mutations.rows.unstart.unstart, { rowId: row._id });
 
   const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   expect(day.rows.find((entry) => entry._id === row._id)?.status).toBe("未着手");
@@ -95,11 +95,13 @@ test("未着手以外に start は失敗する", async () => {
   await expect(t.mutation(api.mutations.rows.start.start, { rowId: row._id })).rejects.toThrow();
 });
 
-test("進行中以外に pause は失敗する", async () => {
+test("進行中以外に unstart は失敗する", async () => {
   const t = asOwner();
   const row = await firstRow(t);
 
-  await expect(t.mutation(api.mutations.rows.pause.pause, { rowId: row._id })).rejects.toThrow();
+  await expect(
+    t.mutation(api.mutations.rows.unstart.unstart, { rowId: row._id }),
+  ).rejects.toThrow();
 });
 
 test("applyOrder は同じ記録IDの重複を拒否する", async () => {

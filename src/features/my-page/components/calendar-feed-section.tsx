@@ -20,20 +20,20 @@ import {
 import { calendarFeedUrl, webcalUrl } from "~/lib/convex-site-url";
 import { runMutation } from "~/lib/run-mutation";
 
-export const CALENDAR_FEED_TITLE = "カレンダー購読";
-export const CALENDAR_FEED_DESCRIPTION =
+const CALENDAR_FEED_TITLE = "カレンダー購読";
+const CALENDAR_FEED_DESCRIPTION =
   "本番日と未達成のチェックポイントの期限を、Google / Apple / Outlook のカレンダーで購読できます。読み取り専用で、カレンダー側で変えてもこのアプリには戻りません。";
 export const CALENDAR_FEED_ISSUE_LABEL = "購読 URL を発行";
 export const CALENDAR_FEED_REISSUE_LABEL = "URL を作り直す";
 export const CALENDAR_FEED_REVOKE_LABEL = "購読を止める";
 export const CALENDAR_FEED_URL_LABEL = "購読 URL";
-export const CALENDAR_FEED_COPY_LABEL = "URL をコピー";
+const CALENDAR_FEED_COPY_LABEL = "URL をコピー";
 export const CALENDAR_FEED_OPEN_LABEL = "カレンダーアプリで開く";
-export const CALENDAR_FEED_INTERVAL_NOTE =
+const CALENDAR_FEED_INTERVAL_NOTE =
   "反映は各カレンダーの取得間隔に従います（Google は最大 24 時間ほど、Outlook は約 3〜24 時間、Apple は設定で選べます）。URL を知っている人は誰でも読めるので、他の人に渡さないでください。";
 export const CALENDAR_FEED_ISSUED_MESSAGE = "購読 URL を発行しました";
-export const CALENDAR_FEED_REISSUED_MESSAGE = "購読 URL を作り直しました。前の URL は使えません";
-export const CALENDAR_FEED_REVOKED_MESSAGE = "カレンダー購読を止めました";
+const CALENDAR_FEED_REISSUED_MESSAGE = "購読 URL を作り直しました。前の URL は使えません";
+const CALENDAR_FEED_REVOKED_MESSAGE = "カレンダー購読を止めました";
 
 export function CalendarFeedSection() {
   const { data: status } = useCalendarFeedStatus();

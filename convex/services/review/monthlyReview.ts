@@ -1,44 +1,18 @@
 import type { QueryCtx } from "../../_generated/server";
 import { loadCatalog } from "../../lib/catalogLoader";
+import { requireYearMonth } from "../../lib/dateArgs";
+import { YEAR_MONTH_MESSAGE } from "../../lib/domain";
+import { ValidationFailedError } from "../../lib/errors";
 import { aggregateBreakdownRows } from "../../lib/historyBreakdown";
 import { addMonthsJst, calendarDatesInMonth } from "../../lib/jst";
 import { buildMonthlyDigestTrend } from "../../lib/monthlyReview";
+import { throwDomain } from "../../lib/ownerFunctions";
 import type { MonthlyReviewDto } from "../../lib/validators";
-import { buildWeeklyDigest, elapsedDaysInWeek } from "../../lib/weeklyReview";
+import { buildDigest, elapsedDaysInRange } from "../../lib/weeklyReview";
 import { liveDayDatesFrom, liveRows } from "../history/shared";
 
 function yearMonthOf(dateJst: string): string {
   return dateJst.slice(0, 7);
-}
-
-function emptyMonthlyReview(yearMonth: string, todayJst: string): MonthlyReviewDto {
-  return {
-    activeDays: 0,
-    byCategory: [],
-    confirmedMinutes: 0,
-    digest: {
-      confirmedCount: 0,
-      countedFrom: yearMonth,
-      countedThrough: null,
-      digestRate: 0,
-      isPartial: true,
-      leftoverCount: 0,
-      ongoingCount: 0,
-      plannedCount: 0,
-      skippedCount: 0,
-    },
-    digestTrend: [],
-    elapsedDays: 0,
-    isCurrentMonth: yearMonth === yearMonthOf(todayJst),
-    monthEnd: yearMonth,
-    monthStart: yearMonth,
-    previousActiveDays: 0,
-    previousByCategory: [],
-    previousConfirmedMinutes: 0,
-    previousYearMonth: yearMonth,
-    skippedMinutes: 0,
-    yearMonth,
-  };
 }
 
 export async function monthlyReview(
@@ -46,11 +20,12 @@ export async function monthlyReview(
   ownerId: string,
   args: { todayJst: string; yearMonth: string },
 ): Promise<MonthlyReviewDto> {
-  const dates = calendarDatesInMonth(args.yearMonth);
+  //? 壊れた月は throw（日・週の引数と同じ規則。dateArgs.ts のコメント参照）
+  const dates = calendarDatesInMonth(requireYearMonth(args.yearMonth));
   const start = dates[0];
   const end = dates.at(-1);
   if (start === undefined || end === undefined) {
-    return emptyMonthlyReview(args.yearMonth, args.todayJst);
+    throwDomain(new ValidationFailedError({ message: YEAR_MONTH_MESSAGE }));
   }
 
   const previousYearMonth = addMonthsJst(args.yearMonth, -1);
@@ -103,9 +78,9 @@ export async function monthlyReview(
     activeDays: activeDaysOf(currentRows),
     byCategory: current.byCategory,
     confirmedMinutes: current.confirmedMinutes,
-    digest: buildWeeklyDigest(dates, statusRows, args.todayJst),
+    digest: buildDigest(dates, statusRows, args.todayJst),
     digestTrend: buildMonthlyDigestTrend(dates, statusRows, args.todayJst),
-    elapsedDays: elapsedDaysInWeek(dates, args.todayJst),
+    elapsedDays: elapsedDaysInRange(dates, args.todayJst),
     isCurrentMonth: args.yearMonth === yearMonthOf(args.todayJst),
     monthEnd: end,
     monthStart: start,

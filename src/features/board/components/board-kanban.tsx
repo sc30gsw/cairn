@@ -147,7 +147,7 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
     onApplyOrder,
     onConfirm,
     onFlagReview,
-    onPause,
+    onUnstart,
     onResumeTimer,
     onSkip,
     onStatusMove,
@@ -175,12 +175,12 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
   }
 
   async function moveRow(move: Exclude<KanbanStatusMove, "noop">, row: BoardRow): Promise<boolean> {
-    if ((move === "skip" || move === "pause") && hasTimerState(row.timer)) {
+    if ((move === "skip" || move === "unstart") && hasTimerState(row.timer)) {
       const measuredMinutes = timerMinutes(measuredMs(row.timer, serverNowMs()));
       const successMessage = `計測 ${String(measuredMinutes)}分を捨てました`;
       await (move === "skip"
         ? onSkip({ rowId: row._id }, successMessage)
-        : onPause({ rowId: row._id }, successMessage));
+        : onUnstart({ rowId: row._id }, successMessage));
       return false;
     }
     let deferred = false;

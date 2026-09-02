@@ -137,7 +137,7 @@ function SearchResultsList({ query, range, today }: SearchResultsListProps) {
   );
 }
 
-export function HistorySearchResultsPending() {
+function HistorySearchResultsPending() {
   return (
     <Shimmer loading>
       <Stack component="ul" gap="xs" style={LIST_STYLE}>

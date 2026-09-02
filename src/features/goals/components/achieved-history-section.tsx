@@ -25,7 +25,7 @@ import { NUMERAL_FONT } from "~/lib/theme";
 import type { ItemDto } from "~/types/item";
 
 export const ACHIEVED_SECTION_TITLE = "達成した目標";
-export const REFLECTION_PREFIX = "振り返り: ";
+const REFLECTION_PREFIX = "振り返り: ";
 export const FINISHED_EXAM_BADGE = "本番";
 
 const ROW_BORDER = "1px dashed var(--cairn-desk)";

@@ -5,7 +5,7 @@ import { needsKanbanConfirmEditor } from "~/features/board/components/board-kanb
 import {
   useBoardApplyRowOrder,
   useBoardConfirmRow,
-  useBoardPauseRow,
+  useBoardUnstartRow,
   useBoardReopenRow,
   useBoardResumeRowTimer,
   useBoardSkipRow,
@@ -30,7 +30,7 @@ export function useBoardKanbanActions(dateJst: DateJst) {
   const unskipRow = useBoardUnskipRow(dateJst, today);
   const unconfirmRow = useBoardUnconfirmRow(dateJst, today);
   const startRow = useBoardStartRow(dateJst, today);
-  const pauseRow = useBoardPauseRow(dateJst, today);
+  const pauseRow = useBoardUnstartRow(dateJst, today);
   const reopenRow = useBoardReopenRow(dateJst, today);
   const stopRowTimer = useBoardStopRowTimer(dateJst, today);
   const resumeRowTimer = useBoardResumeRowTimer(dateJst, today);
@@ -63,7 +63,7 @@ export function useBoardKanbanActions(dateJst: DateJst) {
     runMutation(() => unskipRow.mutateAsync(input), silent).then(() => undefined);
   const onStart = (input: Parameters<typeof startRow.mutateAsync>[0]) =>
     runMutation(() => startRow.mutateAsync(input), silent).then(() => undefined);
-  const onPause = (input: Parameters<typeof pauseRow.mutateAsync>[0], successMessage?: string) =>
+  const onUnstart = (input: Parameters<typeof pauseRow.mutateAsync>[0], successMessage?: string) =>
     runMutation(() => pauseRow.mutateAsync(input), { silent: true, successMessage }).then(
       () => undefined,
     );
@@ -86,7 +86,7 @@ export function useBoardKanbanActions(dateJst: DateJst) {
     onUnconfirm,
     onUnskip,
     onStart,
-    onPause,
+    onUnstart,
     onReopen,
     onStatusMove: async (
       move: KanbanStatusMove,
@@ -121,8 +121,8 @@ export function useBoardKanbanActions(dateJst: DateJst) {
           return await onUnconfirm({ rowId: row._id });
         case "start":
           return await onStart({ rowId: row._id });
-        case "pause":
-          return await onPause({ rowId: row._id });
+        case "unstart":
+          return await onUnstart({ rowId: row._id });
         case "reopen":
           return await onReopen({ rowId: row._id });
         case "noop":

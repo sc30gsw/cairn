@@ -114,8 +114,8 @@ export function useOptimisticStartRow(dateJst: DateJst, todayJst: DateJst) {
   return { mutateAsync };
 }
 
-export function useOptimisticPauseRow(dateJst: DateJst, todayJst: DateJst) {
-  const mutateAsync = useConvexMutation(api.mutations.rows.pause.pause).withOptimisticUpdate(
+export function useOptimisticUnstartRow(dateJst: DateJst, todayJst: DateJst) {
+  const mutateAsync = useConvexMutation(api.mutations.rows.unstart.unstart).withOptimisticUpdate(
     (localStore, args) => {
       setDayRowStatus(localStore, {
         dateJst,

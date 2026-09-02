@@ -123,3 +123,17 @@
 - **Notes に追記（実装セッションで直す小改善）**: `fallback={null}` の Shimmer 化（Stepper は実物で判断）、`rows.pause` の改名、`buildWeeklyDigest` の中立名、convex-test のモジュール一覧の明示、`nitro` の依存区分の確認、`validators.ts` のドメイン分割。
 - **新チケット（決定が要る）**: 日付系引数の検証規則の統一。
 - **Not yet specified に残す**: PWA の実機確認6件（所有者の端末が要る）。
+
+---
+
+## 9. 実施結果（2026-09-02、地図 #66 の実装セッション）
+
+| # | 項目 | 結果 |
+| --- | --- | --- |
+| 7 | `Suspense fallback={null}` の Shimmer 化 | **据え置き（理由をコードに残した）**。`HomeSetupStepper` と `MyPageOnboardingExtras` はセットアップ済みの所有者には何も出ない条件付き UI なので、骨組みを見せる Shimmer はかえって「何かが来る」と誤認させる。`__root.tsx` の devtools は開発時のみ。3箇所とも `//?` コメントで判断を明示 |
+| 10 | `rows.pause` の改名 | **実施**。`rows.unstart`（`convex/mutations/rows/unstart.ts` / `services/rows/unstart.ts`）、`KanbanStatusMove` は `"unstart"`、フックは `useOptimisticUnstartRow` / `useBoardUnstartRow` / `onUnstart`。`docs/specs/study-timer.md` に改訂節 |
+| 11 | `buildWeeklyDigest` / `elapsedDaysInWeek` の中立名 | **実施**。`buildDigest` / `elapsedDaysInRange`（ファイルは `convex/lib/weeklyReview.ts` のまま）。`docs/specs/monthly-review.md` 改訂節 |
+| 12 | 日付系引数の検証規則 | **throw に統一**（#81）。`requireYearMonth` を `convex/lib/dateArgs.ts` に追加し、`computeMonthBreakdown` / `monthlyReview` の空 DTO を撤去。規則は `dateArgs.ts` のコメントと `.claude/rules/convex-rules.md` CVX-03 の補足に記載 |
+| 13 | `convex/lib/validators.ts` のドメイン分割 | **実施**。777 行（Web Push・復習・カレンダー購読の追加後）を `convex/lib/validators/{core,history,goals,methods,trash,boardSchedule,review,notifications,calendarFeed}.ts` に分け、`validators.ts` は再輸出だけ。import 側（`~domain/validators` / `../lib/validators`）は無変更 |
+| 3 | convex-test のモジュール一覧を1箇所に | **見送り**。`import.meta.glob` は Vite 固有で、`convex/` 配下に置くと Convex のバンドル対象になって deploy が壊れる。`src/` 側に置くと convex のテストから `src` を参照する依存の向きになる。fallow の循環依存は偽陽性として受容のまま |
+| 6 | `nitro` の依存区分 | **据え置き**。`nitro/vite` はビルド時プラグインだが、`.output` のサーバー起動が nitro のランタイムを要求するかはこの環境（本番の起動形が不明）では確認できない。`dependencies` のままにする方が安全側 |

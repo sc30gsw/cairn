@@ -102,5 +102,9 @@ export const SEARCH_RESULT_LIMIT = 50;
 
 export const DATE_JST_PATTERN = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
 
+export const YEAR_MONTH_PATTERN = /^\d{4}-(?:0[1-9]|1[0-2])$/;
+
+export const YEAR_MONTH_MESSAGE = "月は YYYY-MM 形式で指定してください";
+
 export { CATEGORIES, type Category } from "./categories";
 export { CONDITIONS, type Condition } from "./conditions";

@@ -14,9 +14,9 @@ import type { ExamGoal } from "~/features/goals/types/goal";
 export const EXAM_RESULT_MODAL_TITLE = "本番の結果を入れる";
 export const EXAM_RESULT_CORRECT_TITLE = "本番の結果を訂正する";
 export const EXAM_RESULT_SCORE_LABEL = "結果スコア";
-export const EXAM_RESULT_DATE_LABEL = "結果を入れた日";
+const EXAM_RESULT_DATE_LABEL = "結果を入れた日";
 export const EXAM_RESULT_SUBMIT = "結果を保存";
-export const EXAM_RESULT_HINT =
+const EXAM_RESULT_HINT =
   "結果は1本番につき1つだけ。入れると本番目標は終了して「達成した目標」に並び、次の本番を作れます。取り消しはできませんが、あとから訂正できます。";
 
 type ExamResultModalProps = {

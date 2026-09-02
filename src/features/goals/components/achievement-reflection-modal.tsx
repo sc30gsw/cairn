@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { AchievementReflectionSchema } from "~/features/goals/schemas/achievement-reflection-schema";
 import type { MasteryGoal } from "~/features/goals/types/goal";
 
-export const ACHIEVEMENT_REFLECTION_TITLE = "達成にする";
+const ACHIEVEMENT_REFLECTION_TITLE = "達成にする";
 export const ACHIEVEMENT_REFLECTION_LABEL = "振り返り（任意）";
 export const ACHIEVEMENT_REFLECTION_SUBMIT = "達成にする";
 

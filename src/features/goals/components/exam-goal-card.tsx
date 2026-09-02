@@ -11,7 +11,7 @@ export const EXAM_GOAL_SECTION_TITLE = "本番目標";
 export const EXAM_GOAL_FINISHED_BADGE = "終了";
 export const EXAM_RESULT_ACTION_LABEL = "結果を入れる";
 export const EXAM_RESULT_CORRECT_LABEL = "結果を訂正";
-export const EXAM_RESULT_LABEL = "結果";
+const EXAM_RESULT_LABEL = "結果";
 
 export function examResultActionName(goal: Pick<ExamGoal, "content" | "result">): string {
   return `${goal.content}の${goal.result === undefined ? EXAM_RESULT_ACTION_LABEL : EXAM_RESULT_CORRECT_LABEL}`;

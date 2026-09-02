@@ -238,7 +238,7 @@ test("T9: 確定30分の記録を reopen すると計測は30分から続く", a
   expect(doc.timerStartedAt).not.toBeUndefined();
 });
 
-test("T7: pause は計測を捨てるが分数は残す", async () => {
+test("T7: unstart は計測を捨てるが分数は残す", async () => {
   const t = asOwner();
   const row = await firstRow(t);
   await t.mutation(api.mutations.rows.confirm.confirm, {
@@ -248,7 +248,7 @@ test("T7: pause は計測を捨てるが分数は残す", async () => {
   });
   await t.mutation(api.mutations.rows.reopen.reopen, { rowId: row._id });
 
-  await t.mutation(api.mutations.rows.pause.pause, { rowId: row._id });
+  await t.mutation(api.mutations.rows.unstart.unstart, { rowId: row._id });
 
   const doc = await rowDoc(t, row._id);
   expect(doc.minutes).toBe(30);

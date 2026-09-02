@@ -6,7 +6,7 @@ import { isSearchableQuery } from "~domain/searchText";
 import { useHistoryView } from "~/features/history/hooks/use-history-view";
 
 export const HISTORY_SEARCH_LABEL = "履歴を検索";
-export const HISTORY_SEARCH_PLACEHOLDER = "ひとこと・メモを検索";
+const HISTORY_SEARCH_PLACEHOLDER = "ひとこと・メモを検索";
 export const HISTORY_SEARCH_CLEAR_LABEL = "検索語を消す";
 export const HISTORY_SEARCH_TOO_SHORT_HINT = `${String(SEARCH_QUERY_MIN_LENGTH)}文字以上で検索します`;
 

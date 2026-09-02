@@ -28,6 +28,7 @@ function HomeSetupStepper() {
 function HomeRoute() {
   return (
     <OwnerGate>
+      {/*? セットアップ済みの所有者には何も出ないので、骨組みを見せる Shimmer は置かない（#80: 実物で判断） */}
       <Suspense fallback={null}>
         <HomeSetupStepper />
       </Suspense>

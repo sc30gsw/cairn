@@ -2,14 +2,14 @@ import { Result, TaggedError } from "better-result";
 
 import type { SubscribePushInput } from "~/types/web-push";
 
-export type WebPushErrorReason =
+type WebPushErrorReason =
   | "denied"
   | "missing-key"
   | "no-service-worker"
   | "subscribe-failed"
   | "unsupported";
 
-export class WebPushError extends TaggedError("WebPush")<{
+class WebPushError extends TaggedError("WebPush")<{
   cause?: unknown;
   message: string;
   reason: WebPushErrorReason;
@@ -43,7 +43,7 @@ function urlBase64ToUint8Array(base64Url: string): Uint8Array<ArrayBuffer> {
 }
 
 //? PushSubscription.toJSON() を Convex に渡す形へ。鍵が欠けていれば登録できない
-export function toSubscriptionInput(subscription: PushSubscription): SubscribePushInput | null {
+function toSubscriptionInput(subscription: PushSubscription): SubscribePushInput | null {
   const json = subscription.toJSON();
   const auth = json.keys?.auth;
   const p256dh = json.keys?.p256dh;

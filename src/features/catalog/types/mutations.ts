@@ -17,9 +17,6 @@ export type RemoveItemInput = Pick<
 >;
 export type CreatePresetInput = FunctionArgs<typeof api.mutations.presets.create.create>;
 export type UpdatePresetInput = FunctionArgs<typeof api.mutations.presets.update.update>;
-export type SavePresetSettingsInput = FunctionArgs<
-  typeof api.mutations.presets.saveSettings.saveSettings
->;
 export type RemovePresetInput = Pick<
   FunctionArgs<typeof api.mutations.presets.remove.remove>,
   "presetId"

@@ -11,5 +11,3 @@ export const AchievementReflectionSchema = v.object({
     v.maxLength(ACHIEVEMENT_REFLECTION_MAX_LENGTH, ACHIEVEMENT_REFLECTION_LENGTH_MESSAGE),
   ),
 });
-
-export type AchievementReflectionOutput = v.InferOutput<typeof AchievementReflectionSchema>;

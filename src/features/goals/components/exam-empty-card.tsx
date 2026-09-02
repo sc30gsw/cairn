@@ -7,7 +7,7 @@ export const EXAM_GOAL_EMPTY_TITLE = "本番目標がまだありません";
 export const NEXT_EXAM_TITLE = "次の本番を作りましょう";
 export const CREATE_EXAM_LABEL = "本番目標を作成する";
 
-export function nextExamDescription(latest: ExamGoal): string {
+function nextExamDescription(latest: ExamGoal): string {
   const score = latest.result === undefined ? "" : `の結果は ${latest.result.score} 点でした`;
 
   return `前回の本番（${latest.examDate}）${score}。次の本番日とスコア帯を決めると、残り日数の軸が戻ります。`;

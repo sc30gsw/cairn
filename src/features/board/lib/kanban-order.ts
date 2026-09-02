@@ -15,7 +15,7 @@ export type KanbanColumn = (typeof KANBAN_COLUMNS)[number];
 export type KanbanStatusMove =
   | "confirm"
   | "noop"
-  | "pause"
+  | "unstart"
   | "reopen"
   | "skip"
   | "start"
@@ -87,7 +87,7 @@ export function resolveKanbanStatusMove(
       return "unconfirm";
     }
     if (sourceStatus === "進行中") {
-      return "pause";
+      return "unstart";
     }
     return "noop";
   }

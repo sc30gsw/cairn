@@ -11,7 +11,7 @@ import type { SaveNotificationSettingsInput } from "~/features/my-page/types/not
 import { onRequiredSelect } from "~/lib/select";
 import { NUMERAL_FONT } from "~/lib/theme";
 
-export const QUIET_HOURS_HINT =
+const QUIET_HOURS_HINT =
   "静穏時間は端末への通知（Web Push）だけを止めます。通知欄には残ります。開始と終了を同じ時刻にすると静穏なしです。";
 
 export function NotificationSettingsForm({

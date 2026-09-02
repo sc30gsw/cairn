@@ -5,11 +5,7 @@ import { aggregateBreakdownRows } from "../../lib/historyBreakdown";
 import { addDaysJst, mondayOfWeek } from "../../lib/jst";
 import { formatWeeklyShareMarkdown } from "../../lib/share";
 import type { WeeklyReviewDto } from "../../lib/validators";
-import {
-  buildWeeklyDigest,
-  buildWeeklyReviewDays,
-  elapsedDaysInWeek,
-} from "../../lib/weeklyReview";
+import { buildDigest, buildWeeklyReviewDays, elapsedDaysInRange } from "../../lib/weeklyReview";
 import { buildConditionByDate, liveDayDatesFrom, liveRows } from "../history/shared";
 import { buildTargetProgress } from "../targets/buildTargetProgress";
 
@@ -87,8 +83,8 @@ export async function weeklyReview(
       weekDates,
     }),
     confirmedMinutes: current.confirmedMinutes,
-    digest: buildWeeklyDigest(weekDates, statusRows, todayJst),
-    elapsedDays: elapsedDaysInWeek(weekDates, todayJst),
+    digest: buildDigest(weekDates, statusRows, todayJst),
+    elapsedDays: elapsedDaysInRange(weekDates, todayJst),
     isCurrentWeek,
     previousActiveDays: activeDaysOf(previousRows),
     previousConfirmedMinutes: previous.confirmedMinutes,

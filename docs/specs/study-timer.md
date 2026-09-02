@@ -861,3 +861,9 @@ export const RowEditorSchema = v.object({
 - **CONTEXT.md**: §3 のとおり「計測」「自動停止」を追加し、「進行中」の _Avoid_ に1項追加する。「記録」「学習量」「実行ボード」の定義は**変更なし**。
 - **ADR**: 本文の §13.4（ボードの破壊的操作は Confirm を出さず Toast で知らせる）は ADR-0014（ボードの移動は確認モーダルなし・3種 Toast）の決定を反映したものである。ADR-0002（1つの出来事は1つの日に寄せる）と ADR-0007（実績カウンタの非正規化）の判断にも従っており、これらを覆す変更はない。
 - **docs/spec.md**: v1 の範囲外だった機能なので、追記は不要（本ドキュメントが仕様の所在）。
+
+---
+
+## 改訂（2026-09-02）— `rows.pause` を `rows.unstart` に改名（#80 小改善）
+
+§7.5 / §17-11 で先送りした改名を実施した。「進行中 → 未着手」の取り消しは `rows.unstart`（`convex/mutations/rows/unstart.ts` / `services/rows/unstart.ts`）、`KanbanStatusMove` の値は `"unstart"`、フックは `useOptimisticUnstartRow` / `useBoardUnstartRow` / `onUnstart`。計測の一時停止は従来どおり `rows.stopTimer`。本文中の `pause` は改名前の名前として読む。
