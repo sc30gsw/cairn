@@ -6,6 +6,7 @@ import {
   IconColumns3,
   IconDots,
   IconLayoutKanban,
+  IconNotebook,
   IconTarget,
   IconTemplate,
   IconTrash,
@@ -37,6 +38,7 @@ const NAV_ROUTES = [
   "/",
   "/board",
   "/history",
+  "/review",
   "/items",
   "/presets",
   "/goals",
@@ -68,6 +70,12 @@ const NAV: {
     label: "履歴",
     match: (path) => path.startsWith("/history"),
     to: "/history",
+  },
+  {
+    Icon: IconNotebook,
+    label: "レビュー",
+    match: (path) => path.startsWith("/review"),
+    to: "/review",
   },
   {
     Icon: IconLayoutKanban,

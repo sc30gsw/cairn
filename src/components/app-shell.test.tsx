@@ -69,7 +69,23 @@ test("下小口ナビは 日 / ボード / 履歴 / 目標 の4本で、項目�
   expect(bottom.querySelectorAll("a").length).toBe(4);
 });
 
-test("「その他」を押すと 項目 / プリセット / 方法 / ゴミ箱 が出る", async () => {
+test("下小口ナビにレビューは出ず、その他に入る", () => {
+  const { getByRole } = renderShell("/review");
+  const bottom = getByRole("navigation", { name: /下小口/ });
+
+  expect(bottom.querySelector('a[href="/review"]')).toBeNull();
+  expect(bottom.querySelectorAll('[aria-current="page"]').length).toBe(0);
+});
+
+test("右小口レールは履歴の直後にレビューを置く", () => {
+  const { getByRole } = renderShell("/", DESKTOP_WIDTH);
+  const rail = getByRole("navigation", { name: /右小口/ });
+  const hrefs = [...rail.querySelectorAll("a")].map((anchor) => anchor.getAttribute("href"));
+
+  expect(hrefs.indexOf("/review")).toBe(hrefs.indexOf("/history") + 1);
+});
+
+test("「その他」を押すと レビュー / 項目 / プリセット / 方法 / ゴミ箱 が出る", async () => {
   const { getByRole } = renderShell("/");
 
   fireEvent.click(getByRole("button", { name: "その他の画面" }));
@@ -77,6 +93,7 @@ test("「その他」を押すと 項目 / プリセット / 方法 / ゴミ箱 
   await waitFor(() => {
     expect(getByRole("menuitem", { hidden: true, name: "項目" })).toBeDefined();
   });
+  expect(getByRole("menuitem", { hidden: true, name: "レビュー" })).toBeDefined();
   expect(getByRole("menuitem", { hidden: true, name: "プリセット" })).toBeDefined();
   expect(getByRole("menuitem", { hidden: true, name: "方法" })).toBeDefined();
   expect(getByRole("menuitem", { hidden: true, name: "ゴミ箱" })).toBeDefined();
