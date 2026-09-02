@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as actions_calendarFeed from "../actions/calendarFeed.js";
 import type * as actions_notifications_deliverWebPush from "../actions/notifications/deliverWebPush.js";
 import type * as auth from "../auth.js";
 import type * as crons from "../crons.js";
@@ -17,6 +18,7 @@ import type * as lib_authFields from "../lib/authFields.js";
 import type * as lib_avatarStorage from "../lib/avatarStorage.js";
 import type * as lib_boardScheduleColors from "../lib/boardScheduleColors.js";
 import type * as lib_boardScheduleRange from "../lib/boardScheduleRange.js";
+import type * as lib_calendarFeedToken from "../lib/calendarFeedToken.js";
 import type * as lib_catalog from "../lib/catalog.js";
 import type * as lib_catalogLoader from "../lib/catalogLoader.js";
 import type * as lib_categories from "../lib/categories.js";
@@ -34,6 +36,7 @@ import type * as lib_examGoal from "../lib/examGoal.js";
 import type * as lib_historyBreakdown from "../lib/historyBreakdown.js";
 import type * as lib_holiday from "../lib/holiday.js";
 import type * as lib_holidayPreset from "../lib/holidayPreset.js";
+import type * as lib_ics from "../lib/ics.js";
 import type * as lib_itemOrder from "../lib/itemOrder.js";
 import type * as lib_itemSort from "../lib/itemSort.js";
 import type * as lib_jst from "../lib/jst.js";
@@ -64,6 +67,8 @@ import type * as mutations_boardSchedule_create from "../mutations/boardSchedule
 import type * as mutations_boardSchedule_move from "../mutations/boardSchedule/move.js";
 import type * as mutations_boardSchedule_remove from "../mutations/boardSchedule/remove.js";
 import type * as mutations_boardSchedule_update from "../mutations/boardSchedule/update.js";
+import type * as mutations_calendarFeed_issue from "../mutations/calendarFeed/issue.js";
+import type * as mutations_calendarFeed_revoke from "../mutations/calendarFeed/revoke.js";
 import type * as mutations_catalog_ensure from "../mutations/catalog/ensure.js";
 import type * as mutations_categories_create from "../mutations/categories/create.js";
 import type * as mutations_categories_remove from "../mutations/categories/remove.js";
@@ -136,6 +141,8 @@ import type * as mutations_trash_removeDay from "../mutations/trash/removeDay.js
 import type * as mutations_trash_restoreDay from "../mutations/trash/restoreDay.js";
 import type * as queries_auth_publicConfig from "../queries/auth/publicConfig.js";
 import type * as queries_boardSchedule_listForWeek from "../queries/boardSchedule/listForWeek.js";
+import type * as queries_calendarFeed_feedByToken from "../queries/calendarFeed/feedByToken.js";
+import type * as queries_calendarFeed_status from "../queries/calendarFeed/status.js";
 import type * as queries_categories_list from "../queries/categories/list.js";
 import type * as queries_days_get from "../queries/days/get.js";
 import type * as queries_goals_auditCheckpointParents from "../queries/goals/auditCheckpointParents.js";
@@ -168,6 +175,13 @@ import type * as queries_setup_status from "../queries/setup/status.js";
 import type * as queries_targets_listWithProgress from "../queries/targets/listWithProgress.js";
 import type * as queries_trash_list from "../queries/trash/list.js";
 import type * as services_boardSchedule_blocks from "../services/boardSchedule/blocks.js";
+import type * as services_calendarFeed_feedByToken from "../services/calendarFeed/feedByToken.js";
+import type * as services_calendarFeed_feedEvents from "../services/calendarFeed/feedEvents.js";
+import type * as services_calendarFeed_getOwnerToken from "../services/calendarFeed/getOwnerToken.js";
+import type * as services_calendarFeed_issue from "../services/calendarFeed/issue.js";
+import type * as services_calendarFeed_respond from "../services/calendarFeed/respond.js";
+import type * as services_calendarFeed_revoke from "../services/calendarFeed/revoke.js";
+import type * as services_calendarFeed_status from "../services/calendarFeed/status.js";
 import type * as services_catalog_backfillItemSortOrders from "../services/catalog/backfillItemSortOrders.js";
 import type * as services_catalog_ensure from "../services/catalog/ensure.js";
 import type * as services_catalog_ensureCatalog from "../services/catalog/ensureCatalog.js";
@@ -340,12 +354,14 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   crons: typeof crons;
   http: typeof http;
+  "actions/calendarFeed": typeof actions_calendarFeed;
   "actions/notifications/deliverWebPush": typeof actions_notifications_deliverWebPush;
   "lib/achievementReflection": typeof lib_achievementReflection;
   "lib/authFields": typeof lib_authFields;
   "lib/avatarStorage": typeof lib_avatarStorage;
   "lib/boardScheduleColors": typeof lib_boardScheduleColors;
   "lib/boardScheduleRange": typeof lib_boardScheduleRange;
+  "lib/calendarFeedToken": typeof lib_calendarFeedToken;
   "lib/catalog": typeof lib_catalog;
   "lib/catalogLoader": typeof lib_catalogLoader;
   "lib/categories": typeof lib_categories;
@@ -363,6 +379,7 @@ declare const fullApi: ApiFromModules<{
   "lib/historyBreakdown": typeof lib_historyBreakdown;
   "lib/holiday": typeof lib_holiday;
   "lib/holidayPreset": typeof lib_holidayPreset;
+  "lib/ics": typeof lib_ics;
   "lib/itemOrder": typeof lib_itemOrder;
   "lib/itemSort": typeof lib_itemSort;
   "lib/jst": typeof lib_jst;
@@ -393,6 +410,8 @@ declare const fullApi: ApiFromModules<{
   "mutations/boardSchedule/move": typeof mutations_boardSchedule_move;
   "mutations/boardSchedule/remove": typeof mutations_boardSchedule_remove;
   "mutations/boardSchedule/update": typeof mutations_boardSchedule_update;
+  "mutations/calendarFeed/issue": typeof mutations_calendarFeed_issue;
+  "mutations/calendarFeed/revoke": typeof mutations_calendarFeed_revoke;
   "mutations/catalog/ensure": typeof mutations_catalog_ensure;
   "mutations/categories/create": typeof mutations_categories_create;
   "mutations/categories/remove": typeof mutations_categories_remove;
@@ -465,6 +484,8 @@ declare const fullApi: ApiFromModules<{
   "mutations/trash/restoreDay": typeof mutations_trash_restoreDay;
   "queries/auth/publicConfig": typeof queries_auth_publicConfig;
   "queries/boardSchedule/listForWeek": typeof queries_boardSchedule_listForWeek;
+  "queries/calendarFeed/feedByToken": typeof queries_calendarFeed_feedByToken;
+  "queries/calendarFeed/status": typeof queries_calendarFeed_status;
   "queries/categories/list": typeof queries_categories_list;
   "queries/days/get": typeof queries_days_get;
   "queries/goals/auditCheckpointParents": typeof queries_goals_auditCheckpointParents;
@@ -497,6 +518,13 @@ declare const fullApi: ApiFromModules<{
   "queries/targets/listWithProgress": typeof queries_targets_listWithProgress;
   "queries/trash/list": typeof queries_trash_list;
   "services/boardSchedule/blocks": typeof services_boardSchedule_blocks;
+  "services/calendarFeed/feedByToken": typeof services_calendarFeed_feedByToken;
+  "services/calendarFeed/feedEvents": typeof services_calendarFeed_feedEvents;
+  "services/calendarFeed/getOwnerToken": typeof services_calendarFeed_getOwnerToken;
+  "services/calendarFeed/issue": typeof services_calendarFeed_issue;
+  "services/calendarFeed/respond": typeof services_calendarFeed_respond;
+  "services/calendarFeed/revoke": typeof services_calendarFeed_revoke;
+  "services/calendarFeed/status": typeof services_calendarFeed_status;
   "services/catalog/backfillItemSortOrders": typeof services_catalog_backfillItemSortOrders;
   "services/catalog/ensure": typeof services_catalog_ensure;
   "services/catalog/ensureCatalog": typeof services_catalog_ensureCatalog;

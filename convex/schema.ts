@@ -153,6 +153,14 @@ export default defineSchema({
     ownerId: v.string(),
   }).index("by_owner_and_endpoint", ["ownerId", "endpoint"]),
 
+  //? カレンダー購読の capability URL。所有者につき1本。再発行で古いトークンは 404 になる
+  calendarFeedTokens: defineTable({
+    ownerId: v.string(),
+    token: v.string(),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_token", ["token"]),
+
   avatarUploadClaims: defineTable({
     ownerId: v.string(),
   }),

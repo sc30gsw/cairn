@@ -752,3 +752,26 @@ export const webPushConfigValidator = v.object({
 });
 
 export type WebPushConfigDto = Infer<typeof webPushConfigValidator>;
+
+export const calendarFeedStatusValidator = v.object({
+  token: v.union(v.string(), v.null()),
+});
+
+export type CalendarFeedStatusDto = Infer<typeof calendarFeedStatusValidator>;
+
+//? フィードに載せる終日イベント。本番日と未達成のチェックポイント期限だけ
+export const calendarFeedEventValidator = v.object({
+  dateJst: v.string(),
+  description: v.optional(v.string()),
+  summary: v.string(),
+  uid: v.string(),
+});
+
+export type CalendarFeedEventDto = Infer<typeof calendarFeedEventValidator>;
+
+export const calendarFeedValidator = v.union(
+  v.object({ events: v.array(calendarFeedEventValidator) }),
+  v.null(),
+);
+
+export type CalendarFeedDto = Infer<typeof calendarFeedValidator>;
