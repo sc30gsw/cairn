@@ -20,6 +20,7 @@ function row(id: string, status: BoardRow["status"], sortOrder: number): BoardRo
     itemId: "i1" as BoardRow["itemId"],
     itemName: id,
     minutes: 0,
+    review: null,
     sortOrder,
     status,
     timer: null,

@@ -17,6 +17,11 @@ const onPauseMock = vi.fn(async () => undefined);
 const onUnconfirmMock = vi.fn(async () => undefined);
 
 const { notificationsShowMock } = vi.hoisted(() => ({ notificationsShowMock: vi.fn() }));
+vi.mock("~/hooks/use-row-mutations", () => ({
+  useFlagReview: () => ({ mutateAsync: vi.fn(async () => null) }),
+  useUnflagReview: () => ({ mutateAsync: vi.fn(async () => null) }),
+}));
+
 vi.mock("@mantine/notifications", () => ({
   notifications: { hide: vi.fn(), show: notificationsShowMock },
 }));
@@ -66,6 +71,7 @@ function row(
     itemId: "i1" as BoardRow["itemId"],
     itemName: name,
     minutes: 30,
+    review: null,
     sortOrder: 0,
     status,
     timer: null,
@@ -126,6 +132,7 @@ test("計測がある進行中の行を確定すると、stopTimer の分数で�
         row("r1", ongoing, "金のフレーズ", {
           content: "Unit 1",
           minutes: 30,
+          review: null,
           timer: { accumulatedMs: 754_000, autoStoppedAt: null, startedAt: null },
         }),
       ]}
@@ -151,6 +158,7 @@ test("stopTimer が失敗したら安全側でエディタを開く", async () =
         row("r1", ongoing, "金のフレーズ", {
           content: "Unit 1",
           minutes: 30,
+          review: null,
           timer: { accumulatedMs: 754_000, autoStoppedAt: null, startedAt: null },
         }),
       ]}
@@ -209,6 +217,7 @@ test("メニューから完了にすると、計測がある行は stopTimer の
         row("r1", ongoing, "金のフレーズ", {
           content: "Unit 1",
           minutes: 30,
+          review: null,
           timer: { accumulatedMs: 754_000, autoStoppedAt: null, startedAt: null },
         }),
       ]}

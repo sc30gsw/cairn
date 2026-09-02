@@ -9,7 +9,9 @@ import {
   IconPlayerSkipForward,
 } from "@tabler/icons-react";
 import { useState } from "react";
+import type { DateJst } from "~domain/jst";
 
+import { ReviewMenuItems } from "~/components/review-menu-items";
 import {
   kanbanMoveMenuItems,
   shiftRowWithinColumn,
@@ -22,10 +24,13 @@ type MoveItem = { column: KanbanColumn; move: Exclude<KanbanStatusMove, "noop"> 
 
 type BoardKanbanCardMenuProps = {
   disabled: boolean;
+  onFlagReview: (row: BoardRow, dueJst: DateJst) => void;
   onStatusMove: (move: Exclude<KanbanStatusMove, "noop">, row: BoardRow) => Promise<unknown>;
   onShift: (direction: -1 | 1, row: BoardRow) => void;
+  onUnflagReview: (row: BoardRow) => void;
   row: BoardRow;
   rows: readonly BoardRow[];
+  todayJst: DateJst;
 };
 
 const MOVE_LABEL = {
@@ -49,10 +54,13 @@ function moveIcon({ column }: MoveItem) {
 
 export function BoardKanbanCardMenu({
   disabled,
+  onFlagReview,
   onStatusMove,
   onShift,
+  onUnflagReview,
   row,
   rows,
+  todayJst,
 }: BoardKanbanCardMenuProps) {
   const [pending, setPending] = useState(false);
   const moves = kanbanMoveMenuItems(row.status);
@@ -111,6 +119,13 @@ export function BoardKanbanCardMenu({
             ) : null}
           </>
         ) : null}
+        <ReviewMenuItems
+          onFlag={(dueJst) => onFlagReview(row, dueJst)}
+          onUnflag={() => onUnflagReview(row)}
+          review={row.review}
+          status={row.status}
+          todayJst={todayJst}
+        />
       </Menu.Dropdown>
     </Menu>
   );

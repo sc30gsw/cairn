@@ -17,6 +17,7 @@ function row(timer: BoardRow["timer"]): BoardRow {
     itemId: "i1" as BoardRow["itemId"],
     itemName: "金のフレーズ",
     minutes: 30,
+    review: null,
     sortOrder: 0,
     status: "進行中",
     timer,

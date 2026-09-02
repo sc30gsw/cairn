@@ -160,6 +160,15 @@ export const rowTimerDtoValidator = v.object({
 
 export type RowTimerDto = Infer<typeof rowTimerDtoValidator>;
 
+//? 復習の印。source = 復習に回した元の記録（次の期日と段階）、review = 期日が来て並んだ復習の記録
+export const rowReviewDtoValidator = v.union(
+  v.object({ dueJst: v.string(), kind: v.literal("source"), stage: v.number() }),
+  v.object({ kind: v.literal("review"), stage: v.number() }),
+  v.null(),
+);
+
+export type RowReviewDto = Infer<typeof rowReviewDtoValidator>;
+
 export const rowDtoValidator = v.object({
   _id: v.id("rows"),
   category: v.string(),
@@ -168,6 +177,7 @@ export const rowDtoValidator = v.object({
   itemId: v.id("items"),
   itemName: v.string(),
   minutes: v.number(),
+  review: rowReviewDtoValidator,
   sortOrder: v.number(),
   status: statusValidator,
   timer: v.union(rowTimerDtoValidator, v.null()),

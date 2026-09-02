@@ -131,6 +131,20 @@ export default defineSchema({
   })
     .index("by_owner", ["ownerId"])
     .index("by_enabled_and_eveningHourJst", ["enabled", "eveningHourJst"]),
+  //? 復習の印。元の記録とは別の表に持ち、期日は「今日を開いたときに並べる条件」としてだけ使う
+  //? （未来の暦日に日を作らない、という days の規則に触れない）
+  reviewFlags: defineTable({
+    content: v.string(),
+    dueJst: v.string(),
+    itemId: v.id("items"),
+    ownerId: v.string(),
+    reviewRowId: v.optional(v.id("rows")),
+    sourceRowId: v.id("rows"),
+    stage: v.number(),
+  })
+    .index("by_owner_and_dueJst", ["ownerId", "dueJst"])
+    .index("by_sourceRow", ["sourceRowId"])
+    .index("by_reviewRow", ["reviewRowId"]),
   //? 1端末 = 1行。所有者は複数端末を持てる。by_owner は by_owner_and_endpoint の接頭辞なので張らない（CVX-12）
   pushSubscriptions: defineTable({
     endpoint: v.string(),

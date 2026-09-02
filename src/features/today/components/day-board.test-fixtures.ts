@@ -15,6 +15,7 @@ export const dayBoardTestRow = {
   itemId: "item1" as DayRow["itemId"],
   itemName: "Distinction 2000",
   minutes: 30,
+  review: null,
   sortOrder: 0,
   status: pending,
   timer: null,

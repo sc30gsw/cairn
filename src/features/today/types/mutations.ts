@@ -17,3 +17,7 @@ export type SetMemoInput = Pick<
   FunctionArgs<typeof api.mutations.days.setMemo.setMemo>,
   "memo"
 >["memo"];
+export type FlagReviewInput = Omit<
+  FunctionArgs<typeof api.mutations.reviews.flag.flag>,
+  "todayJst"
+>;

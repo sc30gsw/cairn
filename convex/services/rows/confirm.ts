@@ -4,6 +4,7 @@ import { requireValidMinutes } from "../../lib/domain";
 import { NotFoundError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { withMasteryProgressDelta } from "../goals/withMasteryProgressDelta";
+import { advanceReviewForRow } from "../reviews/settleReviewRow";
 import { clearTimerFields } from "./clearTimerFields";
 import { requireOwnedRow } from "./requireOwnedRow";
 import { rowDayLiveness } from "./rowDayLiveness";
@@ -27,5 +28,7 @@ export async function confirm(
       status: "確定",
     });
   });
+  //? 復習の記録なら、この確定で次の段階へ進む（同じトランザクション・CVX-15）
+  await advanceReviewForRow(ctx, row);
   return null;
 }

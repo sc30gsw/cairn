@@ -46,6 +46,14 @@ export function useRemoveDay() {
   return useConvexMutation(api.mutations.trash.removeDay.removeDay);
 }
 
+export function useFlagReview() {
+  return useConvexMutation(api.mutations.reviews.flag.flag);
+}
+
+export function useUnflagReview() {
+  return useConvexMutation(api.mutations.reviews.unflag.unflag);
+}
+
 export function useOptimisticSkipRow(dateJst: DateJst, todayJst: DateJst) {
   const mutateAsync = useConvexMutation(api.mutations.rows.skip.skip).withOptimisticUpdate(
     (localStore, args) => {

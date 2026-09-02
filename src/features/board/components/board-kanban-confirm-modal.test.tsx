@@ -12,6 +12,7 @@ function row(overrides: Partial<BoardRow> = {}): BoardRow {
     itemId: "i1" as BoardRow["itemId"],
     itemName: "Distinction",
     minutes: 0,
+    review: null,
     sortOrder: 0,
     status: "未着手",
     timer: null,

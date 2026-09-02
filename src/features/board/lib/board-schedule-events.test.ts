@@ -22,6 +22,7 @@ function row(id: string, name: string, sortOrder: number): BoardRow {
     itemId: "i1" as BoardRow["itemId"],
     itemName: name,
     minutes: 30,
+    review: null,
     sortOrder,
     status: confirmed,
     timer: null,

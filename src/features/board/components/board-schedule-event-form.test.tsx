@@ -15,6 +15,7 @@ function sampleRow(id: string, name: string): BoardRow {
     itemId: "i1" as BoardRow["itemId"],
     itemName: name,
     minutes: 0,
+    review: null,
     sortOrder: 0,
     status: "未着手",
     timer: null,
