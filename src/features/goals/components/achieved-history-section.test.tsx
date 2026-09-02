@@ -4,9 +4,11 @@ import { expect, test, vi } from "vite-plus/test";
 import {
   ACHIEVED_SECTION_TITLE,
   AchievedHistorySection,
+  FINISHED_EXAM_BADGE,
 } from "~/features/goals/components/achieved-history-section";
+import { examResultActionName } from "~/features/goals/components/exam-goal-card";
 import { KINFURE_ITEM, scopeItemsFixture } from "~/features/goals/mocks/goal-scope-fixture";
-import type { MasteryGoal } from "~/features/goals/types/goal";
+import type { ExamGoal, MasteryGoal } from "~/features/goals/types/goal";
 import { renderWithMantine } from "~/test-utils/render";
 
 const TODAY = "2026-08-17";
@@ -32,12 +34,25 @@ const ACHIEVED_LONG_TERM = {
   parentGoalId: undefined,
 } satisfies MasteryGoal;
 
+const FINISHED_EXAM = {
+  _id: "goal-exam-finished" as ExamGoal["_id"],
+  content: "TOEIC で900点を取る",
+  createdAt: 1_754_000_000_000,
+  examDate: "2026-08-02",
+  maxScore: 900,
+  minScore: 850,
+  result: { recordedAt: "2026-08-16", score: 875 },
+  type: "exam",
+} satisfies ExamGoal;
+
 function sectionProps(overrides: Partial<Parameters<typeof AchievedHistorySection>[0]> = {}) {
   return {
     achieved: [ACHIEVED_CHECKPOINT, ACHIEVED_LONG_TERM],
+    finishedExams: [],
     form: undefined,
     items: scopeItemsFixture,
     onEditGoal: vi.fn(),
+    onRecordResult: vi.fn(),
     onRemoveGoal: vi.fn(),
     onSetAchieved: vi.fn(),
     parentNameOf: (goal: MasteryGoal) =>
@@ -142,4 +157,28 @@ test("達成履歴の行も、凍結時点の対象項目を短縮形で併記�
   await waitFor(() => {
     expect(getByText("金フレ・確定 300分 / 6日")).toBeDefined();
   });
+});
+
+test("終了した本番は件数に含まれ、結果と訂正の導線つきで先頭に並ぶ", async () => {
+  const onRecordResult = vi.fn();
+  const { getByRole, getByText } = renderWithMantine(
+    <AchievedHistorySection
+      {...sectionProps({ finishedExams: [FINISHED_EXAM], onRecordResult })}
+    />,
+  );
+  const control = getByRole("button", { name: new RegExp(ACHIEVED_SECTION_TITLE) });
+  expect(within(control).getByText("3")).toBeDefined();
+  control.click();
+
+  await waitFor(() => {
+    expect(getByText(FINISHED_EXAM.content)).toBeDefined();
+  });
+  expect(getByText(FINISHED_EXAM_BADGE)).toBeDefined();
+  expect(getByText("875点")).toBeDefined();
+  expect(getByText("結果 2026-08-16")).toBeDefined();
+  const rows = getByRole("list").querySelectorAll("li");
+  expect(rows[0]?.textContent).toContain(FINISHED_EXAM.content);
+
+  getByRole("button", { name: examResultActionName(FINISHED_EXAM) }).click();
+  expect(onRecordResult).toHaveBeenCalledWith(FINISHED_EXAM);
 });

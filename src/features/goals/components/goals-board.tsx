@@ -1,6 +1,4 @@
-import { Box, Button, Card, EmptyState, Grid, Stack, Text } from "@mantine/core";
-import { modals } from "@mantine/modals";
-import { IconTarget } from "@tabler/icons-react";
+import { Box, Card, Grid, Stack, Text } from "@mantine/core";
 import { useRef, useState, type ReactNode } from "react";
 import type { DateJst } from "~domain/jst";
 
@@ -8,30 +6,33 @@ import { ConcreteActionTour } from "~/components/concrete-action-tour";
 import { PageTitle } from "~/components/page-title";
 import { AchievedHistorySection } from "~/features/goals/components/achieved-history-section";
 import { AchievementReflectionModal } from "~/features/goals/components/achievement-reflection-modal";
+import { ExamEmptyCard } from "~/features/goals/components/exam-empty-card";
+import { ExamResultModal } from "~/features/goals/components/exam-result-modal";
 import { GoalForm } from "~/features/goals/components/goal-form";
 import { LongTermSection } from "~/features/goals/components/long-term-section";
 import { ObstacleSection } from "~/features/goals/components/obstacle-section";
 import { OrphanCheckpointsAlert } from "~/features/goals/components/orphan-checkpoints-alert";
 import { ParentGoalGroup } from "~/features/goals/components/parent-goal-group";
 import { WeeklyTargetsSection } from "~/features/goals/components/weekly-targets-section";
+import { useGoalDialogs } from "~/features/goals/hooks/use-goal-dialogs";
 import { useGoalsBoardActions } from "~/features/goals/hooks/use-goals-board-actions";
 import type { GoalFormVariant } from "~/features/goals/lib/goal-form-copy";
-import { removeConfirmCopy } from "~/features/goals/lib/goal-remove-confirm";
 import { tierTransition, tierTransitionToast } from "~/features/goals/lib/goal-tier-transition";
 import {
   buildGoalTree,
   childCheckpointsOf,
   goalTier,
+  latestFinishedExam,
   type ParentGoal,
   type ParentGroup,
 } from "~/features/goals/lib/goal-tree";
-import type { Goal, MasteryGoal, Obstacle } from "~/features/goals/types/goal";
-import type { GoalInputPayload, SetAchievedInput } from "~/features/goals/types/mutations";
+import { openGoalRemoveConfirm } from "~/features/goals/lib/open-goal-remove-confirm";
+import type { ExamGoal, Goal, MasteryGoal, Obstacle } from "~/features/goals/types/goal";
+import type { GoalInputPayload } from "~/features/goals/types/mutations";
 import type { TargetProgress } from "~/features/goals/types/target";
 import type { CategoryDto } from "~/types/category";
 import type { ItemDto } from "~/types/item";
 
-export const EXAM_GOAL_EMPTY_TITLE = "本番目標がまだありません";
 export const GOAL_HIERARCHY_HINT =
   "本番目標と長期目標の下に、期限つきのチェックポイントを刻みます。同時に追いかけるのは親ごとに1〜2件が目安。";
 
@@ -84,11 +85,21 @@ export function GoalsBoard({
     onRemoveGoal,
     onRemoveObstacle,
     onSetAchieved,
+    onSetExamResult,
     onUpdateGoal,
     onUpdateObstacle,
   } = useGoalsBoardActions();
   const [editor, setEditor] = useState<GoalEditor>({ kind: "closed" });
-  const [pendingAchievement, setPendingAchievement] = useState<SetAchievedInput | null>(null);
+  const {
+    closeReflection,
+    closeResult,
+    openResult,
+    reflectionGoal,
+    requestSetAchieved,
+    resultGoal,
+    submitExamResult,
+    submitReflection,
+  } = useGoalDialogs({ goals, onSetAchieved, onSetExamResult });
   const weeklyTargetsRef = useRef<HTMLDivElement>(null);
   const tree = buildGoalTree(goals);
   const editingGoal = editor.kind === "edit" ? editor.goal : undefined;
@@ -96,23 +107,6 @@ export function GoalsBoard({
   function closeEditor() {
     setEditor({ kind: "closed" });
   }
-
-  //? 達成にするときだけ振り返りを聞く。達成の取り消しは即反映（振り返りは残る）
-  function requestSetAchieved(input: SetAchievedInput) {
-    if (input.achievedAt === undefined) {
-      onSetAchieved(input);
-      return;
-    }
-    setPendingAchievement(input);
-  }
-
-  const reflectionGoal =
-    pendingAchievement === null
-      ? null
-      : (goals.find(
-          (candidate): candidate is MasteryGoal =>
-            candidate._id === pendingAchievement.goalId && candidate.type === "mastery",
-        ) ?? null);
 
   function openEdit(goal: Goal) {
     setEditor({ goal, kind: "edit" });
@@ -123,20 +117,7 @@ export function GoalsBoard({
   }
 
   function requestRemove(goal: Goal) {
-    const children = childCheckpointsOf(goals, goal._id);
-    const copy = removeConfirmCopy({
-      achievedChildCount: children.filter((child) => child.achievedAt !== undefined).length,
-      childNames: children.map((child) => `${child.content}（期限 ${child.deadline}）`),
-      goalName: goal.content,
-      variant: goal.type === "exam" ? "exam" : goalTier(goal),
-    });
-    modals.openConfirmModal({
-      children: <Text style={{ whiteSpace: "pre-line" }}>{copy.children}</Text>,
-      confirmProps: { color: "red" },
-      labels: { cancel: "キャンセル", confirm: copy.labelConfirm },
-      onConfirm: () => onRemoveGoal(goal._id),
-      title: copy.title,
-    });
+    openGoalRemoveConfirm({ goal, goals, onConfirm: onRemoveGoal });
   }
 
   function submitGoal(goal: GoalInputPayload) {
@@ -210,6 +191,10 @@ export function GoalsBoard({
     return rows.some((row) => row._id === editingGoal?._id) ? goalForm() : undefined;
   }
 
+  function formForExamHistory(): ReactNode {
+    return tree.examHistory.some((goal) => goal._id === editingGoal?._id) ? goalForm() : undefined;
+  }
+
   function visibleRows(rows: readonly MasteryGoal[]): MasteryGoal[] {
     return rows.filter((row) => row._id !== editingGoal?._id);
   }
@@ -241,31 +226,13 @@ export function GoalsBoard({
     );
   }
 
-  function renderExamColumn(): ReactNode {
-    const group = tree.exam;
-    if (group === undefined) {
-      return editor.kind === "createExam" ? (
-        goalForm()
-      ) : (
-        <Card>
-          <EmptyState
-            description="本番日とスコア帯を決めると、残り日数の軸ができます。"
-            icon={<IconTarget aria-hidden />}
-            title={EXAM_GOAL_EMPTY_TITLE}
-          >
-            <EmptyState.Actions>
-              <Button onClick={() => setEditor({ kind: "createExam" })} type="button">
-                本番目標を作成する
-              </Button>
-            </EmptyState.Actions>
-          </EmptyState>
-        </Card>
-      );
-    }
+  function renderExamGroup(group: ParentGroup<ExamGoal>): ReactNode {
     if (editingGoal?._id === group.parent._id) {
-      return goalForm();
+      return <Box key={group.parent._id}>{goalForm()}</Box>;
     }
     const form = formForGroup(group);
+    //? 終了した本番には新しいチェックポイントを足せない（残った子の付け替えだけ）
+    const finished = group.parent.result !== undefined;
 
     return (
       <ParentGoalGroup
@@ -273,15 +240,38 @@ export function GoalsBoard({
         form={form}
         hasWeeklyTargets={targets.length > 0}
         items={items}
+        key={group.parent._id}
         kind="exam"
-        onAddCheckpoint={addCheckpointHandler(group.parent, form)}
+        onAddCheckpoint={finished ? undefined : addCheckpointHandler(group.parent, form)}
         onEditGoal={openEdit}
+        onRecordResult={() => openResult(group.parent)}
         onRemoveGoal={requestRemove}
         onSetAchieved={requestSetAchieved}
         onShowWeeklyTargets={showWeeklyTargets}
         parent={group.parent}
         todayJst={todayJst}
       />
+    );
+  }
+
+  function renderExamColumn(): ReactNode {
+    const active =
+      tree.exam !== undefined ? (
+        renderExamGroup(tree.exam)
+      ) : editor.kind === "createExam" ? (
+        goalForm()
+      ) : (
+        <ExamEmptyCard
+          latest={latestFinishedExam(goals)}
+          onCreate={() => setEditor({ kind: "createExam" })}
+        />
+      );
+
+    return (
+      <Stack gap="md">
+        {active}
+        {tree.finishedExams.map(renderExamGroup)}
+      </Stack>
     );
   }
 
@@ -326,13 +316,15 @@ export function GoalsBoard({
             <WeeklyTargetsSection categories={categories} targets={targets} />
           </Card>
         </Grid.Col>
-        {tree.achieved.length > 0 && (
+        {tree.achieved.length + tree.examHistory.length > 0 && (
           <Grid.Col span={12}>
             <AchievedHistorySection
               achieved={visibleRows(tree.achieved)}
-              form={formForRows(tree.achieved)}
+              finishedExams={tree.examHistory.filter((goal) => goal._id !== editingGoal?._id)}
+              form={formForRows(tree.achieved) ?? formForExamHistory()}
               items={items}
               onEditGoal={openEdit}
+              onRecordResult={openResult}
               onRemoveGoal={requestRemove}
               onSetAchieved={requestSetAchieved}
               parentNameOf={parentNameOf}
@@ -342,12 +334,14 @@ export function GoalsBoard({
         )}
         <AchievementReflectionModal
           goal={reflectionGoal}
-          onClose={() => setPendingAchievement(null)}
-          onSubmit={(reflection) => {
-            if (pendingAchievement !== null) {
-              onSetAchieved({ ...pendingAchievement, reflection });
-            }
-          }}
+          onClose={closeReflection}
+          onSubmit={submitReflection}
+        />
+        <ExamResultModal
+          goal={resultGoal}
+          onClose={closeResult}
+          onSubmit={submitExamResult}
+          todayJst={todayJst}
         />
         <Grid.Col span={12}>
           <Card>

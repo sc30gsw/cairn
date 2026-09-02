@@ -17,6 +17,10 @@ export function useSetGoalAchieved() {
   return useConvexMutation(api.mutations.goals.setAchieved.setAchieved);
 }
 
+export function useSetExamResult() {
+  return useConvexMutation(api.mutations.goals.setExamResult.setExamResult);
+}
+
 export function useCreateObstacle() {
   return useConvexMutation(api.mutations.goals.createObstacle.createObstacle);
 }

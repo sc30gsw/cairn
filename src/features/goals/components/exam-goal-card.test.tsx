@@ -1,9 +1,13 @@
 import { expect, test, vi } from "vite-plus/test";
 
 import {
+  EXAM_GOAL_FINISHED_BADGE,
   EXAM_GOAL_INCOMPLETE_TITLE,
   EXAM_GOAL_SECTION_TITLE,
+  EXAM_RESULT_ACTION_LABEL,
+  EXAM_RESULT_CORRECT_LABEL,
   ExamGoalBody,
+  examResultActionName,
 } from "~/features/goals/components/exam-goal-card";
 import type { ExamGoal } from "~/features/goals/types/goal";
 import { renderWithMantine } from "~/test-utils/render";
@@ -25,11 +29,17 @@ const PAST_EXAM_GOAL = {
   examDate: "2026-08-01",
 } satisfies ExamGoal;
 
+const FINISHED_EXAM_GOAL = {
+  ...PAST_EXAM_GOAL,
+  result: { recordedAt: "2026-08-16", score: 875 },
+} satisfies ExamGoal;
+
 function cardProps(overrides: Partial<Parameters<typeof ExamGoalBody>[0]> = {}) {
   return {
     goal: EXAM_GOAL,
     hasWeeklyTargets: false,
     onEdit: vi.fn(),
+    onRecordResult: vi.fn(),
     onRemove: vi.fn(),
     onShowWeeklyTargets: vi.fn(),
     todayJst: TODAY,
@@ -98,4 +108,38 @@ test("編集と削除のアクションが呼ばれる", () => {
 test("残り日数の大きな数字が表示される", () => {
   const { getByText } = renderWithMantine(<ExamGoalBody {...cardProps()} />);
   expect(getByText("41")).toBeDefined();
+});
+
+test("本番日より前は結果の導線を出さない", () => {
+  const { queryByRole } = renderWithMantine(<ExamGoalBody {...cardProps()} />);
+  expect(queryByRole("button", { name: examResultActionName(EXAM_GOAL) })).toBeNull();
+});
+
+test("本番日を過ぎたら「結果を入れる」導線が出て onRecordResult を呼ぶ", () => {
+  const onRecordResult = vi.fn();
+  const { getByRole } = renderWithMantine(
+    <ExamGoalBody {...cardProps({ goal: PAST_EXAM_GOAL, onRecordResult })} />,
+  );
+  const button = getByRole("button", { name: examResultActionName(PAST_EXAM_GOAL) });
+  expect(button.textContent).toBe(EXAM_RESULT_ACTION_LABEL);
+  button.click();
+  expect(onRecordResult).toHaveBeenCalledOnce();
+});
+
+test("結果が入った本番は終了バッジと結果を出し、カウントダウンと未完成の促しを消す", () => {
+  const onRecordResult = vi.fn();
+  const { getByRole, getByText, queryByText } = renderWithMantine(
+    <ExamGoalBody {...cardProps({ goal: FINISHED_EXAM_GOAL, onRecordResult })} />,
+  );
+  expect(getByText(EXAM_GOAL_FINISHED_BADGE)).toBeDefined();
+  expect(getByText("875")).toBeDefined();
+  expect(getByText("結果 2026-08-16")).toBeDefined();
+  expect(queryByText("本番日を過ぎています。")).toBeNull();
+  expect(queryByText(/まであと/)).toBeNull();
+  expect(queryByText(EXAM_GOAL_INCOMPLETE_TITLE)).toBeNull();
+
+  const correct = getByRole("button", { name: examResultActionName(FINISHED_EXAM_GOAL) });
+  expect(correct.textContent).toBe(EXAM_RESULT_CORRECT_LABEL);
+  correct.click();
+  expect(onRecordResult).toHaveBeenCalledOnce();
 });

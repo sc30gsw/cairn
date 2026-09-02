@@ -213,12 +213,24 @@ export const goalTypeValidator = v.union(v.literal(examType), v.literal(masteryT
 
 export type GoalTypeDto = Infer<typeof goalTypeValidator>;
 
-const examGoalFields = v.object({
+export const examResultValidator = v.object({
+  recordedAt: v.string(),
+  score: v.number(),
+});
+
+export type ExamResultDto = Infer<typeof examResultValidator>;
+
+const examGoalInputFields = v.object({
   content: v.string(),
   examDate: v.string(),
   maxScore: v.number(),
   minScore: v.number(),
   type: v.literal(examType),
+});
+
+//? 結果が入った本番目標は「終了」。進行中 / 終了の判別は result の有無だけ（ADR-0015）
+const examGoalFields = examGoalInputFields.extend({
+  result: v.optional(examResultValidator),
 });
 
 const masteryGoalInputFields = v.object({
@@ -262,7 +274,7 @@ export const goalDtoValidator = v.union(
 
 export type GoalDto = Infer<typeof goalDtoValidator>;
 
-export const goalInputValidator = v.union(examGoalFields, masteryGoalInputFields);
+export const goalInputValidator = v.union(examGoalInputFields, masteryGoalInputFields);
 
 export type GoalInput = Infer<typeof goalInputValidator>;
 

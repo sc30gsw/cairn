@@ -1,4 +1,5 @@
 import type { ComboboxData, ComboboxItem } from "@mantine/core";
+import { findActiveExamGoal, isActiveExamGoal, isFinishedExamGoal } from "~domain/examGoal";
 import { compareDateJst } from "~domain/jst";
 
 import type { ExamGoal, Goal, GoalId, MasteryGoal } from "~/features/goals/types/goal";
@@ -14,7 +15,12 @@ export type ParentGroup<TParent extends ParentGoal = ParentGoal> = {
 
 export type GoalTree = {
   achieved: MasteryGoal[];
+  //? 進行中（結果が入っていない）本番目標。常に 0 か 1 件
   exam: ParentGroup<ExamGoal> | undefined;
+  //? 終了して子も片づいた本番。「達成した目標」に並ぶ
+  examHistory: ExamGoal[];
+  //? 終了したが未達成の子が残る本番。子の付け替え先が決まるまでツリーに残す
+  finishedExams: ParentGroup<ExamGoal>[];
   longTerm: ParentGroup<MasteryGoal>[];
   orphans: MasteryGoal[];
 };
@@ -49,6 +55,21 @@ function byAchievedDesc(left: MasteryGoal, right: MasteryGoal): number {
   );
 }
 
+function byResultDesc(left: ExamGoal, right: ExamGoal): number {
+  return (
+    compareDateJst(right.result?.recordedAt ?? "", left.result?.recordedAt ?? "") ||
+    right.createdAt - left.createdAt
+  );
+}
+
+function finishedExamsOf(goals: readonly Goal[]): ExamGoal[] {
+  return goals.filter((goal): goal is ExamGoal => isFinishedExamGoal(goal)).sort(byResultDesc);
+}
+
+export function latestFinishedExam(goals: readonly Goal[]): ExamGoal | undefined {
+  return finishedExamsOf(goals)[0];
+}
+
 export function childCheckpointsOf(goals: readonly Goal[], parentId: GoalId): MasteryGoal[] {
   const children: MasteryGoal[] = [];
   for (const goal of goals) {
@@ -61,8 +82,12 @@ export function childCheckpointsOf(goals: readonly Goal[], parentId: GoalId): Ma
 }
 
 export function buildGoalTree(goals: readonly Goal[]): GoalTree {
-  const exam = goals.find((goal): goal is ExamGoal => goal.type === "exam");
-  const parentIds = new Set<GoalId>(exam === undefined ? [] : [exam._id]);
+  const exam = findActiveExamGoal(goals);
+  const finished = finishedExamsOf(goals);
+  const parentIds = new Set<GoalId>([
+    ...(exam === undefined ? [] : [exam._id]),
+    ...finished.map((goal) => goal._id),
+  ]);
   const longTermGoals: MasteryGoal[] = [];
   const orphans: MasteryGoal[] = [];
   const checkpoints: MasteryGoal[] = [];
@@ -115,10 +140,22 @@ export function buildGoalTree(goals: readonly Goal[]): GoalTree {
     }
   }
   longTermParents.sort((left, right) => left.createdAt - right.createdAt);
+  const finishedExams: ParentGroup<ExamGoal>[] = [];
+  const examHistory: ExamGoal[] = [];
+  for (const goal of finished) {
+    const checkpoints = openChildrenOf(goal._id);
+    if (checkpoints.length === 0) {
+      examHistory.push(goal);
+      continue;
+    }
+    finishedExams.push({ checkpoints, parent: goal });
+  }
 
   return {
     achieved: achieved.sort(byAchievedDesc),
     exam: exam === undefined ? undefined : { checkpoints: openChildrenOf(exam._id), parent: exam },
+    examHistory,
+    finishedExams,
     longTerm: longTermParents.map((parent) => ({
       checkpoints: openChildrenOf(parent._id),
       parent,
@@ -144,8 +181,9 @@ export function parentGoalOptions(
     if (goal._id === selfId) {
       continue;
     }
+    //? 終了した本番は新しい親に選べない。すでに親なら（付け替え先を選ぶまで）残す
     if (
-      goal.type === "exam" ||
+      isActiveExamGoal(goal) ||
       (isLongTerm(goal) && goal.achievedAt === undefined) ||
       goal._id === currentParentId
     ) {

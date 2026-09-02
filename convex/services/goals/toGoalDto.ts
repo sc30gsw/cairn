@@ -11,6 +11,7 @@ export function toGoalDto(goal: Doc<"goals">): GoalDto {
       examDate: goal.examDate,
       maxScore: goal.maxScore,
       minScore: goal.minScore,
+      result: goal.result,
       type: "exam",
     };
   }

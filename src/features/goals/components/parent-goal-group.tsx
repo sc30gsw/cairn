@@ -29,7 +29,13 @@ type ParentGoalGroupCommonProps = {
 
 type ParentGoalGroupProps = ParentGoalGroupCommonProps &
   (
-    | { hasWeeklyTargets: boolean; kind: "exam"; onShowWeeklyTargets: () => void; parent: ExamGoal }
+    | {
+        hasWeeklyTargets: boolean;
+        kind: "exam";
+        onRecordResult: () => void;
+        onShowWeeklyTargets: () => void;
+        parent: ExamGoal;
+      }
     | { kind: "longTerm"; parent: MasteryGoal }
   );
 
@@ -54,6 +60,7 @@ export function ParentGoalGroup(props: ParentGoalGroupProps) {
             goal={props.parent}
             hasWeeklyTargets={props.hasWeeklyTargets}
             onEdit={() => onEditGoal(props.parent)}
+            onRecordResult={props.onRecordResult}
             onRemove={() => onRemoveGoal(props.parent)}
             onShowWeeklyTargets={props.onShowWeeklyTargets}
             todayJst={todayJst}

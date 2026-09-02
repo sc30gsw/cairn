@@ -29,6 +29,7 @@ import type * as lib_dayView from "../lib/dayView.js";
 import type * as lib_domain from "../lib/domain.js";
 import type * as lib_env from "../lib/env.js";
 import type * as lib_errors from "../lib/errors.js";
+import type * as lib_examGoal from "../lib/examGoal.js";
 import type * as lib_historyBreakdown from "../lib/historyBreakdown.js";
 import type * as lib_holiday from "../lib/holiday.js";
 import type * as lib_holidayPreset from "../lib/holidayPreset.js";
@@ -48,6 +49,7 @@ import type * as lib_rowTimer from "../lib/rowTimer.js";
 import type * as lib_scheduleInstant from "../lib/scheduleInstant.js";
 import type * as lib_setupStatus from "../lib/setupStatus.js";
 import type * as lib_share from "../lib/share.js";
+import type * as lib_toeicScore from "../lib/toeicScore.js";
 import type * as lib_trash from "../lib/trash.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as lib_volume from "../lib/volume.js";
@@ -71,6 +73,7 @@ import type * as mutations_goals_recomputeMasteryProgress from "../mutations/goa
 import type * as mutations_goals_remove from "../mutations/goals/remove.js";
 import type * as mutations_goals_removeObstacle from "../mutations/goals/removeObstacle.js";
 import type * as mutations_goals_setAchieved from "../mutations/goals/setAchieved.js";
+import type * as mutations_goals_setExamResult from "../mutations/goals/setExamResult.js";
 import type * as mutations_goals_update from "../mutations/goals/update.js";
 import type * as mutations_goals_updateObstacle from "../mutations/goals/updateObstacle.js";
 import type * as mutations_items_applyOrder from "../mutations/items/applyOrder.js";
@@ -195,6 +198,7 @@ import type * as services_goals_removeObstacle from "../services/goals/removeObs
 import type * as services_goals_requireOwnedGoal from "../services/goals/requireOwnedGoal.js";
 import type * as services_goals_scopeItemIds from "../services/goals/scopeItemIds.js";
 import type * as services_goals_setAchieved from "../services/goals/setAchieved.js";
+import type * as services_goals_setExamResult from "../services/goals/setExamResult.js";
 import type * as services_goals_summarizeCheckpointParents from "../services/goals/summarizeCheckpointParents.js";
 import type * as services_goals_toGoalDocument from "../services/goals/toGoalDocument.js";
 import type * as services_goals_toGoalDto from "../services/goals/toGoalDto.js";
@@ -327,6 +331,7 @@ declare const fullApi: ApiFromModules<{
   "lib/domain": typeof lib_domain;
   "lib/env": typeof lib_env;
   "lib/errors": typeof lib_errors;
+  "lib/examGoal": typeof lib_examGoal;
   "lib/historyBreakdown": typeof lib_historyBreakdown;
   "lib/holiday": typeof lib_holiday;
   "lib/holidayPreset": typeof lib_holidayPreset;
@@ -346,6 +351,7 @@ declare const fullApi: ApiFromModules<{
   "lib/scheduleInstant": typeof lib_scheduleInstant;
   "lib/setupStatus": typeof lib_setupStatus;
   "lib/share": typeof lib_share;
+  "lib/toeicScore": typeof lib_toeicScore;
   "lib/trash": typeof lib_trash;
   "lib/validators": typeof lib_validators;
   "lib/volume": typeof lib_volume;
@@ -369,6 +375,7 @@ declare const fullApi: ApiFromModules<{
   "mutations/goals/remove": typeof mutations_goals_remove;
   "mutations/goals/removeObstacle": typeof mutations_goals_removeObstacle;
   "mutations/goals/setAchieved": typeof mutations_goals_setAchieved;
+  "mutations/goals/setExamResult": typeof mutations_goals_setExamResult;
   "mutations/goals/update": typeof mutations_goals_update;
   "mutations/goals/updateObstacle": typeof mutations_goals_updateObstacle;
   "mutations/items/applyOrder": typeof mutations_items_applyOrder;
@@ -493,6 +500,7 @@ declare const fullApi: ApiFromModules<{
   "services/goals/requireOwnedGoal": typeof services_goals_requireOwnedGoal;
   "services/goals/scopeItemIds": typeof services_goals_scopeItemIds;
   "services/goals/setAchieved": typeof services_goals_setAchieved;
+  "services/goals/setExamResult": typeof services_goals_setExamResult;
   "services/goals/summarizeCheckpointParents": typeof services_goals_summarizeCheckpointParents;
   "services/goals/toGoalDocument": typeof services_goals_toGoalDocument;
   "services/goals/toGoalDto": typeof services_goals_toGoalDto;
