@@ -26,8 +26,7 @@
 | `queries/calendarFeed/status` | `ownerQuery` | `{ token: string \| null }` |
 | `mutations/calendarFeed/issue` / `revoke` | `ownerMutation` | 発行（再発行）/ 停止 |
 | `queries/calendarFeed/feedByToken` | `internalQuery` | トークン → 所有者 → イベント。無効なら `null` |
-| `actions/calendarFeed.ts` | `httpAction` | パスからトークン → 読み1回 → `calendarFeedResponse` |
-| `convex/http.ts` | — | `http.route({ pathPrefix: "/calendar/", method: "GET", handler: calendarFeed })` |
+| `convex/http.ts` | `httpAction` + ルート | パスからトークン → 読み1回 → `calendarFeedResponse`。`http.route({ pathPrefix: "/calendar/", method: "GET" })` |
 
 ## 3. UI
 
@@ -48,3 +47,15 @@
 | 結果を入れて本番を終了した | 本番日の VEVENT が消える。次の本番を作ればその本番日が載る |
 | トークンを知られた | 「URL を作り直す」で即 404。カレンダー側のキャッシュが残る間は見えることがある |
 | 予定が0件 | VEVENT の無い妥当な VCALENDAR を返す |
+
+---
+
+## 改訂（2026-09-02）— httpAction の置き場所
+
+`convex/actions/calendarFeed.ts` に置いていた httpAction を `convex/http.ts` へ移した。Convex が `convex/actions/` を「Node ランタイムを選ぶ非推奨の置き場所」とし、**そのフォルダ内の全ファイルに `"use node"` を要求する**ようになったため、デプロイが次のエラーで止まる。
+
+```
+✖ actions/calendarFeed.ts is in /actions subfolder but has no "use node" directive.
+```
+
+このフィードのハンドラは `ctx.runQuery` と `Response` だけで Node API を使わないので、`"use node"` を足すのは誤り（不要なランタイム分割は CVX-06 に反する）。ルーターと同じ `http.ts` に置き、ロジックは従来どおり `services/calendarFeed/` と `lib/ics.ts` に残した（CVX-02）。`convex/actions/notifications/deliverWebPush.ts` は `web-push` が `node:crypto` に依存するため `"use node"` 付きで `actions/` に残る（要求を満たしている）。

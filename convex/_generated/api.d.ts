@@ -8,7 +8,6 @@
  * @module
  */
 
-import type * as actions_calendarFeed from "../actions/calendarFeed.js";
 import type * as actions_notifications_deliverWebPush from "../actions/notifications/deliverWebPush.js";
 import type * as auth from "../auth.js";
 import type * as crons from "../crons.js";
@@ -354,7 +353,6 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   crons: typeof crons;
   http: typeof http;
-  "actions/calendarFeed": typeof actions_calendarFeed;
   "actions/notifications/deliverWebPush": typeof actions_notifications_deliverWebPush;
   "lib/achievementReflection": typeof lib_achievementReflection;
   "lib/authFields": typeof lib_authFields;
