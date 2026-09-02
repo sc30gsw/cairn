@@ -1,6 +1,5 @@
 import { expect, test } from "vite-plus/test";
-
-import { holidayName } from "~/lib/holiday";
+import { holidayName } from "~domain/holiday";
 
 test("文化の日を返す", () => {
   expect(holidayName("2026-11-03")).toBe("文化の日");

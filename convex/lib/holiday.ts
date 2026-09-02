@@ -8,3 +8,7 @@ export function holidayName(dateJst: string): null | string {
   const dateKey = dateJst.slice(0, 10);
   return holidays[dateKey]?.name ?? null;
 }
+
+export function isHolidayJst(dateJst: string): boolean {
+  return holidayName(dateJst) !== null;
+}

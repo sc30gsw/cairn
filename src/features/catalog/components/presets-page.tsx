@@ -2,6 +2,7 @@ import { Suspense } from "react";
 
 import { PresetList } from "~/features/catalog/components/preset-list";
 import { PresetListPending } from "~/features/catalog/components/preset-list-pending";
+import { PresetSettingsCard } from "~/features/catalog/components/preset-settings-card";
 import { useItemsList, usePresetsList } from "~/features/catalog/hooks/catalog-queries";
 
 export function PresetsPage() {
@@ -16,5 +17,5 @@ function PresetsReady() {
   const { data: items } = useItemsList();
   const { data: presets } = usePresetsList();
 
-  return <PresetList items={items} presets={presets} />;
+  return <PresetList items={items} presets={presets} settingsCard={<PresetSettingsCard />} />;
 }

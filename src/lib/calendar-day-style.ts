@@ -1,8 +1,7 @@
 import type { DateStringValue, DayProps } from "@mantine/dates";
 import dayjs from "dayjs";
+import { holidayName } from "~domain/holiday";
 import { isFutureDateJst } from "~domain/jst";
-
-import { holidayName } from "~/lib/holiday";
 
 import classes from "~/lib/calendar-day-style.module.css";
 

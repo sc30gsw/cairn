@@ -5,6 +5,10 @@ import { api } from "~/../convex/_generated/api";
 
 export { useItemsList } from "~/hooks/use-items-list";
 
+export function usePresetSettings() {
+  return useSuspenseQuery(convexQuery(api.queries.presets.settings.settings, {}));
+}
+
 export function usePresetsList() {
   return useSuspenseQuery(convexQuery(api.queries.presets.list.list, {}));
 }

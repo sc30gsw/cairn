@@ -1,5 +1,6 @@
 import type { MutationCtx } from "../../_generated/server";
-import { weekdayFromDateJst } from "../../lib/jst";
+import { presetWeekdayFor } from "../../lib/holidayPreset";
+import { getSettings as getPresetSettings } from "../presets/getSettings";
 import { collapseExtraLiveDays } from "./collapseExtraLiveDays";
 import { getDayByDate } from "./getDayByDate";
 import { liveRowsForDay } from "./liveRowsForDay";
@@ -16,7 +17,7 @@ export async function openDay(
   if (existing !== null && existing.deletedAt !== undefined) {
     return { applied: false };
   }
-  const weekday = weekdayFromDateJst(args.dateJst);
+  const weekday = presetWeekdayFor(args.dateJst, await getPresetSettings(ctx, ownerId));
   const preset = await ctx.db
     .query("presets")
     .withIndex("by_owner_and_weekday", (q) => q.eq("ownerId", ownerId).eq("weekday", weekday))

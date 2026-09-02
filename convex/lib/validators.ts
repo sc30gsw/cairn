@@ -39,6 +39,10 @@ export const presetLineDtoValidator = v.object({
 
 export type PresetLineDto = Infer<typeof presetLineDtoValidator>;
 
+export const presetSettingsDtoValidator = v.object({ holidayAsSunday: v.boolean() });
+
+export type PresetSettingsDto = Infer<typeof presetSettingsDtoValidator>;
+
 export const shareRowValidator = v.object({
   category: v.string(),
   categorySortOrder: v.number(),

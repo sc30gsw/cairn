@@ -70,6 +70,11 @@ export default defineSchema({
     thenText: v.string(),
   }).index("by_owner", ["ownerId"]),
 
+  presetSettings: defineTable({
+    holidayAsSunday: v.boolean(),
+    ownerId: v.string(),
+  }).index("by_owner", ["ownerId"]),
+
   presets: defineTable({
     lines: v.array(presetLineValidator),
     name: v.string(),

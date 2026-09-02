@@ -65,6 +65,11 @@ export const CHECKPOINT_BACKFILL_MANUAL_MESSAGE =
 export const CHECKPOINT_DEADLINE_MALFORMED_MESSAGE =
   "期限の形式が壊れたチェックポイントがあります。手で直してから再実行してください";
 
+export const PRESET_SETTINGS_DEFAULTS = { holidayAsSunday: false } as const satisfies Record<
+  "holidayAsSunday",
+  boolean
+>;
+
 export const TARGET_METRICS = ["minutes", "days", "count"] as const satisfies readonly string[];
 
 export type TargetMetric = (typeof TARGET_METRICS)[number];

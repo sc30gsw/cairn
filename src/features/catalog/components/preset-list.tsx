@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { IconTemplate, IconTrash } from "@tabler/icons-react";
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { WEEKDAYS, WEEKDAY_NAMES, isWeekday, type Weekday } from "~domain/catalog";
 
 import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action-field-with-suggestions";
@@ -43,6 +43,7 @@ type PresetLineDto = PresetDto["lines"][number];
 type PresetListProps = {
   items: ItemDto[];
   presets: PresetDto[];
+  settingsCard?: ReactNode;
 };
 
 function weekdaySelectOptions(weekdays: readonly Weekday[]) {
@@ -107,7 +108,7 @@ function removeLineLabel(items: ItemDto[], itemId: string | undefined) {
   return `「${name}」を外す`;
 }
 
-export function PresetList({ items, presets }: PresetListProps) {
+export function PresetList({ items, presets, settingsCard }: PresetListProps) {
   const { onCreate, onRemove, onUpdate } = useCatalogPresetActions();
   const { weekday: focusWeekday } = presetsRoute.useSearch();
   const createFormKey = [...presets]
@@ -126,6 +127,7 @@ export function PresetList({ items, presets }: PresetListProps) {
           <PageTitle>プリセット</PageTitle>
           <ConcreteActionTourTrigger />
         </Group>
+        {settingsCard}
         <PresetCreateForm key={createFormKey} onCreate={onCreate} presets={presets} />
         {presets.length === 0 ? (
           <EmptyState
