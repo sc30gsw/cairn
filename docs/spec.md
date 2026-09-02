@@ -103,7 +103,7 @@ Convex は Testing Pyramid。底は純関数の unit を厚くする（睡眠時
 - リラックス工程
 - JSON/CSV エクスポート
 - 8/14 以前の Notion データ移行、Notion API 同期
-- ユーザー間のデータ共有、通知、AI 要約
+- ユーザー間のデータ共有、AI 要約（通知は v1 の範囲外だったが、[docs/specs/notifications.md](./specs/notifications.md) で対象に入った）
 - Notion OAuth と email/password のアカウント連携（同一 subject への統合）
 - タスク・締切・時間割・計画の前提・判断の履歴（Notion に残す）
 - OKR ツリー、WOOP ウィザード、障害プランによる自動スキップ
