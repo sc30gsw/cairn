@@ -58,6 +58,15 @@ import type * as lib_share from "../lib/share.js";
 import type * as lib_toeicScore from "../lib/toeicScore.js";
 import type * as lib_trash from "../lib/trash.js";
 import type * as lib_validators from "../lib/validators.js";
+import type * as lib_validators_boardSchedule from "../lib/validators/boardSchedule.js";
+import type * as lib_validators_calendarFeed from "../lib/validators/calendarFeed.js";
+import type * as lib_validators_core from "../lib/validators/core.js";
+import type * as lib_validators_goals from "../lib/validators/goals.js";
+import type * as lib_validators_history from "../lib/validators/history.js";
+import type * as lib_validators_methods from "../lib/validators/methods.js";
+import type * as lib_validators_notifications from "../lib/validators/notifications.js";
+import type * as lib_validators_review from "../lib/validators/review.js";
+import type * as lib_validators_trash from "../lib/validators/trash.js";
 import type * as lib_volume from "../lib/volume.js";
 import type * as lib_webPush from "../lib/webPush.js";
 import type * as lib_weeklyReview from "../lib/weeklyReview.js";
@@ -120,7 +129,6 @@ import type * as mutations_rows_applyOrder from "../mutations/rows/applyOrder.js
 import type * as mutations_rows_autoStopTimers from "../mutations/rows/autoStopTimers.js";
 import type * as mutations_rows_confirm from "../mutations/rows/confirm.js";
 import type * as mutations_rows_copyYesterdayConfirmed from "../mutations/rows/copyYesterdayConfirmed.js";
-import type * as mutations_rows_unstart from "../mutations/rows/unstart.js";
 import type * as mutations_rows_remove from "../mutations/rows/remove.js";
 import type * as mutations_rows_reopen from "../mutations/rows/reopen.js";
 import type * as mutations_rows_restore from "../mutations/rows/restore.js";
@@ -131,6 +139,7 @@ import type * as mutations_rows_stopTimer from "../mutations/rows/stopTimer.js";
 import type * as mutations_rows_switchPreset from "../mutations/rows/switchPreset.js";
 import type * as mutations_rows_unconfirm from "../mutations/rows/unconfirm.js";
 import type * as mutations_rows_unskip from "../mutations/rows/unskip.js";
+import type * as mutations_rows_unstart from "../mutations/rows/unstart.js";
 import type * as mutations_targets_remove from "../mutations/targets/remove.js";
 import type * as mutations_targets_save from "../mutations/targets/save.js";
 import type * as mutations_trash_purgeDay from "../mutations/trash/purgeDay.js";
@@ -314,7 +323,6 @@ import type * as services_rows_copyYesterdayConfirmed from "../services/rows/cop
 import type * as services_rows_findRunningTimerRow from "../services/rows/findRunningTimerRow.js";
 import type * as services_rows_loadLiveRows from "../services/rows/loadLiveRows.js";
 import type * as services_rows_loadRunningTimer from "../services/rows/loadRunningTimer.js";
-import type * as services_rows_unstart from "../services/rows/unstart.js";
 import type * as services_rows_remove from "../services/rows/remove.js";
 import type * as services_rows_reopen from "../services/rows/reopen.js";
 import type * as services_rows_requireOwnedRow from "../services/rows/requireOwnedRow.js";
@@ -329,6 +337,7 @@ import type * as services_rows_switchPreset from "../services/rows/switchPreset.
 import type * as services_rows_toRowTimerDto from "../services/rows/toRowTimerDto.js";
 import type * as services_rows_unconfirm from "../services/rows/unconfirm.js";
 import type * as services_rows_unskip from "../services/rows/unskip.js";
+import type * as services_rows_unstart from "../services/rows/unstart.js";
 import type * as services_session_get from "../services/session/get.js";
 import type * as services_setup_status from "../services/setup/status.js";
 import type * as services_targets_aggregateByCategory from "../services/targets/aggregateByCategory.js";
@@ -350,10 +359,10 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  "actions/notifications/deliverWebPush": typeof actions_notifications_deliverWebPush;
   auth: typeof auth;
   crons: typeof crons;
   http: typeof http;
-  "actions/notifications/deliverWebPush": typeof actions_notifications_deliverWebPush;
   "lib/achievementReflection": typeof lib_achievementReflection;
   "lib/authFields": typeof lib_authFields;
   "lib/avatarStorage": typeof lib_avatarStorage;
@@ -400,6 +409,15 @@ declare const fullApi: ApiFromModules<{
   "lib/toeicScore": typeof lib_toeicScore;
   "lib/trash": typeof lib_trash;
   "lib/validators": typeof lib_validators;
+  "lib/validators/boardSchedule": typeof lib_validators_boardSchedule;
+  "lib/validators/calendarFeed": typeof lib_validators_calendarFeed;
+  "lib/validators/core": typeof lib_validators_core;
+  "lib/validators/goals": typeof lib_validators_goals;
+  "lib/validators/history": typeof lib_validators_history;
+  "lib/validators/methods": typeof lib_validators_methods;
+  "lib/validators/notifications": typeof lib_validators_notifications;
+  "lib/validators/review": typeof lib_validators_review;
+  "lib/validators/trash": typeof lib_validators_trash;
   "lib/volume": typeof lib_volume;
   "lib/webPush": typeof lib_webPush;
   "lib/weeklyReview": typeof lib_weeklyReview;
@@ -462,7 +480,6 @@ declare const fullApi: ApiFromModules<{
   "mutations/rows/autoStopTimers": typeof mutations_rows_autoStopTimers;
   "mutations/rows/confirm": typeof mutations_rows_confirm;
   "mutations/rows/copyYesterdayConfirmed": typeof mutations_rows_copyYesterdayConfirmed;
-  "mutations/rows/unstart": typeof mutations_rows_unstart;
   "mutations/rows/remove": typeof mutations_rows_remove;
   "mutations/rows/reopen": typeof mutations_rows_reopen;
   "mutations/rows/restore": typeof mutations_rows_restore;
@@ -473,6 +490,7 @@ declare const fullApi: ApiFromModules<{
   "mutations/rows/switchPreset": typeof mutations_rows_switchPreset;
   "mutations/rows/unconfirm": typeof mutations_rows_unconfirm;
   "mutations/rows/unskip": typeof mutations_rows_unskip;
+  "mutations/rows/unstart": typeof mutations_rows_unstart;
   "mutations/targets/remove": typeof mutations_targets_remove;
   "mutations/targets/save": typeof mutations_targets_save;
   "mutations/trash/purgeDay": typeof mutations_trash_purgeDay;
@@ -656,7 +674,6 @@ declare const fullApi: ApiFromModules<{
   "services/rows/findRunningTimerRow": typeof services_rows_findRunningTimerRow;
   "services/rows/loadLiveRows": typeof services_rows_loadLiveRows;
   "services/rows/loadRunningTimer": typeof services_rows_loadRunningTimer;
-  "services/rows/unstart": typeof services_rows_unstart;
   "services/rows/remove": typeof services_rows_remove;
   "services/rows/reopen": typeof services_rows_reopen;
   "services/rows/requireOwnedRow": typeof services_rows_requireOwnedRow;
@@ -671,6 +688,7 @@ declare const fullApi: ApiFromModules<{
   "services/rows/toRowTimerDto": typeof services_rows_toRowTimerDto;
   "services/rows/unconfirm": typeof services_rows_unconfirm;
   "services/rows/unskip": typeof services_rows_unskip;
+  "services/rows/unstart": typeof services_rows_unstart;
   "services/session/get": typeof services_session_get;
   "services/setup/status": typeof services_setup_status;
   "services/targets/aggregateByCategory": typeof services_targets_aggregateByCategory;
