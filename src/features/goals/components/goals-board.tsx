@@ -7,6 +7,7 @@ import type { DateJst } from "~domain/jst";
 import { ConcreteActionTour } from "~/components/concrete-action-tour";
 import { PageTitle } from "~/components/page-title";
 import { AchievedHistorySection } from "~/features/goals/components/achieved-history-section";
+import { AchievementReflectionModal } from "~/features/goals/components/achievement-reflection-modal";
 import { GoalForm } from "~/features/goals/components/goal-form";
 import { LongTermSection } from "~/features/goals/components/long-term-section";
 import { ObstacleSection } from "~/features/goals/components/obstacle-section";
@@ -25,7 +26,7 @@ import {
   type ParentGroup,
 } from "~/features/goals/lib/goal-tree";
 import type { Goal, MasteryGoal, Obstacle } from "~/features/goals/types/goal";
-import type { GoalInputPayload } from "~/features/goals/types/mutations";
+import type { GoalInputPayload, SetAchievedInput } from "~/features/goals/types/mutations";
 import type { TargetProgress } from "~/features/goals/types/target";
 import type { CategoryDto } from "~/types/category";
 import type { ItemDto } from "~/types/item";
@@ -87,6 +88,7 @@ export function GoalsBoard({
     onUpdateObstacle,
   } = useGoalsBoardActions();
   const [editor, setEditor] = useState<GoalEditor>({ kind: "closed" });
+  const [pendingAchievement, setPendingAchievement] = useState<SetAchievedInput | null>(null);
   const weeklyTargetsRef = useRef<HTMLDivElement>(null);
   const tree = buildGoalTree(goals);
   const editingGoal = editor.kind === "edit" ? editor.goal : undefined;
@@ -94,6 +96,23 @@ export function GoalsBoard({
   function closeEditor() {
     setEditor({ kind: "closed" });
   }
+
+  //? 達成にするときだけ振り返りを聞く。達成の取り消しは即反映（振り返りは残る）
+  function requestSetAchieved(input: SetAchievedInput) {
+    if (input.achievedAt === undefined) {
+      onSetAchieved(input);
+      return;
+    }
+    setPendingAchievement(input);
+  }
+
+  const reflectionGoal =
+    pendingAchievement === null
+      ? null
+      : (goals.find(
+          (candidate): candidate is MasteryGoal =>
+            candidate._id === pendingAchievement.goalId && candidate.type === "mastery",
+        ) ?? null);
 
   function openEdit(goal: Goal) {
     setEditor({ goal, kind: "edit" });
@@ -215,7 +234,7 @@ export function GoalsBoard({
         onAddCheckpoint={addCheckpointHandler(group.parent, form)}
         onEditGoal={openEdit}
         onRemoveGoal={requestRemove}
-        onSetAchieved={onSetAchieved}
+        onSetAchieved={requestSetAchieved}
         parent={group.parent}
         todayJst={todayJst}
       />
@@ -258,7 +277,7 @@ export function GoalsBoard({
         onAddCheckpoint={addCheckpointHandler(group.parent, form)}
         onEditGoal={openEdit}
         onRemoveGoal={requestRemove}
-        onSetAchieved={onSetAchieved}
+        onSetAchieved={requestSetAchieved}
         onShowWeeklyTargets={showWeeklyTargets}
         parent={group.parent}
         todayJst={todayJst}
@@ -296,7 +315,7 @@ export function GoalsBoard({
               items={items}
               onEditGoal={openEdit}
               onRemoveGoal={requestRemove}
-              onSetAchieved={onSetAchieved}
+              onSetAchieved={requestSetAchieved}
               orphans={visibleRows(tree.orphans)}
               todayJst={todayJst}
             />
@@ -315,12 +334,21 @@ export function GoalsBoard({
               items={items}
               onEditGoal={openEdit}
               onRemoveGoal={requestRemove}
-              onSetAchieved={onSetAchieved}
+              onSetAchieved={requestSetAchieved}
               parentNameOf={parentNameOf}
               todayJst={todayJst}
             />
           </Grid.Col>
         )}
+        <AchievementReflectionModal
+          goal={reflectionGoal}
+          onClose={() => setPendingAchievement(null)}
+          onSubmit={(reflection) => {
+            if (pendingAchievement !== null) {
+              onSetAchieved({ ...pendingAchievement, reflection });
+            }
+          }}
+        />
         <Grid.Col span={12}>
           <Card>
             <ObstacleSection

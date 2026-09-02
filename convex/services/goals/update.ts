@@ -56,6 +56,7 @@ export async function update(
   await ctx.db.replace("goals", existing._id, {
     ...toGoalDocument({ ...goal, ...progress, scopeItemIds }, ownerId),
     achievedAt: existing.achievedAt,
+    reflection: existing.reflection,
   });
   return null;
 }

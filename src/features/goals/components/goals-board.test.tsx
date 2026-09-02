@@ -3,6 +3,10 @@ import type { ReactNode } from "react";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { ACHIEVED_SECTION_TITLE } from "~/features/goals/components/achieved-history-section";
+import {
+  ACHIEVEMENT_REFLECTION_LABEL,
+  ACHIEVEMENT_REFLECTION_SUBMIT,
+} from "~/features/goals/components/achievement-reflection-modal";
 import { OVERDUE_LABEL } from "~/features/goals/components/checkpoint-row";
 import { EXAM_GOAL_INCOMPLETE_TITLE } from "~/features/goals/components/exam-goal-card";
 import { CHECKPOINT_CROWDED_MESSAGE } from "~/features/goals/components/goal-form-fields";
@@ -264,14 +268,56 @@ test("期限を過ぎたチェックポイントは表示だけが変わる", ()
   expect(getByText(/期限 2026-08-10/)).toBeDefined();
 });
 
-test("達成チェックを入れると onSetAchieved が今日の日付つきで呼ばれる", () => {
+test("達成チェックを入れると振り返りを聞き、送ると onSetAchieved が今日の日付と振り返りつきで呼ばれる", async () => {
   const { getByRole } = renderWithMantine(
     <GoalsBoard {...goalsBoardProps([EXAM_GOAL, SOON_CHECKPOINT])} />,
   );
   getByRole("checkbox", { name: `${SOON_CHECKPOINT.content}の達成` }).click();
+  expect(onSetAchieved).not.toHaveBeenCalled();
+
+  const textbox = await waitFor(() =>
+    getByRole("textbox", { hidden: true, name: new RegExp(ACHIEVEMENT_REFLECTION_LABEL) }),
+  );
+  fireEvent.input(textbox, { target: { value: " 音読が効いた " } });
+  fireEvent.click(getByRole("button", { hidden: true, name: ACHIEVEMENT_REFLECTION_SUBMIT }));
+
+  await waitFor(() => {
+    expect(onSetAchieved).toHaveBeenCalledWith({
+      achievedAt: TODAY,
+      goalId: SOON_CHECKPOINT._id,
+      reflection: "音読が効いた",
+    });
+  });
+});
+
+test("振り返りを書かずに達成にすると reflection は undefined で呼ばれる", async () => {
+  const { getByRole } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, SOON_CHECKPOINT])} />,
+  );
+  getByRole("checkbox", { name: `${SOON_CHECKPOINT.content}の達成` }).click();
+  const submit = await waitFor(() =>
+    getByRole("button", { hidden: true, name: ACHIEVEMENT_REFLECTION_SUBMIT }),
+  );
+  fireEvent.click(submit);
+
+  await waitFor(() => {
+    expect(onSetAchieved).toHaveBeenCalledWith({
+      achievedAt: TODAY,
+      goalId: SOON_CHECKPOINT._id,
+      reflection: undefined,
+    });
+  });
+});
+
+test("達成の取り消しは振り返りを聞かずに即呼ばれる", () => {
+  const { getByRole } = renderWithMantine(
+    <GoalsBoard {...goalsBoardProps([EXAM_GOAL, ACHIEVED_CHECKPOINT])} />,
+  );
+  getByRole("button", { name: new RegExp(ACHIEVED_SECTION_TITLE) }).click();
+  getByRole("checkbox", { hidden: true, name: `${ACHIEVED_CHECKPOINT.content}の達成` }).click();
   expect(onSetAchieved).toHaveBeenCalledWith({
-    achievedAt: TODAY,
-    goalId: SOON_CHECKPOINT._id,
+    achievedAt: undefined,
+    goalId: ACHIEVED_CHECKPOINT._id,
   });
 });
 

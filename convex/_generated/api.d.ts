@@ -11,6 +11,7 @@
 import type * as auth from "../auth.js";
 import type * as crons from "../crons.js";
 import type * as http from "../http.js";
+import type * as lib_achievementReflection from "../lib/achievementReflection.js";
 import type * as lib_authFields from "../lib/authFields.js";
 import type * as lib_avatarStorage from "../lib/avatarStorage.js";
 import type * as lib_boardScheduleColors from "../lib/boardScheduleColors.js";
@@ -308,6 +309,7 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   crons: typeof crons;
   http: typeof http;
+  "lib/achievementReflection": typeof lib_achievementReflection;
   "lib/authFields": typeof lib_authFields;
   "lib/avatarStorage": typeof lib_avatarStorage;
   "lib/boardScheduleColors": typeof lib_boardScheduleColors;

@@ -23,6 +23,7 @@ export function toGoalDto(goal: Doc<"goals">): GoalDto {
     criterion: goal.criterion,
     deadline: goal.deadline,
     parentGoalId: goal.parentGoalId,
+    reflection: goal.reflection,
     scopeItemIds: goal.scopeItemIds,
     type: "mastery",
   };

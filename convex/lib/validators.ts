@@ -230,7 +230,10 @@ const masteryGoalInputFields = v.object({
   type: v.literal(masteryType),
 });
 
-const masteryGoalFields = masteryGoalInputFields.extend({ achievedAt: v.optional(v.string()) });
+const masteryGoalFields = masteryGoalInputFields.extend({
+  achievedAt: v.optional(v.string()),
+  reflection: v.optional(v.string()),
+});
 
 const masteryProgressFields = {
   activeDays: v.number(),

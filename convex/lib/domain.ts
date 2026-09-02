@@ -89,6 +89,10 @@ export const TARGET_VALUE_MESSAGE = `目標値は${TARGET_VALUE_LIMITS.min}以�
 
 export const TARGET_DAYS_MESSAGE = `実施日の目標は${TARGET_VALUE_LIMITS.maxDays}日までです`;
 
+export const ACHIEVEMENT_REFLECTION_MAX_LENGTH = 200;
+
+export const ACHIEVEMENT_REFLECTION_LENGTH_MESSAGE = `振り返りは${String(ACHIEVEMENT_REFLECTION_MAX_LENGTH)}字以内で入力してください`;
+
 export const DATE_JST_PATTERN = /^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
 
 export { CATEGORIES, type Category } from "./categories";

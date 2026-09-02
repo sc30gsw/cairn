@@ -10,6 +10,7 @@ import { NUMERAL_FONT } from "~/lib/theme";
 import type { ItemDto } from "~/types/item";
 
 export const ACHIEVED_SECTION_TITLE = "達成した目標";
+export const REFLECTION_PREFIX = "振り返り: ";
 
 const ROW_BORDER = "1px dashed var(--cairn-desk)";
 
@@ -59,6 +60,12 @@ function AchievedRow({
         <Text c="dimmed" size="sm">
           基準: {goal.criterion}
         </Text>
+        {goal.reflection !== undefined && (
+          <Text fs="italic" size="sm">
+            {REFLECTION_PREFIX}
+            {goal.reflection}
+          </Text>
+        )}
         {parentName !== undefined && (
           <Text c="dimmed" size="xs">
             親: {parentName}
