@@ -32,6 +32,8 @@ export const WEB_PUSH_IOS_HINT =
   "iPhone / iPad では、共有メニューから「ホーム画面に追加」して、そのアプリから開いたときだけ端末に通知を届けられます。";
 const WEB_PUSH_SUBSCRIBED_MESSAGE = "この端末で通知を受け取ります";
 const WEB_PUSH_UNSUBSCRIBED_MESSAGE = "この端末への通知を止めました";
+const WEB_PUSH_ENABLE_FAILED_MESSAGE = "この端末で通知を受け取れませんでした";
+const WEB_PUSH_DISABLE_FAILED_MESSAGE = "この端末への通知を止められませんでした";
 
 export function WebPushSection() {
   const { data: config } = useWebPushConfig();
@@ -59,6 +61,9 @@ export function WebPushSection() {
   const subscribedHere =
     current !== null && subscriptions.some((entry) => entry.endpoint === current.endpoint);
 
+  //? finally 節は React Compiler が lower できず、コンポーネントごと自動メモ化から外れる。
+  //? try/catch で投げる経路を閉じ、解除は早期 return を作らず必ず末尾で通す。
+  //? ブラウザ API（requestPermission / unsubscribe）は投げ得るので握り潰さずトーストで知らせる
   async function enable() {
     setBusy(true);
     try {
@@ -66,15 +71,16 @@ export function WebPushSection() {
       setPermission(notificationPermission());
       if (Result.isError(result)) {
         notifyError(result.error);
-        return;
+      } else {
+        await runMutation(() => subscribePush.mutateAsync(result.value), {
+          successMessage: WEB_PUSH_SUBSCRIBED_MESSAGE,
+        });
+        setCurrent(result.value);
       }
-      await runMutation(() => subscribePush.mutateAsync(result.value), {
-        successMessage: WEB_PUSH_SUBSCRIBED_MESSAGE,
-      });
-      setCurrent(result.value);
-    } finally {
-      setBusy(false);
+    } catch (error) {
+      notifyError(error, WEB_PUSH_ENABLE_FAILED_MESSAGE);
     }
+    setBusy(false);
   }
 
   async function disable() {
@@ -87,9 +93,10 @@ export function WebPushSection() {
         });
       }
       setCurrent(null);
-    } finally {
-      setBusy(false);
+    } catch (error) {
+      notifyError(error, WEB_PUSH_DISABLE_FAILED_MESSAGE);
     }
+    setBusy(false);
   }
 
   function renderControls() {

@@ -19,21 +19,28 @@ const SNAPSHOT = {
   keys: { auth: "auth", p256dh: "p256dh" },
 };
 
-const { pushState, subscribeMutate, subscribeWebPush, unsubscribeMutate, unsubscribeWebPush } =
-  vi.hoisted(() => ({
-    pushState: {
-      current: null as typeof SNAPSHOT | null,
-      permission: "default" as string,
-      publicKey: "public-key" as string | null,
-      standalone: true,
-      subscriptions: [] as { _creationTime: number; _id: string; endpoint: string }[],
-      supported: true,
-    },
-    subscribeMutate: vi.fn().mockResolvedValue(null),
-    subscribeWebPush: vi.fn(),
-    unsubscribeMutate: vi.fn().mockResolvedValue(null),
-    unsubscribeWebPush: vi.fn(),
-  }));
+const {
+  notifyError,
+  pushState,
+  subscribeMutate,
+  subscribeWebPush,
+  unsubscribeMutate,
+  unsubscribeWebPush,
+} = vi.hoisted(() => ({
+  notifyError: vi.fn(),
+  pushState: {
+    current: null as typeof SNAPSHOT | null,
+    permission: "default" as string,
+    publicKey: "public-key" as string | null,
+    standalone: true,
+    subscriptions: [] as { _creationTime: number; _id: string; endpoint: string }[],
+    supported: true,
+  },
+  subscribeMutate: vi.fn().mockResolvedValue(null),
+  subscribeWebPush: vi.fn(),
+  unsubscribeMutate: vi.fn().mockResolvedValue(null),
+  unsubscribeWebPush: vi.fn(),
+}));
 
 vi.mock("~/lib/web-push", () => ({
   currentPushSubscription: () => Promise.resolve(pushState.current),
@@ -61,6 +68,8 @@ vi.mock("~/hooks/use-notification-mutations", () => ({
   useUnsubscribePush: () => ({ mutateAsync: unsubscribeMutate }),
 }));
 
+vi.mock("~/lib/notify", () => ({ notifyError }));
+
 vi.mock("~/lib/run-mutation", () => ({
   runMutation: (operation: () => Promise<unknown>) => operation(),
 }));
@@ -72,6 +81,7 @@ beforeEach(() => {
   pushState.standalone = true;
   pushState.subscriptions = [];
   pushState.supported = true;
+  notifyError.mockClear();
   subscribeMutate.mockClear();
   subscribeWebPush.mockReset();
   unsubscribeMutate.mockClear();
@@ -139,4 +149,19 @@ test("ホーム画面アプリとして起動していないときは iOS の前
   pushState.standalone = true;
   const standalone = renderWithMantine(<WebPushSection />);
   expect(standalone.queryByText(WEB_PUSH_IOS_HINT)).toBeNull();
+});
+
+test("購読の途中で例外が飛んでもトーストで知らせ、ボタンは押せる状態に戻る", async () => {
+  const failure = new Error("permission prompt failed");
+  subscribeWebPush.mockRejectedValue(failure);
+  const { getByRole } = renderWithMantine(<WebPushSection />);
+  const button = getByRole("button", { name: WEB_PUSH_ENABLE_LABEL });
+
+  button.click();
+
+  await waitFor(() => {
+    expect(notifyError).toHaveBeenCalledWith(failure, expect.any(String));
+  });
+  expect(subscribeMutate).not.toHaveBeenCalled();
+  expect(button.getAttribute("data-loading")).toBeNull();
 });
