@@ -1,20 +1,10 @@
 import { AppShell as Shell, Box, Group, Menu, Stack, Title, UnstyledButton } from "@mantine/core";
-import {
-  IconBulb,
-  IconCalendarEvent,
-  IconChartBar,
-  IconColumns3,
-  IconDots,
-  IconLayoutKanban,
-  IconNotebook,
-  IconTarget,
-  IconTemplate,
-  IconTrash,
-} from "@tabler/icons-react";
+import { IconDots } from "@tabler/icons-react";
 import { CatchBoundary, Link, useRouterState } from "@tanstack/react-router";
 import { cn } from "cnfast";
 import { Suspense, type ReactNode } from "react";
 
+import { AppSpotlight, SpotlightTrigger } from "~/components/app-spotlight";
 import { RouteErrorComponent } from "~/components/error-state";
 import { NotificationBell } from "~/components/notification-bell";
 import { NotificationBellFallback } from "~/components/notification-bell-fallback";
@@ -24,6 +14,7 @@ import {
   RunningTimerIndicator,
   RunningTimerIndicatorFallback,
 } from "~/components/running-timer-indicator";
+import { isMobilePrimary, NAV } from "~/lib/app-nav";
 import { DISPLAY_FONT } from "~/lib/theme";
 
 import classes from "~/components/app-shell.module.css";
@@ -32,89 +23,6 @@ type AppShellProps = {
   accountMenu: ReactNode;
   children: ReactNode;
 };
-
-type NavIcon = typeof IconCalendarEvent;
-
-const NAV_ROUTES = [
-  "/",
-  "/board",
-  "/history",
-  "/review",
-  "/items",
-  "/presets",
-  "/goals",
-  "/methods",
-  "/trash",
-] as const;
-type NavRoute = (typeof NAV_ROUTES)[number];
-
-const NAV: {
-  Icon: NavIcon;
-  label: string;
-  match: (path: string) => boolean;
-  to: NavRoute;
-}[] = [
-  {
-    Icon: IconCalendarEvent,
-    label: "日",
-    match: (path) => path === "/" || path.startsWith("/days/"),
-    to: "/",
-  },
-  {
-    Icon: IconColumns3,
-    label: "ボード",
-    match: (path) => path.startsWith("/board"),
-    to: "/board",
-  },
-  {
-    Icon: IconChartBar,
-    label: "履歴",
-    match: (path) => path.startsWith("/history"),
-    to: "/history",
-  },
-  {
-    Icon: IconNotebook,
-    label: "レビュー",
-    match: (path) => path.startsWith("/review"),
-    to: "/review",
-  },
-  {
-    Icon: IconLayoutKanban,
-    label: "項目",
-    match: (path) => path.startsWith("/items"),
-    to: "/items",
-  },
-  {
-    Icon: IconTemplate,
-    label: "プリセット",
-    match: (path) => path.startsWith("/presets"),
-    to: "/presets",
-  },
-  {
-    Icon: IconTarget,
-    label: "目標",
-    match: (path) => path.startsWith("/goals"),
-    to: "/goals",
-  },
-  {
-    Icon: IconBulb,
-    label: "方法",
-    match: (path) => path.startsWith("/methods"),
-    to: "/methods",
-  },
-  {
-    Icon: IconTrash,
-    label: "ゴミ箱",
-    match: (path) => path.startsWith("/trash"),
-    to: "/trash",
-  },
-];
-
-const MOBILE_PRIMARY = ["/", "/board", "/history", "/goals"] as const satisfies readonly NavRoute[];
-
-function isMobilePrimary(to: NavRoute): boolean {
-  return MOBILE_PRIMARY.some((route) => route === to);
-}
 
 function IndexTabs({ pathname }: Record<"pathname", string>) {
   return (
@@ -245,6 +153,7 @@ export function AppShell({ accountMenu, children }: AppShellProps) {
                     <RunningTimerIndicator />
                   </Suspense>
                   <Group align="center" gap="xs" wrap="nowrap">
+                    <SpotlightTrigger />
                     <Suspense fallback={<NotificationBellFallback />}>
                       <NotificationBell />
                     </Suspense>
@@ -254,6 +163,7 @@ export function AppShell({ accountMenu, children }: AppShellProps) {
               </Group>
               <OfflineBanner />
               <PushSubscriptionSync />
+              <AppSpotlight />
               <CatchBoundary errorComponent={RouteErrorComponent} getResetKey={() => pathname}>
                 {children}
               </CatchBoundary>

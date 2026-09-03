@@ -34,6 +34,7 @@
     "@mantine/modals": "^9.5.1",
     "@mantine/notifications": "^9.5.1",
     "@mantine/schedule": "^9.5.1",
+    "@mantine/spotlight": "^9.6.0",
     "@mantine/tiptap": "^9.5.1",
     "@shimmer-from-structure/react": "^2.4.6",
     "@tabler/icons-react": "^3.34.1",

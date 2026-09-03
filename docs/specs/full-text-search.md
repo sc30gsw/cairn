@@ -58,3 +58,26 @@ export const search = ownerQuery({
 | 合字などで正規化後の文字数が変わる | 一致はするが位置を保証できないので、抜粋は先頭から・強調なし |
 | 全期間で件数が多い | 所有者1名・1日十数件のこの規模では数千〜1万件程度で CVX-11 の範囲。件数が問題になったら bigram 索引（調査 §4.2）を再検討 |
 | 同じ語を含む記録が同日に複数 | 行順（`sortOrder`）で並ぶ。メモは行より先 |
+
+---
+
+## 改訂（2026-09-03）— 入口をコマンドパレットに一本化
+
+所有者の判断で、検索の入口を履歴ページの検索欄から **Mantine Spotlight のコマンドパレット**へ移した。検索そのもの（`queries/history/search`、正規化・2文字の下限・ゴミ箱除外・日付降順）は変更していない。
+
+| 論点 | 変更前 | 変更後 |
+| --- | --- | --- |
+| 入口 | 履歴ページ上部の `TextInput`。2文字以上でタブと入れ替え | **⌘K / Ctrl+K**、またはヘッダーの検索ボタン。どの画面からでも開く |
+| 検索語の置き場所 | URL の search param `q`（`replace: true`） | パレット内の state。URL は汚さない |
+| 期間 | 既定12か月 + 全期間の切り替え（`range`） | **常に全期間**（`fromJst: undefined`）。パレットは「どこにあるか分からないもの」を探す場所で、一覧ではないため絞りの UI を持たない |
+| 件数 | 50件まで一覧表示 | 新しい順に **7件**まで（`SPOTLIGHT_RECORD_LIMIT`）。サーバー側の50件上限はそのまま |
+| ほかに載せるもの | なし | **画面移動**（`NAV` の9本）。語で絞り込める |
+| 履歴ページ | 検索欄と結果一覧 | 月 / 週 / 分析のタブのみに戻した |
+
+**撤去したもの**: `history-search-input.tsx`、`history-search-results.tsx`、`lib/search-range.ts`（と各テスト）、`HistorySearchSchema` の `q` / `range`、`use-history-view` の `searchQuery` / `searchRange` / `setQuery` / `setRange`、`historyShimmerSearchHits`。
+
+**共有側へ移したもの**: `src/components/**` は features を import できない規約（`vite.config.ts` の `no-restricted-imports`）のため、`useHistorySearch` を `src/hooks/history-search-queries.ts` に、`searchExcerpt` を `src/lib/search-excerpt.ts` に移した。あわせて小口レールのナビ定義を `src/lib/app-nav.ts` へ切り出し、レール・下小口タブ・パレットが同じ `NAV` を読むようにした。
+
+**実装**: `src/components/app-spotlight.tsx`（`AppSpotlight` / `SpotlightTrigger`）、文言は `src/lib/spotlight-copy.ts`。compound components（`Spotlight.Root` / `Search` / `ActionsList` / `ActionsGroup` / `Action` / `Empty`）を使い、ナビは同期でフィルタ、記録は `Suspense` の内側で `useHistorySearch` を読む。購読だけ 250ms デバウンスする。スタイルは `src/styles.css` に `@mantine/spotlight/styles.layer.css` を追加（既存の layer 方式に合わせる）。
+
+**テスト**: `src/components/app-spotlight.test.tsx`（開く / ナビの絞り込みと遷移 / 記録の検索と日ページへの遷移 / 1文字は検索しない / 該当なし）。`history-page.test.tsx` は検索欄が無いことを確かめる形に変えた。

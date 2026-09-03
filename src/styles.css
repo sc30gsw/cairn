@@ -4,6 +4,7 @@
 @import "@mantine/schedule/styles.layer.css";
 @import "@mantine/charts/styles.layer.css";
 @import "@mantine/notifications/styles.layer.css";
+@import "@mantine/spotlight/styles.layer.css";
 @import "@mantine/tiptap/styles.layer.css";
 
 html {
