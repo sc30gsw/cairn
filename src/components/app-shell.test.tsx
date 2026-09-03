@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 
 import { AppShell } from "~/components/app-shell";
+import { SPOTLIGHT_LABEL } from "~/lib/spotlight-copy";
 import { renderWithMantine } from "~/test-utils/render";
 
 type LinkProps = { children?: ReactNode; to: string } & Record<string, unknown>;
@@ -16,6 +17,7 @@ vi.mock("@tanstack/react-router", () => ({
       {children}
     </a>
   ),
+  useNavigate: () => vi.fn(),
   useRouterState: () => pathnameRef.current,
 }));
 
@@ -28,6 +30,11 @@ vi.mock("~/components/running-timer-indicator", () => ({
   RunningTimerIndicatorFallback: () => null,
 }));
 vi.mock("~/components/offline-banner", () => ({ OfflineBanner: () => null }));
+
+//? パレット本体は app-spotlight.test.tsx が見る。ここではヘッダーの入口だけ確かめる
+vi.mock("~/hooks/history-search-queries", () => ({
+  useHistorySearch: () => ({ data: { hits: [], truncated: false } }),
+}));
 
 const DESKTOP_WIDTH = 1280;
 const MOBILE_WIDTH = 375;
@@ -123,4 +130,9 @@ test("項目ページでは 4本に aria-current が付かず、「その他」�
 
   expect(bottom.querySelectorAll('[aria-current="page"]').length).toBe(0);
   expect(other.className).not.toBe(plainTab?.className);
+});
+
+test("ヘッダーに検索の入口がある", () => {
+  const { getByRole } = renderShell("/");
+  expect(getByRole("button", { name: SPOTLIGHT_LABEL })).toBeDefined();
 });

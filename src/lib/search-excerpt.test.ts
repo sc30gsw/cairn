@@ -1,6 +1,6 @@
 import { expect, test } from "vite-plus/test";
 
-import { searchExcerpt } from "~/features/history/lib/search-excerpt";
+import { searchExcerpt } from "~/lib/search-excerpt";
 
 test("短い文はそのまま、一致だけを分ける", () => {
   expect(searchExcerpt("金フレの音読を30分", "音読")).toEqual({

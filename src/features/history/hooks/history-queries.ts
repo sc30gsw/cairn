@@ -28,14 +28,6 @@ export function historyPresetReviewQuery(todayJst: DateJst) {
   return convexQuery(api.queries.history.presetReview.presetReview, { todayJst });
 }
 
-function historySearchQuery(query: string, fromJst: DateJst | undefined) {
-  return convexQuery(api.queries.history.search.search, { fromJst, query });
-}
-
-export function useHistorySearch(query: string, fromJst: DateJst | undefined) {
-  return useSuspenseQuery(historySearchQuery(query, fromJst));
-}
-
 export function useHistoryMonthBreakdown(todayJst: DateJst, yearMonth: string) {
   return useSuspenseQuery(historyMonthBreakdownQuery(todayJst, yearMonth));
 }
