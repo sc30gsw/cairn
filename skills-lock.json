@@ -250,6 +250,12 @@
       "skillPath": "better-auth/create-auth/SKILL.md",
       "computedHash": "4e261efac2ae9a2321c4495c846ef97cf239818fc8bd2ab7e92ed1f9d25470f7"
     },
+    "create-verification-skill": {
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/create-verification-skill/SKILL.md",
+      "computedHash": "a2e50d21892772174225073b3e4864f853883ae2bc13b33eca64c3b67fe06be5"
+    },
     "diagnosing-bugs": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -320,11 +326,23 @@
       "skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
       "computedHash": "bce096b49db40761adb1d5348f064c303fc152e4e50fc3fd81b79df8b6cf137f"
     },
+    "maintain-verification-skill": {
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/maintain-verification-skill/SKILL.md",
+      "computedHash": "283083c9547641392a58c38edeb147e75aa99912e7fba55edaa7b1a02021ffec"
+    },
     "modern-web-guidance": {
       "source": "GoogleChrome/modern-web-guidance",
       "sourceType": "github",
       "skillPath": "skills/modern-web-guidance/SKILL.md",
       "computedHash": "6e8841de6cb76fedb94c71008924c3bdc46db0c54111049329e789e0e478d282"
+    },
+    "no-comments": {
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/no-comments/SKILL.md",
+      "computedHash": "20c90a85f23d4c9732b0db771d2825c1c58993b4187aac0f62094def66d60511"
     },
     "nodejs-backend-patterns": {
       "source": "wshobson/agents",
@@ -381,6 +399,12 @@
       "skillPath": "skills/engineering/setup-matt-pocock-skills/SKILL.md",
       "computedHash": "f9c2b933dda18eea572e96f6ebbcd5b30e0d1bfdc074af53cc99728dc5f0bdac"
     },
+    "swarm": {
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/swarm/SKILL.md",
+      "computedHash": "f4053e8337af2fdda3b783fa0e03c5f8f275b93997ceda305448eefc7faea170"
+    },
     "tailwind-css-patterns": {
       "source": "giuseppe-trisciuoglio/developer-kit",
       "sourceType": "autoskills-registry",
@@ -396,6 +420,24 @@
       "sourceType": "github",
       "skillPath": "skills/engineering/tdd/SKILL.md",
       "computedHash": "614ac2e45fb0ec02f6ce422d26bd9aa4e33aa4867323f5a3a5c0c20b96f78ff4"
+    },
+    "thermo-nuclear-code-quality-review": {
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "skillPath": "cursor-team-kit/skills/thermo-nuclear-code-quality-review/SKILL.md",
+      "computedHash": "9052b01b46b1d8dbf94c45f9313ec1983443f9a460e83d49cdc7fe0f640ca476"
+    },
+    "thermo-nuclear-review": {
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "skillPath": "thermos/skills/thermo-nuclear-review/SKILL.md",
+      "computedHash": "c13babcfb10d8f33325af0b00c3eff7b5efb034147f93993c4d9ed569faa5570"
+    },
+    "thermos": {
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "skillPath": "thermos/skills/thermos/SKILL.md",
+      "computedHash": "f7f174564eddf63e60ac2b5d6831230942e57ecc5142ac276afe402d3ff99174"
     },
     "to-spec": {
       "source": "mattpocock/skills",
@@ -430,6 +472,18 @@
       "source": "wshobson/agents",
       "sourceType": "autoskills-registry",
       "computedHash": "5ca0e177c6aaaba1889255691224daafdb7d71f317cc70bede1590d3907ded42"
+    },
+    "typescript-best-practices": {
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/typescript-best-practices/SKILL.md",
+      "computedHash": "b9bfe699fc5b14e1ba2a26c1d153ebb1bde7a15fc7517eaf35fa356e88e64f05"
+    },
+    "unslop": {
+      "source": "cursor/plugins",
+      "sourceType": "github",
+      "skillPath": "pstack/skills/unslop/SKILL.md",
+      "computedHash": "78f45b785f543d1bd82f55cd7be018239c769dc1462848a720b62a6d214ffc6d"
     },
     "valibot": {
       "source": "open-circle/agent-skills",
