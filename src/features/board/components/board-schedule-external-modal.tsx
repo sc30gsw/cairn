@@ -83,10 +83,7 @@ function ExternalEventForm({
       title={<GoogleLabel>{external.canEdit ? "予定を編集" : "外部予定"}</GoogleLabel>}
     >
       <Group gap="xs" wrap="nowrap">
-        <Flex align="center" gap="xs">
-          <IconCalendar size={16} />
-          <Text fw={500}>連携先カレンダー：</Text>
-        </Flex>
+        <Text size="sm">接続中のGoogleアカウント</Text>
         <Stack gap={0}>
           <Text size="sm">{external.calendarName}</Text>
           {external.calendarName !== external.calendarEmail && (
