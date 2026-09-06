@@ -10,7 +10,9 @@ export function buildTargetProgress(args: {
 }): TargetProgressDto[] {
   const categoryIdByItemId = new Map<Id<"items">, Id<"categories">>(
     [...args.itemById.values()].flatMap((item) =>
-      item.categoryId === undefined ? [] : [[item._id, item.categoryId] as const],
+      item.categoryId === undefined
+        ? []
+        : [[item._id, item.categoryId] as const satisfies readonly [Id<"items">, Id<"categories">]],
     ),
   );
   const aggregates = aggregateByCategory(args.rows, categoryIdByItemId);

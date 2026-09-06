@@ -2,7 +2,7 @@ import * as v from "valibot";
 
 import { displayNameField, passwordField, usernameField } from "~/lib/validation/account-fields";
 
-const ACCOUNT_AUTH_MODES = ["signIn", "signUp"] as const;
+const ACCOUNT_AUTH_MODES = ["signIn", "signUp"] as const satisfies readonly string[];
 
 export type AccountAuthMode = (typeof ACCOUNT_AUTH_MODES)[number];
 

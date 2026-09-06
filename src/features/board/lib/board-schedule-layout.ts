@@ -1,3 +1,5 @@
+import type { DayViewProps } from "@mantine/schedule";
+
 import { BOARD_ALL_DAY_VISIBLE_LIMIT } from "~/features/board/lib/board-schedule-events";
 
 export const ALL_DAY_ROW_HEIGHT = "1.25rem";
@@ -14,4 +16,7 @@ export const DEFAULT_DAY_BLOCK_END = "10:00:00";
 
 export const boardMoreLabel = (hiddenEventsCount: number) => `+${hiddenEventsCount}件`;
 
-export const BOARD_SCHEDULE_WITHOUT_HEADER = { withHeader: false as const };
+export const BOARD_SCHEDULE_WITHOUT_HEADER = { withHeader: false } as const satisfies Pick<
+  DayViewProps,
+  "withHeader"
+>;

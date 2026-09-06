@@ -1,9 +1,9 @@
-import { Button, Group, Modal, Stack } from "@mantine/core";
+import { Button, Group, Modal, Stack, Tooltip } from "@mantine/core";
 import type { ReactNode } from "react";
 
 export function BoardScheduleEditModal({
   children,
-  deleteLabel = "削除",
+  deleteTooltip,
   formId,
   onClose,
   onDelete,
@@ -15,7 +15,7 @@ export function BoardScheduleEditModal({
   title,
 }: {
   children: ReactNode;
-  deleteLabel?: string;
+  deleteTooltip?: string;
   formId: string;
   onClose: () => void;
   onDelete?: () => void;
@@ -39,9 +39,20 @@ export function BoardScheduleEditModal({
           {onDelete === undefined ? (
             <span />
           ) : (
-            <Button color="red" disabled={readOnly || submitting} onClick={onDelete} type="button">
-              {deleteLabel}
-            </Button>
+            <Tooltip
+              disabled={deleteTooltip === undefined}
+              label={deleteTooltip}
+              events={{ hover: true, focus: true, touch: true }}
+            >
+              <Button
+                color="red"
+                disabled={readOnly || submitting}
+                onClick={onDelete}
+                type="button"
+              >
+                削除
+              </Button>
+            </Tooltip>
           )}
           <Group gap="sm" wrap="nowrap">
             <Button onClick={onClose} type="button" variant="default">

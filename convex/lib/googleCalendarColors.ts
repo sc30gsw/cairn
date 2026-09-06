@@ -1,3 +1,4 @@
+import type { MantineColor } from "@mantine/core";
 export const GOOGLE_CALENDAR_EVENT_COLORS = [
   { id: "1", label: "ラベンダー", color: "indigo" },
   { id: "2", label: "セージ", color: "lime" },
@@ -10,7 +11,7 @@ export const GOOGLE_CALENDAR_EVENT_COLORS = [
   { id: "9", label: "ブルーベリー", color: "blue" },
   { id: "10", label: "バジル", color: "green" },
   { id: "11", label: "トマト", color: "red" },
-] as const;
+] as const satisfies readonly { id: string; label: string; color: MantineColor }[];
 
 export function googleCalendarEventColor(colorId: string | null | undefined): string | undefined {
   return GOOGLE_CALENDAR_EVENT_COLORS.find((entry) => entry.id === colorId)?.color;

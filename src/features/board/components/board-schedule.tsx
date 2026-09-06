@@ -1,6 +1,6 @@
 import { Card, Stack } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
-import { Schedule, type DateStringValue } from "@mantine/schedule";
+import { Schedule, type ScheduleProps, type DateStringValue } from "@mantine/schedule";
 import { Result } from "better-result";
 import type { CSSProperties } from "react";
 import { useRef } from "react";
@@ -58,15 +58,15 @@ const BOARD_WEEK_VIEW_PROPS = {
     weekViewAllDaySlotsEvents: classes.weekAllDayEvents,
     weekViewAllDaySlotsList: classes.weekAllDaySlotsList,
   },
-  firstDayOfWeek: 1 as const,
+  firstDayOfWeek: 1,
   renderEvent: boardScheduleAllDayRenderEvent,
-};
+} as const satisfies ScheduleProps["weekViewProps"];
 
 const BOARD_MONTH_VIEW_PROPS = {
   ...BOARD_SCHEDULE_WITHOUT_HEADER,
-  firstDayOfWeek: 1 as const,
+  firstDayOfWeek: 1,
   maxEventsPerDay: BOARD_MONTH_MAX_EVENTS_PER_DAY,
-};
+} as const satisfies ScheduleProps["monthViewProps"];
 
 type BoardScheduleProps = {
   blocks: readonly BoardScheduleBlock[];
@@ -135,10 +135,10 @@ export function BoardSchedule({
       dayViewAllDay: classes.dayAllDayContainer,
       dayViewAllDayEvents: classes.dayAllDayEventsContainer,
     },
-    moreEventsProps: { mode: "static" as const },
+    moreEventsProps: { mode: "static" },
     renderEvent: dayAllDayRenderEvent,
     withAllDaySlot: ui.dayAllDayEvents.length > 0,
-  };
+  } as const satisfies ScheduleProps["dayViewProps"];
 
   function handleDayClick(day: DateStringValue) {
     if (scheduleView === "year") {
@@ -153,7 +153,7 @@ export function BoardSchedule({
 
   const yearViewProps = {
     ...BOARD_SCHEDULE_WITHOUT_HEADER,
-    firstDayOfWeek: 1 as const,
+    firstDayOfWeek: 1,
     getDayProps: calendarDayProps,
     onDayClick: () => undefined,
     renderDay: createBoardScheduleYearRenderDay({
@@ -165,7 +165,7 @@ export function BoardSchedule({
       },
       onEditBlock: ui.openFromEvent,
     }),
-  };
+  } as const satisfies ScheduleProps["yearViewProps"];
 
   return (
     <>

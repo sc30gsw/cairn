@@ -39,8 +39,8 @@ function distinctConfirmedBreakdownRows(
         categorySortOrder,
         itemName: item?.name ?? "不明",
         minutes: sumBy(itemRows, prop("minutes")),
-        status: "確定" as const,
-      };
+        status: "確定",
+      } as const satisfies BreakdownRow & Pick<CategoryBreakdown, "categorySortOrder">;
     })
     .toSorted(
       (left, right) =>

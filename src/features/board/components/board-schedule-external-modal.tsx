@@ -25,7 +25,7 @@ import {
 import type { BoardExternalEvent } from "~/features/board/types/board";
 import type { MutationResult } from "~/lib/run-mutation";
 
-const REMOVE_LABEL = "Google カレンダーから削除";
+const REMOVE_LABEL = "削除";
 
 type ExternalModalProps = {
   external: BoardExternalEvent | null;
@@ -54,9 +54,9 @@ function ExternalEventForm({
     },
   });
   const colorOptions = [
-    { value: "calendar" as const, label: "カレンダーの色" },
+    { value: "calendar", label: "カレンダーの色" },
     ...GOOGLE_CALENDAR_EVENT_COLORS.map((color) => ({ value: color.id, label: color.label })),
-  ];
+  ] as const satisfies readonly { value: BoardExternalEventOutput["colorId"]; label: string }[];
   const handleSubmit: SubmitHandler<typeof BoardExternalEventSchema> = async (values) => {
     if (!external.canEdit) return;
     const result = await onUpdate(values);
@@ -81,7 +81,7 @@ function ExternalEventForm({
       opened
       onClose={onClose}
       onDelete={requestRemove}
-      deleteLabel={REMOVE_LABEL}
+      deleteTooltip="Google カレンダー上の予定も削除されます"
       readOnly={!external.canEdit}
       submitting={form.isSubmitting}
       title={external.canEdit ? "予定を編集" : "外部予定"}
@@ -114,42 +114,44 @@ function ExternalEventForm({
               />
             )}
           </Field>
-          {(["start", "end"] as const).map((path) => (
-            <Field key={path} of={form} path={[path]}>
-              {(field) =>
-                external.allDay ? (
-                  <DatePickerInput
-                    disabled={!external.canEdit}
-                    error={field.errors?.[0]}
-                    label={path === "start" ? "開始日（終日）" : "終了日（終日）"}
-                    onChange={(value) => {
-                      if (value !== null) {
-                        const date = new Date(value);
-                        date.setHours(
-                          path === "start" ? 0 : 23,
-                          path === "start" ? 0 : 59,
-                          path === "start" ? 0 : 59,
-                          0,
-                        );
-                        field.onChange(date);
-                      }
-                    }}
-                    value={field.input}
-                  />
-                ) : (
-                  <DateTimePicker
-                    disabled={!external.canEdit}
-                    error={field.errors?.[0]}
-                    label={path === "start" ? "開始" : "終了"}
-                    onChange={(value) => {
-                      if (value !== null) field.onChange(new Date(value));
-                    }}
-                    value={field.input}
-                  />
-                )
-              }
-            </Field>
-          ))}
+          {(["start", "end"] as const satisfies readonly (keyof BoardExternalEventOutput)[]).map(
+            (path) => (
+              <Field key={path} of={form} path={[path]}>
+                {(field) =>
+                  external.allDay ? (
+                    <DatePickerInput
+                      disabled={!external.canEdit}
+                      error={field.errors?.[0]}
+                      label={path === "start" ? "開始日（終日）" : "終了日（終日）"}
+                      onChange={(value) => {
+                        if (value !== null) {
+                          const date = new Date(value);
+                          date.setHours(
+                            path === "start" ? 0 : 23,
+                            path === "start" ? 0 : 59,
+                            path === "start" ? 0 : 59,
+                            0,
+                          );
+                          field.onChange(date);
+                        }
+                      }}
+                      value={field.input}
+                    />
+                  ) : (
+                    <DateTimePicker
+                      disabled={!external.canEdit}
+                      error={field.errors?.[0]}
+                      label={path === "start" ? "開始" : "終了"}
+                      onChange={(value) => {
+                        if (value !== null) field.onChange(new Date(value));
+                      }}
+                      value={field.input}
+                    />
+                  )
+                }
+              </Field>
+            ),
+          )}
           <Field of={form} path={["colorId"]}>
             {(field) => (
               <Select

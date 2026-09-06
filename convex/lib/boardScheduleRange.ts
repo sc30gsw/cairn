@@ -1,6 +1,11 @@
 import { addDaysJst, mondayOfWeek } from "./jst";
 
-export const BOARD_SCHEDULE_VIEWS = ["day", "week", "month", "year"] as const;
+export const BOARD_SCHEDULE_VIEWS = [
+  "day",
+  "week",
+  "month",
+  "year",
+] as const satisfies readonly string[];
 export type BoardScheduleView = (typeof BOARD_SCHEDULE_VIEWS)[number];
 
 export function scheduleListRange(

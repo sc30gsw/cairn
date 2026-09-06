@@ -3,11 +3,12 @@ import type { BoardScheduleColor } from "../../lib/boardScheduleColors";
 import { CHECKPOINT_EVENT_PREFIX, EXAM_EVENT_PREFIX } from "../../lib/calendarSync";
 import { isActiveExamGoal } from "../../lib/examGoal";
 import type { GoogleEventPatch, GoogleEventTimePatch } from "../../lib/googleCalendar";
+import type { GOOGLE_CALENDAR_EVENT_COLORS } from "../../lib/googleCalendarColors";
 import { addDaysJst } from "../../lib/jst";
 import type { ExternalChange, GoogleEventPayload, GoogleEventTime } from "../../lib/validators";
 import { scheduleInstantToRfc3339 } from "./instant";
 
-type GoogleEventColorId = "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "11";
+type GoogleEventColorId = (typeof GOOGLE_CALENDAR_EVENT_COLORS)[number]["id"];
 
 const GOOGLE_EVENT_COLOR_IDS = {
   blue: "9",

@@ -1,10 +1,11 @@
+import type { DatePickerInputProps } from "@mantine/dates";
 import type { DateJst } from "~domain/jst";
 
 import { calendarDayProps } from "~/lib/calendar-day-style";
 
 export function learningDatePickerProps(todayJst: DateJst) {
   return {
-    firstDayOfWeek: 1 as const,
+    firstDayOfWeek: 1,
     getDayProps: (date: string) => calendarDayProps(date, todayJst),
     getMonthControlProps: (month: string) => ({
       disabled: month.slice(0, 7) > todayJst.slice(0, 7),
@@ -15,5 +16,5 @@ export function learningDatePickerProps(todayJst: DateJst) {
     locale: "ja",
     maxDate: todayJst,
     popoverProps: { withinPortal: true },
-  };
+  } as const satisfies DatePickerInputProps;
 }

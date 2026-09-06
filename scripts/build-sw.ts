@@ -7,7 +7,10 @@ import { build } from "vite-plus";
 import { renderOfflineHtml } from "./render-offline-html.ts";
 
 const ROOT = process.cwd();
-const OUT_CANDIDATES = [".output/public", ".vercel/output/static"] as const;
+const OUT_CANDIDATES = [
+  ".output/public",
+  ".vercel/output/static",
+] as const satisfies readonly string[];
 
 async function resolveOutDir() {
   for (const candidate of OUT_CANDIDATES) {

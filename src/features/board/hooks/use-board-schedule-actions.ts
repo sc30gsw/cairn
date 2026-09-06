@@ -12,7 +12,7 @@ import type { BoardScheduleView } from "~/features/board/schemas/board-search-sc
 import { useTodayJst } from "~/hooks/use-today-jst";
 import { runMutation } from "~/lib/run-mutation";
 
-const silent = { silent: true } as const;
+const silent = { silent: true } as const satisfies NonNullable<Parameters<typeof runMutation>[1]>;
 
 export function useBoardScheduleActions(anchorDateJst: DateJst, view: BoardScheduleView) {
   const today = useTodayJst();

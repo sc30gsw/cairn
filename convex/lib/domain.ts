@@ -1,7 +1,12 @@
 import { ValidationFailedError } from "./errors";
 import { throwDomain } from "./ownerFunctions";
 
-export const STATUSES = ["確定", "未着手", "進行中", "スキップ"] as const;
+export const STATUSES = [
+  "確定",
+  "未着手",
+  "進行中",
+  "スキップ",
+] as const satisfies readonly string[];
 
 export type Status = (typeof STATUSES)[number];
 

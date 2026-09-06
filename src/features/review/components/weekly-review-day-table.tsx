@@ -15,7 +15,7 @@ const KIND_TEXT = {
   beforeRegistration: "利用開始前",
   rest: "休養",
   unrecorded: "未記録",
-} as const;
+} as const satisfies Partial<Record<WeeklyReviewDay["kind"], string>>;
 
 function MinutesCell({ day, maxMinutes }: { day: WeeklyReviewDay; maxMinutes: number }) {
   if (day.confirmedMinutes === 0) {

@@ -1,4 +1,4 @@
-import { BarChart } from "@mantine/charts";
+import { BarChart, type BarChartSeries } from "@mantine/charts";
 import { Card, EmptyState, Stack, Text, Title } from "@mantine/core";
 import { IconChartHistogram } from "@tabler/icons-react";
 
@@ -8,7 +8,9 @@ import {
 } from "~/features/review/lib/monthly-review-labels";
 import type { MonthlyReview } from "~/features/review/types/monthly-review";
 
-const DIGEST_SERIES = [{ color: "orange.5", name: "消化率" }] as const;
+const DIGEST_SERIES = [
+  { color: "orange.5", name: "消化率" },
+] as const satisfies readonly BarChartSeries[];
 const TITLE_ID = "monthly-digest-trend";
 
 type MonthlyDigestTrendChartProps = Pick<MonthlyReview, "digestTrend">;

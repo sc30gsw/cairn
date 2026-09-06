@@ -38,13 +38,16 @@ test("外部予定の題名・時間・カレンダー名が見え、削除は�
   expect(getByText("owner@example.com")).toBeDefined();
   expect(getByText("仕事")).toBeDefined();
 
-  fireEvent.click(getByRole("button", { name: "Google カレンダーから削除" }));
+  const removeButton = getByRole("button", { name: "削除" });
+  removeButton.focus();
+  await vi.waitFor(() =>
+    expect(getByRole("tooltip").textContent).toBe("Google カレンダー上の予定も削除されます"),
+  );
+  fireEvent.click(removeButton);
   const confirm = await vi.waitFor(() =>
     getByRole("dialog", { hidden: true, name: /削除しますか/ }),
   );
-  fireEvent.click(
-    within(confirm).getByRole("button", { hidden: true, name: "Google カレンダーから削除" }),
-  );
+  fireEvent.click(within(confirm).getByRole("button", { hidden: true, name: "削除" }));
 
   await vi.waitFor(() => {
     expect(onRemove).toHaveBeenCalledWith(EXTERNAL._id);
@@ -75,7 +78,7 @@ test("読み取り専用の予定は削除できずドラッグの案内も出�
       onRemove={onRemove}
     />,
   );
-  const removeButton = getByRole("button", { name: "Google カレンダーから削除" });
+  const removeButton = getByRole("button", { name: "削除" });
   expect(removeButton.hasAttribute("disabled")).toBe(true);
   fireEvent.click(removeButton);
   expect(onRemove).not.toHaveBeenCalled();
@@ -96,13 +99,11 @@ test("外部予定の削除に失敗したら詳細画面を閉じない", async
       onRemove={onRemove}
     />,
   );
-  fireEvent.click(getByRole("button", { name: "Google カレンダーから削除" }));
+  fireEvent.click(getByRole("button", { name: "削除" }));
   const confirm = await vi.waitFor(() =>
     getByRole("dialog", { hidden: true, name: /削除しますか/ }),
   );
-  fireEvent.click(
-    within(confirm).getByRole("button", { hidden: true, name: "Google カレンダーから削除" }),
-  );
+  fireEvent.click(within(confirm).getByRole("button", { hidden: true, name: "削除" }));
   await vi.waitFor(() => expect(onRemove).toHaveBeenCalledOnce());
   expect(onClose).not.toHaveBeenCalled();
   expect(getByRole("textbox", { name: "件名" }).getAttribute("value")).toBe("歯医者");

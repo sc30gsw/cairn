@@ -10,6 +10,8 @@ import {
   IconTrash,
 } from "@tabler/icons-react";
 
+import type { FileRouteTypes } from "~/routeTree.gen";
+
 type NavIcon = typeof IconCalendarEvent;
 
 const NAV_ROUTES = [
@@ -22,7 +24,7 @@ const NAV_ROUTES = [
   "/goals",
   "/methods",
   "/trash",
-] as const;
+] as const satisfies readonly FileRouteTypes["to"][];
 
 export type NavRoute = (typeof NAV_ROUTES)[number];
 

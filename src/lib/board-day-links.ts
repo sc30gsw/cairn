@@ -1,17 +1,18 @@
+import { linkOptions } from "@tanstack/react-router";
 import type { DateJst } from "~domain/jst";
 
 export function dayPageLink(dateJst: DateJst, todayJst: DateJst) {
   if (dateJst === todayJst) {
-    return { to: "/" as const };
+    return linkOptions({ to: "/" });
   }
-  return { params: { dateJst }, to: "/days/$dateJst" as const };
+  return linkOptions({ params: { dateJst }, to: "/days/$dateJst" });
 }
 
 export function boardKanbanLink(dateJst: DateJst, todayJst: DateJst) {
   if (dateJst === todayJst) {
-    return { search: { tab: "kanban" as const }, to: "/board" as const };
+    return linkOptions({ search: { tab: "kanban" }, to: "/board" });
   }
-  return { search: { date: dateJst, tab: "kanban" as const }, to: "/board" as const };
+  return linkOptions({ search: { date: dateJst, tab: "kanban" }, to: "/board" });
 }
 
 export function dayEditLinkLabel(dateJst: DateJst) {

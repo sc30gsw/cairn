@@ -7,4 +7,4 @@ export const PAPER_TOKENS = {
   paper: "#FFFCF0",
   paper2: "#F2F0E5",
   rule: "#E6E4D9",
-} as const;
+} as const satisfies Record<string, string>;

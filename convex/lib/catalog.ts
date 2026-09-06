@@ -66,7 +66,7 @@ export const WEEKDAY_NAMES = [
   "木曜日",
   "金曜日",
   "土曜日",
-] as const;
+] as const satisfies readonly string[];
 
 export type WeekdayName = (typeof WEEKDAY_NAMES)[number];
 

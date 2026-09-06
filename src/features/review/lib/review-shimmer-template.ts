@@ -9,19 +9,23 @@ const SHIMMER_WEEK_DATES = [
   "2026-08-21",
   "2026-08-22",
   "2026-08-23",
-] as const;
+] as const satisfies readonly WeeklyReview["byDay"][number]["dateJst"][];
 
-const SHIMMER_TARGET_CATEGORIES = ["TOEIC対策", "多聴", "英会話"] as const;
+const SHIMMER_TARGET_CATEGORIES = [
+  "TOEIC対策",
+  "多聴",
+  "英会話",
+] as const satisfies readonly WeeklyReviewTarget["categoryName"][];
 
 export const reviewShimmerWeekly = {
   activeDays: 5,
   byDay: SHIMMER_WEEK_DATES.map((dateJst, index) => ({
-    condition: "普通" as const,
+    condition: "普通",
     confirmedCount: 4,
     confirmedMinutes: 60 + index * 10,
     dateJst,
     digestRate: 0.8,
-    kind: "live" as const,
+    kind: "live",
     plannedCount: 5,
     skippedCount: 1,
   })),
@@ -50,7 +54,7 @@ export const reviewShimmerWeekly = {
     categoryId: `shimmer-category-${categoryName}` as WeeklyReviewTarget["categoryId"],
     categoryName,
     current: 300,
-    metric: "minutes" as const,
+    metric: "minutes",
     targetValue: 300,
   })),
   weekEnd: "2026-08-23",
@@ -63,9 +67,16 @@ const SHIMMER_MONTH_BUCKETS = [
   { bucketEnd: "2026-08-16", bucketStart: "2026-08-10", isPartial: false },
   { bucketEnd: "2026-08-23", bucketStart: "2026-08-17", isPartial: false },
   { bucketEnd: "2026-08-30", bucketStart: "2026-08-24", isPartial: false },
-] as const;
+] as const satisfies readonly Pick<
+  MonthlyReview["digestTrend"][number],
+  "bucketEnd" | "bucketStart" | "isPartial"
+>[];
 
-const SHIMMER_MONTH_CATEGORIES = ["TOEIC対策", "多聴", "英会話"] as const;
+const SHIMMER_MONTH_CATEGORIES = [
+  "TOEIC対策",
+  "多聴",
+  "英会話",
+] as const satisfies readonly MonthlyReview["byCategory"][number]["category"][];
 
 export const reviewShimmerMonthly = {
   activeDays: 18,

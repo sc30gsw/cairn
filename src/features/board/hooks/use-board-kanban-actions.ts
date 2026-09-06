@@ -21,7 +21,7 @@ import { useFlagReview, useUnflagReview } from "~/hooks/use-row-mutations";
 import { useTodayJst } from "~/hooks/use-today-jst";
 import { runMutation } from "~/lib/run-mutation";
 
-const silent = { silent: true } as const;
+const silent = { silent: true } as const satisfies NonNullable<Parameters<typeof runMutation>[1]>;
 
 export function useBoardKanbanActions(dateJst: DateJst) {
   const today = useTodayJst();

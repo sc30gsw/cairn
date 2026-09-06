@@ -4,6 +4,7 @@ import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/rea
 import { PageTitle } from "~/components/page-title";
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { MyPagePasskeyReprompt } from "~/features/my-page/components/my-page-passkey-reprompt";
+import type { FileRouteTypes } from "~/routeTree.gen";
 
 import tabBarClasses from "~/components/pills-tab-bar.module.css";
 
@@ -11,7 +12,7 @@ const MY_PAGE_TABS = [
   { label: "アカウント", to: "/my-page", value: "account" },
   { label: "状況", to: "/my-page/status", value: "status" },
   { label: "通知", to: "/my-page/notifications", value: "notifications" },
-] as const;
+] as const satisfies readonly { label: string; to: FileRouteTypes["to"]; value: string }[];
 
 export const Route = createFileRoute("/my-page")({
   component: MyPageLayout,

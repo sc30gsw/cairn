@@ -70,9 +70,9 @@ function isWebPushMessage(value: unknown): value is WebPushMessage {
   if (typeof value !== "object" || value === null) {
     return false;
   }
-  return (["body", "tag", "title", "url"] as const).every(
-    (key) => key in value && typeof (value as Record<string, unknown>)[key] === "string",
-  );
+  return (
+    ["body", "tag", "title", "url"] as const satisfies readonly (keyof WebPushMessage)[]
+  ).every((key) => key in value && typeof (value as Record<string, unknown>)[key] === "string");
 }
 
 function parsePushMessage(data: PushMessageData | null): WebPushMessage | null {

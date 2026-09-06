@@ -64,7 +64,7 @@ function WeekEventRow({ event }: { event: WeekEvent }) {
 
 export function WeekAgenda({ week }: { week: WeekPage }) {
   const eventsByDate = groupBy(week.events, prop("dateJst"));
-  const dayByDate = new Map(week.days.map((day) => [day.dateJst, day] as const));
+  const dayByDate = new Map(week.days.map((day) => [day.dateJst, day]));
 
   return (
     <Card>

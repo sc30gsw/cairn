@@ -24,7 +24,7 @@ const FEATURE_NAMES = [
   "review",
   "today",
   "trash",
-] as const;
+] as const satisfies readonly string[];
 
 const featureBoundaryLintOverrides = FEATURE_NAMES.map((feature) => {
   const otherFeatures = FEATURE_NAMES.filter((name) => name !== feature);

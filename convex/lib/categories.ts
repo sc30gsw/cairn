@@ -1,4 +1,10 @@
-export const CATEGORIES = ["TOEIC対策", "多聴", "多読", "英会話", "その他"] as const;
+export const CATEGORIES = [
+  "TOEIC対策",
+  "多聴",
+  "多読",
+  "英会話",
+  "その他",
+] as const satisfies readonly string[];
 
 export type Category = (typeof CATEGORIES)[number];
 

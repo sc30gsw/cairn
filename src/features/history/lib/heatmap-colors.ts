@@ -15,7 +15,7 @@ export const HEATMAP_CHART_COLORS = [
   "var(--mantine-color-blue-2)",
   "var(--mantine-color-blue-3)",
   "var(--mantine-color-blue-4)",
-] as const;
+] as const satisfies readonly string[];
 
 export const HEATMAP_DOMAIN: [number, number] = [1, 120];
 
@@ -36,9 +36,17 @@ export const HEATMAP_MONTH_LABELS = [
   "10月",
   "11月",
   "12月",
-] as const;
+] as const satisfies readonly string[];
 
-export const HEATMAP_WEEKDAY_LABELS = ["", "月", "", "水", "", "金", ""] as const;
+export const HEATMAP_WEEKDAY_LABELS = [
+  "",
+  "月",
+  "",
+  "水",
+  "",
+  "金",
+  "",
+] as const satisfies readonly string[];
 
 export function yearHeatmapRange(todayJst: DateJst): { endDate: DateJst; startDate: DateJst } {
   return {

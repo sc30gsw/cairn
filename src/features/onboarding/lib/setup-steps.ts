@@ -1,6 +1,11 @@
 import type { SetupStatus } from "~/features/onboarding/types/setup-status";
 
-export const SETUP_STEP_IDS = ["items", "presets", "examGoal", "weeklyTargets"] as const;
+export const SETUP_STEP_IDS = [
+  "items",
+  "presets",
+  "examGoal",
+  "weeklyTargets",
+] as const satisfies readonly string[];
 
 export type SetupStepId = (typeof SETUP_STEP_IDS)[number];
 

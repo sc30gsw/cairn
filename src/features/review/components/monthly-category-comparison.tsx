@@ -1,4 +1,4 @@
-import { BarChart } from "@mantine/charts";
+import { BarChart, type BarChartSeries } from "@mantine/charts";
 import { Card, EmptyState, Stack, Table, Text, Title } from "@mantine/core";
 import { IconChartBar } from "@tabler/icons-react";
 
@@ -13,7 +13,7 @@ import { NUMERAL_FONT } from "~/lib/theme";
 const COMPARISON_SERIES = [
   { color: "orange.5", name: "今月" },
   { color: "gray.6", name: "先月" },
-] as const;
+] as const satisfies readonly BarChartSeries[];
 const TITLE_ID = "monthly-category-comparison";
 
 type MonthlyCategoryComparisonProps = Pick<

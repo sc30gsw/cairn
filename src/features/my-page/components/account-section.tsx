@@ -1,6 +1,7 @@
 import { Field, reset, useForm } from "@formisch/react";
 import { Card, PasswordInput, Stack, TextInput, Title } from "@mantine/core";
 import { Result } from "better-result";
+import type { InferInput } from "valibot";
 
 import { ProfileAccountActionForm } from "~/features/my-page/components/profile-account-action-form";
 import { useMyPageUser } from "~/features/my-page/hooks/use-my-page-user";
@@ -15,7 +16,9 @@ import {
   ProfileUsernameSchema,
 } from "~/lib/validation/profile-schema";
 
-const emptyPasswordInput = { currentPassword: "", newPassword: "" } as const;
+const emptyPasswordInput = { currentPassword: "", newPassword: "" } as const satisfies InferInput<
+  typeof ProfilePasswordSchema
+>;
 
 function ProfileNameForm({ name }: { name: string }) {
   const form = useForm({ initialInput: { name }, schema: ProfileNameSchema });

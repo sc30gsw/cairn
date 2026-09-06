@@ -6,7 +6,7 @@ export const DAY_VIEW_KINDS = [
   "rest",
   "unrecorded",
   "beforeRegistration",
-] as const;
+] as const satisfies readonly string[];
 
 export type DayViewKind = (typeof DAY_VIEW_KINDS)[number];
 

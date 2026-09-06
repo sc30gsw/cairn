@@ -1,3 +1,4 @@
+import type { CompositeChartSeries } from "@mantine/charts";
 import type { DateJst } from "~domain/jst";
 
 import { chartCategoryColor } from "~/features/history/lib/chart-category-colors";
@@ -41,9 +42,9 @@ export type PaceChartPoint = {
 };
 
 export const PACE_CHART_SERIES = [
-  { color: "blue.6", label: "完了", name: "完了", type: "bar" as const },
-  { color: "green.6", label: "7日平均", name: "均", type: "area" as const },
-] as const;
+  { color: "blue.6", label: "完了", name: "完了", type: "bar" },
+  { color: "green.6", label: "7日平均", name: "均", type: "area" },
+] as const satisfies readonly CompositeChartSeries[];
 
 export function paceChartDayLabel(dateJst: DateJst): string {
   return `${dateJst.slice(5, 7)}/${dateJst.slice(8)}`;

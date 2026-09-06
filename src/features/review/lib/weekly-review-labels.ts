@@ -1,3 +1,4 @@
+import { linkOptions } from "@tanstack/react-router";
 import { WEEKDAY_NAMES } from "~domain/catalog";
 import { weekdayFromDateJst } from "~domain/jst";
 
@@ -59,10 +60,10 @@ export function percentOf(current: number, total: number): number {
 }
 
 export function historyWeekAnalysisLink(weekStart: string) {
-  return {
-    search: { scope: "week" as const, tab: "analysis" as const, week: weekStart },
-    to: "/history" as const,
-  };
+  return linkOptions({
+    search: { scope: "week", tab: "analysis", week: weekStart },
+    to: "/history",
+  });
 }
 
 export function digestCellLabel(

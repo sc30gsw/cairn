@@ -1,3 +1,4 @@
+import { linkOptions } from "@tanstack/react-router";
 export function yearMonthLabel(yearMonth: string): string {
   const [year, month] = yearMonth.split("-");
   return `${year}年${Number(month)}月`;
@@ -28,8 +29,8 @@ export function bucketRangeLabel(bucketStart: string, bucketEnd: string): string
 }
 
 export function historyMonthAnalysisLink(yearMonth: string) {
-  return {
-    search: { month: yearMonth, scope: "month" as const, tab: "analysis" as const },
-    to: "/history" as const,
-  };
+  return linkOptions({
+    search: { month: yearMonth, scope: "month", tab: "analysis" },
+    to: "/history",
+  });
 }
