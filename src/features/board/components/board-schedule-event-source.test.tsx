@@ -5,7 +5,7 @@ import { expect, test, vi } from "vite-plus/test";
 import { BoardScheduleEventSource } from "~/features/board/components/board-schedule-event-source";
 import { renderWithMantine } from "~/test-utils/render";
 
-test("Google予定はタイトルと操作を保ち、Tooltipを追加しない", async () => {
+test("Google予定はタイトルと操作を保ち、アイコンやTooltipを追加しない", async () => {
   const onClick = vi.fn();
   const { getByRole, queryByRole } = renderWithMantine(
     <BoardScheduleEventSource eventId="external:event|2026-09-06">
@@ -16,8 +16,7 @@ test("Google予定はタイトルと操作を保ち、Tooltipを追加しない"
   );
   const button = getByRole("button", { name: "英語のレッスン" });
   expect(button.dataset.googleCalendarEvent).toBe("true");
-  expect(button.querySelector("img")?.getAttribute("src")).toBe("/icons/google-g.png");
-  expect(button.querySelector("img")?.getAttribute("alt")).toBe("");
+  expect(button.querySelector("img")).toBeNull();
   expect(button.classList.contains("original")).toBe(true);
   button.focus();
   expect(queryByRole("tooltip")).toBeNull();

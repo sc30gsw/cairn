@@ -8,17 +8,10 @@ import {
   type CSSProperties,
 } from "react";
 
-import { GoogleIcon } from "~/components/google-icon";
 import { boardScheduleEventColors } from "~/features/board/lib/board-schedule-color-ui";
 import { isBoardExternalEvent } from "~/features/board/lib/board-schedule-events";
-import { cn } from "~/lib/utils";
 
-import classes from "~/features/board/components/board-schedule-event-source.module.css";
-
-type EventSourceTargetProps = Pick<
-  HTMLAttributes<HTMLElement>,
-  "children" | "className" | "aria-description"
-> & {
+type EventSourceTargetProps = Pick<HTMLAttributes<HTMLElement>, "aria-description"> & {
   "data-google-calendar-event"?: boolean;
 };
 
@@ -32,13 +25,6 @@ export function BoardScheduleEventSource({
   if (!isBoardExternalEvent(eventId)) return children;
 
   return cloneElement(children, {
-    className: cn(children.props.className, classes.source),
-    children: (
-      <>
-        <GoogleIcon className={classes.icon} size={14} />
-        {children.props.children}
-      </>
-    ),
     "aria-description": "Google カレンダーの予定",
     "data-google-calendar-event": true,
   });

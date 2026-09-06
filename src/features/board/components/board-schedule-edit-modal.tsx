@@ -36,7 +36,7 @@ export function BoardScheduleEditModal({
     >
       <Stack gap="md">
         {children}
-        <Group justify="space-between" wrap="nowrap">
+        <Group justify="space-between" wrap="wrap">
           {onDelete === undefined ? (
             <span />
           ) : (
@@ -56,7 +56,7 @@ export function BoardScheduleEditModal({
               </Button>
             </Tooltip>
           )}
-          <Group gap="sm" wrap="nowrap">
+          <Group gap="sm" ml="auto" wrap="nowrap">
             <Button onClick={onClose} type="button" variant="default">
               {readOnly ? "閉じる" : "キャンセル"}
             </Button>
