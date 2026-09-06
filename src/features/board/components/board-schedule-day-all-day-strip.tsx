@@ -25,38 +25,24 @@ export function BoardScheduleDayAllDayStrip({
 
   return (
     <>
-      {visible.map((event) => (
-        <UnstyledButton
-          className={classes.dayAllDayEvent}
-          style={
-            theme.variantColorResolver({
-              color: event.color ?? "gray",
-              theme,
-              variant: "light",
-            }) === undefined
-              ? undefined
-              : {
-                  backgroundColor: theme.variantColorResolver({
-                    color: event.color ?? "gray",
-                    theme,
-                    variant: "light",
-                  }).background,
-                  color: theme.variantColorResolver({
-                    color: event.color ?? "gray",
-                    theme,
-                    variant: "light",
-                  }).color,
-                }
-          }
-          key={String(event.id)}
-          onClick={() => {
-            onEventClick(event);
-          }}
-          type="button"
-        >
-          {event.title}
-        </UnstyledButton>
-      ))}
+      {visible.map((event) => {
+        const colors = theme.variantColorResolver({
+          color: event.color ?? "gray",
+          theme,
+          variant: "light",
+        });
+        return (
+          <UnstyledButton
+            className={classes.dayAllDayEvent}
+            key={String(event.id)}
+            style={{ backgroundColor: colors.background, color: colors.color }}
+            onClick={() => onEventClick(event)}
+            type="button"
+          >
+            {event.title}
+          </UnstyledButton>
+        );
+      })}
       {hiddenCount > 0 ? (
         <UnstyledButton
           className={classes.dayAllDayMore}

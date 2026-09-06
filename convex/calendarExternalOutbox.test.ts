@@ -628,3 +628,69 @@ test.each(["refresh", "reconnect", "switch-account"] as const)(
     expect(fetch).toHaveBeenCalledTimes(operation === "refresh" ? 1 : 0);
   },
 );
+
+test("件名と色の編集直後に移動しても全変更をGoogleへ送信する", async () => {
+  const { externalId, owner, t } = await setup();
+  await owner.mutation(api.mutations.calendarSync.moveExternal.moveExternal, {
+    externalId,
+    ...MOVED,
+    title: "定期検診",
+    colorId: "11",
+  });
+  const finalRange = { startAt: `${TODAY} 16:00:00`, endAt: `${TODAY} 17:00:00` };
+  await owner.mutation(api.mutations.calendarSync.moveExternal.moveExternal, {
+    externalId,
+    ...finalRange,
+  });
+  const id = await pendingId(t);
+  const bodies: unknown[] = [];
+  vi.stubGlobal("fetch", async (_url: URL, init: RequestInit) => {
+    if (init.method === "PATCH") bodies.push(JSON.parse(String(init.body)));
+    return Response.json({ ...googleEvent(), summary: "定期検診", colorId: "11" });
+  });
+  await t.action(internal.actions.calendarSync.pushExternal.pushExternal, {
+    attempt: 0,
+    pendingId: id,
+  });
+  expect(bodies).toEqual([
+    {
+      summary: "定期検診",
+      colorId: "11",
+      start: { date: null, dateTime: "2026-08-17T16:00:00+09:00" },
+      end: { date: null, dateTime: "2026-08-17T17:00:00+09:00" },
+    },
+  ]);
+  expect(await t.run((ctx) => ctx.db.get("externalCalendarEvents", externalId))).toMatchObject({
+    ...finalRange,
+    title: "定期検診",
+    colorId: "11",
+  });
+});
+
+test("Googleの予定色の変更と解除を取り込む", async () => {
+  const { externalId, t } = await setup();
+  for (const colorId of ["9", undefined]) {
+    await t.run((ctx) =>
+      applyPull(ctx, {
+        finish: null,
+        calendarId: CALENDAR,
+        ownerId: OWNER,
+        todayJst: TODAY,
+        events: [
+          {
+            kind: "upsert",
+            allDay: false,
+            calendarId: CALENDAR,
+            googleEventId: "event",
+            ...MOVED,
+            title: "Googleの件名",
+            updated: "2026-08-17T06:00:00Z",
+            ...(colorId === undefined ? {} : { colorId }),
+          },
+        ],
+      }),
+    );
+    const event = await t.run((ctx) => ctx.db.get("externalCalendarEvents", externalId));
+    expect(event?.colorId).toBe(colorId);
+  }
+});

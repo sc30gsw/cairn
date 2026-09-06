@@ -88,7 +88,7 @@ test("外部予定の削除に失敗したら詳細画面を閉じない", async
   const onRemove = vi.fn(async () =>
     Result.err(new MutationFailedError({ cause: new Error("offline"), message: "削除失敗" })),
   );
-  const { getByRole, getByText } = renderWithMantine(
+  const { getByRole } = renderWithMantine(
     <BoardScheduleExternalModal
       onUpdate={vi.fn()}
       external={EXTERNAL}
@@ -124,7 +124,7 @@ test("件名・色を同じフォームで編集し、失敗時には入力を�
     />,
   );
   fireEvent.change(view.getByRole("textbox", { name: "件名" }), { target: { value: "定期検診" } });
-  fireEvent.click(view.getByRole("textbox", { name: "色" }));
+  fireEvent.click(view.getByRole("combobox", { name: "色" }));
   fireEvent.click(await view.findByRole("option", { name: "トマト" }));
   fireEvent.submit(
     view.getByRole("button", { name: "保存" }).closest('[role="dialog"]')?.querySelector("form") ??

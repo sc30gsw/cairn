@@ -189,6 +189,12 @@ function ExternalEventForm({
 
 export function BoardScheduleExternalModal({ external, ...props }: ExternalModalProps) {
   return external === null ? null : (
-    <ExternalEventForm external={external} {...props} key={external._id} />
+    <ExternalEventForm
+      external={external}
+      onClose={props.onClose}
+      onRemove={props.onRemove}
+      onUpdate={props.onUpdate}
+      key={external._id}
+    />
   );
 }

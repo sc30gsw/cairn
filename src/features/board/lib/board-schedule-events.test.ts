@@ -192,7 +192,7 @@ test("終日イベントだけを除外できる", () => {
   ]);
 });
 
-test("外部予定は灰色の薄い予定になり、印付きの id で見分けられる", () => {
+test("外部予定はカレンダーの色の薄い予定になり、印付きの id で見分けられる", () => {
   const [event] = toExternalScheduleEvents([
     {
       _id: "ext1" as Id<"externalCalendarEvents">,
@@ -209,7 +209,7 @@ test("外部予定は灰色の薄い予定になり、印付きの id で見分�
     },
   ]);
   expect(event).toEqual({
-    color: "gray",
+    color: "#9fe1cb",
     end: "2026-08-17 11:00:00",
     id: "external:ext1",
     start: "2026-08-17 10:00:00",
