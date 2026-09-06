@@ -1,9 +1,10 @@
-import { Text } from "@mantine/core";
+import { Group, Text } from "@mantine/core";
 import { Shimmer } from "@shimmer-from-structure/react";
 import { Suspense } from "react";
 import type { DateJst } from "~domain/jst";
 
 import { PageTitle } from "~/components/page-title";
+import { BoardCalendarSyncButton } from "~/features/board/components/board-calendar-sync-button";
 import { BoardKanban } from "~/features/board/components/board-kanban";
 import { BoardKanbanTab } from "~/features/board/components/board-kanban-tab";
 import { BoardSchedulePending } from "~/features/board/components/board-schedule-pending";
@@ -21,9 +22,15 @@ function boardLeadCopy(selectedDateJst: DateJst, today: DateJst) {
 
 export function BoardPage() {
   return (
-    <Suspense fallback={<BoardPending />}>
-      <BoardReady />
-    </Suspense>
+    <>
+      <Group justify="space-between" mb="md">
+        <PageTitle>ボード</PageTitle>
+        <BoardCalendarSyncButton />
+      </Group>
+      <Suspense fallback={<BoardPending />}>
+        <BoardReady />
+      </Suspense>
+    </>
   );
 }
 
@@ -32,9 +39,6 @@ function BoardPending() {
 
   return (
     <>
-      <PageTitle data-shimmer-ignore mb="md">
-        ボード
-      </PageTitle>
       <Shimmer loading>
         <Text c="dimmed" mb="md" size="sm">
           {boardLeadCopy(selectedDateJst, today)}
@@ -53,7 +57,6 @@ function BoardReady() {
 
   return (
     <>
-      <PageTitle mb="md">ボード</PageTitle>
       <Text c="dimmed" mb="md" size="sm">
         {boardLeadCopy(selectedDateJst, today)}
       </Text>

@@ -12,7 +12,7 @@ import {
   CALENDAR_SYNC_NOW_LABEL,
   CALENDAR_SYNC_RECONNECT_LABEL,
   CalendarSyncSection,
-} from "~/features/my-page/components/calendar-sync-section";
+} from "~/features/board/components/calendar-sync-section";
 import { renderWithMantine } from "~/test-utils/render";
 
 type Status = NonNullable<FunctionReturnType<typeof api.queries.calendarSync.status.status>>;
@@ -45,7 +45,7 @@ vi.mock("~/hooks/use-calendar-sync", () => ({
   useSyncCalendarNow: () => syncNow,
 }));
 
-vi.mock("~/features/my-page/lib/calendar-sync-actions", () => ({
+vi.mock("~/features/board/lib/calendar-sync-actions", () => ({
   clearCalendarSyncConnectPending: () => {
     pendingState.pending = false;
   },
@@ -123,6 +123,7 @@ test("接続済みならアカウント・カレンダーの選択・今すぐ�
   );
 
   expect(getByText(/接続中の Google アカウント/)).toBeDefined();
+  expect(getByText("連携済み")).toBeDefined();
   expect(getAllByText("owner@example.com").length).toBeGreaterThan(0);
   expect(getByText(CALENDAR_SYNC_CALENDARS_LABEL)).toBeDefined();
   const holiday = getByLabelText(/日本の祝日/) as HTMLInputElement;

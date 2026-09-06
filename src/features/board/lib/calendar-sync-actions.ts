@@ -33,16 +33,16 @@ export function readCalendarSyncReturnError(): string | null {
   return new URLSearchParams(window.location.search).get("error");
 }
 
-function myPageUrl(): string {
-  return `${window.location.origin}/my-page`;
+function calendarSyncUrl(): string {
+  return `${window.location.origin}/board?tab=schedule&calendarSync=true`;
 }
 
 export async function linkGoogleCalendar(): Promise<AuthActionResult> {
   trySessionStorageSet(CALENDAR_SYNC_CONNECT_PENDING_KEY, "1");
   const result = await runAuthAction(async () => {
     const authResult = await authClient.linkSocial({
-      callbackURL: myPageUrl(),
-      errorCallbackURL: myPageUrl(),
+      callbackURL: calendarSyncUrl(),
+      errorCallbackURL: calendarSyncUrl(),
       provider: "google",
       scopes: [...GOOGLE_CALENDAR_SCOPES],
     });

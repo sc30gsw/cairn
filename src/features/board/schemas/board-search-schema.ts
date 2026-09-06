@@ -7,6 +7,7 @@ const BoardTabSchema = v.picklist(["kanban", "schedule"]);
 const BoardScheduleViewSchema = v.picklist(BOARD_SCHEDULE_VIEWS);
 
 export const BoardSearchSchema = v.object({
+  calendarSync: v.optional(v.boolean()),
   date: v.optional(DateJstSchema),
   month: v.optional(YearMonthSchema),
   tab: v.optional(BoardTabSchema),
@@ -19,6 +20,7 @@ export type BoardTab = v.InferOutput<typeof BoardTabSchema>;
 export type BoardScheduleView = v.InferOutput<typeof BoardScheduleViewSchema>;
 
 export const boardSearchDefaults = {
+  calendarSync: undefined,
   date: undefined,
   month: undefined,
   tab: "kanban",

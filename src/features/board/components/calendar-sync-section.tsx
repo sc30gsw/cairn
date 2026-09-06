@@ -1,14 +1,4 @@
-import {
-  Badge,
-  Button,
-  Card,
-  Checkbox,
-  ColorSwatch,
-  Group,
-  Stack,
-  Text,
-  Title,
-} from "@mantine/core";
+import { Badge, Button, Checkbox, ColorSwatch, Group, Stack, Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { IconBrandGoogle, IconRefresh } from "@tabler/icons-react";
 import { Result } from "better-result";
@@ -16,13 +6,13 @@ import { useEffect } from "react";
 import { CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE, type CalendarSyncStatus } from "~domain/calendarSync";
 import type { OwnerSyncOutcome } from "~domain/validators";
 
-import { useBusy } from "~/features/my-page/hooks/use-busy";
 import {
   clearCalendarSyncConnectPending,
   linkGoogleCalendar,
   readCalendarSyncConnectPending,
   readCalendarSyncReturnError,
-} from "~/features/my-page/lib/calendar-sync-actions";
+} from "~/features/board/lib/calendar-sync-actions";
+import { useBusy } from "~/hooks/use-busy";
 import {
   useCalendarSyncStatus,
   useConnectCalendarSync,
@@ -34,9 +24,9 @@ import { notifyError } from "~/lib/notify";
 import { runMutation } from "~/lib/run-mutation";
 import { NUMERAL_FONT } from "~/lib/theme";
 
-const CALENDAR_SYNC_TITLE = "カレンダー同期";
+export const CALENDAR_SYNC_TITLE = "カレンダー同期";
 const CALENDAR_SYNC_DESCRIPTION =
-  "本番日・チェックポイントの期限・予定を Google カレンダーに出し、Google 側で動かした変更も戻します。Google カレンダーの予定は、予定タブに外部予定として薄く並びます。";
+  "本番日・チェックポイントの期限・予定を Google のメインカレンダーと同期します。Google カレンダーの予定は、ボードの「予定」タブの日・週表示に並びます。";
 export const CALENDAR_SYNC_CONNECT_LABEL = "Google カレンダーと連携";
 export const CALENDAR_SYNC_RECONNECT_LABEL = "もう一度接続";
 export const CALENDAR_SYNC_NOW_LABEL = "今すぐ同期";
@@ -58,7 +48,7 @@ const CALENDAR_SYNC_DISCONNECT_CONFIRM =
 const STATUS_BADGES = {
   error: { color: "yellow", label: "同期に失敗" },
   needsReauth: { color: "orange", label: "再接続が必要" },
-  ok: { color: "green", label: "同期中" },
+  ok: { color: "green", label: "連携済み" },
 } as const satisfies Record<CalendarSyncStatus, { color: string; label: string }>;
 
 const JST_SYNCED_AT = new Intl.DateTimeFormat("ja-JP", {
@@ -145,131 +135,126 @@ export function CalendarSyncSection() {
 
   if (status === null) {
     return (
-      <Card padding="md">
-        <Stack gap="md">
-          <Title order={3}>{CALENDAR_SYNC_TITLE}</Title>
-          <Text c="dimmed" size="sm">
-            {CALENDAR_SYNC_DESCRIPTION}
-          </Text>
-          <Group>
-            <Button
-              leftSection={<IconBrandGoogle aria-hidden size={16} />}
-              loading={busy}
-              onClick={() => void startLink()}
-              type="button"
-            >
-              {CALENDAR_SYNC_CONNECT_LABEL}
-            </Button>
-          </Group>
-          <Text c="dimmed" size="xs">
-            Google の画面でカレンダーの権限を許可すると、このページに戻って同期が始まります。
-          </Text>
-        </Stack>
-      </Card>
+      <Stack gap="md">
+        <Text c="dimmed" size="sm">
+          {CALENDAR_SYNC_DESCRIPTION}
+        </Text>
+        <Group>
+          <Button
+            leftSection={<IconBrandGoogle aria-hidden size={16} />}
+            loading={busy}
+            onClick={() => void startLink()}
+            type="button"
+          >
+            {CALENDAR_SYNC_CONNECT_LABEL}
+          </Button>
+        </Group>
+        <Text c="dimmed" size="xs">
+          Google
+          の画面でカレンダーの権限を許可すると、ボードの「予定」タブに戻って同期が始まります。
+        </Text>
+      </Stack>
     );
   }
 
   const badge = STATUS_BADGES[status.status];
 
   return (
-    <Card padding="md">
-      <Stack gap="md">
-        <Group justify="space-between" wrap="wrap">
-          <Title order={3}>{CALENDAR_SYNC_TITLE}</Title>
-          <Badge color={badge.color} variant="light">
-            {badge.label}
-          </Badge>
-        </Group>
-        <Text c="dimmed" size="sm">
-          {CALENDAR_SYNC_DESCRIPTION}
+    <Stack gap="md">
+      <Group justify="space-between" wrap="wrap">
+        <Badge color={badge.color} variant="light">
+          {badge.label}
+        </Badge>
+      </Group>
+      <Text c="dimmed" size="sm">
+        {CALENDAR_SYNC_DESCRIPTION}
+      </Text>
+      <Stack gap={2}>
+        <Text size="sm">
+          接続中の Google アカウント:{" "}
+          <Text fw={600} span>
+            {status.googleEmail ?? "不明"}
+          </Text>
         </Text>
-        <Stack gap={2}>
-          <Text size="sm">
-            接続中の Google アカウント:{" "}
-            <Text fw={600} span>
-              {status.googleEmail ?? "不明"}
-            </Text>
+        <Text c="dimmed" size="sm">
+          最終同期:{" "}
+          <Text ff={NUMERAL_FONT} span>
+            {formatSyncedAt(status.lastSyncedAt)}
           </Text>
-          <Text c="dimmed" size="sm">
-            最終同期:{" "}
-            <Text ff={NUMERAL_FONT} span>
-              {formatSyncedAt(status.lastSyncedAt)}
-            </Text>
+        </Text>
+        {status.status === "needsReauth" ? (
+          <Text c="red" size="sm">
+            {CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE}
           </Text>
-          {status.status === "needsReauth" ? (
-            <Text c="red" size="sm">
-              {CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE}
-            </Text>
-          ) : null}
-          {status.status === "error" && status.lastError !== null ? (
-            <Text c="yellow.8" size="sm">
-              {status.lastError}
-            </Text>
-          ) : null}
-        </Stack>
-        <Checkbox.Group
-          description={CALENDAR_SYNC_CALENDARS_HINT}
-          label={CALENDAR_SYNC_CALENDARS_LABEL}
-          onChange={changeVisible}
-          value={status.visibleCalendarIds}
-        >
-          <Stack gap="xs" mt="xs">
-            {status.calendars.map((calendar) => (
-              <Checkbox
-                disabled={busy || status.status === "needsReauth"}
-                key={calendar.id}
-                label={
-                  <Group gap="xs" wrap="nowrap">
-                    <ColorSwatch
-                      color={calendar.backgroundColor ?? "var(--cairn-muted-2)"}
-                      radius="sm"
-                      size={12}
-                    />
-                    <span>{calendar.summary}</span>
-                    {calendar.primary ? (
-                      <Text c="dimmed" size="xs" span>
-                        （書き込み先）
-                      </Text>
-                    ) : null}
-                  </Group>
-                }
-                value={calendar.id}
-              />
-            ))}
-          </Stack>
-        </Checkbox.Group>
-        <Group gap="sm" wrap="wrap">
-          {status.status === "needsReauth" ? (
-            <Button
-              leftSection={<IconBrandGoogle aria-hidden size={16} />}
-              loading={busy}
-              onClick={() => void startLink()}
-              type="button"
-            >
-              {CALENDAR_SYNC_RECONNECT_LABEL}
-            </Button>
-          ) : (
-            <Button
-              leftSection={<IconRefresh aria-hidden size={16} />}
-              loading={busy}
-              onClick={() => void runSyncNow()}
-              type="button"
-              variant="light"
-            >
-              {CALENDAR_SYNC_NOW_LABEL}
-            </Button>
-          )}
-          <Button
-            color="red"
-            disabled={busy}
-            onClick={requestDisconnect}
-            type="button"
-            variant="subtle"
-          >
-            {CALENDAR_SYNC_DISCONNECT_LABEL}
-          </Button>
-        </Group>
+        ) : null}
+        {status.status === "error" && status.lastError !== null ? (
+          <Text c="yellow.8" size="sm">
+            {status.lastError}
+          </Text>
+        ) : null}
       </Stack>
-    </Card>
+      <Checkbox.Group
+        description={CALENDAR_SYNC_CALENDARS_HINT}
+        label={CALENDAR_SYNC_CALENDARS_LABEL}
+        onChange={changeVisible}
+        value={status.visibleCalendarIds}
+      >
+        <Stack gap="xs" mt="xs">
+          {status.calendars.map((calendar) => (
+            <Checkbox
+              disabled={busy || status.status === "needsReauth"}
+              key={calendar.id}
+              label={
+                <Group gap="xs" wrap="nowrap">
+                  <ColorSwatch
+                    color={calendar.backgroundColor ?? "var(--cairn-muted-2)"}
+                    radius="sm"
+                    size={12}
+                  />
+                  <span>{calendar.summary}</span>
+                  {calendar.primary ? (
+                    <Text c="dimmed" size="xs" span>
+                      （書き込み先）
+                    </Text>
+                  ) : null}
+                </Group>
+              }
+              value={calendar.id}
+            />
+          ))}
+        </Stack>
+      </Checkbox.Group>
+      <Group gap="sm" wrap="wrap">
+        {status.status === "needsReauth" ? (
+          <Button
+            leftSection={<IconBrandGoogle aria-hidden size={16} />}
+            loading={busy}
+            onClick={() => void startLink()}
+            type="button"
+          >
+            {CALENDAR_SYNC_RECONNECT_LABEL}
+          </Button>
+        ) : (
+          <Button
+            leftSection={<IconRefresh aria-hidden size={16} />}
+            loading={busy}
+            onClick={() => void runSyncNow()}
+            type="button"
+            variant="light"
+          >
+            {CALENDAR_SYNC_NOW_LABEL}
+          </Button>
+        )}
+        <Button
+          color="red"
+          disabled={busy}
+          onClick={requestDisconnect}
+          type="button"
+          variant="subtle"
+        >
+          {CALENDAR_SYNC_DISCONNECT_LABEL}
+        </Button>
+      </Group>
+    </Stack>
   );
 }

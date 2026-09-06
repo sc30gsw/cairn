@@ -2,7 +2,7 @@ import { Alert, Badge, Button, Card, Group, Stack, Text, Title } from "@mantine/
 import { Result } from "better-result";
 import { useEffect, useState } from "react";
 
-import { useBusy } from "~/features/my-page/hooks/use-busy";
+import { useBusy } from "~/hooks/use-busy";
 import { useInstallPrompt } from "~/hooks/use-install-prompt";
 import { usePushSubscriptions, useWebPushConfig } from "~/hooks/use-notification-inbox";
 import { useSubscribePush, useUnsubscribePush } from "~/hooks/use-notification-mutations";

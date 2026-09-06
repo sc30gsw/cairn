@@ -3,7 +3,6 @@ import { Suspense } from "react";
 
 import { PendingComponent } from "~/components/pending-component";
 import { AccountSection } from "~/features/my-page/components/account-section";
-import { CalendarSyncSection } from "~/features/my-page/components/calendar-sync-section";
 import { PasskeySection } from "~/features/my-page/components/passkey-section";
 import { ProfileSection } from "~/features/my-page/components/profile-section";
 import { useAppShellUser } from "~/hooks/use-auth-session";
@@ -20,9 +19,6 @@ function MyPageAccountContent() {
       <ProfileSection />
       <AccountSection />
       <PasskeySection />
-      <Suspense fallback={<PendingComponent />}>
-        <CalendarSyncSection />
-      </Suspense>
     </Stack>
   );
 }
