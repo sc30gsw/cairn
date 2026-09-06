@@ -11,6 +11,7 @@ import {
   formatHeatmapTooltip,
   yearHeatmapRange,
 } from "~/features/history/lib/heatmap-colors";
+import type { HeatmapDay } from "~/features/history/types/history";
 import type { MonthEvent, WeekPage } from "~/features/history/types/history";
 import { renderWithMantine } from "~/test-utils/render";
 
@@ -473,7 +474,7 @@ test("休養の日でもこの日を開くがある", () => {
   expect(getByRole("link", { name: "この日を開く" })).toBeDefined();
 });
 
-const memoScopeWeekDays = [
+const memoScopeWeekDays: HeatmapDay[] = [
   {
     condition: "好調" as const,
     dateJst: "2026-08-17",

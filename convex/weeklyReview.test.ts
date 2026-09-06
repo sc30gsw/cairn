@@ -1,4 +1,5 @@
 import { convexTest } from "convex-test";
+import { vi } from "vite-plus/test";
 import { expect, test } from "vite-plus/test";
 
 import { api } from "./_generated/api";
@@ -359,3 +360,5 @@ test("byDay は月曜から日曜の7件で、コンディション未選択は 
   expect(review.byDay[1]?.condition).toBeNull();
   expect(review.byDay[6]?.kind).toBe("unrecorded");
 });
+
+vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));

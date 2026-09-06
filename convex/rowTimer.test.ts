@@ -392,3 +392,5 @@ test("進行中でない記録の計測は開始も停止もできない", async
     t.mutation(api.mutations.rows.stopTimer.stopTimer, { rowId: row._id }),
   ).rejects.toThrow();
 });
+
+vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));

@@ -20,18 +20,19 @@ import {
   readCalendarSyncConnectPending,
   readCalendarSyncReturnError,
 } from "~/lib/calendar-sync-actions";
+import {
+  CALENDAR_SYNC_CONNECT_LABEL,
+  CALENDAR_SYNC_RECONNECT_LABEL,
+  CALENDAR_SYNC_NOW_LABEL,
+  CALENDAR_SYNC_DISCONNECT_LABEL,
+  CALENDAR_SYNC_CALENDARS_LABEL,
+} from "~/lib/calendar-sync-labels";
 import { notifyError } from "~/lib/notify";
 import { runMutation } from "~/lib/run-mutation";
 import { NUMERAL_FONT } from "~/lib/theme";
 
-export const CALENDAR_SYNC_TITLE = "Google カレンダー連携";
 const CALENDAR_SYNC_DESCRIPTION =
   "本番日・チェックポイントの期限・予定を Google のメインカレンダーと同期します。Google カレンダーの予定は、ボードの「予定」タブの日・週・月・年表示に並びます。";
-export const CALENDAR_SYNC_CONNECT_LABEL = "Google カレンダーと連携";
-export const CALENDAR_SYNC_RECONNECT_LABEL = "もう一度接続";
-export const CALENDAR_SYNC_NOW_LABEL = "今すぐ同期";
-export const CALENDAR_SYNC_DISCONNECT_LABEL = "連携を解除";
-export const CALENDAR_SYNC_CALENDARS_LABEL = "表示するカレンダー";
 const CALENDAR_SYNC_CONNECTED_MESSAGE = "Google カレンダーと連携しました";
 const CALENDAR_SYNC_SYNCED_MESSAGE = "同期しました";
 const CALENDAR_SYNC_DISCONNECTED_MESSAGE = "カレンダー同期を解除しました";

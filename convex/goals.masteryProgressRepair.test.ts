@@ -320,3 +320,5 @@ test("試験目標は recomputeMasteryProgress の対象外", async () => {
   });
   expect(result).toBeNull();
 });
+
+vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));

@@ -413,12 +413,14 @@ test("Google 側の外部予定は写しとして予定タブの範囲で読め�
       title: "歯医者",
     },
   ]);
-  expect(
-    await owner.query(api.queries.calendarSync.listExternal.listExternal, {
-      anchorDateJst: "2026-09-01",
-      view: "month",
-    }),
-  ).toEqual([]);
+  const month = await owner.query(api.queries.calendarSync.listExternal.listExternal, {
+    anchorDateJst: "2026-09-01", view: "month",
+  });
+  expect(month.map((event) => event.title)).toEqual(["秋分の日"]);
+  const year = await owner.query(api.queries.calendarSync.listExternal.listExternal, {
+    anchorDateJst: TODAY, view: "year",
+  });
+  expect(year.map((event) => event.title).toSorted()).toEqual(["歯医者", "秋分の日"]);
   const september = await owner.query(api.queries.calendarSync.listExternal.listExternal, {
     anchorDateJst: "2026-09-23",
     view: "week",
@@ -854,3 +856,5 @@ test("別の Google アカウントで再接続すると前の同期状態は消
   expect(status?.visibleCalendarIds).toEqual([PRIMARY, HOLIDAY]);
   expect(google.active(PRIMARY).map((event) => event.summary)).toEqual(["本番: 本番で900点を取る"]);
 });
+
+vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));

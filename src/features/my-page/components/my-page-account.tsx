@@ -1,12 +1,13 @@
 import { Card, Stack, Title } from "@mantine/core";
 import { Suspense } from "react";
 
-import { CALENDAR_SYNC_TITLE, CalendarSyncSection } from "~/components/calendar-sync-section";
+import { CalendarSyncSection } from "~/components/calendar-sync-section";
 import { PendingComponent } from "~/components/pending-component";
 import { AccountSection } from "~/features/my-page/components/account-section";
 import { PasskeySection } from "~/features/my-page/components/passkey-section";
 import { ProfileSection } from "~/features/my-page/components/profile-section";
 import { useAppShellUser } from "~/hooks/use-auth-session";
+import { CALENDAR_SYNC_TITLE } from "~/lib/calendar-sync-labels";
 
 function MyPageAccountContent() {
   const user = useAppShellUser();

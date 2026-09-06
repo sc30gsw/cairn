@@ -5,6 +5,7 @@ import { emptyDayCopy } from "~/features/today/lib/empty-day-copy";
 
 test("emptyDayCopy はすべての kind の題を返す", () => {
   const titles = {
+    beforeRegistration: "利用開始前",
     live: "この日の記録はありません",
     rest: "休養",
     todayEmpty: "この日の記録はありません",

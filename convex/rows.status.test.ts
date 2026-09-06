@@ -1,4 +1,5 @@
 import { convexTest } from "convex-test";
+import { vi } from "vite-plus/test";
 import { expect, test } from "vite-plus/test";
 
 import { api } from "./_generated/api";
@@ -123,3 +124,5 @@ test("applyOrder は同じ記録IDの重複を拒否する", async () => {
   const after = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   expect(after.rows.map((entry) => entry._id)).toEqual(day.rows.map((entry) => entry._id));
 });
+
+vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));

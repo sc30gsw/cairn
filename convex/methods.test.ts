@@ -1,4 +1,5 @@
 import { convexTest } from "convex-test";
+import { vi } from "vite-plus/test";
 import { expect, test } from "vite-plus/test";
 
 import { api } from "./_generated/api";
@@ -353,3 +354,5 @@ test("他人のレーン・方法には触れない(一覧にも出ない)", asy
   expect(catalog.lanes).toHaveLength(1);
   expect(catalog.methods).toHaveLength(1);
 });
+
+vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));

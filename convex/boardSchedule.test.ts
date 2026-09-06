@@ -1,4 +1,5 @@
 import { convexTest } from "convex-test";
+import { vi } from "vite-plus/test";
 import { expect, test } from "vite-plus/test";
 
 import { api } from "./_generated/api";
@@ -294,3 +295,5 @@ test("switchPreset で消える未着手の記録は boardScheduleEvents も一�
   );
   expect(remainingBlocks).toEqual([]);
 });
+
+vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));

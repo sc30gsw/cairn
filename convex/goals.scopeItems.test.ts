@@ -409,3 +409,5 @@ test("対象項目なしの目標は従来どおり全記録を数える(既存�
   await repair(t);
   expect(await progressOf(t, goalId)).toEqual({ activeDays: 1, confirmedMinutes: 50 });
 });
+
+vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));

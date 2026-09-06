@@ -1,6 +1,7 @@
 import { expect, test } from "vite-plus/test";
 
 import {
+  calendarDayColor,
   calendarDayClassName,
   calendarDayProps,
   calendarDayStyleClasses,
@@ -42,4 +43,12 @@ test("履歴の未来マスは未記録で選べない", () => {
   expect(historyCalendarDayProps("2026-08-15", "2026-08-17")).toEqual({
     className: calendarDayStyleClasses.saturdayDay,
   });
+});
+
+
+test.each([
+ ["2026-08-15", "blue"], ["2026-08-16", "red"],
+ ["2026-09-22", "red"], ["2027-03-20", "red"],
+])("%s は祝日優先で %s", (date, color) => {
+ expect(calendarDayColor(date)).toBe(`var(--mantine-color-${color}-6)`);
 });

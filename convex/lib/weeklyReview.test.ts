@@ -90,6 +90,7 @@ test("buildDigest は状態ごとの件数を分ける", () => {
 
 test("buildWeeklyReviewDays は7件返し、休養・未記録・今日を書き分ける", () => {
   const days = buildWeeklyReviewDays({
+    serviceStartDateJst: "2026-01-01",
     conditionByDate: { "2026-08-17": "好調" },
     liveDayDates: new Set(["2026-08-17", "2026-08-20"]),
     rows: [row("2026-08-17", "確定", 120), row("2026-08-17", "未着手"), row("2026-08-20", "確定")],
@@ -113,6 +114,7 @@ test("buildWeeklyReviewDays は7件返し、休養・未記録・今日を書き
 
 test("buildWeeklyReviewDays は記録の無い今日を todayEmpty にする", () => {
   const days = buildWeeklyReviewDays({
+    serviceStartDateJst: "2026-01-01",
     conditionByDate: {},
     liveDayDates: new Set(),
     rows: [],

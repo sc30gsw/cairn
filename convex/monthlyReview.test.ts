@@ -1,4 +1,5 @@
 import { convexTest } from "convex-test";
+import { vi } from "vite-plus/test";
 import { expect, test } from "vite-plus/test";
 
 import { api } from "./_generated/api";
@@ -303,3 +304,5 @@ test("月の指定が壊れていれば日・週の引数と同じく throw す�
     }),
   ).rejects.toThrow(YEAR_MONTH_MESSAGE);
 });
+
+vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));

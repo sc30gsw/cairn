@@ -4,6 +4,7 @@ import type { FunctionReturnType } from "convex/server";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
 
 import type { api } from "~/../convex/_generated/api";
+import { CalendarSyncSection } from "~/components/calendar-sync-section";
 import {
   CALENDAR_SYNC_CALENDARS_LABEL,
   CALENDAR_SYNC_CONNECT_LABEL,
@@ -11,8 +12,7 @@ import {
   CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE,
   CALENDAR_SYNC_NOW_LABEL,
   CALENDAR_SYNC_RECONNECT_LABEL,
-  CalendarSyncSection,
-} from "~/components/calendar-sync-section";
+} from "~/lib/calendar-sync-labels";
 import { renderWithMantine } from "~/test-utils/render";
 
 type Status = NonNullable<FunctionReturnType<typeof api.queries.calendarSync.status.status>>;

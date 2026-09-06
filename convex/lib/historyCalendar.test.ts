@@ -46,7 +46,15 @@ test("buildMinutesByDate と buildHeatmapDays が確定分を集計する", () =
   ];
   const minutesByDate = buildMinutesByDate(rows, liveDates);
   expect(minutesByDate["2026-08-17"]).toBe(30);
-  const heatmap = buildHeatmapDays(["2026-08-17"], "2026-08-17", liveDates, minutesByDate, {});
+  const heatmap = buildHeatmapDays(
+    ["2026-08-17"],
+    "2026-08-17",
+    liveDates,
+    minutesByDate,
+    {},
+    {},
+    "2026-01-01",
+  );
   expect(heatmap[0]).toMatchObject({
     condition: null,
     dateJst: "2026-08-17",

@@ -404,3 +404,5 @@ test("未認証では記録を確定できず、実績も動かない", async ()
   ).rejects.toThrow();
   expect(await progressOf(asOwner, masteryId)).toEqual({ activeDays: 0, confirmedMinutes: 0 });
 });
+
+vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));

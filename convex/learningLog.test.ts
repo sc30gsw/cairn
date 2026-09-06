@@ -188,9 +188,9 @@ test("月と週の学習量が所有者に読める", async () => {
   });
   const monday = month.days.find((entry) => entry.dateJst === MONDAY);
   expect(monday?.minutes).toBe(70);
-  expect(monday?.isRest).toBe(false);
+  expect(monday?.kind).not.toBe("rest");
   const rest = month.days.find((entry) => entry.dateJst === SATURDAY);
-  expect(rest?.isRest).toBe(true);
+  expect(rest?.kind).toBe("rest");
   expect(rest?.minutes).toBe(0);
   const week = await t.query(api.queries.history.week.week, { dateJst: MONDAY, todayJst: MONDAY });
   expect(week.volumeMinutes).toBe(70);
@@ -636,7 +636,7 @@ test("ゴミ箱の日の dayBreakdown は休養扱いで0分になる", async ()
   expect(dayBreakdown.confirmedMinutes).toBe(0);
   expect(dayBreakdown.rows).toEqual([]);
   expect(dayBreakdown.byCondition).toEqual([]);
-  expect(dayBreakdown.isRest).toBe(true);
+  expect(dayBreakdown.kind).toBe("rest");
 });
 
 test("分析内訳は同一項目の確定を合算し、未着手を載せない", async () => {
@@ -941,13 +941,13 @@ test("今月の未来のマスは休養ではない", async () => {
     todayJst: MONDAY,
     yearMonth: "2026-08",
   });
-  expect(month.days.find((entry) => entry.dateJst === FUTURE)?.isRest).toBe(false);
-  expect(month.days.find((entry) => entry.dateJst === SATURDAY)?.isRest).toBe(true);
+  expect(month.days.find((entry) => entry.dateJst === FUTURE)?.kind).not.toBe("rest");
+  expect(month.days.find((entry) => entry.dateJst === SATURDAY)?.kind).toBe("rest");
   const weekBreakdown = await t.query(api.queries.history.weekBreakdown.weekBreakdown, {
     dateJst: MONDAY,
     todayJst: MONDAY,
   });
-  expect(weekBreakdown.byDay.find((entry) => entry.dateJst === FUTURE)?.isRest).toBe(false);
+  expect(weekBreakdown.byDay.find((entry) => entry.dateJst === FUTURE)?.kind).not.toBe("rest");
 });
 
 test("コピーで上書きした確定は学習量から外れる", async () => {
@@ -1075,3 +1075,5 @@ test("空の雛形でも休養の日を作れる", async () => {
   expect(created.day).not.toBeNull();
   expect(created.rows).toEqual([]);
 });
+
+vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));

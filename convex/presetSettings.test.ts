@@ -110,3 +110,5 @@ test("設定が無効なら、祝日の月曜でも月曜のプリセットが�
   });
   expect(day.rows.map((row) => row.itemName)).toEqual(["平日の単語"]);
 });
+
+vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));

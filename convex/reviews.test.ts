@@ -280,3 +280,5 @@ test("復習を見送るか、ゴミ箱に入れると復習は終わる", async
   expect(await flags(t)).toEqual([]);
   expect(await dayRows(t, DAY10)).toEqual([]);
 });
+
+vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));

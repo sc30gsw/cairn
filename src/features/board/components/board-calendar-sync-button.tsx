@@ -2,8 +2,9 @@ import { Button, Modal, Skeleton, Stack, Tooltip } from "@mantine/core";
 import { IconCalendar } from "@tabler/icons-react";
 import { Suspense } from "react";
 
-import { CALENDAR_SYNC_TITLE, CalendarSyncSection } from "~/components/calendar-sync-section";
+import { CalendarSyncSection } from "~/components/calendar-sync-section";
 import { boardRoute } from "~/features/board/lib/board-route-api";
+import { CALENDAR_SYNC_TITLE } from "~/lib/calendar-sync-labels";
 
 export const BOARD_CALENDAR_SYNC_TOOLTIP =
   "Google カレンダーとの連携・同期状態を確認します。連携後は、外部予定を「予定」タブの日・週・月・年表示で確認できます。";

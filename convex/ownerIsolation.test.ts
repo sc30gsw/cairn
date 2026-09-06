@@ -1,4 +1,5 @@
 import { convexTest } from "convex-test";
+import { vi } from "vite-plus/test";
 import { expect, test } from "vite-plus/test";
 
 import { api } from "./_generated/api";
@@ -200,3 +201,5 @@ test("他人の行は reopen できない", async () => {
   const ownerB = asOwner(OWNER_B);
   await expect(ownerB.mutation(api.mutations.rows.reopen.reopen, { rowId })).rejects.toThrow();
 });
+
+vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));
