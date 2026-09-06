@@ -135,3 +135,39 @@ test("件名・色を同じフォームで編集し、失敗時には入力を�
   expect(onUpdate.mock.calls[0]?.[0]).toMatchObject({ title: "定期検診", colorId: "11" });
   expect(onClose).not.toHaveBeenCalled();
 });
+
+test("Google の各色を濃淡付きで表示し、選択した色を入力欄にも反映する", async () => {
+  const view = renderWithMantine(
+    <BoardScheduleExternalModal
+      external={EXTERNAL}
+      onClose={vi.fn()}
+      onRemove={vi.fn()}
+      onUpdate={vi.fn()}
+    />,
+  );
+  const colorInput = view.getByRole("combobox", { name: "色" });
+  fireEvent.click(colorInput);
+  const orange = await view.findByRole("option", { name: "ミカン" });
+  const red = view.getByRole("option", { name: "トマト" });
+  expect(
+    orange.querySelector(".mantine-ColorSwatch-colorOverlay")?.getAttribute("style"),
+  ).toContain("var(--mantine-color-orange-3)");
+  expect(red.querySelector(".mantine-ColorSwatch-colorOverlay")?.getAttribute("style")).toContain(
+    "var(--mantine-color-red-3)",
+  );
+  expect(
+    view
+      .getByRole("option", { name: "グラファイト" })
+      .querySelector(".mantine-ColorSwatch-colorOverlay")
+      ?.getAttribute("style"),
+  ).toContain("var(--mantine-color-gray-5)");
+  fireEvent.click(orange);
+  await vi.waitFor(() => {
+    expect(colorInput.getAttribute("value")).toBe("ミカン");
+    expect(
+      colorInput.parentElement
+        ?.querySelector(".mantine-ColorSwatch-colorOverlay")
+        ?.getAttribute("style"),
+    ).toContain("var(--mantine-color-orange-3)");
+  });
+});

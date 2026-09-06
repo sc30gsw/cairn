@@ -15,7 +15,7 @@ export const GOOGLE_CALENDAR_EVENT_COLORS = [
 
 export const DEFAULT_GOOGLE_CALENDAR_EVENT_COLOR = GOOGLE_CALENDAR_EVENT_COLORS[0];
 
-export function googleCalendarEventColor(colorId: string | null | undefined): MantineColor {
+export function googleCalendarEventColor(colorId: string | null | undefined) {
   return (
     GOOGLE_CALENDAR_EVENT_COLORS.find((entry) => entry.id === colorId)?.color ??
     DEFAULT_GOOGLE_CALENDAR_EVENT_COLOR.color

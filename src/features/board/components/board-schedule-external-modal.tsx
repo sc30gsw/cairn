@@ -1,14 +1,5 @@
 import { Field, Form, useForm, type SubmitHandler } from "@formisch/react";
-import {
-  ColorSwatch,
-  Group,
-  Select,
-  Stack,
-  Text,
-  TextInput,
-  useMantineTheme,
-  getThemeColor,
-} from "@mantine/core";
+import { ColorSwatch, Group, Select, Stack, Text, TextInput } from "@mantine/core";
 import { DatePickerInput, DateTimePicker } from "@mantine/dates";
 import { modals } from "@mantine/modals";
 import { IconBrandGoogle } from "@tabler/icons-react";
@@ -21,6 +12,7 @@ import {
 } from "~domain/googleCalendarColors";
 
 import { BoardScheduleEditModal } from "~/features/board/components/board-schedule-edit-modal";
+import { boardScheduleColorCss } from "~/features/board/lib/board-schedule-color-ui";
 import { scheduleInstantToDate } from "~/features/board/lib/schedule-instant";
 import {
   BoardExternalEventSchema,
@@ -45,7 +37,6 @@ function ExternalEventForm({
   onUpdate,
 }: Omit<ExternalModalProps, "external"> & { external: BoardExternalEvent }) {
   const formId = useId();
-  const theme = useMantineTheme();
   const colorId =
     GOOGLE_CALENDAR_EVENT_COLORS.find((color) => color.id === external.colorId)?.id ?? "calendar";
   const form = useForm({
@@ -166,7 +157,7 @@ function ExternalEventForm({
                 label="色"
                 leftSection={
                   <ColorSwatch
-                    color={getThemeColor(googleCalendarEventColor(field.input), theme)}
+                    color={boardScheduleColorCss(googleCalendarEventColor(field.input))}
                     size={16}
                   />
                 }
@@ -178,7 +169,7 @@ function ExternalEventForm({
                 renderOption={({ option }) => (
                   <Group gap="xs">
                     <ColorSwatch
-                      color={getThemeColor(googleCalendarEventColor(option.value), theme)}
+                      color={boardScheduleColorCss(googleCalendarEventColor(option.value))}
                       size={16}
                     />
                     <span>{option.label}</span>
