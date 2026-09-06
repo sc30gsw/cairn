@@ -141,7 +141,6 @@ type GoalDateFieldProps = {
   disabled?: boolean;
   field: GoalTextFieldStore;
   label: string;
-  todayJst: DateJst;
 };
 
 type GoalContentFieldProps = {
@@ -225,7 +224,7 @@ function CheckpointCrowdedAlert({ count }: Record<"count", number>) {
   );
 }
 
-export function ExamGoalFields({ copy, goal, onCancel, onSubmit, todayJst }: GoalFieldsProps) {
+export function ExamGoalFields({ copy, goal, onCancel, onSubmit }: GoalFieldsProps) {
   const examGoal: ExamGoal | undefined = goal?.type === "exam" ? goal : undefined;
   const form = useForm({
     initialInput: {
@@ -247,7 +246,7 @@ export function ExamGoalFields({ copy, goal, onCancel, onSubmit, todayJst }: Goa
         </Grid.Col>
         <Grid.Col span={12}>
           <Field of={form} path={["examDate"]}>
-            {(field) => <GoalDateField field={field} label="本番日" todayJst={todayJst} />}
+            {(field) => <GoalDateField field={field} label="本番日" />}
           </Field>
         </Grid.Col>
         <Grid.Col span={6}>
@@ -417,7 +416,7 @@ export function CheckpointGoalFields({
         </Grid.Col>
         <Grid.Col span={12}>
           <Field of={form} path={["deadline"]}>
-            {(field) => <GoalDateField field={field} label={DEADLINE_LABEL} todayJst={todayJst} />}
+            {(field) => <GoalDateField field={field} label={DEADLINE_LABEL} />}
           </Field>
         </Grid.Col>
         <Grid.Col span={12}>
@@ -447,7 +446,6 @@ export function MasteryEditFields({
   items,
   onCancel,
   onSubmit,
-  todayJst,
 }: GoalFieldsProps) {
   const masteryGoal: MasteryGoal | undefined = goal?.type === "mastery" ? goal : undefined;
   const form = useForm({
@@ -512,7 +510,6 @@ export function MasteryEditFields({
             disabled={hasChildCheckpoints}
             field={deadlineField}
             label={OPTIONAL_DEADLINE_LABEL}
-            todayJst={todayJst}
           />
         </Grid.Col>
         {deadline !== "" && !hasChildCheckpoints && (
