@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TrashRouteImport } from './routes/trash'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ReviewRouteImport } from './routes/review'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PresetsRouteImport } from './routes/presets'
 import { Route as MyPageRouteImport } from './routes/my-page'
 import { Route as MethodsRouteImport } from './routes/methods'
@@ -30,9 +32,19 @@ const TrashRoute = TrashRouteImport.update({
   path: '/trash',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReviewRoute = ReviewRouteImport.update({
   id: '/review',
   path: '/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PresetsRoute = PresetsRouteImport.update({
@@ -110,7 +122,9 @@ export interface FileRoutesByFullPath {
   '/methods': typeof MethodsRoute
   '/my-page': typeof MyPageRouteWithChildren
   '/presets': typeof PresetsRoute
+  '/privacy': typeof PrivacyRoute
   '/review': typeof ReviewRoute
+  '/terms': typeof TermsRoute
   '/trash': typeof TrashRoute
   '/days/$dateJst': typeof DaysDateJstRoute
   '/my-page/notifications': typeof MyPageNotificationsRoute
@@ -126,7 +140,9 @@ export interface FileRoutesByTo {
   '/items': typeof ItemsRoute
   '/methods': typeof MethodsRoute
   '/presets': typeof PresetsRoute
+  '/privacy': typeof PrivacyRoute
   '/review': typeof ReviewRoute
+  '/terms': typeof TermsRoute
   '/trash': typeof TrashRoute
   '/days/$dateJst': typeof DaysDateJstRoute
   '/my-page/notifications': typeof MyPageNotificationsRoute
@@ -144,7 +160,9 @@ export interface FileRoutesById {
   '/methods': typeof MethodsRoute
   '/my-page': typeof MyPageRouteWithChildren
   '/presets': typeof PresetsRoute
+  '/privacy': typeof PrivacyRoute
   '/review': typeof ReviewRoute
+  '/terms': typeof TermsRoute
   '/trash': typeof TrashRoute
   '/days/$dateJst': typeof DaysDateJstRoute
   '/my-page/notifications': typeof MyPageNotificationsRoute
@@ -163,7 +181,9 @@ export interface FileRouteTypes {
     | '/methods'
     | '/my-page'
     | '/presets'
+    | '/privacy'
     | '/review'
+    | '/terms'
     | '/trash'
     | '/days/$dateJst'
     | '/my-page/notifications'
@@ -179,7 +199,9 @@ export interface FileRouteTypes {
     | '/items'
     | '/methods'
     | '/presets'
+    | '/privacy'
     | '/review'
+    | '/terms'
     | '/trash'
     | '/days/$dateJst'
     | '/my-page/notifications'
@@ -196,7 +218,9 @@ export interface FileRouteTypes {
     | '/methods'
     | '/my-page'
     | '/presets'
+    | '/privacy'
     | '/review'
+    | '/terms'
     | '/trash'
     | '/days/$dateJst'
     | '/my-page/notifications'
@@ -214,7 +238,9 @@ export interface RootRouteChildren {
   MethodsRoute: typeof MethodsRoute
   MyPageRoute: typeof MyPageRouteWithChildren
   PresetsRoute: typeof PresetsRoute
+  PrivacyRoute: typeof PrivacyRoute
   ReviewRoute: typeof ReviewRoute
+  TermsRoute: typeof TermsRoute
   TrashRoute: typeof TrashRoute
   DaysDateJstRoute: typeof DaysDateJstRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -229,11 +255,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TrashRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/review': {
       id: '/review'
       path: '/review'
       fullPath: '/review'
       preLoaderRoute: typeof ReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/presets': {
@@ -354,7 +394,9 @@ const rootRouteChildren: RootRouteChildren = {
   MethodsRoute: MethodsRoute,
   MyPageRoute: MyPageRouteWithChildren,
   PresetsRoute: PresetsRoute,
+  PrivacyRoute: PrivacyRoute,
   ReviewRoute: ReviewRoute,
+  TermsRoute: TermsRoute,
   TrashRoute: TrashRoute,
   DaysDateJstRoute: DaysDateJstRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

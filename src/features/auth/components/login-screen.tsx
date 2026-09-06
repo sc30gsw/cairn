@@ -1,4 +1,5 @@
-import { Button, Card, Center, Divider, Stack, Text, Title } from "@mantine/core";
+import { Anchor, Button, Card, Center, Divider, Group, Stack, Text, Title } from "@mantine/core";
+import { Link } from "@tanstack/react-router";
 
 import { AuthActionFeedback } from "~/components/auth-action-feedback";
 import { AccountAuthPanel } from "~/features/auth/components/account-auth-form";
@@ -47,6 +48,14 @@ export function LoginScreen() {
               Google でのログインはブラウザで開きます。
             </Text>
           ) : null}
+          <Group gap="md" justify="center">
+            <Anchor c="dimmed" component={Link} size="xs" to="/privacy">
+              プライバシーポリシー
+            </Anchor>
+            <Anchor c="dimmed" component={Link} size="xs" to="/terms">
+              利用規約
+            </Anchor>
+          </Group>
         </Stack>
       </Card>
     </Center>
