@@ -1,7 +1,12 @@
 import { type Infer, v } from "convex/values";
 
 import { PRESET_REVIEW_REASONS } from "../presetDigest";
-import { conditionValidator, statusValidator, weekdayValidator } from "./core";
+import {
+  conditionValidator,
+  dayViewKindValidator,
+  statusValidator,
+  weekdayValidator,
+} from "./core";
 
 export const shareRowValidator = v.object({
   category: v.string(),
@@ -31,7 +36,7 @@ export const categoryBreakdownValidator = v.object({
 export const monthDayValidator = v.object({
   condition: v.union(conditionValidator, v.null()),
   dateJst: v.string(),
-  isRest: v.boolean(),
+  kind: dayViewKindValidator,
   memo: v.union(v.string(), v.null()),
   minutes: v.number(),
   movingAverage: v.number(),
@@ -56,7 +61,7 @@ export const monthEventValidator = v.object({
 export const weekDayBreakdownValidator = v.object({
   confirmedMinutes: v.number(),
   dateJst: v.string(),
-  isRest: v.boolean(),
+  kind: dayViewKindValidator,
   skippedMinutes: v.number(),
 });
 
@@ -65,7 +70,7 @@ export const dayBreakdownValidator = v.object({
   byCondition: v.array(conditionVolumeValidator),
   confirmedMinutes: v.number(),
   dateJst: v.string(),
-  isRest: v.boolean(),
+  kind: dayViewKindValidator,
   rows: v.array(breakdownRowValidator),
   skippedMinutes: v.number(),
 });

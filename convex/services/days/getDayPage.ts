@@ -7,6 +7,7 @@ import type { DayPageDto } from "../../lib/validators";
 import { confirmedVolumeMinutes } from "../../lib/volume";
 import { getLiveDay } from "./getLiveDay";
 import { liveRowsForDay } from "./liveRowsForDay";
+import { serviceStartDate } from "./serviceStartDate";
 import { toRowDtos } from "./toRowDtos";
 
 export async function getDayPage(
@@ -17,9 +18,10 @@ export async function getDayPage(
   const [confirmedStatus] = STATUSES;
   const unrecorded = isFutureDateJst(args.dateJst, args.todayJst);
   const yesterday = addDaysJst(args.dateJst, -1);
-  const [day, sourceDay] = await Promise.all([
+  const [day, sourceDay, serviceStartDateJst] = await Promise.all([
     getLiveDay(ctx, ownerId, args.dateJst),
     unrecorded ? Promise.resolve(null) : getLiveDay(ctx, ownerId, yesterday),
+    serviceStartDate(ctx, ownerId),
   ]);
   const [rows, sourceRows] = await Promise.all([
     day === null ? Promise.resolve([]) : liveRowsForDay(ctx, day._id),
@@ -41,6 +43,7 @@ export async function getDayPage(
     kind: dayViewKind({
       dateJst: args.dateJst,
       hasLiveDay: day !== null,
+      serviceStartDateJst,
       todayJst: args.todayJst,
     }),
     rows: rowDtos,

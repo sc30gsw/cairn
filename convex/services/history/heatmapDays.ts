@@ -2,7 +2,7 @@ import { groupBy, mapValues, prop } from "remeda";
 
 import type { Doc } from "../../_generated/dataModel";
 import type { Condition } from "../../lib/conditions";
-import { isRestCalendarDate } from "../../lib/dayView";
+import { dayViewKind } from "../../lib/dayView";
 import { addDaysJst } from "../../lib/jst";
 import { sevenDayMovingAverage } from "../../lib/movingAverage";
 import { confirmedVolumeMinutes } from "../../lib/volume";
@@ -66,12 +66,18 @@ export function buildHeatmapDays(
   liveDayDates: ReadonlySet<string>,
   minutesByDate: Readonly<Record<string, number>>,
   conditionByDate: Readonly<Record<string, Condition | null>>,
-  memoByDate: Readonly<Record<string, string | null>> = {},
+  memoByDate: Readonly<Record<string, string | null>>,
+  serviceStartDateJst: string,
 ) {
   return dates.map((dateJst) => ({
     condition: conditionByDate[dateJst] ?? null,
     dateJst,
-    isRest: isRestCalendarDate(dateJst, todayJst, liveDayDates.has(dateJst)),
+    kind: dayViewKind({
+      dateJst,
+      todayJst,
+      hasLiveDay: liveDayDates.has(dateJst),
+      serviceStartDateJst,
+    }),
     memo: memoByDate[dateJst] ?? null,
     minutes: minutesByDate[dateJst] ?? 0,
     movingAverage: sevenDayMovingAverage(minutesByDate, dateJst),

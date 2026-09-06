@@ -37,7 +37,7 @@ export const historyShimmerWeek = {
     {
       condition: null,
       dateJst: "2026-08-17",
-      isRest: false,
+      kind: "live",
       memo: null,
       minutes: 30,
       movingAverage: 10,
@@ -62,7 +62,7 @@ export const historyShimmerHeatmapDays = [
   {
     condition: null,
     dateJst: "2026-08-17",
-    isRest: false,
+    kind: "live",
     memo: null,
     minutes: 30,
     movingAverage: 10,
@@ -77,7 +77,7 @@ export const historyShimmerMonthBreakdown = {
     {
       condition: null,
       dateJst: "2026-08-17",
-      isRest: false,
+      kind: "live",
       memo: null,
       minutes: 30,
       movingAverage: 10,
@@ -93,7 +93,7 @@ export const historyShimmerDayBreakdown = {
   byCondition: [],
   confirmedMinutes: 0,
   dateJst: "2026-08-17",
-  isRest: false,
+  kind: "live",
   rows: [],
   skippedMinutes: 0,
 } satisfies DayBreakdown;

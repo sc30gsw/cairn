@@ -84,4 +84,4 @@ calendarSyncCursors { ownerId, calendarId, syncToken, fullSyncedOnJst }  // by_o
 | アプリと Google で近い時刻に変えた | `appChangedAt` と `updated` の新しい方が勝つ |
 | 差分トークンが失効（410） | そのカレンダーだけ期間で全件を取り直し、無くなった写しを消す |
 | 表示カレンダーを外した | 写しと差分トークンを捨て、再び入れたら全件を取り直す |
-| Google で権限を取り消した | `needsReauth`。マイページから「もう一度接続」で `linkSocial` をやり直す |
+| Google で権限を取り消した | `needsReauth`。ボードの同期設定から「もう一度接続」で `linkSocial` をやり直す |

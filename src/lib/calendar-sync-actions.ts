@@ -34,7 +34,10 @@ export function readCalendarSyncReturnError(): string | null {
 }
 
 function calendarSyncUrl(): string {
-  return `${window.location.origin}/board?tab=schedule&calendarSync=true`;
+  const url = new URL(window.location.href);
+  url.searchParams.delete("error");
+  url.searchParams.delete("error_description");
+  return url.toString();
 }
 
 export async function linkGoogleCalendar(): Promise<AuthActionResult> {

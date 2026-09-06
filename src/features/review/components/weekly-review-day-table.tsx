@@ -12,13 +12,17 @@ import { calendarDayClassName } from "~/lib/calendar-day-style";
 import { NUMERAL_FONT } from "~/lib/theme";
 
 const KIND_TEXT = {
+  beforeRegistration: "利用開始前",
   rest: "休養",
   unrecorded: "未記録",
 } as const;
 
 function MinutesCell({ day, maxMinutes }: { day: WeeklyReviewDay; maxMinutes: number }) {
   if (day.confirmedMinutes === 0) {
-    const text = day.kind === "rest" || day.kind === "unrecorded" ? KIND_TEXT[day.kind] : "0分";
+    const text =
+      day.kind === "rest" || day.kind === "unrecorded" || day.kind === "beforeRegistration"
+        ? KIND_TEXT[day.kind]
+        : "0分";
     return <Text c="dimmed">{text}</Text>;
   }
 

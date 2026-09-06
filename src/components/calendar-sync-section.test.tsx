@@ -12,7 +12,7 @@ import {
   CALENDAR_SYNC_NOW_LABEL,
   CALENDAR_SYNC_RECONNECT_LABEL,
   CalendarSyncSection,
-} from "~/features/board/components/calendar-sync-section";
+} from "~/components/calendar-sync-section";
 import { renderWithMantine } from "~/test-utils/render";
 
 type Status = NonNullable<FunctionReturnType<typeof api.queries.calendarSync.status.status>>;
@@ -45,7 +45,7 @@ vi.mock("~/hooks/use-calendar-sync", () => ({
   useSyncCalendarNow: () => syncNow,
 }));
 
-vi.mock("~/features/board/lib/calendar-sync-actions", () => ({
+vi.mock("~/lib/calendar-sync-actions", () => ({
   clearCalendarSyncConnectPending: () => {
     pendingState.pending = false;
   },

@@ -19,6 +19,8 @@ export const HEATMAP_CHART_COLORS = [
 
 export const HEATMAP_DOMAIN: [number, number] = [1, 120];
 
+export const BEFORE_REGISTRATION_HEATMAP_FILL = "var(--mantine-color-body)";
+
 export const REST_HEATMAP_FILL = "var(--mantine-color-default-hover)";
 
 export const HEATMAP_MONTH_LABELS = [
@@ -47,12 +49,14 @@ export function yearHeatmapRange(todayJst: DateJst): { endDate: DateJst; startDa
 
 export function buildHeatmapChartData(days: HeatmapDay[]): Record<string, number> {
   return Object.fromEntries(
-    flatMap(days, (day) => (!day.isRest && day.minutes > 0 ? [[day.dateJst, day.minutes]] : [])),
+    flatMap(days, (day) =>
+      day.kind === "live" && day.minutes > 0 ? [[day.dateJst, day.minutes]] : [],
+    ),
   );
 }
 
 export function isRestHeatmapDay(day: HeatmapDay | undefined): boolean {
-  return day === undefined || day.isRest || day.minutes === 0;
+  return day === undefined || day.kind === "rest" || day.minutes === 0;
 }
 
 export function formatHeatmapTooltip(
@@ -60,7 +64,10 @@ export function formatHeatmapTooltip(
   value: null | number,
   day: HeatmapDay | undefined,
 ): string {
-  if (day === undefined || day.isRest) {
+  if (day?.kind === "beforeRegistration") {
+    return `${date} — 利用開始前`;
+  }
+  if (day === undefined || day.kind === "rest") {
     return `${date} — 休養`;
   }
   const minutes = value ?? day.minutes;
@@ -68,6 +75,7 @@ export function formatHeatmapTooltip(
 }
 
 export const HEATMAP_LEGEND = [
+  { backgroundColor: BEFORE_REGISTRATION_HEATMAP_FILL, label: "利用開始前" },
   { backgroundColor: "var(--mantine-color-default-hover)", label: "休養（記録なし）" },
   { backgroundColor: "var(--mantine-color-blue-1)", label: "1〜29分" },
   { backgroundColor: "var(--mantine-color-blue-2)", label: "30〜59分" },

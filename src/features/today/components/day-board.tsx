@@ -193,7 +193,7 @@ export function DayBoard(props: DayBoardProps) {
               <DayPresetSelect
                 key={dateJst}
                 dateJst={dateJst}
-                isRest={day.kind === "rest"}
+                isRest={day.kind === "rest" || day.kind === "beforeRegistration"}
                 isToday={isToday}
                 onSwitchPreset={async (presetId) => {
                   if (!interactive) {

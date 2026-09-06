@@ -108,12 +108,19 @@ function DonutSection({
   breakdown: {
     byCategory: DayBreakdown["byCategory"];
     confirmedMinutes: number;
-    isRest?: boolean;
+    kind?: DayBreakdown["kind"];
     skippedMinutes: number;
   };
   title: string;
 }) {
-  if (breakdown.isRest) {
+  if (breakdown.kind === "beforeRegistration") {
+    return (
+      <Alert color="gray" title="利用開始前">
+        利用開始前の日です。この日の記録も追加できます。
+      </Alert>
+    );
+  }
+  if (breakdown.kind === "rest") {
     return <RestAlert />;
   }
   if (breakdown.confirmedMinutes === 0 && breakdown.skippedMinutes === 0) {
@@ -185,7 +192,7 @@ export function HistoryAnalysisPanel({
             学習量（直近365日）
           </Title>
           <Text c="dimmed" size="xs" ta="center">
-            色の濃さは1日の学習時間です。記録のない日は休養です。
+            色の濃さは1日の学習時間です。利用開始後、記録のない日は休養です。
           </Text>
           <HistoryLearningHeatmap days={heatmapDays} onDayClick={onDayClick} todayJst={todayJst} />
           <HeatmapLegend />
@@ -214,13 +221,7 @@ export function HistoryAnalysisPanel({
         ) : null}
         <Grid.Col span={{ base: 12, md: scope === "day" ? 12 : 6 }}>
           <DonutSection
-            breakdown={
-              scope === "day"
-                ? day
-                : scope === "week"
-                  ? week
-                  : { ...month, isRest: false, skippedMinutes: month.skippedMinutes }
-            }
+            breakdown={scope === "day" ? day : scope === "week" ? week : month}
             title={scope === "day" ? "日次内訳" : scope === "week" ? "週次内訳" : "月次内訳"}
           />
         </Grid.Col>

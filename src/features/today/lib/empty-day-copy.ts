@@ -1,6 +1,10 @@
 import type { DayPage } from "~/features/today/types/day";
 
 const EMPTY_DAY_COPY = {
+  beforeRegistration: {
+    title: "利用開始前",
+    description: "利用開始前の日です。下のフォームから、この日の記録も追加できます。",
+  },
   live: {
     description: "下のフォームから、この日の記録を追加できます。",
     title: "この日の記録はありません",

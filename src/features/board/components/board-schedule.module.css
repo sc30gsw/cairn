@@ -129,3 +129,25 @@
   --event-hover: var(--cairn-paper-2);
   border-inline-start: 2px dashed var(--cairn-muted-2);
 }
+
+.weekDayLabel:nth-child(1) {
+  color: var(--board-week-day-0);
+}
+.weekDayLabel:nth-child(2) {
+  color: var(--board-week-day-1);
+}
+.weekDayLabel:nth-child(3) {
+  color: var(--board-week-day-2);
+}
+.weekDayLabel:nth-child(4) {
+  color: var(--board-week-day-3);
+}
+.weekDayLabel:nth-child(5) {
+  color: var(--board-week-day-4);
+}
+.weekDayLabel:nth-child(6) {
+  color: var(--board-week-day-5);
+}
+.weekDayLabel:nth-child(7) {
+  color: var(--board-week-day-6);
+}

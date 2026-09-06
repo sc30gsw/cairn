@@ -2,6 +2,7 @@ import type { QueryCtx } from "../../_generated/server";
 import { loadCatalog } from "../../lib/catalogLoader";
 import { requireDateJst } from "../../lib/dateArgs";
 import { getLiveDay } from "../days/getLiveDay";
+import { serviceStartDate } from "../days/serviceStartDate";
 import { buildDayBreakdown, liveRows } from "./shared";
 
 export async function dayBreakdown(
@@ -11,12 +12,13 @@ export async function dayBreakdown(
 ) {
   const dateJst = requireDateJst(args.dateJst);
   const todayJst = requireDateJst(args.todayJst);
-  const [rows, catalog, liveDay] = await Promise.all([
+  const [rows, catalog, serviceStartDateJst, liveDay] = await Promise.all([
     ctx.db
       .query("rows")
       .withIndex("by_owner_and_date", (q) => q.eq("ownerId", ownerId).eq("dateJst", dateJst))
       .collect(),
     loadCatalog(ctx, ownerId),
+    serviceStartDate(ctx, ownerId),
     getLiveDay(ctx, ownerId, dateJst),
   ]);
   const liveDayDates = liveDay === null ? new Set<string>() : new Set([dateJst]);
@@ -28,5 +30,6 @@ export async function dayBreakdown(
     catalog.itemById,
     catalog.categoryById,
     { [dateJst]: liveDay?.condition ?? null },
+    serviceStartDateJst,
   );
 }

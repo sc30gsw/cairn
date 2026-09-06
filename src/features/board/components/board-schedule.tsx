@@ -4,6 +4,7 @@ import { Schedule, type DateStringValue } from "@mantine/schedule";
 import { Result } from "better-result";
 import type { CSSProperties } from "react";
 import { useRef } from "react";
+import { addDaysJst, mondayOfWeek } from "~domain/jst";
 
 import { BoardScheduleAllDayExpand } from "~/features/board/components/board-schedule-all-day-expand";
 import { boardScheduleAllDayRenderEvent } from "~/features/board/components/board-schedule-all-day-render-event";
@@ -38,7 +39,13 @@ import type {
   BoardRow,
   BoardScheduleBlock,
 } from "~/features/board/types/board";
+import {
+  calendarDayProps,
+  calendarDayStyleClasses,
+  calendarDayColor,
+} from "~/lib/calendar-day-style";
 import { SCHEDULE_LABELS_JA } from "~/lib/schedule-labels";
+import { cn } from "~/lib/utils";
 
 import classes from "~/features/board/components/board-schedule.module.css";
 
@@ -46,6 +53,7 @@ const BOARD_WEEK_VIEW_PROPS = {
   ...BOARD_SCHEDULE_WITHOUT_HEADER,
   allDaySlotHeight: `calc(${ALL_DAY_ROW_HEIGHT} * ${ALL_DAY_VISIBLE_ROWS})`,
   classNames: {
+    weekViewDayLabel: classes.weekDayLabel,
     weekViewAllDaySlots: classes.weekAllDaySlots,
     weekViewAllDaySlotsEvents: classes.weekAllDayEvents,
     weekViewAllDaySlotsList: classes.weekAllDaySlotsList,
@@ -146,6 +154,7 @@ export function BoardSchedule({
   const yearViewProps = {
     ...BOARD_SCHEDULE_WITHOUT_HEADER,
     firstDayOfWeek: 1 as const,
+    getDayProps: calendarDayProps,
     onDayClick: () => undefined,
     renderDay: createBoardScheduleYearRenderDay({
       baseEvents: ui.baseEvents,
@@ -161,10 +170,16 @@ export function BoardSchedule({
   return (
     <>
       <Card
-        className={classes.boardSchedule}
+        className={cn(classes.boardSchedule, calendarDayStyleClasses.japaneseCalendar)}
         padding="md"
         style={
           {
+            ...Object.fromEntries(
+              Array.from({ length: 7 }, (_, index) => [
+                `--board-week-day-${index}`,
+                calendarDayColor(addDaysJst(mondayOfWeek(anchorDateJst), index)) ?? "inherit",
+              ]),
+            ),
             "--board-all-day-row-height": ALL_DAY_ROW_HEIGHT,
             "--board-all-day-visible-rows": ALL_DAY_VISIBLE_ROWS,
           } as CSSProperties
@@ -196,7 +211,7 @@ export function BoardSchedule({
               locale="ja"
               dayViewProps={dayViewProps}
               mode={pending ? "static" : "default"}
-              monthViewProps={BOARD_MONTH_VIEW_PROPS}
+              monthViewProps={{ ...BOARD_MONTH_VIEW_PROPS, getDayProps: calendarDayProps }}
               onDayClick={pending ? undefined : handleDayClick}
               onEventClick={pending ? undefined : ui.handleEventClick}
               onEventDrop={

@@ -23,9 +23,6 @@ export async function listExternal(
   ownerId: string,
   args: { anchorDateJst: string; view: BoardScheduleView },
 ): Promise<ExternalCalendarEventDto[]> {
-  if (args.view !== "day" && args.view !== "week") {
-    return [];
-  }
   const connection = await getConnection(ctx, ownerId);
   if (connection === null) {
     return [];

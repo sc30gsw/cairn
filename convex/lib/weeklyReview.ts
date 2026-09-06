@@ -69,6 +69,7 @@ export function buildWeeklyReviewDays(args: {
   liveDayDates: ReadonlySet<string>;
   rows: readonly WeeklyStatusRow[];
   todayJst: string;
+  serviceStartDateJst: string;
   weekDates: readonly string[];
 }): WeeklyReviewDay[] {
   const rowsByDate = new Map<string, WeeklyStatusRow[]>();
@@ -89,6 +90,7 @@ export function buildWeeklyReviewDays(args: {
       dateJst,
       hasLiveDay: args.liveDayDates.has(dateJst),
       todayJst: args.todayJst,
+      serviceStartDateJst: args.serviceStartDateJst,
     });
     const planned = completedCount(counts);
     return {

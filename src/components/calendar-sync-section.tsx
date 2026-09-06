@@ -6,12 +6,6 @@ import { useEffect } from "react";
 import { CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE, type CalendarSyncStatus } from "~domain/calendarSync";
 import type { OwnerSyncOutcome } from "~domain/validators";
 
-import {
-  clearCalendarSyncConnectPending,
-  linkGoogleCalendar,
-  readCalendarSyncConnectPending,
-  readCalendarSyncReturnError,
-} from "~/features/board/lib/calendar-sync-actions";
 import { useBusy } from "~/hooks/use-busy";
 import {
   useCalendarSyncStatus,
@@ -20,13 +14,19 @@ import {
   useSetVisibleCalendars,
   useSyncCalendarNow,
 } from "~/hooks/use-calendar-sync";
+import {
+  clearCalendarSyncConnectPending,
+  linkGoogleCalendar,
+  readCalendarSyncConnectPending,
+  readCalendarSyncReturnError,
+} from "~/lib/calendar-sync-actions";
 import { notifyError } from "~/lib/notify";
 import { runMutation } from "~/lib/run-mutation";
 import { NUMERAL_FONT } from "~/lib/theme";
 
-export const CALENDAR_SYNC_TITLE = "カレンダー同期";
+export const CALENDAR_SYNC_TITLE = "Google カレンダー連携";
 const CALENDAR_SYNC_DESCRIPTION =
-  "本番日・チェックポイントの期限・予定を Google のメインカレンダーと同期します。Google カレンダーの予定は、ボードの「予定」タブの日・週表示に並びます。";
+  "本番日・チェックポイントの期限・予定を Google のメインカレンダーと同期します。Google カレンダーの予定は、ボードの「予定」タブの日・週・月・年表示に並びます。";
 export const CALENDAR_SYNC_CONNECT_LABEL = "Google カレンダーと連携";
 export const CALENDAR_SYNC_RECONNECT_LABEL = "もう一度接続";
 export const CALENDAR_SYNC_NOW_LABEL = "今すぐ同期";
@@ -139,7 +139,7 @@ export function CalendarSyncSection() {
         <Text c="dimmed" size="sm">
           {CALENDAR_SYNC_DESCRIPTION}
         </Text>
-        <Group>
+        <Group justify="flex-end">
           <Button
             leftSection={<IconBrandGoogle aria-hidden size={16} />}
             loading={busy}
@@ -150,8 +150,7 @@ export function CalendarSyncSection() {
           </Button>
         </Group>
         <Text c="dimmed" size="xs">
-          Google
-          の画面でカレンダーの権限を許可すると、ボードの「予定」タブに戻って同期が始まります。
+          Google の画面でカレンダーの権限を許可すると、この画面に戻って同期が始まります。
         </Text>
       </Stack>
     );
@@ -182,6 +181,15 @@ export function CalendarSyncSection() {
             {formatSyncedAt(status.lastSyncedAt)}
           </Text>
         </Text>
+        <Button
+          color="red"
+          disabled={busy}
+          onClick={requestDisconnect}
+          type="button"
+          variant="subtle"
+        >
+          {CALENDAR_SYNC_DISCONNECT_LABEL}
+        </Button>
         {status.status === "needsReauth" ? (
           <Text c="red" size="sm">
             {CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE}
@@ -224,7 +232,7 @@ export function CalendarSyncSection() {
           ))}
         </Stack>
       </Checkbox.Group>
-      <Group gap="sm" wrap="wrap">
+      <Group gap="sm" justify="space-between" wrap="wrap">
         {status.status === "needsReauth" ? (
           <Button
             leftSection={<IconBrandGoogle aria-hidden size={16} />}
@@ -245,15 +253,6 @@ export function CalendarSyncSection() {
             {CALENDAR_SYNC_NOW_LABEL}
           </Button>
         )}
-        <Button
-          color="red"
-          disabled={busy}
-          onClick={requestDisconnect}
-          type="button"
-          variant="subtle"
-        >
-          {CALENDAR_SYNC_DISCONNECT_LABEL}
-        </Button>
       </Group>
     </Stack>
   );

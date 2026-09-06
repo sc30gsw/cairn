@@ -4,7 +4,7 @@ import type { Doc, Id } from "../_generated/dataModel";
 import { categoryFields } from "./categoryFields";
 import type { Condition } from "./conditions";
 import { CONDITIONS } from "./conditions";
-import { isRestCalendarDate } from "./dayView";
+import { dayViewKind } from "./dayView";
 import type {
   BreakdownRow,
   CategoryBreakdown,
@@ -141,14 +141,20 @@ export function buildDayBreakdown(
   itemById: Map<Id<"items">, Doc<"items">>,
   categoryById: Map<Id<"categories">, Doc<"categories">>,
   conditionByDate: Readonly<Record<string, Condition | null | undefined>>,
+  serviceStartDateJst: string,
 ): DayBreakdown {
-  const isRest = isRestCalendarDate(dateJst, todayJst, liveDayDates.has(dateJst));
+  const kind = dayViewKind({
+    dateJst,
+    todayJst,
+    hasLiveDay: liveDayDates.has(dateJst),
+    serviceStartDateJst,
+  });
   const aggregated = aggregateBreakdownRows(rows, itemById, categoryById);
   return {
     ...aggregated,
     byCondition: aggregateByCondition(rows, conditionByDate),
     dateJst,
-    isRest,
+    kind,
   };
 }
 
@@ -162,6 +168,7 @@ export function buildWeekBreakdown(
   itemById: Map<Id<"items">, Doc<"items">>,
   categoryById: Map<Id<"categories">, Doc<"categories">>,
   conditionByDate: Readonly<Record<string, Condition | null | undefined>>,
+  serviceStartDateJst: string,
 ): WeekBreakdown {
   const aggregated = aggregateBreakdownRows(rows, itemById, categoryById);
   const rowsByDate = groupBy(rows, prop("dateJst"));
@@ -171,7 +178,12 @@ export function buildWeekBreakdown(
     return {
       confirmedMinutes: confirmedVolumeMinutes(dayRows),
       dateJst,
-      isRest: isRestCalendarDate(dateJst, todayJst, liveDayDates.has(dateJst)),
+      kind: dayViewKind({
+        dateJst,
+        todayJst,
+        hasLiveDay: liveDayDates.has(dateJst),
+        serviceStartDateJst,
+      }),
       skippedMinutes: skippedVolumeMinutes(dayRows),
     };
   });

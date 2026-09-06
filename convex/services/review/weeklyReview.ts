@@ -6,6 +6,7 @@ import { addDaysJst, mondayOfWeek } from "../../lib/jst";
 import { formatWeeklyShareMarkdown } from "../../lib/share";
 import type { WeeklyReviewDto } from "../../lib/validators";
 import { buildDigest, buildWeeklyReviewDays, elapsedDaysInRange } from "../../lib/weeklyReview";
+import { serviceStartDate } from "../days/serviceStartDate";
 import { buildConditionByDate, liveDayDatesFrom, liveRows } from "../history/shared";
 import { buildTargetProgress } from "../targets/buildTargetProgress";
 
@@ -26,7 +27,7 @@ export async function weeklyReview(
   const previousWeekEnd = addDaysJst(weekStart, -1);
   const isCurrentWeek = weekStart === mondayOfWeek(todayJst);
 
-  const [rows, days, catalog, targets] = await Promise.all([
+  const [rows, days, catalog, serviceStartDateJst, targets] = await Promise.all([
     ctx.db
       .query("rows")
       .withIndex("by_owner_and_date", (q) =>
@@ -40,6 +41,7 @@ export async function weeklyReview(
       )
       .collect(),
     loadCatalog(ctx, ownerId),
+    serviceStartDate(ctx, ownerId),
     isCurrentWeek
       ? ctx.db
           .query("targets")
@@ -79,6 +81,7 @@ export async function weeklyReview(
       conditionByDate: buildConditionByDate(days),
       liveDayDates,
       rows: statusRows,
+      serviceStartDateJst,
       todayJst,
       weekDates,
     }),

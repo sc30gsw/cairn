@@ -9,6 +9,13 @@ export { classes as calendarDayStyleClasses };
 
 type CalendarDayButtonProps = Pick<Partial<DayProps>, "className" | "disabled" | "title">;
 
+export function calendarDayColor(dateJst: DateStringValue): string | undefined {
+  const weekday = dayjs(dateJst).day();
+  if (holidayName(dateJst) || weekday === 0) return "var(--mantine-color-red-6)";
+  if (weekday === 6) return "var(--mantine-color-blue-6)";
+  return undefined;
+}
+
 export function calendarDayClassName(
   dateJst: DateStringValue,
   todayJst?: DateStringValue,

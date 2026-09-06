@@ -1,6 +1,10 @@
-.saturdayDay,
-.sundayDay,
-.holidayDay {
+.saturdayDay:not([data-selected], [data-disabled], [data-outside]) {
+  color: var(--mantine-color-blue-6);
+}
+
+.sundayDay:not([data-selected], [data-disabled], [data-outside]),
+.holidayDay:not([data-selected], [data-disabled], [data-outside]) {
+  color: var(--mantine-color-red-6);
 }
 
 .unrecordedDay::after {
@@ -14,12 +18,14 @@
 
 .japaneseCalendar :global(.mantine-Schedule-monthViewWeekday:nth-child(6)),
 .japaneseCalendar :global(.mantine-MonthView-monthViewWeekday:nth-child(6)),
+.japaneseCalendar :global(.mantine-Schedule-yearViewWeekday:nth-child(6)),
 .japaneseCalendar th:nth-child(6) {
   color: var(--mantine-color-blue-6);
 }
 
 .japaneseCalendar :global(.mantine-Schedule-monthViewWeekday:nth-child(7)),
 .japaneseCalendar :global(.mantine-MonthView-monthViewWeekday:nth-child(7)),
+.japaneseCalendar :global(.mantine-Schedule-yearViewWeekday:nth-child(7)),
 .japaneseCalendar th:nth-child(7) {
   color: var(--mantine-color-red-6);
 }

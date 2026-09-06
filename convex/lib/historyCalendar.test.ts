@@ -50,7 +50,7 @@ test("buildMinutesByDate と buildHeatmapDays が確定分を集計する", () =
   expect(heatmap[0]).toMatchObject({
     condition: null,
     dateJst: "2026-08-17",
-    isRest: false,
+    kind: "live",
     memo: null,
     minutes: 30,
   });

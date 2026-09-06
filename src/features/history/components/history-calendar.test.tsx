@@ -26,7 +26,7 @@ test("buildHeatmapChartData は休養と0分を除外する", () => {
       {
         condition: null,
         dateJst: "2026-08-15",
-        isRest: true,
+        kind: "rest",
         memo: null,
         minutes: 0,
         movingAverage: 0,
@@ -34,7 +34,7 @@ test("buildHeatmapChartData は休養と0分を除外する", () => {
       {
         condition: null,
         dateJst: "2026-08-17",
-        isRest: false,
+        kind: "live",
         memo: null,
         minutes: 30,
         movingAverage: 10,
@@ -50,7 +50,7 @@ test("formatHeatmapTooltip", () => {
     formatHeatmapTooltip("2026-08-15", 0, {
       condition: null,
       dateJst: "2026-08-15",
-      isRest: true,
+      kind: "rest",
       memo: null,
       minutes: 0,
       movingAverage: 0,
@@ -60,7 +60,7 @@ test("formatHeatmapTooltip", () => {
     formatHeatmapTooltip("2026-08-17", 30, {
       condition: null,
       dateJst: "2026-08-17",
-      isRest: false,
+      kind: "live",
       memo: null,
       minutes: 30,
       movingAverage: 10,
@@ -82,7 +82,7 @@ test("学習量ヒートマップが Mantine Heatmap を描画", () => {
         {
           condition: null,
           dateJst: "2026-08-17",
-          isRest: false,
+          kind: "live",
           memo: null,
           minutes: 30,
           movingAverage: 10,
@@ -139,7 +139,7 @@ test("分析パネルの月スコープに学習量ヒートマップが見え�
         byCondition: [],
         confirmedMinutes: 0,
         dateJst: "2026-08-17",
-        isRest: false,
+        kind: "live",
         rows: [],
         skippedMinutes: 0,
       }}
@@ -147,7 +147,7 @@ test("分析パネルの月スコープに学習量ヒートマップが見え�
         {
           condition: null,
           dateJst: "2026-08-17",
-          isRest: false,
+          kind: "live",
           memo: null,
           minutes: 30,
           movingAverage: 10,
@@ -161,7 +161,7 @@ test("分析パネルの月スコープに学習量ヒートマップが見え�
           {
             condition: null,
             dateJst: "2026-08-17",
-            isRest: false,
+            kind: "live",
             memo: null,
             minutes: 30,
             movingAverage: 10,
@@ -206,7 +206,7 @@ test("月マスに学習量と均を載せる", () => {
         {
           condition: "好調",
           dateJst: "2026-08-17",
-          isRest: false,
+          kind: "live",
           memo: null,
           minutes: 30,
           movingAverage: 10,
@@ -288,7 +288,7 @@ test("週の行がタイトルとステータスで見える", () => {
             {
               condition: "好調",
               dateJst: "2026-08-17",
-              isRest: false,
+              kind: "live",
               memo: "集中できた",
               minutes: 30,
               movingAverage: 10,
@@ -326,7 +326,7 @@ test("分析パネルの日スコープでメモハイライトが見える", ()
         byCondition: [],
         confirmedMinutes: 30,
         dateJst: "2026-08-17",
-        isRest: false,
+        kind: "live",
         rows: [],
         skippedMinutes: 0,
       }}
@@ -334,7 +334,7 @@ test("分析パネルの日スコープでメモハイライトが見える", ()
         {
           condition: "好調",
           dateJst: "2026-08-17",
-          isRest: false,
+          kind: "live",
           memo: "集中できた",
           minutes: 30,
           movingAverage: 10,
@@ -348,7 +348,7 @@ test("分析パネルの日スコープでメモハイライトが見える", ()
           {
             condition: "好調",
             dateJst: "2026-08-17",
-            isRest: false,
+            kind: "live",
             memo: "集中できた",
             minutes: 30,
             movingAverage: 10,
@@ -392,7 +392,7 @@ test("週Agendaの日付ヘッダーが日ページへリンクする", () => {
             {
               condition: "好調",
               dateJst: "2026-08-17",
-              isRest: false,
+              kind: "live",
               memo: "集中できた",
               minutes: 30,
               movingAverage: 10,
@@ -417,7 +417,7 @@ test("休養の日でもこの日を開くがある", () => {
         byCondition: [],
         confirmedMinutes: 0,
         dateJst: "2026-08-15",
-        isRest: true,
+        kind: "rest",
         rows: [],
         skippedMinutes: 0,
       }}
@@ -425,7 +425,7 @@ test("休養の日でもこの日を開くがある", () => {
         {
           condition: null,
           dateJst: "2026-08-15",
-          isRest: true,
+          kind: "rest",
           memo: null,
           minutes: 0,
           movingAverage: 0,
@@ -439,7 +439,7 @@ test("休養の日でもこの日を開くがある", () => {
           {
             condition: null,
             dateJst: "2026-08-15",
-            isRest: true,
+            kind: "rest",
             memo: null,
             minutes: 0,
             movingAverage: 0,
@@ -477,7 +477,7 @@ const memoScopeWeekDays = [
   {
     condition: "好調" as const,
     dateJst: "2026-08-17",
-    isRest: false,
+    kind: "live",
     memo: "週スコープの好調メモ",
     minutes: 30,
     movingAverage: 10,
@@ -485,7 +485,7 @@ const memoScopeWeekDays = [
   {
     condition: "普通" as const,
     dateJst: "2026-08-16",
-    isRest: false,
+    kind: "live",
     memo: "週スコープの普通メモ",
     minutes: 20,
     movingAverage: 10,
@@ -512,7 +512,7 @@ test("分析パネルの週スコープでコンディション別メモが見�
         byCondition: [],
         confirmedMinutes: 0,
         dateJst: "2026-08-17",
-        isRest: false,
+        kind: "live",
         rows: [],
         skippedMinutes: 0,
       }}
@@ -551,7 +551,7 @@ test("分析パネルの月スコープでコンディション別メモが見�
         byCondition: [],
         confirmedMinutes: 0,
         dateJst: "2026-08-17",
-        isRest: false,
+        kind: "live",
         rows: [],
         skippedMinutes: 0,
       }}

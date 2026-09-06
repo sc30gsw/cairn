@@ -6,6 +6,7 @@ import { ValidationFailedError } from "../../lib/errors";
 import { aggregateBreakdownRows, aggregateByCondition } from "../../lib/historyBreakdown";
 import { addDaysJst, calendarDatesInMonth } from "../../lib/jst";
 import { throwDomain } from "../../lib/ownerFunctions";
+import { serviceStartDate } from "../days/serviceStartDate";
 import {
   buildConditionByDate,
   buildHeatmapDays,
@@ -27,7 +28,7 @@ export async function computeMonthBreakdown(
     throwDomain(new ValidationFailedError({ message: YEAR_MONTH_MESSAGE }));
   }
   const lookbackStart = addDaysJst(start, -6);
-  const [rows, days, catalog] = await Promise.all([
+  const [rows, days, catalog, serviceStartDateJst] = await Promise.all([
     ctx.db
       .query("rows")
       .withIndex("by_owner_and_date", (q) =>
@@ -41,6 +42,7 @@ export async function computeMonthBreakdown(
       )
       .collect(),
     loadCatalog(ctx, ownerId),
+    serviceStartDate(ctx, ownerId),
   ]);
   const liveDayDates = liveDayDatesFrom(days);
   const monthLiveDayDates = new Set(
@@ -70,6 +72,7 @@ export async function computeMonthBreakdown(
       minutesByDate,
       conditionByDate,
       memoByDate,
+      serviceStartDateJst,
     ),
     events,
     rows: aggregated.rows,

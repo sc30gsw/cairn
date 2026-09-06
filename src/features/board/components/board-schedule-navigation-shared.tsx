@@ -6,7 +6,7 @@ import { isFutureDateJst, mondayOfWeek, type DateJst } from "~domain/jst";
 
 import { formatWeekNavigationLabel } from "~/features/board/lib/board-schedule-navigation-labels";
 import type { BoardScheduleView } from "~/features/board/schemas/board-search-schema";
-import { calendarDayStyleClasses } from "~/lib/calendar-day-style";
+import { calendarDayStyleClasses, calendarDayColor } from "~/lib/calendar-day-style";
 import { learningDatePickerProps } from "~/lib/learning-date-picker-props";
 import { SCHEDULE_LABELS_JA } from "~/lib/schedule-labels";
 import { cn } from "~/lib/utils";
@@ -74,7 +74,12 @@ export function BoardScheduleDateControl({
       component="div"
       interactive={false}
     >
-      <span className={classes.dateControlLabel}>{label}</span>
+      <span
+        className={classes.dateControlLabel}
+        style={className === undefined ? { color: calendarDayColor(value) } : undefined}
+      >
+        {label}
+      </span>
       <DatePickerInput
         aria-label={ariaLabel}
         className={classes.datePickerOverlay}

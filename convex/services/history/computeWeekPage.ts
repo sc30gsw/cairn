@@ -3,6 +3,7 @@ import { loadCatalog } from "../../lib/catalogLoader";
 import { buildWeekBreakdown } from "../../lib/historyBreakdown";
 import { addDaysJst, mondayOfWeek } from "../../lib/jst";
 import { confirmedVolumeMinutes } from "../../lib/volume";
+import { serviceStartDate } from "../days/serviceStartDate";
 import {
   buildConditionByDate,
   buildHeatmapDays,
@@ -21,7 +22,7 @@ export async function computeWeekPage(
   const weekEnd = addDaysJst(weekStart, 6);
   const weekDates = Array.from({ length: 7 }, (_, offset) => addDaysJst(weekStart, offset));
   const lookbackStart = addDaysJst(weekStart, -6);
-  const [rows, days, catalog] = await Promise.all([
+  const [rows, days, catalog, serviceStartDateJst] = await Promise.all([
     ctx.db
       .query("rows")
       .withIndex("by_owner_and_date", (q) =>
@@ -35,6 +36,7 @@ export async function computeWeekPage(
       )
       .collect(),
     loadCatalog(ctx, ownerId),
+    serviceStartDate(ctx, ownerId),
   ]);
   const liveDayDates = liveDayDatesFrom(days);
   const liveWeekRows = liveRows(
@@ -53,6 +55,7 @@ export async function computeWeekPage(
       minutesByDate,
       conditionByDate,
       memoByDate,
+      serviceStartDateJst,
     ),
     events,
     volumeMinutes: confirmedVolumeMinutes(liveWeekRows),
@@ -66,6 +69,7 @@ export async function computeWeekPage(
       catalog.itemById,
       catalog.categoryById,
       conditionByDate,
+      serviceStartDateJst,
     ),
     weekEnd,
     weekStart,

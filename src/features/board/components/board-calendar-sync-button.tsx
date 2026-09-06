@@ -2,18 +2,19 @@ import { Button, Modal, Skeleton, Stack, Tooltip } from "@mantine/core";
 import { IconCalendar } from "@tabler/icons-react";
 import { Suspense } from "react";
 
-import {
-  CALENDAR_SYNC_TITLE,
-  CalendarSyncSection,
-} from "~/features/board/components/calendar-sync-section";
+import { CALENDAR_SYNC_TITLE, CalendarSyncSection } from "~/components/calendar-sync-section";
 import { boardRoute } from "~/features/board/lib/board-route-api";
 
 export const BOARD_CALENDAR_SYNC_TOOLTIP =
-  "Google カレンダーとの連携・同期状態を確認します。連携後は、外部予定を「予定」タブの日・週表示で確認できます。";
+  "Google カレンダーとの連携・同期状態を確認します。連携後は、外部予定を「予定」タブの日・週・月・年表示で確認できます。";
 
 export function BoardCalendarSyncButton() {
-  const { calendarSync } = boardRoute.useSearch();
+  const { calendarSync, tab } = boardRoute.useSearch();
   const navigate = boardRoute.useNavigate();
+
+  if (tab !== "schedule") {
+    return null;
+  }
 
   function setOpened(opened: boolean) {
     void navigate({
@@ -41,7 +42,7 @@ export function BoardCalendarSyncButton() {
         </Button>
       </Tooltip>
       <Modal
-        closeButtonProps={{ "aria-label": "カレンダー同期を閉じる" }}
+        closeButtonProps={{ "aria-label": "Google カレンダー連携を閉じる" }}
         onClose={() => setOpened(false)}
         opened={calendarSync === true}
         size="lg"
@@ -49,7 +50,7 @@ export function BoardCalendarSyncButton() {
       >
         <Suspense
           fallback={
-            <Stack aria-label="カレンダー同期を読み込み中" component="output" gap="md">
+            <Stack aria-label="Google カレンダー連携を読み込み中" component="output" gap="md">
               <Skeleton animate={false} height={40} />
               <Skeleton animate={false} height={120} />
             </Stack>

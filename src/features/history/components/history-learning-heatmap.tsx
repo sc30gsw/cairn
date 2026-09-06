@@ -3,6 +3,7 @@ import { indexBy, prop } from "remeda";
 import type { DateJst } from "~domain/jst";
 
 import {
+  BEFORE_REGISTRATION_HEATMAP_FILL,
   buildHeatmapChartData,
   formatHeatmapTooltip,
   HEATMAP_CHART_COLORS,
@@ -44,7 +45,12 @@ export function HistoryLearningHeatmap({
         const day = byDate[date];
         const isRest = isRestHeatmapDay(day) || value === null || value === 0;
         return {
-          fill: isRest ? REST_HEATMAP_FILL : undefined,
+          fill:
+            day?.kind === "beforeRegistration"
+              ? BEFORE_REGISTRATION_HEATMAP_FILL
+              : isRest
+                ? REST_HEATMAP_FILL
+                : undefined,
           onClick: () => onDayClick(date),
           style: { cursor: "pointer" },
         };

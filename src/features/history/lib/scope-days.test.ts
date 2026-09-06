@@ -13,7 +13,7 @@ function day(dateJst: string, overrides: Partial<HeatmapDay> = {}): HeatmapDay {
   return {
     condition: null,
     dateJst,
-    isRest: false,
+    kind: "live",
     memo: null,
     minutes: 0,
     movingAverage: 0,

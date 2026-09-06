@@ -1,12 +1,19 @@
 import { isFutureDateJst } from "./jst";
 
-export const DAY_VIEW_KINDS = ["live", "todayEmpty", "rest", "unrecorded"] as const;
+export const DAY_VIEW_KINDS = [
+  "live",
+  "todayEmpty",
+  "rest",
+  "unrecorded",
+  "beforeRegistration",
+] as const;
 
 export type DayViewKind = (typeof DAY_VIEW_KINDS)[number];
 
 export function dayViewKind(args: {
   dateJst: string;
   hasLiveDay: boolean;
+  serviceStartDateJst: string;
   todayJst: string;
 }): DayViewKind {
   if (isFutureDateJst(args.dateJst, args.todayJst)) {
@@ -14,6 +21,9 @@ export function dayViewKind(args: {
   }
   if (args.hasLiveDay) {
     return "live";
+  }
+  if (args.dateJst < args.serviceStartDateJst) {
+    return "beforeRegistration";
   }
   if (args.dateJst === args.todayJst) {
     return "todayEmpty";
@@ -25,6 +35,7 @@ export function isRestCalendarDate(
   dateJst: string,
   todayJst: string,
   hasLiveDay: boolean,
+  serviceStartDateJst: string,
 ): boolean {
-  return dayViewKind({ dateJst, hasLiveDay, todayJst }) === "rest";
+  return dayViewKind({ dateJst, hasLiveDay, serviceStartDateJst, todayJst }) === "rest";
 }
