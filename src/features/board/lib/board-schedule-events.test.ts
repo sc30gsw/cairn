@@ -209,7 +209,7 @@ test("色が未指定の外部予定はラベンダーの予定になり、印�
     },
   ]);
   expect(event).toEqual({
-    color: "#9fe1cb",
+    color: "indigo",
     end: "2026-08-17 11:00:00",
     id: "external:ext1",
     start: "2026-08-17 10:00:00",

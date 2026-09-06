@@ -38,7 +38,8 @@ vi.mock("~/features/today/hooks/use-day-page-date-jst", () => ({
   useDayPageDateJst: () => "2026-08-17",
 }));
 
-vi.mock("@tanstack/react-router", () => ({
+vi.mock("@tanstack/react-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@tanstack/react-router")>()),
   Link: ({ children, to }: { children?: React.ReactNode; to: string }) => (
     <a href={to}>{children}</a>
   ),

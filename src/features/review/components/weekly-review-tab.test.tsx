@@ -5,7 +5,8 @@ import { WeeklyReviewTab } from "~/features/review/components/weekly-review-tab"
 import type { WeeklyReview } from "~/features/review/types/weekly-review";
 import { renderWithMantine } from "~/test-utils/render";
 
-vi.mock("@tanstack/react-router", () => ({
+vi.mock("@tanstack/react-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@tanstack/react-router")>()),
   Link: ({ children }: Record<"children", ReactNode>) => <a href="/review">{children}</a>,
 }));
 
