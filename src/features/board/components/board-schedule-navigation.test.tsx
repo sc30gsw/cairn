@@ -19,8 +19,7 @@ const baseProps = {
 test("day view renders a single header control for the date picker", () => {
   renderWithMantine(<BoardScheduleNavigation {...baseProps} scheduleView="day" />);
 
-  expect(screen.getByText("2026/08/22")).toBeDefined();
-  expect(screen.getByLabelText("日付を選択")).toBeDefined();
+  expect(screen.getByRole("button", { name: "日付を選択" }).textContent).toBe("2026/08/22");
 });
 
 test("week view renders one date control between previous and next", () => {

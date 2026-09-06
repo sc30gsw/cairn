@@ -292,7 +292,7 @@ export function BoardSchedule({
           return onMoveExternal({
             externalId: ui.openedExternal._id,
             title: values.title,
-            colorId: values.colorId === "calendar" ? null : values.colorId,
+            colorId: values.colorId,
             startAt: dateToScheduleInstant(values.start),
             endAt: dateToScheduleInstant(values.end),
           });

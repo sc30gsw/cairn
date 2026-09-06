@@ -17,6 +17,8 @@ import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-st
 import {
   DATE_PICKER_VALUE_FORMAT,
   DATE_TIME_PICKER_VALUE_FORMAT,
+  MONTH_PICKER_VALUE_FORMAT,
+  YEAR_PICKER_VALUE_FORMAT,
 } from "~/lib/date-display-formats";
 import { PAPER_TOKENS } from "~/lib/paper-tokens";
 
@@ -119,10 +121,10 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
 
 const datePickerDefaults = {
   locale: "ja",
-  monthLabelFormat: "YYYY年M月",
-  yearLabelFormat: "YYYY年",
+  monthLabelFormat: MONTH_PICKER_VALUE_FORMAT,
+  yearLabelFormat: YEAR_PICKER_VALUE_FORMAT,
   monthsListFormat: "M月",
-  yearsListFormat: "YYYY年",
+  yearsListFormat: YEAR_PICKER_VALUE_FORMAT,
   firstDayOfWeek: 1,
   getDayProps: calendarDayProps,
   classNames: { month: calendarDayStyleClasses.japaneseCalendar },

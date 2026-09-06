@@ -20,6 +20,7 @@ import {
 } from "~/features/history/lib/month-schedule-events";
 import type { MonthBreakdown, MonthEvent } from "~/features/history/types/history";
 import { calendarDayStyleClasses, historyCalendarDayProps } from "~/lib/calendar-day-style";
+import { MONTH_PICKER_VALUE_FORMAT } from "~/lib/date-display-formats";
 import { SCHEDULE_LABELS_JA } from "~/lib/schedule-labels";
 
 import classes from "~/features/history/components/history-month-view.module.css";
@@ -91,6 +92,7 @@ export function HistoryMonthView({
             onClick={() => shiftMonth(-1)}
           />
           <ScheduleHeader.MonthYearSelect
+            labelFormat={MONTH_PICKER_VALUE_FORMAT}
             monthValue={dayjs(date).month()}
             onMonthChange={(monthValue) => {
               setDate(dayjs(date).month(monthValue).startOf("month").format("YYYY-MM-DD"));

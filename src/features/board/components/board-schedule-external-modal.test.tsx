@@ -38,6 +38,7 @@ test("外部予定の題名・時間・カレンダー名が見え、削除は�
   expect(getByText("owner@example.com")).toBeDefined();
   expect(getByText("仕事")).toBeDefined();
 
+  await vi.waitFor(() => expect(getByRole("dialog").contains(document.activeElement)).toBe(true));
   const removeButton = getByRole("button", { name: "削除" });
   removeButton.focus();
   await vi.waitFor(() =>
@@ -56,16 +57,17 @@ test("外部予定の題名・時間・カレンダー名が見え、削除は�
 });
 
 test("モバイルではドラッグの案内を出さない", () => {
-  const { getByText, queryByText } = renderWithMantine(
+  const { getAllByText, getByText, queryByText } = renderWithMantine(
     <BoardScheduleExternalModal
       onUpdate={vi.fn()}
-      external={EXTERNAL}
+      external={{ ...EXTERNAL, calendarName: "owner@example.com" }}
       onClose={vi.fn()}
       onRemove={vi.fn()}
     />,
   );
   expect(queryByText(/ドラッグで動かす/)).toBeNull();
   expect(getByText(/Google カレンダー上の予定も変更・削除/)).toBeDefined();
+  expect(getAllByText("owner@example.com")).toHaveLength(1);
 });
 
 test("読み取り専用の予定は削除できずドラッグの案内も出さない", () => {
@@ -126,7 +128,7 @@ test("件名・色を同じフォームで編集し、失敗時には入力を�
   );
   fireEvent.change(view.getByRole("textbox", { name: "件名" }), { target: { value: "定期検診" } });
   fireEvent.click(view.getByRole("combobox", { name: "色" }));
-  fireEvent.click(await view.findByRole("option", { name: "トマト" }));
+  fireEvent.click(await view.findByRole("option", { name: "Tomato" }));
   fireEvent.submit(
     view.getByRole("button", { name: "保存" }).closest('[role="dialog"]')?.querySelector("form") ??
       document.body,
@@ -147,9 +149,12 @@ test("Google の各色を濃淡付きで表示し、選択した色を入力欄�
     />,
   );
   const colorInput = view.getByRole("combobox", { name: "色" });
+  expect(colorInput.getAttribute("value")).toBe("Lavender");
   fireEvent.click(colorInput);
-  const orange = await view.findByRole("option", { name: "ミカン" });
-  const red = view.getByRole("option", { name: "トマト" });
+  const orange = await view.findByRole("option", { name: "Tangerine" });
+  const red = view.getByRole("option", { name: "Tomato" });
+  expect(view.queryByRole("option", { name: /既定/ })).toBeNull();
+  expect(view.getAllByRole("option")).toHaveLength(11);
   expect(
     orange.querySelector(".mantine-ColorSwatch-colorOverlay")?.getAttribute("style"),
   ).toContain("var(--mantine-color-orange-3)");
@@ -158,13 +163,13 @@ test("Google の各色を濃淡付きで表示し、選択した色を入力欄�
   );
   expect(
     view
-      .getByRole("option", { name: "グラファイト" })
+      .getByRole("option", { name: "Graphite" })
       .querySelector(".mantine-ColorSwatch-colorOverlay")
       ?.getAttribute("style"),
   ).toContain("var(--mantine-color-gray-5)");
   fireEvent.click(orange);
   await vi.waitFor(() => {
-    expect(colorInput.getAttribute("value")).toBe("ミカン");
+    expect(colorInput.getAttribute("value")).toBe("Tangerine");
     expect(
       colorInput.parentElement
         ?.querySelector(".mantine-ColorSwatch-colorOverlay")

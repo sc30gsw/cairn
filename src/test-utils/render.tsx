@@ -63,6 +63,7 @@ function Wrapper({ children }: Record<"children", ReactNode>) {
     <MantineProvider
       cssVariablesResolver={cssVariablesResolver}
       defaultColorScheme="light"
+      env="test"
       forceColorScheme="light"
       theme={theme}
     >

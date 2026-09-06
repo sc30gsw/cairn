@@ -8,6 +8,7 @@ import {
   yearMonthOf,
   type BoardScheduleNavigationProps,
 } from "~/features/board/components/board-schedule-navigation-shared";
+import { MONTH_PICKER_VALUE_FORMAT, YEAR_PICKER_VALUE_FORMAT } from "~/lib/date-display-formats";
 import { SCHEDULE_LABELS_JA } from "~/lib/schedule-labels";
 
 export function BoardScheduleMonthNavigation({
@@ -34,7 +35,7 @@ export function BoardScheduleMonthNavigation({
     <BoardScheduleNavigationFrame
       center={
         <ScheduleHeader.MonthYearSelect
-          labelFormat="YYYY年M月"
+          labelFormat={MONTH_PICKER_VALUE_FORMAT}
           monthValue={dayjs(monthAnchor).month()}
           onMonthChange={(monthValue) => {
             setDate(dayjs(monthAnchor).month(monthValue).startOf("month").format("YYYY-MM-DD"));
@@ -80,10 +81,8 @@ export function BoardScheduleYearNavigation({
         onClick={() => onDateChange(`${Number(selectedDateJst.slice(0, 4)) - 1}-01-01`)}
       />
       <ScheduleHeader.MonthYearSelect
-        labelFormat="YYYY年"
+        labelFormat={YEAR_PICKER_VALUE_FORMAT}
         withMonths={false}
-        monthValue={0}
-        onMonthChange={() => undefined}
         onYearChange={(yearValue) => {
           const next = `${yearValue}-01-01`;
           if (yearMonthOf(next) > yearMonthOf(todayJst)) {

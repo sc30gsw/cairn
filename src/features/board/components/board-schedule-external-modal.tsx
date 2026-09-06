@@ -22,6 +22,10 @@ import type { BoardExternalEvent } from "~/features/board/types/board";
 import type { MutationResult } from "~/lib/run-mutation";
 
 const REMOVE_LABEL = "削除";
+const colorOptions = GOOGLE_CALENDAR_EVENT_COLORS.map((color) => ({
+  value: color.id,
+  label: color.label,
+}));
 
 type ExternalModalProps = {
   external: BoardExternalEvent | null;
@@ -38,7 +42,8 @@ function ExternalEventForm({
 }: Omit<ExternalModalProps, "external"> & { external: BoardExternalEvent }) {
   const formId = useId();
   const colorId =
-    GOOGLE_CALENDAR_EVENT_COLORS.find((color) => color.id === external.colorId)?.id ?? "calendar";
+    GOOGLE_CALENDAR_EVENT_COLORS.find((color) => color.id === external.colorId)?.id ??
+    DEFAULT_GOOGLE_CALENDAR_EVENT_COLOR.id;
   const form = useForm({
     schema: BoardExternalEventSchema,
     initialInput: {
@@ -48,10 +53,6 @@ function ExternalEventForm({
       end: scheduleInstantToDate(external.endAt),
     },
   });
-  const colorOptions = [
-    { value: "calendar", label: `既定（${DEFAULT_GOOGLE_CALENDAR_EVENT_COLOR.label}）` },
-    ...GOOGLE_CALENDAR_EVENT_COLORS.map((color) => ({ value: color.id, label: color.label })),
-  ] as const satisfies readonly { value: BoardExternalEventOutput["colorId"]; label: string }[];
   const handleSubmit: SubmitHandler<typeof BoardExternalEventSchema> = async (values) => {
     if (!external.canEdit) return;
     const result = await onUpdate(values);
@@ -85,9 +86,11 @@ function ExternalEventForm({
         <IconBrandGoogle aria-hidden size={18} />
         <Stack gap={0}>
           <Text size="sm">{external.calendarName}</Text>
-          <Text c="dimmed" size="xs">
-            {external.calendarEmail ?? "連携アカウントのメールアドレスを取得できませんでした"}
-          </Text>
+          {external.calendarName !== external.calendarEmail && (
+            <Text c="dimmed" size="xs">
+              {external.calendarEmail ?? "連携アカウントのメールアドレスを取得できませんでした"}
+            </Text>
+          )}
         </Stack>
       </Group>
       <Text c="dimmed" size="sm">

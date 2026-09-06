@@ -28,13 +28,16 @@ type BoardScheduleEventFormProps = {
   rows: readonly BoardRow[];
 };
 
-const colorOptions = BOARD_SCHEDULE_COLORS.map((color) => ({ label: color, value: color }));
+const colorOptions = BOARD_SCHEDULE_COLORS.map((color) => ({
+  label: color.charAt(0).toUpperCase() + color.slice(1),
+  value: color,
+}));
 
-function renderScheduleColorOption(color: BoardScheduleColor) {
+function renderScheduleColorOption(color: BoardScheduleColor, label: string) {
   return (
     <Group gap="xs" wrap="nowrap">
-      <ColorSwatch color={boardScheduleColorCss(color)} radius="sm" size={16} />
-      <span>{color}</span>
+      <ColorSwatch color={boardScheduleColorCss(color)} size={16} />
+      <span>{label}</span>
     </Group>
   );
 }
@@ -142,18 +145,21 @@ export function BoardScheduleEventForm({
                 label="色"
                 leftSection={
                   field.input === undefined ? undefined : (
-                    <ColorSwatch color={boardScheduleColorCss(field.input)} radius="sm" size={18} />
+                    <ColorSwatch color={boardScheduleColorCss(field.input)} size={16} />
                   )
                 }
-                leftSectionWidth={32}
                 onChange={(value) => {
-                  if (value !== null) {
-                    field.onChange(value as BoardScheduleEventInput["color"]);
+                  const option = colorOptions.find((entry) => entry.value === value);
+                  if (option !== undefined) {
+                    field.onChange(option.value);
                   }
                 }}
-                renderOption={({ option }) =>
-                  renderScheduleColorOption(option.value as BoardScheduleColor)
-                }
+                renderOption={({ option }) => {
+                  const color = colorOptions.find((entry) => entry.value === option.value);
+                  return color === undefined
+                    ? null
+                    : renderScheduleColorOption(color.value, color.label);
+                }}
                 value={field.input}
               />
             )}

@@ -11,7 +11,7 @@ export const BoardExternalEventSchema = v.pipe(
     ),
     start: v.date(),
     end: v.date(),
-    colorId: v.picklist(["calendar", ...GOOGLE_CALENDAR_EVENT_COLORS.map((color) => color.id)]),
+    colorId: v.picklist(GOOGLE_CALENDAR_EVENT_COLORS.map((color) => color.id)),
   }),
   v.forward(
     v.partialCheck(
