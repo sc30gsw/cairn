@@ -1,4 +1,16 @@
-import { Anchor, Button, Card, Center, Divider, Group, Stack, Text, Title } from "@mantine/core";
+import {
+  Anchor,
+  Button,
+  Card,
+  Center,
+  Divider,
+  Group,
+  Skeleton,
+  Stack,
+  Text,
+  Title,
+  VisuallyHidden,
+} from "@mantine/core";
 import { useLocation } from "@tanstack/react-router";
 import { useEffect } from "react";
 
@@ -11,13 +23,16 @@ import { useInstallPrompt } from "~/hooks/use-install-prompt";
 import { PASSKEY_OAUTH_PENDING_KEY, writePasskeySessionFlag } from "~/lib/passkey-storage";
 import { DISPLAY_FONT } from "~/lib/theme";
 
+import classes from "~/features/auth/components/login-screen.module.css";
+
 export function LoginScreen() {
   const passkeyAction = useAuthActionTransition();
   const googleAction = useAuthActionTransition();
   const searchStr = useLocation({ select: (location) => location.searchStr });
   const oauthFailed = new URLSearchParams(searchStr).get("authError") === "google";
   const { standalone } = useInstallPrompt();
-  const { data: publicConfig } = useAuthPublicConfig();
+  const { data: publicConfig, isPending, isFetching, isError, refetch } = useAuthPublicConfig();
+  const checkingGoogle = isPending || (publicConfig === undefined && isFetching);
   const googleSignIn = publicConfig?.googleSignIn === true;
 
   useEffect(() => {
@@ -49,21 +64,37 @@ export function LoginScreen() {
             パスキーでログイン
           </Button>
           <AuthActionFeedback result={passkeyAction.result} />
-          {googleSignIn ? (
-            <>
-              <Button
-                fullWidth
-                loading={googleAction.isPending}
-                onClick={() => void googleAction.run(signInWithGoogle)}
-                size="md"
-                variant="light"
-              >
-                Googleでログイン
-              </Button>
+          {checkingGoogle || googleSignIn ? (
+            <div>
+              {checkingGoogle ? (
+                <VisuallyHidden component="output">ログイン方法を確認中</VisuallyHidden>
+              ) : null}
+              <Skeleton animate={false} className={classes.googleSkeleton} visible={checkingGoogle}>
+                <Button
+                  aria-hidden={checkingGoogle || undefined}
+                  disabled={checkingGoogle}
+                  fullWidth
+                  loading={googleAction.isPending}
+                  onClick={() => void googleAction.run(signInWithGoogle)}
+                  size="md"
+                  variant="light"
+                >
+                  Googleでログイン
+                </Button>
+              </Skeleton>
               <div aria-live="polite">
                 <AuthActionFeedback result={googleAction.result} />
               </div>
-            </>
+            </div>
+          ) : isError && publicConfig === undefined ? (
+            <Stack gap="xs">
+              <Text c="dimmed" component="output" size="sm">
+                Googleログインを利用できるか確認できませんでした。
+              </Text>
+              <Button fullWidth onClick={() => void refetch()} size="md" variant="light">
+                もう一度確認する
+              </Button>
+            </Stack>
           ) : null}
           {oauthFailed && googleAction.result === null && !googleAction.isPending ? (
             <Text c="red" role="alert" size="sm">

@@ -1,0 +1,25 @@
+.googleSkeleton[data-visible]::before {
+  background: var(--inset);
+}
+
+.googleSkeleton[data-visible]::after {
+  background: linear-gradient(90deg, transparent, var(--bd2), transparent);
+  animation: google-shimmer 2s linear infinite;
+}
+
+@keyframes google-shimmer {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .googleSkeleton[data-visible]::after {
+    animation: none;
+    background: none;
+  }
+}
