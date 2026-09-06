@@ -13,6 +13,7 @@ import {
 import { useFocusWithin } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
 import { IconArrowBackUp, IconPlayerSkipForward, IconRepeat, IconTrash } from "@tabler/icons-react";
+import { Result } from "better-result";
 import { useEffect, type ChangeEvent } from "react";
 import { concreteActionPlaceholder } from "~domain/concreteActionCore";
 import type { DateJst } from "~domain/jst";
@@ -31,12 +32,13 @@ import type {
 } from "~/features/today/types/mutations";
 import { RECORD_STATUS_UI, statusTooltip } from "~/lib/record-status-ui";
 import { REVIEW_MENU_LABEL } from "~/lib/review-ui";
+import type { MutationResult } from "~/lib/run-mutation";
 import { serverNowMs } from "~/lib/server-clock";
 import { RowEditorSchema } from "~/lib/validation/row-editor-schema";
 
 type RowEditorProps = {
   disabled?: boolean;
-  onConfirm: (input: ConfirmRowInput) => void;
+  onConfirm: (input: ConfirmRowInput) => Promise<MutationResult>;
   onFlagReview: (input: FlagReviewInput) => void;
   onRemove: (rowId: RemoveRowInput["rowId"]) => void;
   onSkip: (rowId: SkipRowInput["rowId"]) => void;
@@ -166,8 +168,12 @@ export function RowEditor({
     if (output.content === row.content && output.minutes === row.minutes) {
       return;
     }
-    onConfirm({ content: output.content, minutes: output.minutes, rowId: row._id });
-    reset(form, { initialInput: output, keepInput: true });
+    const result = await onConfirm({
+      content: output.content,
+      minutes: output.minutes,
+      rowId: row._id,
+    });
+    if (Result.isOk(result)) reset(form, { initialInput: output, keepInput: true });
   }
 
   const { ref: rowRef } = useFocusWithin({
@@ -192,7 +198,7 @@ export function RowEditor({
         if (output === null) {
           return;
         }
-        onConfirm({ content: output.content, minutes: output.minutes, rowId: row._id });
+        await onConfirm({ content: output.content, minutes: output.minutes, rowId: row._id });
       }}
     >
       <div ref={rowRef}>

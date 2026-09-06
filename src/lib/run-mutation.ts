@@ -17,7 +17,7 @@ const pending = new Set<symbol>();
 export async function runMutation<T>(
   operation: () => Promise<T>,
   { errorMessage, silent = false, successMessage }: RunMutationOptions<T> = {},
-): Promise<void> {
+): Promise<Result<T, MutationFailedError>> {
   if (silent) {
     const result = await Result.tryPromise({
       catch: (cause) =>
@@ -31,7 +31,7 @@ export async function runMutation<T>(
         notifySuccess(message);
       }
     }
-    return;
+    return result;
   }
 
   const token = Symbol("run-mutation");
@@ -60,11 +60,11 @@ export async function runMutation<T>(
 
   if (Result.isError(result)) {
     notifyError(result.error.cause, result.error.message);
-    return;
+    return result;
   }
 
   if (successMessage === undefined) {
-    return;
+    return result;
   }
 
   const message =
@@ -72,4 +72,7 @@ export async function runMutation<T>(
   if (message) {
     notifySuccess(message);
   }
+  return result;
 }
+
+export type MutationResult = Awaited<ReturnType<typeof runMutation>>;

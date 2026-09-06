@@ -1,9 +1,11 @@
 import { Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { IconBrandGoogle } from "@tabler/icons-react";
+import { Result } from "better-result";
 
 import { formatScheduleTimeLabel } from "~/features/board/lib/schedule-instant";
 import type { BoardExternalEvent } from "~/features/board/types/board";
+import type { MutationResult } from "~/lib/run-mutation";
 import { NUMERAL_FONT } from "~/lib/theme";
 
 const EXTERNAL_EVENT_MODAL_TITLE = "外部予定";
@@ -15,12 +17,14 @@ const EXTERNAL_EVENT_HINT =
   "Google カレンダーの予定です。ドラッグで動かすと Google 側も動きます。題名の変更や新規作成は Google カレンダーで行ってください。";
 const EXTERNAL_EVENT_HINT_COMPACT =
   "Google カレンダーの予定です。時刻・題名の変更や新規作成は Google カレンダーで行ってください。";
+const EXTERNAL_EVENT_READ_ONLY_HINT =
+  "読み取り専用のカレンダーです。この予定は変更・削除できません。";
 
 type BoardScheduleExternalModalProps = {
   canDrag: boolean;
   external: BoardExternalEvent | null;
   onClose: () => void;
-  onRemove: (externalId: BoardExternalEvent["_id"]) => Promise<void>;
+  onRemove: (externalId: BoardExternalEvent["_id"]) => Promise<MutationResult>;
 };
 
 function formatRange(external: BoardExternalEvent): string {
@@ -43,7 +47,7 @@ export function BoardScheduleExternalModal({
   onRemove,
 }: BoardScheduleExternalModalProps) {
   function requestRemove() {
-    if (external === null) {
+    if (external === null || !external.canEdit) {
       return;
     }
     const externalId = external._id;
@@ -51,9 +55,9 @@ export function BoardScheduleExternalModal({
       children: EXTERNAL_EVENT_REMOVE_CONFIRM,
       confirmProps: { color: "red" },
       labels: { cancel: "キャンセル", confirm: EXTERNAL_EVENT_REMOVE_LABEL },
-      onConfirm: () => {
-        onClose();
-        void onRemove(externalId);
+      onConfirm: async () => {
+        const result = await onRemove(externalId);
+        if (Result.isOk(result)) onClose();
       },
       title: EXTERNAL_EVENT_REMOVE_CONFIRM_TITLE,
     });
@@ -78,10 +82,20 @@ export function BoardScheduleExternalModal({
             </Group>
           </Stack>
           <Text c="dimmed" size="xs">
-            {canDrag ? EXTERNAL_EVENT_HINT : EXTERNAL_EVENT_HINT_COMPACT}
+            {external.canEdit
+              ? canDrag
+                ? EXTERNAL_EVENT_HINT
+                : EXTERNAL_EVENT_HINT_COMPACT
+              : EXTERNAL_EVENT_READ_ONLY_HINT}
           </Text>
           <Group justify="space-between" wrap="nowrap">
-            <Button color="red" onClick={requestRemove} type="button" variant="light">
+            <Button
+              color="red"
+              disabled={!external.canEdit}
+              onClick={requestRemove}
+              type="button"
+              variant="light"
+            >
               {EXTERNAL_EVENT_REMOVE_LABEL}
             </Button>
             <Button onClick={onClose} type="button" variant="default">

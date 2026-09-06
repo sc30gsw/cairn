@@ -406,6 +406,7 @@ test("Google 側の外部予定は写しとして予定タブの範囲で読め�
       allDay: false,
       calendarId: PRIMARY,
       calendarName: PRIMARY,
+      canEdit: true,
       color: "#9fe1cb",
       endAt: "2026-08-18 11:00:00",
       startAt: "2026-08-18 10:00:00",
@@ -637,16 +638,12 @@ test("送信の記録は、計画時と対応表が違えば書かない（並�
 
   const fresh = await t.mutation(internal.mutations.calendarSync.recordPush.recordPush, {
     calendarId: link.calendarId,
-    expected: {
-      appChangedAt: link.appChangedAt ?? null,
-      googleEventId: link.googleEventId,
-      payloadKey: link.payloadKey ?? null,
-    },
+    expected: link.googleEventId,
     outcome: {
       googleEventId: link.googleEventId,
       googleUpdated: "u2",
       kind: "upserted",
-      payloadKey: "k2",
+      payloadKey: link.payloadKey ?? "",
     },
     ownerId: OWNER.subject,
     sourceId: examId,

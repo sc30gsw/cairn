@@ -1,6 +1,9 @@
 import type { ScheduleEventData } from "@mantine/schedule";
 
-import { dateToScheduleInstant } from "~/features/board/lib/schedule-instant";
+import {
+  dateToScheduleInstant,
+  scheduleInstantToDate,
+} from "~/features/board/lib/schedule-instant";
 import type {
   BoardExternalEvent,
   BoardRow,
@@ -53,7 +56,8 @@ export function allDayEventsForDay(
     (event) =>
       isAllDayEvent(event) &&
       !isBoardAllDayMoreEvent(event.id) &&
-      dayFromScheduleInstant(event.start) === day,
+      dayFromScheduleInstant(event.start) <= day &&
+      dayFromScheduleInstant(event.end) >= day,
   );
 }
 
@@ -65,9 +69,10 @@ export function timedEventsForDay(
     if (isAllDayEvent(event) || isBoardAllDayMoreEvent(event.id)) {
       return false;
     }
-    const startDay = dayFromScheduleInstant(event.start);
-    const endDay = dayFromScheduleInstant(event.end);
-    return day >= startDay && day <= endDay;
+    return (
+      scheduleInstantString(event.start) <= `${day}${ALL_DAY_END_SUFFIX}` &&
+      scheduleInstantString(event.end) > `${day}${ALL_DAY_START_SUFFIX}`
+    );
   });
 }
 
@@ -75,33 +80,39 @@ export function withAllDayOverflow(
   events: ScheduleEventData[],
   maxVisible: number,
   moreLabel: (hiddenEventsCount: number) => string,
+  days: readonly string[],
 ): {
   events: ScheduleEventData[];
   hiddenEventsByDay: ReadonlyMap<string, ScheduleEventData[]>;
 } {
   const timedEvents = events.filter((event) => !isAllDayEvent(event));
-  const allDayEvents = events.filter(isAllDayEvent);
-  const groupedByDay = new Map<string, ScheduleEventData[]>();
-
-  for (const event of allDayEvents) {
-    const day = dayFromScheduleInstant(event.start);
-    const bucket = groupedByDay.get(day);
-    if (bucket === undefined) {
-      groupedByDay.set(day, [event]);
-      continue;
-    }
-    bucket.push(event);
-  }
-
   const visibleEvents: ScheduleEventData[] = [...timedEvents];
   const hiddenEventsByDay = new Map<string, ScheduleEventData[]>();
 
-  for (const [day, dayEvents] of groupedByDay) {
+  const allDayDates = new Set(days);
+  for (const event of events) {
+    if (isAllDayEvent(event)) {
+      allDayDates.add(dayFromScheduleInstant(event.start));
+    }
+  }
+  for (const day of allDayDates) {
+    const dayEvents = allDayEventsForDay(events, day);
+    visibleEvents.push(
+      ...dayEvents.slice(0, maxVisible).map((event) => {
+        if (dayFromScheduleInstant(event.start) === dayFromScheduleInstant(event.end)) {
+          return event;
+        }
+        return {
+          ...event,
+          end: `${day}${ALL_DAY_END_SUFFIX}`,
+          id: `${event.id}|${day}`,
+          start: `${day}${ALL_DAY_START_SUFFIX}`,
+        };
+      }),
+    );
     if (dayEvents.length <= maxVisible) {
-      visibleEvents.push(...dayEvents);
       continue;
     }
-    visibleEvents.push(...dayEvents.slice(0, maxVisible));
     const hidden = dayEvents.slice(maxVisible);
     hiddenEventsByDay.set(day, hidden);
     visibleEvents.push({
@@ -149,7 +160,33 @@ export function isBoardExternalEvent(eventId: string | number): boolean {
 }
 
 export function boardExternalEventId(eventId: string | number): BoardExternalEvent["_id"] {
-  return String(eventId).slice(BOARD_EXTERNAL_EVENT_PREFIX.length) as BoardExternalEvent["_id"];
+  return boardScheduleEventSourceId(eventId).slice(
+    BOARD_EXTERNAL_EVENT_PREFIX.length,
+  ) as BoardExternalEvent["_id"];
+}
+
+export function boardScheduleEventSourceId(eventId: string | number): string {
+  const id = String(eventId);
+  const segmentIndex = id.indexOf("|");
+  return segmentIndex === -1 ? id : id.slice(0, segmentIndex);
+}
+
+export function movedScheduleRange(
+  external: Pick<BoardExternalEvent, "endAt" | "startAt">,
+  displayedStart: string | Date,
+  newStart: string,
+): Pick<BoardExternalEvent, "endAt" | "startAt"> {
+  const offset =
+    scheduleInstantToDate(newStart).getTime() -
+    scheduleInstantToDate(scheduleInstantString(displayedStart)).getTime();
+  return {
+    endAt: dateToScheduleInstant(
+      new Date(scheduleInstantToDate(external.endAt).getTime() + offset),
+    ),
+    startAt: dateToScheduleInstant(
+      new Date(scheduleInstantToDate(external.startAt).getTime() + offset),
+    ),
+  };
 }
 
 export function toExternalScheduleEvents(

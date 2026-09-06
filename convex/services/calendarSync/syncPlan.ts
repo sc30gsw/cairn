@@ -63,6 +63,7 @@ export async function syncPlan(
   const sources = await Promise.all(pending);
   return {
     googleAccountId: connection.googleAccountId,
+    disconnecting: connection.disconnecting === true,
     calendarId: connection.primaryCalendarId,
     cursors: cursors.map((cursor) => ({
       calendarId: cursor.calendarId,

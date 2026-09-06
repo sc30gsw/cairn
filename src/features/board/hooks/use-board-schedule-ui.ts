@@ -1,5 +1,7 @@
 import type { ScheduleEventData } from "@mantine/schedule";
 import { useEffect, useState, type MouseEvent, type RefObject } from "react";
+import { scheduleListRange, type BoardScheduleView } from "~domain/boardScheduleRange";
+import { addDaysJst } from "~domain/jst";
 
 import type { BoardScheduleAllDayExpandAnchor } from "~/features/board/components/board-schedule-all-day-expand";
 import {
@@ -13,6 +15,7 @@ import {
   boardExternalEventId,
   boardExternalEventIds,
   boardScheduleBlockIds,
+  boardScheduleEventSourceId,
   isBoardAllDayMoreEvent,
   isBoardExternalEvent,
   toBoardScheduleEvents,
@@ -34,6 +37,7 @@ type UseBoardScheduleUiArgs = {
   externals: readonly BoardExternalEvent[];
   rows: readonly BoardRow[];
   scheduleRootRef: RefObject<HTMLDivElement | null>;
+  scheduleView: BoardScheduleView;
   todayJst: string;
 };
 
@@ -43,6 +47,7 @@ export function useBoardScheduleUi({
   externals,
   rows,
   scheduleRootRef,
+  scheduleView,
   todayJst,
 }: UseBoardScheduleUiArgs) {
   const [formOpened, setFormOpened] = useState(false);
@@ -53,16 +58,29 @@ export function useBoardScheduleUi({
 
   const editableBlockIds = boardScheduleBlockIds(blocks);
   const externalEventIds = boardExternalEventIds(externals);
+  const editableExternalEventIds = boardExternalEventIds(
+    externals.filter((external) => external.canEdit),
+  );
   const clickableEventIds = new Set([...editableBlockIds, ...externalEventIds]);
   const baseEvents = [
     ...toBoardScheduleEvents(todayJst, rows, blocks),
     ...toExternalScheduleEvents(externals),
   ];
   const moreLabel = SCHEDULE_LABELS_JA.moreLabel ?? boardMoreLabel;
+  const { rangeStart, rangeEndExclusive } = scheduleListRange(scheduleView, anchorDateJst);
+  const visibleDays: string[] = [];
+  for (
+    let day = rangeStart.slice(0, 10);
+    day < rangeEndExclusive.slice(0, 10);
+    day = addDaysJst(day, 1)
+  ) {
+    visibleDays.push(day);
+  }
   const { events: scheduleEvents } = withAllDayOverflow(
     baseEvents,
     BOARD_ALL_DAY_VISIBLE_LIMIT,
     moreLabel,
+    visibleDays,
   );
   const dayAllDayEvents = allDayEventsForDay(baseEvents, anchorDateJst);
   const expandedAllDayEvents =
@@ -132,10 +150,7 @@ export function useBoardScheduleUi({
   }
 
   function openEditFromEvent(event: ScheduleEventData) {
-    if (!editableBlockIds.has(String(event.id))) {
-      return;
-    }
-    const block = blocks.find((entry) => entry._id === event.id);
+    const block = blocks.find((entry) => entry._id === boardScheduleEventSourceId(event.id));
     if (block === undefined) {
       return;
     }
@@ -171,6 +186,7 @@ export function useBoardScheduleUi({
     collapseAllDayExpand,
     dayAllDayEvents,
     editableBlockIds,
+    editableExternalEventIds,
     expandedAllDayAnchor,
     expandedAllDayEvents,
     externalEventIds,

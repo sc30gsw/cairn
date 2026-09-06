@@ -11,6 +11,7 @@ export const calendarSyncSourceKindValidator = v.union(
 );
 
 export const googleCalendarSummaryValidator = v.object({
+  accessRole: v.optional(v.string()),
   backgroundColor: v.optional(v.string()),
   id: v.string(),
   primary: v.boolean(),
@@ -38,6 +39,7 @@ export const externalCalendarEventDtoValidator = v.object({
   allDay: v.boolean(),
   calendarId: v.string(),
   calendarName: v.string(),
+  canEdit: v.boolean(),
   color: v.union(v.string(), v.null()),
   endAt: v.string(),
   startAt: v.string(),
@@ -84,16 +86,15 @@ export const googleEventPayloadValidator = v.object({
 
 export type GoogleEventPayload = Infer<typeof googleEventPayloadValidator>;
 
+const syncLinkValidator = v.object({
+  appChangedAt: v.union(v.number(), v.null()),
+  googleEventId: v.string(),
+  payloadKey: v.union(v.string(), v.null()),
+});
+
 export const syncSourceValidator = v.object({
   desired: v.union(googleEventPayloadValidator, v.null()),
-  link: v.union(
-    v.null(),
-    v.object({
-      appChangedAt: v.union(v.number(), v.null()),
-      googleEventId: v.string(),
-      payloadKey: v.union(v.string(), v.null()),
-    }),
-  ),
+  link: v.union(v.null(), syncLinkValidator),
   payloadKey: v.union(v.string(), v.null()),
   sourceId: v.string(),
   sourceKind: calendarSyncSourceKindValidator,
@@ -117,6 +118,7 @@ export const syncPlanValidator = v.union(
   v.object({
     googleAccountId: v.string(),
     calendarId: v.string(),
+    disconnecting: v.boolean(),
     cursors: v.array(
       v.object({ calendarId: v.string(), fullSyncedOnJst: v.string(), syncToken: v.string() }),
     ),
@@ -139,7 +141,7 @@ export const pushOutcomeValidator = v.union(
 
 export type PushOutcome = Infer<typeof pushOutcomeValidator>;
 
-export const pushExpectationValidator = syncSourceValidator.fields.link;
+export const pushExpectationValidator = v.union(v.null(), syncLinkValidator.fields.googleEventId);
 
 export type PushExpectation = Infer<typeof pushExpectationValidator>;
 
@@ -147,6 +149,7 @@ export const recordPushResultValidator = v.union(
   v.literal("conflict"),
   v.literal("disconnected"),
   v.literal("recorded"),
+  v.literal("changed"),
 );
 
 export type RecordPushResult = Infer<typeof recordPushResultValidator>;
@@ -154,6 +157,7 @@ export type RecordPushResult = Infer<typeof recordPushResultValidator>;
 export const ownerSyncOutcomeValidator = v.union(
   calendarSyncStatusValidator,
   v.literal("notConnected"),
+  v.literal("busy"),
 );
 
 export type OwnerSyncOutcome = Infer<typeof ownerSyncOutcomeValidator>;

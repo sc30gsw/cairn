@@ -1,3 +1,4 @@
+import type { ScheduleEventData } from "@mantine/schedule";
 import { expect, test } from "vite-plus/test";
 import { STATUSES } from "~domain/domain";
 
@@ -5,6 +6,8 @@ import type { Id } from "~/../convex/_generated/dataModel";
 import {
   BOARD_ALL_DAY_MORE_PREFIX,
   boardExternalEventId,
+  allDayEventsForDay,
+  movedScheduleRange,
   isBoardExternalEvent,
   timedEventsForDay,
   toExternalScheduleEvents,
@@ -74,7 +77,7 @@ test("終日イベントが多い日は +N件 を追加する", () => {
     [row("r1", "A", 0), row("r2", "B", 1), row("r3", "C", 2), row("r4", "D", 3)],
     [],
   );
-  const overflow = withAllDayOverflow(events, 2, (count) => `+${count}件`);
+  const overflow = withAllDayOverflow(events, 2, (count) => `+${count}件`, ["2026-08-17"]);
 
   expect(overflow.events).toEqual([
     {
@@ -119,7 +122,7 @@ test("終日7件は2件表示と+5件のみになる", () => {
     ],
     [],
   );
-  const overflow = withAllDayOverflow(events, 2, (count) => `+${count}件`);
+  const overflow = withAllDayOverflow(events, 2, (count) => `+${count}件`, ["2026-08-22"]);
   const dayEvents = overflow.events.filter((event) => String(event.start).startsWith("2026-08-22"));
 
   expect(dayEvents).toHaveLength(3);
@@ -148,7 +151,7 @@ test("timedEventsForDay は終日とmoreを除いた予定だけ返す", () => {
       },
     ],
   );
-  const overflow = withAllDayOverflow(events, 2, (count) => `+${count}件`);
+  const overflow = withAllDayOverflow(events, 2, (count) => `+${count}件`, ["2026-08-17"]);
 
   expect(timedEventsForDay(overflow.events, "2026-08-17")).toEqual([
     {
@@ -196,6 +199,7 @@ test("外部予定は灰色の薄い予定になり、印付きの id で見分�
       allDay: false,
       calendarId: "owner@example.com",
       calendarName: "owner@example.com",
+      canEdit: true,
       color: "#9fe1cb",
       endAt: "2026-08-17 11:00:00",
       startAt: "2026-08-17 10:00:00",
@@ -213,4 +217,55 @@ test("外部予定は灰色の薄い予定になり、印付きの id で見分�
   expect(isBoardExternalEvent("external:ext1")).toBe(true);
   expect(isBoardExternalEvent("r1")).toBe(false);
   expect(boardExternalEventId("external:ext1")).toBe("ext1");
+});
+
+test("複数日にわたる終日予定は各日の一覧とoverflowに含まれる", () => {
+  const spanning: ScheduleEventData = {
+    color: "gray",
+    id: "external:trip",
+    start: "2026-08-16 00:00:00",
+    end: "2026-08-19 23:59:59",
+    title: "旅行",
+  };
+  const events = [
+    ...toBoardScheduleEvents("2026-08-17", [row("r1", "A", 0), row("r2", "B", 1)], []),
+    spanning,
+  ];
+  expect(allDayEventsForDay(events, "2026-08-18")).toEqual([spanning]);
+  expect(allDayEventsForDay(events, "2026-08-20")).toEqual([]);
+  const overflow = withAllDayOverflow(events, 2, (count) => `+${count}件`, [
+    "2026-08-17",
+    "2026-08-18",
+  ]);
+  expect(overflow.hiddenEventsByDay.get("2026-08-17")).toEqual([spanning]);
+  expect(overflow.events.find((event) => event.id === "external:trip|2026-08-18")).toMatchObject({
+    start: "2026-08-18 00:00:00",
+    end: "2026-08-18 23:59:59",
+  });
+  expect(new Set(overflow.events.map((event) => event.id)).size).toBe(overflow.events.length);
+  expect(boardExternalEventId("external:trip|2026-08-18")).toBe("trip");
+});
+
+test("日跨ぎ予定は翌日に表示し、終了ちょうどの日には含めない", () => {
+  const event: ScheduleEventData = {
+    color: "gray",
+    id: "external:night",
+    start: "2026-08-16 23:00:00",
+    end: "2026-08-18 00:00:00",
+    title: "夜間作業",
+  };
+  expect(timedEventsForDay([event], "2026-08-17")).toEqual([event]);
+  expect(timedEventsForDay([event], "2026-08-18")).toEqual([]);
+});
+
+test("複数日予定の途中の日をドラッグしても元の期間を維持する", () => {
+  const external = {
+    startAt: "2026-08-16 00:00:00",
+    endAt: "2026-08-19 23:59:59",
+    title: "旅行",
+  };
+  expect(movedScheduleRange(external, "2026-08-18 00:00:00", "2026-08-20 00:00:00")).toEqual({
+    startAt: "2026-08-18 00:00:00",
+    endAt: "2026-08-21 23:59:59",
+  });
 });

@@ -35,6 +35,8 @@ function AccountAuthForm({ mode }: AccountAuthFormProps) {
               <TextInput
                 {...field.props}
                 autoComplete="username"
+                required
+                withAsterisk={false}
                 error={field.errors?.[0]}
                 label="ユーザー名"
                 value={field.input}
@@ -46,6 +48,8 @@ function AccountAuthForm({ mode }: AccountAuthFormProps) {
               <TextInput
                 {...field.props}
                 autoComplete="name"
+                required
+                withAsterisk={false}
                 error={field.errors?.[0]}
                 label="表示名"
                 value={field.input}
@@ -57,6 +61,8 @@ function AccountAuthForm({ mode }: AccountAuthFormProps) {
               <TextInput
                 {...field.props}
                 autoComplete="email"
+                required
+                withAsterisk={false}
                 error={field.errors?.[0]}
                 label="メールアドレス"
                 type="email"
@@ -69,6 +75,8 @@ function AccountAuthForm({ mode }: AccountAuthFormProps) {
               <PasswordInput
                 {...field.props}
                 autoComplete="new-password"
+                required
+                withAsterisk={false}
                 error={field.errors?.[0]}
                 label="パスワード"
                 value={field.input}
@@ -102,6 +110,8 @@ function AccountAuthForm({ mode }: AccountAuthFormProps) {
             <TextInput
               {...field.props}
               autoComplete="username"
+              required
+              withAsterisk={false}
               error={field.errors?.[0]}
               label="ユーザー名またはメールアドレス"
               value={field.input}
@@ -113,6 +123,8 @@ function AccountAuthForm({ mode }: AccountAuthFormProps) {
             <PasswordInput
               {...field.props}
               autoComplete="current-password"
+              required
+              withAsterisk={false}
               error={field.errors?.[0]}
               label="パスワード"
               value={field.input}

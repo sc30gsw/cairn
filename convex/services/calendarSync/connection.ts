@@ -1,29 +1,15 @@
+import type { Doc } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
-import { type CalendarSyncStatus, PRIMARY_CALENDAR_ID } from "../../lib/calendarSync";
+import {
+  CALENDAR_SYNC_DISCONNECT_INCOMPLETE_MESSAGE,
+  type CalendarSyncStatus,
+  PRIMARY_CALENDAR_ID,
+} from "../../lib/calendarSync";
+import { ConflictError } from "../../lib/errors";
+import { throwDomain } from "../../lib/ownerFunctions";
 import type { UpsertConnectionArgs } from "../../lib/validators";
+import { clearSyncStateBatch } from "./clearSyncStateBatch";
 import { getConnection } from "./getConnection";
-
-export async function clearSyncState(ctx: MutationCtx, ownerId: string): Promise<void> {
-  const [links, externals, cursors] = await Promise.all([
-    ctx.db
-      .query("calendarSyncLinks")
-      .withIndex("by_owner_and_calendar_and_event", (q) => q.eq("ownerId", ownerId))
-      .collect(),
-    ctx.db
-      .query("externalCalendarEvents")
-      .withIndex("by_owner_and_startAt", (q) => q.eq("ownerId", ownerId))
-      .collect(),
-    ctx.db
-      .query("calendarSyncCursors")
-      .withIndex("by_owner_and_calendar", (q) => q.eq("ownerId", ownerId))
-      .collect(),
-  ]);
-  await Promise.all([
-    ...links.map((link) => ctx.db.delete("calendarSyncLinks", link._id)),
-    ...externals.map((external) => ctx.db.delete("externalCalendarEvents", external._id)),
-    ...cursors.map((cursor) => ctx.db.delete("calendarSyncCursors", cursor._id)),
-  ]);
-}
 
 export async function upsertConnection(
   ctx: MutationCtx,
@@ -31,23 +17,24 @@ export async function upsertConnection(
 ): Promise<null> {
   const existing = await getConnection(ctx, args.ownerId);
   const sameAccount = existing !== null && existing.googleAccountId === args.googleAccountId;
-  if (existing !== null && !sameAccount) {
-    await clearSyncState(ctx, args.ownerId);
+  if (existing !== null && (!sameAccount || existing.disconnecting === true)) {
+    throwDomain(new ConflictError({ message: CALENDAR_SYNC_DISCONNECT_INCOMPLETE_MESSAGE }));
   }
   const known = new Set(args.calendars.map((calendar) => calendar.id));
   const visibleCalendarIds = (
     sameAccount ? existing.visibleCalendarIds : args.defaultVisibleCalendarIds
   ).filter((id) => known.has(id));
   const fields = {
+    externalChangesVersion: sameAccount ? existing.externalChangesVersion : 1,
     calendars: args.calendars,
     googleAccountId: args.googleAccountId,
     googleEmail: args.googleEmail ?? undefined,
     lastError: undefined,
     primaryCalendarId:
       args.calendars.find((calendar) => calendar.primary)?.id ?? PRIMARY_CALENDAR_ID,
-    status: "ok" as const,
+    status: "ok",
     visibleCalendarIds,
-  };
+  } satisfies Omit<Doc<"calendarConnections">, "_id" | "_creationTime" | "ownerId">;
   if (existing === null) {
     await ctx.db.insert("calendarConnections", { ...fields, ownerId: args.ownerId });
     return null;
@@ -66,7 +53,7 @@ export async function markStatus(
   },
 ): Promise<null> {
   const existing = await getConnection(ctx, args.ownerId);
-  if (existing === null) {
+  if (existing === null || existing.disconnecting === true) {
     return null;
   }
   await ctx.db.patch("calendarConnections", existing._id, {
@@ -77,13 +64,20 @@ export async function markStatus(
   return null;
 }
 
-export async function clearConnection(ctx: MutationCtx, ownerId: string): Promise<null> {
+export async function clearConnection(ctx: MutationCtx, ownerId: string): Promise<boolean> {
   const connection = await getConnection(ctx, ownerId);
-  await clearSyncState(ctx, ownerId);
+  if (connection !== null && connection.disconnecting !== true) {
+    await ctx.db.patch("calendarConnections", connection._id, {
+      disconnecting: true,
+      lastError: CALENDAR_SYNC_DISCONNECT_INCOMPLETE_MESSAGE,
+      status: "error",
+    });
+  }
+  if (!(await clearSyncStateBatch(ctx, ownerId))) return false;
   if (connection !== null) {
     await ctx.db.delete("calendarConnections", connection._id);
   }
-  return null;
+  return true;
 }
 
 export async function setVisibleCalendars(

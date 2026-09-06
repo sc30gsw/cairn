@@ -24,10 +24,37 @@ export async function pushOne(
   client: GoogleCalendarClient,
   args: PushOneArgs,
 ): Promise<Result<"conflict" | "deleted" | "skipped" | "upserted", GoogleCalendarError>> {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const plan = await ctx.runQuery(internal.queries.calendarSync.pushPlan.pushPlan, {
+      ownerId: args.ownerId,
+      sourceId: args.source.sourceId,
+      sourceKind: args.source.sourceKind,
+    });
+    if (plan === null || plan.calendarId !== args.calendarId) return Result.ok("skipped");
+    const result = await sendOne(ctx, client, { ...args, source: plan.source });
+    if (Result.isError(result)) return result;
+    if (result.value !== "changed") return Result.ok(result.value);
+  }
+  await ctx.scheduler.runAfter(0, internal.actions.calendarSync.pushSource.pushSource, {
+    attempt: 0,
+    ownerId: args.ownerId,
+    sourceId: args.source.sourceId,
+    sourceKind: args.source.sourceKind,
+  });
+  return Result.ok("conflict");
+}
+
+async function sendOne(
+  ctx: ActionCtx,
+  client: GoogleCalendarClient,
+  args: PushOneArgs,
+): Promise<
+  Result<"changed" | "conflict" | "deleted" | "skipped" | "upserted", GoogleCalendarError>
+> {
   const { calendarId, ownerId, source } = args;
   const base = {
     calendarId,
-    expected: source.link,
+    expected: source.link?.googleEventId ?? null,
     ownerId,
     sourceId: source.sourceId,
     sourceKind: source.sourceKind,
@@ -44,7 +71,9 @@ export async function pushOne(
       ...base,
       outcome: { kind: "deleted" },
     });
-    return Result.ok(recorded === "recorded" ? "deleted" : "conflict");
+    return Result.ok(
+      recorded === "recorded" ? "deleted" : recorded === "changed" ? "changed" : "conflict",
+    );
   }
   const payloadKey = source.payloadKey ?? "";
   if (
@@ -72,6 +101,7 @@ export async function pushOne(
       payloadKey,
     },
   });
+  if (recorded === "changed") return Result.ok("changed");
   if (recorded !== "recorded") {
     if (createdNewGoogleEvent(source, upserted.value.id)) {
       await deleteEvent(client, calendarId, upserted.value.id);

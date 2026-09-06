@@ -4,6 +4,7 @@ import type { ComponentPropsWithoutRef, CSSProperties, Ref } from "react";
 
 import { BoardScheduleDayAllDayStrip } from "~/features/board/components/board-schedule-day-all-day-strip";
 import {
+  boardScheduleEventSourceId,
   isBoardAllDayEvent,
   isBoardAllDayMoreEvent,
 } from "~/features/board/lib/board-schedule-events";
@@ -46,7 +47,10 @@ export function createBoardScheduleDayAllDayRenderEvent({
       return <UnstyledButton {...buttonProps} ref={ref} />;
     }
 
-    if (isBoardAllDayMoreEvent(event.id) || event.id !== firstAllDayId) {
+    if (
+      isBoardAllDayMoreEvent(event.id) ||
+      boardScheduleEventSourceId(event.id) !== String(firstAllDayId)
+    ) {
       return (
         <UnstyledButton
           {...buttonProps}

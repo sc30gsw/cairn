@@ -46,6 +46,8 @@
 
 型は一箇所で定義し、派生型は `Pick` / `Omit` / `v.InferOutput` などで生成します。定数は `as const satisfies` でリテラル型を保持します（詳細は react-conventions）。
 
+Convexではインデックスで表現できる条件を `.withIndex` の範囲に含めます。インデックスで表現できない残余条件の `.filter` は許容しますが、読み取り件数は減らないため、結果が増え続ける処理は範囲・件数上限・ページングで制限します。一括削除は件数を区切り、別トランザクションで継続します（詳細は CVX-10/11 と生成ガイドライン）。
+
 ### AHA Programming
 
 [AHA Programming](https://kentcdodds.com/blog/aha-programming)（Avoid Hasty Abstractions）に従います。

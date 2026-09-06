@@ -3,7 +3,10 @@ import { throwDomain } from "./ownerFunctions";
 
 export const MAX_AVATAR_BYTES = 512 * 1024;
 
-const ALLOWED_AVATAR_CONTENT_TYPES = new Set(["image/jpeg", "image/png"]);
+export const ALLOWED_AVATAR_CONTENT_TYPES: ReadonlySet<string> = new Set([
+  "image/jpeg",
+  "image/png",
+]);
 
 export type AvatarStorageMetadata = {
   contentType?: string;

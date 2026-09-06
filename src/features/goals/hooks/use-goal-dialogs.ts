@@ -7,11 +7,12 @@ import {
 import type { ExamResultInput } from "~/features/goals/schemas/exam-result-schema";
 import type { ExamGoal, Goal, GoalId, MasteryGoal } from "~/features/goals/types/goal";
 import type { SetAchievedInput, SetExamResultInput } from "~/features/goals/types/mutations";
+import type { MutationResult } from "~/lib/run-mutation";
 
 type UseGoalDialogsOptions = {
   goals: readonly Goal[];
-  onSetAchieved: (input: SetAchievedInput) => Promise<void>;
-  onSetExamResult: (input: SetExamResultInput, successMessage: string) => Promise<void>;
+  onSetAchieved: (input: SetAchievedInput) => Promise<MutationResult>;
+  onSetExamResult: (input: SetExamResultInput, successMessage: string) => Promise<MutationResult>;
 };
 
 export function useGoalDialogs({ goals, onSetAchieved, onSetExamResult }: UseGoalDialogsOptions) {
@@ -41,14 +42,14 @@ export function useGoalDialogs({ goals, onSetAchieved, onSetExamResult }: UseGoa
     setPendingAchievement(input);
   }
 
-  function submitReflection(reflection: string | undefined) {
+  async function submitReflection(reflection: string | undefined) {
     if (pendingAchievement === null) {
       return;
     }
     return onSetAchieved({ ...pendingAchievement, reflection });
   }
 
-  function submitExamResult(result: ExamResultInput) {
+  async function submitExamResult(result: ExamResultInput) {
     if (resultGoal === null) {
       return;
     }

@@ -38,8 +38,15 @@ export function useApplyPresetFromSearch(
     if (presetId === null || appliedPresetRef.current === presetId) {
       return;
     }
+    const previousPresetId = appliedPresetRef.current;
     appliedPresetRef.current = presetId;
-    void runMutation(() => switchPreset.mutateAsync({ dateJst, presetId, todayJst: today }));
+    void runMutation(() => switchPreset.mutateAsync({ dateJst, presetId, todayJst: today })).then(
+      (result) => {
+        if (Result.isError(result) && appliedPresetRef.current === presetId) {
+          appliedPresetRef.current = previousPresetId;
+        }
+      },
+    );
   }, [dateJst, isToday, presetFromSearch, switchPreset, today]);
 
   useEffect(() => {

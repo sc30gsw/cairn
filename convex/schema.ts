@@ -7,6 +7,7 @@ import {
   calendarSyncStatusValidator,
   categoryValidator,
   conditionValidator,
+  externalChangeValidator,
   goalDocumentValidator,
   googleCalendarSummaryValidator,
   notificationPayloadValidator,
@@ -153,7 +154,24 @@ export default defineSchema({
     ownerId: v.string(),
   }).index("by_owner_and_endpoint", ["ownerId", "endpoint"]),
 
+  calendarSyncOperations: defineTable({
+    expiresAt: v.number(),
+    ownerId: v.string(),
+  }).index("by_owner", ["ownerId"]),
+
+  calendarExternalChanges: defineTable({
+    settledAt: v.optional(v.number()),
+    calendarId: v.string(),
+    change: externalChangeValidator,
+    googleEventId: v.string(),
+    ownerId: v.string(),
+  })
+    .index("by_owner_and_settledAt", ["ownerId", "settledAt"])
+    .index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"]),
+
   calendarConnections: defineTable({
+    externalChangesVersion: v.optional(v.literal(1)),
+    disconnecting: v.optional(v.boolean()),
     calendars: v.array(googleCalendarSummaryValidator),
     googleAccountId: v.string(),
     googleEmail: v.optional(v.string()),

@@ -20,6 +20,9 @@ export function syncWindow(todayJst: string): SyncWindow {
   };
 }
 
-export function isWithinWindow(startAt: string, window: SyncWindow): boolean {
-  return startAt >= window.startAtMin && startAt < window.startAtMaxExclusive;
+export function overlapsWindow(
+  event: { endAt: string; startAt: string },
+  window: SyncWindow,
+): boolean {
+  return event.startAt < window.startAtMaxExclusive && event.endAt > window.startAtMin;
 }

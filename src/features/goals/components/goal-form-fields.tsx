@@ -66,7 +66,7 @@ export type GoalFieldsProps = {
   hasChildCheckpoints: boolean;
   items: ItemDto[];
   onCancel: () => void;
-  onSubmit: (goal: GoalInputPayload) => void;
+  onSubmit: (goal: GoalInputPayload) => Promise<void>;
   parent: ParentGoal | undefined;
   todayJst: DateJst;
 };
@@ -313,7 +313,7 @@ export function LongTermGoalFields({
         if (scope === undefined) {
           return;
         }
-        onSubmit({
+        return onSubmit({
           ...output,
           ...scope,
           deadline: undefined,
@@ -392,7 +392,7 @@ export function CheckpointGoalFields({
         if (scope === undefined) {
           return;
         }
-        onSubmit({ ...output, ...scope, parentGoalId: parent._id, type: "mastery" });
+        return onSubmit({ ...output, ...scope, parentGoalId: parent._id, type: "mastery" });
       }}
     >
       <Grid align="flex-start" gap="sm">
@@ -485,15 +485,14 @@ export function MasteryEditFields({
           return;
         }
         if (output.deadline === undefined) {
-          onSubmit({ ...output, ...scope, parentGoalId: undefined, type: "mastery" });
-          return;
+          return onSubmit({ ...output, ...scope, parentGoalId: undefined, type: "mastery" });
         }
         const nextParent = goals.find((candidate) => candidate._id === output.parentGoalId);
         if (nextParent === undefined) {
           setErrors(form, { errors: [PARENT_NOT_FOUND_MESSAGE], path: ["parentGoalId"] });
           return;
         }
-        onSubmit({ ...output, ...scope, parentGoalId: nextParent._id, type: "mastery" });
+        return onSubmit({ ...output, ...scope, parentGoalId: nextParent._id, type: "mastery" });
       }}
     >
       <Grid align="flex-start" gap="sm">

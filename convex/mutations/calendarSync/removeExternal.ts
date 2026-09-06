@@ -1,15 +1,14 @@
 import { v } from "convex/values";
 
-import { internal } from "../../_generated/api";
 import { ownerMutation } from "../../lib/ownerFunctions";
 import { removeExternal as removeExternalEvent } from "../../services/calendarSync/externalEvents";
+import { queueExternalChange } from "../../services/calendarSync/queueExternalChange";
 
 export const removeExternal = ownerMutation({
   args: { externalId: v.id("externalCalendarEvents") },
   handler: async (ctx, args) => {
     const removed = await removeExternalEvent(ctx, ctx.ownerId, args);
-    await ctx.scheduler.runAfter(0, internal.actions.calendarSync.pushExternal.pushExternal, {
-      attempt: 0,
+    await queueExternalChange(ctx, {
       calendarId: removed.calendarId,
       change: { kind: "delete" },
       googleEventId: removed.googleEventId,

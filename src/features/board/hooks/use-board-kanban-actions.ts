@@ -1,3 +1,4 @@
+import { Result } from "better-result";
 import type { DateJst } from "~domain/jst";
 import { hasTimerState, timerMinutes } from "~domain/rowTimer";
 
@@ -37,49 +38,41 @@ export function useBoardKanbanActions(dateJst: DateJst) {
   const flagReview = useFlagReview();
   const unflagReview = useUnflagReview();
 
-  async function onStopTimer(rowId: Parameters<typeof stopRowTimer.mutateAsync>[0]["rowId"]) {
-    let accumulatedMs: number | null = null;
-    await runMutation(async () => {
-      accumulatedMs = await stopRowTimer.mutateAsync({ rowId });
-    }, silent);
-    return accumulatedMs;
+  function onStopTimer(rowId: Parameters<typeof stopRowTimer.mutateAsync>[0]["rowId"]) {
+    return runMutation(() => stopRowTimer.mutateAsync({ rowId }), silent);
   }
 
   const onConfirm = (input: Parameters<typeof confirmRow.mutateAsync>[0]) =>
     runMutation(() => confirmRow.mutateAsync(input), {
       silent: true,
       successMessage: `学習時間 ${String(input.minutes)}分を記録しました`,
-    }).then(() => undefined);
+    });
   const onSkip = (input: Parameters<typeof skipRow.mutateAsync>[0], successMessage?: string) =>
-    runMutation(() => skipRow.mutateAsync(input), { silent: true, successMessage }).then(
-      () => undefined,
-    );
+    runMutation(() => skipRow.mutateAsync(input), { silent: true, successMessage });
   const onUnconfirm = (input: Parameters<typeof unconfirmRow.mutateAsync>[0]) =>
     runMutation(() => unconfirmRow.mutateAsync(input), {
       silent: true,
       successMessage: "確定を取り消しました",
-    }).then(() => undefined);
+    });
   const onUnskip = (input: Parameters<typeof unskipRow.mutateAsync>[0]) =>
-    runMutation(() => unskipRow.mutateAsync(input), silent).then(() => undefined);
+    runMutation(() => unskipRow.mutateAsync(input), silent);
   const onStart = (input: Parameters<typeof startRow.mutateAsync>[0]) =>
-    runMutation(() => startRow.mutateAsync(input), silent).then(() => undefined);
+    runMutation(() => startRow.mutateAsync(input), silent);
   const onUnstart = (input: Parameters<typeof pauseRow.mutateAsync>[0], successMessage?: string) =>
-    runMutation(() => pauseRow.mutateAsync(input), { silent: true, successMessage }).then(
-      () => undefined,
-    );
+    runMutation(() => pauseRow.mutateAsync(input), { silent: true, successMessage });
   const onReopen = (input: Parameters<typeof reopenRow.mutateAsync>[0]) =>
-    runMutation(() => reopenRow.mutateAsync(input), silent).then(() => undefined);
+    runMutation(() => reopenRow.mutateAsync(input), silent);
 
   return {
     today,
     onFlagReview: (row: BoardRow, dueJst: DateJst) =>
       runMutation(() => flagReview.mutateAsync({ dueJst, rowId: row._id, todayJst: today }), {
         successMessage: `復習に回しました（${dueJst}）`,
-      }).then(() => undefined),
+      }),
     onUnflagReview: (row: BoardRow) =>
       runMutation(() => unflagReview.mutateAsync({ rowId: row._id }), {
         successMessage: "復習をやめました",
-      }).then(() => undefined),
+      }),
     onStopTimer,
     onConfirm,
     onSkip,
@@ -96,14 +89,11 @@ export function useBoardKanbanActions(dateJst: DateJst) {
       switch (move) {
         case "confirm": {
           if (hasTimerState(row.timer)) {
-            const accumulatedMs = await onStopTimer(row._id);
-            if (accumulatedMs === null) {
-              openConfirmEditor({ prefillMinutes: null, row });
-              return;
-            }
+            const stopped = await onStopTimer(row._id);
+            if (Result.isError(stopped)) return stopped;
             return await onConfirm({
               content: row.content,
-              minutes: timerMinutes(accumulatedMs),
+              minutes: timerMinutes(stopped.value),
               rowId: row._id,
             });
           }
@@ -130,8 +120,8 @@ export function useBoardKanbanActions(dateJst: DateJst) {
       }
     },
     onResumeTimer: (input: Parameters<typeof resumeRowTimer.mutateAsync>[0]) =>
-      runMutation(() => resumeRowTimer.mutateAsync(input), silent).then(() => undefined),
+      runMutation(() => resumeRowTimer.mutateAsync(input), silent),
     onApplyOrder: (input: Parameters<typeof applyOrder.mutateAsync>[0]) =>
-      runMutation(() => applyOrder.mutateAsync(input), silent).then(() => undefined),
+      runMutation(() => applyOrder.mutateAsync(input), silent),
   };
 }

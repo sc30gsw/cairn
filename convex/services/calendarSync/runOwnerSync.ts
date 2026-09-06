@@ -13,12 +13,24 @@ import { daysUntil, todayJst } from "../../lib/jst";
 import type { OwnerSyncOutcome } from "../../lib/validators";
 import { applyPulledEventsInOrder } from "./applyPulledEventsInOrder";
 import { calendarsToPull } from "./calendarsToPull";
+import { withCalendarOperation } from "./operation";
 import { pullCalendar } from "./pullCalendar";
+import { flushExternalChanges } from "./pushExternalChange";
 import { pushOne } from "./pushOne";
 import { markNeedsReauth, markSyncError } from "./syncFailure";
 import { syncWindow } from "./window";
 
 export async function runOwnerSync(ctx: ActionCtx, ownerId: string): Promise<OwnerSyncOutcome> {
+  const operation = await withCalendarOperation(ctx, ownerId, () =>
+    syncConnectedOwner(ctx, ownerId),
+  );
+  return operation.acquired ? operation.value : "busy";
+}
+
+export async function syncConnectedOwner(
+  ctx: ActionCtx,
+  ownerId: string,
+): Promise<OwnerSyncOutcome> {
   const today = todayJst();
   const plan = await ctx.runQuery(internal.queries.calendarSync.syncPlan.syncPlan, {
     ownerId,
@@ -27,6 +39,7 @@ export async function runOwnerSync(ctx: ActionCtx, ownerId: string): Promise<Own
   if (plan === null) {
     return "notConnected";
   }
+  if (plan.disconnecting) return "error";
   const token = await getGoogleAccessToken(ctx, {
     accountId: plan.googleAccountId,
     userId: ownerId,
@@ -38,16 +51,40 @@ export async function runOwnerSync(ctx: ActionCtx, ownerId: string): Promise<Own
   const client: GoogleCalendarClient = { accessToken: token.value };
   const window = syncWindow(today);
   const failures: GoogleCalendarError[] = [];
+  const flushed = await flushExternalChanges(ctx, client, ownerId);
+  if (Result.isError(flushed)) {
+    if (isAuthFailure(flushed.error)) {
+      await markNeedsReauth(ctx, ownerId);
+      return "needsReauth";
+    }
+    failures.push(flushed.error);
+  }
 
-  const cursorByCalendar = new Map(plan.cursors.map((entry) => [entry.calendarId, entry]));
-  for (const calendarId of calendarsToPull(plan)) {
+  const pullPlan = await ctx.runQuery(internal.queries.calendarSync.syncPlan.syncPlan, {
+    ownerId,
+    todayJst: today,
+  });
+  if (pullPlan === null) return "notConnected";
+  const cursorByCalendar = new Map(pullPlan.cursors.map((entry) => [entry.calendarId, entry]));
+  for (const calendarId of calendarsToPull(pullPlan)) {
     const stored = cursorByCalendar.get(calendarId);
     const cursor =
       stored === undefined ||
       daysUntil(stored.fullSyncedOnJst, today) >= CALENDAR_SYNC_FULL_RESYNC_DAYS
         ? null
         : stored.syncToken;
-    const pulled = await pullCalendar(client, { calendarId, syncToken: cursor, window });
+    const linkedEventIds =
+      calendarId === pullPlan.calendarId
+        ? pullPlan.sources.flatMap((source) =>
+            source.link === null ? [] : [source.link.googleEventId],
+          )
+        : [];
+    const pulled = await pullCalendar(client, {
+      calendarId,
+      linkedEventIds,
+      syncToken: cursor,
+      window,
+    });
     if (Result.isError(pulled)) {
       if (isAuthFailure(pulled.error)) {
         await markNeedsReauth(ctx, ownerId);

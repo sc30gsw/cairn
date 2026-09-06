@@ -5,7 +5,7 @@ import type { PulledEvent } from "../../lib/validators";
 import { desiredEvent } from "./desiredEvent";
 import { payloadKey } from "./eventPayload";
 import { finishCalendarPull } from "./finishCalendarPull";
-import { isWithinWindow, syncWindow, type SyncWindow } from "./window";
+import { overlapsWindow, syncWindow, type SyncWindow } from "./window";
 
 export type PullFinish = {
   keepEventIds: readonly string[] | null;
@@ -77,8 +77,20 @@ async function applyToExternal(
   event: PulledEvent,
   window: SyncWindow,
 ): Promise<void> {
+  const pending = await ctx.db
+    .query("calendarExternalChanges")
+    .withIndex("by_owner_and_calendar_and_event", (q) =>
+      q
+        .eq("ownerId", ownerId)
+        .eq("calendarId", event.calendarId)
+        .eq("googleEventId", event.googleEventId),
+    )
+    .unique();
+  if (pending !== null && pending.settledAt === undefined) {
+    return;
+  }
   const existing = await findExternal(ctx, ownerId, event);
-  if (event.kind === "delete" || !isWithinWindow(event.startAt, window)) {
+  if (event.kind === "delete" || !overlapsWindow(event, window)) {
     if (existing !== null) {
       await ctx.db.delete("externalCalendarEvents", existing._id);
     }

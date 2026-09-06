@@ -1,10 +1,11 @@
+import { Result } from "better-result";
 import { expect, test, vi } from "vite-plus/test";
 
 import { BoardScheduleEventForm } from "~/features/board/components/board-schedule-event-form";
 import type { BoardRow } from "~/features/board/types/board";
 import { renderWithMantine } from "~/test-utils/render";
 
-const onSubmit = vi.fn(async () => undefined);
+const onSubmit = vi.fn(async () => Result.ok(null));
 
 function sampleRow(id: string, name: string): BoardRow {
   return {

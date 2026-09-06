@@ -1,4 +1,5 @@
 import { Box, Card, Grid, Stack, Text } from "@mantine/core";
+import { Result } from "better-result";
 import { useRef, useState, type ReactNode } from "react";
 import type { DateJst } from "~domain/jst";
 
@@ -120,10 +121,10 @@ export function GoalsBoard({
     openGoalRemoveConfirm({ goal, goals, onConfirm: onRemoveGoal });
   }
 
-  function submitGoal(goal: GoalInputPayload) {
+  async function submitGoal(goal: GoalInputPayload) {
     if (editingGoal === undefined) {
-      onCreateGoal(goal);
-      closeEditor();
+      const result = await onCreateGoal(goal);
+      if (Result.isOk(result)) closeEditor();
       return;
     }
     const transition =
@@ -140,8 +141,11 @@ export function GoalsBoard({
       goal.type === "mastery"
         ? goals.find((candidate) => candidate._id === goal.parentGoalId)?.content
         : undefined;
-    onUpdateGoal({ goal, goalId: editingGoal._id }, tierTransitionToast(transition, parentName));
-    closeEditor();
+    const result = await onUpdateGoal(
+      { goal, goalId: editingGoal._id },
+      tierTransitionToast(transition, parentName),
+    );
+    if (Result.isOk(result)) closeEditor();
   }
 
   function showWeeklyTargets() {

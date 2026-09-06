@@ -1,5 +1,5 @@
 import { api } from "~/../convex/_generated/api";
-import type { Id } from "~/../convex/_generated/dataModel";
+import type { AvatarUploadDependencies } from "~/features/my-page/lib/avatar-upload";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export function useAvatarUploadDeps() {
@@ -11,12 +11,7 @@ export function useAvatarUploadDeps() {
   );
 
   return {
-    claimAvatarUpload: async (args: {
-      claimId: Id<"avatarUploadClaims">;
-      storageId: Id<"_storage">;
-    }) => {
-      await claimAvatarUpload(args);
-    },
+    claimAvatarUpload,
     generateUploadUrl: () => generateUploadUrl({}),
-  };
+  } satisfies AvatarUploadDependencies;
 }

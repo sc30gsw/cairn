@@ -21,14 +21,14 @@ export function useCatalogPresetActions() {
     onCreate: (input: CreatePresetInput) =>
       runMutation(() => createPreset.mutateAsync(input), {
         successMessage: "プリセットを追加しました",
-      }).then(() => undefined),
+      }),
     onRemove: (presetId: RemovePresetInput["presetId"]) =>
       runMutation(() => removePreset.mutateAsync({ presetId }), {
         successMessage: "プリセットを削除しました",
-      }).then(() => undefined),
+      }),
     onUpdate: (input: UpdatePresetInput) =>
       runMutation(() => updatePreset.mutateAsync(input), {
         successMessage: "プリセットを更新しました",
-      }).then(() => undefined),
+      }),
   };
 }

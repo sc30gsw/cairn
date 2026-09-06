@@ -1,8 +1,10 @@
 import { fireEvent, waitFor } from "@testing-library/react";
+import { Result } from "better-result";
 import { expect, test, vi } from "vite-plus/test";
 
 import { ObstacleSection } from "~/features/goals/components/obstacle-section";
 import type { Obstacle } from "~/features/goals/types/goal";
+import { MutationFailedError } from "~/lib/errors";
 import { renderWithMantine } from "~/test-utils/render";
 
 const THEN_ACTION = "Unit 3 の例文を声に出して5文読む";
@@ -10,7 +12,7 @@ const THEN_ACTION = "Unit 3 の例文を声に出して5文読む";
 function sectionProps(overrides: Partial<Parameters<typeof ObstacleSection>[0]> = {}) {
   return {
     obstacles: [],
-    onCreateObstacle: vi.fn(),
+    onCreateObstacle: vi.fn(async () => Result.ok(null)),
     onRemoveObstacle: vi.fn(),
     onUpdateObstacle: vi.fn(),
     ...overrides,
@@ -18,7 +20,7 @@ function sectionProps(overrides: Partial<Parameters<typeof ObstacleSection>[0]> 
 }
 
 test("ならが空なら障害プランは追加できない", async () => {
-  const onCreateObstacle = vi.fn();
+  const onCreateObstacle = vi.fn(async () => Result.ok(null));
   const { getByRole } = renderWithMantine(
     <ObstacleSection {...sectionProps({ onCreateObstacle })} />,
   );
@@ -30,7 +32,7 @@ test("ならが空なら障害プランは追加できない", async () => {
 });
 
 test("空の障害プランは追加できない", async () => {
-  const onCreateObstacle = vi.fn();
+  const onCreateObstacle = vi.fn(async () => Result.ok(null));
   const { getByRole } = renderWithMantine(
     <ObstacleSection {...sectionProps({ onCreateObstacle })} />,
   );
@@ -41,7 +43,7 @@ test("空の障害プランは追加できない", async () => {
 });
 
 test("入力した障害プランを追加するとフォームがリセットされる", async () => {
-  const onCreateObstacle = vi.fn();
+  const onCreateObstacle = vi.fn(async () => Result.ok(null));
   const { getByRole } = renderWithMantine(
     <ObstacleSection {...sectionProps({ onCreateObstacle })} />,
   );
@@ -107,7 +109,7 @@ test("既存プランのならが空なら保存できない", async () => {
 });
 
 test("もしが空なら新規追加できない", async () => {
-  const onCreateObstacle = vi.fn();
+  const onCreateObstacle = vi.fn(async () => Result.ok(null));
   const { getByRole } = renderWithMantine(
     <ObstacleSection {...sectionProps({ onCreateObstacle })} />,
   );
@@ -166,4 +168,19 @@ test("編集中(dirty)のときは別端末での更新で上書きしない", (
   rerender(<ObstacleSection {...sectionProps({ obstacles: [updatedPlan] })} />);
 
   expect((getByRole("textbox", { name: "眠気のもし" }) as HTMLInputElement).value).toBe("編集中");
+});
+
+test("障害プランの追加失敗では入力を消さない", async () => {
+  const onCreateObstacle = vi.fn(async () =>
+    Result.err(new MutationFailedError({ cause: new Error("offline"), message: "保存失敗" })),
+  );
+  const { getByRole } = renderWithMantine(
+    <ObstacleSection {...sectionProps({ onCreateObstacle })} />,
+  );
+  fireEvent.change(getByRole("textbox", { name: "もし" }), { target: { value: "眠い" } });
+  fireEvent.change(getByRole("textbox", { name: "なら" }), { target: { value: THEN_ACTION } });
+  fireEvent.click(getByRole("button", { name: "障害プランを追加" }));
+  await waitFor(() => expect(onCreateObstacle).toHaveBeenCalledOnce());
+  expect((getByRole("textbox", { name: "もし" }) as HTMLInputElement).value).toBe("眠い");
+  expect((getByRole("textbox", { name: "なら" }) as HTMLInputElement).value).toBe(THEN_ACTION);
 });

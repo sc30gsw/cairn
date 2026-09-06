@@ -1,10 +1,12 @@
 import { Field, Form, reset, useForm } from "@formisch/react";
 import type { SubmitHandler } from "@formisch/react";
 import { Button, Group, Modal, NumberInput, Stack, Textarea } from "@mantine/core";
+import { Result } from "better-result";
 import { useEffect } from "react";
 import { hasTimerState } from "~domain/rowTimer";
 
 import type { BoardRow } from "~/features/board/types/board";
+import type { MutationResult } from "~/lib/run-mutation";
 import { RowEditorSchema } from "~/lib/validation/row-editor-schema";
 
 type KanbanConfirmInput = {
@@ -15,7 +17,7 @@ type KanbanConfirmInput = {
 
 type BoardKanbanConfirmModalProps = {
   onClose: () => void;
-  onConfirm: (input: KanbanConfirmInput) => void | Promise<void>;
+  onConfirm: (input: KanbanConfirmInput) => Promise<MutationResult | undefined>;
   opened: boolean;
   prefillMinutes: number | null;
   row: BoardRow | null;
@@ -50,12 +52,12 @@ export function BoardKanbanConfirmModal({
     if (row === null) {
       return;
     }
-    await onConfirm({
+    const result = await onConfirm({
       content: values.content,
       minutes: values.minutes,
       rowId: row._id,
     });
-    onClose();
+    if (result !== undefined && Result.isOk(result)) onClose();
   };
 
   return (
