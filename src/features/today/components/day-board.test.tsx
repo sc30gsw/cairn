@@ -12,6 +12,7 @@ import {
   dayBoardTestRow,
 } from "~/features/today/components/day-board.test-fixtures";
 import type { DayPage } from "~/features/today/types/day";
+import type { MutationResult } from "~/lib/run-mutation";
 import { renderWithMantine } from "~/test-utils/render";
 
 const [confirmed] = [STATUSES[0], STATUSES[1]] as const;
@@ -35,7 +36,7 @@ const {
 } = vi.hoisted(() => ({
   navigate: vi.fn(),
   onAddRow: vi.fn(async () => undefined),
-  onConfirm: vi.fn<() => Promise<import("~/lib/run-mutation").MutationResult>>(),
+  onConfirm: vi.fn<() => Promise<MutationResult>>(),
   onCopyYesterday: vi.fn(async () => undefined),
   onRemoveDay: vi.fn(async () => undefined),
   onRemoveRow: vi.fn(async () => undefined),
@@ -44,7 +45,7 @@ const {
   onFlagReview: vi.fn(async () => undefined),
   onSkip: vi.fn(async () => undefined),
   onUnflagReview: vi.fn(async () => undefined),
-  onSwitchPreset: vi.fn<() => Promise<import("~/lib/run-mutation").MutationResult>>(),
+  onSwitchPreset: vi.fn<() => Promise<MutationResult>>(),
   onUnskip: vi.fn(async () => undefined),
   appliedPresetRef: { current: null },
   useDayPageDateJstMock: vi.fn(() => "2026-08-17"),
