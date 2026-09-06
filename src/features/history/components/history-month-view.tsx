@@ -5,7 +5,7 @@ import {
   type DateStringValue,
   type ScheduleEventData,
 } from "@mantine/schedule";
-import { cn } from "cnfast";
+import { cn } from "cn";
 import dayjs from "dayjs";
 import type { DateJst } from "~domain/jst";
 import { isFutureDateJst } from "~domain/jst";

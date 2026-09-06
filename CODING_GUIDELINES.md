@@ -9,7 +9,7 @@
 | 領域           | 採用                                                                                                       |
 | -------------- | ---------------------------------------------------------------------------------------------------------- |
 | フレームワーク | TanStack Start + Router、React 19（React Compiler を Babel で有効化）                                      |
-| スタイル       | Tailwind CSS v4（`cn` は `cnfast`）。Mantine とは `tailwind-preset-mantine` で統合                         |
+| スタイル       | Tailwind CSS v4（クラス名の結合は `cn` パッケージ）。Mantine とは `tailwind-preset-mantine` で統合                         |
 | UI             | Mantine（`@mantine/core` + `@mantine/hooks` + `@mantine/dates`）                                           |
 | チャート       | `@tanstack/charts` + `@tanstack/charts-scales` + `@tanstack/react-charts` 0.7.2（SVG/SSR）                 |
 | バックエンド   | Convex（`convex/` + `@convex-dev/react-query`）                                                            |

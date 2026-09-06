@@ -7,7 +7,7 @@ A minimal application template built with [TanStack Start](https://tanstack.com/
 - **TanStack Start** with file-based routing under `src/routes/`
 - **React 19** and **TypeScript**
 - **Tailwind CSS 4** with the Vite plugin
-- [**`cnfast`**](https://github.com/aidenybai/cnfast) for class name merging (drop-in replacement for `clsx` + `tailwind-merge`)
+- [**`cn`**](https://github.com/shadcn-ui/cn) for class name merging (drop-in replacement for `clsx` + `tailwind-merge`)
 - **Vite+**-managed tooling: Oxlint, Oxfmt, Vitest-style testing via `vite-plus/test` (see [AGENTS.md](AGENTS.md) for workflow and pitfalls)
 
 ## Requirements

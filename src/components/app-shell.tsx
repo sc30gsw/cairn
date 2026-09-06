@@ -1,7 +1,7 @@
 import { AppShell as Shell, Box, Group, Menu, Stack, Title, UnstyledButton } from "@mantine/core";
 import { IconDots } from "@tabler/icons-react";
 import { CatchBoundary, Link, useRouterState } from "@tanstack/react-router";
-import { cn } from "cnfast";
+import { cn } from "cn";
 import { Suspense, type ReactNode } from "react";
 
 import { AppSpotlight, SpotlightTrigger } from "~/components/app-spotlight";

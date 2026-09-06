@@ -79,7 +79,7 @@ Notion の日次ログと学習記録で英語学習を残している。行の�
 - 履歴の月は `@mantine/dates` の Calendar。空マスは休養。週は `@mantine/schedule` の AgendaView。行は終日イベント。ResourcesDayView は使わない。ホームは今日。
 - 新規ユーザーは空のカタログから始める（`days.open` は自動 seed しない）。`catalog.ensure` で Notion 由来の初期データを投入可能。
 - 秘密は Convex deployment の env。BETTER_AUTH_SECRET、SITE_URL、GOOGLE_CLIENT_ID / SECRET、AUTH_DISABLE_SIGNUP（任意）、BETTER_AUTH_TRUSTED_ORIGINS（任意）。アプリ側は CONVEX_DEPLOYMENT、VITE_CONVEX_URL、VITE_CONVEX_SITE_URL、VITE_SITE_URL。Better Auth インスタンスは Convex HTTP 上。Start は `/api/auth/$` でプロキシ。
-- フロントのフォームは Formisch と Valibot。Zod は使わない。結果型は better-result。クラス名は cnfast の `cn`。相対 import は禁止。`~/*` が `src/*`。
+- フロントのフォームは Formisch と Valibot。Zod は使わない。結果型は better-result。クラス名は `cn` パッケージの `cn`。相対 import は禁止。`~/*` が `src/*`。
 - パッケージ追加は `vp add`。Vitest / Testing Library 系の本体を直接入れない。テスト runner は vite-plus。`convex-test` と `@edge-runtime/vm` と `convex-helpers` と `@testing-library/react`（および jsdom）と `@mantine/schedule` は足してよい。`vitest` 本体、`convex-helpers/testing`、Playwright は v1 に入れない。
 - `vp test` は Vitest project を分ける。フロント（jsdom、src の test）、Convex 純関数（Node、lib の test）、Convex 統合（edge-runtime、公開関数の test）。`test.include` が src だけな現状は、この分割で置き換える。
 - TDD。赤のテストを先に書く。縦スライス。実装詳細や private、DB を直接覗く assert は禁止。期待値は CONTEXT のリテラル。

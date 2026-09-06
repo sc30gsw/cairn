@@ -20,7 +20,7 @@
 
 - **`vp check` fails on warnings too** — `lint.options` sets `denyWarnings`, `typeAware`, and `typeCheck`.
 - **`src/routeTree.gen.ts` is generated.** It is excluded from fmt and lint; never edit it by hand.
-- **Class names are merged with `cn` from `cnfast`** (drop-in for `clsx` + `tailwind-merge`). Oxfmt's Tailwind class sorting is configured for `cn` only.
+- **Class names are merged with `cn` from `cn`** (drop-in for `clsx` + `tailwind-merge`). Oxfmt's Tailwind class sorting is configured for `cn` only.
 - **Only `.test.ts` / `.test.tsx` files under `src/` are collected** (`test.include` in `vite.config.ts`). Import test utilities from `vite-plus/test`.
 - **`~/*` maps to `src/*`** — declared once in `tsconfig.json` (`compilerOptions.paths`) and consumed by Vite through `resolve.tsconfigPaths: true`. Relative imports are forbidden; see `.claude/rules/typescript/project-structure.md`.
 - **Committing runs `.vite-hooks/pre-commit` → `vp staged`**, which applies `vp check --fix` to staged `js,jsx,ts,tsx,json,css` files.
@@ -35,10 +35,10 @@ Human-readable source of truth: [CODING_GUIDELINES.md](./CODING_GUIDELINES.md). 
 
 Installed packages are the source of truth (`package.json`). Do not write code against libraries that are not installed.
 
-- **Installed:** TanStack Start + React 19, Convex (`convex` + `@convex-dev/react-query`), TanStack Query (Convex SSR adapter only, via `@tanstack/react-query` + `@tanstack/react-router-ssr-query`), Mantine 9 (with `@mantine/dates` + `dayjs`) and `tailwind-preset-mantine` on Tailwind 4, Valibot, Formisch, better-result, `cnfast`.
+- **Installed:** TanStack Start + React 19, Convex (`convex` + `@convex-dev/react-query`), TanStack Query (Convex SSR adapter only, via `@tanstack/react-query` + `@tanstack/react-router-ssr-query`), Mantine 9 (with `@mantine/dates` + `dayjs`) and `tailwind-preset-mantine` on Tailwind 4, Valibot, Formisch, better-result, `cn`.
 - **Tooling:** Vite+ (`vp`). Convex CLI via `vp run convex:dev` / `vp exec convex …`.
 - **Auth:** not wired yet. Do not add Better Auth, Clerk, or WorkOS in this bootstrap.
-- **Rejected:** Better Auth, Jotai, ky, MSW, TanStack Form, generated API clients (`src/lib/api/generated/`), `clsx` / `tailwind-merge` (`cnfast` covers this), Elysia / Drizzle / `pg`. TanStack Query is only for `convexQuery(...)` — do not use it as a generic REST client.
+- **Rejected:** Better Auth, Jotai, ky, MSW, TanStack Form, generated API clients (`src/lib/api/generated/`), `clsx` / `tailwind-merge` (`cn` covers this), Elysia / Drizzle / `pg`. TanStack Query is only for `convexQuery(...)` — do not use it as a generic REST client.
 
 UI defaults to Mantine components; Tailwind handles layout on the wrappers around them. See [CODING_GUIDELINES.md](./CODING_GUIDELINES.md) §UI and `.claude/rules/typescript/mantine-tailwind.md`. `src/styles.css` imports `tailwind-preset-mantine`, which pulls in Tailwind and `@mantine/core/styles.layer.css` in the right layer order — do not add a bare `@import "tailwindcss"`. Rationale in `docs/adr/0003-mantine-with-tailwind-preset.md`.
 
