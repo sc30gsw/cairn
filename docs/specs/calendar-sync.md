@@ -68,7 +68,7 @@ calendarSyncCursors { ownerId, calendarId, syncToken, fullSyncedOnJst }  // by_o
 ## 6. 運用
 
 - Convex deployment env: `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET`（`NOTION_CLIENT_ID` / `NOTION_CLIENT_SECRET` は不要）。
-- Google Cloud Console: OAuth クライアント（ウェブ）に承認済みリダイレクト URI `https://<deployment>.convex.site/api/auth/callback/google` と、承認済み JavaScript 生成元に `SITE_URL`。Google Calendar API を有効化。OAuth 同意画面のスコープに `calendar.events` と `calendar.calendarlist.readonly`（sensitive）を追加。テスト中は公開ステータス「テスト」でテストユーザーに所有者のアカウントを登録する。
+- Google Cloud Console: OAuth クライアント（ウェブ）に承認済みリダイレクト URI `<SITE_URL>/api/auth/callback/google`（Better Auth の `baseURL` は `SITE_URL`。Start が `/api/auth/$` を Convex HTTP へプロキシする）と、承認済み JavaScript 生成元に `SITE_URL`。Google Calendar API を有効化。OAuth 同意画面のスコープに `calendar.events` と `calendar.calendarlist.readonly`（sensitive）を追加。公開ステータスが「テスト」のままだとリフレッシュトークンが 7 日で失効し毎週の再接続になるので、利用者2人のままでも「本番」に公開する（sensitive スコープの審査を通さない間は「未確認のアプリ」の警告画面が出るが、進める）。
 - デプロイ前に Convex ダッシュボードで旧 `calendarFeedTokens` テーブルを空にする（スキーマから消えたテーブルに行が残っていると push が止まることがある）。
 
 ## 7. 端ケース
