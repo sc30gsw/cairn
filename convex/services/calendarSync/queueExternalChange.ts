@@ -4,7 +4,7 @@ import type { MutationCtx } from "../../_generated/server";
 
 export async function queueExternalChange(
   ctx: MutationCtx,
-  args: Omit<Doc<"calendarExternalChanges">, "_id" | "_creationTime">,
+  args: Omit<Doc<"calendarExternalChanges">, "_id" | "_creationTime" | "settledAt">,
 ): Promise<void> {
   const previous = await ctx.db
     .query("calendarExternalChanges")

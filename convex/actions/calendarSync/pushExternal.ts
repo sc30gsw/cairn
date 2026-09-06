@@ -46,14 +46,17 @@ async function pushPendingChange(
 
 const pushExternalArgs = v.union(
   v.object({ attempt: v.number(), pendingId: v.id("calendarExternalChanges") }),
-  schema.tables.calendarExternalChanges.validator.extend({ attempt: v.number() }),
+  schema.tables.calendarExternalChanges.validator.omit("settledAt").extend({ attempt: v.number() }),
 );
 
 export const pushExternal = internalAction({
-  args: schema.tables.calendarExternalChanges.validator.partial().extend({
-    attempt: v.number(),
-    pendingId: v.optional(v.id("calendarExternalChanges")),
-  }).fields,
+  args: schema.tables.calendarExternalChanges.validator
+    .omit("settledAt")
+    .partial()
+    .extend({
+      attempt: v.number(),
+      pendingId: v.optional(v.id("calendarExternalChanges")),
+    }).fields,
   handler: async (ctx, input): Promise<null> => {
     const args = parse(pushExternalArgs, input);
     if (!("pendingId" in args)) {

@@ -86,7 +86,7 @@ async function applyToExternal(
         .eq("googleEventId", event.googleEventId),
     )
     .unique();
-  if (pending !== null) {
+  if (pending !== null && pending.settledAt === undefined) {
     return;
   }
   const existing = await findExternal(ctx, ownerId, event);

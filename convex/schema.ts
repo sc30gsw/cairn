@@ -160,11 +160,14 @@ export default defineSchema({
   }).index("by_owner", ["ownerId"]),
 
   calendarExternalChanges: defineTable({
+    settledAt: v.optional(v.number()),
     calendarId: v.string(),
     change: externalChangeValidator,
     googleEventId: v.string(),
     ownerId: v.string(),
-  }).index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"]),
+  })
+    .index("by_owner_and_settledAt", ["ownerId", "settledAt"])
+    .index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"]),
 
   calendarConnections: defineTable({
     disconnecting: v.optional(v.boolean()),
@@ -193,7 +196,6 @@ export default defineSchema({
     .index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"]),
 
   externalCalendarEvents: defineTable({
-    appChangedAt: v.optional(v.number()),
     allDay: v.boolean(),
     calendarId: v.string(),
     endAt: v.string(),

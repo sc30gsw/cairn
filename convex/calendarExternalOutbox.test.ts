@@ -73,7 +73,12 @@ async function setup() {
 }
 
 async function pendingId(t: Awaited<ReturnType<typeof setup>>["t"]) {
-  const pending = await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").unique());
+  const pending = await t.run(async (ctx) =>
+    ctx.db
+      .query("calendarExternalChanges")
+      .withIndex("by_owner_and_settledAt", (q) => q.eq("ownerId", OWNER).eq("settledAt", undefined))
+      .unique(),
+  );
   if (pending === null) {
     throw new Error("pending change missing");
   }
@@ -117,7 +122,16 @@ test("認証切れで残した変更は次の同期で pull より先に送信�
   });
   expect(await owner.action(api.actions.calendarSync.syncNow.syncNow, {})).toBe("ok");
   expect(methods).toEqual(["PATCH", "GET"]);
-  expect(await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect())).toEqual([]);
+  expect(
+    await t.run(async (ctx) =>
+      ctx.db
+        .query("calendarExternalChanges")
+        .withIndex("by_owner_and_settledAt", (q) =>
+          q.eq("ownerId", OWNER).eq("settledAt", undefined),
+        )
+        .collect(),
+    ),
+  ).toEqual([]);
   expect(
     await t.run(async (ctx) => ctx.db.get("externalCalendarEvents", externalId)),
   ).toMatchObject(MOVED);
@@ -160,7 +174,14 @@ test.each(["move", "delete"] as const)(
     const events = await t.run(async (ctx) => ctx.db.query("externalCalendarEvents").collect());
     expect(events).toMatchObject(kind === "move" ? [MOVED] : []);
     expect(
-      await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect()),
+      await t.run(async (ctx) =>
+        ctx.db
+          .query("calendarExternalChanges")
+          .withIndex("by_owner_and_settledAt", (q) =>
+            q.eq("ownerId", OWNER).eq("settledAt", undefined),
+          )
+          .collect(),
+      ),
     ).toHaveLength(1);
   },
 );
@@ -210,7 +231,16 @@ test("送信中の新しい編集は古い送信の完了で消えず、古い�
     pendingId: latestId,
   });
   expect(fetch).toHaveBeenCalledTimes(2);
-  expect(await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect())).toEqual([]);
+  expect(
+    await t.run(async (ctx) =>
+      ctx.db
+        .query("calendarExternalChanges")
+        .withIndex("by_owner_and_settledAt", (q) =>
+          q.eq("ownerId", OWNER).eq("settledAt", undefined),
+        )
+        .collect(),
+    ),
+  ).toEqual([]);
   expect(
     await t.run(async (ctx) => ctx.db.get("externalCalendarEvents", externalId)),
   ).toMatchObject(latest);
@@ -228,7 +258,16 @@ test("切断は pending を掃除し、残った scheduled action は Google に
     pendingId: id,
   });
   expect(fetch).not.toHaveBeenCalled();
-  expect(await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect())).toEqual([]);
+  expect(
+    await t.run(async (ctx) =>
+      ctx.db
+        .query("calendarExternalChanges")
+        .withIndex("by_owner_and_settledAt", (q) =>
+          q.eq("ownerId", OWNER).eq("settledAt", undefined),
+        )
+        .collect(),
+    ),
+  ).toEqual([]);
 });
 
 test.each([400, 403, 429])(
@@ -298,7 +337,14 @@ test.each([400, 403, 429])(
     expect(patched).toHaveLength(2);
     expect(patched[1]).toContain("later-event");
     expect(cursors).toEqual([status === 429 ? "old" : null]);
-    const pending = await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect());
+    const pending = await t.run(async (ctx) =>
+      ctx.db
+        .query("calendarExternalChanges")
+        .withIndex("by_owner_and_settledAt", (q) =>
+          q.eq("ownerId", OWNER).eq("settledAt", undefined),
+        )
+        .collect(),
+    );
     expect(pending).toHaveLength(status === 429 ? 1 : 0);
     expect(
       await t.run(async (ctx) => ctx.db.get("externalCalendarEvents", externalId)),
@@ -307,9 +353,16 @@ test.each([400, 403, 429])(
     );
     fail = false;
     await t.finishAllScheduledFunctions(vi.runAllTimers);
-    expect(await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect())).toEqual(
-      [],
-    );
+    expect(
+      await t.run(async (ctx) =>
+        ctx.db
+          .query("calendarExternalChanges")
+          .withIndex("by_owner_and_settledAt", (q) =>
+            q.eq("ownerId", OWNER).eq("settledAt", undefined),
+          )
+          .collect(),
+      ),
+    ).toEqual([]);
     expect(patched).toHaveLength(status === 429 ? 3 : 2);
   },
 );
@@ -337,7 +390,16 @@ test("一括再送は100件を超えても各変更を一度ずつ送信する",
   expect(await owner.action(api.actions.calendarSync.syncNow.syncNow, {})).toBe("ok");
   expect(new Set(deleted).size).toBe(101);
   expect(deleted).toHaveLength(101);
-  expect(await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect())).toEqual([]);
+  expect(
+    await t.run(async (ctx) =>
+      ctx.db
+        .query("calendarExternalChanges")
+        .withIndex("by_owner_and_settledAt", (q) =>
+          q.eq("ownerId", OWNER).eq("settledAt", undefined),
+        )
+        .collect(),
+    ),
+  ).toEqual([]);
 });
 
 test.each(["move", "delete"] as const)(
@@ -361,9 +423,16 @@ test.each(["move", "delete"] as const)(
     expect(await pendingId(t)).toBeDefined();
     await t.finishAllScheduledFunctions(vi.runAllTimers);
     expect(methods).toEqual([kind === "delete" ? "DELETE" : "PATCH"]);
-    expect(await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect())).toEqual(
-      [],
-    );
+    expect(
+      await t.run(async (ctx) =>
+        ctx.db
+          .query("calendarExternalChanges")
+          .withIndex("by_owner_and_settledAt", (q) =>
+            q.eq("ownerId", OWNER).eq("settledAt", undefined),
+          )
+          .collect(),
+      ),
+    ).toEqual([]);
   },
 );
 
@@ -397,7 +466,16 @@ test("切断後の旧形式ジョブは未送信変更を復活させない", as
     ownerId: OWNER,
     change: { kind: "delete" },
   });
-  expect(await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect())).toEqual([]);
+  expect(
+    await t.run(async (ctx) =>
+      ctx.db
+        .query("calendarExternalChanges")
+        .withIndex("by_owner_and_settledAt", (q) =>
+          q.eq("ownerId", OWNER).eq("settledAt", undefined),
+        )
+        .collect(),
+    ),
+  ).toEqual([]);
 });
 
 test.each(["move", "delete"] as const)(
@@ -442,9 +520,16 @@ test.each(["move", "delete"] as const)(
     });
     await t.finishAllScheduledFunctions(vi.runAllTimers);
     expect(fetch).toHaveBeenCalledTimes(1);
-    expect(await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect())).toEqual(
-      [],
-    );
+    expect(
+      await t.run(async (ctx) =>
+        ctx.db
+          .query("calendarExternalChanges")
+          .withIndex("by_owner_and_settledAt", (q) =>
+            q.eq("ownerId", OWNER).eq("settledAt", undefined),
+          )
+          .collect(),
+      ),
+    ).toEqual([]);
     expect(
       await t.run(async (ctx) => ctx.db.get("externalCalendarEvents", externalId)),
     ).toMatchObject(MOVED);
@@ -471,5 +556,47 @@ test("互換引数に必要なフィールドが足りなければ処理しな�
   await expect(
     t.action(internal.actions.calendarSync.pushExternal.pushExternal, { attempt: 0 }),
   ).rejects.toThrow();
-  expect(await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect())).toEqual([]);
+  expect(
+    await t.run(async (ctx) =>
+      ctx.db
+        .query("calendarExternalChanges")
+        .withIndex("by_owner_and_settledAt", (q) =>
+          q.eq("ownerId", OWNER).eq("settledAt", undefined),
+        )
+        .collect(),
+    ),
+  ).toEqual([]);
 });
+
+test.each(["move", "delete"] as const)(
+  "キャッシュ掃除後も送信済みの編集を旧 %s で上書きしない",
+  async (kind) => {
+    const { externalId, owner, t } = await setup();
+    await owner.mutation(api.mutations.calendarSync.moveExternal.moveExternal, {
+      externalId,
+      ...MOVED,
+    });
+    const fetch = vi.fn(async () => Response.json(googleEvent()));
+    vi.stubGlobal("fetch", fetch);
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    await t.run(async (ctx) => ctx.db.delete("externalCalendarEvents", externalId));
+    await t.action(internal.actions.calendarSync.pushExternal.pushExternal, {
+      attempt: 2,
+      ownerId: OWNER,
+      calendarId: CALENDAR,
+      googleEventId: "event",
+      change:
+        kind === "delete"
+          ? { kind }
+          : { kind, allDay: false, startAt: `${TODAY} 12:00:00`, endAt: `${TODAY} 13:00:00` },
+    });
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(
+      await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").unique()),
+    ).toMatchObject({
+      change: { kind: "move", ...MOVED },
+      settledAt: expect.any(Number),
+    });
+  },
+);

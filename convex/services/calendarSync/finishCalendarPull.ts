@@ -33,7 +33,7 @@ export async function finishCalendarPull(
             .eq("googleEventId", external.googleEventId),
         )
         .unique();
-      if (pending === null) {
+      if (pending === null || pending.settledAt !== undefined) {
         await ctx.db.delete("externalCalendarEvents", external._id);
       }
     }),

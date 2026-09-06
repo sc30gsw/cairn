@@ -7,10 +7,10 @@ export const finishExternalPush = internalMutation({
   args: { pendingId: v.id("calendarExternalChanges"), lastError: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const pending = await ctx.db.get("calendarExternalChanges", args.pendingId);
-    if (pending === null) {
+    if (pending === null || pending.settledAt !== undefined) {
       return null;
     }
-    await ctx.db.delete("calendarExternalChanges", pending._id);
+    await ctx.db.patch("calendarExternalChanges", pending._id, { settledAt: Date.now() });
     if (args.lastError !== undefined) {
       await resetCalendarCursor(ctx, pending.ownerId, pending.calendarId, { dropExternals: false });
       await markStatus(ctx, {
