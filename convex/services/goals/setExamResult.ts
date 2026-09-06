@@ -5,6 +5,7 @@ import { ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { toeicScoreMessage } from "../../lib/toeicScore";
 import type { ExamResultDto } from "../../lib/validators";
+import { scheduleGoalSync } from "../calendarSync/scheduleSourceSync";
 import { requireOwnedGoal } from "./requireOwnedGoal";
 
 export const NOT_EXAM_GOAL_MESSAGE = "本番の目標ではありません";
@@ -30,5 +31,7 @@ export async function setExamResult(
   }
   requireDateJst(args.result.recordedAt);
   await ctx.db.patch("goals", goal._id, { result: args.result });
+  //? 終了した本番は載せないので、送信アクションが Google 側の本番日を消す
+  await scheduleGoalSync(ctx, ownerId, [goal._id]);
   return null;
 }

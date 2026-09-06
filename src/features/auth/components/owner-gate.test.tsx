@@ -19,7 +19,7 @@ vi.mock("~/components/app-shell", () => ({
 }));
 
 vi.mock("~/features/auth/hooks/use-auth-config", () => ({
-  useAuthPublicConfig: () => ({ data: { notionSignIn: false } }),
+  useAuthPublicConfig: () => ({ data: { googleSignIn: false } }),
 }));
 
 const refetch = vi.fn();

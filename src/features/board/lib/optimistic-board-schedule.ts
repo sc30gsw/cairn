@@ -9,6 +9,33 @@ type BoardScheduleBlock = FunctionReturnType<
   typeof api.queries.boardSchedule.listForWeek.listForWeek
 >[number];
 
+type BoardExternalEvent = FunctionReturnType<
+  typeof api.queries.calendarSync.listExternal.listExternal
+>[number];
+
+export function patchExternalCalendarEvents(
+  localStore: OptimisticLocalStore,
+  args: {
+    anchorDateJst: DateJst;
+    updater: (externals: BoardExternalEvent[]) => BoardExternalEvent[];
+    view: BoardScheduleView;
+  },
+): void {
+  const queryArgs = { anchorDateJst: args.anchorDateJst, view: args.view };
+  const externals = localStore.getQuery(
+    api.queries.calendarSync.listExternal.listExternal,
+    queryArgs,
+  );
+  if (externals === undefined) {
+    return;
+  }
+  localStore.setQuery(
+    api.queries.calendarSync.listExternal.listExternal,
+    queryArgs,
+    args.updater(externals),
+  );
+}
+
 export function patchBoardScheduleBlocks(
   localStore: OptimisticLocalStore,
   args: {

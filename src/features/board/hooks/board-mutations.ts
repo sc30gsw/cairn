@@ -3,7 +3,10 @@ import type { DateJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
 import type { Id } from "~/../convex/_generated/dataModel";
-import { patchBoardScheduleBlocks } from "~/features/board/lib/optimistic-board-schedule";
+import {
+  patchBoardScheduleBlocks,
+  patchExternalCalendarEvents,
+} from "~/features/board/lib/optimistic-board-schedule";
 import type { BoardScheduleView } from "~/features/board/schemas/board-search-schema";
 import {
   useOptimisticApplyRowOrder,
@@ -125,5 +128,37 @@ export function useBoardScheduleMove(anchorDateJst: DateJst, view: BoardSchedule
       });
     },
   );
+  return { mutateAsync };
+}
+
+//? 外部予定の移動・削除。写しを先に動かし、Google への反映はサーバーの送信アクションが行う
+export function useBoardExternalMove(anchorDateJst: DateJst, view: BoardScheduleView) {
+  const mutateAsync = useConvexMutation(
+    api.mutations.calendarSync.moveExternal.moveExternal,
+  ).withOptimisticUpdate((localStore, args) => {
+    patchExternalCalendarEvents(localStore, {
+      anchorDateJst,
+      view,
+      updater: (externals) =>
+        externals.map((external) =>
+          external._id === args.externalId
+            ? { ...external, endAt: args.endAt, startAt: args.startAt }
+            : external,
+        ),
+    });
+  });
+  return { mutateAsync };
+}
+
+export function useBoardExternalRemove(anchorDateJst: DateJst, view: BoardScheduleView) {
+  const mutateAsync = useConvexMutation(
+    api.mutations.calendarSync.removeExternal.removeExternal,
+  ).withOptimisticUpdate((localStore, args) => {
+    patchExternalCalendarEvents(localStore, {
+      anchorDateJst,
+      view,
+      updater: (externals) => externals.filter((external) => external._id !== args.externalId),
+    });
+  });
   return { mutateAsync };
 }

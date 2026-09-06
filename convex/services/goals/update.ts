@@ -3,6 +3,7 @@ import type { MutationCtx } from "../../_generated/server";
 import { ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import type { GoalInput } from "../../lib/validators";
+import { scheduleGoalSync } from "../calendarSync/scheduleSourceSync";
 import { assertCheckpointParent } from "./assertCheckpointParent";
 import { assertGoalInput } from "./assertGoalInput";
 import { assertNoChildCheckpoints } from "./assertNoChildCheckpoints";
@@ -42,6 +43,7 @@ export async function update(
       ...toGoalDocument(goal, ownerId),
       result: existing.result,
     });
+    await scheduleGoalSync(ctx, ownerId, [existing._id]);
     return null;
   }
   if (existing.type !== "mastery") {
@@ -65,5 +67,6 @@ export async function update(
     achievedAt: existing.achievedAt,
     reflection: existing.reflection,
   });
+  await scheduleGoalSync(ctx, ownerId, [existing._id]);
   return null;
 }

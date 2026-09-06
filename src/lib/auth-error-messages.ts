@@ -2,6 +2,7 @@ export type AuthErrorContext =
   | "addPasskey"
   | "changePassword"
   | "deletePasskey"
+  | "linkGoogleCalendar"
   | "listPasskeys"
   | "signIn"
   | "signInPasskey"
@@ -21,6 +22,8 @@ const CONTEXT_FALLBACKS = {
   addPasskey: "パスキーの登録に失敗しました。時間をおいて、もう一度お試しください。",
   changePassword: "パスワードの更新に失敗しました。入力内容を確認して、もう一度お試しください。",
   deletePasskey: "パスキーの削除に失敗しました。時間をおいて、もう一度お試しください。",
+  linkGoogleCalendar:
+    "Google カレンダーとの連携を始められませんでした。時間をおいて、もう一度お試しください。",
   listPasskeys: "パスキー一覧の取得に失敗しました。ページを更新して、もう一度お試しください。",
   signIn: "ログインに失敗しました。ユーザー名・メールアドレスとパスワードを確認してください。",
   signInPasskey:

@@ -6,11 +6,6 @@ import { CONDITIONS } from "../conditions";
 import { DAY_VIEW_KINDS } from "../dayView";
 import { STATUSES } from "../domain";
 import {
-  calendarFeedEventValidator,
-  calendarFeedStatusValidator,
-  calendarFeedValidator,
-} from "./calendarFeed";
-import {
   notificationDtoValidator,
   notificationKindValidator,
   notificationPageValidator,
@@ -194,9 +189,3 @@ export type WebPushMessage = Infer<typeof webPushMessageValidator>;
 export type WebPushDelivery = Infer<typeof webPushDeliveryValidator>;
 
 export type WebPushConfigDto = Infer<typeof webPushConfigValidator>;
-
-export type CalendarFeedStatusDto = Infer<typeof calendarFeedStatusValidator>;
-
-export type CalendarFeedEventDto = Infer<typeof calendarFeedEventValidator>;
-
-export type CalendarFeedDto = Infer<typeof calendarFeedValidator>;

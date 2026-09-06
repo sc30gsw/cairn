@@ -1,8 +1,8 @@
 import { Result } from "better-result";
-import { customMutation, customQuery } from "convex-helpers/server/customFunctions";
+import { customAction, customMutation, customQuery } from "convex-helpers/server/customFunctions";
 import { ConvexError } from "convex/values";
 
-import { mutation, query, type MutationCtx, type QueryCtx } from "../_generated/server";
+import { action, mutation, query, type QueryCtx } from "../_generated/server";
 import type { DomainError } from "./errors";
 import { ownerFromIdentity } from "./owner";
 
@@ -10,7 +10,7 @@ export function throwDomain(error: DomainError): never {
   throw new ConvexError({ message: error.message, tag: error._tag });
 }
 
-async function ownerCtx(ctx: MutationCtx | QueryCtx) {
+async function ownerCtx(ctx: Pick<QueryCtx, "auth">) {
   const identity = await ctx.auth.getUserIdentity();
   const result = ownerFromIdentity(
     identity === null ? null : { email: identity.email, subject: identity.subject },
@@ -29,6 +29,14 @@ export const ownerQuery = customQuery(query, {
 });
 
 export const ownerMutation = customMutation(mutation, {
+  args: {},
+  input: async (ctx) => {
+    return { args: {}, ctx: { ...ctx, ownerId: await ownerCtx(ctx) } };
+  },
+});
+
+//? 外部 API（Google カレンダー）を叩く公開アクション用。認可の形は query / mutation と同じ（CVX-04）
+export const ownerAction = customAction(action, {
   args: {},
   input: async (ctx) => {
     return { args: {}, ctx: { ...ctx, ownerId: await ownerCtx(ctx) } };

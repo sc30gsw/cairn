@@ -4,6 +4,7 @@ import { normalizeReflection } from "../../lib/achievementReflection";
 import { requireDateJst } from "../../lib/dateArgs";
 import { ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
+import { scheduleGoalSync } from "../calendarSync/scheduleSourceSync";
 import { recomputeMasteryProgress } from "./recomputeMasteryProgress";
 import { requireOwnedGoal } from "./requireOwnedGoal";
 
@@ -28,6 +29,7 @@ export async function setAchieved(
     //? 達成を外しても振り返りは残す。次に達成にするときの初期値になる
     await recomputeMasteryProgress(ctx, goal);
     await ctx.db.patch("goals", goal._id, { achievedAt: undefined });
+    await scheduleGoalSync(ctx, ownerId, [goal._id]);
     return null;
   }
   requireDateJst(args.achievedAt);
@@ -36,5 +38,6 @@ export async function setAchieved(
     achievedAt: args.achievedAt,
     reflection: args.reflection === undefined ? goal.reflection : reflection,
   });
+  await scheduleGoalSync(ctx, ownerId, [goal._id]);
   return null;
 }

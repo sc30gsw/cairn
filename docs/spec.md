@@ -4,17 +4,17 @@ Notion の日次ログと学習記録で英語学習を残している。行の�
 
 ## Solution
 
-学習ログの正本をこのアプリに移す。起動は今日の記録。曜日に合うプリセットが未着手の行を並べ、キーボードだけで確定・スキップ・上書きできる。今夜の就寝は日付を選ばない。睡眠は起床した日に載り、7時間未満なら警告する（確定は止めない）。履歴の入口は月のカレンダーで、空マスは休養（学習量0）。週は Agenda で行を終日として並べる。確定行から Slack 用の共有文をコピーする。本番目標のカウントダウン、月曜始まりの週間学習量ゴール、CRUD できる障害プラン（if-then。行は自動で変えない）を持つ。Notion はログインだけ。
+学習ログの正本をこのアプリに移す。起動は今日の記録。曜日に合うプリセットが未着手の行を並べ、キーボードだけで確定・スキップ・上書きできる。今夜の就寝は日付を選ばない。睡眠は起床した日に載り、7時間未満なら警告する（確定は止めない）。履歴の入口は月のカレンダーで、空マスは休養（学習量0）。週は Agenda で行を終日として並べる。確定行から Slack 用の共有文をコピーする。本番目標のカウントダウン、月曜始まりの週間学習量ゴール、CRUD できる障害プラン（if-then。行は自動で変えない）を持つ。ログインは Google か email / password。Notion は使わない。
 
 用語はリポジトリ直下の CONTEXT.md に従う。ADR-0001（Notion は IdP のみ）、ADR-0002（睡眠は起床日）、ADR-0003（プロセス目標であり OKR ツリーは作らない）を覆さない。
 
 ## User Stories
 
-1. As an 所有者, I want Notion でログインする, so that 公開 URL でも自分だと証明できる
+1. As an 所有者, I want Google でログインする, so that 公開 URL でも自分だと証明できる
 2. As an 所有者, I want 初回ログインのあと signup を閉じる, so that 他人がアカウントを作れない
 3. As an 所有者, I want 許可した email 以外は入れない, so that 認証済みの他人もデータに触れない
 4. As an 未ログインの訪問者, I want 記録画面に入れない, so that 学習内容が漏れない
-5. As an 許可されていない Notion アカウント, I want ログインに失敗する, so that 所有者以外が入れない
+5. As an 許可されていない Google アカウント, I want signup が閉じていればログインに失敗する, so that 所有者以外が入れない
 6. As an 所有者, I want 起動すると今日の日が開く, so that 寝る直前や朝にすぐ入力できる
 7. As an 所有者, I want 今日の曜日に合うプリセットの行が未着手で並ぶ, so that 項目・内容・目安分数を毎回選ばなくてよい
 8. As an 所有者, I want 行をキーボードだけで確定する, so that 画面遷移なしで1件を終えられる
@@ -67,7 +67,7 @@ Notion の日次ログと学習記録で英語学習を残している。行の�
 
 ## Implementation Decisions
 
-- TanStack Start と Convex と Better Auth（`@convex-dev/better-auth`）と Mantine 9（core / dates / hooks）と `tailwind-preset-mantine` を使う。Notion ログインは native の social provider（設定時のみ）。email / username / password による一般アカウントも許可（[ADR 0009](./adr/0009-general-account-auth.md)）。genericOAuth は使わない。
+- TanStack Start と Convex と Better Auth（`@convex-dev/better-auth`）と Mantine 9（core / dates / hooks）と `tailwind-preset-mantine` を使う。Google ログインは native の social provider（設定時のみ。Notion OAuth は [ADR 0016](./adr/0016-google-login-replaces-notion.md) で置き換え、アカウント連携を有効化）。email / username / password による一般アカウントも許可（[ADR 0009](./adr/0009-general-account-auth.md)）。genericOAuth は使わない。
 - Better Auth の表はコンポーネント内に置く。アプリの schema に複製しない。ドメイン表はすべて所有者キー（JWT `subject`）を持つ。未認証の公開 query は残さない。デモの tasks 表は捨てる。
 - 認証ラッパは convex-helpers の custom query / custom mutation。identity から `ownerId`（subject）を ctx に載せ、各 mutation/query がリソースの `ownerId` を検証する。Better Auth の user 行を認可のたびに引かない。
 - ドメインの不変条件は Convex ランタイムを import しない純関数に置く。公開 query / mutation は引数検証、所有者、純関数、DB 書きだけ。フロントは同じ純関数を表示に使ってよい。
@@ -78,7 +78,7 @@ Notion の日次ログと学習記録で英語学習を残している。行の�
 - 共有文は確定行だけ。カテゴリ固定順（TOEIC対策、多聴、多読、英会話、その他）。1カテゴリは平坦、2カテゴリ以上は親+子。カテゴリ内は入力順。コピーは Mantine の CopyButton または useClipboard。
 - 履歴の月は `@mantine/dates` の Calendar。空マスは休養。週は `@mantine/schedule` の AgendaView。行は終日イベント。ResourcesDayView は使わない。ホームは今日。
 - 新規ユーザーは空のカタログから始める（`days.open` は自動 seed しない）。`catalog.ensure` で Notion 由来の初期データを投入可能。
-- 秘密は Convex deployment の env。BETTER_AUTH_SECRET、SITE_URL、NOTION_CLIENT_ID / SECRET、AUTH_DISABLE_SIGNUP（任意）、BETTER_AUTH_TRUSTED_ORIGINS（任意）。アプリ側は CONVEX_DEPLOYMENT、VITE_CONVEX_URL、VITE_CONVEX_SITE_URL、VITE_SITE_URL。Better Auth インスタンスは Convex HTTP 上。Start は `/api/auth/$` でプロキシ。
+- 秘密は Convex deployment の env。BETTER_AUTH_SECRET、SITE_URL、GOOGLE_CLIENT_ID / SECRET、AUTH_DISABLE_SIGNUP（任意）、BETTER_AUTH_TRUSTED_ORIGINS（任意）。アプリ側は CONVEX_DEPLOYMENT、VITE_CONVEX_URL、VITE_CONVEX_SITE_URL、VITE_SITE_URL。Better Auth インスタンスは Convex HTTP 上。Start は `/api/auth/$` でプロキシ。
 - フロントのフォームは Formisch と Valibot。Zod は使わない。結果型は better-result。クラス名は cnfast の `cn`。相対 import は禁止。`~/*` が `src/*`。
 - パッケージ追加は `vp add`。Vitest / Testing Library 系の本体を直接入れない。テスト runner は vite-plus。`convex-test` と `@edge-runtime/vm` と `convex-helpers` と `@testing-library/react`（および jsdom）と `@mantine/schedule` は足してよい。`vitest` 本体、`convex-helpers/testing`、Playwright は v1 に入れない。
 - `vp test` は Vitest project を分ける。フロント（jsdom、src の test）、Convex 純関数（Node、lib の test）、Convex 統合（edge-runtime、公開関数の test）。`test.include` が src だけな現状は、この分割で置き換える。
@@ -104,7 +104,7 @@ Convex は Testing Pyramid。底は純関数の unit を厚くする（睡眠時
 - JSON/CSV エクスポート
 - 8/14 以前の Notion データ移行、Notion API 同期
 - ユーザー間のデータ共有、AI 要約（通知は v1 の範囲外だったが、[docs/specs/notifications.md](./specs/notifications.md) で対象に入った）
-- Notion OAuth と email/password のアカウント連携（同一 subject への統合）
+- Notion カレンダーへの直接連携（API が無い。Google 経由で表示する。[docs/specs/calendar-sync.md](./specs/calendar-sync.md)）
 - タスク・締切・時間割・計画の前提・判断の履歴（Notion に残す）
 - OKR ツリー、WOOP ウィザード、障害プランによる自動スキップ
 - WorkOS、Clerk、`@convex-dev/auth`、自前 JWT、genericOAuth

@@ -17,7 +17,8 @@ import {
   USERNAME_PATTERN,
 } from "./lib/authFields";
 import {
-  notionOAuthConfigured,
+  GOOGLE_OAUTH_ENV,
+  googleOAuthConfigured,
   requireEnv,
   signUpDisabledFromEnv,
   trustedOriginsFromEnv,
@@ -45,11 +46,18 @@ const isLiveConvexCtx = (ctx: GenericCtx<DataModel>) => isQueryCtx(ctx) || isAct
 
 export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
   const siteUrl = process.env.SITE_URL;
-  const notionAuth = notionOAuthConfigured();
+  const googleAuth = googleOAuthConfigured();
   const signUpDisabled = signUpDisabledFromEnv();
   return {
     account: {
-      encryptOAuthTokens: notionAuth,
+      //? ADR-0016: 同じメールの Google サインインは既存ユーザーへ自動で繋ぐ。連携（linkSocial）は
+      //? ログイン中の本人が押す操作なので、別メールの Google アカウントも許す
+      accountLinking: {
+        allowDifferentEmails: true,
+        enabled: true,
+        trustedProviders: ["google"],
+      },
+      encryptOAuthTokens: googleAuth,
     },
     baseURL: siteUrl,
     database: authComponent.adapter(ctx),
@@ -78,12 +86,16 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
       enabled: true,
       storage: "database",
     },
-    socialProviders: notionAuth
+    socialProviders: googleAuth
       ? {
-          notion: {
-            clientId: process.env.NOTION_CLIENT_ID ?? "",
-            clientSecret: process.env.NOTION_CLIENT_SECRET ?? "",
+          google: {
+            //? カレンダー同期のリフレッシュトークンを得るため offline。権限は linkSocial の scopes で
+            //? 追加で求める（段階的認可）ので、ログイン時の scope は既定（email / profile / openid）のまま
+            accessType: "offline",
+            clientId: process.env[GOOGLE_OAUTH_ENV.clientId] ?? "",
+            clientSecret: process.env[GOOGLE_OAUTH_ENV.clientSecret] ?? "",
             disableSignUp: signUpDisabled,
+            prompt: "select_account",
           },
         }
       : undefined,

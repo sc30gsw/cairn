@@ -1,6 +1,8 @@
 # カレンダー購読フィード（#76）
 
-- 状態: 決定済み・実装済み（2026-09-02）。地図 [#66](https://github.com/sc30gsw/cairn/issues/66)。調査 [#75](https://github.com/sc30gsw/cairn/issues/75) → [docs/research/calendar-export.md](../research/calendar-export.md)。
+> **置き換え済み（2026-09-06）。** 購読フィード（`calendarFeedTokens`・`/calendar/*.ics`・`lib/ics.ts`・マイページの購読 URL）は撤去し、[calendar-sync.md](./calendar-sync.md)（Google カレンダーとの双方向同期、[ADR-0017](../adr/0017-google-calendar-two-way-sync.md)）に替えた。以下は履歴参照用。
+
+- 状態: ~~決定済み・実装済み（2026-09-02）~~ → 撤去済み。地図 [#66](https://github.com/sc30gsw/cairn/issues/66)。調査 [#75](https://github.com/sc30gsw/cairn/issues/75) → [docs/research/calendar-export.md](../research/calendar-export.md)。
 - 守る規約: [CVX-01〜20](../../.claude/rules/convex-rules.md)（CVX-04 の別形＝トークン照合、CVX-09 純関数、CVX-15）、[security.md](../../.claude/rules/common/security.md)、[better-result.md](../../.claude/rules/typescript/better-result.md)。
 
 ## 1. 決定の要約

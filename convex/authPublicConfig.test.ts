@@ -31,24 +31,24 @@ afterEach(() => {
   process.env = originalEnv;
 });
 
-test("Notion OAuth 未設定なら notionSignIn は false", async () => {
-  delete process.env.NOTION_CLIENT_ID;
-  delete process.env.NOTION_CLIENT_SECRET;
+test("Google OAuth 未設定なら googleSignIn は false", async () => {
+  delete process.env.GOOGLE_CLIENT_ID;
+  delete process.env.GOOGLE_CLIENT_SECRET;
 
   const t = convexTest(schema, modules);
   const config = await t.query(api.queries.auth.publicConfig.publicConfig, {});
 
-  expect(config).toEqual({ notionSignIn: false, signUpEnabled: true });
+  expect(config).toEqual({ googleSignIn: false, signUpEnabled: true });
 });
 
-test("Notion OAuth 設定済みなら notionSignIn は true", async () => {
-  process.env.NOTION_CLIENT_ID = "client-id";
-  process.env.NOTION_CLIENT_SECRET = "client-secret";
+test("Google OAuth 設定済みなら googleSignIn は true", async () => {
+  process.env.GOOGLE_CLIENT_ID = "client-id";
+  process.env.GOOGLE_CLIENT_SECRET = "client-secret";
 
   const t = convexTest(schema, modules);
   const config = await t.query(api.queries.auth.publicConfig.publicConfig, {});
 
-  expect(config).toEqual({ notionSignIn: true, signUpEnabled: true });
+  expect(config).toEqual({ googleSignIn: true, signUpEnabled: true });
 });
 
 test("AUTH_DISABLE_SIGNUP なら signUpEnabled は false", async () => {
@@ -60,22 +60,33 @@ test("AUTH_DISABLE_SIGNUP なら signUpEnabled は false", async () => {
   expect(config.signUpEnabled).toBe(false);
 });
 
-test("AUTH_DISABLE_SIGNUP なら notion socialProvider の disableSignUp も true になる", () => {
+test("AUTH_DISABLE_SIGNUP なら google socialProvider の disableSignUp も true になる", () => {
   process.env.AUTH_DISABLE_SIGNUP = "true";
-  process.env.NOTION_CLIENT_ID = "client-id";
-  process.env.NOTION_CLIENT_SECRET = "client-secret";
+  process.env.GOOGLE_CLIENT_ID = "client-id";
+  process.env.GOOGLE_CLIENT_SECRET = "client-secret";
 
   const options = createAuthOptions(stubCtx);
 
-  expect(options.socialProviders?.notion?.disableSignUp).toBe(true);
+  expect(options.socialProviders?.google?.disableSignUp).toBe(true);
 });
 
-test("AUTH_DISABLE_SIGNUP が未設定なら notion socialProvider の disableSignUp は false", () => {
-  delete process.env.AUTH_DISABLE_SIGNUP;
-  process.env.NOTION_CLIENT_ID = "client-id";
-  process.env.NOTION_CLIENT_SECRET = "client-secret";
+test("Google はオフラインアクセスで、同じメールのサインインを既存ユーザーへ繋ぐ", () => {
+  process.env.GOOGLE_CLIENT_ID = "client-id";
+  process.env.GOOGLE_CLIENT_SECRET = "client-secret";
 
   const options = createAuthOptions(stubCtx);
 
-  expect(options.socialProviders?.notion?.disableSignUp).toBe(false);
+  expect(options.socialProviders?.google?.accessType).toBe("offline");
+  expect(options.account?.accountLinking?.trustedProviders).toEqual(["google"]);
+  expect(options.account?.accountLinking?.allowDifferentEmails).toBe(true);
+});
+
+test("AUTH_DISABLE_SIGNUP が未設定なら google socialProvider の disableSignUp は false", () => {
+  delete process.env.AUTH_DISABLE_SIGNUP;
+  process.env.GOOGLE_CLIENT_ID = "client-id";
+  process.env.GOOGLE_CLIENT_SECRET = "client-secret";
+
+  const options = createAuthOptions(stubCtx);
+
+  expect(options.socialProviders?.google?.disableSignUp).toBe(false);
 });

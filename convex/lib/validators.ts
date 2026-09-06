@@ -7,4 +7,4 @@ export * from "./validators/trash";
 export * from "./validators/boardSchedule";
 export * from "./validators/review";
 export * from "./validators/notifications";
-export * from "./validators/calendarFeed";
+export * from "./validators/calendarSync";

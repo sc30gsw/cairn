@@ -185,3 +185,31 @@ test("終日イベントだけを除外できる", () => {
     },
   ]);
 });
+
+test("外部予定は灰色の薄い予定になり、印付きの id で見分けられる", async () => {
+  const { boardExternalEventId, isBoardExternalEvent, toExternalScheduleEvents } =
+    await import("~/features/board/lib/board-schedule-events");
+  const [event] = toExternalScheduleEvents([
+    {
+      _id: "ext1" as Id<"externalCalendarEvents">,
+      allDay: false,
+      calendarId: "owner@example.com",
+      calendarName: "owner@example.com",
+      color: "#9fe1cb",
+      endAt: "2026-08-17 11:00:00",
+      startAt: "2026-08-17 10:00:00",
+      title: "歯医者",
+    },
+  ]);
+  expect(event).toEqual({
+    color: "gray",
+    end: "2026-08-17 11:00:00",
+    id: "external:ext1",
+    start: "2026-08-17 10:00:00",
+    title: "歯医者",
+    variant: "light",
+  });
+  expect(isBoardExternalEvent("external:ext1")).toBe(true);
+  expect(isBoardExternalEvent("r1")).toBe(false);
+  expect(boardExternalEventId("external:ext1")).toBe("ext1");
+});

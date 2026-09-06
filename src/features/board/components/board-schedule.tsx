@@ -8,6 +8,7 @@ import { BoardScheduleAllDayExpand } from "~/features/board/components/board-sch
 import { boardScheduleAllDayRenderEvent } from "~/features/board/components/board-schedule-all-day-render-event";
 import { createBoardScheduleDayAllDayRenderEvent } from "~/features/board/components/board-schedule-day-all-day-render-event";
 import { BoardScheduleEventForm } from "~/features/board/components/board-schedule-event-form";
+import { BoardScheduleExternalModal } from "~/features/board/components/board-schedule-external-modal";
 import { BoardScheduleNavigation } from "~/features/board/components/board-schedule-navigation";
 import { createBoardScheduleYearRenderDay } from "~/features/board/components/board-schedule-year-render-day";
 import { useBoardScheduleActions } from "~/features/board/hooks/use-board-schedule-actions";
@@ -15,7 +16,9 @@ import { useBoardScheduleUi } from "~/features/board/hooks/use-board-schedule-ui
 import type { BoardViewState } from "~/features/board/hooks/use-board-view";
 import {
   BOARD_ALL_DAY_VISIBLE_LIMIT,
+  boardExternalEventId,
   isBoardAllDayMoreEvent,
+  isBoardExternalEvent,
 } from "~/features/board/lib/board-schedule-events";
 import {
   ALL_DAY_ROW_HEIGHT,
@@ -27,7 +30,11 @@ import {
   BOARD_MONTH_MAX_EVENTS_PER_DAY,
 } from "~/features/board/lib/board-schedule-layout";
 import { dateToScheduleInstant } from "~/features/board/lib/schedule-instant";
-import type { BoardRow, BoardScheduleBlock } from "~/features/board/types/board";
+import type {
+  BoardExternalEvent,
+  BoardRow,
+  BoardScheduleBlock,
+} from "~/features/board/types/board";
 import { SCHEDULE_LABELS_JA } from "~/lib/schedule-labels";
 
 import classes from "~/features/board/components/board-schedule.module.css";
@@ -52,12 +59,19 @@ const BOARD_MONTH_VIEW_PROPS = {
 
 type BoardScheduleProps = {
   blocks: readonly BoardScheduleBlock[];
+  externals?: readonly BoardExternalEvent[];
   pending?: boolean;
   rows: readonly BoardRow[];
   view: BoardViewState;
 };
 
-export function BoardSchedule({ blocks, pending = false, rows, view }: BoardScheduleProps) {
+export function BoardSchedule({
+  blocks,
+  externals = [],
+  pending = false,
+  rows,
+  view,
+}: BoardScheduleProps) {
   const {
     monthDate,
     scheduleAnchor: anchorDateJst,
@@ -71,10 +85,14 @@ export function BoardSchedule({ blocks, pending = false, rows, view }: BoardSche
     today: todayJst,
     weekAnchor,
   } = view;
-  const { onCreateBlock, onMoveBlock, onRemoveBlock, onUpdateBlock } = useBoardScheduleActions(
-    anchorDateJst,
-    scheduleView,
-  );
+  const {
+    onCreateBlock,
+    onMoveBlock,
+    onMoveExternal,
+    onRemoveBlock,
+    onRemoveExternal,
+    onUpdateBlock,
+  } = useBoardScheduleActions(anchorDateJst, scheduleView);
   const scheduleRootRef = useRef<HTMLDivElement | null>(null);
   const isCompact = useMediaQuery("(max-width: 47.9375em)", false, {
     getInitialValueInEffect: true,
@@ -82,6 +100,7 @@ export function BoardSchedule({ blocks, pending = false, rows, view }: BoardSche
   const ui = useBoardScheduleUi({
     anchorDateJst,
     blocks,
+    externals,
     rows,
     scheduleRootRef,
     todayJst,
@@ -162,7 +181,11 @@ export function BoardSchedule({ blocks, pending = false, rows, view }: BoardSche
           />
           <div className={classes.boardScheduleRoot} data-view={scheduleView} ref={scheduleRootRef}>
             <Schedule
-              canDragEvent={(event) => !pending && ui.editableBlockIds.has(String(event.id))}
+              canDragEvent={(event) =>
+                !pending &&
+                (ui.editableBlockIds.has(String(event.id)) ||
+                  ui.externalEventIds.has(String(event.id)))
+              }
               date={anchorDateJst}
               events={ui.scheduleEvents}
               labels={SCHEDULE_LABELS_JA}
@@ -177,6 +200,14 @@ export function BoardSchedule({ blocks, pending = false, rows, view }: BoardSche
                   ? undefined
                   : ({ eventId, newEnd, newStart }) => {
                       ui.collapseAllDayExpand();
+                      if (ui.externalEventIds.has(String(eventId))) {
+                        void onMoveExternal({
+                          endAt: newEnd,
+                          externalId: boardExternalEventId(eventId),
+                          startAt: newStart,
+                        });
+                        return;
+                      }
                       if (!ui.editableBlockIds.has(String(eventId))) {
                         return;
                       }
@@ -196,13 +227,15 @@ export function BoardSchedule({ blocks, pending = false, rows, view }: BoardSche
                     }
               }
               onViewChange={onScheduleViewChange}
-              renderEventBody={(event) =>
-                isBoardAllDayMoreEvent(event.id) ? (
-                  <span data-board-all-day-more="true">{event.title}</span>
-                ) : (
-                  event.title
-                )
-              }
+              renderEventBody={(event) => {
+                if (isBoardAllDayMoreEvent(event.id)) {
+                  return <span data-board-all-day-more="true">{event.title}</span>;
+                }
+                if (isBoardExternalEvent(event.id)) {
+                  return <span data-board-external="true">{event.title}</span>;
+                }
+                return event.title;
+              }}
               view={scheduleView}
               weekViewProps={BOARD_WEEK_VIEW_PROPS}
               yearViewProps={yearViewProps}
@@ -220,6 +253,11 @@ export function BoardSchedule({ blocks, pending = false, rows, view }: BoardSche
           </div>
         </Stack>
       </Card>
+      <BoardScheduleExternalModal
+        external={ui.openedExternal}
+        onClose={ui.closeExternal}
+        onRemove={(externalId) => onRemoveExternal({ externalId })}
+      />
       {pending ? null : (
         <BoardScheduleEventForm
           initialValues={ui.formValues}

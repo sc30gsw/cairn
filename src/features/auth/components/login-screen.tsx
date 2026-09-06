@@ -2,7 +2,8 @@ import { Button, Card, Center, Divider, Stack, Text, Title } from "@mantine/core
 
 import { AuthActionFeedback } from "~/components/auth-action-feedback";
 import { AccountAuthPanel } from "~/features/auth/components/account-auth-form";
-import { signInWithNotion, signInWithPasskey } from "~/features/auth/lib/auth-actions";
+import { useAuthPublicConfig } from "~/features/auth/hooks/use-auth-config";
+import { signInWithGoogle, signInWithPasskey } from "~/features/auth/lib/auth-actions";
 import { useAuthActionTransition } from "~/hooks/use-auth-action-transition";
 import { useInstallPrompt } from "~/hooks/use-install-prompt";
 import { DISPLAY_FONT } from "~/lib/theme";
@@ -10,6 +11,8 @@ import { DISPLAY_FONT } from "~/lib/theme";
 export function LoginScreen() {
   const passkeyAction = useAuthActionTransition();
   const { standalone } = useInstallPrompt();
+  const { data: publicConfig } = useAuthPublicConfig();
+  const googleSignIn = publicConfig?.googleSignIn === true;
 
   return (
     <Center h="100dvh">
@@ -34,12 +37,14 @@ export function LoginScreen() {
             パスキーでログイン
           </Button>
           <AuthActionFeedback result={passkeyAction.result} />
-          <Button fullWidth onClick={signInWithNotion} size="md" variant="light">
-            Notion でログイン
-          </Button>
-          {standalone ? (
+          {googleSignIn ? (
+            <Button fullWidth onClick={signInWithGoogle} size="md" variant="light">
+              Google でログイン
+            </Button>
+          ) : null}
+          {googleSignIn && standalone ? (
             <Text c="dimmed" size="xs">
-              Notion でのログインはブラウザで開きます。
+              Google でのログインはブラウザで開きます。
             </Text>
           ) : null}
         </Stack>

@@ -11,9 +11,14 @@ export function signUpDisabledFromEnv(): boolean {
   return value === "1" || value === "true";
 }
 
-export function notionOAuthConfigured(): boolean {
-  const clientId = process.env.NOTION_CLIENT_ID;
-  const clientSecret = process.env.NOTION_CLIENT_SECRET;
+export const GOOGLE_OAUTH_ENV = {
+  clientId: "GOOGLE_CLIENT_ID",
+  clientSecret: "GOOGLE_CLIENT_SECRET",
+} as const satisfies Record<string, string>;
+
+export function googleOAuthConfigured(): boolean {
+  const clientId = process.env[GOOGLE_OAUTH_ENV.clientId];
+  const clientSecret = process.env[GOOGLE_OAUTH_ENV.clientSecret];
   return (
     clientId !== undefined && clientId !== "" && clientSecret !== undefined && clientSecret !== ""
   );

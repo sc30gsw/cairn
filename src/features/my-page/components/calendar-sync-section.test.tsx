@@ -1,0 +1,158 @@
+import { fireEvent } from "@testing-library/react";
+import { Result } from "better-result";
+import { beforeEach, expect, test, vi } from "vite-plus/test";
+
+import {
+  CALENDAR_SYNC_CALENDARS_LABEL,
+  CALENDAR_SYNC_CONNECT_LABEL,
+  CALENDAR_SYNC_CONNECTED_MESSAGE,
+  CALENDAR_SYNC_DISCONNECT_LABEL,
+  CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE,
+  CALENDAR_SYNC_NOW_LABEL,
+  CALENDAR_SYNC_RECONNECT_LABEL,
+  CalendarSyncSection,
+} from "~/features/my-page/components/calendar-sync-section";
+import { renderWithMantine } from "~/test-utils/render";
+
+type Status = {
+  calendars: { backgroundColor?: string; id: string; primary: boolean; summary: string }[];
+  googleEmail: string | null;
+  lastError: string | null;
+  lastSyncedAt: number | null;
+  status: "error" | "needsReauth" | "ok";
+  visibleCalendarIds: string[];
+};
+
+const {
+  connect,
+  disconnect,
+  linkGoogleCalendar,
+  pendingState,
+  runMutation,
+  setVisible,
+  syncNow,
+  syncState,
+} = vi.hoisted(() => ({
+  connect: vi.fn().mockResolvedValue(null),
+  disconnect: vi.fn().mockResolvedValue(null),
+  linkGoogleCalendar: vi.fn(),
+  pendingState: { pending: false },
+  runMutation: vi.fn((operation: () => Promise<unknown>, _options: unknown) => operation()),
+  setVisible: vi.fn().mockResolvedValue(null),
+  syncNow: vi.fn().mockResolvedValue("ok"),
+  syncState: { status: null as Status | null },
+}));
+
+vi.mock("~/hooks/use-calendar-sync", () => ({
+  useCalendarSyncStatus: () => ({ data: syncState.status }),
+  useConnectCalendarSync: () => connect,
+  useDisconnectCalendarSync: () => disconnect,
+  useSetVisibleCalendars: () => ({ mutateAsync: setVisible }),
+  useSyncCalendarNow: () => syncNow,
+}));
+
+vi.mock("~/features/my-page/lib/calendar-sync-actions", () => ({
+  clearCalendarSyncConnectPending: () => {
+    pendingState.pending = false;
+  },
+  linkGoogleCalendar,
+  readCalendarSyncConnectPending: () => pendingState.pending,
+}));
+
+vi.mock("~/lib/run-mutation", () => ({
+  runMutation: (operation: () => Promise<unknown>, options: unknown) =>
+    runMutation(operation, options),
+}));
+
+const CONNECTED: Status = {
+  calendars: [
+    {
+      backgroundColor: "#9fe1cb",
+      id: "owner@example.com",
+      primary: true,
+      summary: "owner@example.com",
+    },
+    {
+      id: "ja.japanese#holiday@group.v.calendar.google.com",
+      primary: false,
+      summary: "日本の祝日",
+    },
+  ],
+  googleEmail: "owner@example.com",
+  lastError: null,
+  lastSyncedAt: Date.UTC(2026, 8, 6, 3, 0, 0),
+  status: "ok",
+  visibleCalendarIds: ["owner@example.com"],
+};
+
+beforeEach(() => {
+  syncState.status = null;
+  pendingState.pending = false;
+  connect.mockClear();
+  disconnect.mockClear();
+  linkGoogleCalendar.mockClear();
+  runMutation.mockClear();
+  setVisible.mockClear();
+  syncNow.mockClear();
+});
+
+test("未接続なら連携ボタンだけがあり、押すと Google の同意画面へ向かう", async () => {
+  linkGoogleCalendar.mockResolvedValue(Result.ok(undefined));
+  const { getByRole, queryByText } = renderWithMantine(<CalendarSyncSection />);
+  expect(queryByText(CALENDAR_SYNC_CALENDARS_LABEL)).toBeNull();
+
+  getByRole("button", { name: CALENDAR_SYNC_CONNECT_LABEL }).click();
+
+  await vi.waitFor(() => {
+    expect(linkGoogleCalendar).toHaveBeenCalledTimes(1);
+  });
+});
+
+test("同意画面から戻ってきたら connect アクションで接続を仕上げる", async () => {
+  pendingState.pending = true;
+  renderWithMantine(<CalendarSyncSection />);
+
+  await vi.waitFor(() => {
+    expect(connect).toHaveBeenCalledWith({});
+  });
+  expect(runMutation).toHaveBeenCalledWith(expect.any(Function), {
+    successMessage: CALENDAR_SYNC_CONNECTED_MESSAGE,
+  });
+  expect(pendingState.pending).toBe(false);
+});
+
+test("接続済みならアカウント・カレンダーの選択・今すぐ同期・解除が出る", async () => {
+  syncState.status = CONNECTED;
+  const { getAllByText, getByLabelText, getByRole, getByText } = renderWithMantine(
+    <CalendarSyncSection />,
+  );
+
+  expect(getByText(/接続中の Google アカウント/)).toBeDefined();
+  expect(getAllByText("owner@example.com").length).toBeGreaterThan(0);
+  expect(getByText(CALENDAR_SYNC_CALENDARS_LABEL)).toBeDefined();
+  const holiday = getByLabelText(/日本の祝日/) as HTMLInputElement;
+  expect(holiday.checked).toBe(false);
+  expect(getByRole("button", { name: CALENDAR_SYNC_DISCONNECT_LABEL })).toBeDefined();
+
+  //? 同期中（busy）はチェックボックスが無効になるので、先にカレンダーを選び直す
+  fireEvent.click(holiday);
+  await vi.waitFor(() => {
+    expect(setVisible).toHaveBeenCalledWith({
+      calendarIds: ["owner@example.com", "ja.japanese#holiday@group.v.calendar.google.com"],
+    });
+  });
+
+  getByRole("button", { name: CALENDAR_SYNC_NOW_LABEL }).click();
+  await vi.waitFor(() => {
+    expect(syncNow).toHaveBeenCalledWith({});
+  });
+});
+
+test("権限切れなら再接続ボタンと案内が出て、今すぐ同期は出ない", () => {
+  syncState.status = { ...CONNECTED, status: "needsReauth" };
+  const { getByRole, getByText, queryByRole } = renderWithMantine(<CalendarSyncSection />);
+
+  expect(getByText(CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE)).toBeDefined();
+  expect(getByRole("button", { name: CALENDAR_SYNC_RECONNECT_LABEL })).toBeDefined();
+  expect(queryByRole("button", { name: CALENDAR_SYNC_NOW_LABEL })).toBeNull();
+});

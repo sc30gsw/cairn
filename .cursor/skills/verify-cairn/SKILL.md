@@ -135,7 +135,7 @@ Proof standards:
 - Capture the action **and** the resulting state (ARIA snapshot + screenshot with `学習ログ` or the page heading visible). A final screenshot alone is not enough.
 - Verify side effects from a second user-facing view: reopen `/`, reload, or open 履歴 / ゴミ箱 — not only the toast or switch that just flipped.
 - Record the feature ID and entry point in a `proof.txt` next to the files.
-- Mocks are not used here. Notion OAuth and passkey registration are out of scope for default proof; skip those dialogs. Do not set `NOTION_CLIENT_*` just to verify password signup.
+- Mocks are not used here. Google OAuth, Google Calendar sync, and passkey registration are out of scope for default proof; skip those dialogs. Do not set `GOOGLE_CLIENT_*` just to verify password signup.
 
 `vp test` passing is supporting signal, not a substitute for the artifacts above.
 
