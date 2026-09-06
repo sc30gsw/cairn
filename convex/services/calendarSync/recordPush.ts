@@ -1,10 +1,8 @@
 import type { MutationCtx } from "../../_generated/server";
 import type { CalendarSyncSourceKind } from "../../lib/calendarSync";
-import type { PushExpectation, PushOutcome } from "../../lib/validators";
+import type { PushExpectation, PushOutcome, RecordPushResult } from "../../lib/validators";
 import { getConnection } from "./getConnection";
 import { findLink, linkSummary } from "./syncSource";
-
-export type RecordPushResult = "conflict" | "recorded";
 
 //? Google への送信結果を対応表に刻む。送った内容（payloadKey）と Google 側の updated を覚え、
 //? アプリ側の未送信マークを消す。楽観ロック: 計画を立てたときの対応表と今の対応表が違えば

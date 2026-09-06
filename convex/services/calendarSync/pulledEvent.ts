@@ -8,7 +8,7 @@ import {
   rfc3339ToScheduleInstant,
 } from "./instant";
 
-export const UNTITLED_EVENT_TITLE = "（タイトルなし）";
+const UNTITLED_EVENT_TITLE = "（タイトルなし）";
 
 const MIN_TIMED_LENGTH_MS = 60_000;
 

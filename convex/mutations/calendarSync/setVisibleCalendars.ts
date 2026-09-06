@@ -9,8 +9,8 @@ import { setVisibleCalendars as setVisible } from "../../services/calendarSync/c
 export const setVisibleCalendars = ownerMutation({
   args: { calendarIds: v.array(v.string()) },
   handler: async (ctx, args) => {
-    const result = await setVisible(ctx, ctx.ownerId, args.calendarIds);
-    if (result === null) {
+    const connected = await setVisible(ctx, ctx.ownerId, args.calendarIds);
+    if (!connected) {
       throwDomain(
         new NotFoundError({ message: CALENDAR_SYNC_NOT_CONNECTED_MESSAGE, resource: "接続" }),
       );

@@ -51,3 +51,9 @@ export const CALENDAR_SYNC_SCOPE_MISSING_MESSAGE =
   "Google カレンダーの権限が付いていません。連携をやり直してください";
 
 export const EXTERNAL_EVENT_NOT_FOUND_MESSAGE = "外部予定が見つかりません";
+
+export const CALENDAR_SYNC_PRIMARY_MISSING_MESSAGE =
+  "Google アカウントにメインカレンダーが見つかりませんでした";
+
+export const CALENDAR_SYNC_DISCONNECT_INCOMPLETE_MESSAGE =
+  "Google カレンダー側の予定を一部消せませんでした。少し待ってからもう一度解除してください";

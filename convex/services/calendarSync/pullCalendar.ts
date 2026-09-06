@@ -10,7 +10,7 @@ import type { PulledEvent } from "../../lib/validators";
 import { toPulledEvent } from "./pulledEvent";
 import type { SyncWindow } from "./window";
 
-export type PulledCalendar = {
+type PulledCalendar = {
   events: PulledEvent[];
   //? 全件取得（差分トークン無し / 失効）のときだけ、残すべき予定 ID の一覧。差分なら null
   keepEventIds: string[] | null;

@@ -123,8 +123,11 @@
   width: 8px;
 }
 
-/*? 外部予定は鉛筆で書き添えたメモのように、薄く・点線の縁で。記録・予定と混ざらないようにする */
+/*? 外部予定は鉛筆で書き添えたメモのように、紙2の地に点線の縁で。文字は muted-2 でコントラスト（AA）を保つ。
+   opacity で薄めるとフォーカスリングごと薄れて読めなくなるので使わない */
 .boardSchedule :global(.mantine-ScheduleEvent-root:has([data-board-external="true"])) {
+  --event-bg: var(--cairn-paper-2);
+  --event-color: var(--cairn-muted-2);
+  --event-hover: var(--cairn-paper-2);
   border-inline-start: 2px dashed var(--cairn-muted-2);
-  opacity: 0.8;
 }

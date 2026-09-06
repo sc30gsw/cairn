@@ -24,7 +24,10 @@ export async function syncPlan(
     ctx.db
       .query("boardScheduleEvents")
       .withIndex("by_owner_and_startAt", (q) =>
-        q.eq("ownerId", args.ownerId).gte("startAt", window.startAtMin),
+        q
+          .eq("ownerId", args.ownerId)
+          .gte("startAt", window.startAtMin)
+          .lt("startAt", window.startAtMaxExclusive),
       )
       .collect(),
     ctx.db
@@ -61,7 +64,7 @@ export async function syncPlan(
   }
   const sources = await Promise.all(pending);
   return {
-    accessAccountId: connection.googleAccountId,
+    googleAccountId: connection.googleAccountId,
     calendarId: connection.primaryCalendarId,
     cursors: cursors.map((cursor) => ({
       calendarId: cursor.calendarId,

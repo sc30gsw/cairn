@@ -13,15 +13,19 @@ export async function scheduleSourceSync(
   sourceId: string,
 ): Promise<void> {
   const connection = await getConnection(ctx, ownerId);
-  if (connection === null || connection.status === "needsReauth") {
+  if (connection === null) {
     return;
   }
+  //? 権限切れ中でも「アプリ側で変えた」印は刻む。再接続後の取り込みで Google 側の古い変更に負けないため
   const link = await ctx.db
     .query("calendarSyncLinks")
     .withIndex("by_source", (q) => q.eq("sourceKind", sourceKind).eq("sourceId", sourceId))
     .unique();
   if (link !== null && link.ownerId === ownerId) {
     await ctx.db.patch("calendarSyncLinks", link._id, { appChangedAt: Date.now() });
+  }
+  if (connection.status === "needsReauth") {
+    return;
   }
   await ctx.scheduler.runAfter(0, internal.actions.calendarSync.pushSource.pushSource, {
     attempt: 0,

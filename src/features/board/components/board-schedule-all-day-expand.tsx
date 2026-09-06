@@ -15,14 +15,14 @@ export type BoardScheduleAllDayExpandAnchor = {
 
 type BoardScheduleAllDayExpandProps = {
   anchor: BoardScheduleAllDayExpandAnchor;
-  editableBlockIds: ReadonlySet<string>;
+  clickableEventIds: ReadonlySet<string>;
   events: readonly ScheduleEventData[];
   onEventClick: (event: ScheduleEventData) => void;
 };
 
 export function BoardScheduleAllDayExpand({
   anchor,
-  editableBlockIds,
+  clickableEventIds,
   events,
   onEventClick,
 }: BoardScheduleAllDayExpandProps) {
@@ -51,9 +51,9 @@ export function BoardScheduleAllDayExpand({
       </Text>
       <Stack gap={4}>
         {events.map((event) => {
-          const editable = editableBlockIds.has(String(event.id));
+          const clickable = clickableEventIds.has(String(event.id));
 
-          if (!editable) {
+          if (!clickable) {
             return (
               <Badge
                 color={event.color ?? "gray"}

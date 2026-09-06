@@ -15,6 +15,10 @@ export async function listExternal(
   ownerId: string,
   args: { anchorDateJst: string; view: BoardScheduleView },
 ): Promise<ExternalCalendarEventDto[]> {
+  //? 外部予定は日・週ビューにだけ並べる（CONTEXT「外部予定」）。月・年では空
+  if (args.view !== "day" && args.view !== "week") {
+    return [];
+  }
   const connection = await getConnection(ctx, ownerId);
   if (connection === null) {
     return [];

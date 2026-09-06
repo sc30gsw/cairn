@@ -69,7 +69,7 @@ type BoardScheduleYearDayPopoverProps = {
   canAdd: boolean;
   dateJst: string;
   dayEvents: readonly ScheduleEventData[];
-  editableBlockIds: ReadonlySet<string>;
+  clickableEventIds: ReadonlySet<string>;
   onAdd: (dateJst: string) => void;
   onEditBlock: (event: ScheduleEventData) => void;
 };
@@ -79,7 +79,7 @@ export function BoardScheduleYearDayPopover({
   canAdd,
   dateJst,
   dayEvents,
-  editableBlockIds,
+  clickableEventIds,
   onAdd,
   onEditBlock,
 }: BoardScheduleYearDayPopoverProps) {
@@ -187,7 +187,7 @@ export function BoardScheduleYearDayPopover({
             <Stack gap={4}>
               {timedEvents.map((event) => (
                 <YearPopoverTimedEvent
-                  editable={editableBlockIds.has(String(event.id))}
+                  editable={clickableEventIds.has(String(event.id))}
                   event={event}
                   key={String(event.id)}
                   onClose={closePopover}

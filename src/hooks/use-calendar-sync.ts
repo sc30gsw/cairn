@@ -32,12 +32,32 @@ export function useSyncCalendarNow() {
   return useAction(api.actions.calendarSync.syncNow.syncNow);
 }
 
+//? チェックボックスは往復を待たずに切り替わるよう、status の写しを先に書き換える
 export function useSetVisibleCalendars() {
-  return useConvexMutation(api.mutations.calendarSync.setVisibleCalendars.setVisibleCalendars);
+  return useConvexMutation(
+    api.mutations.calendarSync.setVisibleCalendars.setVisibleCalendars,
+  ).withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.calendarSync.status.status, {});
+    if (current === undefined || current === null) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.calendarSync.status.status,
+      {},
+      {
+        ...current,
+        visibleCalendarIds: args.calendarIds,
+      },
+    );
+  });
 }
 
-//? 予定タブを開いたときに一度だけ差分を取りに行く（Q14）。接続が無い・権限切れなら何もしない。
-//? 失敗は次の cron に任せるので、ここでは知らせない
+//? タブの切り替えごとに Google を叩かないための間隔（同じブラウザ内で共有）
+const SYNC_ON_OPEN_COOLDOWN_MS = 5 * 60_000;
+let lastSyncOnOpenAt = 0;
+
+//? 予定タブを開いたときに差分を取りに行く（Q14）。接続が無い・権限切れなら何もしない。
+//? 数分以内に取っていれば飛ばす。失敗は次の cron に任せるので、ここでは知らせない
 export function useSyncCalendarOnOpen() {
   const { data: status } = useCalendarSyncStatus();
   const syncNow = useSyncCalendarNow();
@@ -49,6 +69,11 @@ export function useSyncCalendarOnOpen() {
       return;
     }
     started.current = true;
+    const now = Date.now();
+    if (now - lastSyncOnOpenAt < SYNC_ON_OPEN_COOLDOWN_MS) {
+      return;
+    }
+    lastSyncOnOpenAt = now;
     void syncNow({}).catch(() => undefined);
   }, [connected, syncNow]);
 }

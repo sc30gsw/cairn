@@ -1,7 +1,12 @@
 import { expect, test } from "vite-plus/test";
 
 import type { Doc } from "../../_generated/dataModel";
-import { blockEventPayload, goalEventPayload, payloadKey } from "./eventPayload";
+import {
+  blockEventPayload,
+  externalChangePayload,
+  goalEventPayload,
+  payloadKey,
+} from "./eventPayload";
 
 const block = {
   _creationTime: 0,
@@ -80,4 +85,26 @@ test("本番日・未達成の期限は終日の「空き」、それ以外は�
   expect(
     goalEventPayload({ ...checkpoint, deadline: undefined, parentGoalId: undefined }, null),
   ).toBeNull();
+});
+
+test("外部予定の移動は、終日なら date（終端は翌日）、時刻つきなら dateTime で送る", () => {
+  expect(
+    externalChangePayload({
+      allDay: true,
+      endAt: "2026-08-19 23:59:59",
+      kind: "move",
+      startAt: "2026-08-18 00:00:00",
+    }),
+  ).toEqual({ end: { date: "2026-08-20" }, start: { date: "2026-08-18" } });
+  expect(
+    externalChangePayload({
+      allDay: false,
+      endAt: "2026-08-18 11:00:00",
+      kind: "move",
+      startAt: "2026-08-18 10:00:00",
+    }),
+  ).toEqual({
+    end: { dateTime: "2026-08-18T11:00:00+09:00" },
+    start: { dateTime: "2026-08-18T10:00:00+09:00" },
+  });
 });

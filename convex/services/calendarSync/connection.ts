@@ -1,16 +1,7 @@
 import type { MutationCtx } from "../../_generated/server";
-import type { CalendarSyncStatus } from "../../lib/calendarSync";
-import { PRIMARY_CALENDAR_ID } from "../../lib/calendarSync";
-import type { GoogleCalendarSummary } from "../../lib/validators";
+import { type CalendarSyncStatus, PRIMARY_CALENDAR_ID } from "../../lib/calendarSync";
+import type { UpsertConnectionArgs } from "../../lib/validators";
 import { getConnection } from "./getConnection";
-
-export type UpsertConnectionArgs = {
-  calendars: GoogleCalendarSummary[];
-  defaultVisibleCalendarIds: string[];
-  googleAccountId: string;
-  googleEmail: string | null;
-  ownerId: string;
-};
 
 //? 対応表・外部予定の写し・差分トークンをすべて消す（接続の行は残す）
 export async function clearSyncState(ctx: MutationCtx, ownerId: string): Promise<void> {
@@ -42,12 +33,14 @@ export async function upsertConnection(
   args: UpsertConnectionArgs,
 ): Promise<null> {
   const existing = await getConnection(ctx, args.ownerId);
-  if (existing !== null && existing.googleAccountId !== args.googleAccountId) {
+  const sameAccount = existing !== null && existing.googleAccountId === args.googleAccountId;
+  if (existing !== null && !sameAccount) {
     await clearSyncState(ctx, args.ownerId);
   }
   const known = new Set(args.calendars.map((calendar) => calendar.id));
+  //? 表示カレンダーの選択は同じアカウントなら引き継ぐ。別アカウントは別のカレンダー群なので既定に戻す
   const visibleCalendarIds = (
-    existing === null ? args.defaultVisibleCalendarIds : existing.visibleCalendarIds
+    sameAccount ? existing.visibleCalendarIds : args.defaultVisibleCalendarIds
   ).filter((id) => known.has(id));
   const fields = {
     calendars: args.calendars,
@@ -103,10 +96,10 @@ export async function setVisibleCalendars(
   ctx: MutationCtx,
   ownerId: string,
   calendarIds: readonly string[],
-): Promise<{ removedCalendarIds: string[] } | null> {
+): Promise<boolean> {
   const connection = await getConnection(ctx, ownerId);
   if (connection === null) {
-    return null;
+    return false;
   }
   const known = new Set(connection.calendars.map((calendar) => calendar.id));
   const next = [...new Set(calendarIds.filter((id) => known.has(id)))];
@@ -118,7 +111,7 @@ export async function setVisibleCalendars(
       resetCalendarCursor(ctx, ownerId, calendarId, { dropExternals: true }),
     ),
   );
-  return { removedCalendarIds };
+  return true;
 }
 
 //? 1カレンダーの差分トークンを捨てる（次の同期で期間の全件を取り直す）。写しも消すかは呼び手が決める

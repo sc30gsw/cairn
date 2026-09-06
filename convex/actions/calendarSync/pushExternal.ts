@@ -5,10 +5,6 @@ import { v } from "convex/values";
 
 import { internal } from "../../_generated/api";
 import { internalAction } from "../../_generated/server";
-import {
-  CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE,
-  CALENDAR_SYNC_RETRY_DELAYS_MS,
-} from "../../lib/calendarSync";
 import { getGoogleAccessToken } from "../../lib/googleAccessToken";
 import {
   deleteEvent,
@@ -17,9 +13,9 @@ import {
   isRetryable,
   patchEvent,
 } from "../../lib/googleCalendar";
-import { addDaysJst } from "../../lib/jst";
 import { externalChangeValidator } from "../../lib/validators";
-import { scheduleInstantToRfc3339 } from "../../services/calendarSync/instant";
+import { externalChangePayload } from "../../services/calendarSync/eventPayload";
+import { markNeedsReauth, retryDelayMs } from "../../services/calendarSync/syncFailure";
 
 //? 外部予定へのアプリ側の操作（移動 / 削除）を Google に反映する。写しはミューテーションで先に動いている。
 //? 一時的な失敗は再試行し、諦めたらそのカレンダーの差分トークンを捨てて次の同期で写しを Google に合わせる
@@ -40,43 +36,31 @@ export const pushExternal = internalAction({
       return null;
     }
     const token = await getGoogleAccessToken(ctx, {
-      accountId: access.accessAccountId,
+      accountId: access.googleAccountId,
       userId: args.ownerId,
     });
     if (Result.isError(token)) {
-      await ctx.runMutation(internal.mutations.calendarSync.markStatus.markStatus, {
-        lastError: CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE,
-        ownerId: args.ownerId,
-        status: "needsReauth",
-        syncedAt: null,
-      });
+      await markNeedsReauth(ctx, args.ownerId);
       return null;
     }
     const client = { accessToken: token.value };
     const outcome =
       args.change.kind === "delete"
         ? await deleteEvent(client, args.calendarId, args.googleEventId)
-        : await patchEvent(client, args.calendarId, args.googleEventId, {
-            end: args.change.allDay
-              ? { date: addDaysJst(args.change.endAt.slice(0, 10), 1) }
-              : { dateTime: scheduleInstantToRfc3339(args.change.endAt) },
-            start: args.change.allDay
-              ? { date: args.change.startAt.slice(0, 10) }
-              : { dateTime: scheduleInstantToRfc3339(args.change.startAt) },
-          });
+        : await patchEvent(
+            client,
+            args.calendarId,
+            args.googleEventId,
+            externalChangePayload(args.change),
+          );
     if (Result.isOk(outcome) || isGone(outcome.error)) {
       return null;
     }
     if (isAuthFailure(outcome.error)) {
-      await ctx.runMutation(internal.mutations.calendarSync.markStatus.markStatus, {
-        lastError: CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE,
-        ownerId: args.ownerId,
-        status: "needsReauth",
-        syncedAt: null,
-      });
+      await markNeedsReauth(ctx, args.ownerId);
       return null;
     }
-    const delay = CALENDAR_SYNC_RETRY_DELAYS_MS[args.attempt];
+    const delay = retryDelayMs(args.attempt);
     if (isRetryable(outcome.error) && delay !== undefined) {
       await ctx.scheduler.runAfter(delay, internal.actions.calendarSync.pushExternal.pushExternal, {
         ...args,
@@ -84,15 +68,10 @@ export const pushExternal = internalAction({
       });
       return null;
     }
-    await ctx.runMutation(internal.mutations.calendarSync.resetCalendarCursor.resetCalendarCursor, {
+    await ctx.runMutation(internal.mutations.calendarSync.abandonExternalPush.abandonExternalPush, {
       calendarId: args.calendarId,
-      ownerId: args.ownerId,
-    });
-    await ctx.runMutation(internal.mutations.calendarSync.markStatus.markStatus, {
       lastError: outcome.error.message,
       ownerId: args.ownerId,
-      status: "error",
-      syncedAt: null,
     });
     return null;
   },

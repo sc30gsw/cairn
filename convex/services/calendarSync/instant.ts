@@ -40,7 +40,7 @@ export function rfc3339ToScheduleInstant(dateTime: string): string | null {
 
 export const ALL_DAY_START_TIME = "00:00:00";
 
-export const ALL_DAY_END_TIME = "23:59:59";
+const ALL_DAY_END_TIME = "23:59:59";
 
 export function allDayRange(
   startDate: string,

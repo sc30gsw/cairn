@@ -9,7 +9,9 @@ function error(status: number | null, reason: string | null = null) {
 test("401 と権限系の 403 だけが再接続、レート制限の 403 は再試行", () => {
   expect(isAuthFailure(error(401))).toBe(true);
   expect(isAuthFailure(error(403, "insufficientPermissions"))).toBe(true);
-  expect(isAuthFailure(error(403))).toBe(true);
+  //? 理由の無い 403 は権限切れと断定しない（再試行もしない → error として表に出す）
+  expect(isAuthFailure(error(403))).toBe(false);
+  expect(isRetryable(error(403))).toBe(false);
   expect(isAuthFailure(error(403, "rateLimitExceeded"))).toBe(false);
   expect(isRetryable(error(403, "userRateLimitExceeded"))).toBe(true);
   expect(isRetryable(error(429))).toBe(true);

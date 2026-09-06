@@ -6,7 +6,7 @@ import { BoardScheduleYearDayPopover } from "~/features/board/components/board-s
 type CreateBoardScheduleYearRenderDayOptions = {
   baseEvents: readonly ScheduleEventData[];
   canAdd: boolean;
-  editableBlockIds: ReadonlySet<string>;
+  clickableEventIds: ReadonlySet<string>;
   onAdd: (dateJst: string) => void;
   onEditBlock: (event: ScheduleEventData) => void;
 };
@@ -14,7 +14,7 @@ type CreateBoardScheduleYearRenderDayOptions = {
 export function createBoardScheduleYearRenderDay({
   baseEvents,
   canAdd,
-  editableBlockIds,
+  clickableEventIds,
   onAdd,
   onEditBlock,
 }: CreateBoardScheduleYearRenderDayOptions) {
@@ -25,7 +25,7 @@ export function createBoardScheduleYearRenderDay({
         canAdd={canAdd}
         dateJst={date}
         dayEvents={dayEvents}
-        editableBlockIds={editableBlockIds}
+        clickableEventIds={clickableEventIds}
         onAdd={onAdd}
         onEditBlock={onEditBlock}
       />

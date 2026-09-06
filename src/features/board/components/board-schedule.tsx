@@ -110,7 +110,7 @@ export function BoardSchedule({
     allDayEvents: ui.dayAllDayEvents,
     limit: BOARD_ALL_DAY_VISIBLE_LIMIT,
     moreLabel: ui.moreLabel,
-    onEventClick: ui.openEditFromEvent,
+    onEventClick: ui.openFromEvent,
     onMoreClick: (target) => {
       ui.openAllDayExpand(anchorDateJst, target);
     },
@@ -146,11 +146,11 @@ export function BoardSchedule({
     renderDay: createBoardScheduleYearRenderDay({
       baseEvents: ui.baseEvents,
       canAdd: rows.length > 0,
-      editableBlockIds: ui.editableBlockIds,
+      clickableEventIds: ui.clickableEventIds,
       onAdd: (day) => {
         ui.openCreate(`${day} ${DEFAULT_DAY_BLOCK_START}`, `${day} ${DEFAULT_DAY_BLOCK_END}`);
       },
-      onEditBlock: ui.openEditFromEvent,
+      onEditBlock: ui.openFromEvent,
     }),
   };
 
@@ -245,15 +245,16 @@ export function BoardSchedule({
             {ui.expandedAllDayAnchor === null ? null : (
               <BoardScheduleAllDayExpand
                 anchor={ui.expandedAllDayAnchor}
-                editableBlockIds={ui.editableBlockIds}
+                clickableEventIds={ui.clickableEventIds}
                 events={ui.expandedAllDayEvents}
-                onEventClick={ui.openEditFromEvent}
+                onEventClick={ui.openFromEvent}
               />
             )}
           </div>
         </Stack>
       </Card>
       <BoardScheduleExternalModal
+        canDrag={!pending && !isCompact}
         external={ui.openedExternal}
         onClose={ui.closeExternal}
         onRemove={(externalId) => onRemoveExternal({ externalId })}

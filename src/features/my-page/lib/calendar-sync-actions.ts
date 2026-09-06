@@ -28,6 +28,14 @@ export function clearCalendarSyncConnectPending(): void {
   trySessionStorageRemove(CALENDAR_SYNC_CONNECT_PENDING_KEY);
 }
 
+//? Google の同意画面で拒否・失敗すると Better Auth は ?error=... を付けて errorCallbackURL へ戻す
+export function readCalendarSyncReturnError(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  return new URLSearchParams(window.location.search).get("error");
+}
+
 function myPageUrl(): string {
   return `${window.location.origin}/my-page`;
 }

@@ -18,7 +18,6 @@ export class GoogleCalendarError extends TaggedError("GoogleCalendar")<{
 //? 403 のうち「権限が無い」。それ以外の 403（レート制限・クォータ）は再試行の対象
 const AUTH_FAILURE_REASONS = [
   "accessNotConfigured",
-  "authError",
   "forbidden",
   "insufficientPermissions",
 ] as const satisfies readonly string[];
@@ -57,7 +56,7 @@ const eventListSchema = v.looseObject({
   nextSyncToken: v.optional(v.string()),
 });
 
-export type GoogleEventList = v.InferOutput<typeof eventListSchema>;
+type GoogleEventList = v.InferOutput<typeof eventListSchema>;
 
 const calendarListEntrySchema = v.looseObject({
   accessRole: v.optional(v.string()),
@@ -75,7 +74,7 @@ const calendarListSchema = v.looseObject({
   nextPageToken: v.optional(v.string()),
 });
 
-export type GoogleCalendarListEntry = v.InferOutput<typeof calendarListEntrySchema>;
+type GoogleCalendarListEntry = v.InferOutput<typeof calendarListEntrySchema>;
 
 const errorBodySchema = v.looseObject({
   error: v.optional(
@@ -89,7 +88,6 @@ const errorBodySchema = v.looseObject({
 
 export type GoogleCalendarClient = {
   accessToken: string;
-  fetchImpl?: typeof fetch;
 };
 
 export function isAuthFailure(error: GoogleCalendarError): boolean {
@@ -99,13 +97,11 @@ export function isAuthFailure(error: GoogleCalendarError): boolean {
   if (error.status !== 403) {
     return false;
   }
-  if (error.reason === null) {
-    return true;
-  }
+  //? 理由の無い 403 は権限切れと断定しない（再接続を無駄に求めない）。再試行対象でもないので error に落ちる
   return AUTH_FAILURE_REASONS.some((reason) => reason === error.reason);
 }
 
-export function isRateLimited(error: GoogleCalendarError): boolean {
+function isRateLimited(error: GoogleCalendarError): boolean {
   return (
     error.status === 429 ||
     (error.status === 403 && RATE_LIMIT_REASONS.some((reason) => reason === error.reason))
@@ -176,7 +172,6 @@ async function request<T>(
       url.searchParams.set(key, value);
     }
   }
-  const fetchImpl = client.fetchImpl ?? fetch;
   const sent = await Result.tryPromise({
     catch: (cause) =>
       new GoogleCalendarError({
@@ -187,7 +182,7 @@ async function request<T>(
         status: null,
       }),
     try: () =>
-      fetchImpl(url, {
+      fetch(url, {
         body: args.body === undefined ? undefined : JSON.stringify(args.body),
         headers: {
           accept: "application/json",
@@ -277,7 +272,7 @@ export async function listCalendars(
   return Result.ok(entries);
 }
 
-export type ListEventsArgs = {
+type ListEventsArgs = {
   calendarId: string;
   pageToken?: string;
   syncToken?: string;
