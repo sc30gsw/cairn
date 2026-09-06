@@ -6,7 +6,12 @@ import {
   EXTERNAL_EVENT_NOT_FOUND_MESSAGE,
 } from "../../lib/calendarSync";
 import { requireDateJst } from "../../lib/dateArgs";
-import { ConflictError, ForbiddenError, NotFoundError } from "../../lib/errors";
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  ValidationFailedError,
+} from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { assertScheduleRange, requireScheduleInstant } from "../../lib/scheduleInstant";
 import type { ExternalCalendarEventDto } from "../../lib/validators";
@@ -47,6 +52,8 @@ export async function listExternal(
       _id: external._id,
       allDay: external.allDay,
       calendarId: external.calendarId,
+      calendarEmail: connection.googleEmail ?? null,
+      colorId: external.colorId ?? null,
       calendarName: calendarById.get(external.calendarId)?.summary ?? external.calendarId,
       canEdit:
         connection.disconnecting !== true &&
@@ -85,9 +92,17 @@ async function requireOwnedExternal(
 export async function moveExternal(
   ctx: MutationCtx,
   ownerId: string,
-  args: { endAt: string; externalId: Id<"externalCalendarEvents">; startAt: string },
+  args: {
+    endAt: string;
+    externalId: Id<"externalCalendarEvents">;
+    startAt: string;
+    title?: string;
+    colorId?: string | null;
+  },
 ): Promise<{
   allDay: boolean;
+  title: string;
+  colorId: string | null;
   calendarId: string;
   endAt: string;
   googleEventId: string;
@@ -97,9 +112,16 @@ export async function moveExternal(
   const startAt = requireScheduleInstant(args.startAt);
   const endAt = requireScheduleInstant(args.endAt);
   assertScheduleRange(startAt, endAt);
-  await ctx.db.patch("externalCalendarEvents", external._id, { endAt, startAt });
+  const title = args.title?.trim() ?? external.title;
+  if (title.length === 0 || title.length > 1000) {
+    throwDomain(new ValidationFailedError({ message: "件名は1〜1000文字で入力してください" }));
+  }
+  const colorId = args.colorId === undefined ? external.colorId : (args.colorId ?? undefined);
+  await ctx.db.patch("externalCalendarEvents", external._id, { endAt, startAt, title, colorId });
   return {
     allDay: external.allDay,
+    title,
+    colorId: colorId ?? null,
     calendarId: external.calendarId,
     endAt,
     googleEventId: external.googleEventId,

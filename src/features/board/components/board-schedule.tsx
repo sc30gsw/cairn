@@ -285,10 +285,19 @@ export function BoardSchedule({
         </Stack>
       </Card>
       <BoardScheduleExternalModal
-        canDrag={!pending && !isCompact}
         external={ui.openedExternal}
         onClose={ui.closeExternal}
         onRemove={(externalId) => onRemoveExternal({ externalId })}
+        onUpdate={(values) => {
+          if (ui.openedExternal === null) throw new Error("外部予定が選択されていません");
+          return onMoveExternal({
+            externalId: ui.openedExternal._id,
+            title: values.title,
+            colorId: values.colorId === "calendar" ? null : values.colorId,
+            startAt: dateToScheduleInstant(values.start),
+            endAt: dateToScheduleInstant(values.end),
+          });
+        }}
       />
       {pending ? null : (
         <BoardScheduleEventForm

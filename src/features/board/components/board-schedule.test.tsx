@@ -22,6 +22,8 @@ const external: BoardExternalEvent = {
   allDay: true,
   calendarId: "holidays",
   calendarName: "日本の祝日",
+  calendarEmail: "owner@example.com",
+  colorId: null,
   canEdit: false,
   color: "red",
   startAt: "2026-09-23 00:00:00",

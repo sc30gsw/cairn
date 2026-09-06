@@ -1,109 +1,194 @@
-import { Button, Group, Modal, Stack, Text } from "@mantine/core";
+import { Field, Form, useForm, type SubmitHandler } from "@formisch/react";
+import {
+  ColorSwatch,
+  Group,
+  Select,
+  Stack,
+  Text,
+  TextInput,
+  useMantineTheme,
+  getThemeColor,
+} from "@mantine/core";
+import { DatePickerInput, DateTimePicker } from "@mantine/dates";
 import { modals } from "@mantine/modals";
 import { IconBrandGoogle } from "@tabler/icons-react";
 import { Result } from "better-result";
+import { useId } from "react";
+import { GOOGLE_CALENDAR_EVENT_COLORS } from "~domain/googleCalendarColors";
 
-import { formatScheduleTimeLabel } from "~/features/board/lib/schedule-instant";
+import { BoardScheduleEditModal } from "~/features/board/components/board-schedule-edit-modal";
+import { scheduleInstantToDate } from "~/features/board/lib/schedule-instant";
+import {
+  BoardExternalEventSchema,
+  type BoardExternalEventOutput,
+} from "~/features/board/schemas/board-external-event-schema";
 import type { BoardExternalEvent } from "~/features/board/types/board";
 import type { MutationResult } from "~/lib/run-mutation";
-import { NUMERAL_FONT } from "~/lib/theme";
 
-const EXTERNAL_EVENT_MODAL_TITLE = "外部予定";
-const EXTERNAL_EVENT_REMOVE_LABEL = "Google カレンダーから削除";
-const EXTERNAL_EVENT_REMOVE_CONFIRM_TITLE = "この予定を Google カレンダーから削除しますか？";
-const EXTERNAL_EVENT_REMOVE_CONFIRM =
-  "Google カレンダー側の予定も消えます。記録や学習量には影響しません。";
-const EXTERNAL_EVENT_HINT =
-  "Google カレンダーの予定です。ドラッグで動かすと Google 側も動きます。題名の変更や新規作成は Google カレンダーで行ってください。";
-const EXTERNAL_EVENT_HINT_COMPACT =
-  "Google カレンダーの予定です。時刻・題名の変更や新規作成は Google カレンダーで行ってください。";
-const EXTERNAL_EVENT_READ_ONLY_HINT =
-  "読み取り専用のカレンダーです。この予定は変更・削除できません。";
+const REMOVE_LABEL = "Google カレンダーから削除";
 
-type BoardScheduleExternalModalProps = {
-  canDrag: boolean;
+type ExternalModalProps = {
   external: BoardExternalEvent | null;
   onClose: () => void;
   onRemove: (externalId: BoardExternalEvent["_id"]) => Promise<MutationResult>;
+  onUpdate: (values: BoardExternalEventOutput) => Promise<MutationResult>;
 };
 
-function formatRange(external: BoardExternalEvent): string {
-  const startDay = external.startAt.slice(0, 10);
-  const endDay = external.endAt.slice(0, 10);
-  if (external.allDay) {
-    return startDay === endDay ? `${startDay} 終日` : `${startDay} 〜 ${endDay} 終日`;
-  }
-  const start = formatScheduleTimeLabel(external.startAt);
-  const end = formatScheduleTimeLabel(external.endAt);
-  return startDay === endDay
-    ? `${startDay} ${start} 〜 ${end}`
-    : `${startDay} ${start} 〜 ${endDay} ${end}`;
-}
-
-export function BoardScheduleExternalModal({
-  canDrag,
+function ExternalEventForm({
   external,
   onClose,
   onRemove,
-}: BoardScheduleExternalModalProps) {
+  onUpdate,
+}: Omit<ExternalModalProps, "external"> & { external: BoardExternalEvent }) {
+  const formId = useId();
+  const theme = useMantineTheme();
+  const colorId =
+    GOOGLE_CALENDAR_EVENT_COLORS.find((color) => color.id === external.colorId)?.id ?? "calendar";
+  const form = useForm({
+    schema: BoardExternalEventSchema,
+    initialInput: {
+      title: external.title,
+      colorId,
+      start: scheduleInstantToDate(external.startAt),
+      end: scheduleInstantToDate(external.endAt),
+    },
+  });
+  const colorOptions = [
+    { value: "calendar" as const, label: "カレンダーの色" },
+    ...GOOGLE_CALENDAR_EVENT_COLORS.map((color) => ({ value: color.id, label: color.label })),
+  ];
+  const handleSubmit: SubmitHandler<typeof BoardExternalEventSchema> = async (values) => {
+    if (!external.canEdit) return;
+    const result = await onUpdate(values);
+    if (Result.isOk(result)) onClose();
+  };
   function requestRemove() {
-    if (external === null || !external.canEdit) {
-      return;
-    }
-    const externalId = external._id;
+    if (!external.canEdit) return;
     modals.openConfirmModal({
-      children: EXTERNAL_EVENT_REMOVE_CONFIRM,
+      title: "この予定を Google カレンダーから削除しますか？",
+      children: "Google カレンダー上の予定も削除されます。記録や学習量には影響しません。",
       confirmProps: { color: "red" },
-      labels: { cancel: "キャンセル", confirm: EXTERNAL_EVENT_REMOVE_LABEL },
+      labels: { cancel: "キャンセル", confirm: REMOVE_LABEL },
       onConfirm: async () => {
-        const result = await onRemove(externalId);
+        const result = await onRemove(external._id);
         if (Result.isOk(result)) onClose();
       },
-      title: EXTERNAL_EVENT_REMOVE_CONFIRM_TITLE,
     });
   }
-
   return (
-    <Modal onClose={onClose} opened={external !== null} title={EXTERNAL_EVENT_MODAL_TITLE}>
-      {external === null ? null : (
-        <Stack gap="md">
-          <Stack gap={2}>
-            <Text fw={600} size="lg">
-              {external.title}
-            </Text>
-            <Text ff={NUMERAL_FONT} size="sm">
-              {formatRange(external)}
-            </Text>
-            <Group gap={6} wrap="nowrap">
-              <IconBrandGoogle aria-hidden size={14} />
-              <Text c="dimmed" size="sm">
-                {external.calendarName}
-              </Text>
-            </Group>
-          </Stack>
+    <BoardScheduleEditModal
+      formId={formId}
+      opened
+      onClose={onClose}
+      onDelete={requestRemove}
+      deleteLabel={REMOVE_LABEL}
+      readOnly={!external.canEdit}
+      submitting={form.isSubmitting}
+      title={external.canEdit ? "予定を編集" : "外部予定"}
+    >
+      <Group gap="xs" wrap="nowrap">
+        <IconBrandGoogle aria-hidden size={18} />
+        <Stack gap={0}>
+          <Text size="sm">{external.calendarName}</Text>
           <Text c="dimmed" size="xs">
-            {external.canEdit
-              ? canDrag
-                ? EXTERNAL_EVENT_HINT
-                : EXTERNAL_EVENT_HINT_COMPACT
-              : EXTERNAL_EVENT_READ_ONLY_HINT}
+            {external.calendarEmail ?? "連携アカウントのメールアドレスを取得できませんでした"}
           </Text>
-          <Group justify="space-between" wrap="nowrap">
-            <Button
-              color="red"
-              disabled={!external.canEdit}
-              onClick={requestRemove}
-              type="button"
-              variant="light"
-            >
-              {EXTERNAL_EVENT_REMOVE_LABEL}
-            </Button>
-            <Button onClick={onClose} type="button" variant="default">
-              閉じる
-            </Button>
-          </Group>
         </Stack>
-      )}
-    </Modal>
+      </Group>
+      <Text c="dimmed" size="sm">
+        {external.canEdit
+          ? "保存・削除すると、Google カレンダー上の予定も変更・削除されます。"
+          : "読み取り専用のカレンダーです。この予定は変更・削除できません。"}
+      </Text>
+      <Form id={formId} of={form} onSubmit={handleSubmit}>
+        <Stack gap="md">
+          <Field of={form} path={["title"]}>
+            {(field) => (
+              <TextInput
+                {...field.props}
+                disabled={!external.canEdit}
+                error={field.errors?.[0]}
+                label="件名"
+                onChange={(event) => field.onChange(event.currentTarget.value)}
+                value={field.input ?? ""}
+              />
+            )}
+          </Field>
+          {(["start", "end"] as const).map((path) => (
+            <Field key={path} of={form} path={[path]}>
+              {(field) =>
+                external.allDay ? (
+                  <DatePickerInput
+                    disabled={!external.canEdit}
+                    error={field.errors?.[0]}
+                    label={path === "start" ? "開始日（終日）" : "終了日（終日）"}
+                    onChange={(value) => {
+                      if (value !== null) {
+                        const date = new Date(value);
+                        date.setHours(
+                          path === "start" ? 0 : 23,
+                          path === "start" ? 0 : 59,
+                          path === "start" ? 0 : 59,
+                          0,
+                        );
+                        field.onChange(date);
+                      }
+                    }}
+                    value={field.input}
+                  />
+                ) : (
+                  <DateTimePicker
+                    disabled={!external.canEdit}
+                    error={field.errors?.[0]}
+                    label={path === "start" ? "開始" : "終了"}
+                    onChange={(value) => {
+                      if (value !== null) field.onChange(new Date(value));
+                    }}
+                    value={field.input}
+                  />
+                )
+              }
+            </Field>
+          ))}
+          <Field of={form} path={["colorId"]}>
+            {(field) => (
+              <Select
+                {...field.props}
+                disabled={!external.canEdit}
+                data={colorOptions}
+                error={field.errors?.[0]}
+                label="色"
+                onChange={(value) => {
+                  const option = colorOptions.find((entry) => entry.value === value);
+                  if (option !== undefined) field.onChange(option.value);
+                }}
+                value={field.input}
+                renderOption={({ option }) => (
+                  <Group gap="xs">
+                    <ColorSwatch
+                      color={getThemeColor(
+                        GOOGLE_CALENDAR_EVENT_COLORS.find((color) => color.id === option.value)
+                          ?.color ??
+                          external.color ??
+                          "gray",
+                        theme,
+                      )}
+                      size={16}
+                    />
+                    <span>{option.label}</span>
+                  </Group>
+                )}
+              />
+            )}
+          </Field>
+        </Stack>
+      </Form>
+    </BoardScheduleEditModal>
+  );
+}
+
+export function BoardScheduleExternalModal({ external, ...props }: ExternalModalProps) {
+  return external === null ? null : (
+    <ExternalEventForm external={external} {...props} key={external._id} />
   );
 }

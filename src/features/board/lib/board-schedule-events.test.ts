@@ -199,6 +199,8 @@ test("外部予定は灰色の薄い予定になり、印付きの id で見分�
       allDay: false,
       calendarId: "owner@example.com",
       calendarName: "owner@example.com",
+      calendarEmail: "owner@example.com",
+      colorId: null,
       canEdit: true,
       color: "#9fe1cb",
       endAt: "2026-08-17 11:00:00",

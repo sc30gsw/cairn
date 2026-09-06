@@ -117,14 +117,18 @@ export function patchPayload(payload: GoogleEventPayload): GoogleEventPatch {
 
 export function externalChangePayload(
   change: Extract<ExternalChange, { kind: "move" }>,
-): Pick<GoogleEventPatch, "end" | "start"> {
+): Pick<GoogleEventPatch, "end" | "start"> &
+  Partial<Pick<GoogleEventPatch, "summary" | "colorId">> {
+  const metadata = { summary: change.title, colorId: change.colorId };
   if (change.allDay) {
     return {
+      ...metadata,
       end: timePatch({ date: addDaysJst(change.endAt.slice(0, 10), 1) }),
       start: timePatch({ date: change.startAt.slice(0, 10) }),
     };
   }
   return {
+    ...metadata,
     end: timePatch({ dateTime: scheduleInstantToRfc3339(change.endAt) }),
     start: timePatch({ dateTime: scheduleInstantToRfc3339(change.startAt) }),
   };

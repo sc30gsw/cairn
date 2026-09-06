@@ -1,11 +1,12 @@
 import { Field, Form, reset, useForm } from "@formisch/react";
 import type { SubmitHandler } from "@formisch/react";
-import { Button, ColorSwatch, Group, Modal, Select, Stack } from "@mantine/core";
+import { ColorSwatch, Group, Select, Stack } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
 import { Result } from "better-result";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
 import { DEFAULT_BOARD_SCHEDULE_COLOR } from "~domain/boardScheduleColors";
 
+import { BoardScheduleEditModal } from "~/features/board/components/board-schedule-edit-modal";
 import { boardScheduleColorCss } from "~/features/board/lib/board-schedule-color-ui";
 import { scheduleInstantToDate } from "~/features/board/lib/schedule-instant";
 import {
@@ -46,6 +47,7 @@ export function BoardScheduleEventForm({
   opened,
   rows,
 }: BoardScheduleEventFormProps) {
+  const formId = useId();
   const rowOptions = rows.map((row) => ({ label: row.itemName, value: row._id }));
   const form = useForm({
     initialInput: initialValues ?? {
@@ -73,13 +75,17 @@ export function BoardScheduleEventForm({
   const isEditing = initialValues?.blockId !== undefined;
 
   return (
-    <Modal
+    <BoardScheduleEditModal
+      formId={formId}
+      onDelete={isEditing && onDelete !== undefined ? () => void onDelete() : undefined}
+      saveDisabled={rows.length === 0}
+      submitting={form.isSubmitting}
       onClose={onClose}
       onExitTransitionEnd={() => reset(form)}
       opened={opened}
       title={isEditing ? "予定を編集" : "予定を追加"}
     >
-      <Form of={form} onSubmit={handleSubmit}>
+      <Form id={formId} of={form} onSubmit={handleSubmit}>
         <Stack gap="md">
           <Field of={form} path={["blockId"]}>
             {(field) => <input type="hidden" value={field.input ?? ""} readOnly />}
@@ -152,26 +158,9 @@ export function BoardScheduleEventForm({
               />
             )}
           </Field>
-          <Group justify="space-between" wrap="nowrap">
-            {isEditing && onDelete !== undefined ? (
-              <Button color="red" onClick={() => void onDelete()} type="button" variant="filled">
-                削除
-              </Button>
-            ) : (
-              <span />
-            )}
-            <Group gap="sm" wrap="nowrap">
-              <Button onClick={onClose} type="button" variant="default">
-                キャンセル
-              </Button>
-              <Button disabled={rows.length === 0} loading={form.isSubmitting} type="submit">
-                保存
-              </Button>
-            </Group>
-          </Group>
         </Stack>
       </Form>
-    </Modal>
+    </BoardScheduleEditModal>
   );
 }
 

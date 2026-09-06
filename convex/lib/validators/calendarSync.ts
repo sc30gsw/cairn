@@ -1,6 +1,7 @@
 import { type Infer, v } from "convex/values";
 
 import { CALENDAR_SYNC_SOURCE_KINDS, CALENDAR_SYNC_STATUSES } from "../calendarSync";
+import { GOOGLE_CALENDAR_EVENT_COLORS } from "../googleCalendarColors";
 
 export const calendarSyncStatusValidator = v.union(
   ...CALENDAR_SYNC_STATUSES.map((status) => v.literal(status)),
@@ -34,11 +35,18 @@ export const calendarConnectionDtoValidator = v.union(
 
 export type CalendarConnectionDto = Infer<typeof calendarConnectionDtoValidator>;
 
+export const googleEventColorIdValidator = v.union(
+  v.null(),
+  ...GOOGLE_CALENDAR_EVENT_COLORS.map((entry) => v.literal(entry.id)),
+);
+
 export const externalCalendarEventDtoValidator = v.object({
   _id: v.id("externalCalendarEvents"),
   allDay: v.boolean(),
   calendarId: v.string(),
   calendarName: v.string(),
+  calendarEmail: v.union(v.string(), v.null()),
+  colorId: v.union(v.string(), v.null()),
   canEdit: v.boolean(),
   color: v.union(v.string(), v.null()),
   endAt: v.string(),
@@ -55,6 +63,7 @@ export const pulledEventValidator = v.union(
     endAt: v.string(),
     googleEventId: v.string(),
     kind: v.literal("upsert"),
+    colorId: v.optional(v.string()),
     startAt: v.string(),
     title: v.string(),
     updated: v.string(),
@@ -177,6 +186,8 @@ export const externalChangeValidator = v.union(
     allDay: v.boolean(),
     endAt: v.string(),
     kind: v.literal("move"),
+    title: v.optional(v.string()),
+    colorId: v.optional(v.union(v.string(), v.null())),
     startAt: v.string(),
   }),
   v.object({ kind: v.literal("delete") }),

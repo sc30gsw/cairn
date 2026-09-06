@@ -7,7 +7,8 @@ export type GoogleEventTimePatch =
   | { date: string; dateTime: null }
   | { date: null; dateTime: string };
 
-export type GoogleEventPatch = Omit<GoogleEventPayload, "end" | "start"> & {
+export type GoogleEventPatch = Omit<GoogleEventPayload, "end" | "start" | "colorId"> & {
+  colorId?: string | null;
   end: GoogleEventTimePatch;
   start: GoogleEventTimePatch;
 };
@@ -44,6 +45,7 @@ const dateTimeSchema = v.object({
 });
 
 export const googleEventSchema = v.looseObject({
+  colorId: v.optional(v.string()),
   end: v.optional(dateTimeSchema),
   etag: v.optional(v.string()),
   id: v.string(),

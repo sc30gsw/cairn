@@ -141,7 +141,13 @@ export function useBoardExternalMove(anchorDateJst: DateJst, view: BoardSchedule
       updater: (externals) =>
         externals.map((external) =>
           external._id === args.externalId
-            ? { ...external, endAt: args.endAt, startAt: args.startAt }
+            ? {
+                ...external,
+                endAt: args.endAt,
+                startAt: args.startAt,
+                title: args.title ?? external.title,
+                colorId: args.colorId === undefined ? external.colorId : args.colorId,
+              }
             : external,
         ),
     });

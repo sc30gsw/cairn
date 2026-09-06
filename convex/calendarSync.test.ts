@@ -406,6 +406,8 @@ test("Google 側の外部予定は写しとして予定タブの範囲で読め�
       allDay: false,
       calendarId: PRIMARY,
       calendarName: PRIMARY,
+      calendarEmail: PRIMARY,
+      colorId: null,
       canEdit: true,
       color: "#9fe1cb",
       endAt: "2026-08-18 11:00:00",

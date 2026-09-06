@@ -1,4 +1,5 @@
 import type { ScheduleEventData } from "@mantine/schedule";
+import { googleCalendarEventColor } from "~domain/googleCalendarColors";
 
 import {
   dateToScheduleInstant,
@@ -193,7 +194,8 @@ export function toExternalScheduleEvents(
   externals: readonly BoardExternalEvent[],
 ): ScheduleEventData[] {
   return externals.map((external) => ({
-    color: BOARD_EXTERNAL_EVENT_COLOR,
+    color:
+      googleCalendarEventColor(external.colorId) ?? external.color ?? BOARD_EXTERNAL_EVENT_COLOR,
     end: external.endAt,
     id: `${BOARD_EXTERNAL_EVENT_PREFIX}${external._id}`,
     start: external.startAt,

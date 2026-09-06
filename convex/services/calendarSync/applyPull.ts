@@ -98,6 +98,7 @@ async function applyToExternal(
   }
   const fields = {
     allDay: event.allDay,
+    colorId: event.colorId,
     endAt: event.endAt,
     googleUpdated: event.updated,
     startAt: event.startAt,

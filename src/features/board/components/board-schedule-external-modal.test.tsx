@@ -13,6 +13,8 @@ const EXTERNAL: BoardExternalEvent = {
   allDay: false,
   calendarId: "owner@example.com",
   calendarName: "仕事",
+  calendarEmail: "owner@example.com",
+  colorId: null,
   canEdit: true,
   color: "#9fe1cb",
   endAt: "2026-08-18 11:00:00",
@@ -25,15 +27,15 @@ test("外部予定の題名・時間・カレンダー名が見え、削除は�
   const onClose = vi.fn();
   const { getByRole, getByText } = renderWithMantine(
     <BoardScheduleExternalModal
-      canDrag
+      onUpdate={vi.fn()}
       external={EXTERNAL}
       onClose={onClose}
       onRemove={onRemove}
     />,
   );
 
-  expect(getByText("歯医者")).toBeDefined();
-  expect(getByText("2026-08-18 10:00 〜 11:00")).toBeDefined();
+  expect(getByRole("textbox", { name: "件名" }).getAttribute("value")).toBe("歯医者");
+  expect(getByText("owner@example.com")).toBeDefined();
   expect(getByText("仕事")).toBeDefined();
 
   fireEvent.click(getByRole("button", { name: "Google カレンダーから削除" }));
@@ -53,21 +55,21 @@ test("外部予定の題名・時間・カレンダー名が見え、削除は�
 test("モバイルではドラッグの案内を出さない", () => {
   const { getByText, queryByText } = renderWithMantine(
     <BoardScheduleExternalModal
-      canDrag={false}
+      onUpdate={vi.fn()}
       external={EXTERNAL}
       onClose={vi.fn()}
       onRemove={vi.fn()}
     />,
   );
   expect(queryByText(/ドラッグで動かす/)).toBeNull();
-  expect(getByText(/Google カレンダーで行ってください/)).toBeDefined();
+  expect(getByText(/Google カレンダー上の予定も変更・削除/)).toBeDefined();
 });
 
 test("読み取り専用の予定は削除できずドラッグの案内も出さない", () => {
   const onRemove = vi.fn();
   const { getByRole, getByText, queryByText } = renderWithMantine(
     <BoardScheduleExternalModal
-      canDrag
+      onUpdate={vi.fn()}
       external={{ ...EXTERNAL, canEdit: false }}
       onClose={vi.fn()}
       onRemove={onRemove}
@@ -88,7 +90,7 @@ test("外部予定の削除に失敗したら詳細画面を閉じない", async
   );
   const { getByRole, getByText } = renderWithMantine(
     <BoardScheduleExternalModal
-      canDrag
+      onUpdate={vi.fn()}
       external={EXTERNAL}
       onClose={onClose}
       onRemove={onRemove}
@@ -103,5 +105,32 @@ test("外部予定の削除に失敗したら詳細画面を閉じない", async
   );
   await vi.waitFor(() => expect(onRemove).toHaveBeenCalledOnce());
   expect(onClose).not.toHaveBeenCalled();
-  expect(getByText("歯医者")).toBeDefined();
+  expect(getByRole("textbox", { name: "件名" }).getAttribute("value")).toBe("歯医者");
+});
+
+test("件名・色を同じフォームで編集し、失敗時には入力を残す", async () => {
+  const onClose = vi.fn();
+  const onUpdate = vi
+    .fn()
+    .mockResolvedValue(
+      Result.err(new MutationFailedError({ cause: new Error("offline"), message: "失敗" })),
+    );
+  const view = renderWithMantine(
+    <BoardScheduleExternalModal
+      external={EXTERNAL}
+      onClose={onClose}
+      onRemove={vi.fn()}
+      onUpdate={onUpdate}
+    />,
+  );
+  fireEvent.change(view.getByRole("textbox", { name: "件名" }), { target: { value: "定期検診" } });
+  fireEvent.click(view.getByRole("textbox", { name: "色" }));
+  fireEvent.click(await view.findByRole("option", { name: "トマト" }));
+  fireEvent.submit(
+    view.getByRole("button", { name: "保存" }).closest('[role="dialog"]')?.querySelector("form") ??
+      document.body,
+  );
+  await vi.waitFor(() => expect(onUpdate).toHaveBeenCalledOnce());
+  expect(onUpdate.mock.calls[0]?.[0]).toMatchObject({ title: "定期検診", colorId: "11" });
+  expect(onClose).not.toHaveBeenCalled();
 });

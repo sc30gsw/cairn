@@ -1,4 +1,4 @@
-import { UnstyledButton } from "@mantine/core";
+import { UnstyledButton, useMantineTheme } from "@mantine/core";
 import type { ScheduleEventData } from "@mantine/schedule";
 import type { MouseEvent } from "react";
 
@@ -19,6 +19,7 @@ export function BoardScheduleDayAllDayStrip({
   onEventClick,
   onMoreClick,
 }: BoardScheduleDayAllDayStripProps) {
+  const theme = useMantineTheme();
   const visible = events.slice(0, limit);
   const hiddenCount = events.length - limit;
 
@@ -27,6 +28,26 @@ export function BoardScheduleDayAllDayStrip({
       {visible.map((event) => (
         <UnstyledButton
           className={classes.dayAllDayEvent}
+          style={
+            theme.variantColorResolver({
+              color: event.color ?? "gray",
+              theme,
+              variant: "light",
+            }) === undefined
+              ? undefined
+              : {
+                  backgroundColor: theme.variantColorResolver({
+                    color: event.color ?? "gray",
+                    theme,
+                    variant: "light",
+                  }).background,
+                  color: theme.variantColorResolver({
+                    color: event.color ?? "gray",
+                    theme,
+                    variant: "light",
+                  }).color,
+                }
+          }
           key={String(event.id)}
           onClick={() => {
             onEventClick(event);
