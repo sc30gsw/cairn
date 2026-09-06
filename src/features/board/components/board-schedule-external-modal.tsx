@@ -14,7 +14,11 @@ import { modals } from "@mantine/modals";
 import { IconBrandGoogle } from "@tabler/icons-react";
 import { Result } from "better-result";
 import { useId } from "react";
-import { GOOGLE_CALENDAR_EVENT_COLORS } from "~domain/googleCalendarColors";
+import {
+  GOOGLE_CALENDAR_EVENT_COLORS,
+  DEFAULT_GOOGLE_CALENDAR_EVENT_COLOR,
+  googleCalendarEventColor,
+} from "~domain/googleCalendarColors";
 
 import { BoardScheduleEditModal } from "~/features/board/components/board-schedule-edit-modal";
 import { scheduleInstantToDate } from "~/features/board/lib/schedule-instant";
@@ -54,7 +58,7 @@ function ExternalEventForm({
     },
   });
   const colorOptions = [
-    { value: "calendar", label: "カレンダーの色" },
+    { value: "calendar", label: `既定（${DEFAULT_GOOGLE_CALENDAR_EVENT_COLOR.label}）` },
     ...GOOGLE_CALENDAR_EVENT_COLORS.map((color) => ({ value: color.id, label: color.label })),
   ] as const satisfies readonly { value: BoardExternalEventOutput["colorId"]; label: string }[];
   const handleSubmit: SubmitHandler<typeof BoardExternalEventSchema> = async (values) => {
@@ -160,6 +164,12 @@ function ExternalEventForm({
                 data={colorOptions}
                 error={field.errors?.[0]}
                 label="色"
+                leftSection={
+                  <ColorSwatch
+                    color={getThemeColor(googleCalendarEventColor(field.input), theme)}
+                    size={16}
+                  />
+                }
                 onChange={(value) => {
                   const option = colorOptions.find((entry) => entry.value === value);
                   if (option !== undefined) field.onChange(option.value);
@@ -168,13 +178,7 @@ function ExternalEventForm({
                 renderOption={({ option }) => (
                   <Group gap="xs">
                     <ColorSwatch
-                      color={getThemeColor(
-                        GOOGLE_CALENDAR_EVENT_COLORS.find((color) => color.id === option.value)
-                          ?.color ??
-                          external.color ??
-                          "gray",
-                        theme,
-                      )}
+                      color={getThemeColor(googleCalendarEventColor(option.value), theme)}
                       size={16}
                     />
                     <span>{option.label}</span>

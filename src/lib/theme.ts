@@ -27,7 +27,7 @@ const blue = [
   "#2A5782",
   "#204064",
   "#162A46",
-] as const satisfies MantineColorsTuple;
+] as const satisfies readonly [...MantineColorsTuple];
 
 const red = [
   "#F8E8E6",
@@ -40,7 +40,7 @@ const red = [
   "#771F1A",
   "#5B1714",
   "#3F100E",
-] as const satisfies MantineColorsTuple;
+] as const satisfies readonly [...MantineColorsTuple];
 
 const yellow = [
   "#F8F1D8",
@@ -53,7 +53,7 @@ const yellow = [
   "#715602",
   "#534002",
   "#362B01",
-] as const satisfies MantineColorsTuple;
+] as const satisfies readonly [...MantineColorsTuple];
 
 const green = [
   "#EEF1D8",
@@ -66,7 +66,7 @@ const green = [
   "#405407",
   "#2E3E05",
   "#1C2803",
-] as const satisfies MantineColorsTuple;
+] as const satisfies readonly [...MantineColorsTuple];
 
 const orange = [
   "#FDEEE4",
@@ -79,7 +79,7 @@ const orange = [
   "#7A340D",
   "#5A260A",
   "#3D1A07",
-] as const satisfies MantineColorsTuple;
+] as const satisfies readonly [...MantineColorsTuple];
 
 const HAND_FONT = '"Yomogi", sans-serif';
 export const BODY_FONT = HAND_FONT;

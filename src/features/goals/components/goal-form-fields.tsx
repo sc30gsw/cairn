@@ -179,7 +179,6 @@ export function GoalDateField({
   disabled = false,
   field,
   label,
-  todayJst,
 }: GoalDateFieldProps) {
   return (
     <DatePickerInput

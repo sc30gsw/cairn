@@ -65,6 +65,10 @@ export function ProductCard({ product, onDelete, isLoading }: ProductCardProps) 
 
 ## `as const satisfies` for constants
 
+Pair every const assertion with `satisfies T`. For arrays use `as const satisfies readonly T[]` (or the library's existing readonly tuple type). Derive `T` from Convex, Valibot, library types, or the existing domain definition; do not redeclare unions to validate their source constants. Remove unnecessary assertions when contextual inference already retains the required type.
+
+Use `as const satisfies T` whenever a const assertion is needed, including test fixtures. Arrays must satisfy a readonly array or tuple (`readonly T[]` or `readonly [...Tuple]`). Reuse schema-derived types, DTOs, component props, or utility types; do not duplicate domain unions or object shapes solely for `satisfies`. When contextual typing already preserves the required literals, omit the redundant const assertion.
+
 ```typescript
 // CORRECT: literal types preserved + type-checked
 const STATUS_LABELS = {
@@ -72,6 +76,8 @@ const STATUS_LABELS = {
   inactive: '無効',
   pending: '保留中',
 } as const satisfies Record<UserStatus, string>
+
+const VISIBLE_STATUSES = [STATUSES[0], STATUSES[1]] as const satisfies readonly UserStatus[]
 
 // WRONG: widened to string
 const STATUS_LABELS: Record<UserStatus, string> = { ... }

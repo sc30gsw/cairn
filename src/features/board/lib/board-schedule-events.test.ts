@@ -192,7 +192,7 @@ test("終日イベントだけを除外できる", () => {
   ]);
 });
 
-test("外部予定はカレンダーの色の薄い予定になり、印付きの id で見分けられる", () => {
+test("色が未指定の外部予定はラベンダーの予定になり、印付きの id で見分けられる", () => {
   const [event] = toExternalScheduleEvents([
     {
       _id: "ext1" as Id<"externalCalendarEvents">,

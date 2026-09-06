@@ -15,7 +15,6 @@ import { RECORD_STATUS_UI } from "~/lib/record-status-ui";
 export const BOARD_ALL_DAY_VISIBLE_LIMIT = 2;
 export const BOARD_ALL_DAY_MORE_PREFIX = "board-more:";
 const BOARD_EXTERNAL_EVENT_PREFIX = "external:";
-const BOARD_EXTERNAL_EVENT_COLOR = "gray";
 const ALL_DAY_START_SUFFIX = " 00:00:00";
 const ALL_DAY_END_SUFFIX = " 23:59:59";
 
@@ -194,8 +193,7 @@ export function toExternalScheduleEvents(
   externals: readonly BoardExternalEvent[],
 ): ScheduleEventData[] {
   return externals.map((external) => ({
-    color:
-      googleCalendarEventColor(external.colorId) ?? external.color ?? BOARD_EXTERNAL_EVENT_COLOR,
+    color: googleCalendarEventColor(external.colorId),
     end: external.endAt,
     id: `${BOARD_EXTERNAL_EVENT_PREFIX}${external._id}`,
     start: external.startAt,

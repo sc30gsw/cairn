@@ -13,6 +13,11 @@ export const GOOGLE_CALENDAR_EVENT_COLORS = [
   { id: "11", label: "トマト", color: "red" },
 ] as const satisfies readonly { id: string; label: string; color: MantineColor }[];
 
-export function googleCalendarEventColor(colorId: string | null | undefined): string | undefined {
-  return GOOGLE_CALENDAR_EVENT_COLORS.find((entry) => entry.id === colorId)?.color;
+export const DEFAULT_GOOGLE_CALENDAR_EVENT_COLOR = GOOGLE_CALENDAR_EVENT_COLORS[0];
+
+export function googleCalendarEventColor(colorId: string | null | undefined): MantineColor {
+  return (
+    GOOGLE_CALENDAR_EVENT_COLORS.find((entry) => entry.id === colorId)?.color ??
+    DEFAULT_GOOGLE_CALENDAR_EVENT_COLOR.color
+  );
 }
