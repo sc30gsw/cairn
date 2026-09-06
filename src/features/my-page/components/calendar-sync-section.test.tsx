@@ -1,7 +1,9 @@
 import { fireEvent } from "@testing-library/react";
 import { Result } from "better-result";
+import type { FunctionReturnType } from "convex/server";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
 
+import type { api } from "~/../convex/_generated/api";
 import {
   CALENDAR_SYNC_CALENDARS_LABEL,
   CALENDAR_SYNC_CONNECT_LABEL,
@@ -14,14 +16,8 @@ import {
 } from "~/features/my-page/components/calendar-sync-section";
 import { renderWithMantine } from "~/test-utils/render";
 
-type Status = {
-  calendars: { backgroundColor?: string; id: string; primary: boolean; summary: string }[];
-  googleEmail: string | null;
-  lastError: string | null;
-  lastSyncedAt: number | null;
-  status: "error" | "needsReauth" | "ok";
-  visibleCalendarIds: string[];
-};
+//? 型は Convex の status クエリから導く（手書きの複製を置かない）
+type Status = NonNullable<FunctionReturnType<typeof api.queries.calendarSync.status.status>>;
 
 const {
   connect,

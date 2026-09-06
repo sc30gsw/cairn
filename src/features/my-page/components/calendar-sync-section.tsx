@@ -32,7 +32,7 @@ import { notifyError } from "~/lib/notify";
 import { runMutation } from "~/lib/run-mutation";
 import { NUMERAL_FONT } from "~/lib/theme";
 
-export const CALENDAR_SYNC_TITLE = "カレンダー同期";
+const CALENDAR_SYNC_TITLE = "カレンダー同期";
 const CALENDAR_SYNC_DESCRIPTION =
   "本番日・チェックポイントの期限・予定を Google カレンダーに出し、Google 側で動かした変更も戻します。Google カレンダーの予定は、予定タブに外部予定として薄く並びます。";
 export const CALENDAR_SYNC_CONNECT_LABEL = "Google カレンダーと連携";
@@ -41,8 +41,8 @@ export const CALENDAR_SYNC_NOW_LABEL = "今すぐ同期";
 export const CALENDAR_SYNC_DISCONNECT_LABEL = "連携を解除";
 export const CALENDAR_SYNC_CALENDARS_LABEL = "表示するカレンダー";
 export const CALENDAR_SYNC_CONNECTED_MESSAGE = "Google カレンダーと連携しました";
-export const CALENDAR_SYNC_SYNCED_MESSAGE = "同期しました";
-export const CALENDAR_SYNC_DISCONNECTED_MESSAGE = "カレンダー同期を解除しました";
+const CALENDAR_SYNC_SYNCED_MESSAGE = "同期しました";
+const CALENDAR_SYNC_DISCONNECTED_MESSAGE = "カレンダー同期を解除しました";
 export const CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE =
   "Google の権限が切れています。もう一度接続してください。";
 const CALENDAR_SYNC_CALENDARS_HINT =
@@ -74,7 +74,8 @@ export function CalendarSyncSection() {
   const disconnect = useDisconnectCalendarSync();
   const syncNow = useSyncCalendarNow();
   const setVisible = useSetVisibleCalendars();
-  const [busy, setBusy] = useState(false);
+  //? Google の同意画面から戻ってきた直後は、接続を仕上げる間ずっと busy（初期値で決めて effect では触らない）
+  const [busy, setBusy] = useState(readCalendarSyncConnectPending);
 
   //? finally 節は React Compiler が lower できないので、try/catch で投げる経路を閉じて末尾で必ず戻す
   //? （web-push-section と同じ形）。runMutation 自体は失敗をトーストにして投げない
@@ -88,14 +89,15 @@ export function CalendarSyncSection() {
     setBusy(false);
   }
 
-  //? Google の同意画面から戻ってきた直後: 印を消してから接続を仕上げる（二重実行を避ける）
+  //? 戻ってきた1回だけ: 印を消してから connect アクションで接続を仕上げる（二重実行を避ける）。
+  //? busy は初期値で立てているので、ここでは非同期に下ろすだけ
   useEffect(() => {
     if (!readCalendarSyncConnectPending()) {
       return;
     }
     clearCalendarSyncConnectPending();
-    void withBusy(() =>
-      runMutation(() => connect({}), { successMessage: CALENDAR_SYNC_CONNECTED_MESSAGE }),
+    void runMutation(() => connect({}), { successMessage: CALENDAR_SYNC_CONNECTED_MESSAGE }).then(
+      () => setBusy(false),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: 戻ってきた1回だけ
   }, []);

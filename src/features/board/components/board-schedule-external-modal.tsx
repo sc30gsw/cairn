@@ -6,8 +6,8 @@ import { formatScheduleTimeLabel } from "~/features/board/lib/schedule-instant";
 import type { BoardExternalEvent } from "~/features/board/types/board";
 import { NUMERAL_FONT } from "~/lib/theme";
 
-export const EXTERNAL_EVENT_MODAL_TITLE = "外部予定";
-export const EXTERNAL_EVENT_REMOVE_LABEL = "Google カレンダーから削除";
+const EXTERNAL_EVENT_MODAL_TITLE = "外部予定";
+const EXTERNAL_EVENT_REMOVE_LABEL = "Google カレンダーから削除";
 const EXTERNAL_EVENT_REMOVE_CONFIRM_TITLE = "この予定を Google カレンダーから削除しますか？";
 const EXTERNAL_EVENT_REMOVE_CONFIRM =
   "Google カレンダー側の予定も消えます。記録や学習量には影響しません。";

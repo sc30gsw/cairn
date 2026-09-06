@@ -12,7 +12,7 @@ import {
 
 //? 連携は「Google の同意画面 → /my-page に戻る → connect アクション」の2段。戻ってきたことを
 //? sessionStorage の印で知る（URL を汚さない。passkey の OAuth 待ちと同じ形）
-export const CALENDAR_SYNC_CONNECT_PENDING_KEY = "cairn:calendar-sync:connect-pending";
+const CALENDAR_SYNC_CONNECT_PENDING_KEY = "cairn:calendar-sync:connect-pending";
 
 export function readCalendarSyncConnectPending(): boolean {
   if (typeof window === "undefined") {
