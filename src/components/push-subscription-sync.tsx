@@ -1,14 +1,9 @@
 import { useEffect, useSyncExternalStore } from "react";
+import { WEB_PUSH_SUBSCRIPTION_CHANGED } from "~domain/webPush";
 
 import { useSubscribePush } from "~/hooks/use-notification-mutations";
-import {
-  currentPushSubscription,
-  isWebPushSupported,
-  WEB_PUSH_SUBSCRIPTION_CHANGED,
-} from "~/lib/web-push";
+import { currentPushSubscription, isWebPushSupported } from "~/lib/web-push";
 
-//? 起動時と SW からの購読変更の合図で、この端末の購読をサーバーへ upsert する。
-//? iOS は pushsubscriptionchange を出さないので、失効の検知は配信時の 404 / 410 に任せる
 function PushSubscriptionSyncGranted() {
   const { mutateAsync: subscribePush } = useSubscribePush();
 
@@ -43,8 +38,7 @@ function PushSubscriptionSyncGranted() {
   return null;
 }
 
-function subscribePermission() {
-  //? 通知権限の変化を購読する標準 API は無い。次回のマウントで読み直す
+function noPermissionChangeEvents() {
   return () => undefined;
 }
 
@@ -56,11 +50,9 @@ function getPermissionServerSnapshot(): boolean {
   return false;
 }
 
-//? 権限が granted の端末だけが同期を持つ。未対応・未許可なら Convex への依存も生まない。
-//? SSR では false、クライアントでは同期的に読むのでハイドレーションの差分にならない
 export function PushSubscriptionSync() {
   const granted = useSyncExternalStore(
-    subscribePermission,
+    noPermissionChangeEvents,
     getPermissionGranted,
     getPermissionServerSnapshot,
   );

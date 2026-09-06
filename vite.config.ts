@@ -17,6 +17,7 @@ const FEATURE_NAMES = [
   "catalog",
   "goals",
   "history",
+  "legal",
   "methods",
   "my-page",
   "onboarding",
@@ -170,11 +171,11 @@ export default defineConfig({
         },
       },
       // @ts-expect-error vite-plus lint override typing is narrower than oxlint's no-restricted-imports patterns
-      ...featureBoundaryLintOverrides,
-      // @ts-expect-error vite-plus lint override typing is narrower than oxlint's no-restricted-imports patterns
-      featureLibBoundaryLintOverride,
-      // @ts-expect-error vite-plus lint override typing is narrower than oxlint's no-restricted-imports patterns
-      sharedBoundaryLintOverride,
+      ...[
+        ...featureBoundaryLintOverrides,
+        featureLibBoundaryLintOverride,
+        sharedBoundaryLintOverride,
+      ],
     ],
     plugins: ["react", "react-perf", "import", "jsx-a11y", "promise"],
     rules: {

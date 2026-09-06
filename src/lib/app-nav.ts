@@ -33,7 +33,6 @@ export type NavEntry = {
   to: NavRoute;
 };
 
-//? 小口レール・下小口タブ・コマンドパレットが読む唯一のナビ定義
 export const NAV: NavEntry[] = [
   {
     Icon: IconCalendarEvent,
@@ -91,8 +90,12 @@ export const NAV: NavEntry[] = [
   },
 ];
 
-//? 下小口タブに出す4本。ほかは「その他」メニューへ回す
-const MOBILE_PRIMARY = ["/", "/board", "/history", "/goals"] as const satisfies readonly NavRoute[];
+const MOBILE_PRIMARY = ["/", "/board", "/history", "/goals"] as const satisfies readonly [
+  NavRoute,
+  NavRoute,
+  NavRoute,
+  NavRoute,
+];
 
 export function isMobilePrimary(to: NavRoute): boolean {
   return MOBILE_PRIMARY.some((route) => route === to);

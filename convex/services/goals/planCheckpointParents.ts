@@ -38,7 +38,6 @@ export function planCheckpointParents(goals: readonly Doc<"goals">[]): Checkpoin
   }
   const assignAll = orphans.map((goal) => goal._id);
 
-  //? 終了した本番目標は新しい子を受け取らない。進行中の本番目標だけが受け皿になる
   const exam = goals.filter((goal) => isActiveExamGoal(goal)).sort(byOldest)[0];
   if (exam !== undefined) {
     return { assignGoalIds: assignAll, parentGoalId: exam._id, plan: "exam", promoteGoalId: null };

@@ -14,7 +14,6 @@ type UseGoalDialogsOptions = {
   onSetExamResult: (input: SetExamResultInput, successMessage: string) => Promise<void>;
 };
 
-//? 目標ボードの2つのモーダル（達成の振り返り / 本番の結果）の開閉と送信をまとめる
 export function useGoalDialogs({ goals, onSetAchieved, onSetExamResult }: UseGoalDialogsOptions) {
   const [pendingAchievement, setPendingAchievement] = useState<SetAchievedInput | null>(null);
   const [resultGoalId, setResultGoalId] = useState<GoalId | null>(null);
@@ -34,7 +33,6 @@ export function useGoalDialogs({ goals, onSetAchieved, onSetExamResult }: UseGoa
             candidate._id === resultGoalId && candidate.type === "exam",
         ) ?? null);
 
-  //? 達成にするときだけ振り返りを聞く。達成の取り消しは即反映（振り返りは残る）
   function requestSetAchieved(input: SetAchievedInput) {
     if (input.achievedAt === undefined) {
       onSetAchieved(input);
@@ -50,7 +48,6 @@ export function useGoalDialogs({ goals, onSetAchieved, onSetExamResult }: UseGoa
     return onSetAchieved({ ...pendingAchievement, reflection });
   }
 
-  //? 結果は1本番につき1値。最初の記録と訂正でトーストの文言だけを分ける
   function submitExamResult(result: ExamResultInput) {
     if (resultGoal === null) {
       return;

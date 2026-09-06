@@ -22,11 +22,12 @@ Preconditions:
 - At least one weekday has no preset yet.
 - `control-cairn doctor` is OK.
 
-- **Open presets.** Run `playwright-cli -s="$SESSION" click "getByRole('link', { name: 'プリセット' })"`. Heading `プリセット` is visible. A new account also shows `プリセットはまだありません`.
-- **Name and weekday.** Fill `プリセット名` with `検証プリセット`. On `曜日`, choose a weekday that is still free (options are only unused weekdays).
-- **Create.** Run `playwright-cli -s="$SESSION" click "getByRole('button', { name: 'プリセットを追加' })"`. An accordion row titled `検証プリセット` appears. The empty-state title is gone.
+- **Open presets.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('link', { name: 'プリセット' })"`. Heading `プリセット` is visible. A new account also shows `プリセットはまだありません`.
+- **Name and weekday.** Run `rtk proxy playwright-cli -s="$SESSION" fill "getByLabel('プリセット名', { exact: true })" "検証プリセット"`, then `rtk proxy playwright-cli -s="$SESSION" click "getByRole('combobox', { name: '曜日', exact: true })"`. Click a free weekday option from the new snapshot (options contain only unused weekdays).
+- **Create.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('button', { name: 'プリセットを追加' })"`. An accordion row titled `検証プリセット` appears. The empty-state title is gone.
 - **Confirm persistence.** Reload `/presets`. `検証プリセット` is still listed.
-- **Proof.** Run `playwright-cli -s="$SESSION" --raw snapshot > "$ART/presets.aria.yml"` and `playwright-cli -s="$SESSION" screenshot --filename="$ART/presets.png"`. Both show heading `プリセット` and `検証プリセット`.
+- **Onboarding entry.** Return to a fresh account’s home setup and click its `プリセットを登録する` link from the snapshot; require `/presets`, then use the same create/persistence steps. Mark this entry skipped if setup was already dismissed.
+- **Proof.** Run `rtk proxy playwright-cli -s="$SESSION" --raw snapshot > "$ART/presets.aria.yml"` and `rtk proxy playwright-cli -s="$SESSION" screenshot --filename="$ART/presets.png"`. Both show heading `プリセット` and `検証プリセット`.
 
 ## Gotchas
 

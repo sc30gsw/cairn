@@ -1,11 +1,17 @@
 import type { ScheduleEventData } from "@mantine/schedule";
 
 import { dateToScheduleInstant } from "~/features/board/lib/schedule-instant";
-import type { BoardRow, BoardScheduleBlock } from "~/features/board/types/board";
+import type {
+  BoardExternalEvent,
+  BoardRow,
+  BoardScheduleBlock,
+} from "~/features/board/types/board";
 import { RECORD_STATUS_UI } from "~/lib/record-status-ui";
 
 export const BOARD_ALL_DAY_VISIBLE_LIMIT = 2;
 export const BOARD_ALL_DAY_MORE_PREFIX = "board-more:";
+const BOARD_EXTERNAL_EVENT_PREFIX = "external:";
+const BOARD_EXTERNAL_EVENT_COLOR = "gray";
 const ALL_DAY_START_SUFFIX = " 00:00:00";
 const ALL_DAY_END_SUFFIX = " 23:59:59";
 
@@ -136,4 +142,31 @@ export function toBoardScheduleEvents(
 
 export function boardScheduleBlockIds(blocks: readonly BoardScheduleBlock[]): ReadonlySet<string> {
   return new Set(blocks.map((block) => block._id));
+}
+
+export function isBoardExternalEvent(eventId: string | number): boolean {
+  return String(eventId).startsWith(BOARD_EXTERNAL_EVENT_PREFIX);
+}
+
+export function boardExternalEventId(eventId: string | number): BoardExternalEvent["_id"] {
+  return String(eventId).slice(BOARD_EXTERNAL_EVENT_PREFIX.length) as BoardExternalEvent["_id"];
+}
+
+export function toExternalScheduleEvents(
+  externals: readonly BoardExternalEvent[],
+): ScheduleEventData[] {
+  return externals.map((external) => ({
+    color: BOARD_EXTERNAL_EVENT_COLOR,
+    end: external.endAt,
+    id: `${BOARD_EXTERNAL_EVENT_PREFIX}${external._id}`,
+    start: external.startAt,
+    title: external.title,
+    variant: "light",
+  }));
+}
+
+export function boardExternalEventIds(
+  externals: readonly BoardExternalEvent[],
+): ReadonlySet<string> {
+  return new Set(externals.map((external) => `${BOARD_EXTERNAL_EVENT_PREFIX}${external._id}`));
 }

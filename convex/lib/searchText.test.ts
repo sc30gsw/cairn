@@ -34,6 +34,5 @@ test("一致位置は元の文字列のインデックスで返し、文字数�
   expect(searchMatchRange("今日は金フレの音読を30分", "音読")).toEqual({ end: 9, start: 7 });
   expect(searchMatchRange("TOEIC Part5", "part5")).toEqual({ end: 11, start: 6 });
   expect(searchMatchRange("音読", "読書")).toBeNull();
-  //? "㍻"(平成の合字)は NFKC で2文字に展開され、位置がずれるので保証しない
   expect(searchMatchRange("㍻の音読", "音読")).toBeNull();
 });

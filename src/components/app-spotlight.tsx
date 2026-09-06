@@ -22,7 +22,6 @@ import {
 } from "~/lib/spotlight-copy";
 import { NUMERAL_FONT } from "~/lib/theme";
 
-//? 打鍵ごとに Convex へ問い合わせない。入力欄は即時、購読だけ遅らせる
 const SPOTLIGHT_DEBOUNCE_MS = 250;
 
 function matchingNav(query: string): NavEntry[] {
@@ -38,7 +37,6 @@ type SpotlightRecordActionsProps = {
   query: string;
 };
 
-//? 期間は絞らない。パレットは「どこにあるか分からないもの」を探す場所なので全期間を見る
 function SpotlightRecordActions({ navCount, query }: SpotlightRecordActionsProps) {
   const navigate = useNavigate();
   const { data } = useHistorySearch(query, undefined);
@@ -85,7 +83,6 @@ function SpotlightRecordActions({ navCount, query }: SpotlightRecordActionsProps
   );
 }
 
-//? Cmd/Ctrl + K で開く横断検索。記録・メモの検索と画面移動を1つの窓にまとめる
 export function AppSpotlight() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");

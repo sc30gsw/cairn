@@ -7,3 +7,6 @@ export type BoardRow = BoardDayPage["rows"][number];
 export type BoardScheduleBlock = FunctionReturnType<
   typeof api.queries.boardSchedule.listForWeek.listForWeek
 >[number];
+export type BoardExternalEvent = FunctionReturnType<
+  typeof api.queries.calendarSync.listExternal.listExternal
+>[number];

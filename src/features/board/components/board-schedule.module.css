@@ -122,3 +122,10 @@
   margin-inline-start: -2px;
   width: 8px;
 }
+
+.boardSchedule :global(.mantine-ScheduleEvent-root:has([data-board-external="true"])) {
+  --event-bg: var(--cairn-paper-2);
+  --event-color: var(--cairn-muted-2);
+  --event-hover: var(--cairn-paper-2);
+  border-inline-start: 2px dashed var(--cairn-muted-2);
+}

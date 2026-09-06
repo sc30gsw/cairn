@@ -10,6 +10,9 @@ import {
   type SerwistGlobalConfig,
 } from "serwist";
 
+import type { WebPushMessage } from "../convex/lib/validators";
+import type { WEB_PUSH_SUBSCRIPTION_CHANGED } from "../convex/lib/webPush";
+
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
     __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
@@ -59,10 +62,8 @@ const serwist = new Serwist({
   },
 });
 
-//? Web Push。文言はサーバー（convex/lib/webPush.ts の webPushMessage）で組んで送る。SW は形を確かめて出すだけ
-type WebPushMessage = Record<"body" | "tag" | "title" | "url", string>;
-
-const PUSH_SUBSCRIPTION_CHANGED = "PUSH_SUBSCRIPTION_CHANGED";
+const PUSH_SUBSCRIPTION_CHANGED =
+  "PUSH_SUBSCRIPTION_CHANGED" satisfies typeof WEB_PUSH_SUBSCRIPTION_CHANGED;
 const NOTIFICATION_ICON = "/icons/icon-192.png";
 
 function isWebPushMessage(value: unknown): value is WebPushMessage {
@@ -125,7 +126,6 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
-//? 購読が push service 側で入れ替わったら同じ鍵で再購読し、開いているページに知らせる（サーバー側の upsert はページが行う）
 self.addEventListener("pushsubscriptionchange", (event) => {
   const changeEvent = event as ExtendableEvent & {
     oldSubscription?: PushSubscription | null;

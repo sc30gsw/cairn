@@ -31,7 +31,6 @@ vi.mock("~/components/running-timer-indicator", () => ({
 }));
 vi.mock("~/components/offline-banner", () => ({ OfflineBanner: () => null }));
 
-//? パレット本体は app-spotlight.test.tsx が見る。ここではヘッダーの入口だけ確かめる
 vi.mock("~/hooks/history-search-queries", () => ({
   useHistorySearch: () => ({ data: { hits: [], truncated: false } }),
 }));

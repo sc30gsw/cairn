@@ -10,19 +10,28 @@ import {
   allDayEventsForDay,
   boardAllDayMoreDate,
   BOARD_ALL_DAY_VISIBLE_LIMIT,
+  boardExternalEventId,
+  boardExternalEventIds,
   boardScheduleBlockIds,
   isBoardAllDayMoreEvent,
+  isBoardExternalEvent,
   toBoardScheduleEvents,
+  toExternalScheduleEvents,
   withAllDayOverflow,
 } from "~/features/board/lib/board-schedule-events";
 import { boardMoreLabel } from "~/features/board/lib/board-schedule-layout";
 import type { BoardScheduleEventInput } from "~/features/board/schemas/board-schedule-event-schema";
-import type { BoardRow, BoardScheduleBlock } from "~/features/board/types/board";
+import type {
+  BoardExternalEvent,
+  BoardRow,
+  BoardScheduleBlock,
+} from "~/features/board/types/board";
 import { SCHEDULE_LABELS_JA } from "~/lib/schedule-labels";
 
 type UseBoardScheduleUiArgs = {
   anchorDateJst: string;
   blocks: readonly BoardScheduleBlock[];
+  externals: readonly BoardExternalEvent[];
   rows: readonly BoardRow[];
   scheduleRootRef: RefObject<HTMLDivElement | null>;
   todayJst: string;
@@ -31,6 +40,7 @@ type UseBoardScheduleUiArgs = {
 export function useBoardScheduleUi({
   anchorDateJst,
   blocks,
+  externals,
   rows,
   scheduleRootRef,
   todayJst,
@@ -39,9 +49,15 @@ export function useBoardScheduleUi({
   const [formValues, setFormValues] = useState<BoardScheduleEventInput | null>(null);
   const [expandedAllDayAnchor, setExpandedAllDayAnchor] =
     useState<BoardScheduleAllDayExpandAnchor | null>(null);
+  const [openedExternal, setOpenedExternal] = useState<BoardExternalEvent | null>(null);
 
   const editableBlockIds = boardScheduleBlockIds(blocks);
-  const baseEvents = toBoardScheduleEvents(todayJst, rows, blocks);
+  const externalEventIds = boardExternalEventIds(externals);
+  const clickableEventIds = new Set([...editableBlockIds, ...externalEventIds]);
+  const baseEvents = [
+    ...toBoardScheduleEvents(todayJst, rows, blocks),
+    ...toExternalScheduleEvents(externals),
+  ];
   const moreLabel = SCHEDULE_LABELS_JA.moreLabel ?? boardMoreLabel;
   const { events: scheduleEvents } = withAllDayOverflow(
     baseEvents,
@@ -126,29 +142,47 @@ export function useBoardScheduleUi({
     openEdit(block);
   }
 
+  function openFromEvent(event: ScheduleEventData) {
+    if (isBoardExternalEvent(event.id)) {
+      const externalId = boardExternalEventId(event.id);
+      setOpenedExternal(externals.find((entry) => entry._id === externalId) ?? null);
+      return;
+    }
+    openEditFromEvent(event);
+  }
+
   function handleEventClick(event: ScheduleEventData, clickEvent: MouseEvent<HTMLButtonElement>) {
     if (isBoardAllDayMoreEvent(event.id)) {
       openAllDayExpand(boardAllDayMoreDate(event.id), clickEvent.currentTarget);
       return;
     }
     collapseAllDayExpand();
-    openEditFromEvent(event);
+    openFromEvent(event);
+  }
+
+  function closeExternal() {
+    setOpenedExternal(null);
   }
 
   return {
     baseEvents,
+    clickableEventIds,
+    closeExternal,
     collapseAllDayExpand,
     dayAllDayEvents,
     editableBlockIds,
     expandedAllDayAnchor,
     expandedAllDayEvents,
+    externalEventIds,
     formOpened,
     formValues,
     handleEventClick,
     moreLabel,
     openAllDayExpand,
     openCreate,
+    openedExternal,
     openEditFromEvent,
+    openFromEvent,
     scheduleEvents,
     setFormOpened,
   };

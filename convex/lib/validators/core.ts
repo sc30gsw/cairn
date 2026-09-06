@@ -6,11 +6,6 @@ import { CONDITIONS } from "../conditions";
 import { DAY_VIEW_KINDS } from "../dayView";
 import { STATUSES } from "../domain";
 import {
-  calendarFeedEventValidator,
-  calendarFeedStatusValidator,
-  calendarFeedValidator,
-} from "./calendarFeed";
-import {
   notificationDtoValidator,
   notificationKindValidator,
   notificationPageValidator,
@@ -67,7 +62,6 @@ export const rowTimerDtoValidator = v.object({
 
 export type RowTimerDto = Infer<typeof rowTimerDtoValidator>;
 
-//? 復習の印。source = 復習に回した元の記録（次の期日と段階）、review = 期日が来て並んだ復習の記録
 export const rowReviewDtoValidator = v.union(
   v.object({ dueJst: v.string(), kind: v.literal("source"), stage: v.number() }),
   v.object({ kind: v.literal("review"), stage: v.number() }),
@@ -194,9 +188,3 @@ export type WebPushMessage = Infer<typeof webPushMessageValidator>;
 export type WebPushDelivery = Infer<typeof webPushDeliveryValidator>;
 
 export type WebPushConfigDto = Infer<typeof webPushConfigValidator>;
-
-export type CalendarFeedStatusDto = Infer<typeof calendarFeedStatusValidator>;
-
-export type CalendarFeedEventDto = Infer<typeof calendarFeedEventValidator>;
-
-export type CalendarFeedDto = Infer<typeof calendarFeedValidator>;

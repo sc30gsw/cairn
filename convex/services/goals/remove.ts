@@ -1,5 +1,6 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
+import { scheduleGoalSync } from "../calendarSync/scheduleSourceSync";
 import { listChildCheckpoints } from "./listChildCheckpoints";
 import { requireOwnedGoal } from "./requireOwnedGoal";
 
@@ -12,6 +13,7 @@ export async function remove(
   const children = await listChildCheckpoints(ctx, ownerId, goal._id);
   await Promise.all(children.map((child) => ctx.db.delete("goals", child._id)));
   await ctx.db.delete("goals", goal._id);
+  await scheduleGoalSync(ctx, ownerId, [goal._id, ...children.map((child) => child._id)]);
 
   return children.length;
 }

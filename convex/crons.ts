@@ -39,4 +39,11 @@ crons.cron(
   {},
 );
 
+crons.cron(
+  "sync google calendars",
+  "20 * * * *",
+  internal.actions.calendarSync.syncAll.syncAll,
+  {},
+);
+
 export default crons;

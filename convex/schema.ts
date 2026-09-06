@@ -3,9 +3,12 @@ import { v } from "convex/values";
 
 import { boardScheduleColorValidator } from "./lib/boardScheduleColors";
 import {
+  calendarSyncSourceKindValidator,
+  calendarSyncStatusValidator,
   categoryValidator,
   conditionValidator,
   goalDocumentValidator,
+  googleCalendarSummaryValidator,
   notificationPayloadValidator,
   notificationTriggerPrefsValidator,
   presetLineValidator,
@@ -131,8 +134,6 @@ export default defineSchema({
   })
     .index("by_owner", ["ownerId"])
     .index("by_enabled_and_eveningHourJst", ["enabled", "eveningHourJst"]),
-  //? 復習の印。元の記録とは別の表に持ち、期日は「今日を開いたときに並べる条件」としてだけ使う
-  //? （未来の暦日に日を作らない、という days の規則に触れない）
   reviewFlags: defineTable({
     content: v.string(),
     dueJst: v.string(),
@@ -145,7 +146,6 @@ export default defineSchema({
     .index("by_owner_and_dueJst", ["ownerId", "dueJst"])
     .index("by_sourceRow", ["sourceRowId"])
     .index("by_reviewRow", ["reviewRowId"]),
-  //? 1端末 = 1行。所有者は複数端末を持てる。by_owner は by_owner_and_endpoint の接頭辞なので張らない（CVX-12）
   pushSubscriptions: defineTable({
     endpoint: v.string(),
     expirationTime: v.optional(v.number()),
@@ -153,13 +153,50 @@ export default defineSchema({
     ownerId: v.string(),
   }).index("by_owner_and_endpoint", ["ownerId", "endpoint"]),
 
-  //? カレンダー購読の capability URL。所有者につき1本。再発行で古いトークンは 404 になる
-  calendarFeedTokens: defineTable({
+  calendarConnections: defineTable({
+    calendars: v.array(googleCalendarSummaryValidator),
+    googleAccountId: v.string(),
+    googleEmail: v.optional(v.string()),
+    lastError: v.optional(v.string()),
+    lastSyncedAt: v.optional(v.number()),
     ownerId: v.string(),
-    token: v.string(),
+    primaryCalendarId: v.string(),
+    status: calendarSyncStatusValidator,
+    visibleCalendarIds: v.array(v.string()),
+  }).index("by_owner", ["ownerId"]),
+
+  calendarSyncLinks: defineTable({
+    appChangedAt: v.optional(v.number()),
+    calendarId: v.string(),
+    googleEventId: v.string(),
+    googleUpdated: v.optional(v.string()),
+    ownerId: v.string(),
+    payloadKey: v.optional(v.string()),
+    sourceId: v.string(),
+    sourceKind: calendarSyncSourceKindValidator,
   })
-    .index("by_owner", ["ownerId"])
-    .index("by_token", ["token"]),
+    .index("by_source", ["sourceKind", "sourceId"])
+    .index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"]),
+
+  externalCalendarEvents: defineTable({
+    allDay: v.boolean(),
+    calendarId: v.string(),
+    endAt: v.string(),
+    googleEventId: v.string(),
+    googleUpdated: v.string(),
+    ownerId: v.string(),
+    startAt: v.string(),
+    title: v.string(),
+  })
+    .index("by_owner_and_startAt", ["ownerId", "startAt"])
+    .index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"]),
+
+  calendarSyncCursors: defineTable({
+    calendarId: v.string(),
+    fullSyncedOnJst: v.string(),
+    ownerId: v.string(),
+    syncToken: v.string(),
+  }).index("by_owner_and_calendar", ["ownerId", "calendarId"]),
 
   avatarUploadClaims: defineTable({
     ownerId: v.string(),

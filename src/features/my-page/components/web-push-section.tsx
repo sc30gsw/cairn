@@ -2,6 +2,7 @@ import { Alert, Badge, Button, Card, Group, Stack, Text, Title } from "@mantine/
 import { Result } from "better-result";
 import { useEffect, useState } from "react";
 
+import { useBusy } from "~/features/my-page/hooks/use-busy";
 import { useInstallPrompt } from "~/hooks/use-install-prompt";
 import { usePushSubscriptions, useWebPushConfig } from "~/hooks/use-notification-inbox";
 import { useSubscribePush, useUnsubscribePush } from "~/hooks/use-notification-mutations";
@@ -43,7 +44,7 @@ export function WebPushSection() {
   const { standalone } = useInstallPrompt();
   const [current, setCurrent] = useState<SubscribePushInput | null>(null);
   const [permission, setPermission] = useState(notificationPermission);
-  const [busy, setBusy] = useState(false);
+  const { busy, withBusy } = useBusy();
 
   useEffect(() => {
     let cancelled = false;
@@ -61,42 +62,37 @@ export function WebPushSection() {
   const subscribedHere =
     current !== null && subscriptions.some((entry) => entry.endpoint === current.endpoint);
 
-  //? finally 節は React Compiler が lower できず、コンポーネントごと自動メモ化から外れる。
-  //? try/catch で投げる経路を閉じ、解除は早期 return を作らず必ず末尾で通す。
-  //? ブラウザ API（requestPermission / unsubscribe）は投げ得るので握り潰さずトーストで知らせる
-  async function enable() {
-    setBusy(true);
-    try {
-      const result = await subscribeWebPush(config.publicKey);
-      setPermission(notificationPermission());
-      if (Result.isError(result)) {
-        notifyError(result.error);
-      } else {
+  function enable() {
+    return withBusy(
+      async () => {
+        const result = await subscribeWebPush(config.publicKey);
+        setPermission(notificationPermission());
+        if (Result.isError(result)) {
+          notifyError(result.error);
+          return;
+        }
         await runMutation(() => subscribePush.mutateAsync(result.value), {
           successMessage: WEB_PUSH_SUBSCRIBED_MESSAGE,
         });
         setCurrent(result.value);
-      }
-    } catch (error) {
-      notifyError(error, WEB_PUSH_ENABLE_FAILED_MESSAGE);
-    }
-    setBusy(false);
+      },
+      (error) => notifyError(error, WEB_PUSH_ENABLE_FAILED_MESSAGE),
+    );
   }
 
-  async function disable() {
-    setBusy(true);
-    try {
-      const endpoint = await unsubscribeWebPush();
-      if (endpoint !== null) {
-        await runMutation(() => unsubscribePush.mutateAsync({ endpoint }), {
-          successMessage: WEB_PUSH_UNSUBSCRIBED_MESSAGE,
-        });
-      }
-      setCurrent(null);
-    } catch (error) {
-      notifyError(error, WEB_PUSH_DISABLE_FAILED_MESSAGE);
-    }
-    setBusy(false);
+  function disable() {
+    return withBusy(
+      async () => {
+        const endpoint = await unsubscribeWebPush();
+        if (endpoint !== null) {
+          await runMutation(() => unsubscribePush.mutateAsync({ endpoint }), {
+            successMessage: WEB_PUSH_UNSUBSCRIBED_MESSAGE,
+          });
+        }
+        setCurrent(null);
+      },
+      (error) => notifyError(error, WEB_PUSH_DISABLE_FAILED_MESSAGE),
+    );
   }
 
   function renderControls() {

@@ -14,7 +14,6 @@ function nextExamDescription(latest: ExamGoal): string {
 }
 
 type ExamEmptyCardProps = {
-  //? 直近に終了した本番。あれば「次の本番」の導線として前回の結果を添える
   latest: ExamGoal | undefined;
   onCreate: () => void;
 };

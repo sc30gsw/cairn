@@ -1,271 +1,265 @@
-#!/usr/bin/env bash
-# Launch / doctor / cleanup for live verification of 学習ログ (cairn).
-# Invocation is documented in .cursor/skills/verify-cairn/SKILL.md.
-set -euo pipefail
+#!/usr/bin/env python3
+"""Cairn の隔離された実機検証を起動・診断・終了する。"""
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import secrets
+import shlex
+import shutil
+import signal
+import socket
+import subprocess
+import sys
+import time
+import urllib.request
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
-RUN_ID="${CAIRN_VERIFY_RUN_ID:-default}"
-STATE_DIR="${CAIRN_VERIFY_DIR:-/tmp/cairn-verify-${RUN_ID}}"
-STATE_FILE="${STATE_DIR}/run.env"
-LOG_DIR="${STATE_DIR}/logs"
-ARTIFACT_DIR="${STATE_DIR}/artifacts"
-WEB_URL="${CAIRN_VERIFY_WEB_URL:-http://localhost:3000}"
-CONVEX_HTTP="${CAIRN_VERIFY_CONVEX_HTTP:-http://127.0.0.1:3210}"
-WEB_PORT="${CAIRN_VERIFY_WEB_PORT:-3000}"
-TMUX_CONF="/exec-daemon/tmux.portal.conf"
-CONVEX_SESSION="cairn-convex"
-WEB_SESSION="cairn-web"
+ROOT = Path(__file__).resolve().parents[4]
+RUN = os.environ.get("CAIRN_VERIFY_RUN_ID", "")
+if not re.fullmatch(r"[a-zA-Z0-9_]{1,32}", RUN):
+    sys.exit("Set CAIRN_VERIFY_RUN_ID to 1–32 ASCII letters, digits or underscores")
+STATE = Path("/tmp") / f"cairn-verify-{RUN}"
+WORK = STATE / "app"
+SOCKET = str(STATE / "tmux.sock")
+ART = STATE / "artifacts"
+URL = "http://localhost:3000"
+ENV = {k: v for k, v in os.environ.items() if not k.startswith(
+    ("CONVEX_", "VITE_", "BETTER_AUTH_", "GOOGLE_", "NOTION_", "AUTH_")) and k != "SITE_URL"}
+ENV["CONVEX_AGENT_MODE"] = "anonymous"
 
-ensure_node() {
-  if [[ -s "${HOME}/.nvm/nvm.sh" ]]; then
-    # shellcheck disable=SC1091
-    . "${HOME}/.nvm/nvm.sh"
-    nvm use 24.17.0 >/dev/null 2>&1 || true
-  fi
-  export PATH="${ROOT}/node_modules/.bin:${PATH}"
-  local major
-  major="$(node -p "process.versions.node.split('.')[0]")"
-  if ((major < 24)); then
-    echo "control-cairn: need Node >= 24.17.0, got $(node -v)" >&2
-    exit 1
-  fi
-}
 
-tmux_bin() {
-  if [[ -f "${TMUX_CONF}" ]]; then
-    tmux -f "${TMUX_CONF}" "$@"
-  else
-    tmux "$@"
-  fi
-}
+def run(args, **kwargs):
+    return subprocess.run(args, check=True, text=True, capture_output=True,
+                          env=ENV, **kwargs).stdout.strip()
 
-ensure_tmux_session() {
-  local name="$1"
-  if tmux_bin has-session -t "=${name}" 2>/dev/null; then
-    return 0
-  fi
-  tmux_bin new-session -d -s "${name}" -c "${ROOT}" -- "${SHELL:-bash}" -l
-}
 
-http_code() {
-  local url="$1"
-  curl -sS -o /dev/null -w '%{http_code}' --max-time 3 "${url}" 2>/dev/null || true
-}
+def tmux(*args):
+    return run(["tmux", "-S", SOCKET, "-f", "/dev/null", *args])
 
-wait_http() {
-  local url="$1"
-  local label="$2"
-  local attempts="${3:-60}"
-  local i
-  for ((i = 1; i <= attempts; i++)); do
-    local code
-    code="$(http_code "${url}" 2>/dev/null || true)"
-    if [[ "${code}" =~ ^[23] ]]; then
-      echo "control-cairn: ${label} ready (${url} → ${code})"
-      return 0
-    fi
-    sleep 1
-  done
-  echo "control-cairn: ${label} did not become ready at ${url}" >&2
-  return 1
-}
 
-write_state() {
-  mkdir -p "${STATE_DIR}" "${LOG_DIR}" "${ARTIFACT_DIR}"
-  cat >"${STATE_FILE}" <<EOF
-CAIRN_VERIFY_RUN_ID=${RUN_ID}
-CAIRN_VERIFY_DIR=${STATE_DIR}
-CAIRN_VERIFY_WEB_URL=${WEB_URL}
-CAIRN_VERIFY_CONVEX_HTTP=${CONVEX_HTTP}
-CAIRN_STARTED_CONVEX=${CAIRN_STARTED_CONVEX:-0}
-CAIRN_STARTED_WEB=${CAIRN_STARTED_WEB:-0}
-CAIRN_CONVEX_SESSION=${CONVEX_SESSION}
-CAIRN_WEB_SESSION=${WEB_SESSION}
-EOF
-}
+def alive(name):
+    try:
+        tmux("has-session", "-t", "=" + name)
+        return True
+    except subprocess.CalledProcessError:
+        return False
 
-load_state() {
-  if [[ -f "${STATE_FILE}" ]]; then
-    # shellcheck disable=SC1090
-    . "${STATE_FILE}"
-  fi
-}
 
-ensure_site_url() {
-  local env_file="${ROOT}/.env.local"
-  if [[ ! -f "${env_file}" ]]; then
-    echo "control-cairn: missing ${env_file} after Convex launch" >&2
-    return 1
-  fi
-  if ! grep -q '^VITE_SITE_URL=' "${env_file}"; then
-    printf '\nVITE_SITE_URL=http://localhost:3000\n' >>"${env_file}"
-  fi
-  if ! grep -q '^SITE_URL=' "${env_file}"; then
-    printf 'SITE_URL=http://localhost:3000\n' >>"${env_file}"
-  fi
-}
+def listeners(port):
+    result = subprocess.run(["lsof", "-nP", "-t", f"-iTCP:{port}", "-sTCP:LISTEN"],
+                            text=True, capture_output=True)
+    if result.returncode not in (0, 1):
+        raise RuntimeError(result.stderr)
+    return {int(pid) for pid in result.stdout.split()}
 
-ensure_auth_env() {
-  local secret
-  if [[ -f "${STATE_DIR}/better-auth.secret" ]]; then
-    secret="$(cat "${STATE_DIR}/better-auth.secret")"
-  else
-    secret="$(openssl rand -hex 32)"
-    umask 077
-    printf '%s\n' "${secret}" >"${STATE_DIR}/better-auth.secret"
-  fi
-  (
-    cd "${ROOT}"
-    CONVEX_AGENT_MODE=anonymous vp exec convex -- env set BETTER_AUTH_SECRET "${secret}" >/dev/null
-    CONVEX_AGENT_MODE=anonymous vp exec convex -- env set SITE_URL http://localhost:3000 >/dev/null
-    CONVEX_AGENT_MODE=anonymous vp exec convex -- env set BETTER_AUTH_TRUSTED_ORIGINS \
-      "http://localhost:3000,http://127.0.0.1:3000" >/dev/null
-  )
-}
 
-cmd_launch() {
-  ensure_node
-  mkdir -p "${STATE_DIR}" "${LOG_DIR}" "${ARTIFACT_DIR}"
-  cd "${ROOT}"
+def descendants(pid):
+    rows = run(["ps", "-axo", "pid=,ppid="]).splitlines()
+    pairs = [tuple(map(int, row.split())) for row in rows]
+    found = {pid}
+    while True:
+        more = {child for child, parent in pairs if parent in found}
+        if more <= found:
+            return found
+        found |= more
 
-  CAIRN_STARTED_CONVEX=0
-  CAIRN_STARTED_WEB=0
 
-  if [[ "$(http_code "${CONVEX_HTTP}/version")" =~ ^[23] ]] || [[ "$(http_code "${CONVEX_HTTP}")" =~ ^[23] ]]; then
-    echo "control-cairn: reusing Convex at ${CONVEX_HTTP}"
-  else
-    ensure_tmux_session "${CONVEX_SESSION}"
-    tmux_bin send-keys -t "${CONVEX_SESSION}:0.0" C-c
-    sleep 0.3
-    tmux_bin send-keys -t "${CONVEX_SESSION}:0.0" \
-      "cd ${ROOT} && export CONVEX_AGENT_MODE=anonymous PATH=\"${ROOT}/node_modules/.bin:\$PATH\" && printf 'n\\n' | vp exec convex -- dev 2>&1 | tee ${LOG_DIR}/convex.log" \
-      C-m
-    CAIRN_STARTED_CONVEX=1
-    wait_http "${CONVEX_HTTP}/version" "Convex" 90 || wait_http "${CONVEX_HTTP}" "Convex" 30
-  fi
+def owned(name, port):
+    if not alive(name):
+        return False
+    pid = int(tmux("display-message", "-p", "-t", name, "#{pane_pid}"))
+    pids = listeners(port)
+    return bool(pids) and pids <= descendants(pid)
 
-  ensure_site_url
-  ensure_auth_env
 
-  if [[ "$(http_code "${WEB_URL}/")" =~ ^[23] ]]; then
-    echo "control-cairn: reusing web at ${WEB_URL}"
-  else
-    ensure_tmux_session "${WEB_SESSION}"
-    tmux_bin send-keys -t "${WEB_SESSION}:0.0" C-c
-    sleep 0.3
-    tmux_bin send-keys -t "${WEB_SESSION}:0.0" \
-      "cd ${ROOT} && export PATH=\"${ROOT}/node_modules/.bin:\$PATH\" && vp dev --host 127.0.0.1 --port ${WEB_PORT} 2>&1 | tee ${LOG_DIR}/web.log" \
-      C-m
-    CAIRN_STARTED_WEB=1
-    wait_http "${WEB_URL}/" "web" 90
-  fi
+def http(url):
+    try:
+        with urllib.request.urlopen(url, timeout=3) as response:
+            return response.status, response.read().decode()
+    except (OSError, ValueError):
+        return 0, ""
 
-  write_state
-  echo "control-cairn: launch ok"
-  echo "  web     ${WEB_URL}"
-  echo "  convex  ${CONVEX_HTTP}"
-  echo "  state   ${STATE_FILE}"
-  echo "  artifacts ${ARTIFACT_DIR}"
-}
 
-cmd_doctor() {
-  ensure_node
-  load_state
-  local failed=0
+def wait_for(test, description, timeout=180):
+    end = time.monotonic() + timeout
+    while time.monotonic() < end:
+        if (STATE / "cleaned.txt").exists():
+            raise RuntimeError("Run was cleaned up")
+        if test():
+            print("control-cairn: ready — " + description, flush=True)
+            return
+        time.sleep(1)
+    raise RuntimeError("Timed out: " + description + "; inspect " + str(STATE / "logs"))
 
-  echo "control-cairn doctor (run ${RUN_ID})"
-  echo "  node     $(node -v) at $(command -v node)"
-  echo "  vp       $(command -v vp || echo MISSING)"
-  echo "  web      ${WEB_URL} → $(http_code "${WEB_URL}/")"
-  echo "  convex   ${CONVEX_HTTP} → $(http_code "${CONVEX_HTTP}/version")"
 
-  if [[ ! -f "${ROOT}/.env.local" ]]; then
-    echo "  env      MISSING .env.local" >&2
-    failed=1
-  elif ! grep -q '^VITE_CONVEX_URL=' "${ROOT}/.env.local"; then
-    echo "  env      VITE_CONVEX_URL missing" >&2
-    failed=1
-  else
-    echo "  env      .env.local has VITE_CONVEX_URL"
-  fi
+def start(name, args):
+    log = STATE / "logs" / (name + ".log")
+    command = "exec " + shlex.join(args) + " > " + shlex.quote(str(log)) + " 2>&1"
+    tmux("new-session", "-d", "-s", name, "-c", str(WORK), command)
 
-  if [[ ! "$(http_code "${WEB_URL}/")" =~ ^[23] ]]; then
-    echo "  health   web is not answering" >&2
-    failed=1
-  fi
-  if [[ ! "$(http_code "${CONVEX_HTTP}/version")" =~ ^[23] ]] && [[ ! "$(http_code "${CONVEX_HTTP}")" =~ ^[23] ]]; then
-    echo "  health   Convex is not answering" >&2
-    failed=1
-  fi
 
-  if ! command -v playwright-cli >/dev/null 2>&1 && ! command -v playwright >/dev/null 2>&1; then
-    echo "  drive    playwright-cli not on PATH (install @playwright/cli before driving)" >&2
-    failed=1
-  else
-    echo "  drive    $(command -v playwright-cli 2>/dev/null || command -v playwright)"
-  fi
+def local_env():
+    path = WORK / ".env.local"
+    if not path.exists():
+        return False
+    values = dict(line.split("=", 1) for line in path.read_text().splitlines()
+                  if "=" in line and not line.startswith("#"))
+    deployment = values.get("CONVEX_DEPLOYMENT", "").split(" #", 1)[0].strip()
+    return (deployment.startswith("anonymous:") or deployment.startswith("local:")) and (
+        values.get("VITE_CONVEX_URL") == "http://127.0.0.1:3210")
 
-  echo "  artifacts ${ARTIFACT_DIR}"
-  mkdir -p "${ARTIFACT_DIR}"
 
-  if ((failed)); then
-    echo "control-cairn: doctor FAIL — do not drive this instance"
-    exit 1
-  fi
-  echo "control-cairn: doctor OK"
-}
+def load_state():
+    data = json.loads((STATE / "run.json").read_text())
+    if data["root"] != str(ROOT) or data["run"] != RUN:
+        raise RuntimeError("Run ownership mismatch")
+    return data
 
-cmd_cleanup() {
-  load_state
-  local started_convex="${CAIRN_STARTED_CONVEX:-0}"
-  local started_web="${CAIRN_STARTED_WEB:-0}"
 
-  if command -v playwright-cli >/dev/null 2>&1; then
-    playwright-cli -s="cairn-verify-${RUN_ID}" close >/dev/null 2>&1 || true
-  fi
+def cleanup():
+    if not (STATE / "run.json").exists():
+        print("control-cairn: no owned run to clean")
+        return
+    load_state()
+    browser_error = None
+    if (STATE / "browser-started").exists():
+        try:
+            run(["playwright-cli", "-s=cairn-verify-" + RUN, "close"], cwd=STATE)
+            (STATE / "browser-started").unlink()
+        except (OSError, subprocess.CalledProcessError) as error:
+            browser_error = error
+    for name in ("web", "convex"):
+        if alive(name):
+            tmux("send-keys", "-t", name, "C-c")
+            for _ in range(10):
+                if not alive(name):
+                    break
+                time.sleep(0.3)
+            if alive(name):
+                tmux("kill-session", "-t", name)
+    # 専用ソケットのサーバーだけを終了する。
+    if Path(SOCKET).exists():
+        try:
+            tmux("kill-server")
+        except subprocess.CalledProcessError:
+            pass
+    if WORK.exists():
+        shutil.rmtree(WORK)
+    (STATE / "auth.env").unlink(missing_ok=True)
+    (STATE / "cleaned.txt").write_text("Owned sessions and disposable app removed; evidence retained.\n")
+    if browser_error is not None:
+        raise RuntimeError("Servers cleaned; browser close failed, retry cleanup: " + str(browser_error))
+    print("control-cairn: cleanup done; evidence kept at " + str(ART))
 
-  if [[ "${started_web}" == "1" ]] && tmux_bin has-session -t "=${WEB_SESSION}" 2>/dev/null; then
-    tmux_bin send-keys -t "${WEB_SESSION}:0.0" C-c
-    sleep 0.4
-    tmux_bin kill-session -t "${WEB_SESSION}" 2>/dev/null || true
-  fi
-  if [[ "${started_convex}" == "1" ]] && tmux_bin has-session -t "=${CONVEX_SESSION}" 2>/dev/null; then
-    tmux_bin send-keys -t "${CONVEX_SESSION}:0.0" C-c
-    sleep 0.4
-    tmux_bin kill-session -t "${CONVEX_SESSION}" 2>/dev/null || true
-  fi
 
-  echo "control-cairn: cleanup done (artifacts kept at ${ARTIFACT_DIR})"
-  if [[ -d "${ARTIFACT_DIR}" ]]; then
-    ls -la "${ARTIFACT_DIR}" || true
-  fi
-}
+def launch():
+    for tool in ("vp", "tmux", "lsof", "git", "playwright-cli"):
+        if shutil.which(tool) is None:
+            raise RuntimeError("Missing tool: " + tool)
+    version = run(["vp", "exec", "node", "-p", "process.versions.node"], cwd=ROOT)
+    if tuple(map(int, version.split("."))) < (24, 17, 0):
+        raise RuntimeError("Need Node >=24.17.0; vp selected " + version)
+    if not (ROOT / "node_modules").is_dir():
+        raise RuntimeError("Run vp install first")
+    if STATE.exists():
+        raise RuntimeError("Run directory exists; use a new run ID (evidence is never overwritten)")
+    for port in (3000, 3210, 3211):
+        if listeners(port):
+            raise RuntimeError(f"Port {port} is occupied; do not reuse or stop its owner")
+        with socket.socket() as probe:
+            probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            probe.bind(("127.0.0.1", port))
+    STATE.mkdir(mode=0o700)
+    (STATE / "logs").mkdir()
+    ART.mkdir()
+    (STATE / "run.json").write_text(json.dumps({
+        "root": str(ROOT), "run": RUN, "node": version,
+        "revision": run(["git", "rev-parse", "HEAD"], cwd=ROOT),
+    }, indent=2) + "\n")
+    try:
+        WORK.mkdir()
+        files = run(["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z"], cwd=ROOT)
+        manifest = {}
+        for name in sorted(set(files.split("\0"))):
+            parts = Path(name).parts
+            if not parts or parts[0] in (".agents", ".claude", ".cursor", "graft"):
+                continue
+            if any(part.startswith(".env") for part in parts):
+                continue
+            source = ROOT / name
+            if not source.is_file() or source.is_symlink():
+                continue
+            target = WORK / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+            manifest[name] = hashlib.sha256(target.read_bytes()).hexdigest()
+        (STATE / "source-manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
+        if sys.platform == "darwin":
+            run(["cp", "-cR", str(ROOT / "node_modules"), str(WORK / "node_modules")])
+        else:
+            run(["cp", "-a", "--reflink=auto", str(ROOT / "node_modules"), str(WORK / "node_modules")])
+        start("convex", ["vp", "exec", "convex", "dev", "--typecheck", "disable"])
+        wait_for(lambda: local_env() and owned("convex", 3210) and http("http://127.0.0.1:3210/version")[0] == 200,
+                 "owned local Convex and anonymous .env.local")
+        auth = STATE / "auth.env"
+        auth.write_text("BETTER_AUTH_SECRET=" + secrets.token_hex(32) + "\nSITE_URL=" + URL +
+                        "\nBETTER_AUTH_TRUSTED_ORIGINS=" + URL + "\n")
+        run(["vp", "exec", "convex", "env", "set", "--from-file", str(auth)], cwd=WORK)
+        auth.unlink()
+        with (WORK / ".env.local").open("a") as envfile:
+            envfile.write("\nVITE_SITE_URL=" + URL + "\nSITE_URL=" + URL + "\n")
+        wait_for(lambda: "Convex functions ready" in (STATE / "logs/convex.log").read_text(),
+                 "Convex functions deployed")
+        start("web", ["vp", "dev", "--host", "127.0.0.1", "--port", "3000", "--strictPort"])
+        wait_for(lambda: owned("web", 3000) and http(URL)[0] == 200, "owned Cairn web")
+        doctor()
+    except BaseException:
+        cleanup()
+        raise
 
-usage() {
-  cat <<'EOF'
-usage: control-cairn <launch|doctor|cleanup>
 
-  launch   start or reuse Convex (3210) and vp dev (3000); write run state
-  doctor   read-only health check — exit 1 if the instance is not worth driving
-  cleanup  stop processes this run started; keep artifacts
+def doctor():
+    data = load_state()
+    if not local_env():
+        raise RuntimeError("Scratch app is not configured for anonymous local Convex")
+    for name, port in (("web", 3000), ("convex", 3210), ("convex", 3211)):
+        if not owned(name, port):
+            raise RuntimeError(f"Port {port} not owned by this run's {name} session")
+    status, body = http(URL)
+    if status != 200 or "学習ログ" not in body:
+        raise RuntimeError("Cairn document is unavailable or has wrong identity")
+    status, body = http(URL + "/api/auth/get-session")
+    if status != 200 or body.strip() != "null":
+        raise RuntimeError("Anonymous auth endpoint is unhealthy: " + str(status))
+    if http("http://127.0.0.1:3210/version")[0] != 200:
+        raise RuntimeError("Convex version endpoint unavailable")
+    print("control-cairn: doctor OK; owned ports 3000/3210/3211; auth null (signed out)")
+    print("source revision=" + data["revision"] + "; node=" + data["node"])
+    print("source manifest=" + str(STATE / "source-manifest.json"))
+    print("artifacts=" + str(ART))
 
-Env:
-  CAIRN_VERIFY_RUN_ID   default: default
-  CAIRN_VERIFY_DIR      default: /tmp/cairn-verify-$CAIRN_VERIFY_RUN_ID
-EOF
-}
 
-main() {
-  mkdir -p "${STATE_DIR}" "${LOG_DIR}" "${ARTIFACT_DIR}"
-  case "${1:-}" in
-    launch) cmd_launch ;;
-    doctor) cmd_doctor ;;
-    cleanup) cmd_cleanup ;;
-    *)
-      usage >&2
-      exit 2
-      ;;
-  esac
-}
+def browser():
+    doctor()
+    (STATE / "browser-started").touch()
+    print(run(["playwright-cli", "-s=cairn-verify-" + RUN, "open", URL], cwd=STATE))
+    print(run(["playwright-cli", "-s=cairn-verify-" + RUN, "resize", "1280", "900"], cwd=STATE))
 
-main "$@"
+
+def interrupted(signum, frame):
+    raise KeyboardInterrupt("Verification interrupted")
+
+
+if __name__ == "__main__":
+    signal.signal(signal.SIGTERM, interrupted)
+    try:
+        actions = {"launch": launch, "doctor": doctor, "browser": browser, "cleanup": cleanup}
+        if len(sys.argv) != 2 or sys.argv[1] not in actions:
+            sys.exit("usage: control-cairn <launch|doctor|browser|cleanup>")
+        actions[sys.argv[1]]()
+    except (RuntimeError, OSError, subprocess.CalledProcessError) as error:
+        print("control-cairn: " + str(error), file=sys.stderr)
+        if isinstance(error, subprocess.CalledProcessError):
+            print(error.stderr, file=sys.stderr)
+        sys.exit(1)

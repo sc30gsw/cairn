@@ -109,7 +109,6 @@ test("進行中の本番目標があるうちは2件目を拒否し、結果を�
   const goals = await t.query(api.queries.goals.list.list, {});
   expect(goals.filter((goal) => goal.type === "exam")).toHaveLength(2);
   expect((await examOf(t, nextId))?.result).toBeUndefined();
-  //? 終了した本番が2件あっても、進行中は常に1件まで
   await expect(
     t.mutation(api.mutations.goals.create.create, { goal: NEXT_EXAM_GOAL }),
   ).rejects.toThrow(SINGLE_EXAM_GOAL_MESSAGE);

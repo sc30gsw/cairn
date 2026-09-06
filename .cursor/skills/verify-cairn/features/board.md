@@ -21,11 +21,12 @@ Preconditions:
 - Signed in. Today has at least one 未着手 row (add it on 日 first via `day-log.md` `day-add-adhoc`, and do not confirm it yet).
 - `control-cairn doctor` is OK. Desktop width.
 
-- **Open board.** Run `playwright-cli -s="$SESSION" click "getByRole('link', { name: 'ボード' })"`. Heading `ボード` is visible. The カンバン tab is selected. Lead copy mentions `今日の記録の状態` when viewing today.
+- **Open board.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('link', { name: 'ボード' })"`. Heading `ボード` is visible. The カンバン tab is selected. Lead copy mentions `今日の記録の状態` when viewing today.
 - **See the row.** The region `カンバンの列` contains a column whose accessible name starts with `未着手` and the card for `検証項目` (or the item you added).
-- **Confirm from the board.** On that card, run `playwright-cli -s="$SESSION" click "getByRole('button', { name: '確定する' })"`. If minutes are missing the board asks for them in place — enter `25` and confirm. The card leaves 未着手 and appears under `確定`.
+- **Confirm from the board.** On that card, run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('button', { name: '確定する' })"`. If the dialog `記録を確定` opens, fill `内容` as needed, enter `25` in its `分数` textbox, and click its exact button `確定`. Scope these locators to that dialog. The card leaves 未着手 and appears under `確定`.
 - **Second view.** Open `日`. Volume includes the confirmed minutes and the row badge is `完了`.
-- **Proof.** Capture the board after the move. Run `playwright-cli -s="$SESSION" --raw snapshot > "$ART/board.aria.yml"` and `playwright-cli -s="$SESSION" screenshot --filename="$ART/board.png"`. Artifacts show heading `ボード` and the item under 確定.
+- **Day shortcut entry.** Return to 日 and click the link whose accessible name is the displayed date followed by ` の記録をカンバンで見る`. Use the fresh snapshot to keep the actual date literal. Verify that the board date matches before repeating the card steps.
+- **Proof.** Capture the board after the move. Run `rtk proxy playwright-cli -s="$SESSION" --raw snapshot > "$ART/board.aria.yml"` and `rtk proxy playwright-cli -s="$SESSION" screenshot --filename="$ART/board.png"`. Artifacts show heading `ボード` and the item under 確定.
 
 ## Gotchas
 

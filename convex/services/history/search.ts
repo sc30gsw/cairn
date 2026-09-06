@@ -9,7 +9,6 @@ import type { HistorySearchDto, HistorySearchHitDto } from "../../lib/validators
 import { liveDayDatesFrom, liveRows } from "./liveRows";
 
 export type SearchArgs = {
-  //? 省略なら全期間。既定（直近12か月）はクライアントが計算して渡す（CVX-14）
   fromJst?: string;
   query: string;
 };
@@ -29,7 +28,6 @@ function byDateDescThenOrder(left: RankedHit, right: RankedHit): number {
   );
 }
 
-//? 所有者の対象文書をインデックスで読み、TypeScript 側で部分一致を判定する（案 c）
 export async function search(
   ctx: QueryCtx,
   ownerId: string,

@@ -17,7 +17,8 @@ import {
   USERNAME_PATTERN,
 } from "./lib/authFields";
 import {
-  notionOAuthConfigured,
+  GOOGLE_OAUTH_ENV,
+  googleOAuthConfigured,
   requireEnv,
   signUpDisabledFromEnv,
   trustedOriginsFromEnv,
@@ -45,11 +46,16 @@ const isLiveConvexCtx = (ctx: GenericCtx<DataModel>) => isQueryCtx(ctx) || isAct
 
 export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
   const siteUrl = process.env.SITE_URL;
-  const notionAuth = notionOAuthConfigured();
+  const googleAuth = googleOAuthConfigured();
   const signUpDisabled = signUpDisabledFromEnv();
   return {
     account: {
-      encryptOAuthTokens: notionAuth,
+      accountLinking: {
+        allowDifferentEmails: true,
+        enabled: true,
+        trustedProviders: ["google"],
+      },
+      encryptOAuthTokens: googleAuth,
     },
     baseURL: siteUrl,
     database: authComponent.adapter(ctx),
@@ -78,12 +84,14 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
       enabled: true,
       storage: "database",
     },
-    socialProviders: notionAuth
+    socialProviders: googleAuth
       ? {
-          notion: {
-            clientId: process.env.NOTION_CLIENT_ID ?? "",
-            clientSecret: process.env.NOTION_CLIENT_SECRET ?? "",
+          google: {
+            accessType: "offline",
+            clientId: process.env[GOOGLE_OAUTH_ENV.clientId] ?? "",
+            clientSecret: process.env[GOOGLE_OAUTH_ENV.clientSecret] ?? "",
             disableSignUp: signUpDisabled,
+            prompt: "select_account",
           },
         }
       : undefined,

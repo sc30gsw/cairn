@@ -15,8 +15,6 @@ class WebPushError extends TaggedError("WebPush")<{
   reason: WebPushErrorReason;
 }> {}
 
-export const WEB_PUSH_SUBSCRIPTION_CHANGED = "PUSH_SUBSCRIPTION_CHANGED";
-
 export function isWebPushSupported(): boolean {
   return (
     typeof window !== "undefined" &&
@@ -30,7 +28,6 @@ export function notificationPermission(): NotificationPermission | "unsupported"
   return isWebPushSupported() ? Notification.permission : "unsupported";
 }
 
-//? VAPID 公開鍵（base64url）を applicationServerKey が受け取る Uint8Array に直す
 function urlBase64ToUint8Array(base64Url: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64Url.length % 4)) % 4);
   const base64 = (base64Url + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -42,7 +39,6 @@ function urlBase64ToUint8Array(base64Url: string): Uint8Array<ArrayBuffer> {
   return bytes;
 }
 
-//? PushSubscription.toJSON() を Convex に渡す形へ。鍵が欠けていれば登録できない
 function toSubscriptionInput(subscription: PushSubscription): SubscribePushInput | null {
   const json = subscription.toJSON();
   const auth = json.keys?.auth;
@@ -93,7 +89,6 @@ export async function subscribeWebPush(
       }),
     );
   }
-  //? 権限要求はボタン押下（ユーザー操作）からだけ呼ぶ。自動では出さない
   const permission = await Notification.requestPermission();
   if (permission !== "granted") {
     return Result.err(
@@ -137,7 +132,6 @@ export async function subscribeWebPush(
   return Result.ok(input);
 }
 
-//? 解除した endpoint を返す（サーバー側の行を消すのに使う）。購読が無ければ null
 export async function unsubscribeWebPush(): Promise<string | null> {
   if (!isWebPushSupported()) {
     return null;

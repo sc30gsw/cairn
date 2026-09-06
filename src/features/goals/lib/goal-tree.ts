@@ -15,11 +15,8 @@ export type ParentGroup<TParent extends ParentGoal = ParentGoal> = {
 
 export type GoalTree = {
   achieved: MasteryGoal[];
-  //? 進行中（結果が入っていない）本番目標。常に 0 か 1 件
   exam: ParentGroup<ExamGoal> | undefined;
-  //? 終了して子も片づいた本番。「達成した目標」に並ぶ
   examHistory: ExamGoal[];
-  //? 終了したが未達成の子が残る本番。子の付け替え先が決まるまでツリーに残す
   finishedExams: ParentGroup<ExamGoal>[];
   longTerm: ParentGroup<MasteryGoal>[];
   orphans: MasteryGoal[];
@@ -181,7 +178,6 @@ export function parentGoalOptions(
     if (goal._id === selfId) {
       continue;
     }
-    //? 終了した本番は新しい親に選べない。すでに親なら（付け替え先を選ぶまで）残す
     if (
       isActiveExamGoal(goal) ||
       (isLongTerm(goal) && goal.achievedAt === undefined) ||

@@ -1,7 +1,7 @@
 import { Result } from "better-result";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
-import { signInWithNotion, signOutAndReload } from "~/features/auth/lib/auth-actions";
+import { signInWithGoogle, signOutAndReload } from "~/features/auth/lib/auth-actions";
 import { authClient } from "~/lib/auth-client";
 import { PASSKEY_OAUTH_PENDING_KEY, readPasskeySessionFlag } from "~/lib/passkey-storage";
 
@@ -44,35 +44,35 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-test("signInWithNotion は成功時に Result.ok を返す", async () => {
+test("signInWithGoogle は成功時に Result.ok を返す", async () => {
   vi.mocked(authClient.signIn.social).mockResolvedValue({ data: {}, error: undefined });
 
-  const result = await signInWithNotion();
+  const result = await signInWithGoogle();
 
   expect(Result.isOk(result)).toBe(true);
 });
 
-test("signInWithNotion は失敗時に Result.err を返し、pending フラグを消す", async () => {
+test("signInWithGoogle は失敗時に Result.err を返し、pending フラグを消す", async () => {
   vi.mocked(authClient.signIn.social).mockResolvedValue({
     data: undefined,
     error: { message: "failed" },
   });
 
-  const result = await signInWithNotion();
+  const result = await signInWithGoogle();
 
   expect(Result.isError(result)).toBe(true);
   expect(readPasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY)).toBe(false);
 });
 
-test("signInWithNotion は redirect 前に pending フラグを立てる", async () => {
+test("signInWithGoogle は redirect 前に pending フラグを立てる", async () => {
   vi.mocked(authClient.signIn.social).mockImplementation(async () => {
     expect(readPasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY)).toBe(true);
     return { data: {}, error: undefined };
   });
 
-  await signInWithNotion();
+  await signInWithGoogle();
 
-  expect(authClient.signIn.social).toHaveBeenCalledWith({ provider: "notion" });
+  expect(authClient.signIn.social).toHaveBeenCalledWith({ provider: "google" });
 });
 
 test("signOutAndReload は成功時に Result.ok を返しリロードする", async () => {

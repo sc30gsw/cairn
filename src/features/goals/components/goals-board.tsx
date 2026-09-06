@@ -231,7 +231,6 @@ export function GoalsBoard({
       return <Box key={group.parent._id}>{goalForm()}</Box>;
     }
     const form = formForGroup(group);
-    //? 終了した本番には新しいチェックポイントを足せない（残った子の付け替えだけ）
     const finished = group.parent.result !== undefined;
 
     return (

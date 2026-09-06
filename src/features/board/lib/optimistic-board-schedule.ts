@@ -4,10 +4,34 @@ import type { DateJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
 import type { BoardScheduleView } from "~/features/board/schemas/board-search-schema";
+import type { BoardExternalEvent } from "~/features/board/types/board";
 
 type BoardScheduleBlock = FunctionReturnType<
   typeof api.queries.boardSchedule.listForWeek.listForWeek
 >[number];
+
+export function patchExternalCalendarEvents(
+  localStore: OptimisticLocalStore,
+  args: {
+    anchorDateJst: DateJst;
+    updater: (externals: BoardExternalEvent[]) => BoardExternalEvent[];
+    view: BoardScheduleView;
+  },
+): void {
+  const queryArgs = { anchorDateJst: args.anchorDateJst, view: args.view };
+  const externals = localStore.getQuery(
+    api.queries.calendarSync.listExternal.listExternal,
+    queryArgs,
+  );
+  if (externals === undefined) {
+    return;
+  }
+  localStore.setQuery(
+    api.queries.calendarSync.listExternal.listExternal,
+    queryArgs,
+    args.updater(externals),
+  );
+}
 
 export function patchBoardScheduleBlocks(
   localStore: OptimisticLocalStore,

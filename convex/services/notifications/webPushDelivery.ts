@@ -3,7 +3,6 @@ import type { QueryCtx } from "../../_generated/server";
 import type { WebPushDelivery } from "../../lib/validators";
 import { webPushMessage } from "../../lib/webPush";
 
-//? action が読むのはこの1回だけ（CVX-07）。通知が消えていれば null
 export async function webPushDelivery(
   ctx: QueryCtx,
   args: Record<"notificationId", Id<"notifications">>,

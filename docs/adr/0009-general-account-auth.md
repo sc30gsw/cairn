@@ -1,5 +1,7 @@
 # 一般アカウント認証とユーザーごとのデータ分離
 
+> **一部 superseded by [0016-google-login-replaces-notion.md](./0016-google-login-replaces-notion.md).** Notion OAuth は Google に置き換え、アカウント連携は有効にした。email / password / username とデータ分離の決定は現行。
+
 Notion OAuth に加え、email / password / username による一般 signup / signin を許可する。記録の正本は Convex のまま。各ユーザーのデータは JWT の `subject`（`ownerId`）で分離する。
 
 単一所有者の email allowlist（`ALLOWED_EMAIL`）と初回所有者だけ signup 可の制限は廃止する。新規ユーザーは空のカタログから始め、項目・プリセット・目標は各自が CRUD する。Notion 由来の初期シードは `catalog.ensure` 経由でのみ投入可能とし、`days.open` では自動 seed しない。

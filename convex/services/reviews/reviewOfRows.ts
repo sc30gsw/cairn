@@ -1,7 +1,6 @@
 import type { Doc, Id } from "../../_generated/dataModel";
 import type { RowReviewDto } from "../../lib/validators";
 
-//? 行ごとの復習の印を組む。復習の記録そのものなら review、復習に回した元の記録なら source
 export function reviewOfRows(
   flags: readonly Doc<"reviewFlags">[],
 ): (rowId: Id<"rows">) => RowReviewDto {
