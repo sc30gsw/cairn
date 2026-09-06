@@ -77,6 +77,9 @@ test("Google はオフラインアクセスで、同じメールのサインイ�
   const options = createAuthOptions(stubCtx);
 
   expect(options.socialProviders?.google?.accessType).toBe("offline");
+  expect(options.socialProviders?.google?.prompt).toBe("select_account");
+  expect(options.socialProviders?.google).not.toHaveProperty("scope");
+  expect(options.account?.encryptOAuthTokens).toBe(true);
   expect(options.account?.accountLinking?.trustedProviders).toEqual(["google"]);
   expect(options.account?.accountLinking?.allowDifferentEmails).toBe(true);
 });

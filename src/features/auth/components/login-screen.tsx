@@ -1,4 +1,6 @@
 import { Anchor, Button, Card, Center, Divider, Group, Stack, Text, Title } from "@mantine/core";
+import { useLocation } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 import { AuthActionFeedback } from "~/components/auth-action-feedback";
 import { AccountAuthPanel } from "~/features/auth/components/account-auth-form";
@@ -6,13 +8,23 @@ import { useAuthPublicConfig } from "~/features/auth/hooks/use-auth-config";
 import { signInWithGoogle, signInWithPasskey } from "~/features/auth/lib/auth-actions";
 import { useAuthActionTransition } from "~/hooks/use-auth-action-transition";
 import { useInstallPrompt } from "~/hooks/use-install-prompt";
+import { PASSKEY_OAUTH_PENDING_KEY, writePasskeySessionFlag } from "~/lib/passkey-storage";
 import { DISPLAY_FONT } from "~/lib/theme";
 
 export function LoginScreen() {
   const passkeyAction = useAuthActionTransition();
+  const googleAction = useAuthActionTransition();
+  const searchStr = useLocation({ select: (location) => location.searchStr });
+  const oauthFailed = new URLSearchParams(searchStr).get("authError") === "google";
   const { standalone } = useInstallPrompt();
   const { data: publicConfig } = useAuthPublicConfig();
   const googleSignIn = publicConfig?.googleSignIn === true;
+
+  useEffect(() => {
+    if (oauthFailed) {
+      writePasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY, false);
+    }
+  }, [oauthFailed]);
 
   return (
     <Center h="100dvh">
@@ -38,9 +50,25 @@ export function LoginScreen() {
           </Button>
           <AuthActionFeedback result={passkeyAction.result} />
           {googleSignIn ? (
-            <Button fullWidth onClick={signInWithGoogle} size="md" variant="light">
-              Google でログイン
-            </Button>
+            <>
+              <Button
+                fullWidth
+                loading={googleAction.isPending}
+                onClick={() => void googleAction.run(signInWithGoogle)}
+                size="md"
+                variant="light"
+              >
+                Googleでログイン
+              </Button>
+              <div aria-live="polite">
+                <AuthActionFeedback result={googleAction.result} />
+              </div>
+            </>
+          ) : null}
+          {oauthFailed && googleAction.result === null && !googleAction.isPending ? (
+            <Text c="red" role="alert" size="sm">
+              Google でのログインを完了できませんでした。もう一度お試しください。
+            </Text>
           ) : null}
           {googleSignIn && standalone ? (
             <Text c="dimmed" size="xs">

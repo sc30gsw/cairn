@@ -72,7 +72,11 @@ test("signInWithGoogle は redirect 前に pending フラグを立てる", async
 
   await signInWithGoogle();
 
-  expect(authClient.signIn.social).toHaveBeenCalledWith({ provider: "google" });
+  expect(authClient.signIn.social).toHaveBeenCalledWith({
+    callbackURL: `${location.origin}/`,
+    errorCallbackURL: `${location.origin}/?authError=google`,
+    provider: "google",
+  });
 });
 
 test("signOutAndReload は成功時に Result.ok を返しリロードする", async () => {

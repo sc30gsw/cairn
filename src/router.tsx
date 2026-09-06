@@ -12,9 +12,7 @@ export function getRouter() {
     throw new Error("VITE_CONVEX_URL is required");
   }
 
-  const convexQueryClient = new ConvexQueryClient(CONVEX_URL, {
-    expectAuth: true,
-  });
+  const convexQueryClient = new ConvexQueryClient(CONVEX_URL);
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {

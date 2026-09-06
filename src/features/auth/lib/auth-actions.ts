@@ -75,7 +75,11 @@ export async function signInWithPasskey(): Promise<AuthActionResult> {
 export async function signInWithGoogle(): Promise<AuthActionResult> {
   writePasskeySessionFlag(PASSKEY_OAUTH_PENDING_KEY, true);
   const result = await runAuthAction(async () => {
-    const authResult = await authClient.signIn.social({ provider: "google" });
+    const authResult = await authClient.signIn.social({
+      callbackURL: `${location.origin}/`,
+      errorCallbackURL: `${location.origin}/?authError=google`,
+      provider: "google",
+    });
     if (authResult.error) {
       throw authActionError(authResult.error, "signIn");
     }

@@ -3,7 +3,7 @@ import { expect, test, vi } from "vite-plus/test";
 
 import { OwnerGate } from "~/features/auth/components/owner-gate";
 import { authClient } from "~/lib/auth-client";
-import { renderWithMantine } from "~/test-utils/render";
+import { renderWithMemoryRouter } from "~/test-utils/render";
 
 vi.mock("~/lib/auth-client", () => ({
   authClient: {
@@ -25,7 +25,7 @@ vi.mock("~/features/auth/hooks/use-auth-config", () => ({
 const refetch = vi.fn();
 const now = new Date();
 
-test("未ログインならログイン画面が見える", () => {
+test("未ログインならログイン画面が見える", async () => {
   vi.mocked(authClient.useSession).mockReturnValue({
     data: null,
     error: null,
@@ -33,7 +33,7 @@ test("未ログインならログイン画面が見える", () => {
     isRefetching: false,
     refetch,
   });
-  const { getByRole } = renderWithMantine(
+  const { getByRole } = await renderWithMemoryRouter(
     <OwnerGate>
       <p>記録</p>
     </OwnerGate>,
@@ -41,7 +41,7 @@ test("未ログインならログイン画面が見える", () => {
   expect(getByRole("button", { name: "ログイン" })).toBeDefined();
 });
 
-test("ログイン済みなら子が見える", () => {
+test("ログイン済みなら子が見える", async () => {
   vi.mocked(authClient.useSession).mockReturnValue({
     data: {
       session: {
@@ -67,7 +67,7 @@ test("ログイン済みなら子が見える", () => {
     isRefetching: false,
     refetch,
   });
-  const { getByText } = renderWithMantine(
+  const { getByText } = await renderWithMemoryRouter(
     <OwnerGate>
       <p>記録</p>
     </OwnerGate>,
