@@ -1,3 +1,4 @@
+import type { Doc } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { type CalendarSyncStatus, PRIMARY_CALENDAR_ID } from "../../lib/calendarSync";
 import type { UpsertConnectionArgs } from "../../lib/validators";
@@ -44,15 +45,16 @@ export async function upsertConnection(
     sameAccount ? existing.visibleCalendarIds : args.defaultVisibleCalendarIds
   ).filter((id) => known.has(id));
   const fields = {
+    externalChangesVersion: sameAccount ? existing.externalChangesVersion : 1,
     calendars: args.calendars,
     googleAccountId: args.googleAccountId,
     googleEmail: args.googleEmail ?? undefined,
     lastError: undefined,
     primaryCalendarId:
       args.calendars.find((calendar) => calendar.primary)?.id ?? PRIMARY_CALENDAR_ID,
-    status: "ok" as const,
+    status: "ok",
     visibleCalendarIds,
-  };
+  } satisfies Omit<Doc<"calendarConnections">, "_id" | "_creationTime" | "ownerId">;
   if (existing === null) {
     await ctx.db.insert("calendarConnections", { ...fields, ownerId: args.ownerId });
     return null;

@@ -170,6 +170,7 @@ export default defineSchema({
     .index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"]),
 
   calendarConnections: defineTable({
+    externalChangesVersion: v.optional(v.literal(1)),
     disconnecting: v.optional(v.boolean()),
     calendars: v.array(googleCalendarSummaryValidator),
     googleAccountId: v.string(),

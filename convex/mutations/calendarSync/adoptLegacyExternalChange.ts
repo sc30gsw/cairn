@@ -9,7 +9,12 @@ export const adoptLegacyExternalChange = internalMutation({
   args: schema.tables.calendarExternalChanges.validator.omit("settledAt").fields,
   handler: async (ctx, args) => {
     const connection = await getConnection(ctx, args.ownerId);
-    if (connection === null || connection.disconnecting === true) return null;
+    if (
+      connection === null ||
+      connection.disconnecting === true ||
+      connection.externalChangesVersion !== undefined
+    )
+      return null;
     const pending = await ctx.db
       .query("calendarExternalChanges")
       .withIndex("by_owner_and_calendar_and_event", (q) =>

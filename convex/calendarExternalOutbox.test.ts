@@ -6,7 +6,7 @@ import { api, internal } from "./_generated/api";
 import { GoogleAuthError } from "./lib/googleAccessToken";
 import schema from "./schema";
 import { applyPull } from "./services/calendarSync/applyPull";
-import { clearConnection } from "./services/calendarSync/connection";
+import { clearConnection, upsertConnection } from "./services/calendarSync/connection";
 
 const tokenState = vi.hoisted(() => ({ fail: false }));
 
@@ -598,5 +598,33 @@ test.each(["move", "delete"] as const)(
       change: { kind: "move", ...MOVED },
       settledAt: expect.any(Number),
     });
+  },
+);
+
+test.each(["refresh", "reconnect", "switch-account"] as const)(
+  "接続の %s は旧ジョブの採用範囲を維持する",
+  async (operation) => {
+    const { t } = await setup();
+    await t.run(async (ctx) => {
+      if (operation === "reconnect") await clearConnection(ctx, OWNER);
+      await upsertConnection(ctx, {
+        ownerId: OWNER,
+        googleAccountId: operation === "switch-account" ? "another-account" : "google-owner",
+        googleEmail: CALENDAR,
+        calendars: [{ accessRole: "owner", id: CALENDAR, primary: true, summary: "予定" }],
+        defaultVisibleCalendarIds: [CALENDAR],
+      });
+    });
+    const fetch = vi.fn(async () => new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetch);
+    await t.action(internal.actions.calendarSync.pushExternal.pushExternal, {
+      attempt: 2,
+      ownerId: OWNER,
+      calendarId: CALENDAR,
+      googleEventId: "event",
+      change: { kind: "delete" },
+    });
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    expect(fetch).toHaveBeenCalledTimes(operation === "refresh" ? 1 : 0);
   },
 );
