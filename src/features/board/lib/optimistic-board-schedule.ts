@@ -4,13 +4,10 @@ import type { DateJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
 import type { BoardScheduleView } from "~/features/board/schemas/board-search-schema";
+import type { BoardExternalEvent } from "~/features/board/types/board";
 
 type BoardScheduleBlock = FunctionReturnType<
   typeof api.queries.boardSchedule.listForWeek.listForWeek
->[number];
-
-type BoardExternalEvent = FunctionReturnType<
-  typeof api.queries.calendarSync.listExternal.listExternal
 >[number];
 
 export function patchExternalCalendarEvents(

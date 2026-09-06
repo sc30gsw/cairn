@@ -1,15 +1,17 @@
 "use node";
 
-import { Result } from "better-result";
 import { v } from "convex/values";
 
 import { internal } from "../../_generated/api";
-import { getGoogleAccessToken } from "../../lib/googleAccessToken";
-import { deleteEvent } from "../../lib/googleCalendar";
+import { CALENDAR_SYNC_DISCONNECT_INCOMPLETE_MESSAGE } from "../../lib/calendarSync";
+import { ConflictError } from "../../lib/errors";
 import { todayJst } from "../../lib/jst";
-import { ownerAction } from "../../lib/ownerFunctions";
+import { ownerAction, throwDomain } from "../../lib/ownerFunctions";
+import { deleteLinkedGoogleEvents } from "../../services/calendarSync/deleteLinkedGoogleEvents";
 
-//? 連携解除: アプリが Google に作った予定を消し（できる範囲で）、接続・対応表・写しをすべて消す（Q8/Q19）
+//? 連携解除: アプリが Google に作った予定を消し、接続・対応表・写しをすべて消す（Q8/Q19）。
+//? 消せなかった予定があれば解除せずに知らせる（Google 側に孤児を残さない）。トークンが取れない
+//? （権限が取り消された）ときは消しようがないので、そのまま解除する
 export const disconnect = ownerAction({
   args: {},
   handler: async (ctx) => {
@@ -18,19 +20,9 @@ export const disconnect = ownerAction({
       todayJst: todayJst(),
     });
     if (plan !== null) {
-      const token = await getGoogleAccessToken(ctx, {
-        accountId: plan.accessAccountId,
-        userId: ctx.ownerId,
-      });
-      if (Result.isOk(token)) {
-        const client = { accessToken: token.value };
-        const deletions: Promise<unknown>[] = [];
-        for (const source of plan.sources) {
-          if (source.link !== null) {
-            deletions.push(deleteEvent(client, plan.calendarId, source.link.googleEventId));
-          }
-        }
-        await Promise.all(deletions);
+      const outcome = await deleteLinkedGoogleEvents(ctx, ctx.ownerId, plan);
+      if (outcome === "failed") {
+        throwDomain(new ConflictError({ message: CALENDAR_SYNC_DISCONNECT_INCOMPLETE_MESSAGE }));
       }
     }
     await ctx.runMutation(internal.mutations.calendarSync.clearConnection.clearConnection, {

@@ -14,7 +14,7 @@ export async function pushPlan(
   }
   const link = await findLink(ctx, args.ownerId, args.sourceKind, args.sourceId);
   return {
-    accessAccountId: connection.googleAccountId,
+    googleAccountId: connection.googleAccountId,
     calendarId: connection.primaryCalendarId,
     source: await syncSource(ctx, args.ownerId, args.sourceKind, args.sourceId, link),
   };

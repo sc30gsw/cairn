@@ -4,13 +4,26 @@ import { isDateJst } from "../../lib/jst";
 import type { PulledEvent } from "../../lib/validators";
 import { desiredEvent } from "./desiredEvent";
 import { payloadKey } from "./eventPayload";
+import { finishCalendarPull } from "./finishCalendarPull";
 import { isWithinWindow, syncWindow, type SyncWindow } from "./window";
 
+export type PullFinish = {
+  keepEventIds: readonly string[] | null;
+  syncToken: string | null;
+};
+
 //? Google から来た差分をアプリに写す。対応表にある予定はアプリ発なので「戻す」、無いものは外部予定の写し。
-//? 後の更新が勝つ: アプリ側の未送信の変更（appChangedAt）が Google の updated より新しければ Google 側を捨てる
+//? 後の更新が勝つ: アプリ側の未送信の変更（appChangedAt）が Google の updated より新しければ Google 側を捨てる。
+//? finish が付いた最後の塊では、同じトランザクションで差分トークンの保存と写しの掃除まで行う（CVX-07/15）
 export async function applyPull(
   ctx: MutationCtx,
-  args: { calendarId: string; events: readonly PulledEvent[]; ownerId: string; todayJst: string },
+  args: {
+    calendarId: string;
+    events: readonly PulledEvent[];
+    finish: PullFinish | null;
+    ownerId: string;
+    todayJst: string;
+  },
 ): Promise<null> {
   const window = syncWindow(args.todayJst);
   for (const event of args.events) {
@@ -33,6 +46,15 @@ export async function applyPull(
       continue;
     }
     await applyToExternal(ctx, args.ownerId, event, window);
+  }
+  if (args.finish !== null) {
+    await finishCalendarPull(ctx, {
+      calendarId: args.calendarId,
+      keepEventIds: args.finish.keepEventIds,
+      ownerId: args.ownerId,
+      syncToken: args.finish.syncToken,
+      todayJst: args.todayJst,
+    });
   }
   return null;
 }
@@ -93,6 +115,10 @@ function googleWins(link: Doc<"calendarSyncLinks">, updated: string): boolean {
   return !Number.isNaN(updatedMs) && updatedMs > link.appChangedAt;
 }
 
+//? Google 側の変更をアプリの元に戻した結果。
+//? applied: 戻した / ignored: 触らない / reassert: 受け入れられない形なので次の送信でアプリの値を Google に書き戻す
+type ApplyResult = "applied" | "ignored" | "reassert";
+
 async function applyToSource(
   ctx: MutationCtx,
   link: Doc<"calendarSyncLinks">,
@@ -101,9 +127,8 @@ async function applyToSource(
   if (event.kind === "delete") {
     //? 予定は Google で消せばアプリでも消える。目標は消さず、対応表だけ落として次の送信で戻す（Q10）
     if (link.sourceKind === "block") {
-      const blockId = ctx.db.normalizeId("boardScheduleEvents", link.sourceId);
-      const block = blockId === null ? null : await ctx.db.get("boardScheduleEvents", blockId);
-      if (block !== null && block.ownerId === link.ownerId) {
+      const block = await ownedBlock(ctx, link);
+      if (block !== null) {
         await ctx.db.delete("boardScheduleEvents", block._id);
       }
     }
@@ -117,7 +142,15 @@ async function applyToSource(
     link.sourceKind === "block"
       ? await moveBlockFromGoogle(ctx, link, event)
       : await moveGoalFromGoogle(ctx, link, event);
-  if (!applied) {
+  if (applied === "ignored") {
+    return;
+  }
+  if (applied === "reassert") {
+    //? 例: 予定が Google で終日にされた。アプリの時刻を正として、次の送信で上書きさせる
+    await ctx.db.patch("calendarSyncLinks", link._id, {
+      appChangedAt: Date.now(),
+      googleUpdated: event.updated,
+    });
     return;
   }
   const desired = await desiredEvent(ctx, link.ownerId, link.sourceKind, link.sourceId);
@@ -128,57 +161,64 @@ async function applyToSource(
   });
 }
 
+async function ownedBlock(
+  ctx: MutationCtx,
+  link: Doc<"calendarSyncLinks">,
+): Promise<Doc<"boardScheduleEvents"> | null> {
+  const blockId = ctx.db.normalizeId("boardScheduleEvents", link.sourceId);
+  const block = blockId === null ? null : await ctx.db.get("boardScheduleEvents", blockId);
+  return block === null || block.ownerId !== link.ownerId ? null : block;
+}
+
 async function moveBlockFromGoogle(
   ctx: MutationCtx,
   link: Doc<"calendarSyncLinks">,
   event: Extract<PulledEvent, { kind: "upsert" }>,
-): Promise<boolean> {
+): Promise<ApplyResult> {
+  const block = await ownedBlock(ctx, link);
+  if (block === null) {
+    return "ignored";
+  }
   if (event.allDay || event.endAt <= event.startAt) {
-    return false;
+    return "reassert";
   }
-  const blockId = ctx.db.normalizeId("boardScheduleEvents", link.sourceId);
-  const block = blockId === null ? null : await ctx.db.get("boardScheduleEvents", blockId);
-  if (block === null || block.ownerId !== link.ownerId) {
-    return false;
+  if (block.startAt !== event.startAt || block.endAt !== event.endAt) {
+    await ctx.db.patch("boardScheduleEvents", block._id, {
+      endAt: event.endAt,
+      startAt: event.startAt,
+    });
   }
-  if (block.startAt === event.startAt && block.endAt === event.endAt) {
-    return true;
-  }
-  await ctx.db.patch("boardScheduleEvents", block._id, {
-    endAt: event.endAt,
-    startAt: event.startAt,
-  });
-  return true;
+  return "applied";
 }
 
 async function moveGoalFromGoogle(
   ctx: MutationCtx,
   link: Doc<"calendarSyncLinks">,
   event: Extract<PulledEvent, { kind: "upsert" }>,
-): Promise<boolean> {
-  const dateJst = event.startAt.slice(0, 10);
-  if (!isDateJst(dateJst)) {
-    return false;
-  }
+): Promise<ApplyResult> {
   const goalId = ctx.db.normalizeId("goals", link.sourceId);
   const goal = goalId === null ? null : await ctx.db.get("goals", goalId);
   if (goal === null || goal.ownerId !== link.ownerId) {
-    return false;
+    return "ignored";
+  }
+  const dateJst = event.startAt.slice(0, 10);
+  if (!isDateJst(dateJst)) {
+    return "reassert";
   }
   if (goal.type === "exam") {
     if (goal.result !== undefined) {
-      return false;
+      return "ignored";
     }
     if (goal.examDate !== dateJst) {
       await ctx.db.patch("goals", goal._id, { examDate: dateJst });
     }
-    return true;
+    return "applied";
   }
   if (goal.deadline === undefined || goal.achievedAt !== undefined) {
-    return false;
+    return "ignored";
   }
   if (goal.deadline !== dateJst) {
     await ctx.db.patch("goals", goal._id, { deadline: dateJst });
   }
-  return true;
+  return "applied";
 }

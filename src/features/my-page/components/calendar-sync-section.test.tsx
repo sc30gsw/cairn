@@ -1,11 +1,12 @@
-import { fireEvent } from "@testing-library/react";
+import { fireEvent, within } from "@testing-library/react";
 import { Result } from "better-result";
+import type { FunctionReturnType } from "convex/server";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
 
+import type { api } from "~/../convex/_generated/api";
 import {
   CALENDAR_SYNC_CALENDARS_LABEL,
   CALENDAR_SYNC_CONNECT_LABEL,
-  CALENDAR_SYNC_CONNECTED_MESSAGE,
   CALENDAR_SYNC_DISCONNECT_LABEL,
   CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE,
   CALENDAR_SYNC_NOW_LABEL,
@@ -14,14 +15,8 @@ import {
 } from "~/features/my-page/components/calendar-sync-section";
 import { renderWithMantine } from "~/test-utils/render";
 
-type Status = {
-  calendars: { backgroundColor?: string; id: string; primary: boolean; summary: string }[];
-  googleEmail: string | null;
-  lastError: string | null;
-  lastSyncedAt: number | null;
-  status: "error" | "needsReauth" | "ok";
-  visibleCalendarIds: string[];
-};
+//? 型は Convex の status クエリから導く（手書きの複製を置かない）
+type Status = NonNullable<FunctionReturnType<typeof api.queries.calendarSync.status.status>>;
 
 const {
   connect,
@@ -33,7 +28,7 @@ const {
   syncNow,
   syncState,
 } = vi.hoisted(() => ({
-  connect: vi.fn().mockResolvedValue(null),
+  connect: vi.fn().mockResolvedValue("ok"),
   disconnect: vi.fn().mockResolvedValue(null),
   linkGoogleCalendar: vi.fn(),
   pendingState: { pending: false },
@@ -47,7 +42,7 @@ vi.mock("~/hooks/use-calendar-sync", () => ({
   useCalendarSyncStatus: () => ({ data: syncState.status }),
   useConnectCalendarSync: () => connect,
   useDisconnectCalendarSync: () => disconnect,
-  useSetVisibleCalendars: () => ({ mutateAsync: setVisible }),
+  useSetVisibleCalendars: () => setVisible,
   useSyncCalendarNow: () => syncNow,
 }));
 
@@ -57,6 +52,7 @@ vi.mock("~/features/my-page/lib/calendar-sync-actions", () => ({
   },
   linkGoogleCalendar,
   readCalendarSyncConnectPending: () => pendingState.pending,
+  readCalendarSyncReturnError: () => null,
 }));
 
 vi.mock("~/lib/run-mutation", () => ({
@@ -116,7 +112,7 @@ test("同意画面から戻ってきたら connect アクションで接続を�
     expect(connect).toHaveBeenCalledWith({});
   });
   expect(runMutation).toHaveBeenCalledWith(expect.any(Function), {
-    successMessage: CALENDAR_SYNC_CONNECTED_MESSAGE,
+    successMessage: expect.any(Function),
   });
   expect(pendingState.pending).toBe(false);
 });
@@ -155,4 +151,40 @@ test("権限切れなら再接続ボタンと案内が出て、今すぐ同期�
   expect(getByText(CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE)).toBeDefined();
   expect(getByRole("button", { name: CALENDAR_SYNC_RECONNECT_LABEL })).toBeDefined();
   expect(queryByRole("button", { name: CALENDAR_SYNC_NOW_LABEL })).toBeNull();
+});
+
+test("同期に失敗しているときは lastError の文言が見える", () => {
+  syncState.status = { ...CONNECTED, lastError: "Rate Limit Exceeded", status: "error" };
+  const { getByText } = renderWithMantine(<CalendarSyncSection />);
+  expect(getByText("Rate Limit Exceeded")).toBeDefined();
+  expect(getByText("同期に失敗")).toBeDefined();
+});
+
+test("権限切れのときはカレンダーの選択を変えられない", () => {
+  syncState.status = { ...CONNECTED, status: "needsReauth" };
+  const { getByLabelText } = renderWithMantine(<CalendarSyncSection />);
+  const holiday = getByLabelText(/日本の祝日/) as HTMLInputElement;
+  expect(holiday.disabled).toBe(true);
+});
+
+test("解除は確認を挟み、確定したときだけ disconnect が呼ばれる", async () => {
+  syncState.status = CONNECTED;
+  const { getAllByRole, getByRole } = renderWithMantine(<CalendarSyncSection />);
+  //? 確認ダイアログの確定ボタンは元のボタンと同じ名前なので、探す範囲をダイアログ内に限る
+  const trigger = () =>
+    getAllByRole("button", { name: CALENDAR_SYNC_DISCONNECT_LABEL })[0] as HTMLElement;
+
+  fireEvent.click(trigger());
+  const first = await vi.waitFor(() => getByRole("dialog", { hidden: true }));
+  fireEvent.click(within(first).getByRole("button", { hidden: true, name: "キャンセル" }));
+  expect(disconnect).not.toHaveBeenCalled();
+
+  fireEvent.click(trigger());
+  const second = await vi.waitFor(() => getByRole("dialog", { hidden: true }));
+  fireEvent.click(
+    within(second).getByRole("button", { hidden: true, name: CALENDAR_SYNC_DISCONNECT_LABEL }),
+  );
+  await vi.waitFor(() => {
+    expect(disconnect).toHaveBeenCalledWith({});
+  });
 });

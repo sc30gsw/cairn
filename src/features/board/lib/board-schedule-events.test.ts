@@ -4,7 +4,10 @@ import { STATUSES } from "~domain/domain";
 import type { Id } from "~/../convex/_generated/dataModel";
 import {
   BOARD_ALL_DAY_MORE_PREFIX,
+  boardExternalEventId,
+  isBoardExternalEvent,
   timedEventsForDay,
+  toExternalScheduleEvents,
   toBoardScheduleEvents,
   withoutAllDayEvents,
   withAllDayOverflow,
@@ -186,9 +189,7 @@ test("終日イベントだけを除外できる", () => {
   ]);
 });
 
-test("外部予定は灰色の薄い予定になり、印付きの id で見分けられる", async () => {
-  const { boardExternalEventId, isBoardExternalEvent, toExternalScheduleEvents } =
-    await import("~/features/board/lib/board-schedule-events");
+test("外部予定は灰色の薄い予定になり、印付きの id で見分けられる", () => {
   const [event] = toExternalScheduleEvents([
     {
       _id: "ext1" as Id<"externalCalendarEvents">,

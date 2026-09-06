@@ -3,13 +3,13 @@ import type { BoardScheduleColor } from "../../lib/boardScheduleColors";
 import { CHECKPOINT_EVENT_PREFIX, EXAM_EVENT_PREFIX } from "../../lib/calendarSync";
 import { isActiveExamGoal } from "../../lib/examGoal";
 import { addDaysJst } from "../../lib/jst";
-import type { GoogleEventPayload } from "../../lib/validators";
+import type { ExternalChange, GoogleEventPayload } from "../../lib/validators";
 import { scheduleInstantToRfc3339 } from "./instant";
 
 //? Google に出す予定の形を決める純関数（Q17 の決定）。本番日・期限は終日で「空き」、予定は時刻つきで「予定あり」
 
 //? Google のイベント色（1〜11）への近似対応。Mantine の色名 → Google の colorId
-export const GOOGLE_EVENT_COLOR_IDS = {
+const GOOGLE_EVENT_COLOR_IDS = {
   blue: "9",
   cyan: "7",
   grape: "3",
@@ -60,7 +60,7 @@ export function goalEventPayload(
   return null;
 }
 
-export type BlockPayloadContext = {
+type BlockPayloadContext = {
   content: string;
   dayUrl: string | null;
 };
@@ -96,5 +96,21 @@ export function patchPayload(payload: GoogleEventPayload): GoogleEventPayload {
     ...payload,
     end: { date: payload.end.date, dateTime: payload.end.dateTime },
     start: { date: payload.start.date, dateTime: payload.start.dateTime },
+  };
+}
+
+//? 外部予定をアプリで動かしたときに Google へ送る start / end。終日は date（終端は排他的）、それ以外は時刻つき
+export function externalChangePayload(
+  change: Extract<ExternalChange, { kind: "move" }>,
+): Pick<GoogleEventPayload, "end" | "start"> {
+  if (change.allDay) {
+    return {
+      end: { date: addDaysJst(change.endAt.slice(0, 10), 1) },
+      start: { date: change.startAt.slice(0, 10) },
+    };
+  }
+  return {
+    end: { dateTime: scheduleInstantToRfc3339(change.endAt) },
+    start: { dateTime: scheduleInstantToRfc3339(change.startAt) },
   };
 }

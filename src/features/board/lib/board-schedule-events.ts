@@ -11,8 +11,8 @@ import { RECORD_STATUS_UI } from "~/lib/record-status-ui";
 export const BOARD_ALL_DAY_VISIBLE_LIMIT = 2;
 export const BOARD_ALL_DAY_MORE_PREFIX = "board-more:";
 //? 外部予定（Google 側の予定の写し）。記録・予定とは別の概念なので id に印を付けて見分ける
-export const BOARD_EXTERNAL_EVENT_PREFIX = "external:";
-export const BOARD_EXTERNAL_EVENT_COLOR = "gray";
+const BOARD_EXTERNAL_EVENT_PREFIX = "external:";
+const BOARD_EXTERNAL_EVENT_COLOR = "gray";
 const ALL_DAY_START_SUFFIX = " 00:00:00";
 const ALL_DAY_END_SUFFIX = " 23:59:59";
 

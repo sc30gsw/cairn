@@ -3,6 +3,7 @@ import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
+import { GOOGLE_CALENDAR_SCOPES } from "./lib/calendarSync";
 import { GoogleAuthError } from "./lib/googleAccessToken";
 import schema from "./schema";
 
@@ -37,10 +38,7 @@ const OTHER = { email: "other@example.com", subject: "other-subject" };
 const TODAY = "2026-08-17";
 const PRIMARY = "owner@example.com";
 const HOLIDAY = "ja.japanese#holiday@group.v.calendar.google.com";
-const CALENDAR_SCOPES = [
-  "https://www.googleapis.com/auth/calendar.events",
-  "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
-];
+const CALENDAR_SCOPES = [...GOOGLE_CALENDAR_SCOPES];
 
 type FakeEvent = {
   colorId?: string;
@@ -396,16 +394,23 @@ test("Google 側の外部予定は写しとして予定タブの範囲で読め�
       title: "歯医者",
     },
   ]);
+  //? 外部予定は日・週ビューにだけ並ぶ。月ビューでは空
+  expect(
+    await owner.query(api.queries.calendarSync.listExternal.listExternal, {
+      anchorDateJst: "2026-09-01",
+      view: "month",
+    }),
+  ).toEqual([]);
   const september = await owner.query(api.queries.calendarSync.listExternal.listExternal, {
-    anchorDateJst: "2026-09-01",
-    view: "month",
+    anchorDateJst: "2026-09-23",
+    view: "week",
   });
   expect(september.map((event) => [event.title, event.allDay, event.startAt, event.endAt])).toEqual(
     [["秋分の日", true, "2026-09-23 00:00:00", "2026-09-23 23:59:59"]],
   );
   const nextYear = await owner.query(api.queries.calendarSync.listExternal.listExternal, {
     anchorDateJst: "2027-01-01",
-    view: "month",
+    view: "week",
   });
   expect(nextYear).toEqual([]);
   expect(
@@ -422,8 +427,8 @@ test("Google 側の外部予定は写しとして予定タブの範囲で読め�
   await flush(t);
   expect(
     await owner.query(api.queries.calendarSync.listExternal.listExternal, {
-      anchorDateJst: "2026-09-01",
-      view: "month",
+      anchorDateJst: "2026-09-23",
+      view: "week",
     }),
   ).toEqual([]);
 });
@@ -660,4 +665,187 @@ test("レート制限（403 rateLimitExceeded）は再接続にせず、再試�
   expect(failures).toBe(1);
   expect(google.active(PRIMARY).map((event) => event.summary)).toEqual(["本番: 本番で900点を取る"]);
   expect((await owner.query(api.queries.calendarSync.status.status, {}))?.status).toBe("ok");
+});
+
+test("差分トークンが失効（410）したら期間の全件を取り直し、もう無い写しを消す", async () => {
+  const { owner, t } = await connectedOwner();
+  google.upsertExternal(PRIMARY, {
+    end: { dateTime: "2026-08-18T11:00:00+09:00" },
+    id: "dentist",
+    start: { dateTime: "2026-08-18T10:00:00+09:00" },
+    status: "confirmed",
+    summary: "歯医者",
+  });
+  await syncNow(owner);
+  //? Google 側で消えたが差分では届かない状況を作る（写しだけ残る）
+  google.calendars.get(PRIMARY)?.delete("dentist");
+  await t.run(async (ctx) => {
+    const cursors = await ctx.db.query("calendarSyncCursors").collect();
+    await Promise.all(
+      cursors.map((cursor) =>
+        ctx.db.patch("calendarSyncCursors", cursor._id, { syncToken: "expired" }),
+      ),
+    );
+  });
+  google.requests = [];
+
+  expect(await syncNow(owner)).toBe("ok");
+
+  expect(google.requests.some((entry) => entry.startsWith("GET /calendar/v3/calendars/"))).toBe(
+    true,
+  );
+  expect(
+    await owner.query(api.queries.calendarSync.listExternal.listExternal, {
+      anchorDateJst: TODAY,
+      view: "week",
+    }),
+  ).toEqual([]);
+});
+
+test("全件を取った日から 7 日たつと差分ではなく全件を取り直す", async () => {
+  const { owner, t } = await connectedOwner();
+  await syncNow(owner);
+  const before = await t.run(async (ctx) => ctx.db.query("calendarSyncCursors").collect());
+  expect(before.every((cursor) => cursor.fullSyncedOnJst === TODAY)).toBe(true);
+
+  vi.setSystemTime(new Date("2026-08-25T12:00:00+09:00"));
+  google.requests = [];
+  await syncNow(owner);
+
+  const after = await t.run(async (ctx) => ctx.db.query("calendarSyncCursors").collect());
+  expect(after.every((cursor) => cursor.fullSyncedOnJst === "2026-08-25")).toBe(true);
+});
+
+test("アプリ側の未送信の変更が新しければ Google の古い変更は捨てられ、アプリの時刻が Google に届く", async () => {
+  const { owner, t } = await connectedOwner();
+  const rowId = await firstRowId(owner);
+  const blockId = await owner.mutation(api.mutations.boardSchedule.create.create, {
+    endAt: `${TODAY} 10:30:00`,
+    rowId,
+    startAt: `${TODAY} 09:00:00`,
+  });
+  await flush(t);
+  const [event] = google.active(PRIMARY);
+  if (event === undefined) {
+    throw new Error("expected the block in Google");
+  }
+  //? Google 側の変更（古い updated）を先に置き、あとからアプリで動かす（送信はまだ走らせない）
+  google.upsertExternal(PRIMARY, {
+    ...event,
+    end: { dateTime: "2026-08-17T16:00:00+09:00" },
+    start: { dateTime: "2026-08-17T15:00:00+09:00" },
+  });
+  vi.setSystemTime(new Date("2026-08-17T20:00:00+09:00"));
+  await owner.mutation(api.mutations.boardSchedule.move.move, {
+    blockId,
+    endAt: `${TODAY} 13:00:00`,
+    startAt: `${TODAY} 12:00:00`,
+  });
+
+  await syncNow(owner);
+
+  const [block] = await owner.query(api.queries.boardSchedule.listForWeek.listForWeek, {
+    anchorDateJst: TODAY,
+    view: "week",
+  });
+  expect(block?.startAt).toBe(`${TODAY} 12:00:00`);
+  expect(google.active(PRIMARY)[0]?.start).toEqual({ dateTime: "2026-08-17T12:00:00+09:00" });
+});
+
+test("Google で予定を終日にされたら戻さず、次の送信でアプリの時刻に書き戻す", async () => {
+  const { owner, t } = await connectedOwner();
+  const rowId = await firstRowId(owner);
+  await owner.mutation(api.mutations.boardSchedule.create.create, {
+    endAt: `${TODAY} 10:30:00`,
+    rowId,
+    startAt: `${TODAY} 09:00:00`,
+  });
+  await flush(t);
+  const [event] = google.active(PRIMARY);
+  if (event === undefined) {
+    throw new Error("expected the block in Google");
+  }
+  google.upsertExternal(PRIMARY, {
+    ...event,
+    end: { date: "2026-08-18" },
+    start: { date: "2026-08-17" },
+  });
+
+  await syncNow(owner);
+
+  const [block] = await owner.query(api.queries.boardSchedule.listForWeek.listForWeek, {
+    anchorDateJst: TODAY,
+    view: "week",
+  });
+  expect(block?.startAt).toBe(`${TODAY} 09:00:00`);
+  expect(google.active(PRIMARY)[0]?.start).toEqual({ dateTime: "2026-08-17T09:00:00+09:00" });
+});
+
+test("外部予定の送信は一時的な失敗なら再試行し、諦めたら差分トークンを捨てて error にする", async () => {
+  const { owner, t } = await connectedOwner();
+  google.upsertExternal(PRIMARY, {
+    end: { dateTime: "2026-08-18T11:00:00+09:00" },
+    id: "dentist",
+    start: { dateTime: "2026-08-18T10:00:00+09:00" },
+    status: "confirmed",
+    summary: "歯医者",
+  });
+  await syncNow(owner);
+  const [external] = await owner.query(api.queries.calendarSync.listExternal.listExternal, {
+    anchorDateJst: TODAY,
+    view: "week",
+  });
+  if (external === undefined) {
+    throw new Error("expected the external event");
+  }
+  const original = google.fetch;
+  let patches = 0;
+  vi.stubGlobal("fetch", async (input: string | URL | Request, init?: RequestInit) => {
+    if ((init?.method ?? "GET") === "PATCH") {
+      patches += 1;
+      return json(
+        { error: { message: patches === 1 ? "Backend Error" : "Bad Request" } },
+        patches === 1 ? 503 : 400,
+      );
+    }
+    return original(input, init);
+  });
+
+  await owner.mutation(api.mutations.calendarSync.moveExternal.moveExternal, {
+    endAt: "2026-08-18 15:00:00",
+    externalId: external._id,
+    startAt: "2026-08-18 14:00:00",
+  });
+  await flush(t);
+
+  expect(patches).toBe(2);
+  const status = await owner.query(api.queries.calendarSync.status.status, {});
+  expect(status?.status).toBe("error");
+  expect(status?.lastError).toBe("Bad Request");
+  await t.run(async (ctx) => {
+    const cursors = await ctx.db.query("calendarSyncCursors").collect();
+    expect(cursors.some((cursor) => cursor.calendarId === PRIMARY)).toBe(false);
+  });
+});
+
+test("別の Google アカウントで再接続すると前の同期状態は消え、同じアカウントなら表示カレンダーの選択は残る", async () => {
+  const { owner, t } = await connectedOwner();
+  await owner.mutation(api.mutations.goals.create.create, { goal: EXAM_GOAL });
+  await syncNow(owner);
+  await owner.mutation(api.mutations.calendarSync.setVisibleCalendars.setVisibleCalendars, {
+    calendarIds: [PRIMARY],
+  });
+  await flush(t);
+
+  await owner.action(api.actions.calendarSync.connect.connect, {});
+  expect(
+    (await owner.query(api.queries.calendarSync.status.status, {}))?.visibleCalendarIds,
+  ).toEqual([PRIMARY]);
+
+  tokenState.accounts = [{ accountId: "another-google-sub", scopes: CALENDAR_SCOPES }];
+  await owner.action(api.actions.calendarSync.connect.connect, {});
+  const status = await owner.query(api.queries.calendarSync.status.status, {});
+  expect(status?.visibleCalendarIds).toEqual([PRIMARY, HOLIDAY]);
+  //? 旧アカウントに作った本番日は消され、新アカウント（偽 Google では同じカレンダー）に作り直される
+  expect(google.active(PRIMARY).map((event) => event.summary)).toEqual(["本番: 本番で900点を取る"]);
 });

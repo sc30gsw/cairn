@@ -101,7 +101,7 @@ export type SyncSource = Infer<typeof syncSourceValidator>;
 export const pushPlanValidator = v.union(
   v.null(),
   v.object({
-    accessAccountId: v.string(),
+    googleAccountId: v.string(),
     calendarId: v.string(),
     source: syncSourceValidator,
   }),
@@ -112,7 +112,7 @@ export type PushPlan = Infer<typeof pushPlanValidator>;
 export const syncPlanValidator = v.union(
   v.null(),
   v.object({
-    accessAccountId: v.string(),
+    googleAccountId: v.string(),
     calendarId: v.string(),
     cursors: v.array(
       v.object({ calendarId: v.string(), fullSyncedOnJst: v.string(), syncToken: v.string() }),
@@ -142,6 +142,27 @@ export const pushExpectationValidator = syncSourceValidator.fields.link;
 export type PushExpectation = Infer<typeof pushExpectationValidator>;
 
 export const recordPushResultValidator = v.union(v.literal("conflict"), v.literal("recorded"));
+
+export type RecordPushResult = Infer<typeof recordPushResultValidator>;
+
+//? 所有者1人の同期の結果。接続の状態に「未接続」を足したもの（syncNow / connect の戻り値）
+export const ownerSyncOutcomeValidator = v.union(
+  calendarSyncStatusValidator,
+  v.literal("notConnected"),
+);
+
+export type OwnerSyncOutcome = Infer<typeof ownerSyncOutcomeValidator>;
+
+//? 接続の作成・再接続に要る材料（connect アクション → upsertConnection ミューテーション）
+export const upsertConnectionArgsValidator = v.object({
+  calendars: v.array(googleCalendarSummaryValidator),
+  defaultVisibleCalendarIds: v.array(v.string()),
+  googleAccountId: v.string(),
+  googleEmail: v.union(v.string(), v.null()),
+  ownerId: v.string(),
+});
+
+export type UpsertConnectionArgs = Infer<typeof upsertConnectionArgsValidator>;
 
 //? 外部予定へのアプリ側の操作（移動 / 削除）を Google へ送る形
 export const externalChangeValidator = v.union(

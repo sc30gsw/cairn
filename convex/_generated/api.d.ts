@@ -83,14 +83,13 @@ import type * as mutations_boardSchedule_create from "../mutations/boardSchedule
 import type * as mutations_boardSchedule_move from "../mutations/boardSchedule/move.js";
 import type * as mutations_boardSchedule_remove from "../mutations/boardSchedule/remove.js";
 import type * as mutations_boardSchedule_update from "../mutations/boardSchedule/update.js";
+import type * as mutations_calendarSync_abandonExternalPush from "../mutations/calendarSync/abandonExternalPush.js";
 import type * as mutations_calendarSync_applyPull from "../mutations/calendarSync/applyPull.js";
 import type * as mutations_calendarSync_clearConnection from "../mutations/calendarSync/clearConnection.js";
-import type * as mutations_calendarSync_finishCalendarPull from "../mutations/calendarSync/finishCalendarPull.js";
 import type * as mutations_calendarSync_markStatus from "../mutations/calendarSync/markStatus.js";
 import type * as mutations_calendarSync_moveExternal from "../mutations/calendarSync/moveExternal.js";
 import type * as mutations_calendarSync_recordPush from "../mutations/calendarSync/recordPush.js";
 import type * as mutations_calendarSync_removeExternal from "../mutations/calendarSync/removeExternal.js";
-import type * as mutations_calendarSync_resetCalendarCursor from "../mutations/calendarSync/resetCalendarCursor.js";
 import type * as mutations_calendarSync_setVisibleCalendars from "../mutations/calendarSync/setVisibleCalendars.js";
 import type * as mutations_calendarSync_upsertConnection from "../mutations/calendarSync/upsertConnection.js";
 import type * as mutations_catalog_ensure from "../mutations/catalog/ensure.js";
@@ -204,7 +203,9 @@ import type * as queries_targets_listWithProgress from "../queries/targets/listW
 import type * as queries_trash_list from "../queries/trash/list.js";
 import type * as services_boardSchedule_blocks from "../services/boardSchedule/blocks.js";
 import type * as services_calendarSync_applyPull from "../services/calendarSync/applyPull.js";
+import type * as services_calendarSync_connect from "../services/calendarSync/connect.js";
 import type * as services_calendarSync_connection from "../services/calendarSync/connection.js";
+import type * as services_calendarSync_deleteLinkedGoogleEvents from "../services/calendarSync/deleteLinkedGoogleEvents.js";
 import type * as services_calendarSync_desiredEvent from "../services/calendarSync/desiredEvent.js";
 import type * as services_calendarSync_eventPayload from "../services/calendarSync/eventPayload.js";
 import type * as services_calendarSync_externalEvents from "../services/calendarSync/externalEvents.js";
@@ -218,6 +219,7 @@ import type * as services_calendarSync_pushPlan from "../services/calendarSync/p
 import type * as services_calendarSync_recordPush from "../services/calendarSync/recordPush.js";
 import type * as services_calendarSync_runOwnerSync from "../services/calendarSync/runOwnerSync.js";
 import type * as services_calendarSync_scheduleSourceSync from "../services/calendarSync/scheduleSourceSync.js";
+import type * as services_calendarSync_syncFailure from "../services/calendarSync/syncFailure.js";
 import type * as services_calendarSync_syncPlan from "../services/calendarSync/syncPlan.js";
 import type * as services_calendarSync_syncSource from "../services/calendarSync/syncSource.js";
 import type * as services_calendarSync_toConnectionDto from "../services/calendarSync/toConnectionDto.js";
@@ -466,14 +468,13 @@ declare const fullApi: ApiFromModules<{
   "mutations/boardSchedule/move": typeof mutations_boardSchedule_move;
   "mutations/boardSchedule/remove": typeof mutations_boardSchedule_remove;
   "mutations/boardSchedule/update": typeof mutations_boardSchedule_update;
+  "mutations/calendarSync/abandonExternalPush": typeof mutations_calendarSync_abandonExternalPush;
   "mutations/calendarSync/applyPull": typeof mutations_calendarSync_applyPull;
   "mutations/calendarSync/clearConnection": typeof mutations_calendarSync_clearConnection;
-  "mutations/calendarSync/finishCalendarPull": typeof mutations_calendarSync_finishCalendarPull;
   "mutations/calendarSync/markStatus": typeof mutations_calendarSync_markStatus;
   "mutations/calendarSync/moveExternal": typeof mutations_calendarSync_moveExternal;
   "mutations/calendarSync/recordPush": typeof mutations_calendarSync_recordPush;
   "mutations/calendarSync/removeExternal": typeof mutations_calendarSync_removeExternal;
-  "mutations/calendarSync/resetCalendarCursor": typeof mutations_calendarSync_resetCalendarCursor;
   "mutations/calendarSync/setVisibleCalendars": typeof mutations_calendarSync_setVisibleCalendars;
   "mutations/calendarSync/upsertConnection": typeof mutations_calendarSync_upsertConnection;
   "mutations/catalog/ensure": typeof mutations_catalog_ensure;
@@ -587,7 +588,9 @@ declare const fullApi: ApiFromModules<{
   "queries/trash/list": typeof queries_trash_list;
   "services/boardSchedule/blocks": typeof services_boardSchedule_blocks;
   "services/calendarSync/applyPull": typeof services_calendarSync_applyPull;
+  "services/calendarSync/connect": typeof services_calendarSync_connect;
   "services/calendarSync/connection": typeof services_calendarSync_connection;
+  "services/calendarSync/deleteLinkedGoogleEvents": typeof services_calendarSync_deleteLinkedGoogleEvents;
   "services/calendarSync/desiredEvent": typeof services_calendarSync_desiredEvent;
   "services/calendarSync/eventPayload": typeof services_calendarSync_eventPayload;
   "services/calendarSync/externalEvents": typeof services_calendarSync_externalEvents;
@@ -601,6 +604,7 @@ declare const fullApi: ApiFromModules<{
   "services/calendarSync/recordPush": typeof services_calendarSync_recordPush;
   "services/calendarSync/runOwnerSync": typeof services_calendarSync_runOwnerSync;
   "services/calendarSync/scheduleSourceSync": typeof services_calendarSync_scheduleSourceSync;
+  "services/calendarSync/syncFailure": typeof services_calendarSync_syncFailure;
   "services/calendarSync/syncPlan": typeof services_calendarSync_syncPlan;
   "services/calendarSync/syncSource": typeof services_calendarSync_syncSource;
   "services/calendarSync/toConnectionDto": typeof services_calendarSync_toConnectionDto;

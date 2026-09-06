@@ -8,7 +8,7 @@ export const connectionAccess = internalQuery({
   args: { ownerId: v.string() },
   handler: async (ctx, args) => {
     const connection = await getConnection(ctx, args.ownerId);
-    return connection === null ? null : { accessAccountId: connection.googleAccountId };
+    return connection === null ? null : { googleAccountId: connection.googleAccountId };
   },
-  returns: v.union(v.null(), v.object({ accessAccountId: v.string() })),
+  returns: v.union(v.null(), v.object({ googleAccountId: v.string() })),
 });

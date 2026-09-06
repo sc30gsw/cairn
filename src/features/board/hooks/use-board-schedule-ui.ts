@@ -53,6 +53,8 @@ export function useBoardScheduleUi({
 
   const editableBlockIds = boardScheduleBlockIds(blocks);
   const externalEventIds = boardExternalEventIds(externals);
+  //? クリックで開ける予定 = 編集できる予定 + 外部予定（記録の終日イベントは開けない）
+  const clickableEventIds = new Set([...editableBlockIds, ...externalEventIds]);
   const baseEvents = [
     ...toBoardScheduleEvents(todayJst, rows, blocks),
     ...toExternalScheduleEvents(externals),
@@ -141,12 +143,8 @@ export function useBoardScheduleUi({
     openEdit(block);
   }
 
-  function handleEventClick(event: ScheduleEventData, clickEvent: MouseEvent<HTMLButtonElement>) {
-    if (isBoardAllDayMoreEvent(event.id)) {
-      openAllDayExpand(boardAllDayMoreDate(event.id), clickEvent.currentTarget);
-      return;
-    }
-    collapseAllDayExpand();
+  //? 予定タブのどのビュー（週・日・終日展開・年）から開いても同じ入口: 外部予定はモーダル、予定は編集フォーム
+  function openFromEvent(event: ScheduleEventData) {
     if (isBoardExternalEvent(event.id)) {
       const externalId = boardExternalEventId(event.id);
       setOpenedExternal(externals.find((entry) => entry._id === externalId) ?? null);
@@ -155,12 +153,22 @@ export function useBoardScheduleUi({
     openEditFromEvent(event);
   }
 
+  function handleEventClick(event: ScheduleEventData, clickEvent: MouseEvent<HTMLButtonElement>) {
+    if (isBoardAllDayMoreEvent(event.id)) {
+      openAllDayExpand(boardAllDayMoreDate(event.id), clickEvent.currentTarget);
+      return;
+    }
+    collapseAllDayExpand();
+    openFromEvent(event);
+  }
+
   function closeExternal() {
     setOpenedExternal(null);
   }
 
   return {
     baseEvents,
+    clickableEventIds,
     closeExternal,
     collapseAllDayExpand,
     dayAllDayEvents,
@@ -176,6 +184,7 @@ export function useBoardScheduleUi({
     openCreate,
     openedExternal,
     openEditFromEvent,
+    openFromEvent,
     scheduleEvents,
     setFormOpened,
   };

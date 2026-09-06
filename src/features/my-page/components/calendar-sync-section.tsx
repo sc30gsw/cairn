@@ -12,14 +12,15 @@ import {
 import { modals } from "@mantine/modals";
 import { IconBrandGoogle, IconRefresh } from "@tabler/icons-react";
 import { Result } from "better-result";
-import dayjs from "dayjs";
 import { useEffect, useState } from "react";
-import type { CalendarSyncStatus } from "~domain/calendarSync";
+import { CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE, type CalendarSyncStatus } from "~domain/calendarSync";
+import type { OwnerSyncOutcome } from "~domain/validators";
 
 import {
   clearCalendarSyncConnectPending,
   linkGoogleCalendar,
   readCalendarSyncConnectPending,
+  readCalendarSyncReturnError,
 } from "~/features/my-page/lib/calendar-sync-actions";
 import {
   useCalendarSyncStatus,
@@ -32,7 +33,7 @@ import { notifyError } from "~/lib/notify";
 import { runMutation } from "~/lib/run-mutation";
 import { NUMERAL_FONT } from "~/lib/theme";
 
-export const CALENDAR_SYNC_TITLE = "カレンダー同期";
+const CALENDAR_SYNC_TITLE = "カレンダー同期";
 const CALENDAR_SYNC_DESCRIPTION =
   "本番日・チェックポイントの期限・予定を Google カレンダーに出し、Google 側で動かした変更も戻します。Google カレンダーの予定は、予定タブに外部予定として薄く並びます。";
 export const CALENDAR_SYNC_CONNECT_LABEL = "Google カレンダーと連携";
@@ -40,21 +41,34 @@ export const CALENDAR_SYNC_RECONNECT_LABEL = "もう一度接続";
 export const CALENDAR_SYNC_NOW_LABEL = "今すぐ同期";
 export const CALENDAR_SYNC_DISCONNECT_LABEL = "連携を解除";
 export const CALENDAR_SYNC_CALENDARS_LABEL = "表示するカレンダー";
-export const CALENDAR_SYNC_CONNECTED_MESSAGE = "Google カレンダーと連携しました";
-export const CALENDAR_SYNC_SYNCED_MESSAGE = "同期しました";
-export const CALENDAR_SYNC_DISCONNECTED_MESSAGE = "カレンダー同期を解除しました";
-export const CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE =
-  "Google の権限が切れています。もう一度接続してください。";
+const CALENDAR_SYNC_CONNECTED_MESSAGE = "Google カレンダーと連携しました";
+const CALENDAR_SYNC_SYNCED_MESSAGE = "同期しました";
+const CALENDAR_SYNC_DISCONNECTED_MESSAGE = "カレンダー同期を解除しました";
+export { CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE };
+const CALENDAR_SYNC_CONNECTED_PARTIAL_MESSAGE =
+  "連携しましたが、最初の同期に失敗しました。状態を確認してください";
+const CALENDAR_SYNC_DENIED_MESSAGE =
+  "Google カレンダーの権限が許可されなかったため、連携を始められませんでした。";
 const CALENDAR_SYNC_CALENDARS_HINT =
   "外して良いのは、空き時間の確認に要らないカレンダー（祝日など）。書き込み先はメインカレンダーで、ここでは変わりません。";
 const CALENDAR_SYNC_DISCONNECT_CONFIRM =
   "このアプリが Google カレンダーに作った本番日・期限・予定は消えます。Google 側で作った予定はそのまま残ります。";
 
+//? red は削除・危険に予約（design-live-board）。再接続は orange のアクセント、一時的な失敗は yellow の注意
 const STATUS_BADGES = {
   error: { color: "yellow", label: "同期に失敗" },
-  needsReauth: { color: "red", label: "再接続が必要" },
+  needsReauth: { color: "orange", label: "再接続が必要" },
   ok: { color: "green", label: "同期中" },
 } as const satisfies Record<CalendarSyncStatus, { color: string; label: string }>;
+
+//? 表示は端末のタイムゾーンではなく、アプリの暦（JST）で揃える
+const JST_SYNCED_AT = new Intl.DateTimeFormat("ja-JP", {
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  month: "numeric",
+  timeZone: "Asia/Tokyo",
+});
 
 //? 成功すると Google の同意画面へ遷移する（戻ってきたら CalendarSyncSection の effect が接続を仕上げる）
 async function startLink() {
@@ -64,8 +78,15 @@ async function startLink() {
   }
 }
 
+//? 接続はできたが最初の同期が失敗した場合は、成功トーストで誤魔化さない
+function connectedMessage(outcome: OwnerSyncOutcome): string {
+  return outcome === "ok"
+    ? CALENDAR_SYNC_CONNECTED_MESSAGE
+    : CALENDAR_SYNC_CONNECTED_PARTIAL_MESSAGE;
+}
+
 function formatSyncedAt(syncedAt: number | null): string {
-  return syncedAt === null ? "まだ同期していません" : dayjs(syncedAt).format("M/D HH:mm");
+  return syncedAt === null ? "まだ同期していません" : JST_SYNCED_AT.format(new Date(syncedAt));
 }
 
 export function CalendarSyncSection() {
@@ -74,7 +95,8 @@ export function CalendarSyncSection() {
   const disconnect = useDisconnectCalendarSync();
   const syncNow = useSyncCalendarNow();
   const setVisible = useSetVisibleCalendars();
-  const [busy, setBusy] = useState(false);
+  //? Google の同意画面から戻ってきた直後は、接続を仕上げる間ずっと busy（初期値で決めて effect では触らない）
+  const [busy, setBusy] = useState(readCalendarSyncConnectPending);
 
   //? finally 節は React Compiler が lower できないので、try/catch で投げる経路を閉じて末尾で必ず戻す
   //? （web-push-section と同じ形）。runMutation 自体は失敗をトーストにして投げない
@@ -88,14 +110,22 @@ export function CalendarSyncSection() {
     setBusy(false);
   }
 
-  //? Google の同意画面から戻ってきた直後: 印を消してから接続を仕上げる（二重実行を避ける）
+  //? 戻ってきた1回だけ: 印を消してから connect アクションで接続を仕上げる（二重実行を避ける）。
+  //? busy は初期値で立てているので、ここでは非同期に下ろすだけ
   useEffect(() => {
     if (!readCalendarSyncConnectPending()) {
       return;
     }
     clearCalendarSyncConnectPending();
-    void withBusy(() =>
-      runMutation(() => connect({}), { successMessage: CALENDAR_SYNC_CONNECTED_MESSAGE }),
+    //? 同意画面で拒否・失敗して戻ってきた場合は接続を試みず、理由だけ知らせる
+    const returnError = readCalendarSyncReturnError();
+    if (returnError !== null) {
+      notifyError(new Error(returnError), CALENDAR_SYNC_DENIED_MESSAGE);
+      setBusy(false);
+      return;
+    }
+    void runMutation(() => connect({}), { successMessage: connectedMessage }).then(() =>
+      setBusy(false),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: 戻ってきた1回だけ
   }, []);
@@ -125,7 +155,7 @@ export function CalendarSyncSection() {
   }
 
   function changeVisible(calendarIds: string[]) {
-    void runMutation(() => setVisible.mutateAsync({ calendarIds }), { silent: true });
+    void runMutation(() => setVisible({ calendarIds }), { silent: true });
   }
 
   if (status === null) {
