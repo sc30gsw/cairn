@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+"""サインアップから項目の保存・再読込までを実画面で検証する。"""
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+
+run_id = os.environ.get("CAIRN_VERIFY_RUN_ID", "")
+if not re.fullmatch(r"[a-zA-Z0-9_]{1,32}", run_id):
+    sys.exit("Set CAIRN_VERIFY_RUN_ID first")
+state = Path("/tmp") / ("cairn-verify-" + run_id)
+control = Path(__file__).with_name("control-cairn")
+subprocess.run([str(control), "doctor"], check=True)
+if not (state / "browser-started").exists():
+    sys.exit("Run control-cairn browser first")
+art = state / "artifacts/catalog-items"
+art.mkdir(parents=True, exist_ok=False)
+script = r"""async page => {
+  const art = ART_DIRECTORY;
+  const runId = RUN_IDENTIFIER;
+  const actions = [];
+  const snapshots = {};
+  const note = action => {
+    actions.push({ at: new Date().toISOString(), action });
+  };
+  const capture = async name => {
+    snapshots[name] = await page.locator('body').ariaSnapshot();
+    await page.screenshot({ path: art + '/' + name + '.png', fullPage: true });
+  };
+  page.setDefaultTimeout(20000);
+  try {
+    await page.getByRole('heading', { name: '学習ログ', exact: true }).waitFor();
+    await page.getByText('新規登録', { exact: true }).waitFor();
+    note('Open signed-out Cairn at /; capture before signup');
+    await capture('before');
+    await page.getByText('新規登録', { exact: true }).click();
+    await page.getByRole('textbox', { name: 'ユーザー名', exact: true }).fill('vfy_' + runId);
+    await page.getByRole('textbox', { name: '表示名', exact: true }).fill('検証 ' + runId);
+    await page.getByRole('textbox', { name: 'メールアドレス', exact: true }).fill('vfy-' + runId + '@example.test');
+    await page.getByLabel('パスワード', { exact: true }).fill('Verify1!cairn');
+    note('Fill disposable local credentials; click アカウントを作成 (password omitted)');
+    await page.getByRole('button', { name: 'アカウントを作成', exact: true }).click();
+    const prompt = page.getByRole('dialog', { name: 'パスキーを登録しますか？' });
+    await prompt.waitFor();
+    await prompt.getByRole('button', { name: 'あとで', exact: true }).click();
+    note('Skip optional passkey and reach authenticated navigation');
+    await page.getByRole('link', { name: '項目', exact: true }).waitFor();
+    await page.getByRole('link', { name: '項目', exact: true }).click();
+    await page.getByRole('heading', { name: '項目', exact: true }).waitFor();
+    note('Open catalog through desktop 項目 navigation');
+    await page.getByRole('textbox', { name: '新しいカテゴリー', exact: true }).fill('検証カテゴリ');
+    note('Click カテゴリーを追加 with 検証カテゴリ');
+    await page.getByRole('button', { name: 'カテゴリーを追加', exact: true }).click();
+    await page.getByRole('textbox', { name: '検証カテゴリに学習内容を追加', exact: true }).waitFor();
+    await capture('category-added');
+    await page.getByRole('textbox', { name: '検証カテゴリに学習内容を追加', exact: true }).fill('検証項目');
+    note('Click 検証カテゴリに学習内容を追加 with 検証項目');
+    await page.getByRole('button', { name: '検証カテゴリに学習内容を追加', exact: true }).click();
+    await page.getByRole('textbox', { name: '検証項目の名前', exact: true }).waitFor();
+    if (await page.getByRole('textbox', { name: '検証項目の名前', exact: true }).inputValue() !== '検証項目') throw new Error('Item value mismatch');
+    await capture('item-added');
+    note('Reload /items to verify stored category and item');
+    await page.reload();
+    await page.getByRole('textbox', { name: '検証カテゴリに学習内容を追加', exact: true }).waitFor();
+    await page.getByRole('textbox', { name: '検証項目の名前', exact: true }).waitFor();
+    if (await page.getByRole('textbox', { name: '検証項目の名前', exact: true }).inputValue() !== '検証項目') throw new Error('Item value mismatch');
+    await capture('reloaded');
+    note('Open 日; verify persisted item is available to the day record selector');
+    await page.getByRole('link', { name: '日', exact: true }).click();
+    const select = page.getByRole('combobox', { name: 'その日限りの項目', exact: true });
+    await select.waitFor();
+    await select.click();
+    await page.getByRole('option', { name: '検証項目', exact: true }).waitFor();
+    await capture('day-select');
+    await page.getByRole('option', { name: '検証項目', exact: true }).click();
+    if (await select.inputValue() !== '検証項目') throw new Error('Selected value did not persist');
+    note('PASS: /items reload and independent day selector both show 検証項目');
+    return { actions, snapshots, proof: {
+      result: 'passed', runId,
+      features: ['auth-signup', 'auth-passkey-skip', 'items-open', 'items-add-category', 'items-add-item'],
+      entryPoints: ['signed-out / → 新規登録', 'desktop 項目 nav → /items', 'desktop 日 nav → /'],
+      category: '検証カテゴリ', item: '検証項目',
+      sideEffects: ['category and item survive /items reload', 'saved item selectable on 日'],
+      notTested: ['mobile その他', 'onboarding shortcut', 'signout/signin', 'day record creation', 'presets', 'board']
+    } };
+  } catch (error) {
+    note('FAIL: ' + String(error));
+    await capture('failure').catch(() => {});
+    return { actions, snapshots, error: String(error) };
+  }
+}
+"""
+script = script.replace("ART_DIRECTORY", json.dumps(str(art))).replace("RUN_IDENTIFIER", json.dumps(run_id))
+script_path = state / "drive-catalog.js"
+script_path.write_text(script)
+result = subprocess.run(["playwright-cli", "-s=cairn-verify-" + run_id,
+                         "--raw", "run-code", "--filename=" + str(script_path)],
+                        cwd=state, text=True, capture_output=True)
+(art / "harness.log").write_text(result.stdout + result.stderr)
+try:
+    evidence = json.loads(result.stdout)
+    if isinstance(evidence, str):
+        evidence = json.loads(evidence)
+except (ValueError, TypeError):
+    sys.exit("Harness returned no evidence; inspect " + str(art / "harness.log"))
+(art / "actions.json").write_text(json.dumps(evidence.get("actions", []), ensure_ascii=False, indent=2))
+for name, snapshot in evidence.get("snapshots", {}).items():
+    (art / (name + ".aria.yml")).write_text(snapshot)
+if result.returncode != 0 or "proof" not in evidence:
+    print(evidence.get("error", "Unknown browser failure"))
+    sys.exit("Catalog proof failed; inspect " + str(art) + "; run control-cairn cleanup")
+(art / "proof.json").write_text(json.dumps(evidence["proof"], ensure_ascii=False, indent=2))
+print("Catalog proof passed: " + str(art / "proof.json"))

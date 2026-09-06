@@ -23,13 +23,14 @@ Preconditions:
 - Today is writable (not a future `未記録` day).
 - `control-cairn doctor` is OK. Session is on desktop width.
 
-- **Open today.** Run `playwright-cli -s="$SESSION" goto http://localhost:3000/` or `playwright-cli -s="$SESSION" click "getByRole('link', { name: '日', exact: true })"`. The 記録 card is visible. Empty today shows `この日の記録はありません` (or preset rows if a weekday preset already applied). `あとで設定` dismisses one setup step only; repeat or ignore. Scroll `検証項目の記録` into view before a screenshot — the stepper can push the row below the fold.
-- **Choose item.** On `その日限りの項目`, select `検証項目` (the combobox option whose name is the item). The field value is `検証項目`.
-- **Enter note and minutes.** Run `playwright-cli -s="$SESSION" fill "getByRole('textbox', { name: 'その日限りのひとこと' })" "検証のひとこと"` and `playwright-cli -s="$SESSION" fill "getByRole('textbox', { name: '分数' })" "25"`. `分数` is a textbox.
-- **Add record.** Run `playwright-cli -s="$SESSION" click "getByRole('button', { name: '記録を足す' })"`. A form named `検証項目の記録` appears. Volume is still `0分` until confirm. Badge on the row reads `未着手`.
+- **Open today.** Run `rtk proxy playwright-cli -s="$SESSION" goto http://localhost:3000/` or `rtk proxy playwright-cli -s="$SESSION" click "getByRole('link', { name: '日', exact: true })"`. The 記録 card is visible. Empty today shows `この日の記録はありません` (or preset rows if a weekday preset already applied). `あとで設定` dismisses one setup step only; repeat or ignore. Scroll `検証項目の記録` into view before a screenshot — the stepper can push the row below the fold.
+- **Choose item.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('combobox', { name: 'その日限りの項目', exact: true })"`, then `rtk proxy playwright-cli -s="$SESSION" click "getByRole('option', { name: '検証項目', exact: true })"`. The field value is `検証項目`.
+- **Enter note and minutes.** Run `rtk proxy playwright-cli -s="$SESSION" fill "getByRole('textbox', { name: 'その日限りのひとこと' })" "検証のひとこと"` and `rtk proxy playwright-cli -s="$SESSION" fill "getByRole('textbox', { name: '分数' })" "25"`. `分数` is a textbox.
+- **Add record.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('button', { name: '記録を足す' })"`. A form named `検証項目の記録` appears. Volume is still `0分` until confirm. Badge on the row reads `未着手`.
 - **Confirm.** Snapshot the form `検証項目の記録`. Click the visible track immediately after switch `記録を確定` (the `[cursor=pointer]` sibling). `getByRole('switch')` hits a hidden input whose track label intercepts the click. After Convex updates: the switch is `[checked]`, the badge reads `完了`, the volume heading is `25分`, toast `記録を確定しました`, and 共有文 contains `検証項目`.
 - **Second view.** Reload `/`. The same `検証項目の記録` form remains, badge `完了`, volume `25分`.
-- **Proof.** Capture the confirmed day. Run `playwright-cli -s="$SESSION" --raw snapshot > "$ART/day-confirmed.aria.yml"` and `playwright-cli -s="$SESSION" screenshot --filename="$ART/day-confirmed.png"`. Artifacts show 学習量 `25分` and `検証項目`. Write `proof.txt` with feature ID `day-confirm` and entry `/`.
+- **Other dates.** From `履歴` choose a dated link from the current snapshot; alternatively use `前の日` or the `学習日` field from 日. Record the resulting `/days/YYYY-MM-DD` URL and repeat the row steps only for a writable date. Proving `/` alone does not cover these entries.
+- **Proof.** Capture the confirmed day. Run `rtk proxy playwright-cli -s="$SESSION" --raw snapshot > "$ART/day-confirmed.aria.yml"` and `rtk proxy playwright-cli -s="$SESSION" screenshot --filename="$ART/day-confirmed.png"`. Artifacts show 学習量 `25分` and `検証項目`. Write `proof.txt` with feature ID `day-confirm` and entry `/`.
 
 ## Gotchas
 
