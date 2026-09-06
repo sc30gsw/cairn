@@ -84,9 +84,7 @@ export function ExamResultModal({ goal, onClose, onSubmit, todayJst }: ExamResul
             )}
           </Field>
           <Field of={form} path={["recordedAt"]}>
-            {(field) => (
-              <GoalDateField field={field} label={EXAM_RESULT_DATE_LABEL} todayJst={todayJst} />
-            )}
+            {(field) => <GoalDateField field={field} label={EXAM_RESULT_DATE_LABEL} />}
           </Field>
           <Group gap="sm" justify="flex-end">
             <Button onClick={onClose} type="button" variant="default">

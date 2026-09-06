@@ -41,6 +41,7 @@ import type * as lib_errors from "../lib/errors.js";
 import type * as lib_examGoal from "../lib/examGoal.js";
 import type * as lib_googleAccessToken from "../lib/googleAccessToken.js";
 import type * as lib_googleCalendar from "../lib/googleCalendar.js";
+import type * as lib_googleCalendarColors from "../lib/googleCalendarColors.js";
 import type * as lib_historyBreakdown from "../lib/historyBreakdown.js";
 import type * as lib_holiday from "../lib/holiday.js";
 import type * as lib_holidayPreset from "../lib/holidayPreset.js";
@@ -252,6 +253,7 @@ import type * as services_days_liveRowsForDay from "../services/days/liveRowsFor
 import type * as services_days_openDay from "../services/days/openDay.js";
 import type * as services_days_requireEditableDay from "../services/days/requireEditableDay.js";
 import type * as services_days_requireLiveDay from "../services/days/requireLiveDay.js";
+import type * as services_days_serviceStartDate from "../services/days/serviceStartDate.js";
 import type * as services_days_setCondition from "../services/days/setCondition.js";
 import type * as services_days_setMemo from "../services/days/setMemo.js";
 import type * as services_days_toRowDtos from "../services/days/toRowDtos.js";
@@ -439,6 +441,7 @@ declare const fullApi: ApiFromModules<{
   "lib/examGoal": typeof lib_examGoal;
   "lib/googleAccessToken": typeof lib_googleAccessToken;
   "lib/googleCalendar": typeof lib_googleCalendar;
+  "lib/googleCalendarColors": typeof lib_googleCalendarColors;
   "lib/historyBreakdown": typeof lib_historyBreakdown;
   "lib/holiday": typeof lib_holiday;
   "lib/holidayPreset": typeof lib_holidayPreset;
@@ -650,6 +653,7 @@ declare const fullApi: ApiFromModules<{
   "services/days/openDay": typeof services_days_openDay;
   "services/days/requireEditableDay": typeof services_days_requireEditableDay;
   "services/days/requireLiveDay": typeof services_days_requireLiveDay;
+  "services/days/serviceStartDate": typeof services_days_serviceStartDate;
   "services/days/setCondition": typeof services_days_setCondition;
   "services/days/setMemo": typeof services_days_setMemo;
   "services/days/toRowDtos": typeof services_days_toRowDtos;
