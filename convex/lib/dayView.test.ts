@@ -69,7 +69,11 @@ test.each([
   ["2026-08-16", false, "rest"],
   ["2026-08-17", false, "todayEmpty"],
   ["2026-08-18", false, "unrecorded"],
-] as const)("登録日境界 %s / 記録 %s は %s", (dateJst, hasLiveDay, kind) => {
+] as const satisfies readonly (readonly [
+  Parameters<typeof dayViewKind>[0]["dateJst"],
+  boolean,
+  ReturnType<typeof dayViewKind>,
+])[])("登録日境界 %s / 記録 %s は %s", (dateJst, hasLiveDay, kind) => {
   expect(
     dayViewKind({ dateJst, hasLiveDay, serviceStartDateJst: "2026-08-16", todayJst: TODAY }),
   ).toBe(kind);

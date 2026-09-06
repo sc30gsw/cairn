@@ -4,7 +4,16 @@ import {
   type MantineColorsTuple,
   type MantineTheme,
 } from "@mantine/core";
+import {
+  Calendar,
+  DateInput,
+  DatePicker,
+  DatePickerInput,
+  DateTimePicker,
+  type CalendarProps,
+} from "@mantine/dates";
 
+import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-style";
 import { PAPER_TOKENS } from "~/lib/paper-tokens";
 
 const blue = [
@@ -104,6 +113,12 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
   },
 });
 
+const datePickerDefaults = {
+  firstDayOfWeek: 1,
+  getDayProps: calendarDayProps,
+  classNames: { month: calendarDayStyleClasses.japaneseCalendar },
+} as const satisfies Pick<CalendarProps, "firstDayOfWeek" | "getDayProps" | "classNames">;
+
 export const theme = createTheme({
   autoContrast: true,
   black: INK,
@@ -119,6 +134,11 @@ export const theme = createTheme({
   primaryShade: 5,
   white: PAPER,
   components: {
+    Calendar: Calendar.extend({ defaultProps: datePickerDefaults }),
+    DatePicker: DatePicker.extend({ defaultProps: datePickerDefaults }),
+    DatePickerInput: DatePickerInput.extend({ defaultProps: datePickerDefaults }),
+    DateTimePicker: DateTimePicker.extend({ defaultProps: datePickerDefaults }),
+    DateInput: DateInput.extend({ defaultProps: datePickerDefaults }),
     AppShell: {
       styles: {
         main: {

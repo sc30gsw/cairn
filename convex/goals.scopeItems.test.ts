@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { GOAL_SCOPE_FROZEN_MESSAGE, GOAL_SCOPE_ITEM_UNKNOWN_MESSAGE } from "./lib/domain";
+import type { GoalInput } from "./lib/validators";
 import schema from "./schema";
 
 const modules = import.meta.glob([
@@ -46,7 +47,7 @@ const MASTERY_GOAL = {
   content: "音読を止まらずにできる",
   criterion: "1分間で120語",
   type: "mastery",
-} as const;
+} as const satisfies GoalInput;
 
 const CONCRETE_ACTION = "Unit 1 を音読する";
 

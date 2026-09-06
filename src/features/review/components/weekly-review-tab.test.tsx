@@ -27,34 +27,34 @@ const WEEK_END = "2026-08-23";
 const TODAY_IN_WEEK = "2026-08-20";
 const TODAY_AFTER_WEEK = "2026-08-31";
 
-const ACHIEVED_TARGET = {
+const ACHIEVED_TARGET: NonNullable<WeeklyReview["targets"]>[number] = {
   _id: "target-toeic" as NonNullable<WeeklyReview["targets"]>[number]["_id"],
   achieved: true,
   categoryId: "category-toeic" as NonNullable<WeeklyReview["targets"]>[number]["categoryId"],
   categoryName: "TOEIC対策",
   current: 300,
-  metric: "minutes" as const,
+  metric: "minutes",
   targetValue: 300,
 };
 
-const MISSED_TARGET = {
+const MISSED_TARGET: NonNullable<WeeklyReview["targets"]>[number] = {
   _id: "target-listening" as NonNullable<WeeklyReview["targets"]>[number]["_id"],
   achieved: false,
   categoryId: "category-listening" as NonNullable<WeeklyReview["targets"]>[number]["categoryId"],
   categoryName: "多聴",
   current: 3,
-  metric: "days" as const,
+  metric: "days",
   targetValue: 5,
 };
 
-const BY_DAY = [
+const BY_DAY: WeeklyReview["byDay"] = [
   {
-    condition: "好調" as const,
+    condition: "好調",
     confirmedCount: 4,
     confirmedMinutes: 120,
     dateJst: WEEK_START,
     digestRate: 0.8,
-    kind: "live" as const,
+    kind: "live",
     plannedCount: 5,
     skippedCount: 1,
   },
@@ -64,27 +64,27 @@ const BY_DAY = [
     confirmedMinutes: 0,
     dateJst: "2026-08-18",
     digestRate: null,
-    kind: "rest" as const,
+    kind: "rest",
     plannedCount: 0,
     skippedCount: 0,
   },
   {
-    condition: "好調" as const,
+    condition: "好調",
     confirmedCount: 5,
     confirmedMinutes: 140,
     dateJst: "2026-08-19",
     digestRate: 1,
-    kind: "live" as const,
+    kind: "live",
     plannedCount: 5,
     skippedCount: 0,
   },
   {
-    condition: "普通" as const,
+    condition: "普通",
     confirmedCount: 1,
     confirmedMinutes: 60,
     dateJst: TODAY_IN_WEEK,
     digestRate: null,
-    kind: "live" as const,
+    kind: "live",
     plannedCount: 2,
     skippedCount: 0,
   },
@@ -94,7 +94,7 @@ const BY_DAY = [
     confirmedMinutes: 0,
     dateJst: "2026-08-21",
     digestRate: null,
-    kind: "unrecorded" as const,
+    kind: "unrecorded",
     plannedCount: 0,
     skippedCount: 0,
   },
@@ -104,7 +104,7 @@ const BY_DAY = [
     confirmedMinutes: 0,
     dateJst: "2026-08-22",
     digestRate: null,
-    kind: "unrecorded" as const,
+    kind: "unrecorded",
     plannedCount: 0,
     skippedCount: 0,
   },
@@ -114,7 +114,7 @@ const BY_DAY = [
     confirmedMinutes: 0,
     dateJst: WEEK_END,
     digestRate: null,
-    kind: "unrecorded" as const,
+    kind: "unrecorded",
     plannedCount: 0,
     skippedCount: 0,
   },

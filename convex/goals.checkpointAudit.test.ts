@@ -2,6 +2,7 @@ import { convexTest } from "convex-test";
 import { makeFunctionReference } from "convex/server";
 import { expect, test } from "vite-plus/test";
 
+import type { Doc } from "./_generated/dataModel";
 import { CHECKPOINT_AUDIT_LIMIT } from "./lib/domain";
 import type { CheckpointParentAudit } from "./lib/validators";
 import schema from "./schema";
@@ -30,7 +31,10 @@ const MASTERY_FIELDS = {
   confirmedMinutes: 0,
   criterion: "できる",
   type: "mastery",
-} as const;
+} as const satisfies Pick<
+  Extract<Doc<"goals">, { type: "mastery" }>,
+  "activeDays" | "confirmedMinutes" | "criterion" | "type"
+>;
 
 function raw() {
   return convexTest(schema, modules);

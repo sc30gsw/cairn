@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
 import { GoogleAuthError } from "./lib/googleAccessToken";
+import type { ExternalChange } from "./lib/validators";
 import schema from "./schema";
 import { applyPull } from "./services/calendarSync/applyPull";
 import { clearConnection, upsertConnection } from "./services/calendarSync/connection";
@@ -137,7 +138,7 @@ test("認証切れで残した変更は次の同期で pull より先に送信�
   ).toMatchObject(MOVED);
 });
 
-test.each(["move", "delete"] as const)(
+test.each(["move", "delete"] as const satisfies readonly ExternalChange["kind"][])(
   "pending %s を pull と全件同期の掃除が巻き戻さない",
   async (kind) => {
     const { externalId, owner, t } = await setup();
@@ -402,7 +403,7 @@ test("一括再送は100件を超えても各変更を一度ずつ送信する",
   ).toEqual([]);
 });
 
-test.each(["move", "delete"] as const)(
+test.each(["move", "delete"] as const satisfies readonly ExternalChange["kind"][])(
   "旧形式の予約済み %s は未送信管理を経由して送信する",
   async (kind) => {
     const { t } = await setup();
@@ -478,7 +479,7 @@ test("切断後の旧形式ジョブは未送信変更を復活させない", as
   ).toEqual([]);
 });
 
-test.each(["move", "delete"] as const)(
+test.each(["move", "delete"] as const satisfies readonly ExternalChange["kind"][])(
   "新しい移動の送信完了後に届いた旧 %s は送信しない",
   async (kind) => {
     const { externalId, owner, t } = await setup();
@@ -568,7 +569,7 @@ test("互換引数に必要なフィールドが足りなければ処理しな�
   ).toEqual([]);
 });
 
-test.each(["move", "delete"] as const)(
+test.each(["move", "delete"] as const satisfies readonly ExternalChange["kind"][])(
   "キャッシュ掃除後も送信済みの編集を旧 %s で上書きしない",
   async (kind) => {
     const { externalId, owner, t } = await setup();
@@ -601,7 +602,7 @@ test.each(["move", "delete"] as const)(
   },
 );
 
-test.each(["refresh", "reconnect", "switch-account"] as const)(
+test.each(["refresh", "reconnect", "switch-account"] as const satisfies readonly string[])(
   "接続の %s は旧ジョブの採用範囲を維持する",
   async (operation) => {
     const { t } = await setup();

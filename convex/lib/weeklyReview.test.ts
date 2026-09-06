@@ -16,7 +16,7 @@ const WEEK_DATES = [
   "2026-08-21",
   "2026-08-22",
   "2026-08-23",
-] as const;
+] as const satisfies readonly WeeklyStatusRow["dateJst"][];
 
 function row(dateJst: string, status: WeeklyStatusRow["status"], minutes = 30): WeeklyStatusRow {
   return { dateJst, minutes, status };

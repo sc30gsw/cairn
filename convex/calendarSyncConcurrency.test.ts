@@ -162,65 +162,70 @@ test.each([
   ["insert", "remove"],
   ["patch", "update"],
   ["patch", "remove"],
-] as const)("%s送信中の%sを最後まで反映し、Google予定を重複させない", async (phase, change) => {
-  const { goalId, owner, t } = await connected();
-  if (phase === "patch") {
-    await push(t, goalId);
-    await owner.mutation(api.mutations.goals.update.update, {
-      goalId,
-      goal: { ...GOAL, content: "送信中の目標" },
-    });
-  }
-  const entered = signal();
-  const resume = signal();
-  const method = phase === "insert" ? vi.mocked(insertEvent) : vi.mocked(patchEvent);
-  if (phase === "insert") {
-    vi.mocked(insertEvent).mockImplementationOnce(async (_client, _calendar, payload) => {
-      googleEvents.set("event-1", payload.summary);
-      entered.resolve();
-      await resume.promise;
-      return Result.ok({ ...payload, id: "event-1", updated: new Date(NOW).toISOString() });
-    });
-  } else {
-    vi.mocked(patchEvent).mockImplementationOnce(async (_client, _calendar, id, payload) => {
-      if (!("summary" in payload)) throw new Error("expected source event payload");
-      googleEvents.set(id, payload.summary);
-      entered.resolve();
-      await resume.promise;
-      return Result.ok({ id, summary: payload.summary, updated: new Date(NOW).toISOString() });
-    });
-  }
-  const sending = push(t, goalId);
-  await entered.promise;
-  expect(method).toHaveBeenCalled();
-  if (change === "update") {
-    await owner.mutation(api.mutations.goals.update.update, {
-      goalId,
-      goal: { ...GOAL, content: "最後の目標" },
-    });
-  } else {
-    await owner.mutation(api.mutations.goals.remove.remove, { goalId });
-  }
-  resume.resolve();
-  await sending;
-  expect([...googleEvents.entries()]).toEqual(
-    change === "update" ? [["event-1", "本番: 最後の目標"]] : [],
-  );
-  await t.finishAllScheduledFunctions(() => vi.runAllTimers());
-  expect(insertEvent).toHaveBeenCalledTimes(1);
-  const links = await t.run(async (ctx) => ctx.db.query("calendarSyncLinks").collect());
-  if (change === "update") {
-    expect([...googleEvents.entries()]).toEqual([["event-1", "本番: 最後の目標"]]);
-    expect(links).toMatchObject([{ googleEventId: "event-1", sourceId: goalId }]);
-    expect(links).toHaveLength(1);
-    expect(links[0]?.appChangedAt).toBeUndefined();
-  } else {
-    expect(googleEvents.size).toBe(0);
-    expect(links).toEqual([]);
-    expect(await t.run(async (ctx) => ctx.db.get("goals", goalId))).toBeNull();
-  }
-  expect(await t.run(async (ctx) => ctx.db.query("calendarSyncOperations").collect())).toEqual([]);
-});
+] as const satisfies readonly (readonly [string, string])[])(
+  "%s送信中の%sを最後まで反映し、Google予定を重複させない",
+  async (phase, change) => {
+    const { goalId, owner, t } = await connected();
+    if (phase === "patch") {
+      await push(t, goalId);
+      await owner.mutation(api.mutations.goals.update.update, {
+        goalId,
+        goal: { ...GOAL, content: "送信中の目標" },
+      });
+    }
+    const entered = signal();
+    const resume = signal();
+    const method = phase === "insert" ? vi.mocked(insertEvent) : vi.mocked(patchEvent);
+    if (phase === "insert") {
+      vi.mocked(insertEvent).mockImplementationOnce(async (_client, _calendar, payload) => {
+        googleEvents.set("event-1", payload.summary);
+        entered.resolve();
+        await resume.promise;
+        return Result.ok({ ...payload, id: "event-1", updated: new Date(NOW).toISOString() });
+      });
+    } else {
+      vi.mocked(patchEvent).mockImplementationOnce(async (_client, _calendar, id, payload) => {
+        if (!("summary" in payload)) throw new Error("expected source event payload");
+        googleEvents.set(id, payload.summary);
+        entered.resolve();
+        await resume.promise;
+        return Result.ok({ id, summary: payload.summary, updated: new Date(NOW).toISOString() });
+      });
+    }
+    const sending = push(t, goalId);
+    await entered.promise;
+    expect(method).toHaveBeenCalled();
+    if (change === "update") {
+      await owner.mutation(api.mutations.goals.update.update, {
+        goalId,
+        goal: { ...GOAL, content: "最後の目標" },
+      });
+    } else {
+      await owner.mutation(api.mutations.goals.remove.remove, { goalId });
+    }
+    resume.resolve();
+    await sending;
+    expect([...googleEvents.entries()]).toEqual(
+      change === "update" ? [["event-1", "本番: 最後の目標"]] : [],
+    );
+    await t.finishAllScheduledFunctions(() => vi.runAllTimers());
+    expect(insertEvent).toHaveBeenCalledTimes(1);
+    const links = await t.run(async (ctx) => ctx.db.query("calendarSyncLinks").collect());
+    if (change === "update") {
+      expect([...googleEvents.entries()]).toEqual([["event-1", "本番: 最後の目標"]]);
+      expect(links).toMatchObject([{ googleEventId: "event-1", sourceId: goalId }]);
+      expect(links).toHaveLength(1);
+      expect(links[0]?.appChangedAt).toBeUndefined();
+    } else {
+      expect(googleEvents.size).toBe(0);
+      expect(links).toEqual([]);
+      expect(await t.run(async (ctx) => ctx.db.get("goals", goalId))).toBeNull();
+    }
+    expect(await t.run(async (ctx) => ctx.db.query("calendarSyncOperations").collect())).toEqual(
+      [],
+    );
+  },
+);
 
 test("解除の部分失敗後は通常同期が削除を取り込まず、解除の再試行で完了する", async () => {
   const { goalId, owner, t } = await connected();

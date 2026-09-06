@@ -19,7 +19,10 @@ test.each([
   ["week", "2026-13-01"],
   ["month", "2026-13"],
   ["month", "2026-8"],
-] as const)("HistorySearchSchema は不正な %s=%s を拒否する", (key, value) => {
+] as const satisfies readonly (readonly [
+  keyof v.InferInput<typeof HistorySearchSchema>,
+  string,
+])[])("HistorySearchSchema は不正な %s=%s を拒否する", (key, value) => {
   const result = v.safeParse(HistorySearchSchema, { [key]: value });
 
   expect(result.success).toBe(false);

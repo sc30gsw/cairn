@@ -2,6 +2,7 @@ import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { api } from "./_generated/api";
+import type { GoalInput } from "./lib/validators";
 import schema from "./schema";
 
 const modules = import.meta.glob([
@@ -43,13 +44,13 @@ const EXAM_GOAL = {
   maxScore: 900,
   minScore: 800,
   type: "exam",
-} as const;
+} as const satisfies GoalInput;
 
 const MASTERY_GOAL = {
   content: "音読を止まらずにできる",
   criterion: "1分間で120語",
   type: "mastery",
-} as const;
+} as const satisfies GoalInput;
 
 test("試験・習得の2タイプを作成でき、list に反映される", async () => {
   const t = owner();

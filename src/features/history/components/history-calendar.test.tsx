@@ -19,7 +19,7 @@ vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children?: ReactNode }) => <a href="/days/rest">{children}</a>,
 }));
 
-const [confirmed, pending] = [STATUSES[0], STATUSES[1]] as const;
+const [confirmed, pending] = STATUSES;
 
 test("buildHeatmapChartData は休養と0分を除外する", () => {
   expect(
@@ -476,7 +476,7 @@ test("休養の日でもこの日を開くがある", () => {
 
 const memoScopeWeekDays: HeatmapDay[] = [
   {
-    condition: "好調" as const,
+    condition: "好調",
     dateJst: "2026-08-17",
     kind: "live",
     memo: "週スコープの好調メモ",
@@ -484,7 +484,7 @@ const memoScopeWeekDays: HeatmapDay[] = [
     movingAverage: 10,
   },
   {
-    condition: "普通" as const,
+    condition: "普通",
     dateJst: "2026-08-16",
     kind: "live",
     memo: "週スコープの普通メモ",

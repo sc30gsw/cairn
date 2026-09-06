@@ -1,7 +1,9 @@
 import { convexTest } from "convex-test";
+import type { FunctionArgs } from "convex/server";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { api } from "./_generated/api";
+import type { GoalInput } from "./lib/validators";
 import schema from "./schema";
 import { SINGLE_EXAM_GOAL_MESSAGE } from "./services/goals/create";
 import { NOT_EXAM_GOAL_MESSAGE } from "./services/goals/setExamResult";
@@ -40,7 +42,7 @@ const EXAM_GOAL = {
   maxScore: 900,
   minScore: 800,
   type: "exam",
-} as const;
+} as const satisfies GoalInput;
 
 const NEXT_EXAM_GOAL = {
   ...EXAM_GOAL,
@@ -48,15 +50,17 @@ const NEXT_EXAM_GOAL = {
   examDate: "2027-01-24",
   maxScore: 950,
   minScore: 900,
-} as const;
+} as const satisfies GoalInput;
 
 const CHECKPOINT = {
   content: "Part 5 を10分で解く",
   criterion: "30問を10分以内",
   type: "mastery",
-} as const;
+} as const satisfies GoalInput;
 
-const RESULT = { recordedAt: TODAY, score: 855 } as const;
+const RESULT = { recordedAt: TODAY, score: 855 } as const satisfies NonNullable<
+  FunctionArgs<typeof api.mutations.goals.setExamResult.setExamResult>["result"]
+>;
 
 async function examOf(t: ReturnType<typeof owner>, goalId: string) {
   const goals = await t.query(api.queries.goals.list.list, {});

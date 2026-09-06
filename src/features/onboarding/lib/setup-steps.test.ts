@@ -1,5 +1,6 @@
 import { expect, test } from "vite-plus/test";
 
+import type { SetupStepId } from "~/features/onboarding/lib/setup-steps";
 import {
   firstIncompleteSetupStep,
   incompleteSetupSteps,
@@ -68,7 +69,12 @@ test("全部 dismiss かつ未完了なら firstIncompleteSetupStep は null", (
 });
 
 test("全部 dismiss かつ未完了でも visibleSetupStep は最初の未完了を返す", () => {
-  const dismissed = new Set(["items", "presets", "examGoal", "weeklyTargets"] as const);
+  const dismissed = new Set([
+    "items",
+    "presets",
+    "examGoal",
+    "weeklyTargets",
+  ] as const satisfies readonly SetupStepId[]);
   const step = visibleSetupStep(emptyStatus, dismissed);
   expect(step?.id).toBe("items");
 });

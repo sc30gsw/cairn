@@ -11,9 +11,9 @@ const baseProps = {
   onMonthViewToday: () => undefined,
   onViewChange: () => undefined,
   onWeekChange: () => undefined,
-  selectedDateJst: "2026-08-22" as const,
-  todayJst: "2026-08-22" as const,
-  weekAnchor: "2026-08-18" as const,
+  selectedDateJst: "2026-08-22",
+  todayJst: "2026-08-22",
+  weekAnchor: "2026-08-18",
 };
 
 test("day view renders a single header control for the date picker", () => {

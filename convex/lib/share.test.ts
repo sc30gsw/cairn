@@ -97,7 +97,14 @@ test("カテゴリが2つ以上なら親+子で sortOrder 順、カテゴリ内�
   );
 });
 
-const WEEK = { activeDays: 5, weekEnd: "2026-08-23", weekStart: "2026-08-17" } as const;
+const WEEK = {
+  activeDays: 5,
+  weekEnd: "2026-08-23",
+  weekStart: "2026-08-17",
+} as const satisfies Pick<
+  Parameters<typeof formatWeeklyShareMarkdown>[0],
+  "activeDays" | "weekEnd" | "weekStart"
+>;
 
 test("週版は見出し行つきの2階層で、カテゴリ間に空行を入れない", () => {
   expect(

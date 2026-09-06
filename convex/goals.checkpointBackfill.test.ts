@@ -32,7 +32,10 @@ const MASTERY_FIELDS = {
   confirmedMinutes: 0,
   criterion: "できる",
   type: "mastery",
-} as const;
+} as const satisfies Pick<
+  Extract<Doc<"goals">, { type: "mastery" }>,
+  "activeDays" | "confirmedMinutes" | "criterion" | "type"
+>;
 
 function raw() {
   return convexTest(schema, modules);

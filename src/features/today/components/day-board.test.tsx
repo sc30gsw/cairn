@@ -15,7 +15,7 @@ import type { DayPage } from "~/features/today/types/day";
 import type { MutationResult } from "~/lib/run-mutation";
 import { renderWithMantine } from "~/test-utils/render";
 
-const [confirmed] = [STATUSES[0], STATUSES[1]] as const;
+const [confirmed] = STATUSES;
 
 const {
   appliedPresetRef,

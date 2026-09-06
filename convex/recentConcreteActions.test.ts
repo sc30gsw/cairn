@@ -56,7 +56,7 @@ test("確定済みの行から重複排除で最大5件返す", async () => {
   const t = newTest();
   const itemId = await seedItemWithRows(
     t,
-    ["a", "b", "a", "c", "d", "e", "f"].map((content) => ({ content, status: "確定" as const })),
+    ["a", "b", "a", "c", "d", "e", "f"].map((content) => ({ content, status: "確定" })),
   );
 
   const suggestions = await t

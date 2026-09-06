@@ -155,7 +155,6 @@ export function BoardSchedule({
     ...BOARD_SCHEDULE_WITHOUT_HEADER,
     firstDayOfWeek: 1,
     getDayProps: calendarDayProps,
-    onDayClick: () => undefined,
     renderDay: createBoardScheduleYearRenderDay({
       baseEvents: ui.baseEvents,
       canAdd: rows.length > 0,

@@ -2,7 +2,7 @@ import { STATUSES } from "~domain/domain";
 
 import type { DayPage, DayRow } from "~/features/today/types/day";
 
-const [, pending] = [STATUSES[0], STATUSES[1]] as const;
+const [, pending] = STATUSES;
 
 export const CONCRETE_ACTION = "Unit 1 を音読する";
 export const CONCRETE_ACTION_2 = "Unit 2 を音読する";

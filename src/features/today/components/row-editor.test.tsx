@@ -54,7 +54,9 @@ test("確定した記録には復習の導線があり、期日を選ぶと onFl
 });
 
 test("印の付いた記録は期日つきのバッジを出し、「復習をやめる」で onUnflagReview が呼ばれる", async () => {
-  const review = { dueJst: "2026-08-18", kind: "source", stage: 0 } as const;
+  const review = { dueJst: "2026-08-18", kind: "source", stage: 0 } as const satisfies NonNullable<
+    DayRow["review"]
+  >;
   const props = editorProps({ ...CONFIRMED_ROW, review });
   const { getByRole, getByText, queryByRole } = renderWithMantine(<RowEditor {...props} />);
 
@@ -70,7 +72,7 @@ test("印の付いた記録は期日つきのバッジを出し、「復習を�
 });
 
 test("復習の記録そのものは何回目かを出し、印を付ける導線は出さない", () => {
-  const review = { kind: "review", stage: 1 } as const;
+  const review = { kind: "review", stage: 1 } as const satisfies NonNullable<DayRow["review"]>;
   const props = editorProps({ ...CONFIRMED_ROW, review });
   const { getByText, queryByRole } = renderWithMantine(<RowEditor {...props} />);
 

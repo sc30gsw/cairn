@@ -3,6 +3,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { api } from "./_generated/api";
 import { ACHIEVEMENT_REFLECTION_MAX_LENGTH } from "./lib/domain";
+import type { GoalInput } from "./lib/validators";
 import schema from "./schema";
 
 const modules = import.meta.glob([
@@ -23,7 +24,7 @@ const MASTERY_GOAL = {
   content: "Part 5 を10分で解き切る",
   criterion: "模試 Part 5 を時間内に終えられる",
   type: "mastery",
-} as const;
+} as const satisfies GoalInput;
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });

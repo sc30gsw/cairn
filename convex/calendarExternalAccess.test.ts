@@ -2,6 +2,7 @@ import { convexTest } from "convex-test";
 import { expect, test } from "vite-plus/test";
 
 import { api } from "./_generated/api";
+import type { BoardScheduleView } from "./lib/boardScheduleRange";
 import schema from "./schema";
 import { moveExternal, removeExternal } from "./services/calendarSync/externalEvents";
 
@@ -174,7 +175,7 @@ test("日・週境界をまたぐ予定を取得し、範囲端で接するだ�
     });
   });
   const owner = t.withIdentity({ subject: "owner" });
-  for (const view of ["day", "week"] as const) {
+  for (const view of ["day", "week"] as const satisfies readonly BoardScheduleView[]) {
     expect(
       await owner.query(api.queries.calendarSync.listExternal.listExternal, {
         anchorDateJst: "2026-08-17",

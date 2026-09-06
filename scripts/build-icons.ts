@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-import sharp, { type Create, type RGBA } from "sharp";
+import sharp, { type Create } from "sharp";
 
 import { PAPER_TOKENS } from "../src/lib/paper-tokens.ts";
 
@@ -15,7 +15,7 @@ const SPLASH_SIZES = [
 ] as const satisfies readonly Pick<Create, "width" | "height">[];
 
 function deskBackground() {
-  return { b: 0xce, g: 0xd8, r: 0xda, alpha: 1 } as const satisfies RGBA;
+  return { b: 0xce, g: 0xd8, r: 0xda, alpha: 1 } as const satisfies Create["background"];
 }
 
 async function rasterize(size: number) {

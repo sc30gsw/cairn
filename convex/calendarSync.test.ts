@@ -5,6 +5,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { api, internal } from "./_generated/api";
 import { GOOGLE_CALENDAR_SCOPES } from "./lib/calendarSync";
 import { GoogleAuthError } from "./lib/googleAccessToken";
+import type { GoalInput } from "./lib/validators";
 import schema from "./schema";
 
 const { tokenState } = vi.hoisted(() => ({
@@ -246,7 +247,7 @@ const EXAM_GOAL = {
   maxScore: 900,
   minScore: 800,
   type: "exam",
-} as const;
+} as const satisfies GoalInput;
 
 function raw() {
   return convexTest(schema, modules);

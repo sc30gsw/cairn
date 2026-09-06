@@ -49,10 +49,10 @@ test("同じ暦日に何件あっても実施日は1日、0分の確定でも1�
 });
 
 test("対象項目を渡すと、対象外の確定は分数にも実施日にも入らない", () => {
-  const rows = [
-    { dateJst: SINCE, itemId: KINFURE, minutes: 30, status: "確定" as const },
-    { dateJst: SINCE, itemId: TADOKU, minutes: 20, status: "確定" as const },
-    { dateJst: "2026-08-18", itemId: TADOKU, minutes: 240, status: "確定" as const },
+  const rows: Parameters<typeof masteryProgressSince>[0] = [
+    { dateJst: SINCE, itemId: KINFURE, minutes: 30, status: "確定" },
+    { dateJst: SINCE, itemId: TADOKU, minutes: 20, status: "確定" },
+    { dateJst: "2026-08-18", itemId: TADOKU, minutes: 240, status: "確定" },
   ];
   expect(masteryProgressSince(rows, SINCE, [KINFURE])).toEqual({
     activeDays: 1,

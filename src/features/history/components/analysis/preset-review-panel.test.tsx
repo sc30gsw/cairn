@@ -15,7 +15,7 @@ const emptyWeekdays = WEEKDAY_DISPLAY_ORDER.map((weekday) => ({
 }));
 
 const review = {
-  suggestions: [{ reason: "leftoverHeavy" as const, weekday: 1 }],
+  suggestions: [{ reason: "leftoverHeavy", weekday: 1 }],
   weekdays: emptyWeekdays.map((row) =>
     row.weekday === 1 ? { ...row, leftover: 4, planned: 6, skipped: 1, confirmed: 1 } : row,
   ),

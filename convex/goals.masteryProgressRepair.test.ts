@@ -3,6 +3,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import type { GoalInput } from "./lib/validators";
 import schema from "./schema";
 import { creationDateJst } from "./services/goals/masteryProgress";
 import { recomputeMasteryProgress } from "./services/goals/recomputeMasteryProgress";
@@ -44,7 +45,7 @@ const MASTERY_GOAL = {
   content: "音読を止まらずにできる",
   criterion: "1分間で120語",
   type: "mastery",
-} as const;
+} as const satisfies GoalInput;
 
 const CONCRETE_ACTION = "Unit 1 を音読する";
 
@@ -306,7 +307,7 @@ const EXAM_GOAL = {
   maxScore: 850,
   minScore: 730,
   type: "exam",
-} as const;
+} as const satisfies GoalInput;
 
 test("試験目標は recomputeMasteryProgress の対象外", async () => {
   const t = owner();

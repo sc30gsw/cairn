@@ -190,7 +190,7 @@ export function GoalDateField({
       disabled={disabled}
       error={field.errors?.[0]}
       firstDayOfWeek={1}
-      getDayProps={(date) => calendarDayProps(date, todayJst)}
+      getDayProps={calendarDayProps}
       label={label}
       locale="ja"
       name={field.props.name}

@@ -242,7 +242,7 @@ test("復習を確定すると段階が進み、次の期日はその日から�
     [DAY5, 2],
     ["2026-08-28", 3],
     ["2026-09-11", null],
-  ] as const) {
+  ] as const satisfies readonly (readonly [string, number | null])[]) {
     vi.setSystemTime(new Date(`${dateJst}T09:00:00+09:00`));
     await owner.mutation(api.mutations.days.open.open, { dateJst, todayJst: dateJst });
     const [review] = await dayRows(t, dateJst);

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import type { GoalInput } from "./lib/validators";
 import schema from "./schema";
 
 const modules = import.meta.glob([
@@ -36,13 +37,13 @@ const EXAM_GOAL = {
   maxScore: 900,
   minScore: 800,
   type: "exam",
-} as const;
+} as const satisfies GoalInput;
 
 const LONG_TERM_GOAL = {
   content: "音読を止まらずにできる",
   criterion: "1分間で120語",
   type: "mastery",
-} as const;
+} as const satisfies GoalInput;
 
 function raw() {
   return convexTest(schema, modules);

@@ -3,6 +3,7 @@ import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
+import type { TableNames } from "./_generated/dataModel";
 import { GOOGLE_CALENDAR_SCOPES } from "./lib/calendarSync";
 import { deleteEvent, listCalendars, listEvents } from "./lib/googleCalendar";
 import schema from "./schema";
@@ -41,7 +42,7 @@ const SYNC_TABLES = [
   "externalCalendarEvents",
   "calendarSyncCursors",
   "calendarExternalChanges",
-] as const;
+] as const satisfies readonly TableNames[];
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -172,7 +173,7 @@ test("清掃を上限付きで確定し、残りがある間は再認証と旧�
   });
 });
 
-test.each(["disconnect", "reconnect", "switch-account"] as const)(
+test.each(["disconnect", "reconnect", "switch-account"] as const satisfies readonly string[])(
   "清掃途中で停止しても lease 失効後の %s が残りを完了する",
   async (operation) => {
     const { t, owner } = await setup();

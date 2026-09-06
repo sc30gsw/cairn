@@ -6,7 +6,7 @@ import { TrashList } from "~/features/trash/components/trash-list";
 import type { TrashPage } from "~/features/trash/types/trash";
 import { renderWithMantine } from "~/test-utils/render";
 
-const [confirmed] = [STATUSES[0]] as const;
+const [confirmed] = STATUSES;
 
 test("ゴミ箱と復元・完全削除が見える", async () => {
   const onRestoreRow = vi.fn();
