@@ -76,9 +76,9 @@ export async function flushExternalChanges(
   let firstError: GoogleCalendarError | null = null;
   while (true) {
     const pending: FunctionReturnType<
-      typeof internal.queries.calendarSync.pendingExternalChange.pendingExternalChanges
+      typeof internal.queries.calendarSync.pendingExternalChanges.pendingExternalChanges
     > = await ctx.runQuery(
-      internal.queries.calendarSync.pendingExternalChange.pendingExternalChanges,
+      internal.queries.calendarSync.pendingExternalChanges.pendingExternalChanges,
       { ownerId, paginationOpts: { cursor, numItems: 100 } },
     );
     for (const pendingId of pending.page) {

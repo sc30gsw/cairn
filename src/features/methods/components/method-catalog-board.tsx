@@ -19,6 +19,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { IconEye, IconEyeOff, IconGripVertical, IconTrash } from "@tabler/icons-react";
+import { Result } from "better-result";
 import { useState, type ReactNode } from "react";
 import { groupBy, mapValues, prop, sortBy } from "remeda";
 
@@ -178,8 +179,9 @@ export function MethodCatalogBoard({ catalog }: Record<"catalog", MethodCatalog>
           method={openedMethod}
           onClose={() => setOpenedMethodId(null)}
           onRemove={async (methodId) => {
-            setOpenedMethodId(null);
-            await actions.onRemoveMethod(methodId);
+            const result = await actions.onRemoveMethod(methodId);
+            if (Result.isOk(result)) setOpenedMethodId(null);
+            return result;
           }}
           onUpdate={actions.onUpdateMethod}
         />
@@ -222,9 +224,9 @@ function AddLaneForm({ onCreate }: Record<"onCreate", MethodCatalogActions["onCr
   return (
     <Form
       of={form}
-      onSubmit={(output) => {
-        onCreate(output);
-        reset(form);
+      onSubmit={async (output) => {
+        const result = await onCreate(output);
+        if (Result.isOk(result)) reset(form);
       }}
     >
       <Grid align="flex-start" gap="sm">
@@ -515,9 +517,9 @@ function AddMethodToLaneForm({
   return (
     <Form
       of={form}
-      onSubmit={(output) => {
-        onCreate({ laneId: lane._id, name: output.name });
-        reset(form);
+      onSubmit={async (output) => {
+        const result = await onCreate({ laneId: lane._id, name: output.name });
+        if (Result.isOk(result)) reset(form);
       }}
     >
       <Stack gap="xs">

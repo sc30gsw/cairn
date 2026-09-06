@@ -1,6 +1,7 @@
 import { Card, Stack } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { Schedule, type DateStringValue } from "@mantine/schedule";
+import { Result } from "better-result";
 import type { CSSProperties } from "react";
 import { useRef } from "react";
 
@@ -281,8 +282,9 @@ export function BoardSchedule({
                   if (blockId === undefined) {
                     return;
                   }
-                  await onRemoveBlock({ blockId });
-                  ui.setFormOpened(false);
+                  const result = await onRemoveBlock({ blockId });
+                  if (Result.isOk(result)) ui.setFormOpened(false);
+                  return result;
                 }
           }
           onSubmit={async (values) => {
@@ -293,13 +295,12 @@ export function BoardSchedule({
               startAt: dateToScheduleInstant(values.start),
             };
             if (blockId === undefined) {
-              await onCreateBlock({
+              return await onCreateBlock({
                 ...payload,
                 rowId: values.rowId,
               });
-              return;
             }
-            await onUpdateBlock({
+            return await onUpdateBlock({
               blockId,
               rowId: values.rowId,
               ...payload,

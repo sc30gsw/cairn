@@ -1,5 +1,6 @@
 import { Field, Form, reset, useForm, type FormStore } from "@formisch/react";
 import { Box, Button, Card, Grid, Group, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Result } from "better-result";
 import { useEffect } from "react";
 import { OBSTACLE_THEN_PLACEHOLDER } from "~domain/concreteActionCore";
 
@@ -15,10 +16,11 @@ import type {
   RemoveObstacleInput,
   UpdateObstacleInput,
 } from "~/features/goals/types/mutations";
+import type { MutationResult } from "~/lib/run-mutation";
 
 type ObstacleSectionProps = {
   obstacles: Obstacle[];
-  onCreateObstacle: (input: CreateObstacleInput) => void;
+  onCreateObstacle: (input: CreateObstacleInput) => Promise<MutationResult>;
   onRemoveObstacle: (planId: RemoveObstacleInput["planId"]) => void;
   onUpdateObstacle: (input: UpdateObstacleInput) => void;
 };
@@ -42,9 +44,9 @@ export function ObstacleSection({
       </Group>
       <Form
         of={obstacleForm}
-        onSubmit={(output) => {
-          onCreateObstacle(output);
-          reset(obstacleForm);
+        onSubmit={async (output) => {
+          const result = await onCreateObstacle(output);
+          if (Result.isOk(result)) reset(obstacleForm);
         }}
       >
         <Grid align="flex-start" gap="sm">

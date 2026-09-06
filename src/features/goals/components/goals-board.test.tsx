@@ -1,4 +1,5 @@
 import { fireEvent, waitFor, within } from "@testing-library/react";
+import { Result } from "better-result";
 import type { ReactNode } from "react";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
 
@@ -99,6 +100,17 @@ vi.mock("~/features/goals/hooks/use-goals-board-actions", () => ({
 }));
 
 beforeEach(() => {
+  for (const action of [
+    onCreateGoal,
+    onCreateObstacle,
+    onRemoveGoal,
+    onRemoveObstacle,
+    onSetAchieved,
+    onSetExamResult,
+    onUpdateGoal,
+    onUpdateObstacle,
+  ])
+    action.mockResolvedValue(Result.ok(null));
   onCreateGoal.mockClear();
   onCreateObstacle.mockClear();
   onRemoveGoal.mockClear();

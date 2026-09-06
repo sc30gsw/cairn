@@ -1,9 +1,11 @@
 import { Field, Form, reset, useForm, type SubmitHandler } from "@formisch/react";
 import { Button, Group, Modal, Stack, Text, Textarea } from "@mantine/core";
+import { Result } from "better-result";
 import { useEffect } from "react";
 
 import { AchievementReflectionSchema } from "~/features/goals/schemas/achievement-reflection-schema";
 import type { MasteryGoal } from "~/features/goals/types/goal";
+import type { MutationResult } from "~/lib/run-mutation";
 
 const ACHIEVEMENT_REFLECTION_TITLE = "達成にする";
 export const ACHIEVEMENT_REFLECTION_LABEL = "振り返り（任意）";
@@ -12,7 +14,7 @@ export const ACHIEVEMENT_REFLECTION_SUBMIT = "達成にする";
 type AchievementReflectionModalProps = {
   goal: MasteryGoal | null;
   onClose: () => void;
-  onSubmit: (reflection: string | undefined) => void | Promise<void>;
+  onSubmit: (reflection: string | undefined) => Promise<MutationResult | undefined>;
 };
 
 export function AchievementReflectionModal({
@@ -33,8 +35,8 @@ export function AchievementReflectionModal({
   }, [form, goal]);
 
   const handleSubmit: SubmitHandler<typeof AchievementReflectionSchema> = async (values) => {
-    await onSubmit(values.reflection === "" ? undefined : values.reflection);
-    onClose();
+    const result = await onSubmit(values.reflection === "" ? undefined : values.reflection);
+    if (result !== undefined && Result.isOk(result)) onClose();
   };
 
   return (

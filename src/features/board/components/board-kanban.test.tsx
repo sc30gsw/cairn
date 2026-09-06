@@ -149,9 +149,9 @@ test("計測がある進行中の行を確定すると、stopTimer の分数で�
   expect(queryByLabelText("分数")).toBeNull();
 });
 
-test("stopTimer が失敗したら安全側でエディタを開く", async () => {
-  onStopTimerMock.mockResolvedValueOnce(null);
-  const { findByLabelText, getByRole } = renderWithMantine(
+test("stopTimer が失敗したら確定せず、再試行で計測値を保存する", async () => {
+  onStopTimerMock.mockRejectedValueOnce(new Error("offline"));
+  const { queryByLabelText, getByRole } = renderWithMantine(
     <BoardKanban
       dateJst="2026-08-17"
       rows={[
@@ -167,9 +167,13 @@ test("stopTimer が失敗したら安全側でエディタを開く", async () =
 
   getByRole("button", { name: "確定する" }).click();
 
-  const minutesInput = await findByLabelText("分数");
+  await waitFor(() => expect(onStopTimerMock).toHaveBeenCalledOnce());
   expect(onConfirmMock).not.toHaveBeenCalled();
-  expect((minutesInput as HTMLInputElement).value).toBe("30");
+  expect(queryByLabelText("分数")).toBeNull();
+  fireEvent.click(getByRole("button", { name: "確定する" }));
+  await waitFor(() =>
+    expect(onConfirmMock).toHaveBeenCalledWith({ content: "Unit 1", minutes: 13, rowId: "r1" }),
+  );
 });
 
 test("計測が無く内容と分数が埋まった行はモーダルなしで確定する", async () => {

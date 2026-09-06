@@ -2,6 +2,7 @@ import { Field, Form, reset, useForm } from "@formisch/react";
 import type { SubmitHandler } from "@formisch/react";
 import { Button, ColorSwatch, Group, Modal, Select, Stack } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
+import { Result } from "better-result";
 import { useEffect } from "react";
 import { DEFAULT_BOARD_SCHEDULE_COLOR } from "~domain/boardScheduleColors";
 
@@ -15,12 +16,13 @@ import {
   type BoardScheduleEventOutput,
 } from "~/features/board/schemas/board-schedule-event-schema";
 import type { BoardRow, BoardScheduleBlock } from "~/features/board/types/board";
+import type { MutationResult } from "~/lib/run-mutation";
 
 type BoardScheduleEventFormProps = {
   initialValues: BoardScheduleEventInput | null;
   onClose: () => void;
-  onDelete?: () => void | Promise<void>;
-  onSubmit: (values: BoardScheduleEventOutput) => Promise<void>;
+  onDelete?: () => Promise<MutationResult | undefined>;
+  onSubmit: (values: BoardScheduleEventOutput) => Promise<MutationResult>;
   opened: boolean;
   rows: readonly BoardRow[];
 };
@@ -64,8 +66,8 @@ export function BoardScheduleEventForm({
   }, [form, initialValues]);
 
   const handleSubmit: SubmitHandler<typeof BoardScheduleEventSchema> = async (values) => {
-    await onSubmit(values);
-    onClose();
+    const result = await onSubmit(values);
+    if (result !== undefined && Result.isOk(result)) onClose();
   };
 
   const isEditing = initialValues?.blockId !== undefined;

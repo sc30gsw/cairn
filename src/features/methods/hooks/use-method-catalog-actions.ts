@@ -39,38 +39,36 @@ export function useMethodCatalogActions() {
     onApplyLaneOrder: (input: ApplyLaneOrderInput) =>
       runMutation(() => applyLaneOrder(input), {
         successMessage: "レーンの並びを更新しました",
-      }).then(() => undefined),
+      }),
     onApplyMethodOrder: (input: ApplyMethodOrderInput) =>
-      runMutation(() => applyMethodOrder(input), { successMessage: "並び順を更新しました" }).then(
-        () => undefined,
-      ),
+      runMutation(() => applyMethodOrder(input), { successMessage: "並び順を更新しました" }),
     onCreateLane: (input: CreateLaneInput) =>
       runMutation(() => createLane.mutateAsync(input), {
         successMessage: "レーンを追加しました",
-      }).then(() => undefined),
+      }),
     onCreateMethod: (input: CreateMethodInput) =>
       runMutation(() => createMethod.mutateAsync(input), {
         successMessage: "方法を追加しました",
-      }).then(() => undefined),
+      }),
     onRemoveLane: (laneId: RemoveLaneInput["laneId"]) =>
       runMutation(() => removeLane.mutateAsync({ laneId }), {
         successMessage: "レーンを削除しました",
-      }).then(() => undefined),
+      }),
     onRemoveMethod: (methodId: RemoveMethodInput["methodId"]) =>
       runMutation(() => removeMethod.mutateAsync({ methodId }), {
         successMessage: "方法を削除しました",
-      }).then(() => undefined),
+      }),
     onRenameLane: (input: RenameLaneInput) =>
       runMutation(() => renameLane.mutateAsync(input), {
         successMessage: "レーン名を変更しました",
-      }).then(() => undefined),
+      }),
     onSetNowViewing: (input: SetNowViewingInput) =>
       runMutation(() => setNowViewing.mutateAsync(input), {
         successMessage: input.nowViewing ? "いま見るにしました" : "いま見るを外しました",
-      }).then(() => undefined),
+      }),
     onUpdateMethod: (input: UpdateMethodInput) =>
       runMutation(() => updateMethod.mutateAsync(input), {
         successMessage: "方法を保存しました",
-      }).then(() => undefined),
+      }),
   };
 }

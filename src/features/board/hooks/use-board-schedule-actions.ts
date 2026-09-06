@@ -25,18 +25,18 @@ export function useBoardScheduleActions(anchorDateJst: DateJst, view: BoardSched
 
   return {
     onCreateBlock: (input: Parameters<typeof createBlock.mutateAsync>[0]) =>
-      runMutation(() => createBlock.mutateAsync(input), silent).then(() => undefined),
+      runMutation(() => createBlock.mutateAsync(input), silent),
     onMoveBlock: (input: Parameters<typeof moveBlock.mutateAsync>[0]) =>
-      runMutation(() => moveBlock.mutateAsync(input), silent).then(() => undefined),
+      runMutation(() => moveBlock.mutateAsync(input), silent),
     onMoveExternal: (input: Parameters<typeof moveExternal.mutateAsync>[0]) =>
-      runMutation(() => moveExternal.mutateAsync(input), silent).then(() => undefined),
+      runMutation(() => moveExternal.mutateAsync(input), silent),
     onRemoveExternal: (input: Parameters<typeof removeExternal.mutateAsync>[0]) =>
       runMutation(() => removeExternal.mutateAsync(input), {
         successMessage: "Google カレンダーから予定を消しました",
-      }).then(() => undefined),
+      }),
     onRemoveBlock: (input: Parameters<typeof removeBlock.mutateAsync>[0]) =>
-      runMutation(() => removeBlock.mutateAsync(input), silent).then(() => undefined),
+      runMutation(() => removeBlock.mutateAsync(input), silent),
     onUpdateBlock: (input: Parameters<typeof updateBlock.mutateAsync>[0]) =>
-      runMutation(() => updateBlock.mutateAsync(input), silent).then(() => undefined),
+      runMutation(() => updateBlock.mutateAsync(input), silent),
   };
 }

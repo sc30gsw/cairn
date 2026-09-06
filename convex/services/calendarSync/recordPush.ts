@@ -4,7 +4,7 @@ import type { PushExpectation, PushOutcome, RecordPushResult } from "../../lib/v
 import { desiredEvent } from "./desiredEvent";
 import { payloadKey } from "./eventPayload";
 import { getConnection } from "./getConnection";
-import { findLink, linkSummary } from "./syncSource";
+import { findLink } from "./syncSource";
 
 export async function recordPush(
   ctx: MutationCtx,
@@ -26,7 +26,7 @@ export async function recordPush(
     return "disconnected";
   }
   const link = await findLink(ctx, args.ownerId, args.sourceKind, args.sourceId);
-  if (!matchesExpectation(linkSummary(link), args.expected)) {
+  if ((link?.googleEventId ?? null) !== args.expected) {
     return "conflict";
   }
   const { outcome } = args;
@@ -75,14 +75,4 @@ export async function recordPush(
   }
   await ctx.db.patch("calendarSyncLinks", link._id, fields);
   return changed ? "changed" : "recorded";
-}
-
-function matchesExpectation(
-  current: ReturnType<typeof linkSummary>,
-  expected: PushExpectation,
-): boolean {
-  if (current === null || expected === null) {
-    return current === expected;
-  }
-  return current.googleEventId === expected.googleEventId;
 }

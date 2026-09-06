@@ -14,6 +14,7 @@ import {
 } from "@mantine/core";
 import { IconNotes } from "@tabler/icons-react";
 import { useNavigate } from "@tanstack/react-router";
+import { Result } from "better-result";
 import { useState } from "react";
 import { isDateJst, type DateJst } from "~domain/jst";
 
@@ -33,6 +34,7 @@ import { useApplyPresetFromSearch } from "~/features/today/hooks/use-apply-prese
 import { useDayBoardActions } from "~/features/today/hooks/use-day-board-actions";
 import { emptyDayCopy } from "~/features/today/lib/empty-day-copy";
 import { weekdayPresetId } from "~/features/today/lib/weekday-preset";
+import type { MutationResult } from "~/lib/run-mutation";
 import { onRequiredSelect } from "~/lib/select";
 import { BODY_FONT, NUMERAL_FONT } from "~/lib/theme";
 import type { PresetDto, PresetId } from "~/types/item";
@@ -69,7 +71,7 @@ function DayPresetSelect({
   dateJst: DateJst;
   isRest: boolean;
   isToday: boolean;
-  onSwitchPreset: (presetId: PresetDto["_id"]) => void;
+  onSwitchPreset: (presetId: PresetDto["_id"]) => Promise<MutationResult>;
   presets: PresetDto[];
   selectedPresetId: null | PresetId;
 }) {
@@ -85,8 +87,10 @@ function DayPresetSelect({
       aria-label="プリセット切替"
       data={presetSelectData(presets)}
       label="この日の雛形"
-      onChange={onRequiredSelect((raw) => {
+      onChange={onRequiredSelect(async (raw) => {
         const presetId = unwrapPresetId(parsePresetId(raw));
+        const result = await onSwitchPreset(presetId);
+        if (Result.isError(result)) return;
         if (isToday) {
           void navigate({
             to: ".",
@@ -98,7 +102,6 @@ function DayPresetSelect({
         } else {
           setAppliedPresetId(presetId);
         }
-        onSwitchPreset(presetId);
       })}
       placeholder="切り替える"
       value={value}
@@ -192,11 +195,11 @@ export function DayBoard(props: DayBoardProps) {
                 dateJst={dateJst}
                 isRest={day.kind === "rest"}
                 isToday={isToday}
-                onSwitchPreset={(presetId) => {
+                onSwitchPreset={async (presetId) => {
                   if (!interactive) {
-                    return;
+                    return Result.ok(null);
                   }
-                  void onSwitchPreset(presetId, appliedPresetRef);
+                  return onSwitchPreset(presetId, appliedPresetRef);
                 }}
                 presets={presets}
                 selectedPresetId={selectedPresetId}
@@ -215,7 +218,7 @@ export function DayBoard(props: DayBoardProps) {
                 <Box key={row._id} data-onboarding-tour-id={CONCRETE_ACTION_TOUR_TARGETS.today}>
                   <RowEditor
                     disabled={!canEdit || !interactive}
-                    onConfirm={interactive ? onConfirm : () => {}}
+                    onConfirm={interactive ? onConfirm : async () => Result.ok(null)}
                     onFlagReview={interactive ? onFlagReview : () => {}}
                     onRemove={interactive ? onRemoveRow : () => {}}
                     onSkip={interactive ? onSkip : () => {}}
@@ -229,7 +232,7 @@ export function DayBoard(props: DayBoardProps) {
                 <RowEditor
                   key={row._id}
                   disabled={!canEdit || !interactive}
-                  onConfirm={interactive ? onConfirm : () => {}}
+                  onConfirm={interactive ? onConfirm : async () => Result.ok(null)}
                   onFlagReview={interactive ? onFlagReview : () => {}}
                   onRemove={interactive ? onRemoveRow : () => {}}
                   onSkip={interactive ? onSkip : () => {}}

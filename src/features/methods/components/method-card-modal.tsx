@@ -5,10 +5,12 @@ import TaskItem from "@tiptap/extension-task-item";
 import TipTapTaskList from "@tiptap/extension-task-list";
 import { useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { Result } from "better-result";
 
 import { MethodEditSchema } from "~/features/methods/schemas/method-schema";
 import type { Method } from "~/features/methods/types/method";
 import type { RemoveMethodInput, UpdateMethodInput } from "~/features/methods/types/mutations";
+import type { MutationResult } from "~/lib/run-mutation";
 
 import classes from "~/features/methods/components/method-card-modal.module.css";
 
@@ -16,7 +18,7 @@ type MethodCardModalProps = {
   method: Method;
   onClose: () => void;
   onRemove: (methodId: RemoveMethodInput["methodId"]) => void;
-  onUpdate: (input: UpdateMethodInput) => void;
+  onUpdate: (input: UpdateMethodInput) => Promise<MutationResult>;
 };
 
 export function MethodCardModal({ method, onClose, onRemove, onUpdate }: MethodCardModalProps) {
@@ -43,15 +45,15 @@ export function MethodCardModal({ method, onClose, onRemove, onUpdate }: MethodC
     <Modal onClose={onClose} opened size="lg" title={method.name}>
       <Form
         of={form}
-        onSubmit={(output) => {
-          onUpdate({
+        onSubmit={async (output) => {
+          const result = await onUpdate({
             bodyText: output.bodyText,
             completionHtml: completionEditor?.getHTML() ?? method.completionHtml,
             memoHtml: memoEditor?.getHTML() ?? method.memoHtml,
             methodId: method._id,
             name: output.name,
           });
-          onClose();
+          if (Result.isOk(result)) onClose();
         }}
       >
         <Stack gap="md">

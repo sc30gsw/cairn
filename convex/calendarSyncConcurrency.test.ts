@@ -124,27 +124,33 @@ function signal() {
 test("同じ所有者の操作を排他し、別の所有者と解放後の操作を許可する", async () => {
   const t = convexTest(schema, modules);
   const acquire = (ownerId: string) =>
-    t.mutation(internal.mutations.calendarSync.operation.acquire, { ownerId });
+    t.mutation(internal.mutations.calendarSync.acquireOperation.acquireOperation, { ownerId });
   const operationId = await acquire(OWNER);
   expect(operationId).not.toBeNull();
   expect(await acquire(OWNER)).toBeNull();
   expect(await acquire("another-owner")).not.toBeNull();
   if (operationId === null) throw new Error("expected acquired operation");
-  await t.mutation(internal.mutations.calendarSync.operation.release, { operationId });
+  await t.mutation(internal.mutations.calendarSync.releaseOperation.releaseOperation, {
+    operationId,
+  });
   expect(await acquire(OWNER)).not.toBeNull();
 });
 
 test("期限切れの操作を回復し、古い処理の解放で新しい操作を消さない", async () => {
   const t = convexTest(schema, modules);
   const acquire = () =>
-    t.mutation(internal.mutations.calendarSync.operation.acquire, { ownerId: OWNER });
+    t.mutation(internal.mutations.calendarSync.acquireOperation.acquireOperation, {
+      ownerId: OWNER,
+    });
   const expiredId = await acquire();
   if (expiredId === null) throw new Error("expected acquired operation");
   vi.setSystemTime(NOW + 11 * 60 * 1000);
   const replacementId = await acquire();
   expect(replacementId).not.toBeNull();
   expect(replacementId).not.toBe(expiredId);
-  await t.mutation(internal.mutations.calendarSync.operation.release, { operationId: expiredId });
+  await t.mutation(internal.mutations.calendarSync.releaseOperation.releaseOperation, {
+    operationId: expiredId,
+  });
   expect(await acquire()).toBeNull();
   expect(
     await t.run(async (ctx) => ctx.db.query("calendarSyncOperations").collect()),

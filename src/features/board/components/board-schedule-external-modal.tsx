@@ -1,9 +1,11 @@
 import { Button, Group, Modal, Stack, Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
 import { IconBrandGoogle } from "@tabler/icons-react";
+import { Result } from "better-result";
 
 import { formatScheduleTimeLabel } from "~/features/board/lib/schedule-instant";
 import type { BoardExternalEvent } from "~/features/board/types/board";
+import type { MutationResult } from "~/lib/run-mutation";
 import { NUMERAL_FONT } from "~/lib/theme";
 
 const EXTERNAL_EVENT_MODAL_TITLE = "外部予定";
@@ -22,7 +24,7 @@ type BoardScheduleExternalModalProps = {
   canDrag: boolean;
   external: BoardExternalEvent | null;
   onClose: () => void;
-  onRemove: (externalId: BoardExternalEvent["_id"]) => Promise<void>;
+  onRemove: (externalId: BoardExternalEvent["_id"]) => Promise<MutationResult>;
 };
 
 function formatRange(external: BoardExternalEvent): string {
@@ -53,9 +55,9 @@ export function BoardScheduleExternalModal({
       children: EXTERNAL_EVENT_REMOVE_CONFIRM,
       confirmProps: { color: "red" },
       labels: { cancel: "キャンセル", confirm: EXTERNAL_EVENT_REMOVE_LABEL },
-      onConfirm: () => {
-        onClose();
-        void onRemove(externalId);
+      onConfirm: async () => {
+        const result = await onRemove(externalId);
+        if (Result.isOk(result)) onClose();
       },
       title: EXTERNAL_EVENT_REMOVE_CONFIRM_TITLE,
     });

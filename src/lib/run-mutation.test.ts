@@ -1,3 +1,4 @@
+import { Result } from "better-result";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { notifyError, notifySuccess } from "~/lib/notify";
@@ -130,4 +131,17 @@ test("2本並行して先に1本解決しても通知は消えず、2本目の�
   resolveSecond();
   await second;
   expect(hideMock).toHaveBeenCalledWith("run-mutation-unsaved");
+});
+
+test.each([false, true])("保存結果を呼び出し元へ返す silent=%s", async (silent) => {
+  const result = await runMutation(async () => ({ savedId: "row-1" }), { silent });
+  expect(Result.isOk(result)).toBe(true);
+  if (Result.isOk(result)) expect(result.value).toEqual({ savedId: "row-1" });
+});
+
+test.each([false, true])("失敗を通知の設定によらず呼び出し元へ返す silent=%s", async (silent) => {
+  const cause = new Error("offline");
+  const result = await runMutation(() => Promise.reject(cause), { silent });
+  expect(Result.isError(result)).toBe(true);
+  if (Result.isError(result)) expect(result.error.cause).toBe(cause);
 });

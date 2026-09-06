@@ -31,32 +31,28 @@ export function useCatalogItemActions() {
 
   return {
     onApplyItemOrder: (input: ApplyItemOrderInput) =>
-      runMutation(() => applyItemOrder(input), { successMessage: "並び順を更新しました" }).then(
-        () => undefined,
-      ),
+      runMutation(() => applyItemOrder(input), { successMessage: "並び順を更新しました" }),
     onCreateCategory: (input: CreateCategoryInput) =>
       runMutation(() => createCategory.mutateAsync(input), {
         successMessage: "カテゴリーを追加しました",
-      }).then(() => undefined),
+      }),
     onCreateItem: (input: CreateItemInput) =>
       runMutation(() => createItem.mutateAsync(input), {
         successMessage: "項目を追加しました",
-      }).then(() => undefined),
+      }),
     onRemoveCategory: (categoryId: RemoveCategoryInput["categoryId"]) =>
       runMutation(() => removeCategory.mutateAsync({ categoryId }), {
         successMessage: "カテゴリーを削除しました",
-      }).then(() => undefined),
+      }),
     onRemoveItem: (itemId: RemoveItemInput["itemId"]) =>
       runMutation(() => removeItem.mutateAsync({ itemId }), {
         successMessage: "項目を削除しました",
-      }).then(() => undefined),
+      }),
     onRenameCategory: (input: RenameCategoryInput) =>
       runMutation(() => renameCategory.mutateAsync(input), {
         successMessage: "カテゴリー名を変更しました",
-      }).then(() => undefined),
+      }),
     onRenameItem: (input: RenameItemInput) =>
-      runMutation(() => renameItem(input), { successMessage: "項目名を変更しました" }).then(
-        () => undefined,
-      ),
+      runMutation(() => renameItem(input), { successMessage: "項目名を変更しました" }),
   };
 }

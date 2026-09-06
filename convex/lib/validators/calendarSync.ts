@@ -86,16 +86,15 @@ export const googleEventPayloadValidator = v.object({
 
 export type GoogleEventPayload = Infer<typeof googleEventPayloadValidator>;
 
+const syncLinkValidator = v.object({
+  appChangedAt: v.union(v.number(), v.null()),
+  googleEventId: v.string(),
+  payloadKey: v.union(v.string(), v.null()),
+});
+
 export const syncSourceValidator = v.object({
   desired: v.union(googleEventPayloadValidator, v.null()),
-  link: v.union(
-    v.null(),
-    v.object({
-      appChangedAt: v.union(v.number(), v.null()),
-      googleEventId: v.string(),
-      payloadKey: v.union(v.string(), v.null()),
-    }),
-  ),
+  link: v.union(v.null(), syncLinkValidator),
   payloadKey: v.union(v.string(), v.null()),
   sourceId: v.string(),
   sourceKind: calendarSyncSourceKindValidator,
@@ -142,7 +141,7 @@ export const pushOutcomeValidator = v.union(
 
 export type PushOutcome = Infer<typeof pushOutcomeValidator>;
 
-export const pushExpectationValidator = syncSourceValidator.fields.link;
+export const pushExpectationValidator = v.union(v.null(), syncLinkValidator.fields.googleEventId);
 
 export type PushExpectation = Infer<typeof pushExpectationValidator>;
 

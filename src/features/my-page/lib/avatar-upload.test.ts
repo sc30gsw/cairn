@@ -14,7 +14,7 @@ import { AuthActionError } from "~/lib/errors";
 const STORAGE_ID = "storage123" as import("~/../convex/_generated/dataModel").Id<"_storage">;
 
 const uploadDeps = {
-  claimAvatarUpload: async () => {},
+  claimAvatarUpload: async () => null,
   generateUploadUrl: async () => ({
     claimId: "claim123" as import("~/../convex/_generated/dataModel").Id<"avatarUploadClaims">,
     uploadUrl: "https://example.com/upload",
@@ -47,7 +47,7 @@ test("アップロード成功時は storageId を返す", async () => {
   }));
   vi.stubGlobal("fetch", fetchMock);
 
-  const claimMock = vi.fn(async () => {});
+  const claimMock = vi.fn(async () => null);
   const result = await uploadAvatarBlob(blob, {
     claimAvatarUpload: claimMock,
     generateUploadUrl: uploadDeps.generateUploadUrl,
@@ -101,6 +101,23 @@ test("storageId が無いレスポンスは失敗する", async () => {
   expect(Result.isError(result)).toBe(true);
   vi.unstubAllGlobals();
 });
+
+test.each([null, 123, {}, [], false, ""])(
+  "不正なstorageId %jはclaimに送らない",
+  async (storageId) => {
+    const claimAvatarUpload = vi.fn(async () => null);
+    vi.stubGlobal("fetch", async () => Response.json({ storageId }));
+
+    const result = await uploadAvatarBlob(new Blob(["jpeg"], { type: "image/jpeg" }), {
+      ...uploadDeps,
+      claimAvatarUpload,
+    });
+
+    expect(Result.isError(result)).toBe(true);
+    expect(claimAvatarUpload).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  },
+);
 
 test("avatarUploadErrorMessage は AuthActionError も表示できる", () => {
   expect(

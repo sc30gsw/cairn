@@ -1,8 +1,10 @@
-import { cleanup, renderHook } from "@testing-library/react";
+import { cleanup, renderHook, waitFor } from "@testing-library/react";
+import { Result } from "better-result";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 import type { DateJst } from "~domain/jst";
 
 import { useApplyPresetFromSearch } from "~/features/today/hooks/use-apply-preset-from-search";
+import { MutationFailedError } from "~/lib/errors";
 import type { PresetId } from "~/types/item";
 
 const { mutateAsync } = vi.hoisted(() => ({ mutateAsync: vi.fn().mockResolvedValue(undefined) }));
@@ -20,7 +22,11 @@ vi.mock("~/hooks/use-today-jst", () => ({
 }));
 
 vi.mock("~/lib/run-mutation", () => ({
-  runMutation: (operation: () => Promise<unknown>) => operation(),
+  runMutation: (operation: () => Promise<unknown>) =>
+    Result.tryPromise({
+      try: operation,
+      catch: (cause) => new MutationFailedError({ cause, message: "保存失敗" }),
+    }),
 }));
 
 afterEach(() => {
@@ -64,4 +70,15 @@ test("preset が空文字(不正な外部入力)なら「指定なし」とし�
 
   expect(mutateAsync).not.toHaveBeenCalled();
   expect(result.current.selectedPresetId).toBeNull();
+});
+
+test("URLのプリセット適用失敗を適用済みと記憶せず再試行できる", async () => {
+  mutateAsync.mockRejectedValueOnce(new Error("offline"));
+  const { result, rerender } = renderHook(() =>
+    useApplyPresetFromSearch(DATE_JST, "preset-1" as PresetId, true),
+  );
+  await waitFor(() => expect(result.current.appliedPresetRef.current).toBeNull());
+  rerender();
+  await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(2));
+  expect(result.current.appliedPresetRef.current).toBe("preset-1");
 });

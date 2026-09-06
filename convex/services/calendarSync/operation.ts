@@ -8,14 +8,19 @@ export async function withCalendarOperation<T>(
   ownerId: string,
   operation: () => Promise<T>,
 ): Promise<{ acquired: false } | { acquired: true; value: T }> {
-  const operationId = await ctx.runMutation(internal.mutations.calendarSync.operation.acquire, {
-    ownerId,
-  });
+  const operationId = await ctx.runMutation(
+    internal.mutations.calendarSync.acquireOperation.acquireOperation,
+    {
+      ownerId,
+    },
+  );
   if (operationId === null) return { acquired: false };
   try {
     return { acquired: true, value: await operation() };
   } finally {
-    await ctx.runMutation(internal.mutations.calendarSync.operation.release, { operationId });
+    await ctx.runMutation(internal.mutations.calendarSync.releaseOperation.releaseOperation, {
+      operationId,
+    });
   }
 }
 

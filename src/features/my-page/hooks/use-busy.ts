@@ -6,7 +6,7 @@ export function useBusy(initialBusy: boolean | (() => boolean) = false) {
   const [busy, setBusy] = useState(initialBusy);
 
   async function withBusy(
-    operation: () => Promise<void>,
+    operation: () => Promise<unknown>,
     onError: (error: unknown) => void,
   ): Promise<void> {
     setBusy(true);

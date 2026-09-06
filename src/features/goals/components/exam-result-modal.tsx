@@ -1,5 +1,6 @@
 import { Field, Form, reset, useForm, type SubmitHandler } from "@formisch/react";
 import { Button, Group, Modal, NumberInput, Stack, Text } from "@mantine/core";
+import { Result } from "better-result";
 import { useEffect } from "react";
 import { TOEIC_SCORE } from "~domain/domain";
 import type { DateJst } from "~domain/jst";
@@ -10,6 +11,7 @@ import {
   type ExamResultInput,
 } from "~/features/goals/schemas/exam-result-schema";
 import type { ExamGoal } from "~/features/goals/types/goal";
+import type { MutationResult } from "~/lib/run-mutation";
 
 export const EXAM_RESULT_MODAL_TITLE = "本番の結果を入れる";
 export const EXAM_RESULT_CORRECT_TITLE = "本番の結果を訂正する";
@@ -22,7 +24,7 @@ const EXAM_RESULT_HINT =
 type ExamResultModalProps = {
   goal: ExamGoal | null;
   onClose: () => void;
-  onSubmit: (result: ExamResultInput) => void | Promise<void>;
+  onSubmit: (result: ExamResultInput) => Promise<MutationResult | undefined>;
   todayJst: DateJst;
 };
 
@@ -47,8 +49,8 @@ export function ExamResultModal({ goal, onClose, onSubmit, todayJst }: ExamResul
   }, [form, goal, todayJst]);
 
   const handleSubmit: SubmitHandler<typeof ExamResultSchema> = async (values) => {
-    await onSubmit(values);
-    onClose();
+    const result = await onSubmit(values);
+    if (result !== undefined && Result.isOk(result)) onClose();
   };
   const correcting = goal?.result !== undefined;
 

@@ -1,9 +1,11 @@
 import { fireEvent, within } from "@testing-library/react";
+import { Result } from "better-result";
 import { expect, test, vi } from "vite-plus/test";
 
 import type { Id } from "~/../convex/_generated/dataModel";
 import { BoardScheduleExternalModal } from "~/features/board/components/board-schedule-external-modal";
 import type { BoardExternalEvent } from "~/features/board/types/board";
+import { MutationFailedError } from "~/lib/errors";
 import { renderWithMantine } from "~/test-utils/render";
 
 const EXTERNAL: BoardExternalEvent = {
@@ -19,7 +21,7 @@ const EXTERNAL: BoardExternalEvent = {
 };
 
 test("外部予定の題名・時間・カレンダー名が見え、削除は確認を挟んで Google 側に送る", async () => {
-  const onRemove = vi.fn().mockResolvedValue(undefined);
+  const onRemove = vi.fn().mockResolvedValue(Result.ok(null));
   const onClose = vi.fn();
   const { getByRole, getByText } = renderWithMantine(
     <BoardScheduleExternalModal
@@ -77,4 +79,29 @@ test("読み取り専用の予定は削除できずドラッグの案内も出�
   expect(onRemove).not.toHaveBeenCalled();
   expect(queryByText(/ドラッグで動かす/)).toBeNull();
   expect(getByText(/読み取り専用のカレンダーです/)).toBeDefined();
+});
+
+test("外部予定の削除に失敗したら詳細画面を閉じない", async () => {
+  const onClose = vi.fn();
+  const onRemove = vi.fn(async () =>
+    Result.err(new MutationFailedError({ cause: new Error("offline"), message: "削除失敗" })),
+  );
+  const { getByRole, getByText } = renderWithMantine(
+    <BoardScheduleExternalModal
+      canDrag
+      external={EXTERNAL}
+      onClose={onClose}
+      onRemove={onRemove}
+    />,
+  );
+  fireEvent.click(getByRole("button", { name: "Google カレンダーから削除" }));
+  const confirm = await vi.waitFor(() =>
+    getByRole("dialog", { hidden: true, name: /削除しますか/ }),
+  );
+  fireEvent.click(
+    within(confirm).getByRole("button", { hidden: true, name: "Google カレンダーから削除" }),
+  );
+  await vi.waitFor(() => expect(onRemove).toHaveBeenCalledOnce());
+  expect(onClose).not.toHaveBeenCalled();
+  expect(getByText("歯医者")).toBeDefined();
 });

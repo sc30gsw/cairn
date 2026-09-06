@@ -1,3 +1,4 @@
+import { Result } from "better-result";
 import type { DateJst } from "~domain/jst";
 import { hasTimerState, timerMinutes } from "~domain/rowTimer";
 
@@ -58,7 +59,7 @@ export function useDayBoardActions(
     onAddRow: (input: AddRowInput) =>
       runMutation(() => add.mutateAsync({ ...input, dateJst, todayJst: today }), {
         successMessage: "記録を追加しました",
-      }).then(() => undefined),
+      }),
     onConfirm: (input: ConfirmRowInput) =>
       runMutation(
         async () => {
@@ -81,51 +82,54 @@ export function useDayBoardActions(
               ? "記録を確定しました"
               : `計測した${String(measuredMinutes)}分で確定しました`,
         },
-      ).then(() => undefined),
+      ),
     onFlagReview: (input: FlagReviewInput) =>
       runMutation(() => flagReview.mutateAsync({ ...input, todayJst: today }), {
         successMessage:
           input.dueJst === undefined ? "復習に回しました" : `復習に回しました（${input.dueJst}）`,
-      }).then(() => undefined),
+      }),
     onUnflagReview: (rowId: RemoveRowInput["rowId"]) =>
       runMutation(() => unflagReview.mutateAsync({ rowId }), {
         successMessage: "復習をやめました",
-      }).then(() => undefined),
+      }),
     onCopyYesterday: () =>
       runMutation(() => copyYesterday.mutateAsync({ dateJst, todayJst: today }), {
         successMessage: "昨日の確定をコピーしました",
-      }).then(() => undefined),
+      }),
     onRemoveDay: () =>
       runMutation(() => removeDay.mutateAsync({ dateJst }), {
         successMessage: "この日をゴミ箱へ移動しました",
-      }).then(() => undefined),
+      }),
     onRemoveRow: (rowId: RemoveRowInput["rowId"]) =>
       runMutation(() => removeRow.mutateAsync({ rowId }), {
         successMessage: "記録をゴミ箱へ移動しました",
-      }).then(() => undefined),
+      }),
     onSaveCondition: (condition: SetConditionInput) =>
       runMutation(() => setCondition.mutateAsync({ condition, dateJst, todayJst: today }), {
         successMessage: "コンディションを保存しました",
-      }).then(() => undefined),
+      }),
     onSaveMemo: (memo: SetMemoInput) =>
       runMutation(() => setMemo.mutateAsync({ dateJst, memo, todayJst: today }), {
         successMessage: "メモを保存しました",
-      }).then(() => undefined),
+      }),
     onSkip: (rowId: SkipRowInput["rowId"]) =>
       runMutation(() => skip.mutateAsync({ rowId }), {
         successMessage: "記録を見送りにしました",
-      }).then(() => undefined),
+      }),
     onUnskip: (rowId: SkipRowInput["rowId"]) =>
       runMutation(() => unskip.mutateAsync({ rowId }), {
         successMessage: "見送りを取り消しました",
-      }).then(() => undefined),
-    onSwitchPreset: (presetId: PresetId, appliedPresetRef?: { current: PresetId | null }) => {
-      if (appliedPresetRef !== undefined) {
+      }),
+    onSwitchPreset: async (presetId: PresetId, appliedPresetRef?: { current: PresetId | null }) => {
+      const result = await runMutation(
+        () => switchPreset.mutateAsync({ dateJst, presetId, todayJst: today }),
+        {
+          successMessage: "プリセットを切り替えました",
+        },
+      );
+      if (Result.isOk(result) && appliedPresetRef !== undefined)
         appliedPresetRef.current = presetId;
-      }
-      return runMutation(() => switchPreset.mutateAsync({ dateJst, presetId, todayJst: today }), {
-        successMessage: "プリセットを切り替えました",
-      }).then(() => undefined);
+      return result;
     },
   };
 }

@@ -1,8 +1,12 @@
-import { TaggedError } from "better-result";
-import { Result } from "better-result";
+import { Result, TaggedError } from "better-result";
+import { validate } from "convex-helpers/validators";
+import type { FunctionArgs, FunctionReturnType } from "convex/server";
+import { v as cv } from "convex/values";
+import * as v from "valibot";
 
+import type { api } from "~/../convex/_generated/api";
 import type { Id } from "~/../convex/_generated/dataModel";
-import { MAX_AVATAR_BYTES } from "~/../convex/lib/avatarStorage";
+import { ALLOWED_AVATAR_CONTENT_TYPES, MAX_AVATAR_BYTES } from "~/../convex/lib/avatarStorage";
 import { presentError } from "~/lib/error-presentation";
 import { AuthActionError } from "~/lib/errors";
 
@@ -25,19 +29,30 @@ export type AvatarUploadError =
   | AvatarUnsupportedTypeError
   | AvatarUploadFailedError;
 
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png"]);
+type ClaimAvatarUpload = typeof api.mutations.profile.claimAvatarUpload.claimAvatarUpload;
+type GenerateAvatarUploadUrl =
+  typeof api.mutations.profile.generateAvatarUploadUrl.generateAvatarUploadUrl;
+
+export type AvatarUploadDependencies = {
+  claimAvatarUpload: (
+    args: FunctionArgs<ClaimAvatarUpload>,
+  ) => Promise<FunctionReturnType<ClaimAvatarUpload>>;
+  generateUploadUrl: () => Promise<FunctionReturnType<GenerateAvatarUploadUrl>>;
+};
+
+const storageIdValidator = cv.id("_storage");
+const uploadResponseSchema = v.object({
+  storageId: v.pipe(
+    v.custom<Id<"_storage">>((input) => validate(storageIdValidator, input)),
+    v.nonEmpty("ストレージ ID を取得できませんでした"),
+  ),
+});
 
 export async function uploadAvatarBlob(
   blob: Blob,
-  deps: {
-    claimAvatarUpload: (args: {
-      claimId: Id<"avatarUploadClaims">;
-      storageId: Id<"_storage">;
-    }) => Promise<void>;
-    generateUploadUrl: () => Promise<{ claimId: Id<"avatarUploadClaims">; uploadUrl: string }>;
-  },
+  deps: AvatarUploadDependencies,
 ): Promise<Result<Id<"_storage">, AvatarUploadError>> {
-  if (!ALLOWED_TYPES.has(blob.type)) {
+  if (!ALLOWED_AVATAR_CONTENT_TYPES.has(blob.type)) {
     return Result.err(
       new AvatarUnsupportedTypeError({
         message: "JPEG または PNG の画像を選んでください",
@@ -68,12 +83,9 @@ export async function uploadAvatarBlob(
       if (!response.ok) {
         throw new Error("画像のアップロードに失敗しました");
       }
-      const json = (await response.json()) as { storageId?: Id<"_storage"> };
-      if (json.storageId === undefined) {
-        throw new Error("ストレージ ID を取得できませんでした");
-      }
-      await deps.claimAvatarUpload({ claimId, storageId: json.storageId });
-      return json.storageId;
+      const { storageId } = v.parse(uploadResponseSchema, await response.json());
+      await deps.claimAvatarUpload({ claimId, storageId });
+      return storageId;
     },
   });
 

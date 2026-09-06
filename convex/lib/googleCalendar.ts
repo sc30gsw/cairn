@@ -121,7 +121,12 @@ export function isSyncTokenExpired(error: GoogleCalendarError): boolean {
 }
 
 export function isRetryable(error: GoogleCalendarError): boolean {
-  return error.status === null || isRateLimited(error) || error.status >= 500;
+  return (
+    error.status === null ||
+    (error.status >= 200 && error.status < 300) ||
+    isRateLimited(error) ||
+    error.status >= 500
+  );
 }
 
 type RequestArgs = {
@@ -132,8 +137,7 @@ type RequestArgs = {
   query?: Record<string, string | undefined>;
 };
 
-async function readError(response: Response): Promise<{ message: string; reason: string | null }> {
-  const text = await response.text();
+function readError(text: string, response: Response): { message: string; reason: string | null } {
   const parsed = Result.try({
     catch: () => null,
     try: () => v.parse(errorBodySchema, JSON.parse(text)),
@@ -200,8 +204,26 @@ async function request<T>(
     return sent;
   }
   const response = sent.value;
+  if (response.status === 204) {
+    return parseBody(schema, undefined, args.operation);
+  }
+  const body = await Result.tryPromise({
+    catch: (cause) =>
+      new GoogleCalendarError({
+        cause,
+        message: "Google カレンダーの応答を読み取れませんでした",
+        operation: args.operation,
+        reason: null,
+        status: response.status,
+      }),
+    try: () => response.text(),
+  });
+  if (Result.isError(body)) {
+    return body;
+  }
+  const text = body.value;
   if (!response.ok) {
-    const { message, reason } = await readError(response);
+    const { message, reason } = readError(text, response);
     return Result.err(
       new GoogleCalendarError({
         message,
@@ -211,10 +233,6 @@ async function request<T>(
       }),
     );
   }
-  if (response.status === 204) {
-    return parseBody(schema, undefined, args.operation);
-  }
-  const text = await response.text();
   const json = Result.try({ catch: () => undefined, try: () => JSON.parse(text) as unknown });
   return parseBody(
     schema,

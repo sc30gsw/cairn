@@ -1,4 +1,5 @@
 import { fireEvent, waitFor } from "@testing-library/react";
+import { Result } from "better-result";
 import { expect, test, vi } from "vite-plus/test";
 
 import { dayBoardTestRow } from "~/features/today/components/day-board.test-fixtures";
@@ -23,7 +24,7 @@ const CONFIRMED_ROW = {
 
 function editorProps(row: DayRow) {
   return {
-    onConfirm: vi.fn(),
+    onConfirm: vi.fn(async () => Result.ok(null)),
     onFlagReview: vi.fn(),
     onRemove: vi.fn(),
     onSkip: vi.fn(),

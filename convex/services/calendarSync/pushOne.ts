@@ -54,7 +54,7 @@ async function sendOne(
   const { calendarId, ownerId, source } = args;
   const base = {
     calendarId,
-    expected: source.link,
+    expected: source.link?.googleEventId ?? null,
     ownerId,
     sourceId: source.sourceId,
     sourceKind: source.sourceKind,

@@ -1,4 +1,5 @@
 import { fireEvent, waitFor } from "@testing-library/react";
+import { Result } from "better-result";
 import { expect, test, vi } from "vite-plus/test";
 import { TOEIC_SCORE_STEP_MESSAGE } from "~domain/domain";
 
@@ -10,6 +11,7 @@ import {
   ExamResultModal,
 } from "~/features/goals/components/exam-result-modal";
 import type { ExamGoal } from "~/features/goals/types/goal";
+import { MutationFailedError } from "~/lib/errors";
 import { renderWithMantine } from "~/test-utils/render";
 
 const TODAY = "2026-10-20";
@@ -45,7 +47,7 @@ test("goal が無ければ何も出さない", () => {
 
 test("スコアを入れて保存すると、今日を入れた日として onSubmit が呼ばれ閉じる", async () => {
   const onClose = vi.fn();
-  const onSubmit = vi.fn().mockResolvedValue(undefined);
+  const onSubmit = vi.fn().mockResolvedValue(Result.ok(null));
   const { getByRole, getByText } = renderWithMantine(
     <ExamResultModal {...modalProps({ onClose, onSubmit })} />,
   );
@@ -86,4 +88,25 @@ test("結果が入っている本番では訂正の題名になり、いまの�
   );
   expect(getByText(EXAM_RESULT_CORRECT_TITLE)).toBeDefined();
   expect(scoreInput(getByRole).value).toBe("875");
+});
+
+test("保存に失敗しても入力を保持し、再試行の成功後だけ閉じる", async () => {
+  const onClose = vi.fn();
+  const onSubmit = vi
+    .fn()
+    .mockResolvedValueOnce(
+      Result.err(new MutationFailedError({ cause: new Error("offline"), message: "保存失敗" })),
+    )
+    .mockResolvedValueOnce(Result.ok(null));
+  const { getByRole } = renderWithMantine(
+    <ExamResultModal {...modalProps({ onClose, onSubmit })} />,
+  );
+  fireEvent.change(scoreInput(getByRole), { target: { value: "855" } });
+  fireEvent.click(getByRole("button", { hidden: true, name: EXAM_RESULT_SUBMIT }));
+  await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+  expect(onClose).not.toHaveBeenCalled();
+  expect(scoreInput(getByRole).value).toBe("855");
+  fireEvent.click(getByRole("button", { hidden: true, name: EXAM_RESULT_SUBMIT }));
+  await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+  expect(onSubmit).toHaveBeenLastCalledWith({ recordedAt: TODAY, score: 855 });
 });

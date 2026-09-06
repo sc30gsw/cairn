@@ -1,6 +1,7 @@
 import type { DropResult } from "@hello-pangea/dnd";
 import { ActionIcon, Badge, Box, Card, Group, Stack, Text, Tooltip } from "@mantine/core";
 import { IconGripVertical } from "@tabler/icons-react";
+import { Result } from "better-result";
 import { useRef, useState } from "react";
 import type { DateJst } from "~domain/jst";
 import { hasTimerState, measuredMs, timerMinutes, timerRunState } from "~domain/rowTimer";
@@ -170,25 +171,26 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
     if (pendingOrder === null) {
       return;
     }
-    await onApplyOrder(pendingOrder);
-    pendingOrderRef.current = null;
+    const result = await onApplyOrder(pendingOrder);
+    if (Result.isOk(result)) pendingOrderRef.current = null;
+    return result;
   }
 
   async function moveRow(move: Exclude<KanbanStatusMove, "noop">, row: BoardRow): Promise<boolean> {
     if ((move === "skip" || move === "unstart") && hasTimerState(row.timer)) {
       const measuredMinutes = timerMinutes(measuredMs(row.timer, serverNowMs()));
       const successMessage = `計測 ${String(measuredMinutes)}分を捨てました`;
-      await (move === "skip"
+      const result = await (move === "skip"
         ? onSkip({ rowId: row._id }, successMessage)
         : onUnstart({ rowId: row._id }, successMessage));
-      return false;
+      return Result.isError(result);
     }
     let deferred = false;
-    await onStatusMove(move, row, (target) => {
+    const result = await onStatusMove(move, row, (target) => {
       deferred = true;
       setConfirmTarget(target);
     });
-    return deferred;
+    return deferred || (result !== undefined && Result.isError(result));
   }
 
   async function requestConfirm(row: BoardRow) {
@@ -248,8 +250,10 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
           pendingOrderRef.current = null;
         }}
         onConfirm={async (input) => {
-          await onConfirm(input);
-          await applyPendingOrder();
+          const result = await onConfirm(input);
+          if (Result.isError(result)) return result;
+          const ordered = await applyPendingOrder();
+          return ordered ?? result;
         }}
         opened={confirmTarget !== null}
         prefillMinutes={confirmTarget?.prefillMinutes ?? null}

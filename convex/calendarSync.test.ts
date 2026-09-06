@@ -638,11 +638,7 @@ test("送信の記録は、計画時と対応表が違えば書かない（並�
 
   const fresh = await t.mutation(internal.mutations.calendarSync.recordPush.recordPush, {
     calendarId: link.calendarId,
-    expected: {
-      appChangedAt: link.appChangedAt ?? null,
-      googleEventId: link.googleEventId,
-      payloadKey: link.payloadKey ?? null,
-    },
+    expected: link.googleEventId,
     outcome: {
       googleEventId: link.googleEventId,
       googleUpdated: "u2",

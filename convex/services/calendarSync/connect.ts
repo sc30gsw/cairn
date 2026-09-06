@@ -19,6 +19,7 @@ import {
 import { todayJst } from "../../lib/jst";
 import { throwDomain } from "../../lib/ownerFunctions";
 import type { OwnerSyncOutcome } from "../../lib/validators";
+import { clearConnectionState } from "./clearConnectionState";
 import { deleteLinkedGoogleEvents } from "./deleteLinkedGoogleEvents";
 import { syncConnectedOwner } from "./runOwnerSync";
 
@@ -47,18 +48,18 @@ export async function connect(ctx: ActionCtx, ownerId: string): Promise<OwnerSyn
     ownerId,
     todayJst: todayJst(),
   });
-  if (previous?.disconnecting === true) {
-    throwDomain(new ConflictError({ message: CALENDAR_SYNC_DISCONNECT_INCOMPLETE_MESSAGE }));
-  }
-  if (previous !== null && previous.googleAccountId !== account.accountId) {
-    await ctx.runMutation(internal.mutations.calendarSync.operation.beginDisconnect, { ownerId });
+  if (
+    previous !== null &&
+    (previous.disconnecting || previous.googleAccountId !== account.accountId)
+  ) {
+    await ctx.runMutation(internal.mutations.calendarSync.beginDisconnect.beginDisconnect, {
+      ownerId,
+    });
     const deleted = await deleteLinkedGoogleEvents(ctx, ownerId, previous);
     if (deleted === "failed") {
       throwDomain(new ConflictError({ message: CALENDAR_SYNC_DISCONNECT_INCOMPLETE_MESSAGE }));
     }
-    await ctx.runMutation(internal.mutations.calendarSync.clearConnection.clearConnection, {
-      ownerId,
-    });
+    await clearConnectionState(ctx, ownerId);
   }
 
   await ctx.runMutation(internal.mutations.calendarSync.upsertConnection.upsertConnection, {

@@ -606,7 +606,7 @@ test.each(["refresh", "reconnect", "switch-account"] as const)(
   async (operation) => {
     const { t } = await setup();
     await t.run(async (ctx) => {
-      if (operation === "reconnect") await clearConnection(ctx, OWNER);
+      if (operation !== "refresh") await clearConnection(ctx, OWNER);
       await upsertConnection(ctx, {
         ownerId: OWNER,
         googleAccountId: operation === "switch-account" ? "another-account" : "google-owner",
