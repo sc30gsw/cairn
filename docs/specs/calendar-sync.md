@@ -10,10 +10,10 @@
 | --- | --- |
 | 方向 | **双方向**。アプリ → Google は本番日・未達成チェックポイントの期限（終日・空き）と予定（時刻つき・予定あり）。Google → アプリは、アプリ発の予定の**移動・時間変更・削除**（予定）と**日付変更**（本番日・期限。削除は目標を消さず次の同期で予定を戻す）。外部予定は写しとして予定タブに出す |
 | Notion カレンダー | 公開 API が無いので直接は繋がない。接続した Google アカウントの予定を表示する製品なので、Google に書けば出る |
-| 認証 | Notion OAuth を外し、Google を唯一の外部ログインにする。email / username / password とパスキーは残す。アカウント連携を有効化（`trustedProviders: ["google"]`、`allowDifferentEmails: true`）。カレンダー権限はログイン時ではなく、ボードの同期設定の「Google カレンダーと連携」で `linkSocial({ scopes })` により追加で求める（段階的認可） |
+| 認証 | Notion OAuth を外し、Google を唯一の外部ログインにする。email / username / password とパスキーは残す。アカウント連携を有効化（`trustedProviders: ["google"]`、`allowDifferentEmails: true`）。カレンダー権限はログイン時ではなく、ボードまたはアカウント設定の「Google カレンダーと連携」で `linkSocial({ scopes })` により追加で求める（段階的認可） |
 | スコープ | `calendar.events` + `calendar.calendarlist.readonly`（`convex/lib/calendarSync.ts` の `GOOGLE_CALENDAR_SCOPES`）。Google プロバイダは `accessType: "offline"`（リフレッシュトークン） |
 | 書き込み先 | 接続アカウントの**メインカレンダー**。接続時に一覧から `primary` の実 ID（メールアドレス）を `calendarConnections.primaryCalendarId` に写す（取り込みは実 ID で来るので `"primary"` では照合できない） |
-| 表示カレンダー | 接続時の既定は Google 側で表示中かつ空き情報だけではないもの。ボードの同期設定の `Checkbox.Group` で選び直せる。外したカレンダーの写しと差分トークンは捨てる |
+| 表示カレンダー | 接続時の既定は Google 側で表示中かつ空き情報だけではないもの。ボードまたはアカウント設定の `Checkbox.Group` で選び直せる。外したカレンダーの写しと差分トークンは捨てる |
 | 写しの期間 | 過去 30 日〜未来 90 日（`CALENDAR_SYNC_WINDOW`）。範囲外は写しから消す。本番日・期限は期間に関わらず Google へ出す |
 | 変更検知 | Google → アプリは `events.list` の **syncToken 差分同期**（カレンダーごとに `calendarSyncCursors`。差分の期間は初回全件の日で固定されるため、`fullSyncedOnJst` から 7 日たったら全件を取り直す）。取り込むカレンダーは表示中のもの + メインカレンダー（表示から外していても Google 側の移動・削除を戻す）。実行は (a) 予定タブを開いたとき（`useSyncCalendarOnOpen`）、(b) ボードの同期設定「今すぐ同期」、(c) 1時間ごとの cron（`sync google calendars`, `20 * * * *`）。push 通知（`events.watch`）は webhook のドメイン所有確認が要るため v1 では使わず、後から足せる構造にする |
 | アプリ → Google の即時送信 | 目標・予定を変えるサービス（goals の create / update / remove / setAchieved / setExamResult、boardSchedule の create / update / move / remove / removeForRow）の末尾で `scheduleSourceSync` を呼び、同じトランザクションで `internal.actions.calendarSync.pushSource` を `runAfter(0)` に積む。接続が無ければ何もしない |
@@ -57,8 +57,10 @@ calendarSyncCursors { ownerId, calendarId, syncToken, fullSyncedOnJst }  // by_o
 ## 4. UI
 
 - ログイン画面: 「Google でログイン」（`publicConfig.googleSignIn` が true のときだけ）。
-- ボード上部の **カレンダー同期**ボタン（`BoardCalendarSyncButton`）: ホバー・キーボードフォーカス・タッチでTooltipを表示。押すと `CalendarSyncSection` をダイアログで開く（`calendarSync=true`）。閉じても選択中のタブ・日付・週を保持する。 未接続なら「Google カレンダーと連携」。接続後は接続中のアカウント・最終同期・状態バッジ・「表示するカレンダー」（`Checkbox.Group`、メインは「書き込み先」と注記）・「今すぐ同期」・「連携を解除」（Confirm）。権限切れなら「もう一度接続」。同意後は `/board?tab=schedule&calendarSync=true` に戻り、設定を開いたまま予定タブを表示する。同意画面から戻ったことは `sessionStorage` の印（`cairn:calendar-sync:connect-pending`）で知り、`connect` アクションで仕上げる。
-- 実行ボード **予定タブ**: 外部予定を**日・週ビュー**に灰色（紙2の地・muted-2 の文字・点線の縁、`data-board-external`）で並べる。月・年ビューには出さない（`CONTEXT.md`「外部予定」）。終日展開・年ビューの一覧からも開ける。ドラッグ移動は `moveExternal`、クリックで `BoardScheduleExternalModal`（題名・時間・カレンダー名・「Google カレンダーから削除」Confirm）。題名の編集・新規作成・記録への紐づけはしない。タブを開いたとき `syncNow` を一度呼ぶ。
+- ボードの予定タブだけに表示する **Google カレンダー連携**ボタン（`BoardCalendarSyncButton`）: ホバー・キーボードフォーカス・タッチでTooltipを表示。押すと `CalendarSyncSection` をダイアログで開く（`calendarSync=true`）。閉じても選択中のタブ・日付・週を保持する。 未接続なら「Google カレンダーと連携」。接続後は接続中のアカウント・最終同期・状態バッジ・「表示するカレンダー」（`Checkbox.Group`、メインは「書き込み先」と注記）・「今すぐ同期」・「連携を解除」（Confirm）。権限切れなら「もう一度接続」。同意後は開始元の画面に戻る。ボードでは選択中の日付・週を保持して設定を開き、マイページではアカウント設定に戻る。主操作は右寄せ、解除は左に配置する。同意画面から戻ったことは `sessionStorage` の印（`cairn:calendar-sync:connect-pending`）で知り、`connect` アクションで仕上げる。
+- マイページ **アカウント設定**: ボードと共通の `CalendarSyncSection` で接続・表示対象・同期・解除を管理する。
+- 日付色: 既存の日本の祝日判定を使い、祝日・日曜は赤、土曜は青。Google の表示対象チェックは予定表示だけに作用する。
+- 実行ボード **予定タブ**: 外部予定を**日・週・月・年ビュー**に灰色（紙2の地・muted-2 の文字・点線の縁、`data-board-external`）で並べる。月は件名と省略時の一覧、年は日付マーカーと予定一覧で確認する。終日展開・年ビューの一覧からも開ける。ドラッグ移動は `moveExternal`、クリックで `BoardScheduleExternalModal`（題名・時間・カレンダー名・「Google カレンダーから削除」Confirm）。題名の編集・新規作成・記録への紐づけはしない。タブを開いたとき `syncNow` を一度呼ぶ。
 
 ## 5. テスト
 

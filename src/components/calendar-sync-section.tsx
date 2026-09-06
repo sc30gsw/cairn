@@ -36,7 +36,6 @@ const CALENDAR_SYNC_DESCRIPTION =
 const CALENDAR_SYNC_CONNECTED_MESSAGE = "Google カレンダーと連携しました";
 const CALENDAR_SYNC_SYNCED_MESSAGE = "同期しました";
 const CALENDAR_SYNC_DISCONNECTED_MESSAGE = "カレンダー同期を解除しました";
-export { CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE };
 const CALENDAR_SYNC_CONNECTED_PARTIAL_MESSAGE =
   "連携しましたが、最初の同期に失敗しました。状態を確認してください";
 const CALENDAR_SYNC_DENIED_MESSAGE =
@@ -140,6 +139,9 @@ export function CalendarSyncSection() {
         <Text c="dimmed" size="sm">
           {CALENDAR_SYNC_DESCRIPTION}
         </Text>
+        <Text c="dimmed" size="xs">
+          Google の画面でカレンダーの権限を許可すると、この画面に戻って同期が始まります。
+        </Text>
         <Group justify="flex-end">
           <Button
             leftSection={<IconBrandGoogle aria-hidden size={16} />}
@@ -150,9 +152,6 @@ export function CalendarSyncSection() {
             {CALENDAR_SYNC_CONNECT_LABEL}
           </Button>
         </Group>
-        <Text c="dimmed" size="xs">
-          Google の画面でカレンダーの権限を許可すると、この画面に戻って同期が始まります。
-        </Text>
       </Stack>
     );
   }

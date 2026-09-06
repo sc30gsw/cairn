@@ -15,12 +15,19 @@ async function registeredOwner(createdAt: string) {
   t.registerComponent("betterAuth", authSchema, authModules);
   const user = await t.run(async (ctx) => {
     const result: unknown = await ctx.runMutation(components.betterAuth.adapter.create, {
-      input: { model: "user", data: {
-        name: "利用者", email: "registered@example.com", emailVerified: true,
-        createdAt: Date.parse(createdAt), updatedAt: Date.parse(createdAt),
-      } },
+      input: {
+        model: "user",
+        data: {
+          name: "利用者",
+          email: "registered@example.com",
+          emailVerified: true,
+          createdAt: Date.parse(createdAt),
+          updatedAt: Date.parse(createdAt),
+        },
+      },
     });
-    return validate(authSchema.doc("user"), result);
+    if (!validate(authSchema.doc("user"), result)) throw new Error("Invalid auth user fixture");
+    return result;
   });
   return { t, owner: t.withIdentity({ subject: user._id }), ownerId: user._id };
 }
@@ -48,8 +55,20 @@ test("登録日前の未記録日を区別し、過去に入力した記録を�
   const day = await owner.query(api.queries.days.get.get, before);
   expect(day.kind).toBe("live");
   expect(day.day?.memo).toBe("登録前の学習");
-  const month = await owner.query(api.queries.history.month.month, { todayJst: before.todayJst, yearMonth: "2026-08" });
-  expect(month.days.find((entry) => entry.dateJst === "2026-08-15")?.kind).toBe("beforeRegistration");
+  const month = await owner.query(api.queries.history.month.month, {
+    todayJst: before.todayJst,
+    yearMonth: "2026-08",
+  });
+  expect(month.days.find((entry) => entry.dateJst === "2026-08-15")?.kind).toBe(
+    "beforeRegistration",
+  );
   expect(month.days.find((entry) => entry.dateJst === before.dateJst)?.kind).toBe("live");
-  expect((await owner.query(api.queries.days.get.get, { dateJst: before.todayJst, todayJst: before.todayJst })).kind).toBe("todayEmpty");
+  expect(
+    (
+      await owner.query(api.queries.days.get.get, {
+        dateJst: before.todayJst,
+        todayJst: before.todayJst,
+      })
+    ).kind,
+  ).toBe("todayEmpty");
 });

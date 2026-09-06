@@ -2,6 +2,7 @@ import { fireEvent, within } from "@testing-library/react";
 import { Result } from "better-result";
 import type { FunctionReturnType } from "convex/server";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
+import { CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE } from "~domain/calendarSync";
 
 import type { api } from "~/../convex/_generated/api";
 import { CalendarSyncSection } from "~/components/calendar-sync-section";
@@ -9,7 +10,6 @@ import {
   CALENDAR_SYNC_CALENDARS_LABEL,
   CALENDAR_SYNC_CONNECT_LABEL,
   CALENDAR_SYNC_DISCONNECT_LABEL,
-  CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE,
   CALENDAR_SYNC_NOW_LABEL,
   CALENDAR_SYNC_RECONNECT_LABEL,
 } from "~/lib/calendar-sync-labels";

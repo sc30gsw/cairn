@@ -200,73 +200,78 @@ export function BoardSchedule({
           />
           <div className={classes.boardScheduleRoot} data-view={scheduleView} ref={scheduleRootRef}>
             <Schedule
-              canDragEvent={(event) =>
-                !pending &&
-                (ui.editableBlockIds.has(boardScheduleEventSourceId(event.id)) ||
-                  ui.editableExternalEventIds.has(boardScheduleEventSourceId(event.id)))
-              }
+              {...(scheduleView === "year"
+                ? {}
+                : {
+                    canDragEvent: (event) =>
+                      !pending &&
+                      (ui.editableBlockIds.has(boardScheduleEventSourceId(event.id)) ||
+                        ui.editableExternalEventIds.has(boardScheduleEventSourceId(event.id))),
+                    onEventClick: pending ? undefined : ui.handleEventClick,
+                    onEventDrop: pending
+                      ? undefined
+                      : ({ event, eventId, newStart }) => {
+                          ui.collapseAllDayExpand();
+                          if (
+                            ui.editableExternalEventIds.has(boardScheduleEventSourceId(eventId))
+                          ) {
+                            const external = externals.find(
+                              (entry) => entry._id === boardExternalEventId(eventId),
+                            );
+                            if (external === undefined) {
+                              return;
+                            }
+                            void onMoveExternal({
+                              ...movedScheduleRange(external, event.start, newStart),
+                              externalId: boardExternalEventId(eventId),
+                            });
+                            return;
+                          }
+                          const block = blocks.find(
+                            (entry) => entry._id === boardScheduleEventSourceId(eventId),
+                          );
+                          if (block === undefined) {
+                            return;
+                          }
+                          void onMoveBlock({
+                            ...movedScheduleRange(block, event.start, newStart),
+                            blockId: block._id,
+                          });
+                        },
+                    onTimeSlotClick: pending
+                      ? undefined
+                      : ({ slotEnd, slotStart }) => {
+                          ui.openCreate(slotStart, slotEnd);
+                        },
+                    onSlotDragEnd: pending ? undefined : ui.openCreate,
+                    renderEventBody: (event) => {
+                      if (isBoardAllDayMoreEvent(event.id)) {
+                        return <span data-board-all-day-more="true">{event.title}</span>;
+                      }
+                      if (isBoardExternalEvent(event.id)) {
+                        return <span data-board-external="true">{event.title}</span>;
+                      }
+                      return event.title;
+                    },
+                    withDragSlotSelect: !pending && rows.length > 0 && !isCompact,
+                    withEventsDragAndDrop: !pending && !isCompact,
+                  })}
               date={anchorDateJst}
-              events={ui.scheduleEvents}
+              events={
+                scheduleView === "day" || scheduleView === "week"
+                  ? ui.scheduleEvents
+                  : ui.baseEvents
+              }
               labels={SCHEDULE_LABELS_JA}
               locale="ja"
               dayViewProps={dayViewProps}
               mode={pending ? "static" : "default"}
               monthViewProps={{ ...BOARD_MONTH_VIEW_PROPS, getDayProps: calendarDayProps }}
               onDayClick={pending ? undefined : handleDayClick}
-              onEventClick={pending ? undefined : ui.handleEventClick}
-              onEventDrop={
-                pending
-                  ? undefined
-                  : ({ event, eventId, newStart }) => {
-                      ui.collapseAllDayExpand();
-                      if (ui.editableExternalEventIds.has(boardScheduleEventSourceId(eventId))) {
-                        const external = externals.find(
-                          (entry) => entry._id === boardExternalEventId(eventId),
-                        );
-                        if (external === undefined) {
-                          return;
-                        }
-                        void onMoveExternal({
-                          ...movedScheduleRange(external, event.start, newStart),
-                          externalId: boardExternalEventId(eventId),
-                        });
-                        return;
-                      }
-                      const block = blocks.find(
-                        (entry) => entry._id === boardScheduleEventSourceId(eventId),
-                      );
-                      if (block === undefined) {
-                        return;
-                      }
-                      void onMoveBlock({
-                        ...movedScheduleRange(block, event.start, newStart),
-                        blockId: block._id,
-                      });
-                    }
-              }
-              onSlotDragEnd={pending ? undefined : ui.openCreate}
-              onTimeSlotClick={
-                pending
-                  ? undefined
-                  : ({ slotEnd, slotStart }) => {
-                      ui.openCreate(slotStart, slotEnd);
-                    }
-              }
               onViewChange={onScheduleViewChange}
-              renderEventBody={(event) => {
-                if (isBoardAllDayMoreEvent(event.id)) {
-                  return <span data-board-all-day-more="true">{event.title}</span>;
-                }
-                if (isBoardExternalEvent(event.id)) {
-                  return <span data-board-external="true">{event.title}</span>;
-                }
-                return event.title;
-              }}
               view={scheduleView}
               weekViewProps={BOARD_WEEK_VIEW_PROPS}
               yearViewProps={yearViewProps}
-              withDragSlotSelect={!pending && rows.length > 0 && !isCompact}
-              withEventsDragAndDrop={!pending && !isCompact}
             />
             {ui.expandedAllDayAnchor === null ? null : (
               <BoardScheduleAllDayExpand
