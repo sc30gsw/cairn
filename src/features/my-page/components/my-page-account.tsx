@@ -2,6 +2,7 @@ import { Card, Stack, Title } from "@mantine/core";
 import { Suspense } from "react";
 
 import { CalendarSyncSection } from "~/components/calendar-sync-section";
+import { GoogleLabel } from "~/components/google-label";
 import { PendingComponent } from "~/components/pending-component";
 import { AccountSection } from "~/features/my-page/components/account-section";
 import { PasskeySection } from "~/features/my-page/components/passkey-section";
@@ -23,7 +24,7 @@ function MyPageAccountContent() {
       <PasskeySection />
       <Card padding="md">
         <Title mb="md" order={3}>
-          {CALENDAR_SYNC_TITLE}
+          <GoogleLabel>{CALENDAR_SYNC_TITLE}</GoogleLabel>
         </Title>
         <Suspense fallback={<PendingComponent />}>
           <CalendarSyncSection />

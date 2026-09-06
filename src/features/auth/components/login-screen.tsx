@@ -11,10 +11,12 @@ import {
   Title,
   VisuallyHidden,
 } from "@mantine/core";
+import { IconKey, IconRefresh } from "@tabler/icons-react";
 import { useLocation } from "@tanstack/react-router";
 import { useEffect } from "react";
 
 import { AuthActionFeedback } from "~/components/auth-action-feedback";
+import { GoogleIcon } from "~/components/google-icon";
 import { AccountAuthPanel } from "~/features/auth/components/account-auth-form";
 import { useAuthPublicConfig } from "~/features/auth/hooks/use-auth-config";
 import { signInWithGoogle, signInWithPasskey } from "~/features/auth/lib/auth-actions";
@@ -56,6 +58,7 @@ export function LoginScreen() {
           <Divider label="または" labelPosition="center" />
           <Button
             fullWidth
+            leftSection={<IconKey aria-hidden size={18} />}
             loading={passkeyAction.isPending}
             onClick={() => void passkeyAction.run(() => signInWithPasskey())}
             size="md"
@@ -74,6 +77,7 @@ export function LoginScreen() {
                   aria-hidden={checkingGoogle || undefined}
                   disabled={checkingGoogle}
                   fullWidth
+                  leftSection={<GoogleIcon />}
                   loading={googleAction.isPending}
                   onClick={() => void googleAction.run(signInWithGoogle)}
                   size="md"
@@ -91,7 +95,13 @@ export function LoginScreen() {
               <Text c="dimmed" component="output" size="sm">
                 Googleログインを利用できるか確認できませんでした。
               </Text>
-              <Button fullWidth onClick={() => void refetch()} size="md" variant="light">
+              <Button
+                fullWidth
+                leftSection={<IconRefresh aria-hidden size={18} />}
+                onClick={() => void refetch()}
+                size="md"
+                variant="light"
+              >
                 もう一度確認する
               </Button>
             </Stack>

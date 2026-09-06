@@ -1,42 +1,21 @@
-@property --google-event-border-angle {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
-
-:where(.frame) {
+:where(.source) {
   position: relative;
 }
 
-.frame::after {
-  background: conic-gradient(
-    from var(--google-event-border-angle),
-    #4285f4,
-    #ea4335,
-    #fbbc05,
-    #34a853,
-    #4285f4
-  );
-  border-radius: inherit;
-  content: "";
-  inset: 0;
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  padding: 1.5px;
+.source[data-google-calendar-event] {
+  padding-inline-start: 20px;
+}
+
+.icon {
+  inset-inline-start: 3px;
+  max-height: calc(100% - 2px);
   pointer-events: none;
   position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .frame:is(:hover, :focus-visible, :focus-within)::after {
-    animation: rotateGoogleEventBorder 6s linear infinite;
-  }
-}
-
-@keyframes rotateGoogleEventBorder {
-  to {
-    --google-event-border-angle: 360deg;
-  }
+.source[data-event-id]:not([data-hanging]) > .icon {
+  top: 4px;
+  transform: none;
 }

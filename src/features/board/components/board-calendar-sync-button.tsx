@@ -1,8 +1,9 @@
 import { Button, Modal, Skeleton, Stack, Tooltip } from "@mantine/core";
-import { IconCalendar } from "@tabler/icons-react";
 import { Suspense } from "react";
 
 import { CalendarSyncSection } from "~/components/calendar-sync-section";
+import { GoogleIcon } from "~/components/google-icon";
+import { GoogleLabel } from "~/components/google-label";
 import { boardRoute } from "~/features/board/lib/board-route-api";
 import { CALENDAR_SYNC_TITLE } from "~/lib/calendar-sync-labels";
 
@@ -35,7 +36,7 @@ export function BoardCalendarSyncButton() {
       >
         <Button
           aria-haspopup="dialog"
-          leftSection={<IconCalendar aria-hidden size={18} />}
+          leftSection={<GoogleIcon />}
           onClick={() => setOpened(true)}
           variant="light"
         >
@@ -47,7 +48,7 @@ export function BoardCalendarSyncButton() {
         onClose={() => setOpened(false)}
         opened={calendarSync === true}
         size="lg"
-        title={CALENDAR_SYNC_TITLE}
+        title={<GoogleLabel>{CALENDAR_SYNC_TITLE}</GoogleLabel>}
       >
         <Suspense
           fallback={

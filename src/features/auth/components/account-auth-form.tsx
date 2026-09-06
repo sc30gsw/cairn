@@ -1,5 +1,6 @@
 import { Field, Form, useForm } from "@formisch/react";
 import { Button, PasswordInput, SegmentedControl, Stack, TextInput } from "@mantine/core";
+import { IconLogin, IconUserPlus } from "@tabler/icons-react";
 import { useState } from "react";
 
 import { AuthActionFeedback } from "~/components/auth-action-feedback";
@@ -87,6 +88,7 @@ function AccountAuthForm({ mode }: AccountAuthFormProps) {
           <Button
             disabled={signUpForm.isSubmitting || isPending}
             fullWidth
+            leftSection={<IconUserPlus aria-hidden size={18} />}
             loading={signUpForm.isSubmitting || isPending}
             type="submit"
           >
@@ -135,6 +137,7 @@ function AccountAuthForm({ mode }: AccountAuthFormProps) {
         <Button
           disabled={loginForm.isSubmitting || isPending}
           fullWidth
+          leftSection={<IconLogin aria-hidden size={18} />}
           loading={loginForm.isSubmitting || isPending}
           type="submit"
         >

@@ -1,3 +1,4 @@
+import { fireEvent, waitFor } from "@testing-library/react";
 import { Result } from "better-result";
 import { expect, test, vi } from "vite-plus/test";
 
@@ -23,10 +24,10 @@ function sampleRow(id: string, name: string): BoardRow {
   };
 }
 
-test("BoardScheduleEventForm renders row options and submit button", () => {
+test("通常予定もGoogleの11色から選択して保存できる", async () => {
   const start = new Date("2026-08-17T00:00:00.000Z");
   const end = new Date("2026-08-17T01:00:00.000Z");
-  const { getByRole, getByText } = renderWithMantine(
+  const { getByRole, getByText, findByRole, getAllByRole } = renderWithMantine(
     <BoardScheduleEventForm
       initialValues={{
         blockId: undefined,
@@ -46,4 +47,12 @@ test("BoardScheduleEventForm renders row options and submit button", () => {
   expect(getByRole("button", { name: "保存" })).toBeDefined();
   expect(getByText("Distinction")).toBeDefined();
   expect(document.querySelector(".mantine-ColorSwatch-root")).not.toBeNull();
+  fireEvent.click(getByRole("combobox", { name: "色" }));
+  fireEvent.click(await findByRole("option", { name: "Graphite" }));
+  fireEvent.click(getByRole("combobox", { name: "色" }));
+  expect(getAllByRole("option")).toHaveLength(11);
+  fireEvent.click(getByRole("option", { name: "Graphite" }));
+  fireEvent.click(getByRole("button", { name: "保存" }));
+  await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ color: "gray" }));
 });

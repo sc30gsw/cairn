@@ -1,11 +1,13 @@
 import { Badge, Button, Checkbox, ColorSwatch, Group, Stack, Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
-import { IconBrandGoogle, IconRefresh } from "@tabler/icons-react";
+import { IconLinkOff, IconRefresh } from "@tabler/icons-react";
 import { Result } from "better-result";
 import { useEffect } from "react";
 import { CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE, type CalendarSyncStatus } from "~domain/calendarSync";
 import type { OwnerSyncOutcome } from "~domain/validators";
 
+import { GoogleIcon } from "~/components/google-icon";
+import { GoogleLabel } from "~/components/google-label";
 import { useBusy } from "~/hooks/use-busy";
 import {
   useCalendarSyncStatus,
@@ -125,7 +127,7 @@ export function CalendarSyncSection() {
           notifyError,
         );
       },
-      title: "カレンダー同期を解除しますか？",
+      title: <GoogleLabel>カレンダー同期を解除しますか？</GoogleLabel>,
     });
   }
 
@@ -144,7 +146,7 @@ export function CalendarSyncSection() {
         </Text>
         <Group justify="flex-end">
           <Button
-            leftSection={<IconBrandGoogle aria-hidden size={16} />}
+            leftSection={<GoogleIcon />}
             loading={busy}
             onClick={() => void startLink()}
             type="button"
@@ -184,6 +186,7 @@ export function CalendarSyncSection() {
         <Button
           color="red"
           disabled={busy}
+          leftSection={<IconLinkOff aria-hidden size={16} />}
           onClick={requestDisconnect}
           type="button"
           variant="subtle"
@@ -235,7 +238,7 @@ export function CalendarSyncSection() {
       <Group gap="sm" justify="space-between" wrap="wrap">
         {status.status === "needsReauth" ? (
           <Button
-            leftSection={<IconBrandGoogle aria-hidden size={16} />}
+            leftSection={<GoogleIcon />}
             loading={busy}
             onClick={() => void startLink()}
             type="button"

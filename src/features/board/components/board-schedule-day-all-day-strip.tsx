@@ -3,6 +3,7 @@ import type { ScheduleEventData } from "@mantine/schedule";
 import type { MouseEvent } from "react";
 
 import { BoardScheduleEventSource } from "~/features/board/components/board-schedule-event-source";
+import { boardScheduleEventColors } from "~/features/board/lib/board-schedule-color-ui";
 
 import classes from "~/features/board/components/board-schedule.module.css";
 
@@ -28,12 +29,7 @@ export function BoardScheduleDayAllDayStrip({
   return (
     <>
       {visible.map((event) => {
-        const colors = theme.variantColorResolver({
-          color: event.color ?? "gray",
-          theme,
-          variant: event.variant ?? "light",
-          autoContrast: true,
-        });
+        const colors = boardScheduleEventColors({ ...event, theme });
         return (
           <BoardScheduleEventSource eventId={event.id} key={String(event.id)}>
             <UnstyledButton

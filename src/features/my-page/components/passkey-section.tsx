@@ -1,6 +1,7 @@
 import type { Passkey } from "@better-auth/passkey/client";
 import { Field, Form, useForm } from "@formisch/react";
 import { Button, Card, Group, Stack, Text, TextInput, Title } from "@mantine/core";
+import { IconKey, IconPlus, IconTrash } from "@tabler/icons-react";
 import { Result } from "better-result";
 import { useState } from "react";
 
@@ -45,7 +46,12 @@ export function PasskeySection() {
     <Card padding="md">
       <Stack gap="md">
         <Group justify="space-between">
-          <Title order={3}>パスキー</Title>
+          <Title order={3}>
+            <span className="inline-flex items-center gap-2">
+              <IconKey aria-hidden size={18} />
+              <span>パスキー</span>
+            </span>
+          </Title>
           <Form
             of={form}
             onSubmit={async (output) => {
@@ -70,6 +76,7 @@ export function PasskeySection() {
               </Field>
               <Button
                 disabled={form.isSubmitting || addAction.isPending}
+                leftSection={<IconPlus aria-hidden size={16} />}
                 loading={form.isSubmitting || addAction.isPending}
                 size="xs"
                 type="submit"
@@ -105,6 +112,7 @@ export function PasskeySection() {
             </Stack>
             <Button
               color="red"
+              leftSection={<IconTrash aria-hidden size={16} />}
               loading={deletingId === passkey.id}
               onClick={() => void handleDelete(passkey.id)}
               size="xs"

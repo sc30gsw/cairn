@@ -1,11 +1,7 @@
-import { UnstyledButton } from "@mantine/core";
 import type { ScheduleEventData } from "@mantine/schedule";
 import type { ComponentPropsWithoutRef, CSSProperties } from "react";
 
-import {
-  BoardScheduleEventSource,
-  renderBoardScheduleEvent,
-} from "~/features/board/components/board-schedule-event-source";
+import { renderBoardScheduleEvent } from "~/features/board/components/board-schedule-event-source";
 import {
   mergeAllDayEventStyle,
   parseMantineAllDayRow,
@@ -28,9 +24,9 @@ export const boardScheduleAllDayRenderEvent = (
     return renderBoardScheduleEvent(event, { ...props, children: props.children });
   }
 
-  return (
-    <BoardScheduleEventSource eventId={event.id}>
-      <UnstyledButton {...props} style={mergeAllDayEventStyle(baseStyle, row)} />
-    </BoardScheduleEventSource>
-  );
+  return renderBoardScheduleEvent(event, {
+    ...props,
+    children: props.children,
+    style: mergeAllDayEventStyle(baseStyle, row),
+  });
 };

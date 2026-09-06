@@ -14,6 +14,7 @@ import type { ScheduleEventData } from "@mantine/schedule";
 import { useRef, useState, type MouseEvent } from "react";
 
 import { BoardScheduleEventSource } from "~/features/board/components/board-schedule-event-source";
+import { boardScheduleEventColors } from "~/features/board/lib/board-schedule-color-ui";
 import {
   allDayEventsForDay,
   isBoardAllDayMoreEvent,
@@ -40,10 +41,12 @@ function YearPopoverTimedEvent({
   onClose,
   onEditBlock,
 }: YearPopoverTimedEventProps) {
+  const theme = useMantineTheme();
   const timeLabel = `${formatScheduleTimeLabel(event.start)}–${formatScheduleTimeLabel(event.end)}`;
   const badge = (
     <Badge
       autoContrast
+      c={boardScheduleEventColors({ ...event, theme }).color}
       color={event.color ?? "gray"}
       fullWidth
       size="sm"
@@ -175,6 +178,7 @@ export function BoardScheduleYearDayPopover({
                 <BoardScheduleEventSource eventId={event.id} key={String(event.id)}>
                   <Badge
                     autoContrast
+                    c={boardScheduleEventColors({ ...event, theme }).color}
                     color={event.color ?? "gray"}
                     fullWidth
                     size="sm"

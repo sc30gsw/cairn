@@ -1,8 +1,10 @@
+import { useMantineTheme } from "@mantine/core";
 import { Badge, Paper, Stack, Text, UnstyledButton } from "@mantine/core";
 import type { ScheduleEventData } from "@mantine/schedule";
 import type { CSSProperties } from "react";
 
 import { BoardScheduleEventSource } from "~/features/board/components/board-schedule-event-source";
+import { boardScheduleEventColors } from "~/features/board/lib/board-schedule-color-ui";
 import { cn } from "~/lib/utils";
 
 import classes from "~/features/board/components/board-schedule-all-day-expand.module.css";
@@ -27,6 +29,7 @@ export function BoardScheduleAllDayExpand({
   events,
   onEventClick,
 }: BoardScheduleAllDayExpandProps) {
+  const theme = useMantineTheme();
   const style: CSSProperties = {
     borderColor: "var(--mantine-color-orange-2)",
     left: anchor.left,
@@ -59,6 +62,7 @@ export function BoardScheduleAllDayExpand({
               <BoardScheduleEventSource eventId={event.id} key={String(event.id)}>
                 <Badge
                   autoContrast
+                  c={boardScheduleEventColors({ ...event, theme }).color}
                   color={event.color ?? "gray"}
                   fullWidth
                   size="sm"
@@ -84,6 +88,7 @@ export function BoardScheduleAllDayExpand({
               >
                 <Badge
                   autoContrast
+                  c={boardScheduleEventColors({ ...event, theme }).color}
                   color={event.color ?? "gray"}
                   fullWidth
                   size="sm"

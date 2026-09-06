@@ -2,7 +2,6 @@ import { Field, Form, useForm, type SubmitHandler } from "@formisch/react";
 import { ColorSwatch, Group, Select, Stack, Text, TextInput } from "@mantine/core";
 import { DatePickerInput, DateTimePicker } from "@mantine/dates";
 import { modals } from "@mantine/modals";
-import { IconBrandGoogle } from "@tabler/icons-react";
 import { Result } from "better-result";
 import { useId } from "react";
 import {
@@ -11,6 +10,8 @@ import {
   googleCalendarEventColor,
 } from "~domain/googleCalendarColors";
 
+import { GoogleIcon } from "~/components/google-icon";
+import { GoogleLabel } from "~/components/google-label";
 import { BoardScheduleEditModal } from "~/features/board/components/board-schedule-edit-modal";
 import { scheduleInstantToDate } from "~/features/board/lib/schedule-instant";
 import {
@@ -60,7 +61,7 @@ function ExternalEventForm({
   function requestRemove() {
     if (!external.canEdit) return;
     modals.openConfirmModal({
-      title: "この予定を Google カレンダーから削除しますか？",
+      title: <GoogleLabel>この予定を Google カレンダーから削除しますか？</GoogleLabel>,
       children: "Google カレンダー上の予定も削除されます。記録や学習量には影響しません。",
       confirmProps: { color: "red" },
       labels: { cancel: "キャンセル", confirm: REMOVE_LABEL },
@@ -79,10 +80,10 @@ function ExternalEventForm({
       deleteTooltip="Google カレンダー上の予定も削除されます"
       readOnly={!external.canEdit}
       submitting={form.isSubmitting}
-      title={external.canEdit ? "予定を編集" : "外部予定"}
+      title={<GoogleLabel>{external.canEdit ? "予定を編集" : "外部予定"}</GoogleLabel>}
     >
       <Group gap="xs" wrap="nowrap">
-        <IconBrandGoogle aria-hidden size={18} />
+        <GoogleIcon />
         <Stack gap={0}>
           <Text size="sm">{external.calendarName}</Text>
           {external.calendarName !== external.calendarEmail && (

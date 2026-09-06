@@ -1,4 +1,5 @@
-import { Button, Group, Modal, Stack, Tooltip } from "@mantine/core";
+import { Button, Group, Modal, Stack, Tooltip, type ModalProps } from "@mantine/core";
+import { IconCheck, IconTrash } from "@tabler/icons-react";
 import type { ReactNode } from "react";
 
 export function BoardScheduleEditModal({
@@ -24,7 +25,7 @@ export function BoardScheduleEditModal({
   readOnly?: boolean;
   saveDisabled?: boolean;
   submitting?: boolean;
-  title: string;
+  title: ModalProps["title"];
 }) {
   return (
     <Modal
@@ -47,6 +48,7 @@ export function BoardScheduleEditModal({
               <Button
                 color="red"
                 disabled={readOnly || submitting}
+                leftSection={<IconTrash aria-hidden size={16} />}
                 onClick={onDelete}
                 type="button"
               >
@@ -59,7 +61,13 @@ export function BoardScheduleEditModal({
               {readOnly ? "閉じる" : "キャンセル"}
             </Button>
             {readOnly ? null : (
-              <Button disabled={saveDisabled} form={formId} loading={submitting} type="submit">
+              <Button
+                disabled={saveDisabled}
+                form={formId}
+                leftSection={<IconCheck aria-hidden size={16} />}
+                loading={submitting}
+                type="submit"
+              >
                 保存
               </Button>
             )}
