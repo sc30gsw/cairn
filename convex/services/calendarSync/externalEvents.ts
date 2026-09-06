@@ -100,7 +100,11 @@ export async function moveExternal(
   const startAt = requireScheduleInstant(args.startAt);
   const endAt = requireScheduleInstant(args.endAt);
   assertScheduleRange(startAt, endAt);
-  await ctx.db.patch("externalCalendarEvents", external._id, { endAt, startAt });
+  await ctx.db.patch("externalCalendarEvents", external._id, {
+    endAt,
+    startAt,
+    appChangedAt: Date.now(),
+  });
   return {
     allDay: external.allDay,
     calendarId: external.calendarId,

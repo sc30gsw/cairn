@@ -1,10 +1,10 @@
 import { internal } from "../../_generated/api";
+import type { Doc } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
-import type { ExternalChange } from "../../lib/validators";
 
 export async function queueExternalChange(
   ctx: MutationCtx,
-  args: { calendarId: string; change: ExternalChange; googleEventId: string; ownerId: string },
+  args: Omit<Doc<"calendarExternalChanges">, "_id" | "_creationTime">,
 ): Promise<void> {
   const previous = await ctx.db
     .query("calendarExternalChanges")

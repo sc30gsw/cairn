@@ -1,3 +1,4 @@
+import { paginationOptsValidator, paginationResultValidator } from "convex/server";
 import { v } from "convex/values";
 
 import { internalQuery } from "../../_generated/server";
@@ -10,13 +11,13 @@ export const pendingExternalChange = internalQuery({
 });
 
 export const pendingExternalChanges = internalQuery({
-  args: { ownerId: v.string() },
-  handler: async (ctx, { ownerId }) => {
+  args: { ownerId: v.string(), paginationOpts: paginationOptsValidator },
+  handler: async (ctx, { ownerId, paginationOpts }) => {
     const pending = await ctx.db
       .query("calendarExternalChanges")
       .withIndex("by_owner_and_calendar_and_event", (q) => q.eq("ownerId", ownerId))
-      .take(100);
-    return pending.map((change) => change._id);
+      .paginate(paginationOpts);
+    return { ...pending, page: pending.page.map((change) => change._id) };
   },
-  returns: v.array(v.id("calendarExternalChanges")),
+  returns: paginationResultValidator(v.id("calendarExternalChanges")),
 });

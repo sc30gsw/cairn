@@ -1,4 +1,5 @@
 import { Result } from "better-result";
+import type { FunctionReturnType } from "convex/server";
 
 import { internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
@@ -8,14 +9,17 @@ import {
   type GoogleCalendarClient,
   type GoogleCalendarError,
   isGone,
+  isAuthFailure,
+  isRetryable,
   patchEvent,
 } from "../../lib/googleCalendar";
 import { externalChangePayload } from "./eventPayload";
+import { retryDelayMs } from "./syncFailure";
 
 export async function pushExternalChange(
   ctx: ActionCtx,
   client: GoogleCalendarClient,
-  pendingId: Id<"calendarExternalChanges">,
+  { pendingId, attempt }: { pendingId: Id<"calendarExternalChanges">; attempt: number },
 ): Promise<Result<null, GoogleCalendarError>> {
   const pending = await ctx.runQuery(
     internal.queries.calendarSync.pendingExternalChange.pendingExternalChange,
@@ -34,6 +38,27 @@ export async function pushExternalChange(
           externalChangePayload(pending.change),
         );
   if (Result.isError(outcome) && !isGone(outcome.error)) {
+    if (!isAuthFailure(outcome.error)) {
+      const delay = retryDelayMs(attempt);
+      if (isRetryable(outcome.error) && delay !== undefined) {
+        await ctx.scheduler.runAfter(
+          delay,
+          internal.actions.calendarSync.pushExternal.pushExternal,
+          {
+            pendingId,
+            attempt: attempt + 1,
+          },
+        );
+      } else {
+        await ctx.runMutation(
+          internal.mutations.calendarSync.finishExternalPush.finishExternalPush,
+          {
+            pendingId,
+            lastError: outcome.error.message,
+          },
+        );
+      }
+    }
     return outcome;
   }
   await ctx.runMutation(internal.mutations.calendarSync.finishExternalPush.finishExternalPush, {
@@ -47,19 +72,25 @@ export async function flushExternalChanges(
   client: GoogleCalendarClient,
   ownerId: string,
 ): Promise<Result<null, GoogleCalendarError>> {
+  let cursor: string | null = null;
+  let firstError: GoogleCalendarError | null = null;
   while (true) {
-    const pending = await ctx.runQuery(
+    const pending: FunctionReturnType<
+      typeof internal.queries.calendarSync.pendingExternalChange.pendingExternalChanges
+    > = await ctx.runQuery(
       internal.queries.calendarSync.pendingExternalChange.pendingExternalChanges,
-      { ownerId },
+      { ownerId, paginationOpts: { cursor, numItems: 100 } },
     );
-    if (pending.length === 0) {
-      return Result.ok(null);
-    }
-    for (const pendingId of pending) {
-      const result = await pushExternalChange(ctx, client, pendingId);
+    for (const pendingId of pending.page) {
+      const result = await pushExternalChange(ctx, client, { pendingId, attempt: 0 });
       if (Result.isError(result)) {
-        return result;
+        if (isAuthFailure(result.error)) return result;
+        firstError ??= result.error;
       }
     }
+    if (pending.isDone) {
+      return firstError === null ? Result.ok(null) : Result.err(firstError);
+    }
+    cursor = pending.continueCursor;
   }
 }

@@ -1,16 +1,18 @@
 "use node";
 
 import { Result } from "better-result";
+import { parse } from "convex-helpers/validators";
 import { v } from "convex/values";
 
 import { internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 import { internalAction, type ActionCtx } from "../../_generated/server";
 import { getGoogleAccessToken } from "../../lib/googleAccessToken";
-import { isAuthFailure, isRetryable } from "../../lib/googleCalendar";
+import { isAuthFailure } from "../../lib/googleCalendar";
+import schema from "../../schema";
 import { withCalendarOperation } from "../../services/calendarSync/operation";
 import { pushExternalChange } from "../../services/calendarSync/pushExternalChange";
-import { markNeedsReauth, retryDelayMs } from "../../services/calendarSync/syncFailure";
+import { markNeedsReauth } from "../../services/calendarSync/syncFailure";
 
 async function pushPendingChange(
   ctx: ActionCtx,
@@ -32,7 +34,7 @@ async function pushPendingChange(
     return;
   }
   const client = { accessToken: token.value };
-  const outcome = await pushExternalChange(ctx, client, args.pendingId);
+  const outcome = await pushExternalChange(ctx, client, args);
   if (Result.isOk(outcome)) {
     return;
   }
@@ -40,23 +42,28 @@ async function pushPendingChange(
     await markNeedsReauth(ctx, args.ownerId);
     return;
   }
-  const delay = retryDelayMs(args.attempt);
-  if (isRetryable(outcome.error) && delay !== undefined) {
-    await ctx.scheduler.runAfter(delay, internal.actions.calendarSync.pushExternal.pushExternal, {
-      attempt: args.attempt + 1,
-      pendingId: args.pendingId,
-    });
-    return;
-  }
-  await ctx.runMutation(internal.mutations.calendarSync.finishExternalPush.finishExternalPush, {
-    pendingId: args.pendingId,
-    lastError: outcome.error.message,
-  });
 }
 
+const pushExternalArgs = v.union(
+  v.object({ attempt: v.number(), pendingId: v.id("calendarExternalChanges") }),
+  schema.tables.calendarExternalChanges.validator.extend({ attempt: v.number() }),
+);
+
 export const pushExternal = internalAction({
-  args: { attempt: v.number(), pendingId: v.id("calendarExternalChanges") },
-  handler: async (ctx, args) => {
+  args: schema.tables.calendarExternalChanges.validator.partial().extend({
+    attempt: v.number(),
+    pendingId: v.optional(v.id("calendarExternalChanges")),
+  }).fields,
+  handler: async (ctx, input): Promise<null> => {
+    const args = parse(pushExternalArgs, input);
+    if (!("pendingId" in args)) {
+      const { attempt: _attempt, ...change } = args;
+      await ctx.runMutation(
+        internal.mutations.calendarSync.adoptLegacyExternalChange.adoptLegacyExternalChange,
+        change,
+      );
+      return null;
+    }
     const pending = await ctx.runQuery(
       internal.queries.calendarSync.pendingExternalChange.pendingExternalChange,
       { pendingId: args.pendingId },

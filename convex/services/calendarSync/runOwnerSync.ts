@@ -60,8 +60,13 @@ export async function syncConnectedOwner(
     failures.push(flushed.error);
   }
 
-  const cursorByCalendar = new Map(plan.cursors.map((entry) => [entry.calendarId, entry]));
-  for (const calendarId of calendarsToPull(plan)) {
+  const pullPlan = await ctx.runQuery(internal.queries.calendarSync.syncPlan.syncPlan, {
+    ownerId,
+    todayJst: today,
+  });
+  if (pullPlan === null) return "notConnected";
+  const cursorByCalendar = new Map(pullPlan.cursors.map((entry) => [entry.calendarId, entry]));
+  for (const calendarId of calendarsToPull(pullPlan)) {
     const stored = cursorByCalendar.get(calendarId);
     const cursor =
       stored === undefined ||
@@ -69,8 +74,8 @@ export async function syncConnectedOwner(
         ? null
         : stored.syncToken;
     const linkedEventIds =
-      calendarId === plan.calendarId
-        ? plan.sources.flatMap((source) =>
+      calendarId === pullPlan.calendarId
+        ? pullPlan.sources.flatMap((source) =>
             source.link === null ? [] : [source.link.googleEventId],
           )
         : [];

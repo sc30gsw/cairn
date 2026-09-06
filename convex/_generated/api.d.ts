@@ -83,6 +83,7 @@ import type * as mutations_boardSchedule_create from "../mutations/boardSchedule
 import type * as mutations_boardSchedule_move from "../mutations/boardSchedule/move.js";
 import type * as mutations_boardSchedule_remove from "../mutations/boardSchedule/remove.js";
 import type * as mutations_boardSchedule_update from "../mutations/boardSchedule/update.js";
+import type * as mutations_calendarSync_adoptLegacyExternalChange from "../mutations/calendarSync/adoptLegacyExternalChange.js";
 import type * as mutations_calendarSync_applyPull from "../mutations/calendarSync/applyPull.js";
 import type * as mutations_calendarSync_clearConnection from "../mutations/calendarSync/clearConnection.js";
 import type * as mutations_calendarSync_finishExternalPush from "../mutations/calendarSync/finishExternalPush.js";
@@ -475,6 +476,7 @@ declare const fullApi: ApiFromModules<{
   "mutations/boardSchedule/move": typeof mutations_boardSchedule_move;
   "mutations/boardSchedule/remove": typeof mutations_boardSchedule_remove;
   "mutations/boardSchedule/update": typeof mutations_boardSchedule_update;
+  "mutations/calendarSync/adoptLegacyExternalChange": typeof mutations_calendarSync_adoptLegacyExternalChange;
   "mutations/calendarSync/applyPull": typeof mutations_calendarSync_applyPull;
   "mutations/calendarSync/clearConnection": typeof mutations_calendarSync_clearConnection;
   "mutations/calendarSync/finishExternalPush": typeof mutations_calendarSync_finishExternalPush;

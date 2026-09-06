@@ -230,3 +230,246 @@ test("切断は pending を掃除し、残った scheduled action は Google に
   expect(fetch).not.toHaveBeenCalled();
   expect(await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect())).toEqual([]);
 });
+
+test.each([400, 403, 429])(
+  "再認証後の %s は後続の送信を止めず、失敗時は最新cursorでpullする",
+  async (status) => {
+    const { externalId, owner, t } = await setup();
+    await owner.mutation(api.mutations.calendarSync.moveExternal.moveExternal, {
+      externalId,
+      ...MOVED,
+    });
+    const secondId = await t.run(async (ctx) => {
+      await ctx.db.insert("calendarSyncCursors", {
+        ownerId: OWNER,
+        calendarId: CALENDAR,
+        syncToken: "old",
+        fullSyncedOnJst: TODAY,
+      });
+      return ctx.db.insert("externalCalendarEvents", {
+        allDay: false,
+        calendarId: CALENDAR,
+        googleEventId: "later-event",
+        googleUpdated: "2026-08-17T00:00:00Z",
+        ownerId: OWNER,
+        startAt: `${TODAY} 10:00:00`,
+        endAt: `${TODAY} 11:00:00`,
+        title: "後続",
+      });
+    });
+    await owner.mutation(api.mutations.calendarSync.moveExternal.moveExternal, {
+      externalId: secondId,
+      ...MOVED,
+    });
+    tokenState.fail = true;
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    tokenState.fail = false;
+    const patched: string[] = [];
+    const cursors: (string | null)[] = [];
+    let fail = true;
+    vi.stubGlobal("fetch", async (url: URL, init: RequestInit) => {
+      if (init.method === "PATCH") {
+        patched.push(url.pathname);
+        if (url.pathname.endsWith("/event") && fail) {
+          return Response.json(
+            { error: { message: "Rejected", errors: [{ reason: "forbidden" }] } },
+            { status },
+          );
+        }
+        return Response.json({
+          ...googleEvent(),
+          id: url.pathname.endsWith("/event") ? "event" : "later-event",
+        });
+      }
+      cursors.push(url.searchParams.get("syncToken"));
+      return Response.json({
+        items: [
+          {
+            ...googleEvent(),
+            start: { dateTime: "2026-08-17T10:00:00+09:00" },
+            end: { dateTime: "2026-08-17T11:00:00+09:00" },
+          },
+          { ...googleEvent(), id: "later-event" },
+        ],
+        nextSyncToken: "fresh",
+      });
+    });
+    expect(await owner.action(api.actions.calendarSync.syncNow.syncNow, {})).toBe("error");
+    expect(patched).toHaveLength(2);
+    expect(patched[1]).toContain("later-event");
+    expect(cursors).toEqual([status === 429 ? "old" : null]);
+    const pending = await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect());
+    expect(pending).toHaveLength(status === 429 ? 1 : 0);
+    expect(
+      await t.run(async (ctx) => ctx.db.get("externalCalendarEvents", externalId)),
+    ).toMatchObject(
+      status === 429 ? MOVED : { startAt: `${TODAY} 10:00:00`, endAt: `${TODAY} 11:00:00` },
+    );
+    fail = false;
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    expect(await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect())).toEqual(
+      [],
+    );
+    expect(patched).toHaveLength(status === 429 ? 3 : 2);
+  },
+);
+
+test("一括再送は100件を超えても各変更を一度ずつ送信する", async () => {
+  const { owner, t } = await setup();
+  await t.run(async (ctx) => {
+    for (let index = 0; index < 101; index += 1) {
+      await ctx.db.insert("calendarExternalChanges", {
+        ownerId: OWNER,
+        calendarId: CALENDAR,
+        googleEventId: `event-${index}`,
+        change: { kind: "delete" },
+      });
+    }
+  });
+  const deleted: string[] = [];
+  vi.stubGlobal("fetch", async (url: URL, init: RequestInit) => {
+    if (init.method === "DELETE") {
+      deleted.push(url.pathname);
+      return new Response(null, { status: 204 });
+    }
+    return Response.json({ items: [], nextSyncToken: "fresh" });
+  });
+  expect(await owner.action(api.actions.calendarSync.syncNow.syncNow, {})).toBe("ok");
+  expect(new Set(deleted).size).toBe(101);
+  expect(deleted).toHaveLength(101);
+  expect(await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect())).toEqual([]);
+});
+
+test.each(["move", "delete"] as const)(
+  "旧形式の予約済み %s は未送信管理を経由して送信する",
+  async (kind) => {
+    const { t } = await setup();
+    const methods: string[] = [];
+    vi.stubGlobal("fetch", async (_url: URL, init: RequestInit) => {
+      methods.push(init.method ?? "GET");
+      return init.method === "DELETE"
+        ? new Response(null, { status: 204 })
+        : Response.json(googleEvent());
+    });
+    await t.action(internal.actions.calendarSync.pushExternal.pushExternal, {
+      attempt: 1,
+      calendarId: CALENDAR,
+      googleEventId: "event",
+      ownerId: OWNER,
+      change: kind === "delete" ? { kind } : { kind, allDay: false, ...MOVED },
+    });
+    expect(await pendingId(t)).toBeDefined();
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    expect(methods).toEqual([kind === "delete" ? "DELETE" : "PATCH"]);
+    expect(await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect())).toEqual(
+      [],
+    );
+  },
+);
+
+test("旧形式の再試行は新しい未送信変更を置き換えない", async () => {
+  const { externalId, owner, t } = await setup();
+  await owner.mutation(api.mutations.calendarSync.moveExternal.moveExternal, {
+    externalId,
+    ...MOVED,
+  });
+  const id = await pendingId(t);
+  await t.action(internal.actions.calendarSync.pushExternal.pushExternal, {
+    attempt: 1,
+    calendarId: CALENDAR,
+    googleEventId: "event",
+    ownerId: OWNER,
+    change: { kind: "delete" },
+  });
+  expect(await pendingId(t)).toBe(id);
+  expect(await t.run(async (ctx) => ctx.db.get("calendarExternalChanges", id))).toMatchObject({
+    change: { kind: "move", ...MOVED },
+  });
+});
+
+test("切断後の旧形式ジョブは未送信変更を復活させない", async () => {
+  const { t } = await setup();
+  await t.run(async (ctx) => clearConnection(ctx, OWNER));
+  await t.action(internal.actions.calendarSync.pushExternal.pushExternal, {
+    attempt: 1,
+    calendarId: CALENDAR,
+    googleEventId: "event",
+    ownerId: OWNER,
+    change: { kind: "delete" },
+  });
+  expect(await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect())).toEqual([]);
+});
+
+test.each(["move", "delete"] as const)(
+  "新しい移動の送信完了後に届いた旧 %s は送信しない",
+  async (kind) => {
+    const { externalId, owner, t } = await setup();
+    await owner.mutation(api.mutations.calendarSync.moveExternal.moveExternal, {
+      externalId,
+      ...MOVED,
+    });
+    const fetch = vi.fn(async () => Response.json(googleEvent()));
+    vi.stubGlobal("fetch", fetch);
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    await t.run(async (ctx) =>
+      applyPull(ctx, {
+        calendarId: CALENDAR,
+        ownerId: OWNER,
+        todayJst: TODAY,
+        finish: null,
+        events: [
+          {
+            kind: "upsert",
+            allDay: false,
+            calendarId: CALENDAR,
+            googleEventId: "event",
+            ...MOVED,
+            title: "予定",
+            updated: "2026-08-17T03:01:00Z",
+          },
+        ],
+      }),
+    );
+    await t.action(internal.actions.calendarSync.pushExternal.pushExternal, {
+      attempt: 2,
+      ownerId: OWNER,
+      calendarId: CALENDAR,
+      googleEventId: "event",
+      change:
+        kind === "delete"
+          ? { kind }
+          : { kind, allDay: false, startAt: `${TODAY} 12:00:00`, endAt: `${TODAY} 13:00:00` },
+    });
+    await t.finishAllScheduledFunctions(vi.runAllTimers);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect())).toEqual(
+      [],
+    );
+    expect(
+      await t.run(async (ctx) => ctx.db.get("externalCalendarEvents", externalId)),
+    ).toMatchObject(MOVED);
+  },
+);
+
+test("旧削除の再試行はpullで復活した未編集の写しがあっても送信する", async () => {
+  const { t } = await setup();
+  const fetch = vi.fn(async () => new Response(null, { status: 204 }));
+  vi.stubGlobal("fetch", fetch);
+  await t.action(internal.actions.calendarSync.pushExternal.pushExternal, {
+    attempt: 2,
+    ownerId: OWNER,
+    calendarId: CALENDAR,
+    googleEventId: "event",
+    change: { kind: "delete" },
+  });
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  expect(fetch).toHaveBeenCalledTimes(1);
+});
+
+test("互換引数に必要なフィールドが足りなければ処理しない", async () => {
+  const { t } = await setup();
+  await expect(
+    t.action(internal.actions.calendarSync.pushExternal.pushExternal, { attempt: 0 }),
+  ).rejects.toThrow();
+  expect(await t.run(async (ctx) => ctx.db.query("calendarExternalChanges").collect())).toEqual([]);
+});

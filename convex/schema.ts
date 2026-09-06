@@ -193,6 +193,7 @@ export default defineSchema({
     .index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"]),
 
   externalCalendarEvents: defineTable({
+    appChangedAt: v.optional(v.number()),
     allDay: v.boolean(),
     calendarId: v.string(),
     endAt: v.string(),
