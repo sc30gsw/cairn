@@ -35,7 +35,6 @@ export const ownerMutation = customMutation(mutation, {
   },
 });
 
-//? 外部 API（Google カレンダー）を叩く公開アクション用。認可の形は query / mutation と同じ（CVX-04）
 export const ownerAction = customAction(action, {
   args: {},
   input: async (ctx) => {

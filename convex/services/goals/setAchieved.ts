@@ -26,7 +26,6 @@ export async function setAchieved(
     throwDomain(new ValidationFailedError({ message: NOT_MASTERY_GOAL_MESSAGE }));
   }
   if (args.achievedAt === undefined) {
-    //? 達成を外しても振り返りは残す。次に達成にするときの初期値になる
     await recomputeMasteryProgress(ctx, goal);
     await ctx.db.patch("goals", goal._id, { achievedAt: undefined });
     await scheduleGoalSync(ctx, ownerId, [goal._id]);

@@ -15,7 +15,6 @@ import {
 } from "~/features/my-page/components/calendar-sync-section";
 import { renderWithMantine } from "~/test-utils/render";
 
-//? 型は Convex の status クエリから導く（手書きの複製を置かない）
 type Status = NonNullable<FunctionReturnType<typeof api.queries.calendarSync.status.status>>;
 
 const {
@@ -130,7 +129,6 @@ test("接続済みならアカウント・カレンダーの選択・今すぐ�
   expect(holiday.checked).toBe(false);
   expect(getByRole("button", { name: CALENDAR_SYNC_DISCONNECT_LABEL })).toBeDefined();
 
-  //? 同期中（busy）はチェックボックスが無効になるので、先にカレンダーを選び直す
   fireEvent.click(holiday);
   await vi.waitFor(() => {
     expect(setVisible).toHaveBeenCalledWith({
@@ -170,7 +168,6 @@ test("権限切れのときはカレンダーの選択を変えられない", ()
 test("解除は確認を挟み、確定したときだけ disconnect が呼ばれる", async () => {
   syncState.status = CONNECTED;
   const { getAllByRole, getByRole } = renderWithMantine(<CalendarSyncSection />);
-  //? 確認ダイアログの確定ボタンは元のボタンと同じ名前なので、探す範囲をダイアログ内に限る
   const trigger = () =>
     getAllByRole("button", { name: CALENDAR_SYNC_DISCONNECT_LABEL })[0] as HTMLElement;
 

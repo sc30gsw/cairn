@@ -20,7 +20,6 @@ const { navigate, searchState, useHistorySearch } = vi.hoisted(() => ({
 
 vi.mock("@tanstack/react-router", () => ({ useNavigate: () => navigate }));
 
-//? デバウンスは実時間を待たずに素通しさせる。他の Mantine hooks は本物のまま
 vi.mock("@mantine/hooks", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@mantine/hooks")>()),
   useDebouncedValue: (value: unknown) => [value],
@@ -77,7 +76,6 @@ test("トリガーを押すとパレットが開き、ナビの全項目が並�
   for (const entry of NAV) {
     expect(view.getByRole("button", { hidden: true, name: entry.label })).toBeDefined();
   }
-  //? 語を入れるまで Convex には問い合わせない
   expect(useHistorySearch).not.toHaveBeenCalled();
 });
 

@@ -20,7 +20,6 @@ export async function monthlyReview(
   ownerId: string,
   args: { todayJst: string; yearMonth: string },
 ): Promise<MonthlyReviewDto> {
-  //? 壊れた月は throw（日・週の引数と同じ規則。dateArgs.ts のコメント参照）
   const dates = calendarDatesInMonth(requireYearMonth(args.yearMonth));
   const start = dates[0];
   const end = dates.at(-1);

@@ -41,7 +41,6 @@ type DaySeed = {
   rows?: RowSeed[];
 };
 
-//? 検索は読み取りだけなので、フィクスチャは t.run で直接入れる（ownerId は identity.subject）
 async function seed(t: Harness, ownerId: string, days: DaySeed[], itemName = "金のフレーズ") {
   await t.run(async (ctx) => {
     const itemId = await ctx.db.insert("items", { name: itemName, ownerId, sortOrder: 0 });

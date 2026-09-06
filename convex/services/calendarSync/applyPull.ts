@@ -12,9 +12,6 @@ export type PullFinish = {
   syncToken: string | null;
 };
 
-//? Google から来た差分をアプリに写す。対応表にある予定はアプリ発なので「戻す」、無いものは外部予定の写し。
-//? 後の更新が勝つ: アプリ側の未送信の変更（appChangedAt）が Google の updated より新しければ Google 側を捨てる。
-//? finish が付いた最後の塊では、同じトランザクションで差分トークンの保存と写しの掃除まで行う（CVX-07/15）
 export async function applyPull(
   ctx: MutationCtx,
   args: {
@@ -37,7 +34,6 @@ export async function applyPull(
       )
       .unique();
     if (link !== null) {
-      //? 対応表より先に写しになっていたら（送信と取り込みの並走）、写しを消してから戻す
       const shadow = await findExternal(ctx, args.ownerId, event);
       if (shadow !== null) {
         await ctx.db.delete("externalCalendarEvents", shadow._id);
@@ -115,8 +111,6 @@ function googleWins(link: Doc<"calendarSyncLinks">, updated: string): boolean {
   return !Number.isNaN(updatedMs) && updatedMs > link.appChangedAt;
 }
 
-//? Google 側の変更をアプリの元に戻した結果。
-//? applied: 戻した / ignored: 触らない / reassert: 受け入れられない形なので次の送信でアプリの値を Google に書き戻す
 type ApplyResult = "applied" | "ignored" | "reassert";
 
 async function applyToSource(
@@ -125,7 +119,6 @@ async function applyToSource(
   event: PulledEvent,
 ): Promise<void> {
   if (event.kind === "delete") {
-    //? 予定は Google で消せばアプリでも消える。目標は消さず、対応表だけ落として次の送信で戻す（Q10）
     if (link.sourceKind === "block") {
       const block = await ownedBlock(ctx, link);
       if (block !== null) {
@@ -146,7 +139,6 @@ async function applyToSource(
     return;
   }
   if (applied === "reassert") {
-    //? 例: 予定が Google で終日にされた。アプリの時刻を正として、次の送信で上書きさせる
     await ctx.db.patch("calendarSyncLinks", link._id, {
       appChangedAt: Date.now(),
       googleUpdated: event.updated,

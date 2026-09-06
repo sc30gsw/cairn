@@ -3,7 +3,6 @@ import { type CalendarSyncStatus, PRIMARY_CALENDAR_ID } from "../../lib/calendar
 import type { UpsertConnectionArgs } from "../../lib/validators";
 import { getConnection } from "./getConnection";
 
-//? 対応表・外部予定の写し・差分トークンをすべて消す（接続の行は残す）
 export async function clearSyncState(ctx: MutationCtx, ownerId: string): Promise<void> {
   const [links, externals, cursors] = await Promise.all([
     ctx.db
@@ -26,8 +25,6 @@ export async function clearSyncState(ctx: MutationCtx, ownerId: string): Promise
   ]);
 }
 
-//? 接続（再接続）。表示カレンダーの選択は既存があれば引き継ぎ、今の一覧に無いものは落とす。
-//? 別の Google アカウントに替えたら、前のアカウントの対応表・写し・差分トークンは意味を失うので消す
 export async function upsertConnection(
   ctx: MutationCtx,
   args: UpsertConnectionArgs,
@@ -38,7 +35,6 @@ export async function upsertConnection(
     await clearSyncState(ctx, args.ownerId);
   }
   const known = new Set(args.calendars.map((calendar) => calendar.id));
-  //? 表示カレンダーの選択は同じアカウントなら引き継ぐ。別アカウントは別のカレンダー群なので既定に戻す
   const visibleCalendarIds = (
     sameAccount ? existing.visibleCalendarIds : args.defaultVisibleCalendarIds
   ).filter((id) => known.has(id));
@@ -81,7 +77,6 @@ export async function markStatus(
   return null;
 }
 
-//? 解除の後始末: 接続・対応表・外部予定の写し・差分トークンをすべて消す（Q19）
 export async function clearConnection(ctx: MutationCtx, ownerId: string): Promise<null> {
   const connection = await getConnection(ctx, ownerId);
   await clearSyncState(ctx, ownerId);
@@ -91,7 +86,6 @@ export async function clearConnection(ctx: MutationCtx, ownerId: string): Promis
   return null;
 }
 
-//? 表示カレンダーの変更。外したカレンダーの写しと差分トークンは捨てる
 export async function setVisibleCalendars(
   ctx: MutationCtx,
   ownerId: string,
@@ -114,7 +108,6 @@ export async function setVisibleCalendars(
   return true;
 }
 
-//? 1カレンダーの差分トークンを捨てる（次の同期で期間の全件を取り直す）。写しも消すかは呼び手が決める
 export async function resetCalendarCursor(
   ctx: MutationCtx,
   ownerId: string,

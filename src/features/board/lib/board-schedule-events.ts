@@ -10,7 +10,6 @@ import { RECORD_STATUS_UI } from "~/lib/record-status-ui";
 
 export const BOARD_ALL_DAY_VISIBLE_LIMIT = 2;
 export const BOARD_ALL_DAY_MORE_PREFIX = "board-more:";
-//? 外部予定（Google 側の予定の写し）。記録・予定とは別の概念なので id に印を付けて見分ける
 const BOARD_EXTERNAL_EVENT_PREFIX = "external:";
 const BOARD_EXTERNAL_EVENT_COLOR = "gray";
 const ALL_DAY_START_SUFFIX = " 00:00:00";
@@ -153,7 +152,6 @@ export function boardExternalEventId(eventId: string | number): BoardExternalEve
   return String(eventId).slice(BOARD_EXTERNAL_EVENT_PREFIX.length) as BoardExternalEvent["_id"];
 }
 
-//? 外部予定は薄い灰色で並べる（空き時間を見るためのもので、操作の主役ではない）
 export function toExternalScheduleEvents(
   externals: readonly BoardExternalEvent[],
 ): ScheduleEventData[] {

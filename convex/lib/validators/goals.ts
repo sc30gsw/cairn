@@ -23,7 +23,6 @@ const examGoalInputFields = v.object({
   type: v.literal(examType),
 });
 
-//? 結果が入った本番目標は「終了」。進行中 / 終了の判別は result の有無だけ（ADR-0015）
 const examGoalFields = examGoalInputFields.extend({
   result: v.optional(examResultValidator),
 });

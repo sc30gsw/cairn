@@ -12,7 +12,6 @@ function dayUrl(dateJst: string): string | null {
   return `${siteUrl.replace(/\/$/, "")}/days/${dateJst}`;
 }
 
-//? 元（目標 / 予定）の今の状態から、Google に置くべき予定を導く。載せない状態・消えた元は null
 export async function desiredEvent(
   ctx: MutationCtx | QueryCtx,
   ownerId: string,

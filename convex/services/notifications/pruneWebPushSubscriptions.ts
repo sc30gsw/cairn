@@ -1,7 +1,6 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 
-//? 404 / 410 が返った購読をまとめて消す（action からの書きは1回・CVX-07）
 export async function pruneWebPushSubscriptions(
   ctx: MutationCtx,
   args: Record<"subscriptionIds", Id<"pushSubscriptions">[]>,

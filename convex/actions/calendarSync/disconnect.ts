@@ -9,9 +9,6 @@ import { todayJst } from "../../lib/jst";
 import { ownerAction, throwDomain } from "../../lib/ownerFunctions";
 import { deleteLinkedGoogleEvents } from "../../services/calendarSync/deleteLinkedGoogleEvents";
 
-//? 連携解除: アプリが Google に作った予定を消し、接続・対応表・写しをすべて消す（Q8/Q19）。
-//? 消せなかった予定があれば解除せずに知らせる（Google 側に孤児を残さない）。トークンが取れない
-//? （権限が取り消された）ときは消しようがないので、そのまま解除する
 export const disconnect = ownerAction({
   args: {},
   handler: async (ctx) => {

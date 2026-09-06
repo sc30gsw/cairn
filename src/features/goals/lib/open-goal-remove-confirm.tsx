@@ -11,7 +11,6 @@ type OpenGoalRemoveConfirmOptions = {
   onConfirm: (goalId: GoalId) => void;
 };
 
-//? 削除は常に Confirm。親なら子の件数と名前を明示する（目標にゴミ箱は無い）
 export function openGoalRemoveConfirm({ goal, goals, onConfirm }: OpenGoalRemoveConfirmOptions) {
   const children = childCheckpointsOf(goals, goal._id);
   const copy = removeConfirmCopy({

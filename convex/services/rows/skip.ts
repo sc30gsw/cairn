@@ -20,7 +20,6 @@ export async function skip(
   await withMasteryProgressDelta(ctx, ownerId, row, async () => {
     await ctx.db.patch("rows", args.rowId, { ...clearTimerFields(), status: "スキップ" });
   });
-  //? 復習の記録を見送ったら、その復習はそこで終わる
   await endReviewForRow(ctx, row);
   return null;
 }

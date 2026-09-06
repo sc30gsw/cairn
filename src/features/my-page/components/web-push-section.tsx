@@ -61,9 +61,6 @@ export function WebPushSection() {
   const subscribedHere =
     current !== null && subscriptions.some((entry) => entry.endpoint === current.endpoint);
 
-  //? finally 節は React Compiler が lower できず、コンポーネントごと自動メモ化から外れる。
-  //? try/catch で投げる経路を閉じ、解除は早期 return を作らず必ず末尾で通す。
-  //? ブラウザ API（requestPermission / unsubscribe）は投げ得るので握り潰さずトーストで知らせる
   async function enable() {
     setBusy(true);
     try {

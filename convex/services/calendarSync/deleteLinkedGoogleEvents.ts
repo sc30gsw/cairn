@@ -7,8 +7,6 @@ import type { SyncPlan } from "../../lib/validators";
 
 export type DeleteLinkedOutcome = "deleted" | "failed" | "noToken";
 
-//? アプリが Google に作った予定（対応表にあるもの）をすべて消す。解除と、別アカウントへの再接続で使う。
-//? トークンが取れなければ消せない（noToken）。消せなかった予定が1件でもあれば failed
 export async function deleteLinkedGoogleEvents(
   ctx: ActionCtx,
   ownerId: string,

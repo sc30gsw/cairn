@@ -2,7 +2,6 @@ import { ACHIEVEMENT_REFLECTION_LENGTH_MESSAGE, ACHIEVEMENT_REFLECTION_MAX_LENGT
 import { ValidationFailedError } from "./errors";
 import { throwDomain } from "./ownerFunctions";
 
-//? 振り返りは任意の一行。前後の空白を落とし、空なら「無し」として扱う
 export function normalizeReflection(reflection: string | undefined): string | undefined {
   if (reflection === undefined) {
     return undefined;

@@ -15,7 +15,6 @@ export type SetExamResultArgs = {
   result: ExamResultDto;
 };
 
-//? 結果は1本番につき1値。入れ直し（訂正）は許すが、取り消して進行中に戻す道は無い
 export async function setExamResult(
   ctx: MutationCtx,
   ownerId: string,
@@ -31,7 +30,6 @@ export async function setExamResult(
   }
   requireDateJst(args.result.recordedAt);
   await ctx.db.patch("goals", goal._id, { result: args.result });
-  //? 終了した本番は載せないので、送信アクションが Google 側の本番日を消す
   await scheduleGoalSync(ctx, ownerId, [goal._id]);
   return null;
 }

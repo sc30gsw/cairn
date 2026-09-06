@@ -54,14 +54,12 @@ const CALENDAR_SYNC_CALENDARS_HINT =
 const CALENDAR_SYNC_DISCONNECT_CONFIRM =
   "このアプリが Google カレンダーに作った本番日・期限・予定は消えます。Google 側で作った予定はそのまま残ります。";
 
-//? red は削除・危険に予約（design-live-board）。再接続は orange のアクセント、一時的な失敗は yellow の注意
 const STATUS_BADGES = {
   error: { color: "yellow", label: "同期に失敗" },
   needsReauth: { color: "orange", label: "再接続が必要" },
   ok: { color: "green", label: "同期中" },
 } as const satisfies Record<CalendarSyncStatus, { color: string; label: string }>;
 
-//? 表示は端末のタイムゾーンではなく、アプリの暦（JST）で揃える
 const JST_SYNCED_AT = new Intl.DateTimeFormat("ja-JP", {
   day: "numeric",
   hour: "2-digit",
@@ -70,7 +68,6 @@ const JST_SYNCED_AT = new Intl.DateTimeFormat("ja-JP", {
   timeZone: "Asia/Tokyo",
 });
 
-//? 成功すると Google の同意画面へ遷移する（戻ってきたら CalendarSyncSection の effect が接続を仕上げる）
 async function startLink() {
   const result = await linkGoogleCalendar();
   if (Result.isError(result)) {
@@ -78,7 +75,6 @@ async function startLink() {
   }
 }
 
-//? 接続はできたが最初の同期が失敗した場合は、成功トーストで誤魔化さない
 function connectedMessage(outcome: OwnerSyncOutcome): string {
   return outcome === "ok"
     ? CALENDAR_SYNC_CONNECTED_MESSAGE
@@ -95,11 +91,8 @@ export function CalendarSyncSection() {
   const disconnect = useDisconnectCalendarSync();
   const syncNow = useSyncCalendarNow();
   const setVisible = useSetVisibleCalendars();
-  //? Google の同意画面から戻ってきた直後は、接続を仕上げる間ずっと busy（初期値で決めて effect では触らない）
   const [busy, setBusy] = useState(readCalendarSyncConnectPending);
 
-  //? finally 節は React Compiler が lower できないので、try/catch で投げる経路を閉じて末尾で必ず戻す
-  //? （web-push-section と同じ形）。runMutation 自体は失敗をトーストにして投げない
   async function withBusy(operation: () => Promise<void>) {
     setBusy(true);
     try {
@@ -110,14 +103,11 @@ export function CalendarSyncSection() {
     setBusy(false);
   }
 
-  //? 戻ってきた1回だけ: 印を消してから connect アクションで接続を仕上げる（二重実行を避ける）。
-  //? busy は初期値で立てているので、ここでは非同期に下ろすだけ
   useEffect(() => {
     if (!readCalendarSyncConnectPending()) {
       return;
     }
     clearCalendarSyncConnectPending();
-    //? 同意画面で拒否・失敗して戻ってきた場合は接続を試みず、理由だけ知らせる
     const returnError = readCalendarSyncReturnError();
     if (returnError !== null) {
       notifyError(new Error(returnError), CALENDAR_SYNC_DENIED_MESSAGE);

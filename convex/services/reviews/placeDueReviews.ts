@@ -3,7 +3,6 @@ import type { MutationCtx } from "../../_generated/server";
 import { compareDateJst } from "../../lib/jst";
 import { isReviewDue } from "../../lib/review";
 
-//? 期日が来て、まだ並べていない印。期日超過も今日に繰り越す（休養日は飛ばし、失敗にはしない）
 export function dueUnplacedFlags(
   flags: readonly Doc<"reviewFlags">[],
   dateJst: string,
@@ -16,7 +15,6 @@ export function dueUnplacedFlags(
     );
 }
 
-//? 期日の来た復習を、その日の先頭に未着手の記録として並べる（プリセット適用と同じ経路・同じトランザクション）
 export async function placeDueReviews(
   ctx: MutationCtx,
   ownerId: string,

@@ -9,13 +9,11 @@ import { assertScheduleRange, requireScheduleInstant } from "../../lib/scheduleI
 import type { ExternalCalendarEventDto } from "../../lib/validators";
 import { getConnection } from "./getConnection";
 
-//? 予定タブの範囲（日 / 週 / 月 / 年）に入る外部予定の写し。色はカレンダー一覧の写しから引く
 export async function listExternal(
   ctx: QueryCtx,
   ownerId: string,
   args: { anchorDateJst: string; view: BoardScheduleView },
 ): Promise<ExternalCalendarEventDto[]> {
-  //? 外部予定は日・週ビューにだけ並べる（CONTEXT「外部予定」）。月・年では空
   if (args.view !== "day" && args.view !== "week") {
     return [];
   }
@@ -66,7 +64,6 @@ async function requireOwnedExternal(
   return external;
 }
 
-//? 写しを先に動かし、Google への反映は送信アクションに任せる（画面は即座に追従する）
 export async function moveExternal(
   ctx: MutationCtx,
   ownerId: string,

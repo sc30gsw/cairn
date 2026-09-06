@@ -5,8 +5,6 @@ import { getConnection } from "./getConnection";
 import { syncSource } from "./syncSource";
 import { syncWindow } from "./window";
 
-//? 全件突き合わせの材料: 所有者の目標すべて・写しの期間内の予定・対応表・差分トークン。
-//? 元が消えた対応表の行も sources に含める（desired = null → Google から消す）
 export async function syncPlan(
   ctx: QueryCtx,
   args: { ownerId: string; todayJst: string },

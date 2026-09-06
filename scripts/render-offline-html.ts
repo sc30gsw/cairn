@@ -17,7 +17,6 @@ export function renderOfflineHtml(): string {
         background: ${PAPER_TOKENS.desk};
         color: ${PAPER_TOKENS.ink};
         display: flex;
-        /*? 手書きフォントは外部から来る。オフラインで待たされるだけなので system-ui に落とす */
         font-family: system-ui, sans-serif;
         justify-content: center;
         line-height: 1.8;

@@ -55,7 +55,6 @@ export function ExamGoalBody({
       </Group>
       <Text>{goal.content}</Text>
       {result !== undefined ? (
-        //? 終了した本番はカウントダウンを出さず、結果を大きく置く
         <Group align="baseline" gap="xs" wrap="wrap">
           <Title ff={NUMERAL_FONT} fw={700} order={2}>
             {result.score}

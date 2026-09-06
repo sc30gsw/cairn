@@ -134,8 +134,6 @@ export default defineSchema({
   })
     .index("by_owner", ["ownerId"])
     .index("by_enabled_and_eveningHourJst", ["enabled", "eveningHourJst"]),
-  //? 復習の印。元の記録とは別の表に持ち、期日は「今日を開いたときに並べる条件」としてだけ使う
-  //? （未来の暦日に日を作らない、という days の規則に触れない）
   reviewFlags: defineTable({
     content: v.string(),
     dueJst: v.string(),
@@ -148,7 +146,6 @@ export default defineSchema({
     .index("by_owner_and_dueJst", ["ownerId", "dueJst"])
     .index("by_sourceRow", ["sourceRowId"])
     .index("by_reviewRow", ["reviewRowId"]),
-  //? 1端末 = 1行。所有者は複数端末を持てる。by_owner は by_owner_and_endpoint の接頭辞なので張らない（CVX-12）
   pushSubscriptions: defineTable({
     endpoint: v.string(),
     expirationTime: v.optional(v.number()),
@@ -156,7 +153,6 @@ export default defineSchema({
     ownerId: v.string(),
   }).index("by_owner_and_endpoint", ["ownerId", "endpoint"]),
 
-  //? カレンダー同期（ADR-0017）: 所有者につき Google アカウント1つ。カレンダー一覧は接続・同期時の写し
   calendarConnections: defineTable({
     calendars: v.array(googleCalendarSummaryValidator),
     googleAccountId: v.string(),
@@ -164,14 +160,11 @@ export default defineSchema({
     lastError: v.optional(v.string()),
     lastSyncedAt: v.optional(v.number()),
     ownerId: v.string(),
-    //? 書き込み先（メインカレンダー）の実 ID。Google からの取り込みは実 ID で来るので "primary" では照合できない
     primaryCalendarId: v.string(),
     status: calendarSyncStatusValidator,
     visibleCalendarIds: v.array(v.string()),
   }).index("by_owner", ["ownerId"]),
 
-  //? アプリの目標・予定 ↔ Google イベントの対応表。googleUpdated は最後に見た Google 側の updated、
-  //? payloadKey は最後に送った内容、appChangedAt はアプリ側の未送信の変更（後の更新が勝つ判定に使う）
   calendarSyncLinks: defineTable({
     appChangedAt: v.optional(v.number()),
     calendarId: v.string(),
@@ -185,7 +178,6 @@ export default defineSchema({
     .index("by_source", ["sourceKind", "sourceId"])
     .index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"]),
 
-  //? 外部予定の写し（過去 30 日〜未来 90 日）。startAt / endAt は予定と同じ JST の schedule instant
   externalCalendarEvents: defineTable({
     allDay: v.boolean(),
     calendarId: v.string(),
@@ -199,8 +191,6 @@ export default defineSchema({
     .index("by_owner_and_startAt", ["ownerId", "startAt"])
     .index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"]),
 
-  //? Google の差分同期トークン（カレンダーごと）。410 で捨てて全件取り直す。
-  //? 差分は初回全件の期間に固定されるので、全件を取った日を覚えて期間がずれたら取り直す
   calendarSyncCursors: defineTable({
     calendarId: v.string(),
     fullSyncedOnJst: v.string(),

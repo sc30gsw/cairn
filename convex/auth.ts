@@ -50,8 +50,6 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
   const signUpDisabled = signUpDisabledFromEnv();
   return {
     account: {
-      //? ADR-0016: 同じメールの Google サインインは既存ユーザーへ自動で繋ぐ。連携（linkSocial）は
-      //? ログイン中の本人が押す操作なので、別メールの Google アカウントも許す
       accountLinking: {
         allowDifferentEmails: true,
         enabled: true,
@@ -89,8 +87,6 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
     socialProviders: googleAuth
       ? {
           google: {
-            //? カレンダー同期のリフレッシュトークンを得るため offline。権限は linkSocial の scopes で
-            //? 追加で求める（段階的認可）ので、ログイン時の scope は既定（email / profile / openid）のまま
             accessType: "offline",
             clientId: process.env[GOOGLE_OAUTH_ENV.clientId] ?? "",
             clientSecret: process.env[GOOGLE_OAUTH_ENV.clientSecret] ?? "",

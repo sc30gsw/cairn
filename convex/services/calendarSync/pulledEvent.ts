@@ -12,7 +12,6 @@ const UNTITLED_EVENT_TITLE = "（タイトルなし）";
 
 const MIN_TIMED_LENGTH_MS = 60_000;
 
-//? Google のイベント1件をアプリの形へ。純関数。取り消し（cancelled）は削除、形が読めないものは無視（null）
 export function toPulledEvent(calendarId: string, event: GoogleEvent): PulledEvent | null {
   if (event.status === "cancelled") {
     return { calendarId, googleEventId: event.id, kind: "delete" };

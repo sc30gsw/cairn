@@ -4,8 +4,6 @@ import type { MutationCtx } from "../../_generated/server";
 import type { CalendarSyncSourceKind } from "../../lib/calendarSync";
 import { getConnection } from "./getConnection";
 
-//? 目標・予定を変えたミューテーションの末尾から呼ぶ。接続が無ければ何もしない。
-//? 対応表に「アプリ側の未送信の変更」を刻み、同じトランザクションで送信アクションを積む（CVX-05/15/17）
 export async function scheduleSourceSync(
   ctx: MutationCtx,
   ownerId: string,
@@ -16,7 +14,6 @@ export async function scheduleSourceSync(
   if (connection === null) {
     return;
   }
-  //? 権限切れ中でも「アプリ側で変えた」印は刻む。再接続後の取り込みで Google 側の古い変更に負けないため
   const link = await ctx.db
     .query("calendarSyncLinks")
     .withIndex("by_source", (q) => q.eq("sourceKind", sourceKind).eq("sourceId", sourceId))

@@ -17,8 +17,6 @@ import { externalChangeValidator } from "../../lib/validators";
 import { externalChangePayload } from "../../services/calendarSync/eventPayload";
 import { markNeedsReauth, retryDelayMs } from "../../services/calendarSync/syncFailure";
 
-//? 外部予定へのアプリ側の操作（移動 / 削除）を Google に反映する。写しはミューテーションで先に動いている。
-//? 一時的な失敗は再試行し、諦めたらそのカレンダーの差分トークンを捨てて次の同期で写しを Google に合わせる
 export const pushExternal = internalAction({
   args: {
     attempt: v.number(),

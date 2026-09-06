@@ -4,9 +4,6 @@ import type { PushExpectation, PushOutcome, RecordPushResult } from "../../lib/v
 import { getConnection } from "./getConnection";
 import { findLink, linkSummary } from "./syncSource";
 
-//? Google への送信結果を対応表に刻む。送った内容（payloadKey）と Google 側の updated を覚え、
-//? アプリ側の未送信マークを消す。楽観ロック: 計画を立てたときの対応表と今の対応表が違えば
-//? （別の送信が先に走った）書かずに conflict を返し、呼び手が作ってしまった予定を片付ける
 export async function recordPush(
   ctx: MutationCtx,
   args: {
@@ -18,7 +15,6 @@ export async function recordPush(
     sourceKind: CalendarSyncSourceKind;
   },
 ): Promise<RecordPushResult> {
-  //? 解除と並走したときに幽霊の対応表を残さない
   if ((await getConnection(ctx, args.ownerId)) === null) {
     return "conflict";
   }
@@ -33,7 +29,6 @@ export async function recordPush(
     }
     return "recorded";
   }
-  //? 対応表より先に取り込みが走って、自分の予定が外部予定として写っていたら消す
   const shadow = await ctx.db
     .query("externalCalendarEvents")
     .withIndex("by_owner_and_calendar_and_event", (q) =>

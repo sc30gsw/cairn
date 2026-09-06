@@ -26,8 +26,6 @@ function chunk<T>(items: readonly T[], size: number): T[][] {
   return chunks;
 }
 
-//? 1所有者の全件突き合わせ: (1) 表示カレンダー + メインを Google から取り込む → (2) 目標・予定を Google に合わせる。
-//? 取り込みを先にするのは、Google 側の変更を戻したうえで送るため（Q10 の「後の更新が勝つ」）
 export async function runOwnerSync(ctx: ActionCtx, ownerId: string): Promise<OwnerSyncOutcome> {
   const today = todayJst();
   const plan = await ctx.runQuery(internal.queries.calendarSync.syncPlan.syncPlan, {
@@ -50,11 +48,9 @@ export async function runOwnerSync(ctx: ActionCtx, ownerId: string): Promise<Own
   const failures: GoogleCalendarError[] = [];
 
   const cursorByCalendar = new Map(plan.cursors.map((entry) => [entry.calendarId, entry]));
-  //? 書き込み先（メイン）は表示から外されていても取り込む。Google 側の移動・削除を戻すため（Q10）
   const pullCalendarIds = new Set([...plan.visibleCalendarIds, plan.calendarId]);
   for (const calendarId of pullCalendarIds) {
     const stored = cursorByCalendar.get(calendarId);
-    //? 差分の期間は全件を取った日で固定される。日が進んだら全件を取り直して期間を動かす
     const cursor =
       stored === undefined ||
       daysUntil(stored.fullSyncedOnJst, today) >= CALENDAR_SYNC_FULL_RESYNC_DAYS
@@ -69,8 +65,6 @@ export async function runOwnerSync(ctx: ActionCtx, ownerId: string): Promise<Own
       failures.push(pulled.error);
       continue;
     }
-    //? 同じ予定の差分が複数の塊に跨ることがあるので、塊は到着順に1つずつ写す（並列にしない）。
-    //? 最後の塊に差分トークンの保存と写しの掃除を載せる（塊が無ければ空の1回）
     const chunks = chunk<PulledEvent>(pulled.value.events, APPLY_CHUNK_SIZE);
     const batches = chunks.length === 0 ? [[]] : chunks;
     for (const [index, events] of batches.entries()) {
@@ -95,7 +89,6 @@ export async function runOwnerSync(ctx: ActionCtx, ownerId: string): Promise<Own
   if (refreshed === null) {
     return "notConnected";
   }
-  //? Google のレート制限に配慮して1件ずつ送る
   for (const source of refreshed.sources) {
     // oxlint-disable-next-line react-doctor/async-await-in-loop
     const pushed = await pushOne(ctx, client, {

@@ -2,7 +2,6 @@ import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { requireOwnedRow } from "../rows/requireOwnedRow";
 
-//? 印を外す。すでに今日に並んだ復習の記録はそのまま残す（記録は消さない）
 export async function unflag(
   ctx: MutationCtx,
   ownerId: string,

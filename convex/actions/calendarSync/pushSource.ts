@@ -15,8 +15,6 @@ import {
   retryDelayMs,
 } from "../../services/calendarSync/syncFailure";
 
-//? 目標・予定のミューテーションから積まれる差分送信。読み1回（pushPlan）→ Google → 書き1回（recordPush）。
-//? 一時的な失敗は数回だけ退避して再試行し、権限切れは needsReauth にして止める（CVX-05/07）
 export const pushSource = internalAction({
   args: {
     attempt: v.number(),

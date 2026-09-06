@@ -34,7 +34,6 @@ test("外部予定の題名・時間・カレンダー名が見え、削除は�
   expect(getByText("仕事")).toBeDefined();
 
   fireEvent.click(getByRole("button", { name: "Google カレンダーから削除" }));
-  //? 確認ダイアログの確定ボタンは元のボタンと同じ名前なので、探す範囲をダイアログ内に限る
   const confirm = await vi.waitFor(() =>
     getByRole("dialog", { hidden: true, name: /削除しますか/ }),
   );

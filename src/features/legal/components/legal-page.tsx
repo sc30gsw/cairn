@@ -4,7 +4,6 @@ import { PageTitle } from "~/components/page-title";
 import type { LegalDocument } from "~/features/legal/content/legal-document";
 import { NUMERAL_FONT } from "~/lib/theme";
 
-//? ログイン不要で読める1枚紙。Google の OAuth 同意画面のブランディングからもリンクされる
 export function LegalPage({ document }: Record<"document", LegalDocument>) {
   return (
     <Container py="xl" size="sm">

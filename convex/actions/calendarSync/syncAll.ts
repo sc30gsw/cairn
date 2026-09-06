@@ -7,7 +7,6 @@ import { internalAction } from "../../_generated/server";
 
 const STAGGER_MS = 2_000;
 
-//? cron（1時間ごと）の入口。接続している所有者ぶんの突き合わせを少しずらして積む（CVX-05）
 export const syncAll = internalAction({
   args: {},
   handler: async (ctx) => {

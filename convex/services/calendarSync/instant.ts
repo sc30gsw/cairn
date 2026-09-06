@@ -1,7 +1,5 @@
 import { addDaysJst } from "../../lib/jst";
 
-//? schedule instant（`YYYY-MM-DD HH:mm:ss`、暗黙に JST）と Google の RFC 3339 / 終日 date の相互変換。純関数
-
 const JST_OFFSET = "+09:00";
 
 const JST_PARTS = new Intl.DateTimeFormat("en-GB", {

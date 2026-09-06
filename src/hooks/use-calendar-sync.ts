@@ -8,8 +8,6 @@ import type { DateJst } from "~domain/jst";
 import { api } from "~/../convex/_generated/api";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
-//? カレンダー同期（ADR-0017）の読み書き。マイページと予定タブの両方から使うので共有に置く
-
 export function useCalendarSyncStatus() {
   return useSuspenseQuery(convexQuery(api.queries.calendarSync.status.status, {}));
 }
@@ -32,7 +30,6 @@ export function useSyncCalendarNow() {
   return useAction(api.actions.calendarSync.syncNow.syncNow);
 }
 
-//? チェックボックスは往復を待たずに切り替わるよう、status の写しを先に書き換える
 export function useSetVisibleCalendars() {
   return useConvexMutation(
     api.mutations.calendarSync.setVisibleCalendars.setVisibleCalendars,
@@ -52,12 +49,9 @@ export function useSetVisibleCalendars() {
   });
 }
 
-//? タブの切り替えごとに Google を叩かないための間隔（同じブラウザ内で共有）
 const SYNC_ON_OPEN_COOLDOWN_MS = 5 * 60_000;
 let lastSyncOnOpenAt = 0;
 
-//? 予定タブを開いたときに差分を取りに行く（Q14）。接続が無い・権限切れなら何もしない。
-//? 数分以内に取っていれば飛ばす。失敗は次の cron に任せるので、ここでは知らせない
 export function useSyncCalendarOnOpen() {
   const { data: status } = useCalendarSyncStatus();
   const syncNow = useSyncCalendarNow();

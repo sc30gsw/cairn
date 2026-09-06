@@ -14,7 +14,6 @@ type ReviewMenuItemsProps = {
   todayJst: DateJst;
 };
 
-//? 印を付ける・期日を選び直す・やめる。確定した記録にだけ出し、復習の記録そのものには出さない
 export function ReviewMenuItems({
   onFlag,
   onUnflag,

@@ -7,8 +7,6 @@ import { collapseExtraLiveDays } from "./collapseExtraLiveDays";
 import { getDayByDate } from "./getDayByDate";
 import { liveRowsForDay } from "./liveRowsForDay";
 
-//? 今日を開いたとき: 曜日（祝日設定込み）のプリセットを未着手で並べ、期日の来た復習を先頭に足す。
-//? どちらも同じトランザクション。applied はプリセットを適用したかだけを表す（従来どおり）
 export async function openDay(
   ctx: MutationCtx,
   ownerId: string,

@@ -1,4 +1,3 @@
-//? validator の SSoT（CVX-16）。ドメインごとのファイルに分け、ここから再輸出する（#80 小改善）
 export * from "./validators/core";
 export * from "./validators/history";
 export * from "./validators/goals";

@@ -1,5 +1,3 @@
-//? プライバシーポリシー・利用規約の本文の形。文章はここに集め、画面はこの形を描くだけ
-
 export type LegalLink = {
   href: string;
   label: string;

@@ -153,7 +153,6 @@ export function RowEditor({
   const canSkipDirectly = row.status === "未着手" || row.status === "進行中";
   const canUnskip = row.status === "スキップ";
   const badge = RECORD_STATUS_UI[row.status];
-  //? 復習の印は確定した記録にだけ付けられる。復習の記録そのものは確定で次へ進むので出さない
   const canReview = isDone && row.review?.kind !== "review";
 
   async function saveIfConfirmedDirty() {

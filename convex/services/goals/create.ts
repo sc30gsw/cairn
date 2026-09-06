@@ -27,7 +27,6 @@ export async function create(
   const { goal } = args;
   assertGoalInput(goal);
   if (goal.type === "exam") {
-    //? 終了した（結果が入った）本番目標は数えない。進行中が1件だけ、が不変条件
     const exams = await ctx.db
       .query("goals")
       .withIndex("by_owner_and_type", (q) => q.eq("ownerId", ownerId).eq("type", "exam"))

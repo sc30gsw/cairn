@@ -30,8 +30,6 @@ export async function emitNotification(
     ownerId: setting.ownerId,
     payload,
   });
-  //? 押し出しは行の insert 後に scheduler で走るアダプタに閉じる（notifications.md §2.4 / §9.1）。
-  //? 静穏時間は押し出しだけを止め、翌朝に持ち越さない。端末が1つも無ければ何もしない
   const quiet = isQuietHourJst(
     hourJst(now),
     setting.quietFromHourJst ?? NOTIFICATION_DEFAULTS.quietFromHourJst,

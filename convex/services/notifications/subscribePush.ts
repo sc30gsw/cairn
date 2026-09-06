@@ -1,7 +1,6 @@
 import type { MutationCtx } from "../../_generated/server";
 import type { PushSubscriptionInput } from "../../lib/validators";
 
-//? endpoint ごとに upsert。同じ端末が再登録しても行は増えない
 export async function subscribePush(
   ctx: MutationCtx,
   ownerId: string,

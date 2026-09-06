@@ -24,7 +24,6 @@ export function TodaySummarySection() {
     ],
   });
 
-  //? 終了した（結果が入った）本番は数えない。進行中の本番だけがカウントダウンの軸
   const examGoal = findActiveExamGoal(goals);
 
   return <TodaySummaryContent examGoal={examGoal} targets={targets} today={today} />;

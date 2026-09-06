@@ -20,7 +20,6 @@ export async function computeMonthBreakdown(
   ownerId: string,
   args: { todayJst: string; yearMonth: string },
 ) {
-  //? 壊れた月は throw（日・週の引数と同じ規則。dateArgs.ts のコメント参照）
   const dates = calendarDatesInMonth(requireYearMonth(args.yearMonth));
   const start = dates[0];
   const end = dates[dates.length - 1];

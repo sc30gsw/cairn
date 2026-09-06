@@ -2,7 +2,6 @@ import { notificationMessage } from "./notificationCopy";
 import { notificationLink } from "./notificationLink";
 import type { NotificationPayload, WebPushMessage } from "./validators";
 
-//? push service が「購読はもう無い」と答える状態コード（RFC 8030）。行を消す
 export const WEB_PUSH_GONE_STATUSES = [404, 410] as const satisfies readonly number[];
 
 export type WebPushOutcome = "delivered" | "failed" | "gone";
@@ -17,7 +16,6 @@ export function webPushOutcome(statusCode: number | undefined): WebPushOutcome {
   return statusCode >= 200 && statusCode < 300 ? "delivered" : "failed";
 }
 
-//? 文言はサーバー側で組んで送る。SW は Convex のモジュールを import できないので、SSoT を1箇所に保つ
 export function webPushMessage(notification: {
   dedupeKey: string;
   payload: NotificationPayload;
@@ -43,7 +41,6 @@ export type VapidKeys = {
   subject: string;
 };
 
-//? 3つ揃っていないときは null。鍵が無い deployment では押し出しを静かに諦める（通知欄には残る）
 export function readVapidKeys(env: Record<string, string | undefined>): VapidKeys | null {
   const privateKey = env[WEB_PUSH_ENV.privateKey];
   const publicKey = env[WEB_PUSH_ENV.publicKey];
