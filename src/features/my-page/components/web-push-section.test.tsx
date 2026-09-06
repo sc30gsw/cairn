@@ -8,6 +8,8 @@ import {
   WEB_PUSH_ENABLE_LABEL,
   WEB_PUSH_IOS_HINT,
   WEB_PUSH_MISSING_KEY_MESSAGE,
+  WEB_PUSH_PENDING_REMOVAL_MESSAGE,
+  WEB_PUSH_RETRY_DISABLE_LABEL,
   WEB_PUSH_SUBSCRIBED_BADGE,
   WEB_PUSH_UNSUPPORTED_MESSAGE,
   WebPushSection,
@@ -43,7 +45,7 @@ const {
 }));
 
 vi.mock("~/lib/web-push", () => ({
-  currentPushSubscription: () => Promise.resolve(pushState.current),
+  currentPushSubscription: () => Promise.resolve(Result.ok(pushState.current)),
   isWebPushSupported: () => pushState.supported,
   notificationPermission: () => pushState.permission,
   subscribeWebPush,
@@ -71,7 +73,8 @@ vi.mock("~/hooks/use-notification-mutations", () => ({
 vi.mock("~/lib/notify", () => ({ notifyError }));
 
 vi.mock("~/lib/run-mutation", () => ({
-  runMutation: (operation: () => Promise<unknown>) => operation(),
+  runMutation: (operation: () => Promise<unknown>) =>
+    Result.tryPromise({ try: operation, catch: (cause) => cause }),
 }));
 
 beforeEach(() => {
@@ -115,10 +118,24 @@ test("未登録の端末では「受け取る」から購読し、サーバー�
   expect(subscribeWebPush).toHaveBeenCalledWith("public-key");
 });
 
+test("ブラウザ購読を保持し、サーバー登録が確認されるまでは届くと表示しない", async () => {
+  subscribeWebPush.mockResolvedValue(Result.ok(SNAPSHOT));
+  subscribeMutate.mockRejectedValueOnce(new Error("offline"));
+  const view = renderWithMantine(<WebPushSection />);
+
+  view.getByRole("button", { name: WEB_PUSH_ENABLE_LABEL }).click();
+  await waitFor(() => expect(subscribeMutate).toHaveBeenCalledTimes(1));
+  expect(view.queryByText(WEB_PUSH_SUBSCRIBED_BADGE)).toBeNull();
+
+  pushState.subscriptions = [{ _creationTime: 1, _id: "sub-1", endpoint: SNAPSHOT.endpoint }];
+  view.rerender(<WebPushSection />);
+  await waitFor(() => expect(view.getByText(WEB_PUSH_SUBSCRIBED_BADGE)).toBeDefined());
+});
+
 test("この端末が登録済みならバッジと「止める」を出し、解除でサーバーの行も消す", async () => {
   pushState.current = SNAPSHOT;
   pushState.subscriptions = [{ _creationTime: 1, _id: "sub-1", endpoint: SNAPSHOT.endpoint }];
-  unsubscribeWebPush.mockResolvedValue(SNAPSHOT.endpoint);
+  unsubscribeWebPush.mockResolvedValue(Result.ok(SNAPSHOT.endpoint));
   const { getByRole, getByText } = renderWithMantine(<WebPushSection />);
 
   await waitFor(() => {
@@ -164,4 +181,30 @@ test("購読の途中で例外が飛んでもトーストで知らせ、ボタ�
   });
   expect(subscribeMutate).not.toHaveBeenCalled();
   expect(button.getAttribute("data-loading")).toBeNull();
+});
+
+test("解除のサーバー保存が失敗したら停止済みと示しendpointを保持して再試行する", async () => {
+  pushState.current = SNAPSHOT;
+  pushState.subscriptions = [{ _creationTime: 1, _id: "sub-1", endpoint: SNAPSHOT.endpoint }];
+  unsubscribeWebPush
+    .mockResolvedValueOnce(Result.ok(SNAPSHOT.endpoint))
+    .mockResolvedValue(Result.ok(null));
+  unsubscribeMutate.mockRejectedValueOnce(new Error("offline"));
+  const view = renderWithMantine(<WebPushSection />);
+
+  await waitFor(() => expect(view.getByText(WEB_PUSH_SUBSCRIBED_BADGE)).toBeDefined());
+  view.getByRole("button", { name: WEB_PUSH_DISABLE_LABEL }).click();
+  await waitFor(() => expect(unsubscribeMutate).toHaveBeenCalledTimes(1));
+  await waitFor(() =>
+    expect(
+      view.getByRole("button", { name: WEB_PUSH_RETRY_DISABLE_LABEL }).getAttribute("data-loading"),
+    ).toBeNull(),
+  );
+  expect(view.queryByText(WEB_PUSH_SUBSCRIBED_BADGE)).toBeNull();
+  expect(view.getByText(WEB_PUSH_PENDING_REMOVAL_MESSAGE)).toBeDefined();
+
+  view.getByRole("button", { name: WEB_PUSH_RETRY_DISABLE_LABEL }).click();
+  await waitFor(() => expect(unsubscribeMutate).toHaveBeenCalledTimes(2));
+  expect(unsubscribeMutate).toHaveBeenLastCalledWith({ endpoint: SNAPSHOT.endpoint });
+  await waitFor(() => expect(view.queryByText(WEB_PUSH_PENDING_REMOVAL_MESSAGE)).toBeNull());
 });

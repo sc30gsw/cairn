@@ -23,6 +23,9 @@ const WEB_PUSH_DESCRIPTION =
   "通知欄に加えて、登録した端末へ通知を押し出します。端末ごとに登録し、静穏時間は端末への通知だけを止めます。";
 export const WEB_PUSH_ENABLE_LABEL = "この端末で通知を受け取る";
 export const WEB_PUSH_DISABLE_LABEL = "この端末への通知を止める";
+export const WEB_PUSH_RETRY_DISABLE_LABEL = "登録情報の削除を再試行";
+export const WEB_PUSH_PENDING_REMOVAL_MESSAGE =
+  "この端末への通知は停止しています。登録情報の削除をもう一度お試しください。";
 export const WEB_PUSH_SUBSCRIBED_BADGE = "この端末に届きます";
 export const WEB_PUSH_UNSUPPORTED_MESSAGE = "このブラウザは端末への通知に対応していません。";
 export const WEB_PUSH_MISSING_KEY_MESSAGE =
@@ -43,15 +46,19 @@ export function WebPushSection() {
   const unsubscribePush = useUnsubscribePush();
   const { standalone } = useInstallPrompt();
   const [current, setCurrent] = useState<SubscribePushInput | null>(null);
+  const [pendingUnsubscribe, setPendingUnsubscribe] = useState<string | null>(null);
   const [permission, setPermission] = useState(notificationPermission);
   const { busy, withBusy } = useBusy();
 
   useEffect(() => {
     let cancelled = false;
-    void currentPushSubscription().then((subscription) => {
-      if (!cancelled) {
-        setCurrent(subscription);
+    void currentPushSubscription().then((result) => {
+      if (cancelled) return;
+      if (Result.isError(result)) {
+        notifyError(result.error, result.error.message);
+        return;
       }
+      setCurrent(result.value);
     });
     return () => {
       cancelled = true;
@@ -68,13 +75,13 @@ export function WebPushSection() {
         const result = await subscribeWebPush(config.publicKey);
         setPermission(notificationPermission());
         if (Result.isError(result)) {
-          notifyError(result.error);
+          notifyError(result.error, result.error.message);
           return;
         }
+        setCurrent(result.value);
         await runMutation(() => subscribePush.mutateAsync(result.value), {
           successMessage: WEB_PUSH_SUBSCRIBED_MESSAGE,
         });
-        setCurrent(result.value);
       },
       (error) => notifyError(error, WEB_PUSH_ENABLE_FAILED_MESSAGE),
     );
@@ -83,13 +90,21 @@ export function WebPushSection() {
   function disable() {
     return withBusy(
       async () => {
-        const endpoint = await unsubscribeWebPush();
-        if (endpoint !== null) {
-          await runMutation(() => unsubscribePush.mutateAsync({ endpoint }), {
+        const result = await unsubscribeWebPush();
+        if (Result.isError(result)) {
+          notifyError(result.error, result.error.message);
+          return;
+        }
+        const endpoint = result.value ?? pendingUnsubscribe ?? current?.endpoint;
+        setCurrent(null);
+        if (endpoint !== undefined) {
+          setPendingUnsubscribe(endpoint);
+          const saved = await runMutation(() => unsubscribePush.mutateAsync({ endpoint }), {
             successMessage: WEB_PUSH_UNSUBSCRIBED_MESSAGE,
           });
+          if (Result.isError(saved)) return;
         }
-        setCurrent(null);
+        setPendingUnsubscribe(null);
       },
       (error) => notifyError(error, WEB_PUSH_DISABLE_FAILED_MESSAGE),
     );
@@ -118,7 +133,14 @@ export function WebPushSection() {
           </Alert>
         )}
         <Group gap="sm" wrap="wrap">
-          {subscribedHere ? (
+          {pendingUnsubscribe !== null ? (
+            <>
+              <Text size="sm">{WEB_PUSH_PENDING_REMOVAL_MESSAGE}</Text>
+              <Button loading={busy} onClick={disable} type="button" variant="default">
+                {WEB_PUSH_RETRY_DISABLE_LABEL}
+              </Button>
+            </>
+          ) : subscribedHere ? (
             <>
               <Badge color="green" variant="light">
                 {WEB_PUSH_SUBSCRIBED_BADGE}

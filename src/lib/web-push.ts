@@ -6,7 +6,10 @@ type WebPushErrorReason =
   | "denied"
   | "missing-key"
   | "no-service-worker"
+  | "permission-failed"
+  | "read-failed"
   | "subscribe-failed"
+  | "unsubscribe-failed"
   | "unsupported";
 
 class WebPushError extends TaggedError("WebPush")<{
@@ -58,16 +61,36 @@ async function serviceWorkerRegistration(): Promise<ServiceWorkerRegistration | 
   return registration ?? null;
 }
 
-export async function currentPushSubscription(): Promise<SubscribePushInput | null> {
-  if (!isWebPushSupported()) {
-    return null;
-  }
-  const registration = await serviceWorkerRegistration();
-  if (registration === null) {
-    return null;
-  }
-  const subscription = await registration.pushManager.getSubscription();
-  return subscription === null ? null : toSubscriptionInput(subscription);
+function runWebPushOperation<T>(
+  operation: () => Promise<T>,
+  reason: WebPushErrorReason,
+  message: string,
+): Promise<Result<T, WebPushError>> {
+  return Result.tryPromise({
+    try: operation,
+    catch: (cause) => new WebPushError({ cause, message, reason }),
+  });
+}
+
+function readSubscription(): Promise<Result<PushSubscription | null, WebPushError>> {
+  return runWebPushOperation(
+    async () => {
+      if (!isWebPushSupported()) return null;
+      const registration = await serviceWorkerRegistration();
+      return (await registration?.pushManager.getSubscription()) ?? null;
+    },
+    "read-failed",
+    "この端末の通知設定を読み取れませんでした",
+  );
+}
+
+export async function currentPushSubscription(): Promise<
+  Result<SubscribePushInput | null, WebPushError>
+> {
+  const result = await readSubscription();
+  return result.map((subscription) =>
+    subscription === null ? null : toSubscriptionInput(subscription),
+  );
 }
 
 export async function subscribeWebPush(
@@ -89,8 +112,13 @@ export async function subscribeWebPush(
       }),
     );
   }
-  const permission = await Notification.requestPermission();
-  if (permission !== "granted") {
+  const permission = await runWebPushOperation(
+    () => Notification.requestPermission(),
+    "permission-failed",
+    "通知の許可を確認できませんでした",
+  );
+  if (Result.isError(permission)) return permission;
+  if (permission.value !== "granted") {
     return Result.err(
       new WebPushError({
         message: "通知が許可されませんでした。ブラウザの設定から許可すると登録できます",
@@ -98,8 +126,13 @@ export async function subscribeWebPush(
       }),
     );
   }
-  const registration = await serviceWorkerRegistration();
-  if (registration === null) {
+  const registration = await runWebPushOperation(
+    serviceWorkerRegistration,
+    "read-failed",
+    "この端末の通知設定を読み取れませんでした",
+  );
+  if (Result.isError(registration)) return registration;
+  if (registration.value === null) {
     return Result.err(
       new WebPushError({
         message: "Service Worker がまだ登録されていません。ページを再読み込みしてください",
@@ -107,19 +140,16 @@ export async function subscribeWebPush(
       }),
     );
   }
-  const subscribed = await Result.tryPromise({
-    catch: (cause) =>
-      new WebPushError({
-        cause,
-        message: "この端末の登録に失敗しました",
-        reason: "subscribe-failed",
-      }),
-    try: () =>
-      registration.pushManager.subscribe({
+  const registered = registration.value;
+  const subscribed = await runWebPushOperation(
+    () =>
+      registered.pushManager.subscribe({
         applicationServerKey: urlBase64ToUint8Array(publicKey),
         userVisibleOnly: true,
       }),
-  });
+    "subscribe-failed",
+    "この端末の登録に失敗しました",
+  );
   if (Result.isError(subscribed)) {
     return subscribed;
   }
@@ -132,16 +162,24 @@ export async function subscribeWebPush(
   return Result.ok(input);
 }
 
-export async function unsubscribeWebPush(): Promise<string | null> {
-  if (!isWebPushSupported()) {
-    return null;
+export async function unsubscribeWebPush(): Promise<Result<string | null, WebPushError>> {
+  const current = await readSubscription();
+  if (Result.isError(current)) return current;
+  const subscription = current.value;
+  if (subscription === null) return Result.ok(null);
+  const result = await runWebPushOperation(
+    () => subscription.unsubscribe(),
+    "unsubscribe-failed",
+    "この端末の通知設定を解除できませんでした",
+  );
+  if (Result.isError(result)) return result;
+  if (!result.value) {
+    return Result.err(
+      new WebPushError({
+        message: "この端末の通知設定を解除できませんでした",
+        reason: "unsubscribe-failed",
+      }),
+    );
   }
-  const registration = await serviceWorkerRegistration();
-  const subscription = (await registration?.pushManager.getSubscription()) ?? null;
-  if (subscription === null) {
-    return null;
-  }
-  const { endpoint } = subscription;
-  await subscription.unsubscribe();
-  return endpoint;
+  return Result.ok(subscription.endpoint);
 }

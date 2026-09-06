@@ -85,9 +85,9 @@ Applies to this project: `elapsed(session, now)`, `suggestRescheduleSlots(blocks
 
 ## B. Database Access
 
-### CVX-10: Do Not Use `.filter` in DB Queries 〔Official〕
+### CVX-10: Express Indexed Predicates in the Index Range 〔Official〕
 
-Replace it with `.withIndex` / `.withSearchIndex`, or filter in TypeScript code after fetching. This is enforced through manual review discipline: every `convex/` change must be checked against this file's checklist, and the `convex:convex-reviewer` subagent should be run on `convex/` code before merging. Exception: allowed only when combined with `.paginate` (even then, `withIndex` is still preferred).
+Use `.withIndex` / `.withSearchIndex` and express every supported predicate in its index range. A subsequent `.filter` is allowed for residual predicates that the index cannot express, as specified in `convex/_generated/ai/guidelines.md`. Filtering does not reduce rows scanned; use a bounded range, `.take(n)`, or pagination when results can grow. Every `convex/` change must be checked manually against this checklist, and the `convex:convex-reviewer` subagent should run before merging.
 
 ### CVX-11: Only Use `.collect` When the Result Set Is Small (roughly under 1000) 〔Official〕
 
@@ -135,7 +135,7 @@ A missing `await` on things like `ctx.scheduler.runAfter` / `ctx.db.patch` cause
 
 ### CVX-18: Enforce These Rules via Review Discipline, Not ESLint 〔Official, adapted for this project〕
 
-This project uses oxlint via `vp check`, which cannot run the `@convex-dev` ESLint plugins (`no-filter-in-query`, `require-argument-validators`, `explicit-table-ids`, and, where available, `no-collect-in-query`) or the typescript-eslint `no-floating-promises` rule that the official guidance recommends installing at scaffold time. Since no static enforcement is available for these checks in this project, they are enforced manually instead: every `convex/` change must be reviewed against this file's checklist (see the bottom of this document), and the `convex:convex-reviewer` subagent must be invoked on `convex/` code before merging. The underlying rules themselves — no `.filter` in queries, explicit table-id arguments, required argument validators, awareness of unawaited promises — are unchanged; only the enforcement mechanism differs from the official recommendation.
+This project uses oxlint via `vp check`, which cannot run the `@convex-dev` ESLint plugins (`no-filter-in-query`, `require-argument-validators`, `explicit-table-ids`, and, where available, `no-collect-in-query`) or the typescript-eslint `no-floating-promises` rule that the official guidance recommends installing at scaffold time. Since no static enforcement is available for these checks in this project, they are enforced manually instead: every `convex/` change must be reviewed against this file's checklist (see the bottom of this document), and the `convex:convex-reviewer` subagent must be invoked on `convex/` code before merging. The underlying rules themselves — indexed predicates and bounded residual filtering, explicit table-id arguments, required argument validators, awareness of unawaited promises — are unchanged; only the enforcement mechanism differs from the official recommendation.
 
 ### CVX-19: Write Schema-Aware Tests with convex-test 〔Zenn〕
 
@@ -183,7 +183,7 @@ This project adopts the Zenn article's `queries/` / `mutations/` / `actions/` / 
 
 - [ ] Does every public function have an args validator and call `requireUser`? (CVX-03/04)
 - [ ] Do all scheduler / crons targets point to `internal.`? (CVX-05)
-- [ ] No `.filter(`, no `.collect(` without an index condition, no `Date.now()` inside a query, and no `ctx.db.*` call missing a table name? (CVX-10/11/13/14)
+- [ ] Indexed predicates expressed in the index range, residual filters bounded or paginated, no unbounded `.collect(`, no `Date.now()` inside a query, and no `ctx.db.*` call missing a table name? (CVX-10/11/13/14)
 - [ ] Is logic kept out of public functions (does it live in the model layer)? (CVX-02)
 - [ ] No prefix-duplicate indexes? (CVX-12)
 - [ ] No missing `await`s, and has this change been checked against this file's checklist plus a `convex:convex-reviewer` pass before merging? (CVX-17/18)

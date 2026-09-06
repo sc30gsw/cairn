@@ -176,21 +176,25 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
     return result;
   }
 
-  async function moveRow(move: Exclude<KanbanStatusMove, "noop">, row: BoardRow): Promise<boolean> {
+  async function moveRow(
+    move: Exclude<KanbanStatusMove, "noop">,
+    row: BoardRow,
+  ): Promise<"applied" | "deferred" | "failed"> {
     if ((move === "skip" || move === "unstart") && hasTimerState(row.timer)) {
       const measuredMinutes = timerMinutes(measuredMs(row.timer, serverNowMs()));
       const successMessage = `計測 ${String(measuredMinutes)}分を捨てました`;
       const result = await (move === "skip"
         ? onSkip({ rowId: row._id }, successMessage)
         : onUnstart({ rowId: row._id }, successMessage));
-      return Result.isError(result);
+      return Result.isError(result) ? "failed" : "applied";
     }
     let deferred = false;
     const result = await onStatusMove(move, row, (target) => {
       deferred = true;
       setConfirmTarget(target);
     });
-    return deferred || (result !== undefined && Result.isError(result));
+    if (deferred) return "deferred";
+    return result !== undefined && Result.isError(result) ? "failed" : "applied";
   }
 
   async function requestConfirm(row: BoardRow) {
@@ -235,11 +239,16 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
       pendingOrderRef.current = { dateJst, orderedRowIds };
     }
 
-    if (statusMove !== "noop" && (await moveRow(statusMove, row))) {
-      return;
+    if (statusMove !== "noop") {
+      const outcome = await moveRow(statusMove, row);
+      if (outcome !== "applied") {
+        if (outcome === "failed") pendingOrderRef.current = null;
+        return;
+      }
     }
 
-    await applyPendingOrder();
+    const outcome = await applyPendingOrder();
+    if (outcome !== undefined && Result.isError(outcome)) pendingOrderRef.current = null;
   }
 
   return (

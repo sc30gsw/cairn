@@ -1,6 +1,6 @@
 # better-result 採用状況
 
-このドキュメントは cairn における [better-result](https://better-result.dev/) の採用方針と、2026-09-06、`7edac72` 時点のエラー境界監査を記録する。実装変更ではなく監査・改善案である。スキル別の判定は [best-practices監査](best-practices-review-2026-09-06.md) を参照。
+このドキュメントは cairn における [better-result](https://better-result.dev/) の採用方針と、2026-09-06、`7edac72` 時点のエラー境界監査を記録する。後続の修正依頼により、下記の採用状況を更新した。スキル別の判定は [best-practices監査](best-practices-review-2026-09-06.md) を参照。
 
 ## 方針
 
@@ -24,7 +24,7 @@
 
 - `convex/lib/errors.ts` — `TaggedError` ベースのドメインエラー
 - `convex/lib/ownerFunctions.ts` — 認可ラッパ
-- `src/lib/run-mutation.ts` — 内部でmutation結果を `Result` でラップするが、現在の公開戻り値は `Promise<void>`。呼び出し元まで失敗を返せない課題がある。
+- `src/lib/run-mutation.ts` — `Promise<Result<T, MutationFailedError>>` を返す。通知を共通化しながら、呼び出し元で成功時だけclose/reset/後続処理を実行できる。
 
 ### フロントエンド ID パース（`src/types/item.ts`）
 
@@ -54,6 +54,20 @@ Select / DnD など UI 由来で既に有効な ID がある箇所は `unwrap*` 
 2. 境界を越えるか？ → プレーン型に変換してから return
 3. 呼び出し元は `.match` / `Result.isError` で分岐するか？
 4. テストで成功・失敗両方をカバーしたか？
+
+## 修正済みの経路
+
+2026-09-06の修正で、次を実装・検証した。
+
+- Google APIの本文読み取りまでResult境界を拡張し、HTTP状態とcauseを保持。200/503の本文失敗、401、204の回帰テストを追加。
+- runMutationの結果をcallerへ返し、試験結果を含む全callerの成功後処理を照合。編集画面の入力保持、タイマー停止失敗後の確定阻止、DnD失敗時の一時順序破棄を検証。
+- avatar JSONをValibotとConvex ID validatorで検証。依存引数・戻り値は生成APIから導出。サーバー側のID所属・所有者検証を維持。
+- Web Pushのpermission/registration/getSubscription/subscribe/unsubscribeをResult化。ブラウザ停止済み・DB解除未完了を別の状態として示し、保存失敗後もendpointを保持して再試行。
+- カレンダー解除をtableごと100件のバッチにし、別mutationで継続。disconnectingを保持し、中断後の再開と旧jobの拒否を検証。
+
+AuthのonSuccess callbackは、session再取得などの外部I/Oも含む既存契約としてResultへ変換する。既存テストにも明記されており、純粋callbackの不変条件と未分類I/Oを混同して一律throwへ変更していない。任意storage・best-effortのPush再登録/配送は、監査で確定した障害ではないため既存方針を維持した。
+
+最後のWeb Push表示調整を含めて `vp check --fix` / `vp run type-ssot-check` / `vp test`（233ファイル・1365件）/ `vp build` が成功。`vp run doctor`のローカル診断も指摘なし。以下の検索件数・カタログ・経路説明は `7edac72` の監査記録で、修正前の状態を示す。
 
 ## 監査対象・APIの事実
 
@@ -150,7 +164,7 @@ better-result 3.0.1がインストール済み。`node_modules/better-result/dis
 4. **avatar HTTP応答の検証**：BP-04。生成API型・Valibotを使い、wrong type/null/欠損を通信境界で拒否する。
 5. **Web PushブラウザI/Oと診断**：W1/W2。取得/購読/解除の失敗を統一し、best-effort配信の運用判断を記録する。
 
-今回は監査依頼として報告を作成した。実装候補は上記の単位で切り出せる。大規模な全Result置換を前提にしない。
+この順序を元に後続の修正を実施した。Google I/O、清掃、フォーム、avatar、Web Pushブラウザ境界は上記の「修正済みの経路」を参照。Push配信運用の変更や全ドメイン関数のResult化を必要とするものではない。
 
 ## 未確認事項と検証ログ
 
@@ -158,7 +172,7 @@ better-result 3.0.1がインストール済み。`node_modules/better-result/dis
 - 第三者SDK・Convex内部がrejectする全条件、全ブラウザのStorage/Push例外、全フォームの障害時UIは未網羅。
 - 2026-09-06：全領域の候補検索、API型確認、上記7経路の追跡。BP-02は実関数・mock fetchで200/503のbody rejectを再現し、fetch rejectのResult化とも比較した。
 - `vp check` と `vp run type-ssot-check` は今回成功。同じソースに対する直前の `vp test` は231ファイル・1332件成功、build成功。監査文書以外の変更はない。
-- 採用済みの既存実装を記録したが、今回の提案sliceは未実装。セキュリティ・配備・長期容量の未知を、静的テスト成功で埋め合わせない。
+- 本文の旧経路は監査時点の証拠として保持している。実装したsliceと検証は冒頭に記載。セキュリティ・配備・長期容量の未知を、静的テスト成功で埋め合わせない。
 
 ## 全領域のカバレッジ
 

@@ -1,3 +1,4 @@
+import { Result } from "better-result";
 import { useEffect, useSyncExternalStore } from "react";
 import { WEB_PUSH_SUBSCRIPTION_CHANGED } from "~domain/webPush";
 
@@ -10,11 +11,11 @@ function PushSubscriptionSyncGranted() {
   useEffect(() => {
     let cancelled = false;
     async function sync() {
-      const subscription = await currentPushSubscription();
-      if (subscription === null || cancelled) {
+      const result = await currentPushSubscription();
+      if (Result.isError(result) || result.value === null || cancelled) {
         return;
       }
-      await subscribePush(subscription).catch(() => undefined);
+      await subscribePush(result.value).catch(() => undefined);
     }
     function onMessage(event: MessageEvent) {
       const data: unknown = event.data;
