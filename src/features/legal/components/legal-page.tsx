@@ -1,5 +1,4 @@
 import { Anchor, Card, Container, List, Stack, Text, Title } from "@mantine/core";
-import { Link } from "@tanstack/react-router";
 
 import { PageTitle } from "~/components/page-title";
 import type { LegalDocument } from "~/features/legal/content/legal-document";
@@ -10,7 +9,7 @@ export function LegalPage({ document }: Record<"document", LegalDocument>) {
   return (
     <Container py="xl" size="sm">
       <Stack gap="lg">
-        <Anchor component={Link} size="sm" to="/">
+        <Anchor href="/" size="sm">
           ← 学習ログへ戻る
         </Anchor>
         <PageTitle>{document.title}</PageTitle>

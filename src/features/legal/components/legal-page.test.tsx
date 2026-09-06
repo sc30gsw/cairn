@@ -6,9 +6,9 @@ import { TERMS_OF_SERVICE } from "~/features/legal/content/terms-of-service";
 import { renderWithMantine } from "~/test-utils/render";
 
 test("プライバシーポリシーは Google ユーザーデータの Limited Use と連絡先を含む", () => {
-  const { getByRole, getByText } = renderWithMantine(<LegalPage document={PRIVACY_POLICY} />);
+  const { getByRole } = renderWithMantine(<LegalPage document={PRIVACY_POLICY} />);
   expect(getByRole("heading", { level: 1, name: "プライバシーポリシー" })).toBeDefined();
-  expect(getByText(/Limited Use/)).toBeDefined();
+  expect(getByRole("heading", { level: 2, name: /Limited Use/ })).toBeDefined();
   expect(
     getByRole("link", { name: /Google API Services User Data Policy/ }).getAttribute("href"),
   ).toBe("https://developers.google.com/terms/api-services-user-data-policy");

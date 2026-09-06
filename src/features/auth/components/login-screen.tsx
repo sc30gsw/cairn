@@ -1,5 +1,4 @@
 import { Anchor, Button, Card, Center, Divider, Group, Stack, Text, Title } from "@mantine/core";
-import { Link } from "@tanstack/react-router";
 
 import { AuthActionFeedback } from "~/components/auth-action-feedback";
 import { AccountAuthPanel } from "~/features/auth/components/account-auth-form";
@@ -49,10 +48,11 @@ export function LoginScreen() {
             </Text>
           ) : null}
           <Group gap="md" justify="center">
-            <Anchor c="dimmed" component={Link} size="xs" to="/privacy">
+            {/*? ログイン前の1枚紙なのでルーターの Link は使わず、通常の遷移で開く */}
+            <Anchor c="dimmed" href="/privacy" size="xs">
               プライバシーポリシー
             </Anchor>
-            <Anchor c="dimmed" component={Link} size="xs" to="/terms">
+            <Anchor c="dimmed" href="/terms" size="xs">
               利用規約
             </Anchor>
           </Group>
