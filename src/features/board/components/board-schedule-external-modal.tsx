@@ -1,8 +1,7 @@
 import { Field, Form, useForm, type SubmitHandler } from "@formisch/react";
-import { ColorSwatch, Flex, Group, Select, Stack, Text, TextInput } from "@mantine/core";
+import { ColorSwatch, Group, Select, Stack, Text, TextInput } from "@mantine/core";
 import { DatePickerInput, DateTimePicker } from "@mantine/dates";
 import { modals } from "@mantine/modals";
-import { IconCalendar } from "@tabler/icons-react";
 import { Result } from "better-result";
 import { useId } from "react";
 import {
