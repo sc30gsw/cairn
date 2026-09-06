@@ -91,7 +91,10 @@ export function CalendarSyncSection() {
   const disconnect = useDisconnectCalendarSync();
   const syncNow = useSyncCalendarNow();
   const setVisible = useSetVisibleCalendars();
-  const [busy, setBusy] = useState(readCalendarSyncConnectPending);
+  const [busy, setBusy] = useState(() => {
+    const pending = readCalendarSyncConnectPending();
+    return pending && readCalendarSyncReturnError() === null;
+  });
 
   async function withBusy(operation: () => Promise<void>) {
     setBusy(true);
@@ -111,7 +114,6 @@ export function CalendarSyncSection() {
     const returnError = readCalendarSyncReturnError();
     if (returnError !== null) {
       notifyError(new Error(returnError), CALENDAR_SYNC_DENIED_MESSAGE);
-      setBusy(false);
       return;
     }
     void runMutation(() => connect({}), { successMessage: connectedMessage }).then(() =>
