@@ -1,7 +1,8 @@
 import { Field, Form, useForm, type SubmitHandler } from "@formisch/react";
-import { ColorSwatch, Group, Select, Stack, Text, TextInput } from "@mantine/core";
+import { ColorSwatch, Flex, Group, Select, Stack, Text, TextInput } from "@mantine/core";
 import { DatePickerInput, DateTimePicker } from "@mantine/dates";
 import { modals } from "@mantine/modals";
+import { IconCalendar } from "@tabler/icons-react";
 import { Result } from "better-result";
 import { useId } from "react";
 import {
@@ -10,7 +11,6 @@ import {
   googleCalendarEventColor,
 } from "~domain/googleCalendarColors";
 
-import { GoogleIcon } from "~/components/google-icon";
 import { GoogleLabel } from "~/components/google-label";
 import { BoardScheduleEditModal } from "~/features/board/components/board-schedule-edit-modal";
 import { scheduleInstantToDate } from "~/features/board/lib/schedule-instant";
@@ -83,7 +83,10 @@ function ExternalEventForm({
       title={<GoogleLabel>{external.canEdit ? "予定を編集" : "外部予定"}</GoogleLabel>}
     >
       <Group gap="xs" wrap="nowrap">
-        <GoogleIcon />
+        <Flex align="center" gap="xs">
+          <IconCalendar size={16} />
+          <Text fw={500}>連携先カレンダー：</Text>
+        </Flex>
         <Stack gap={0}>
           <Text size="sm">{external.calendarName}</Text>
           {external.calendarName !== external.calendarEmail && (
