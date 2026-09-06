@@ -14,20 +14,16 @@ test.each([DatePickerInput, DateTimePicker, DateInput])(
     if (Picker === DateInput) fireEvent.focus(getByLabelText("日付"));
     else fireEvent.click(getByLabelText("日付"));
     await findByLabelText("5 9月 2026");
-    expect(
-      [...getByLabelText("5 9月 2026").classList].includes(
-        calendarDayStyleClasses.saturdayDay ?? "",
-      ),
-    ).toBe(true);
-    expect(
-      [...getByLabelText("6 9月 2026").classList].includes(calendarDayStyleClasses.sundayDay ?? ""),
-    ).toBe(true);
+    expect([...getByLabelText("5 9月 2026").classList]).toContain(
+      calendarDayStyleClasses.saturdayDay,
+    );
+    expect([...getByLabelText("6 9月 2026").classList]).toContain(
+      calendarDayStyleClasses.sundayDay,
+    );
     expect(getByLabelText("6 9月 2026").hasAttribute("data-selected")).toBe(true);
-    expect(
-      [...getByLabelText("23 9月 2026").classList].includes(
-        calendarDayStyleClasses.holidayDay ?? "",
-      ),
-    ).toBe(true);
+    expect([...getByLabelText("23 9月 2026").classList]).toContain(
+      calendarDayStyleClasses.holidayDay,
+    );
     expect(getByLabelText("23 9月 2026").getAttribute("title")).toBe("秋分の日");
   },
 );
