@@ -3,6 +3,7 @@ import type { ScheduleEventData } from "@mantine/schedule";
 import type { ComponentPropsWithoutRef, CSSProperties, Ref } from "react";
 
 import { BoardScheduleDayAllDayStrip } from "~/features/board/components/board-schedule-day-all-day-strip";
+import { BoardScheduleEventSource } from "~/features/board/components/board-schedule-event-source";
 import {
   boardScheduleEventSourceId,
   isBoardAllDayEvent,
@@ -44,7 +45,11 @@ export function createBoardScheduleDayAllDayRenderEvent({
   ) => {
     const { ref, ...buttonProps } = props;
     if (!isBoardAllDayEvent(event)) {
-      return <UnstyledButton {...buttonProps} ref={ref} />;
+      return (
+        <BoardScheduleEventSource eventId={event.id}>
+          <UnstyledButton {...buttonProps} ref={ref} />
+        </BoardScheduleEventSource>
+      );
     }
 
     if (

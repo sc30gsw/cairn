@@ -13,6 +13,7 @@ import {
 import type { ScheduleEventData } from "@mantine/schedule";
 import { useRef, useState, type MouseEvent } from "react";
 
+import { BoardScheduleEventSource } from "~/features/board/components/board-schedule-event-source";
 import {
   allDayEventsForDay,
   isBoardAllDayMoreEvent,
@@ -41,26 +42,34 @@ function YearPopoverTimedEvent({
 }: YearPopoverTimedEventProps) {
   const timeLabel = `${formatScheduleTimeLabel(event.start)}–${formatScheduleTimeLabel(event.end)}`;
   const badge = (
-    <Badge color={event.color ?? "gray"} fullWidth size="sm" variant="light">
+    <Badge
+      autoContrast
+      color={event.color ?? "gray"}
+      fullWidth
+      size="sm"
+      variant={event.variant ?? "light"}
+    >
       {event.title} · {timeLabel}
     </Badge>
   );
 
   if (!editable) {
-    return badge;
+    return <BoardScheduleEventSource eventId={event.id}>{badge}</BoardScheduleEventSource>;
   }
 
   return (
-    <UnstyledButton
-      onClick={(clickEvent) => {
-        stopDayClick(clickEvent);
-        onClose();
-        onEditBlock(event);
-      }}
-      type="button"
-    >
-      {badge}
-    </UnstyledButton>
+    <BoardScheduleEventSource eventId={event.id}>
+      <UnstyledButton
+        onClick={(clickEvent) => {
+          stopDayClick(clickEvent);
+          onClose();
+          onEditBlock(event);
+        }}
+        type="button"
+      >
+        {badge}
+      </UnstyledButton>
+    </BoardScheduleEventSource>
   );
 }
 
@@ -163,15 +172,17 @@ export function BoardScheduleYearDayPopover({
           ) : (
             <Stack gap={4}>
               {allDayEvents.map((event) => (
-                <Badge
-                  color={event.color ?? "gray"}
-                  fullWidth
-                  key={String(event.id)}
-                  size="sm"
-                  variant="light"
-                >
-                  {event.title}
-                </Badge>
+                <BoardScheduleEventSource eventId={event.id} key={String(event.id)}>
+                  <Badge
+                    autoContrast
+                    color={event.color ?? "gray"}
+                    fullWidth
+                    size="sm"
+                    variant={event.variant ?? "light"}
+                  >
+                    {event.title}
+                  </Badge>
+                </BoardScheduleEventSource>
               ))}
             </Stack>
           )}

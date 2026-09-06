@@ -1,29 +1,14 @@
 import type { Doc } from "../../_generated/dataModel";
-import type { BoardScheduleColor } from "../../lib/boardScheduleColors";
+import {
+  boardScheduleGoogleColor,
+  DEFAULT_BOARD_SCHEDULE_COLOR,
+} from "../../lib/boardScheduleColors";
 import { CHECKPOINT_EVENT_PREFIX, EXAM_EVENT_PREFIX } from "../../lib/calendarSync";
 import { isActiveExamGoal } from "../../lib/examGoal";
 import type { GoogleEventPatch, GoogleEventTimePatch } from "../../lib/googleCalendar";
-import type { GOOGLE_CALENDAR_EVENT_COLORS } from "../../lib/googleCalendarColors";
 import { addDaysJst } from "../../lib/jst";
 import type { ExternalChange, GoogleEventPayload, GoogleEventTime } from "../../lib/validators";
 import { scheduleInstantToRfc3339 } from "./instant";
-
-type GoogleEventColorId = (typeof GOOGLE_CALENDAR_EVENT_COLORS)[number]["id"];
-
-const GOOGLE_EVENT_COLOR_IDS = {
-  blue: "9",
-  cyan: "7",
-  grape: "3",
-  green: "10",
-  indigo: "1",
-  lime: "2",
-  orange: "6",
-  pink: "4",
-  red: "11",
-  teal: "7",
-  violet: "3",
-  yellow: "5",
-} as const satisfies Record<BoardScheduleColor, GoogleEventColorId>;
 
 function allDayPayload(args: {
   dateJst: string;
@@ -73,9 +58,9 @@ export function blockEventPayload(
   if (context.dayUrl !== null) {
     lines.push(context.dayUrl);
   }
-  const color = block.color ?? "blue";
+  const color = block.color ?? DEFAULT_BOARD_SCHEDULE_COLOR;
   return {
-    colorId: GOOGLE_EVENT_COLOR_IDS[color],
+    colorId: boardScheduleGoogleColor(color).id,
     description: lines.join("\n"),
     end: { dateTime: scheduleInstantToRfc3339(block.endAt) },
     start: { dateTime: scheduleInstantToRfc3339(block.startAt) },

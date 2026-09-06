@@ -10,6 +10,7 @@ import { BoardScheduleAllDayExpand } from "~/features/board/components/board-sch
 import { boardScheduleAllDayRenderEvent } from "~/features/board/components/board-schedule-all-day-render-event";
 import { createBoardScheduleDayAllDayRenderEvent } from "~/features/board/components/board-schedule-day-all-day-render-event";
 import { BoardScheduleEventForm } from "~/features/board/components/board-schedule-event-form";
+import { renderBoardScheduleEvent } from "~/features/board/components/board-schedule-event-source";
 import { BoardScheduleExternalModal } from "~/features/board/components/board-schedule-external-modal";
 import { BoardScheduleNavigation } from "~/features/board/components/board-schedule-navigation";
 import { createBoardScheduleYearRenderDay } from "~/features/board/components/board-schedule-year-render-day";
@@ -66,6 +67,7 @@ const BOARD_MONTH_VIEW_PROPS = {
   ...BOARD_SCHEDULE_WITHOUT_HEADER,
   firstDayOfWeek: 1,
   maxEventsPerDay: BOARD_MONTH_MAX_EVENTS_PER_DAY,
+  renderEvent: renderBoardScheduleEvent,
 } as const satisfies ScheduleProps["monthViewProps"];
 
 type BoardScheduleProps = {

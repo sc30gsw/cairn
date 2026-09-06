@@ -4,13 +4,16 @@ import { ColorSwatch, Group, Select, Stack } from "@mantine/core";
 import { DateTimePicker } from "@mantine/dates";
 import { Result } from "better-result";
 import { useEffect, useId } from "react";
-import { DEFAULT_BOARD_SCHEDULE_COLOR } from "~domain/boardScheduleColors";
+import {
+  DEFAULT_BOARD_SCHEDULE_COLOR,
+  normalizeBoardScheduleColor,
+} from "~domain/boardScheduleColors";
+import { GOOGLE_CALENDAR_EVENT_COLORS } from "~domain/googleCalendarColors";
 
 import { BoardScheduleEditModal } from "~/features/board/components/board-schedule-edit-modal";
 import { boardScheduleColorCss } from "~/features/board/lib/board-schedule-color-ui";
 import { scheduleInstantToDate } from "~/features/board/lib/schedule-instant";
 import {
-  BOARD_SCHEDULE_COLORS,
   BoardScheduleEventSchema,
   type BoardScheduleColor,
   type BoardScheduleEventInput,
@@ -28,9 +31,9 @@ type BoardScheduleEventFormProps = {
   rows: readonly BoardRow[];
 };
 
-const colorOptions = BOARD_SCHEDULE_COLORS.map((color) => ({
-  label: color.charAt(0).toUpperCase() + color.slice(1),
-  value: color,
+const colorOptions = GOOGLE_CALENDAR_EVENT_COLORS.map((color) => ({
+  label: color.label,
+  value: color.appColor,
 }));
 
 function renderScheduleColorOption(color: BoardScheduleColor, label: string) {
@@ -173,7 +176,7 @@ export function BoardScheduleEventForm({
 function blockFormValues(block: BoardScheduleBlock): BoardScheduleEventInput {
   return {
     blockId: block._id,
-    color: block.color as BoardScheduleEventInput["color"],
+    color: normalizeBoardScheduleColor(block.color),
     end: scheduleInstantToDate(block.endAt),
     rowId: block.rowId,
     start: scheduleInstantToDate(block.startAt),

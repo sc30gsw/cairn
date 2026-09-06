@@ -1,6 +1,7 @@
 import { expect, test } from "vite-plus/test";
 
 import type { Doc } from "../../_generated/dataModel";
+import { GOOGLE_CALENDAR_EVENT_COLORS } from "../../lib/googleCalendarColors";
 import {
   blockEventPayload,
   externalChangePayload,
@@ -19,6 +20,15 @@ const block = {
   startAt: "2026-08-17 09:00:00",
   title: "Distinction 2000",
 } satisfies Doc<"boardScheduleEvents">;
+
+test.each(GOOGLE_CALENDAR_EVENT_COLORS)(
+  "アプリの$labelを対応するGoogle色IDで同期する",
+  ({ appColor, id }) => {
+    expect(
+      blockEventPayload({ ...block, color: appColor }, { content: "", dayUrl: null }).colorId,
+    ).toBe(id);
+  },
+);
 
 test("予定は時刻つきの「予定あり」になり、項目名とひとことと日ページのリンクを説明に持つ", () => {
   expect(

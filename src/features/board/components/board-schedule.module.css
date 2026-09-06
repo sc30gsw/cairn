@@ -123,10 +123,6 @@
   width: 8px;
 }
 
-.boardSchedule :global(.mantine-ScheduleEvent-root:has([data-board-external="true"])) {
-  border-inline-start: 2px dashed var(--cairn-muted-2);
-}
-
 .weekDayLabel:nth-of-type(1) {
   color: var(--board-week-day-0);
 }

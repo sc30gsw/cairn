@@ -1,6 +1,7 @@
 import type { ScheduleEventData } from "@mantine/schedule";
 import { googleCalendarEventColor } from "~domain/googleCalendarColors";
 
+import { boardScheduleColorCss } from "~/features/board/lib/board-schedule-color-ui";
 import {
   dateToScheduleInstant,
   scheduleInstantToDate,
@@ -140,13 +141,16 @@ export function toBoardScheduleEvents(
     title: row.itemName,
   }));
 
-  const blockEvents = blocks.map((block) => ({
-    color: block.color,
-    end: block.endAt,
-    id: block._id,
-    start: block.startAt,
-    title: block.title,
-  }));
+  const blockEvents = blocks.map(
+    (block): ScheduleEventData => ({
+      color: boardScheduleColorCss(block.color),
+      end: block.endAt,
+      id: block._id,
+      start: block.startAt,
+      title: block.title,
+      variant: "filled",
+    }),
+  );
 
   return [...recordEvents, ...blockEvents];
 }
@@ -198,7 +202,7 @@ export function toExternalScheduleEvents(
     id: `${BOARD_EXTERNAL_EVENT_PREFIX}${external._id}`,
     start: external.startAt,
     title: external.title,
-    variant: "light",
+    variant: "filled",
   }));
 }
 

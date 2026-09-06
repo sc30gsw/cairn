@@ -62,7 +62,8 @@ test("ユーザー予定ブロックは記録と並べて表示する", () => {
   const events = toBoardScheduleEvents("2026-08-17", [], [block]);
   expect(events).toEqual([
     {
-      color: "blue",
+      color: "#5484ed",
+      variant: "filled",
       end: "2026-08-17 10:30:00",
       id: "b1",
       start: "2026-08-17 09:00:00",
@@ -155,7 +156,8 @@ test("timedEventsForDay は終日とmoreを除いた予定だけ返す", () => {
 
   expect(timedEventsForDay(overflow.events, "2026-08-17")).toEqual([
     {
-      color: "blue",
+      color: "#5484ed",
+      variant: "filled",
       end: "2026-08-17 10:30:00",
       id: "b1",
       start: "2026-08-17 09:00:00",
@@ -183,7 +185,8 @@ test("終日イベントだけを除外できる", () => {
 
   expect(withoutAllDayEvents(events)).toEqual([
     {
-      color: "blue",
+      color: "#5484ed",
+      variant: "filled",
       end: "2026-08-17 10:30:00",
       id: "b1",
       start: "2026-08-17 09:00:00",
@@ -209,12 +212,12 @@ test("色が未指定の外部予定はラベンダーの予定になり、印�
     },
   ]);
   expect(event).toEqual({
-    color: "indigo",
+    color: "#a4bdfc",
     end: "2026-08-17 11:00:00",
     id: "external:ext1",
     start: "2026-08-17 10:00:00",
     title: "歯医者",
-    variant: "light",
+    variant: "filled",
   });
   expect(isBoardExternalEvent("external:ext1")).toBe(true);
   expect(isBoardExternalEvent("r1")).toBe(false);

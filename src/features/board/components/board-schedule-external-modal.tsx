@@ -12,7 +12,6 @@ import {
 } from "~domain/googleCalendarColors";
 
 import { BoardScheduleEditModal } from "~/features/board/components/board-schedule-edit-modal";
-import { boardScheduleColorCss } from "~/features/board/lib/board-schedule-color-ui";
 import { scheduleInstantToDate } from "~/features/board/lib/schedule-instant";
 import {
   BoardExternalEventSchema,
@@ -159,10 +158,7 @@ function ExternalEventForm({
                 error={field.errors?.[0]}
                 label="色"
                 leftSection={
-                  <ColorSwatch
-                    color={boardScheduleColorCss(googleCalendarEventColor(field.input))}
-                    size={16}
-                  />
+                  <ColorSwatch color={googleCalendarEventColor(field.input)} size={16} />
                 }
                 onChange={(value) => {
                   const option = colorOptions.find((entry) => entry.value === value);
@@ -171,10 +167,7 @@ function ExternalEventForm({
                 value={field.input}
                 renderOption={({ option }) => (
                   <Group gap="xs">
-                    <ColorSwatch
-                      color={boardScheduleColorCss(googleCalendarEventColor(option.value))}
-                      size={16}
-                    />
+                    <ColorSwatch color={googleCalendarEventColor(option.value)} size={16} />
                     <span>{option.label}</span>
                   </Group>
                 )}

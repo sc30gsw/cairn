@@ -1,25 +1,32 @@
-import type { MantineColor } from "@mantine/core";
-import { v } from "convex/values";
+import { v, type Infer } from "convex/values";
 
-export const BOARD_SCHEDULE_COLORS = [
-  "blue",
-  "cyan",
-  "indigo",
-  "green",
-  "lime",
-  "red",
-  "orange",
-  "pink",
-  "yellow",
-  "teal",
-  "violet",
-  "grape",
-] as const satisfies readonly MantineColor[];
+import {
+  GOOGLE_CALENDAR_EVENT_COLORS,
+  DEFAULT_GOOGLE_CALENDAR_EVENT_COLOR,
+} from "./googleCalendarColors";
 
-export type BoardScheduleColor = (typeof BOARD_SCHEDULE_COLORS)[number];
+export const BOARD_SCHEDULE_COLORS = GOOGLE_CALENDAR_EVENT_COLORS.map((color) => color.appColor);
 
 export const boardScheduleColorValidator = v.union(
   ...BOARD_SCHEDULE_COLORS.map((color) => v.literal(color)),
+  v.literal("teal"),
+  v.literal("violet"),
 );
 
-export const DEFAULT_BOARD_SCHEDULE_COLOR = "blue" satisfies BoardScheduleColor;
+export type BoardScheduleColor = Infer<typeof boardScheduleColorValidator>;
+
+export const DEFAULT_BOARD_SCHEDULE_COLOR = DEFAULT_GOOGLE_CALENDAR_EVENT_COLOR.appColor;
+
+export function normalizeBoardScheduleColor(color: BoardScheduleColor) {
+  if (color === "teal") return "cyan";
+  if (color === "violet") return "grape";
+  return color;
+}
+
+export function boardScheduleGoogleColor(color: BoardScheduleColor) {
+  const appColor = normalizeBoardScheduleColor(color);
+  return (
+    GOOGLE_CALENDAR_EVENT_COLORS.find((entry) => entry.appColor === appColor) ??
+    DEFAULT_GOOGLE_CALENDAR_EVENT_COLOR
+  );
+}

@@ -1,0 +1,42 @@
+@property --google-event-border-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+:where(.frame) {
+  position: relative;
+}
+
+.frame::after {
+  background: conic-gradient(
+    from var(--google-event-border-angle),
+    #4285f4,
+    #ea4335,
+    #fbbc05,
+    #34a853,
+    #4285f4
+  );
+  border-radius: inherit;
+  content: "";
+  inset: 0;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  padding: 1.5px;
+  pointer-events: none;
+  position: absolute;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .frame:is(:hover, :focus-visible, :focus-within)::after {
+    animation: rotateGoogleEventBorder 6s linear infinite;
+  }
+}
+
+@keyframes rotateGoogleEventBorder {
+  to {
+    --google-event-border-angle: 360deg;
+  }
+}

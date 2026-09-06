@@ -138,7 +138,7 @@ test("件名・色を同じフォームで編集し、失敗時には入力を�
   expect(onClose).not.toHaveBeenCalled();
 });
 
-test("Google の各色を濃淡付きで表示し、選択した色を入力欄にも反映する", async () => {
+test("Googleのパレットで各色を表示し、選択した色を入力欄にも反映する", async () => {
   const onUpdate = vi.fn().mockResolvedValue(Result.ok(null));
   const view = renderWithMantine(
     <BoardScheduleExternalModal
@@ -157,16 +157,16 @@ test("Google の各色を濃淡付きで表示し、選択した色を入力欄�
   expect(view.getAllByRole("option")).toHaveLength(11);
   expect(
     orange.querySelector(".mantine-ColorSwatch-colorOverlay")?.getAttribute("style"),
-  ).toContain("var(--mantine-color-orange-3)");
+  ).toContain("#ffb878");
   expect(red.querySelector(".mantine-ColorSwatch-colorOverlay")?.getAttribute("style")).toContain(
-    "var(--mantine-color-red-3)",
+    "#dc2127",
   );
   expect(
     view
       .getByRole("option", { name: "Graphite" })
       .querySelector(".mantine-ColorSwatch-colorOverlay")
       ?.getAttribute("style"),
-  ).toContain("var(--mantine-color-gray-5)");
+  ).toContain("#e1e1e1");
   fireEvent.click(orange);
   await vi.waitFor(() => {
     expect(colorInput.getAttribute("value")).toBe("Tangerine");
@@ -174,7 +174,7 @@ test("Google の各色を濃淡付きで表示し、選択した色を入力欄�
       colorInput.parentElement
         ?.querySelector(".mantine-ColorSwatch-colorOverlay")
         ?.getAttribute("style"),
-    ).toContain("var(--mantine-color-orange-3)");
+    ).toContain("#ffb878");
   });
   fireEvent.click(view.getByRole("button", { name: "保存" }));
   await vi.waitFor(() => expect(onUpdate).toHaveBeenCalledOnce());
