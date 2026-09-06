@@ -10,21 +10,13 @@ import {
   isAuthFailure,
 } from "../../lib/googleCalendar";
 import { daysUntil, todayJst } from "../../lib/jst";
-import type { OwnerSyncOutcome, PulledEvent } from "../../lib/validators";
+import type { OwnerSyncOutcome } from "../../lib/validators";
+import { applyPulledEventsInOrder } from "./applyPulledEventsInOrder";
+import { calendarsToPull } from "./calendarsToPull";
 import { pullCalendar } from "./pullCalendar";
 import { pushOne } from "./pushOne";
 import { markNeedsReauth, markSyncError } from "./syncFailure";
 import { syncWindow } from "./window";
-
-const APPLY_CHUNK_SIZE = 200;
-
-function chunk<T>(items: readonly T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let index = 0; index < items.length; index += size) {
-    chunks.push(items.slice(index, index + size));
-  }
-  return chunks;
-}
 
 export async function runOwnerSync(ctx: ActionCtx, ownerId: string): Promise<OwnerSyncOutcome> {
   const today = todayJst();
@@ -48,8 +40,7 @@ export async function runOwnerSync(ctx: ActionCtx, ownerId: string): Promise<Own
   const failures: GoogleCalendarError[] = [];
 
   const cursorByCalendar = new Map(plan.cursors.map((entry) => [entry.calendarId, entry]));
-  const pullCalendarIds = new Set([...plan.visibleCalendarIds, plan.calendarId]);
-  for (const calendarId of pullCalendarIds) {
+  for (const calendarId of calendarsToPull(plan)) {
     const stored = cursorByCalendar.get(calendarId);
     const cursor =
       stored === undefined ||
@@ -65,21 +56,13 @@ export async function runOwnerSync(ctx: ActionCtx, ownerId: string): Promise<Own
       failures.push(pulled.error);
       continue;
     }
-    const chunks = chunk<PulledEvent>(pulled.value.events, APPLY_CHUNK_SIZE);
-    const batches = chunks.length === 0 ? [[]] : chunks;
-    for (const [index, events] of batches.entries()) {
-      const last = index === batches.length - 1;
-      // oxlint-disable-next-line react-doctor/async-await-in-loop
-      await ctx.runMutation(internal.mutations.calendarSync.applyPull.applyPull, {
-        calendarId,
-        events,
-        finish: last
-          ? { keepEventIds: pulled.value.keepEventIds, syncToken: pulled.value.syncToken }
-          : null,
-        ownerId,
-        todayJst: today,
-      });
-    }
+    await applyPulledEventsInOrder(ctx, {
+      calendarId,
+      events: pulled.value.events,
+      finish: { keepEventIds: pulled.value.keepEventIds, syncToken: pulled.value.syncToken },
+      ownerId,
+      todayJst: today,
+    });
   }
 
   const refreshed = await ctx.runQuery(internal.queries.calendarSync.syncPlan.syncPlan, {
@@ -90,7 +73,6 @@ export async function runOwnerSync(ctx: ActionCtx, ownerId: string): Promise<Own
     return "notConnected";
   }
   for (const source of refreshed.sources) {
-    // oxlint-disable-next-line react-doctor/async-await-in-loop
     const pushed = await pushOne(ctx, client, {
       calendarId: refreshed.calendarId,
       ownerId,

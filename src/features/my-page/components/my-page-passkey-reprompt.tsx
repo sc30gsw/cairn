@@ -1,6 +1,6 @@
 import type { Passkey } from "@better-auth/passkey/client";
 import { Result } from "better-result";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { PasskeyPromptModal } from "~/components/passkey-prompt-modal";
 import type { AuthActionError } from "~/lib/errors";
@@ -12,23 +12,18 @@ import { listPasskeys } from "~/lib/profile-actions";
 import { useResultTransition } from "~/lib/use-result-transition";
 
 export function MyPagePasskeyReprompt() {
-  const list = useResultTransition<Passkey[], AuthActionError>();
   const [opened, setOpened] = useState(false);
+  useResultTransition<Passkey[], AuthActionError>({
+    initialAction: shouldOpenMyPagePasskeyPrompt() ? repromptIfNoPasskeys : undefined,
+  });
 
-  useEffect(() => {
-    if (!shouldOpenMyPagePasskeyPrompt()) {
-      return;
+  async function repromptIfNoPasskeys() {
+    const result = await listPasskeys();
+    if (Result.isOk(result) && shouldShowMyPagePasskeyPrompt(result.value.length > 0)) {
+      setOpened(true);
     }
-
-    void list.run(async () => {
-      const result = await listPasskeys();
-      if (Result.isOk(result) && shouldShowMyPagePasskeyPrompt(result.value.length > 0)) {
-        setOpened(true);
-      }
-      return result;
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only
-  }, []);
+    return result;
+  }
 
   return <PasskeyPromptModal context="mypage" onClose={() => setOpened(false)} opened={opened} />;
 }

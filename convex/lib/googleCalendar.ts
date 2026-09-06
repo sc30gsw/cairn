@@ -3,6 +3,15 @@ import * as v from "valibot";
 
 import type { GoogleCalendarSummary, GoogleEventPayload } from "./validators";
 
+export type GoogleEventTimePatch =
+  | { date: string; dateTime: null }
+  | { date: null; dateTime: string };
+
+export type GoogleEventPatch = Omit<GoogleEventPayload, "end" | "start"> & {
+  end: GoogleEventTimePatch;
+  start: GoogleEventTimePatch;
+};
+
 export class GoogleCalendarError extends TaggedError("GoogleCalendar")<{
   cause?: unknown;
   message: string;
@@ -24,6 +33,8 @@ const RATE_LIMIT_REASONS = [
 ] as const satisfies readonly string[];
 
 const GOOGLE_CALENDAR_BASE_URL = "https://www.googleapis.com/calendar/v3";
+
+const FREE_BUSY_ACCESS_ROLE = "freeBusyReader";
 
 const MAX_RESULTS = 250;
 
@@ -226,10 +237,14 @@ export function calendarSummaryOf(entry: GoogleCalendarListEntry): GoogleCalenda
   };
 }
 
+function isSelectableForDisplay(entry: GoogleCalendarListEntry): boolean {
+  return entry.selected !== false && entry.accessRole !== FREE_BUSY_ACCESS_ROLE;
+}
+
 export function defaultVisibleCalendarIds(entries: readonly GoogleCalendarListEntry[]): string[] {
   const ids: string[] = [];
   for (const entry of entries) {
-    if (entry.selected !== false && entry.accessRole !== "freeBusyReader") {
+    if (isSelectableForDisplay(entry)) {
       ids.push(entry.id);
     }
   }
@@ -268,10 +283,7 @@ export async function listCalendars(
 type ListEventsArgs = {
   calendarId: string;
   pageToken?: string;
-  syncToken?: string;
-  timeMax?: string;
-  timeMin?: string;
-};
+} & ({ syncToken: string } | { timeMax: string; timeMin: string });
 
 export async function listEvents(
   client: GoogleCalendarClient,
@@ -283,7 +295,7 @@ export async function listEvents(
     showDeleted: "true",
     singleEvents: "true",
   };
-  if (args.syncToken !== undefined) {
+  if ("syncToken" in args) {
     query.syncToken = args.syncToken;
   } else {
     query.timeMax = args.timeMax;
@@ -322,7 +334,7 @@ export async function patchEvent(
   client: GoogleCalendarClient,
   calendarId: string,
   eventId: string,
-  payload: Partial<GoogleEventPayload>,
+  payload: GoogleEventPatch | Pick<GoogleEventPatch, "end" | "start">,
 ): Promise<Result<GoogleEvent, GoogleCalendarError>> {
   return request(
     client,

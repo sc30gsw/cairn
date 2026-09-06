@@ -14,13 +14,7 @@ export async function scheduleSourceSync(
   if (connection === null) {
     return;
   }
-  const link = await ctx.db
-    .query("calendarSyncLinks")
-    .withIndex("by_source", (q) => q.eq("sourceKind", sourceKind).eq("sourceId", sourceId))
-    .unique();
-  if (link !== null && link.ownerId === ownerId) {
-    await ctx.db.patch("calendarSyncLinks", link._id, { appChangedAt: Date.now() });
-  }
+  await markAppChanged(ctx, ownerId, sourceKind, sourceId);
   if (connection.status === "needsReauth") {
     return;
   }
@@ -30,6 +24,21 @@ export async function scheduleSourceSync(
     sourceId,
     sourceKind,
   });
+}
+
+async function markAppChanged(
+  ctx: MutationCtx,
+  ownerId: string,
+  sourceKind: CalendarSyncSourceKind,
+  sourceId: string,
+): Promise<void> {
+  const link = await ctx.db
+    .query("calendarSyncLinks")
+    .withIndex("by_source", (q) => q.eq("sourceKind", sourceKind).eq("sourceId", sourceId))
+    .unique();
+  if (link !== null && link.ownerId === ownerId) {
+    await ctx.db.patch("calendarSyncLinks", link._id, { appChangedAt: Date.now() });
+  }
 }
 
 export async function scheduleGoalSync(

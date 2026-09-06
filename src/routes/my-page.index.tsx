@@ -13,7 +13,6 @@ function MyPageAccountRoute() {
   return (
     <Stack gap="md">
       <MyPageAccount />
-      {}
       <Suspense fallback={null}>
         <MyPageOnboardingExtras />
       </Suspense>

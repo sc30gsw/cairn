@@ -28,7 +28,6 @@ function HomeSetupStepper() {
 function HomeRoute() {
   return (
     <OwnerGate>
-      {}
       <Suspense fallback={null}>
         <HomeSetupStepper />
       </Suspense>

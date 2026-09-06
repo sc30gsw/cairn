@@ -12,10 +12,11 @@ import {
 import { modals } from "@mantine/modals";
 import { IconBrandGoogle, IconRefresh } from "@tabler/icons-react";
 import { Result } from "better-result";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE, type CalendarSyncStatus } from "~domain/calendarSync";
 import type { OwnerSyncOutcome } from "~domain/validators";
 
+import { useBusy } from "~/features/my-page/hooks/use-busy";
 import {
   clearCalendarSyncConnectPending,
   linkGoogleCalendar,
@@ -91,20 +92,9 @@ export function CalendarSyncSection() {
   const disconnect = useDisconnectCalendarSync();
   const syncNow = useSyncCalendarNow();
   const setVisible = useSetVisibleCalendars();
-  const [busy, setBusy] = useState(() => {
-    const pending = readCalendarSyncConnectPending();
-    return pending && readCalendarSyncReturnError() === null;
-  });
-
-  async function withBusy(operation: () => Promise<void>) {
-    setBusy(true);
-    try {
-      await operation();
-    } catch (error) {
-      notifyError(error);
-    }
-    setBusy(false);
-  }
+  const { busy, setBusy, withBusy } = useBusy(
+    () => readCalendarSyncConnectPending() && readCalendarSyncReturnError() === null,
+  );
 
   useEffect(() => {
     if (!readCalendarSyncConnectPending()) {
@@ -119,14 +109,15 @@ export function CalendarSyncSection() {
     void runMutation(() => connect({}), { successMessage: connectedMessage }).then(() =>
       setBusy(false),
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: 戻ってきた1回だけ
-  }, []);
+  }, [connect, setBusy]);
 
   function runSyncNow() {
-    return withBusy(() =>
-      runMutation(() => syncNow({}), {
-        successMessage: (outcome) => (outcome === "ok" ? CALENDAR_SYNC_SYNCED_MESSAGE : ""),
-      }),
+    return withBusy(
+      () =>
+        runMutation(() => syncNow({}), {
+          successMessage: (outcome) => (outcome === "ok" ? CALENDAR_SYNC_SYNCED_MESSAGE : ""),
+        }),
+      notifyError,
     );
   }
 
@@ -136,10 +127,12 @@ export function CalendarSyncSection() {
       confirmProps: { color: "red" },
       labels: { cancel: "キャンセル", confirm: CALENDAR_SYNC_DISCONNECT_LABEL },
       onConfirm: () => {
-        void withBusy(() =>
-          runMutation(() => disconnect({}), {
-            successMessage: CALENDAR_SYNC_DISCONNECTED_MESSAGE,
-          }),
+        void withBusy(
+          () =>
+            runMutation(() => disconnect({}), {
+              successMessage: CALENDAR_SYNC_DISCONNECTED_MESSAGE,
+            }),
+          notifyError,
         );
       },
       title: "カレンダー同期を解除しますか？",

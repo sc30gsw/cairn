@@ -1,15 +1,28 @@
 import { Result } from "better-result";
-import { useState, useTransition } from "react";
+import { useEffect, useEffectEvent, useState, useTransition } from "react";
 
-export function useResultTransition<T, E>() {
+type ResultAction<T, E> = () => Promise<Result<T, E>>;
+
+export function useResultTransition<T, E>(options?: { initialAction?: ResultAction<T, E> }) {
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<null | Result<T, E>>(null);
+  const initialAction = options?.initialAction;
+
+  const runInitialAction = useEffectEvent(() => {
+    if (initialAction !== undefined) {
+      void run(initialAction);
+    }
+  });
+
+  useEffect(() => {
+    runInitialAction();
+  }, []);
 
   function clear() {
     setResult(null);
   }
 
-  function run(action: () => Promise<Result<T, E>>): Promise<Result<T, E>> {
+  function run(action: ResultAction<T, E>): Promise<Result<T, E>> {
     setResult(null);
     return new Promise((resolve, reject) => {
       startTransition(async () => {

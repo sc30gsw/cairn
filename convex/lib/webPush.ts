@@ -2,7 +2,10 @@ import { notificationMessage } from "./notificationCopy";
 import { notificationLink } from "./notificationLink";
 import type { NotificationPayload, WebPushMessage } from "./validators";
 
+// iOS Safari は pushsubscriptionchange を発火しないため、購読切れはサーバー側でこの応答から検知する（RFC 8030 §7.3）
 export const WEB_PUSH_GONE_STATUSES = [404, 410] as const satisfies readonly number[];
+
+export const WEB_PUSH_SUBSCRIPTION_CHANGED = "PUSH_SUBSCRIPTION_CHANGED";
 
 export type WebPushOutcome = "delivered" | "failed" | "gone";
 

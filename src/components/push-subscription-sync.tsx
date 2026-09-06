@@ -1,11 +1,8 @@
 import { useEffect, useSyncExternalStore } from "react";
+import { WEB_PUSH_SUBSCRIPTION_CHANGED } from "~domain/webPush";
 
 import { useSubscribePush } from "~/hooks/use-notification-mutations";
-import {
-  currentPushSubscription,
-  isWebPushSupported,
-  WEB_PUSH_SUBSCRIPTION_CHANGED,
-} from "~/lib/web-push";
+import { currentPushSubscription, isWebPushSupported } from "~/lib/web-push";
 
 function PushSubscriptionSyncGranted() {
   const { mutateAsync: subscribePush } = useSubscribePush();
@@ -41,7 +38,7 @@ function PushSubscriptionSyncGranted() {
   return null;
 }
 
-function subscribePermission() {
+function noPermissionChangeEvents() {
   return () => undefined;
 }
 
@@ -55,7 +52,7 @@ function getPermissionServerSnapshot(): boolean {
 
 export function PushSubscriptionSync() {
   const granted = useSyncExternalStore(
-    subscribePermission,
+    noPermissionChangeEvents,
     getPermissionGranted,
     getPermissionServerSnapshot,
   );

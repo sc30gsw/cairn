@@ -66,11 +66,18 @@ export const pulledEventValidator = v.union(
 
 export type PulledEvent = Infer<typeof pulledEventValidator>;
 
+const googleEventTimeValidator = v.union(
+  v.object({ date: v.string() }),
+  v.object({ dateTime: v.string() }),
+);
+
+export type GoogleEventTime = Infer<typeof googleEventTimeValidator>;
+
 export const googleEventPayloadValidator = v.object({
   colorId: v.optional(v.string()),
   description: v.string(),
-  end: v.object({ date: v.optional(v.string()), dateTime: v.optional(v.string()) }),
-  start: v.object({ date: v.optional(v.string()), dateTime: v.optional(v.string()) }),
+  end: googleEventTimeValidator,
+  start: googleEventTimeValidator,
   summary: v.string(),
   transparency: v.union(v.literal("opaque"), v.literal("transparent")),
 });
@@ -136,7 +143,11 @@ export const pushExpectationValidator = syncSourceValidator.fields.link;
 
 export type PushExpectation = Infer<typeof pushExpectationValidator>;
 
-export const recordPushResultValidator = v.union(v.literal("conflict"), v.literal("recorded"));
+export const recordPushResultValidator = v.union(
+  v.literal("conflict"),
+  v.literal("disconnected"),
+  v.literal("recorded"),
+);
 
 export type RecordPushResult = Infer<typeof recordPushResultValidator>;
 

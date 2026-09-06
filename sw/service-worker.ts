@@ -10,6 +10,9 @@ import {
   type SerwistGlobalConfig,
 } from "serwist";
 
+import type { WebPushMessage } from "../convex/lib/validators";
+import type { WEB_PUSH_SUBSCRIPTION_CHANGED } from "../convex/lib/webPush";
+
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
     __SW_MANIFEST: (PrecacheEntry | string)[] | undefined;
@@ -59,9 +62,8 @@ const serwist = new Serwist({
   },
 });
 
-type WebPushMessage = Record<"body" | "tag" | "title" | "url", string>;
-
-const PUSH_SUBSCRIPTION_CHANGED = "PUSH_SUBSCRIPTION_CHANGED";
+const PUSH_SUBSCRIPTION_CHANGED =
+  "PUSH_SUBSCRIPTION_CHANGED" satisfies typeof WEB_PUSH_SUBSCRIPTION_CHANGED;
 const NOTIFICATION_ICON = "/icons/icon-192.png";
 
 function isWebPushMessage(value: unknown): value is WebPushMessage {
