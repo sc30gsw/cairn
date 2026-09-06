@@ -92,7 +92,9 @@ export function CalendarSyncSection() {
   const disconnect = useDisconnectCalendarSync();
   const syncNow = useSyncCalendarNow();
   const setVisible = useSetVisibleCalendars();
-  const { busy, setBusy, withBusy } = useBusy(readCalendarSyncConnectPending);
+  const { busy, setBusy, withBusy } = useBusy(
+    () => readCalendarSyncConnectPending() && readCalendarSyncReturnError() === null,
+  );
 
   useEffect(() => {
     if (!readCalendarSyncConnectPending()) {
@@ -102,7 +104,6 @@ export function CalendarSyncSection() {
     const returnError = readCalendarSyncReturnError();
     if (returnError !== null) {
       notifyError(new Error(returnError), CALENDAR_SYNC_DENIED_MESSAGE);
-      setBusy(false);
       return;
     }
     void runMutation(() => connect({}), { successMessage: connectedMessage }).then(() =>
