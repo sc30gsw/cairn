@@ -353,17 +353,21 @@ export async function insertEvent(
   client: GoogleCalendarClient,
   calendarId: string,
   payload: GoogleEventPayload,
+  eventId?: string,
 ): Promise<Result<GoogleEvent, GoogleCalendarError>> {
-  return request(
+  const result = await request(
     client,
     {
-      body: payload,
+      body: eventId === undefined ? payload : { ...payload, id: eventId },
       method: "POST",
       operation: "events.insert",
       path: `/calendars/${encodeId(calendarId)}/events`,
     },
     googleEventSchema,
   );
+  return Result.isError(result) && result.error.status === 409 && eventId !== undefined
+    ? getEvent(client, calendarId, eventId)
+    : result;
 }
 
 export async function patchEvent(

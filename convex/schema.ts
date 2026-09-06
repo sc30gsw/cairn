@@ -154,12 +154,30 @@ export default defineSchema({
     ownerId: v.string(),
   }).index("by_owner_and_endpoint", ["ownerId", "endpoint"]),
 
+  calendarAuthorizationRequests: defineTable({
+    calendarId: v.optional(v.string()),
+    expectedGoogleAccountId: v.optional(v.string()),
+    expiresAt: v.number(),
+    googleAccountId: v.optional(v.string()),
+    ownerId: v.string(),
+    purpose: v.union(v.literal("read"), v.literal("write")),
+    state: v.union(v.literal("pending"), v.literal("authorized"), v.literal("consumed")),
+  }).index("by_expiresAt", ["expiresAt"]),
+
+  googleCalendarIdentities: defineTable({
+    googleAccountId: v.string(),
+    ownerId: v.string(),
+    signInAllowed: v.boolean(),
+  }).index("by_googleAccountId", ["googleAccountId"]),
+
   calendarSyncOperations: defineTable({
+    connectionId: v.optional(v.id("calendarConnections")),
     expiresAt: v.number(),
     ownerId: v.string(),
-  }).index("by_owner", ["ownerId"]),
+  }).index("by_owner_and_connectionId", ["ownerId", "connectionId"]),
 
   calendarExternalChanges: defineTable({
+    connectionId: v.optional(v.id("calendarConnections")),
     settledAt: v.optional(v.number()),
     calendarId: v.string(),
     change: externalChangeValidator,
@@ -167,9 +185,35 @@ export default defineSchema({
     ownerId: v.string(),
   })
     .index("by_owner_and_settledAt", ["ownerId", "settledAt"])
-    .index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"]),
+    .index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"])
+    .index("by_owner_and_connectionId_and_calendarId_and_googleEventId", [
+      "ownerId",
+      "connectionId",
+      "calendarId",
+      "googleEventId",
+    ]),
+
+  calendarOutputSettings: defineTable({
+    ownerId: v.string(),
+    legacyConnectionId: v.optional(v.id("calendarConnections")),
+    connectionId: v.optional(v.id("calendarConnections")),
+    calendarId: v.optional(v.string()),
+    generation: v.number(),
+    changing: v.optional(v.boolean()),
+    nextConnectionId: v.optional(v.id("calendarConnections")),
+    nextCalendarId: v.optional(v.string()),
+  }).index("by_owner", ["ownerId"]),
+
+  calendarEventDeletions: defineTable({
+    ownerId: v.string(),
+    calendarId: v.string(),
+    googleEventId: v.string(),
+    deletedAt: v.string(),
+  }).index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"]),
 
   calendarConnections: defineTable({
+    externalReadOnly: v.optional(v.boolean()),
+    canWrite: v.optional(v.boolean()),
     externalChangesVersion: v.optional(v.literal(1)),
     disconnecting: v.optional(v.boolean()),
     calendars: v.array(googleCalendarSummaryValidator),
@@ -181,9 +225,19 @@ export default defineSchema({
     primaryCalendarId: v.string(),
     status: calendarSyncStatusValidator,
     visibleCalendarIds: v.array(v.string()),
-  }).index("by_owner", ["ownerId"]),
+  }).index("by_owner_and_googleAccountId", ["ownerId", "googleAccountId"]),
 
   calendarSyncLinks: defineTable({
+    pendingMove: v.optional(
+      v.object({
+        connectionId: v.id("calendarConnections"),
+        calendarId: v.string(),
+        googleEventId: v.string(),
+        googleUpdated: v.string(),
+        payloadKey: v.string(),
+      }),
+    ),
+    connectionId: v.optional(v.id("calendarConnections")),
     appChangedAt: v.optional(v.number()),
     calendarId: v.string(),
     googleEventId: v.string(),
@@ -194,9 +248,22 @@ export default defineSchema({
     sourceKind: calendarSyncSourceKindValidator,
   })
     .index("by_source", ["sourceKind", "sourceId"])
-    .index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"]),
+    .index("by_owner_and_pendingCalendarId_and_pendingGoogleEventId", [
+      "ownerId",
+      "pendingMove.calendarId",
+      "pendingMove.googleEventId",
+    ])
+    .index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"])
+    .index("by_owner_and_connectionId_and_calendarId_and_googleEventId", [
+      "ownerId",
+      "connectionId",
+      "calendarId",
+      "googleEventId",
+    ]),
 
   externalCalendarEvents: defineTable({
+    lastPullId: v.optional(v.string()),
+    connectionId: v.optional(v.id("calendarConnections")),
     colorId: v.optional(v.string()),
     allDay: v.boolean(),
     calendarId: v.string(),
@@ -208,14 +275,23 @@ export default defineSchema({
     title: v.string(),
   })
     .index("by_owner_and_startAt", ["ownerId", "startAt"])
-    .index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"]),
+    .index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"])
+    .index("by_owner_and_connectionId_and_calendarId_and_googleEventId", [
+      "ownerId",
+      "connectionId",
+      "calendarId",
+      "googleEventId",
+    ]),
 
   calendarSyncCursors: defineTable({
+    connectionId: v.optional(v.id("calendarConnections")),
     calendarId: v.string(),
     fullSyncedOnJst: v.string(),
     ownerId: v.string(),
     syncToken: v.string(),
-  }).index("by_owner_and_calendar", ["ownerId", "calendarId"]),
+  })
+    .index("by_owner_and_calendar", ["ownerId", "calendarId"])
+    .index("by_owner_and_connectionId_and_calendarId", ["ownerId", "connectionId", "calendarId"]),
 
   avatarUploadClaims: defineTable({
     ownerId: v.string(),

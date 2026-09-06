@@ -1,6 +1,7 @@
 import { Result } from "better-result";
 
 import { internal } from "../../_generated/api";
+import type { Id } from "../../_generated/dataModel";
 import type { ActionCtx } from "../../_generated/server";
 import {
   deleteEvent,
@@ -14,6 +15,8 @@ import type { GoogleEventPayload, SyncSource } from "../../lib/validators";
 import { patchPayload } from "./eventPayload";
 
 type PushOneArgs = {
+  connectionId?: Id<"calendarConnections">;
+  generation?: number;
   calendarId: string;
   ownerId: string;
   source: SyncSource;
@@ -30,12 +33,25 @@ export async function pushOne(
       sourceId: args.source.sourceId,
       sourceKind: args.source.sourceKind,
     });
-    if (plan === null || plan.calendarId !== args.calendarId) return Result.ok("skipped");
-    const result = await sendOne(ctx, client, { ...args, source: plan.source });
+    if (
+      plan === null ||
+      plan.calendarId !== args.calendarId ||
+      (args.connectionId !== undefined && plan.connectionId !== args.connectionId) ||
+      (args.generation !== undefined && plan.generation !== args.generation)
+    )
+      return Result.ok("skipped");
+    const result = await sendOne(ctx, client, {
+      ...args,
+      connectionId: plan.connectionId,
+      generation: plan.generation,
+      source: plan.source,
+    });
     if (Result.isError(result)) return result;
     if (result.value !== "changed") return Result.ok(result.value);
   }
   await ctx.scheduler.runAfter(0, internal.actions.calendarSync.pushSource.pushSource, {
+    connectionId: args.connectionId,
+    generation: args.generation,
     attempt: 0,
     ownerId: args.ownerId,
     sourceId: args.source.sourceId,
@@ -53,6 +69,8 @@ async function sendOne(
 > {
   const { calendarId, ownerId, source } = args;
   const base = {
+    connectionId: args.connectionId,
+    generation: args.generation,
     calendarId,
     expected: source.link?.googleEventId ?? null,
     ownerId,

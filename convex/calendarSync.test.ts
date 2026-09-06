@@ -7,13 +7,16 @@ import { GOOGLE_CALENDAR_SCOPES } from "./lib/calendarSync";
 import { GoogleAuthError } from "./lib/googleAccessToken";
 import type { GoalInput } from "./lib/validators";
 import schema from "./schema";
+import { connect as connectCalendar } from "./services/calendarSync/connect";
 
 const { tokenState } = vi.hoisted(() => ({
   tokenState: { accounts: [{ accountId: "google-sub", scopes: [] as string[] }], fail: false },
 }));
 
 vi.mock("./lib/googleAccessToken", () => ({
-  GoogleAuthError: class GoogleAuthError extends Error {},
+  GoogleAuthError: class GoogleAuthError extends Error {
+    revoked = true;
+  },
   getGoogleAccessToken: async () =>
     tokenState.fail
       ? Result.err(new GoogleAuthError({ message: "expired" }))
@@ -255,12 +258,35 @@ function raw() {
 
 type Owner = ReturnType<ReturnType<typeof raw>["withIdentity"]>;
 
+async function connectAccount(owner: Owner, googleAccountId = "google-sub") {
+  await owner.run(async (ctx) => {
+    const existing = await ctx.db
+      .query("calendarConnections")
+      .withIndex("by_owner_and_googleAccountId", (q) => q.eq("ownerId", OWNER.subject))
+      .first();
+    if (existing !== null) return;
+    await ctx.db.insert("calendarConnections", {
+      ownerId: OWNER.subject,
+      googleAccountId,
+      googleEmail: PRIMARY,
+      primaryCalendarId: PRIMARY,
+      status: "ok",
+      calendars: [
+        { id: PRIMARY, primary: true, summary: PRIMARY, accessRole: "owner" },
+        { id: HOLIDAY, primary: false, summary: "日本の祝日", accessRole: "reader" },
+      ],
+      visibleCalendarIds: [PRIMARY, HOLIDAY],
+    });
+  });
+  return owner.action((ctx) => connectCalendar(ctx, OWNER.subject, googleAccountId));
+}
+
 async function connectedOwner() {
   const t = raw();
   const owner = t.withIdentity(OWNER);
   await owner.mutation(api.mutations.catalog.ensure.ensure, {});
   await owner.mutation(api.mutations.days.open.open, { dateJst: TODAY, todayJst: TODAY });
-  await owner.action(api.actions.calendarSync.connect.connect, {});
+  await connectAccount(owner);
   return { owner, t };
 }
 
@@ -282,13 +308,16 @@ test("連携すると接続とカレンダー一覧が写り、進行中の本�
   const owner = t.withIdentity(OWNER);
   await owner.mutation(api.mutations.goals.create.create, { goal: EXAM_GOAL });
 
-  await owner.action(api.actions.calendarSync.connect.connect, {});
+  await connectAccount(owner);
 
   const status = await owner.query(api.queries.calendarSync.status.status, {});
-  expect(status?.googleEmail).toBe(PRIMARY);
-  expect(status?.status).toBe("ok");
-  expect(status?.calendars.map((calendar) => calendar.id)).toEqual([PRIMARY, HOLIDAY]);
-  expect(status?.visibleCalendarIds).toEqual([PRIMARY, HOLIDAY]);
+  expect(status.connections[0]?.googleEmail).toBe(PRIMARY);
+  expect(status.connections[0]?.status).toBe("ok");
+  expect(status.connections[0]?.calendars.map((calendar) => calendar.id)).toEqual([
+    PRIMARY,
+    HOLIDAY,
+  ]);
+  expect(status.connections[0]?.visibleCalendarIds).toEqual([PRIMARY, HOLIDAY]);
   const [event] = google.active(PRIMARY);
   expect(event).toMatchObject({
     description: "目標 800〜900",
@@ -297,13 +326,15 @@ test("連携すると接続とカレンダー一覧が写り、進行中の本�
     summary: "本番: 本番で900点を取る",
     transparency: "transparent",
   });
-  expect(await t.withIdentity(OTHER).query(api.queries.calendarSync.status.status, {})).toBeNull();
+  expect(
+    await t.withIdentity(OTHER).query(api.queries.calendarSync.status.status, {}),
+  ).toMatchObject({ connections: [], output: null });
 });
 
 test("カレンダー権限の無い Google アカウントしか無ければ連携できない", async () => {
   tokenState.accounts = [{ accountId: "google-sub", scopes: ["openid", "email"] }];
   const owner = raw().withIdentity(OWNER);
-  await expect(owner.action(api.actions.calendarSync.connect.connect, {})).rejects.toThrow();
+  await expect(connectAccount(owner)).rejects.toThrow();
 });
 
 test("予定の作成・移動・削除が Google に送られる", async () => {
@@ -588,7 +619,10 @@ test("解除すると Google のアプリ発の予定と、アプリ側の写し
   await owner.action(api.actions.calendarSync.disconnect.disconnect, {});
 
   expect(google.active(PRIMARY).map((event) => event.summary)).toEqual(["歯医者"]);
-  expect(await owner.query(api.queries.calendarSync.status.status, {})).toBeNull();
+  expect(await owner.query(api.queries.calendarSync.status.status, {})).toMatchObject({
+    connections: [],
+    output: null,
+  });
   expect(
     await owner.query(api.queries.calendarSync.listExternal.listExternal, {
       anchorDateJst: TODAY,
@@ -606,15 +640,17 @@ test("トークンが取れなくなったら再接続が必要になり、cron 
   tokenState.fail = true;
 
   expect(await syncNow(owner)).toBe("needsReauth");
-  expect((await owner.query(api.queries.calendarSync.status.status, {}))?.status).toBe(
-    "needsReauth",
-  );
+  expect(
+    (await owner.query(api.queries.calendarSync.status.status, {})).connections[0]?.status,
+  ).toBe("needsReauth");
   expect(
     await t.query(internal.queries.calendarSync.listConnectedOwners.listConnectedOwners, {}),
   ).toEqual([]);
   tokenState.fail = false;
-  await owner.action(api.actions.calendarSync.connect.connect, {});
-  expect((await owner.query(api.queries.calendarSync.status.status, {}))?.status).toBe("ok");
+  await connectAccount(owner);
+  expect(
+    (await owner.query(api.queries.calendarSync.status.status, {})).connections[0]?.status,
+  ).toBe("ok");
 });
 
 test("送信の記録は、計画時と対応表が違えば書かない（並走の楽観ロック）", async () => {
@@ -679,7 +715,9 @@ test("レート制限（403 rateLimitExceeded）は再接続にせず、再試�
 
   expect(failures).toBe(1);
   expect(google.active(PRIMARY).map((event) => event.summary)).toEqual(["本番: 本番で900点を取る"]);
-  expect((await owner.query(api.queries.calendarSync.status.status, {}))?.status).toBe("ok");
+  expect(
+    (await owner.query(api.queries.calendarSync.status.status, {})).connections[0]?.status,
+  ).toBe("ok");
 });
 
 test("差分トークンが失効（410）したら期間の全件を取り直し、もう無い写しを消す", async () => {
@@ -833,8 +871,8 @@ test("外部予定の送信は一時的な失敗なら再試行し、諦めた�
 
   expect(patches).toBe(2);
   const status = await owner.query(api.queries.calendarSync.status.status, {});
-  expect(status?.status).toBe("error");
-  expect(status?.lastError).toBe("Bad Request");
+  expect(status.connections[0]?.status).toBe("error");
+  expect(status.connections[0]?.lastError).toBe("Bad Request");
   await t.run(async (ctx) => {
     const cursors = await ctx.db.query("calendarSyncCursors").collect();
     expect(cursors.some((cursor) => cursor.calendarId === PRIMARY)).toBe(false);
@@ -850,15 +888,17 @@ test("別の Google アカウントで再接続すると前の同期状態は消
   });
   await flush(t);
 
-  await owner.action(api.actions.calendarSync.connect.connect, {});
+  await connectAccount(owner);
   expect(
-    (await owner.query(api.queries.calendarSync.status.status, {}))?.visibleCalendarIds,
+    (await owner.query(api.queries.calendarSync.status.status, {})).connections[0]
+      ?.visibleCalendarIds,
   ).toEqual([PRIMARY]);
 
   tokenState.accounts = [{ accountId: "another-google-sub", scopes: CALENDAR_SCOPES }];
-  await owner.action(api.actions.calendarSync.connect.connect, {});
+  await connectAccount(owner, "another-google-sub");
   const status = await owner.query(api.queries.calendarSync.status.status, {});
-  expect(status?.visibleCalendarIds).toEqual([PRIMARY, HOLIDAY]);
+  expect(status.connections).toHaveLength(2);
+  expect(status.connections[1]?.visibleCalendarIds).toEqual([PRIMARY, HOLIDAY]);
   expect(google.active(PRIMARY).map((event) => event.summary)).toEqual(["本番: 本番で900点を取る"]);
 });
 

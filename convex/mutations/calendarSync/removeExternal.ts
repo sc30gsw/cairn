@@ -10,6 +10,7 @@ export const removeExternal = ownerMutation({
     const removed = await removeExternalEvent(ctx, ctx.ownerId, args);
     await queueExternalChange(ctx, {
       calendarId: removed.calendarId,
+      connectionId: removed.connectionId,
       change: { kind: "delete" },
       googleEventId: removed.googleEventId,
       ownerId: ctx.ownerId,

@@ -2,7 +2,7 @@ import { internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import type { CalendarSyncSourceKind } from "../../lib/calendarSync";
-import { getConnection } from "./getConnection";
+import { getOutput } from "./getConnection";
 
 export async function scheduleSourceSync(
   ctx: MutationCtx,
@@ -10,15 +10,18 @@ export async function scheduleSourceSync(
   sourceKind: CalendarSyncSourceKind,
   sourceId: string,
 ): Promise<void> {
-  const connection = await getConnection(ctx, ownerId);
-  if (connection === null) {
+  const output = await getOutput(ctx, ownerId);
+  if (output === null) {
     return;
   }
+  const connection = output.connection;
   await markAppChanged(ctx, ownerId, sourceKind, sourceId);
-  if (connection.status === "needsReauth" || connection.disconnecting === true) {
+  if (output.changing || connection.status === "needsReauth" || connection.disconnecting === true) {
     return;
   }
   await ctx.scheduler.runAfter(0, internal.actions.calendarSync.pushSource.pushSource, {
+    connectionId: connection._id,
+    generation: output.generation,
     attempt: 0,
     ownerId,
     sourceId,

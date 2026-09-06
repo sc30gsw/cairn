@@ -11,6 +11,8 @@ import { recordPush as recordPushOutcome } from "../../services/calendarSync/rec
 
 export const recordPush = internalMutation({
   args: {
+    connectionId: v.optional(v.id("calendarConnections")),
+    generation: v.optional(v.number()),
     calendarId: v.string(),
     expected: pushExpectationValidator,
     outcome: pushOutcomeValidator,

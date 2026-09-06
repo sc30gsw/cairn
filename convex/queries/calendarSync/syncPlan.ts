@@ -5,7 +5,12 @@ import { syncPlanValidator } from "../../lib/validators";
 import { syncPlan as buildSyncPlan } from "../../services/calendarSync/syncPlan";
 
 export const syncPlan = internalQuery({
-  args: { ownerId: v.string(), todayJst: v.string() },
+  args: {
+    includeSources: v.optional(v.boolean()),
+    connectionId: v.optional(v.id("calendarConnections")),
+    ownerId: v.string(),
+    todayJst: v.string(),
+  },
   handler: async (ctx, args) => buildSyncPlan(ctx, args),
   returns: syncPlanValidator,
 });

@@ -10,21 +10,30 @@ const STAGGER_MS = 2_000;
 export const syncAll = internalAction({
   args: {},
   handler: async (ctx) => {
-    const ownerIds = await ctx.runQuery(
-      internal.queries.calendarSync.listConnectedOwners.listConnectedOwners,
-      {},
-    );
-    await Promise.all(
-      ownerIds.map((ownerId, index) =>
-        ctx.scheduler.runAfter(
-          index * STAGGER_MS,
-          internal.actions.calendarSync.syncOwner.syncOwner,
-          {
-            ownerId,
-          },
+    let cursor: string | null = null;
+    while (true) {
+      const page: {
+        page: {
+          ownerId: string;
+          connectionId: import("../../_generated/dataModel").Id<"calendarConnections">;
+        }[];
+        isDone: boolean;
+        continueCursor: string;
+      } = await ctx.runQuery(internal.queries.calendarSync.connectedPage.connectedPage, {
+        paginationOpts: { cursor, numItems: 100 },
+      });
+      await Promise.all(
+        page.page.map((connection, index) =>
+          ctx.scheduler.runAfter(
+            index * STAGGER_MS,
+            internal.actions.calendarSync.syncOwner.syncOwner,
+            connection,
+          ),
         ),
-      ),
-    );
+      );
+      if (page.isDone) break;
+      cursor = page.continueCursor;
+    }
     return null;
   },
   returns: v.null(),

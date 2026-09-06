@@ -85,7 +85,7 @@ test("読み取り専用の予定は削除できずドラッグの案内も出�
   fireEvent.click(removeButton);
   expect(onRemove).not.toHaveBeenCalled();
   expect(queryByText(/ドラッグで動かす/)).toBeNull();
-  expect(getByText(/読み取り専用のカレンダーです/)).toBeDefined();
+  expect(getByText(/この外部予定は閲覧専用です/)).toBeDefined();
 });
 
 test("外部予定の削除に失敗したら詳細画面を閉じない", async () => {

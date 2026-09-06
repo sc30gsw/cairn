@@ -71,6 +71,7 @@ export async function flushExternalChanges(
   ctx: ActionCtx,
   client: GoogleCalendarClient,
   ownerId: string,
+  connectionId?: Id<"calendarConnections">,
 ): Promise<Result<null, GoogleCalendarError>> {
   let cursor: string | null = null;
   let firstError: GoogleCalendarError | null = null;
@@ -79,7 +80,7 @@ export async function flushExternalChanges(
       typeof internal.queries.calendarSync.pendingExternalChanges.pendingExternalChanges
     > = await ctx.runQuery(
       internal.queries.calendarSync.pendingExternalChanges.pendingExternalChanges,
-      { ownerId, paginationOpts: { cursor, numItems: 100 } },
+      { ownerId, connectionId, paginationOpts: { cursor, numItems: 100 } },
     );
     for (const pendingId of pending.page) {
       const result = await pushExternalChange(ctx, client, { pendingId, attempt: 0 });

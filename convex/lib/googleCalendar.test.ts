@@ -7,6 +7,7 @@ import {
   GoogleCalendarError,
   isAuthFailure,
   isGone,
+  insertEvent,
   isRetryable,
   listCalendars,
 } from "./googleCalendar";
@@ -101,4 +102,34 @@ test("204の削除成功では本文を読み取らない", async () => {
 
   expect(Result.isOk(result)).toBe(true);
   expect(read).not.toHaveBeenCalled();
+});
+
+test("固定IDの再作成で409が返ると既存予定を回収して重複を防ぐ", async () => {
+  const request = vi
+    .fn<typeof fetch>()
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ error: { message: "duplicate" } }), { status: 409 }),
+    )
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ id: "cairn12345", updated: "2026-09-07T00:00:00Z" }), {
+        status: 200,
+      }),
+    );
+  vi.stubGlobal("fetch", request);
+  const result = await insertEvent(
+    { accessToken: "token" },
+    "work@example.com",
+    {
+      description: "",
+      start: { date: "2026-09-07" },
+      end: { date: "2026-09-08" },
+      summary: "期限",
+      transparency: "transparent",
+    },
+    "cairn12345",
+  );
+  expect(Result.isOk(result) && result.value.id).toBe("cairn12345");
+  expect(request).toHaveBeenCalledTimes(2);
+  expect(request.mock.calls[0]?.[1]?.body).toContain('"id":"cairn12345"');
+  expect(String(request.mock.calls[1]?.[0])).toContain("/events/cairn12345");
 });

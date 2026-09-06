@@ -1,4 +1,5 @@
 import { Result, TaggedError } from "better-result";
+import * as v from "valibot";
 
 import type { ActionCtx } from "../_generated/server";
 import { authComponent, createAuth } from "../auth";
@@ -6,8 +7,14 @@ import { GOOGLE_PROVIDER_ID } from "./calendarSync";
 
 export class GoogleAuthError extends TaggedError("GoogleAuth")<{
   cause?: unknown;
+  revoked?: boolean;
   message: string;
 }> {}
+
+const revokedGoogleGrant = v.object({
+  status: v.literal(400),
+  error: v.literal("invalid_grant"),
+});
 
 export type GoogleAccount = {
   accountId: string;
@@ -31,10 +38,19 @@ export async function getGoogleAccessToken(
   ctx: ActionCtx,
   args: { accountId: string; userId: string },
 ): Promise<Result<string, GoogleAuthError>> {
-  const auth = createAuth(ctx);
+  let revoked = false;
+  const auth = createAuth(ctx, {
+    onGoogleRefreshError: (cause) => {
+      revoked = v.is(revokedGoogleGrant, cause);
+    },
+  });
   const fetched = await Result.tryPromise({
     catch: (cause) =>
-      new GoogleAuthError({ cause, message: "Google のアクセストークンを取得できませんでした" }),
+      new GoogleAuthError({
+        cause,
+        revoked,
+        message: "Google のアクセストークンを取得できませんでした",
+      }),
     try: () =>
       auth.api.getAccessToken({
         body: { accountId: args.accountId, providerId: GOOGLE_PROVIDER_ID, userId: args.userId },

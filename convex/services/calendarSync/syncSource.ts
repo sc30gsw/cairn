@@ -10,6 +10,8 @@ export function linkSummary(link: Doc<"calendarSyncLinks"> | null): SyncSource["
     return null;
   }
   return {
+    calendarId: link.calendarId,
+    connectionId: link.connectionId,
     appChangedAt: link.appChangedAt ?? null,
     googleEventId: link.googleEventId,
     payloadKey: link.payloadKey ?? null,

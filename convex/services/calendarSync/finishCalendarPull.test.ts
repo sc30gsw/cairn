@@ -24,6 +24,16 @@ async function cursorOf(t: ReturnType<typeof convexTest>) {
 
 test("全件取り込みは fullSyncedOnJst を当日に置き、差分取り込みは元の日付を引き継ぐ", async () => {
   const t = convexTest(schema, modules);
+  await t.run((ctx) =>
+    ctx.db.insert("calendarConnections", {
+      ownerId: "owner",
+      googleAccountId: "google",
+      primaryCalendarId: "calendar",
+      calendars: [{ id: "calendar", primary: true, summary: "予定", accessRole: "owner" }],
+      status: "ok",
+      visibleCalendarIds: ["calendar"],
+    }),
+  );
 
   await t.run(async (ctx) =>
     finishCalendarPull(ctx, { ...base, keepEventIds: [], syncToken: "t1", todayJst: "2026-08-10" }),
@@ -53,6 +63,16 @@ test("全件取り込みは fullSyncedOnJst を当日に置き、差分取り込
 
 test("差分トークンが返らなければ保存済みのカーソルを捨て、次回は全件取り込みになる", async () => {
   const t = convexTest(schema, modules);
+  await t.run((ctx) =>
+    ctx.db.insert("calendarConnections", {
+      ownerId: "owner",
+      googleAccountId: "google",
+      primaryCalendarId: "calendar",
+      calendars: [{ id: "calendar", primary: true, summary: "予定", accessRole: "owner" }],
+      status: "ok",
+      visibleCalendarIds: ["calendar"],
+    }),
+  );
 
   await t.run(async (ctx) =>
     finishCalendarPull(ctx, { ...base, keepEventIds: [], syncToken: "t1", todayJst: "2026-08-10" }),
@@ -71,6 +91,16 @@ test("差分トークンが返らなければ保存済みのカーソルを捨�
 
 test("全件取り込みで Google に無くなった写しと、期間の外へ出た写しを消す", async () => {
   const t = convexTest(schema, modules);
+  await t.run((ctx) =>
+    ctx.db.insert("calendarConnections", {
+      ownerId: "owner",
+      googleAccountId: "google",
+      primaryCalendarId: "calendar",
+      calendars: [{ id: "calendar", primary: true, summary: "予定", accessRole: "owner" }],
+      status: "ok",
+      visibleCalendarIds: ["calendar"],
+    }),
+  );
   const external = {
     allDay: false,
     calendarId: "primary",

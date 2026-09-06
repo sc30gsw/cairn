@@ -17,6 +17,7 @@ export const moveExternal = ownerMutation({
     const moved = await moveExternalEvent(ctx, ctx.ownerId, args);
     await queueExternalChange(ctx, {
       calendarId: moved.calendarId,
+      connectionId: moved.connectionId,
       change: {
         title: moved.title,
         colorId: moved.colorId,

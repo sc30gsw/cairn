@@ -1,13 +1,12 @@
 import type { Doc } from "../../_generated/dataModel";
 import type { CalendarConnectionDto } from "../../lib/validators";
 
-export function toConnectionDto(
-  connection: Doc<"calendarConnections"> | null,
-): CalendarConnectionDto {
-  if (connection === null) {
-    return null;
-  }
+export function toConnectionDto(connection: Doc<"calendarConnections">): CalendarConnectionDto {
   return {
+    connectionId: connection._id,
+    googleAccountId: connection.googleAccountId,
+    externalReadOnly: connection.externalReadOnly === true,
+    canWrite: connection.canWrite !== false,
     calendars: connection.calendars,
     googleEmail: connection.googleEmail ?? null,
     lastError: connection.lastError ?? null,
