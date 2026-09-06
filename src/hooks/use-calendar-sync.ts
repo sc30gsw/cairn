@@ -49,8 +49,20 @@ export function useSetVisibleCalendars() {
   });
 }
 
-const SYNC_ON_OPEN_COOLDOWN_MS = 5 * 60_000;
-let lastSyncOnOpenAt = 0;
+function createCooldown(ms: number) {
+  let lastAcquiredAt = 0;
+  return {
+    tryAcquire(now: number): boolean {
+      if (now - lastAcquiredAt < ms) {
+        return false;
+      }
+      lastAcquiredAt = now;
+      return true;
+    },
+  };
+}
+
+const syncOnOpenCooldownAcrossTabsOfThisPage = createCooldown(5 * 60_000);
 
 export function useSyncCalendarOnOpen() {
   const { data: status } = useCalendarSyncStatus();
@@ -63,11 +75,9 @@ export function useSyncCalendarOnOpen() {
       return;
     }
     started.current = true;
-    const now = Date.now();
-    if (now - lastSyncOnOpenAt < SYNC_ON_OPEN_COOLDOWN_MS) {
+    if (!syncOnOpenCooldownAcrossTabsOfThisPage.tryAcquire(Date.now())) {
       return;
     }
-    lastSyncOnOpenAt = now;
     void syncNow({}).catch(() => undefined);
   }, [connected, syncNow]);
 }

@@ -72,13 +72,17 @@ export async function pushOne(
       payloadKey,
     },
   });
-  if (recorded === "conflict") {
-    if (source.link === null || source.link.googleEventId !== upserted.value.id) {
+  if (recorded !== "recorded") {
+    if (createdNewGoogleEvent(source, upserted.value.id)) {
       await deleteEvent(client, calendarId, upserted.value.id);
     }
     return Result.ok("conflict");
   }
   return Result.ok("upserted");
+}
+
+function createdNewGoogleEvent(source: SyncSource, googleEventId: string): boolean {
+  return source.link === null || source.link.googleEventId !== googleEventId;
 }
 
 async function upsert(

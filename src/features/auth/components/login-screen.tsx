@@ -48,7 +48,6 @@ export function LoginScreen() {
             </Text>
           ) : null}
           <Group gap="md" justify="center">
-            {}
             <Anchor c="dimmed" href="/privacy" size="xs">
               プライバシーポリシー
             </Anchor>

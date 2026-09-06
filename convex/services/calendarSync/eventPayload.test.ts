@@ -5,6 +5,7 @@ import {
   blockEventPayload,
   externalChangePayload,
   goalEventPayload,
+  patchPayload,
   payloadKey,
 } from "./eventPayload";
 
@@ -95,7 +96,10 @@ test("外部予定の移動は、終日なら date（終端は翌日）、時刻
       kind: "move",
       startAt: "2026-08-18 00:00:00",
     }),
-  ).toEqual({ end: { date: "2026-08-20" }, start: { date: "2026-08-18" } });
+  ).toEqual({
+    end: { date: "2026-08-20", dateTime: null },
+    start: { date: "2026-08-18", dateTime: null },
+  });
   expect(
     externalChangePayload({
       allDay: false,
@@ -104,7 +108,41 @@ test("外部予定の移動は、終日なら date（終端は翌日）、時刻
       startAt: "2026-08-18 10:00:00",
     }),
   ).toEqual({
-    end: { dateTime: "2026-08-18T11:00:00+09:00" },
-    start: { dateTime: "2026-08-18T10:00:00+09:00" },
+    end: { date: null, dateTime: "2026-08-18T11:00:00+09:00" },
+    start: { date: null, dateTime: "2026-08-18T10:00:00+09:00" },
   });
+});
+
+test("payloadKey はキーの並び順に依らず同じ内容なら同じ値になる", () => {
+  const payload = blockEventPayload(block, { content: "", dayUrl: null });
+  const reordered = {
+    transparency: payload.transparency,
+    summary: payload.summary,
+    start: payload.start,
+    end: payload.end,
+    description: payload.description,
+    colorId: payload.colorId,
+  };
+  expect(payloadKey(reordered)).toBe(payloadKey(payload));
+  expect(payloadKey({ ...payload, colorId: undefined })).toBe(
+    payloadKey({ ...payload, colorId: undefined }),
+  );
+});
+
+test("patch は date / dateTime の使わない方を null で送り、終日⇄時刻の切替を Google に伝える", () => {
+  const timed = patchPayload(blockEventPayload(block, { content: "", dayUrl: null }));
+  expect(timed.start).toEqual({ date: null, dateTime: "2026-08-17T09:00:00+09:00" });
+  expect(timed.end).toEqual({ date: null, dateTime: "2026-08-17T10:30:00+09:00" });
+  expect(JSON.stringify(timed)).toContain(
+    '"start":{"date":null,"dateTime":"2026-08-17T09:00:00+09:00"}',
+  );
+
+  const allDay = externalChangePayload({
+    allDay: true,
+    endAt: "2026-08-18 00:00:00",
+    kind: "move",
+    startAt: "2026-08-17 00:00:00",
+  });
+  expect(allDay.start).toEqual({ date: "2026-08-17", dateTime: null });
+  expect(allDay.end).toEqual({ date: "2026-08-19", dateTime: null });
 });

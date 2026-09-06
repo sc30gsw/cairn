@@ -15,8 +15,6 @@ class WebPushError extends TaggedError("WebPush")<{
   reason: WebPushErrorReason;
 }> {}
 
-export const WEB_PUSH_SUBSCRIPTION_CHANGED = "PUSH_SUBSCRIPTION_CHANGED";
-
 export function isWebPushSupported(): boolean {
   return (
     typeof window !== "undefined" &&

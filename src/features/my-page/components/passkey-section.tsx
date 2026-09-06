@@ -2,7 +2,7 @@ import type { Passkey } from "@better-auth/passkey/client";
 import { Field, Form, useForm } from "@formisch/react";
 import { Button, Card, Group, Stack, Text, TextInput, Title } from "@mantine/core";
 import { Result } from "better-result";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { AuthActionFeedback } from "~/components/auth-action-feedback";
 import { useAuthActionTransition } from "~/hooks/use-auth-action-transition";
@@ -12,7 +12,9 @@ import { useResultTransition } from "~/lib/use-result-transition";
 import { PASSKEY_DEFAULT_DEVICE_NAME, PasskeyAddSchema } from "~/lib/validation/passkey-schema";
 
 export function PasskeySection() {
-  const list = useResultTransition<Passkey[], AuthActionError>();
+  const list = useResultTransition<Passkey[], AuthActionError>({
+    initialAction: () => listPasskeys(),
+  });
   const addAction = useAuthActionTransition();
   const deleteAction = useAuthActionTransition();
   const [deletingId, setDeletingId] = useState<null | string>(null);
@@ -25,11 +27,6 @@ export function PasskeySection() {
   const isListLoading = list.isPending && list.result === null;
   const listErrorMessage =
     list.result !== null && Result.isError(list.result) ? list.result.error.message : null;
-
-  useEffect(() => {
-    void list.run(() => listPasskeys());
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only
-  }, []);
 
   async function refreshPasskeys() {
     await list.run(() => listPasskeys());

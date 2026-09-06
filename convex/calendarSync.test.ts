@@ -171,6 +171,8 @@ class FakeGoogle {
       const next: FakeEvent = {
         ...existing,
         ...body,
+        end: mergeTime(existing.end, body.end),
+        start: mergeTime(existing.start, body.start),
         updated: this.stamp(),
         version: this.nextVersion(),
       };
@@ -188,6 +190,27 @@ class FakeGoogle {
     }
     return json({ error: { message: "unsupported" } }, 405);
   };
+}
+
+function mergeTime(
+  current: FakeEvent["start"],
+  patch: Record<string, string | null | undefined> | undefined,
+): FakeEvent["start"] {
+  if (patch === undefined) {
+    return current;
+  }
+  const merged: Record<string, string> = { ...current };
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === null) {
+      delete merged[key];
+    } else if (value !== undefined) {
+      merged[key] = value;
+    }
+  }
+  if ("date" in merged && "dateTime" in merged) {
+    throw new Error("Google rejects an event time with both date and dateTime");
+  }
+  return merged;
 }
 
 function json(body: unknown, status = 200): Response {

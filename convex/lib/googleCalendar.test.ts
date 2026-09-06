@@ -1,6 +1,12 @@
 import { expect, test } from "vite-plus/test";
 
-import { GoogleCalendarError, isAuthFailure, isGone, isRetryable } from "./googleCalendar";
+import {
+  defaultVisibleCalendarIds,
+  GoogleCalendarError,
+  isAuthFailure,
+  isGone,
+  isRetryable,
+} from "./googleCalendar";
 
 function error(status: number | null, reason: string | null = null) {
   return new GoogleCalendarError({ message: "x", operation: "events.list", reason, status });
@@ -23,4 +29,15 @@ test("404 / 410 は「もう無い」", () => {
   expect(isGone(error(404))).toBe(true);
   expect(isGone(error(410))).toBe(true);
   expect(isGone(error(403))).toBe(false);
+});
+
+test("表示カレンダーの既定は Google 側で表示中のものだけで、空き情報だけ見える共有は除く", () => {
+  expect(
+    defaultVisibleCalendarIds([
+      { accessRole: "owner", id: "mine" },
+      { accessRole: "reader", id: "team", selected: true },
+      { accessRole: "reader", id: "hidden", selected: false },
+      { accessRole: "freeBusyReader", id: "busy-only", selected: true },
+    ]),
+  ).toEqual(["mine", "team"]);
 });

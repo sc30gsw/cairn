@@ -90,7 +90,12 @@ export const NAV: NavEntry[] = [
   },
 ];
 
-const MOBILE_PRIMARY = ["/", "/board", "/history", "/goals"] as const satisfies readonly NavRoute[];
+const MOBILE_PRIMARY = ["/", "/board", "/history", "/goals"] as const satisfies readonly [
+  NavRoute,
+  NavRoute,
+  NavRoute,
+  NavRoute,
+];
 
 export function isMobilePrimary(to: NavRoute): boolean {
   return MOBILE_PRIMARY.some((route) => route === to);

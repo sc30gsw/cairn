@@ -16,7 +16,7 @@ export async function recordPush(
   },
 ): Promise<RecordPushResult> {
   if ((await getConnection(ctx, args.ownerId)) === null) {
-    return "conflict";
+    return "disconnected";
   }
   const link = await findLink(ctx, args.ownerId, args.sourceKind, args.sourceId);
   if (!matchesExpectation(linkSummary(link), args.expected)) {
