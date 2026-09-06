@@ -15,6 +15,8 @@ const EXTERNAL_EVENT_HINT =
   "Google カレンダーの予定です。ドラッグで動かすと Google 側も動きます。題名の変更や新規作成は Google カレンダーで行ってください。";
 const EXTERNAL_EVENT_HINT_COMPACT =
   "Google カレンダーの予定です。時刻・題名の変更や新規作成は Google カレンダーで行ってください。";
+const EXTERNAL_EVENT_READ_ONLY_HINT =
+  "読み取り専用のカレンダーです。この予定は変更・削除できません。";
 
 type BoardScheduleExternalModalProps = {
   canDrag: boolean;
@@ -43,7 +45,7 @@ export function BoardScheduleExternalModal({
   onRemove,
 }: BoardScheduleExternalModalProps) {
   function requestRemove() {
-    if (external === null) {
+    if (external === null || !external.canEdit) {
       return;
     }
     const externalId = external._id;
@@ -78,10 +80,20 @@ export function BoardScheduleExternalModal({
             </Group>
           </Stack>
           <Text c="dimmed" size="xs">
-            {canDrag ? EXTERNAL_EVENT_HINT : EXTERNAL_EVENT_HINT_COMPACT}
+            {external.canEdit
+              ? canDrag
+                ? EXTERNAL_EVENT_HINT
+                : EXTERNAL_EVENT_HINT_COMPACT
+              : EXTERNAL_EVENT_READ_ONLY_HINT}
           </Text>
           <Group justify="space-between" wrap="nowrap">
-            <Button color="red" onClick={requestRemove} type="button" variant="light">
+            <Button
+              color="red"
+              disabled={!external.canEdit}
+              onClick={requestRemove}
+              type="button"
+              variant="light"
+            >
               {EXTERNAL_EVENT_REMOVE_LABEL}
             </Button>
             <Button onClick={onClose} type="button" variant="default">

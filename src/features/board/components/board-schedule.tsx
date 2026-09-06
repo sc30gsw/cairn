@@ -17,6 +17,8 @@ import type { BoardViewState } from "~/features/board/hooks/use-board-view";
 import {
   BOARD_ALL_DAY_VISIBLE_LIMIT,
   boardExternalEventId,
+  boardScheduleEventSourceId,
+  movedScheduleRange,
   isBoardAllDayMoreEvent,
   isBoardExternalEvent,
 } from "~/features/board/lib/board-schedule-events";
@@ -103,6 +105,7 @@ export function BoardSchedule({
     externals,
     rows,
     scheduleRootRef,
+    scheduleView,
     todayJst,
   });
 
@@ -183,8 +186,8 @@ export function BoardSchedule({
             <Schedule
               canDragEvent={(event) =>
                 !pending &&
-                (ui.editableBlockIds.has(String(event.id)) ||
-                  ui.externalEventIds.has(String(event.id)))
+                (ui.editableBlockIds.has(boardScheduleEventSourceId(event.id)) ||
+                  ui.editableExternalEventIds.has(boardScheduleEventSourceId(event.id)))
               }
               date={anchorDateJst}
               events={ui.scheduleEvents}
@@ -198,23 +201,30 @@ export function BoardSchedule({
               onEventDrop={
                 pending
                   ? undefined
-                  : ({ eventId, newEnd, newStart }) => {
+                  : ({ event, eventId, newStart }) => {
                       ui.collapseAllDayExpand();
-                      if (ui.externalEventIds.has(String(eventId))) {
+                      if (ui.editableExternalEventIds.has(boardScheduleEventSourceId(eventId))) {
+                        const external = externals.find(
+                          (entry) => entry._id === boardExternalEventId(eventId),
+                        );
+                        if (external === undefined) {
+                          return;
+                        }
                         void onMoveExternal({
-                          endAt: newEnd,
+                          ...movedScheduleRange(external, event.start, newStart),
                           externalId: boardExternalEventId(eventId),
-                          startAt: newStart,
                         });
                         return;
                       }
-                      if (!ui.editableBlockIds.has(String(eventId))) {
+                      const block = blocks.find(
+                        (entry) => entry._id === boardScheduleEventSourceId(eventId),
+                      );
+                      if (block === undefined) {
                         return;
                       }
                       void onMoveBlock({
-                        blockId: eventId as BoardScheduleBlock["_id"],
-                        endAt: newEnd,
-                        startAt: newStart,
+                        ...movedScheduleRange(block, event.start, newStart),
+                        blockId: block._id,
                       });
                     }
               }

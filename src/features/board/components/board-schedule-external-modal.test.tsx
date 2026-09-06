@@ -11,6 +11,7 @@ const EXTERNAL: BoardExternalEvent = {
   allDay: false,
   calendarId: "owner@example.com",
   calendarName: "仕事",
+  canEdit: true,
   color: "#9fe1cb",
   endAt: "2026-08-18 11:00:00",
   startAt: "2026-08-18 10:00:00",
@@ -58,4 +59,22 @@ test("モバイルではドラッグの案内を出さない", () => {
   );
   expect(queryByText(/ドラッグで動かす/)).toBeNull();
   expect(getByText(/Google カレンダーで行ってください/)).toBeDefined();
+});
+
+test("読み取り専用の予定は削除できずドラッグの案内も出さない", () => {
+  const onRemove = vi.fn();
+  const { getByRole, getByText, queryByText } = renderWithMantine(
+    <BoardScheduleExternalModal
+      canDrag
+      external={{ ...EXTERNAL, canEdit: false }}
+      onClose={vi.fn()}
+      onRemove={onRemove}
+    />,
+  );
+  const removeButton = getByRole("button", { name: "Google カレンダーから削除" });
+  expect(removeButton.hasAttribute("disabled")).toBe(true);
+  fireEvent.click(removeButton);
+  expect(onRemove).not.toHaveBeenCalled();
+  expect(queryByText(/ドラッグで動かす/)).toBeNull();
+  expect(getByText(/読み取り専用のカレンダーです/)).toBeDefined();
 });
