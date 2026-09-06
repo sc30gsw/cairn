@@ -9,6 +9,7 @@ export const removeExternal = ownerMutation({
   handler: async (ctx, args) => {
     const removed = await removeExternalEvent(ctx, ctx.ownerId, args);
     await ctx.scheduler.runAfter(0, internal.actions.calendarSync.pushExternal.pushExternal, {
+      attempt: 0,
       calendarId: removed.calendarId,
       change: { kind: "delete" },
       googleEventId: removed.googleEventId,

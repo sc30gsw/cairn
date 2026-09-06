@@ -9,6 +9,7 @@ export const moveExternal = ownerMutation({
   handler: async (ctx, args) => {
     const moved = await moveExternalEvent(ctx, ctx.ownerId, args);
     await ctx.scheduler.runAfter(0, internal.actions.calendarSync.pushExternal.pushExternal, {
+      attempt: 0,
       calendarId: moved.calendarId,
       change: { allDay: moved.allDay, endAt: moved.endAt, kind: "move", startAt: moved.startAt },
       googleEventId: moved.googleEventId,

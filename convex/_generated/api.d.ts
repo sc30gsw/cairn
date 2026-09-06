@@ -90,6 +90,7 @@ import type * as mutations_calendarSync_markStatus from "../mutations/calendarSy
 import type * as mutations_calendarSync_moveExternal from "../mutations/calendarSync/moveExternal.js";
 import type * as mutations_calendarSync_recordPush from "../mutations/calendarSync/recordPush.js";
 import type * as mutations_calendarSync_removeExternal from "../mutations/calendarSync/removeExternal.js";
+import type * as mutations_calendarSync_resetCalendarCursor from "../mutations/calendarSync/resetCalendarCursor.js";
 import type * as mutations_calendarSync_setVisibleCalendars from "../mutations/calendarSync/setVisibleCalendars.js";
 import type * as mutations_calendarSync_upsertConnection from "../mutations/calendarSync/upsertConnection.js";
 import type * as mutations_catalog_ensure from "../mutations/catalog/ensure.js";
@@ -472,6 +473,7 @@ declare const fullApi: ApiFromModules<{
   "mutations/calendarSync/moveExternal": typeof mutations_calendarSync_moveExternal;
   "mutations/calendarSync/recordPush": typeof mutations_calendarSync_recordPush;
   "mutations/calendarSync/removeExternal": typeof mutations_calendarSync_removeExternal;
+  "mutations/calendarSync/resetCalendarCursor": typeof mutations_calendarSync_resetCalendarCursor;
   "mutations/calendarSync/setVisibleCalendars": typeof mutations_calendarSync_setVisibleCalendars;
   "mutations/calendarSync/upsertConnection": typeof mutations_calendarSync_upsertConnection;
   "mutations/catalog/ensure": typeof mutations_catalog_ensure;

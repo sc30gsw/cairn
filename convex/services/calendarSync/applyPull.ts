@@ -24,6 +24,11 @@ export async function applyPull(
       )
       .unique();
     if (link !== null) {
+      //? 対応表より先に写しになっていたら（送信と取り込みの並走）、写しを消してから戻す
+      const shadow = await findExternal(ctx, args.ownerId, event);
+      if (shadow !== null) {
+        await ctx.db.delete("externalCalendarEvents", shadow._id);
+      }
       await applyToSource(ctx, link, event);
       continue;
     }

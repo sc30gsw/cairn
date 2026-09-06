@@ -65,6 +65,7 @@ export async function syncPlan(
     calendarId: connection.primaryCalendarId,
     cursors: cursors.map((cursor) => ({
       calendarId: cursor.calendarId,
+      fullSyncedOnJst: cursor.fullSyncedOnJst,
       syncToken: cursor.syncToken,
     })),
     sources,

@@ -10,8 +10,24 @@ export class GoogleCalendarError extends TaggedError("GoogleCalendar")<{
   cause?: unknown;
   message: string;
   operation: string;
+  //? Google の error.errors[].reason（rateLimitExceeded など）。403 の意味を分けるのに使う
+  reason: string | null;
   status: number | null;
 }> {}
+
+//? 403 のうち「権限が無い」。それ以外の 403（レート制限・クォータ）は再試行の対象
+const AUTH_FAILURE_REASONS = [
+  "accessNotConfigured",
+  "authError",
+  "forbidden",
+  "insufficientPermissions",
+] as const satisfies readonly string[];
+
+const RATE_LIMIT_REASONS = [
+  "quotaExceeded",
+  "rateLimitExceeded",
+  "userRateLimitExceeded",
+] as const satisfies readonly string[];
 
 const GOOGLE_CALENDAR_BASE_URL = "https://www.googleapis.com/calendar/v3";
 
@@ -77,7 +93,23 @@ export type GoogleCalendarClient = {
 };
 
 export function isAuthFailure(error: GoogleCalendarError): boolean {
-  return error.status === 401 || error.status === 403;
+  if (error.status === 401) {
+    return true;
+  }
+  if (error.status !== 403) {
+    return false;
+  }
+  if (error.reason === null) {
+    return true;
+  }
+  return AUTH_FAILURE_REASONS.some((reason) => reason === error.reason);
+}
+
+export function isRateLimited(error: GoogleCalendarError): boolean {
+  return (
+    error.status === 429 ||
+    (error.status === 403 && RATE_LIMIT_REASONS.some((reason) => reason === error.reason))
+  );
 }
 
 export function isGone(error: GoogleCalendarError): boolean {
@@ -89,7 +121,7 @@ export function isSyncTokenExpired(error: GoogleCalendarError): boolean {
 }
 
 export function isRetryable(error: GoogleCalendarError): boolean {
-  return error.status === null || error.status === 429 || error.status >= 500;
+  return error.status === null || isRateLimited(error) || error.status >= 500;
 }
 
 type RequestArgs = {
@@ -100,14 +132,17 @@ type RequestArgs = {
   query?: Record<string, string | undefined>;
 };
 
-async function readErrorMessage(response: Response): Promise<string> {
+async function readError(response: Response): Promise<{ message: string; reason: string | null }> {
   const text = await response.text();
   const parsed = Result.try({
     catch: () => null,
     try: () => v.parse(errorBodySchema, JSON.parse(text)),
   });
-  const message = Result.isOk(parsed) ? parsed.value?.error?.message : undefined;
-  return message ?? `${String(response.status)} ${response.statusText}`;
+  const body = Result.isOk(parsed) ? parsed.value?.error : undefined;
+  return {
+    message: body?.message ?? `${String(response.status)} ${response.statusText}`,
+    reason: body?.errors?.find((entry) => entry.reason !== undefined)?.reason ?? null,
+  };
 }
 
 function parseBody<T>(
@@ -123,6 +158,7 @@ function parseBody<T>(
         cause,
         message: "Google カレンダーの応答が想定と違います",
         operation,
+        reason: null,
         status: null,
       }),
     );
@@ -147,6 +183,7 @@ async function request<T>(
         cause,
         message: "Google カレンダーに接続できませんでした",
         operation: args.operation,
+        reason: null,
         status: null,
       }),
     try: () =>
@@ -165,10 +202,12 @@ async function request<T>(
   }
   const response = sent.value;
   if (!response.ok) {
+    const { message, reason } = await readError(response);
     return Result.err(
       new GoogleCalendarError({
-        message: await readErrorMessage(response),
+        message,
         operation: args.operation,
+        reason,
         status: response.status,
       }),
     );

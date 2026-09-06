@@ -84,9 +84,10 @@ export function blockEventPayload(
   };
 }
 
-//? 「最後に送った内容」との比較に使う安定した文字列。キー順を固定する
+//? 「最後に送った内容」との比較に使う文字列。payload はこのファイルの関数が固定のキー順で組むので、
+//? そのまま stringify すれば決定的（replacer 配列はネストにも効いて start / end が落ちるので使わない）
 export function payloadKey(payload: GoogleEventPayload): string {
-  return JSON.stringify(payload, Object.keys(payload).toSorted());
+  return JSON.stringify(payload);
 }
 
 //? Google 側の予定を PATCH で置き換えるときは start / end を両方送る（片方だけだと不整合で 400）

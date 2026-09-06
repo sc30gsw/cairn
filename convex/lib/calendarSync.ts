@@ -17,6 +17,9 @@ export const CALENDAR_SYNC_WINDOW = { futureDays: 90, pastDays: 30 } as const sa
   number
 >;
 
+//? 差分同期の期間は初回全件の日で固定される。これだけ日が進んだら全件を取り直して期間を動かす
+export const CALENDAR_SYNC_FULL_RESYNC_DAYS = 7;
+
 export const CALENDAR_SYNC_STATUSES = [
   "ok",
   "needsReauth",

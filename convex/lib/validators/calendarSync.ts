@@ -114,7 +114,9 @@ export const syncPlanValidator = v.union(
   v.object({
     accessAccountId: v.string(),
     calendarId: v.string(),
-    cursors: v.array(v.object({ calendarId: v.string(), syncToken: v.string() })),
+    cursors: v.array(
+      v.object({ calendarId: v.string(), fullSyncedOnJst: v.string(), syncToken: v.string() }),
+    ),
     sources: v.array(syncSourceValidator),
     visibleCalendarIds: v.array(v.string()),
   }),
@@ -133,6 +135,13 @@ export const pushOutcomeValidator = v.union(
 );
 
 export type PushOutcome = Infer<typeof pushOutcomeValidator>;
+
+//? 送信を計画したときの対応表の姿。recordPush が今の姿と比べ、違えば書かない（楽観ロック）
+export const pushExpectationValidator = syncSourceValidator.fields.link;
+
+export type PushExpectation = Infer<typeof pushExpectationValidator>;
+
+export const recordPushResultValidator = v.union(v.literal("conflict"), v.literal("recorded"));
 
 //? 外部予定へのアプリ側の操作（移動 / 削除）を Google へ送る形
 export const externalChangeValidator = v.union(

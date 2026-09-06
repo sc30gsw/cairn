@@ -20,14 +20,21 @@ type PushOneArgs = {
 };
 
 //? 元1件を Google に合わせる: 載せない → 消す、未登録 → 作る、内容が変わった → 置き換える。
-//? 結果は同じトランザクションで対応表へ（recordPush）。Google 側で消えていた（404 / 410）予定は作り直す
+//? 結果は対応表へ（recordPush、楽観ロック）。別の送信が先に走っていたら（conflict）、自分が作った
+//? 予定は消して相手の結果に譲る。Google 側で消えていた（404 / 410）予定は作り直す
 export async function pushOne(
   ctx: ActionCtx,
   client: GoogleCalendarClient,
   args: PushOneArgs,
-): Promise<Result<"deleted" | "skipped" | "upserted", GoogleCalendarError>> {
+): Promise<Result<"conflict" | "deleted" | "skipped" | "upserted", GoogleCalendarError>> {
   const { calendarId, ownerId, source } = args;
-  const base = { calendarId, ownerId, sourceId: source.sourceId, sourceKind: source.sourceKind };
+  const base = {
+    calendarId,
+    expected: source.link,
+    ownerId,
+    sourceId: source.sourceId,
+    sourceKind: source.sourceKind,
+  };
   if (source.desired === null) {
     if (source.link === null) {
       return Result.ok("skipped");
@@ -36,11 +43,11 @@ export async function pushOne(
     if (Result.isError(deleted) && !isGone(deleted.error)) {
       return deleted;
     }
-    await ctx.runMutation(internal.mutations.calendarSync.recordPush.recordPush, {
+    const recorded = await ctx.runMutation(internal.mutations.calendarSync.recordPush.recordPush, {
       ...base,
       outcome: { kind: "deleted" },
     });
-    return Result.ok("deleted");
+    return Result.ok(recorded === "recorded" ? "deleted" : "conflict");
   }
   const payloadKey = source.payloadKey ?? "";
   if (
@@ -59,7 +66,7 @@ export async function pushOne(
   if (Result.isError(upserted)) {
     return upserted;
   }
-  await ctx.runMutation(internal.mutations.calendarSync.recordPush.recordPush, {
+  const recorded = await ctx.runMutation(internal.mutations.calendarSync.recordPush.recordPush, {
     ...base,
     outcome: {
       googleEventId: upserted.value.id,
@@ -68,6 +75,13 @@ export async function pushOne(
       payloadKey,
     },
   });
+  if (recorded === "conflict") {
+    //? 新しく作った予定が対応表に載らないなら孤児になるので消す（既存の予定を PATCH した場合は残す）
+    if (source.link === null || source.link.googleEventId !== upserted.value.id) {
+      await deleteEvent(client, calendarId, upserted.value.id);
+    }
+    return Result.ok("conflict");
+  }
   return Result.ok("upserted");
 }
 

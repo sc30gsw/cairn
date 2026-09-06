@@ -12,12 +12,39 @@ export type UpsertConnectionArgs = {
   ownerId: string;
 };
 
-//? 接続（再接続）。表示カレンダーの選択は既存があれば引き継ぎ、今の一覧に無いものは落とす
+//? 対応表・外部予定の写し・差分トークンをすべて消す（接続の行は残す）
+export async function clearSyncState(ctx: MutationCtx, ownerId: string): Promise<void> {
+  const [links, externals, cursors] = await Promise.all([
+    ctx.db
+      .query("calendarSyncLinks")
+      .withIndex("by_owner_and_calendar_and_event", (q) => q.eq("ownerId", ownerId))
+      .collect(),
+    ctx.db
+      .query("externalCalendarEvents")
+      .withIndex("by_owner_and_startAt", (q) => q.eq("ownerId", ownerId))
+      .collect(),
+    ctx.db
+      .query("calendarSyncCursors")
+      .withIndex("by_owner_and_calendar", (q) => q.eq("ownerId", ownerId))
+      .collect(),
+  ]);
+  await Promise.all([
+    ...links.map((link) => ctx.db.delete("calendarSyncLinks", link._id)),
+    ...externals.map((external) => ctx.db.delete("externalCalendarEvents", external._id)),
+    ...cursors.map((cursor) => ctx.db.delete("calendarSyncCursors", cursor._id)),
+  ]);
+}
+
+//? 接続（再接続）。表示カレンダーの選択は既存があれば引き継ぎ、今の一覧に無いものは落とす。
+//? 別の Google アカウントに替えたら、前のアカウントの対応表・写し・差分トークンは意味を失うので消す
 export async function upsertConnection(
   ctx: MutationCtx,
   args: UpsertConnectionArgs,
 ): Promise<null> {
   const existing = await getConnection(ctx, args.ownerId);
+  if (existing !== null && existing.googleAccountId !== args.googleAccountId) {
+    await clearSyncState(ctx, args.ownerId);
+  }
   const known = new Set(args.calendars.map((calendar) => calendar.id));
   const visibleCalendarIds = (
     existing === null ? args.defaultVisibleCalendarIds : existing.visibleCalendarIds
@@ -63,26 +90,8 @@ export async function markStatus(
 
 //? 解除の後始末: 接続・対応表・外部予定の写し・差分トークンをすべて消す（Q19）
 export async function clearConnection(ctx: MutationCtx, ownerId: string): Promise<null> {
-  const [connection, links, externals, cursors] = await Promise.all([
-    getConnection(ctx, ownerId),
-    ctx.db
-      .query("calendarSyncLinks")
-      .withIndex("by_owner_and_calendar_and_event", (q) => q.eq("ownerId", ownerId))
-      .collect(),
-    ctx.db
-      .query("externalCalendarEvents")
-      .withIndex("by_owner_and_startAt", (q) => q.eq("ownerId", ownerId))
-      .collect(),
-    ctx.db
-      .query("calendarSyncCursors")
-      .withIndex("by_owner_and_calendar", (q) => q.eq("ownerId", ownerId))
-      .collect(),
-  ]);
-  await Promise.all([
-    ...links.map((link) => ctx.db.delete("calendarSyncLinks", link._id)),
-    ...externals.map((external) => ctx.db.delete("externalCalendarEvents", external._id)),
-    ...cursors.map((cursor) => ctx.db.delete("calendarSyncCursors", cursor._id)),
-  ]);
+  const connection = await getConnection(ctx, ownerId);
+  await clearSyncState(ctx, ownerId);
   if (connection !== null) {
     await ctx.db.delete("calendarConnections", connection._id);
   }
@@ -104,30 +113,41 @@ export async function setVisibleCalendars(
   const nextSet = new Set(next);
   const removedCalendarIds = connection.visibleCalendarIds.filter((id) => !nextSet.has(id));
   await ctx.db.patch("calendarConnections", connection._id, { visibleCalendarIds: next });
-  if (removedCalendarIds.length > 0) {
-    const removed = new Set(removedCalendarIds);
-    const [externals, cursors] = await Promise.all([
-      ctx.db
-        .query("externalCalendarEvents")
-        .withIndex("by_owner_and_startAt", (q) => q.eq("ownerId", ownerId))
-        .collect(),
-      ctx.db
-        .query("calendarSyncCursors")
-        .withIndex("by_owner_and_calendar", (q) => q.eq("ownerId", ownerId))
-        .collect(),
-    ]);
-    const deletions: Promise<void>[] = [];
-    for (const external of externals) {
-      if (removed.has(external.calendarId)) {
-        deletions.push(ctx.db.delete("externalCalendarEvents", external._id));
-      }
-    }
-    for (const cursor of cursors) {
-      if (removed.has(cursor.calendarId)) {
-        deletions.push(ctx.db.delete("calendarSyncCursors", cursor._id));
-      }
-    }
-    await Promise.all(deletions);
-  }
+  await Promise.all(
+    removedCalendarIds.map((calendarId) =>
+      resetCalendarCursor(ctx, ownerId, calendarId, { dropExternals: true }),
+    ),
+  );
   return { removedCalendarIds };
+}
+
+//? 1カレンダーの差分トークンを捨てる（次の同期で期間の全件を取り直す）。写しも消すかは呼び手が決める
+export async function resetCalendarCursor(
+  ctx: MutationCtx,
+  ownerId: string,
+  calendarId: string,
+  options: { dropExternals: boolean },
+): Promise<null> {
+  const cursor = await ctx.db
+    .query("calendarSyncCursors")
+    .withIndex("by_owner_and_calendar", (q) =>
+      q.eq("ownerId", ownerId).eq("calendarId", calendarId),
+    )
+    .unique();
+  if (cursor !== null) {
+    await ctx.db.delete("calendarSyncCursors", cursor._id);
+  }
+  if (!options.dropExternals) {
+    return null;
+  }
+  const externals = await ctx.db
+    .query("externalCalendarEvents")
+    .withIndex("by_owner_and_calendar_and_event", (q) =>
+      q.eq("ownerId", ownerId).eq("calendarId", calendarId),
+    )
+    .collect();
+  await Promise.all(
+    externals.map((external) => ctx.db.delete("externalCalendarEvents", external._id)),
+  );
+  return null;
 }

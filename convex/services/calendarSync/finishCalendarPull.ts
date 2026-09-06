@@ -17,13 +17,12 @@ export async function finishCalendarPull(
   const keep = args.keepEventIds === null ? null : new Set(args.keepEventIds);
   const externals = await ctx.db
     .query("externalCalendarEvents")
-    .withIndex("by_owner_and_startAt", (q) => q.eq("ownerId", args.ownerId))
+    .withIndex("by_owner_and_calendar_and_event", (q) =>
+      q.eq("ownerId", args.ownerId).eq("calendarId", args.calendarId),
+    )
     .collect();
   const deletions: Promise<void>[] = [];
   for (const external of externals) {
-    if (external.calendarId !== args.calendarId) {
-      continue;
-    }
     const stale =
       !isWithinWindow(external.startAt, window) ||
       (keep !== null && !keep.has(external.googleEventId));
@@ -44,14 +43,21 @@ export async function finishCalendarPull(
     }
     return null;
   }
+  //? 全件を取った日を覚える（差分の期間はその日で固定されるため）。差分なら前回の日を引き継ぐ
+  const fullSyncedOnJst =
+    args.keepEventIds !== null || cursor === null ? args.todayJst : cursor.fullSyncedOnJst;
   if (cursor === null) {
     await ctx.db.insert("calendarSyncCursors", {
       calendarId: args.calendarId,
+      fullSyncedOnJst,
       ownerId: args.ownerId,
       syncToken: args.syncToken,
     });
     return null;
   }
-  await ctx.db.patch("calendarSyncCursors", cursor._id, { syncToken: args.syncToken });
+  await ctx.db.patch("calendarSyncCursors", cursor._id, {
+    fullSyncedOnJst,
+    syncToken: args.syncToken,
+  });
   return null;
 }

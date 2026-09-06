@@ -590,3 +590,74 @@ test("トークンが取れなくなったら再接続が必要になり、cron 
   await owner.action(api.actions.calendarSync.connect.connect, {});
   expect((await owner.query(api.queries.calendarSync.status.status, {}))?.status).toBe("ok");
 });
+
+test("送信の記録は、計画時と対応表が違えば書かない（並走の楽観ロック）", async () => {
+  const { owner, t } = await connectedOwner();
+  const examId = await owner.mutation(api.mutations.goals.create.create, { goal: EXAM_GOAL });
+  await flush(t);
+  const link = await t.run(async (ctx) =>
+    ctx.db
+      .query("calendarSyncLinks")
+      .withIndex("by_source", (q) => q.eq("sourceKind", "goal").eq("sourceId", examId))
+      .unique(),
+  );
+  if (link === null) {
+    throw new Error("expected a link");
+  }
+
+  //? 「対応表は無い」と思って作った送信は、既に対応表があるので conflict
+  const stale = await t.mutation(internal.mutations.calendarSync.recordPush.recordPush, {
+    calendarId: link.calendarId,
+    expected: null,
+    outcome: { googleEventId: "ghost", googleUpdated: "", kind: "upserted", payloadKey: "k" },
+    ownerId: OWNER.subject,
+    sourceId: examId,
+    sourceKind: "goal",
+  });
+  expect(stale).toBe("conflict");
+  const unchanged = await t.run(async (ctx) => ctx.db.get("calendarSyncLinks", link._id));
+  expect(unchanged?.googleEventId).toBe(link.googleEventId);
+
+  //? 今の姿と一致していれば書ける
+  const fresh = await t.mutation(internal.mutations.calendarSync.recordPush.recordPush, {
+    calendarId: link.calendarId,
+    expected: {
+      appChangedAt: link.appChangedAt ?? null,
+      googleEventId: link.googleEventId,
+      payloadKey: link.payloadKey ?? null,
+    },
+    outcome: {
+      googleEventId: link.googleEventId,
+      googleUpdated: "u2",
+      kind: "upserted",
+      payloadKey: "k2",
+    },
+    ownerId: OWNER.subject,
+    sourceId: examId,
+    sourceKind: "goal",
+  });
+  expect(fresh).toBe("recorded");
+});
+
+test("レート制限（403 rateLimitExceeded）は再接続にせず、再試行で送り切る", async () => {
+  const { owner, t } = await connectedOwner();
+  const original = google.fetch;
+  let failures = 0;
+  vi.stubGlobal("fetch", async (input: string | URL | Request, init?: RequestInit) => {
+    if ((init?.method ?? "GET") === "POST" && failures < 1) {
+      failures += 1;
+      return json(
+        { error: { errors: [{ reason: "rateLimitExceeded" }], message: "Rate Limit Exceeded" } },
+        403,
+      );
+    }
+    return original(input, init);
+  });
+
+  await owner.mutation(api.mutations.goals.create.create, { goal: EXAM_GOAL });
+  await flush(t);
+
+  expect(failures).toBe(1);
+  expect(google.active(PRIMARY).map((event) => event.summary)).toEqual(["本番: 本番で900点を取る"]);
+  expect((await owner.query(api.queries.calendarSync.status.status, {}))?.status).toBe("ok");
+});

@@ -2,14 +2,17 @@ import { Result } from "better-result";
 
 import { internal } from "../../_generated/api";
 import type { ActionCtx } from "../../_generated/server";
-import { CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE } from "../../lib/calendarSync";
+import {
+  CALENDAR_SYNC_FULL_RESYNC_DAYS,
+  CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE,
+} from "../../lib/calendarSync";
 import { getGoogleAccessToken } from "../../lib/googleAccessToken";
 import {
   type GoogleCalendarClient,
   GoogleCalendarError,
   isAuthFailure,
 } from "../../lib/googleCalendar";
-import { todayJst } from "../../lib/jst";
+import { daysUntil, todayJst } from "../../lib/jst";
 import type { PulledEvent } from "../../lib/validators";
 import { pullCalendar } from "./pullCalendar";
 import { pushOne } from "./pushOne";
@@ -65,11 +68,17 @@ export async function runOwnerSync(ctx: ActionCtx, ownerId: string): Promise<Own
   const window = syncWindow(today);
   const failures: GoogleCalendarError[] = [];
 
-  const cursorByCalendar = new Map(
-    plan.cursors.map((entry) => [entry.calendarId, entry.syncToken]),
-  );
-  for (const calendarId of plan.visibleCalendarIds) {
-    const cursor = cursorByCalendar.get(calendarId) ?? null;
+  const cursorByCalendar = new Map(plan.cursors.map((entry) => [entry.calendarId, entry]));
+  //? 書き込み先（メイン）は表示から外されていても取り込む。Google 側の移動・削除を戻すため（Q10）
+  const pullCalendarIds = new Set([...plan.visibleCalendarIds, plan.calendarId]);
+  for (const calendarId of pullCalendarIds) {
+    const stored = cursorByCalendar.get(calendarId);
+    //? 差分の期間は全件を取った日で固定される。日が進んだら全件を取り直して期間を動かす
+    const cursor =
+      stored === undefined ||
+      daysUntil(stored.fullSyncedOnJst, today) >= CALENDAR_SYNC_FULL_RESYNC_DAYS
+        ? null
+        : stored.syncToken;
     const pulled = await pullCalendar(client, { calendarId, syncToken: cursor, window });
     if (Result.isError(pulled)) {
       if (isAuthFailure(pulled.error)) {

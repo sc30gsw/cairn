@@ -15,12 +15,12 @@
 | 書き込み先 | 接続アカウントの**メインカレンダー**。接続時に一覧から `primary` の実 ID（メールアドレス）を `calendarConnections.primaryCalendarId` に写す（取り込みは実 ID で来るので `"primary"` では照合できない） |
 | 表示カレンダー | 接続時の既定は Google 側で表示中かつ空き情報だけではないもの。マイページの `Checkbox.Group` で選び直せる。外したカレンダーの写しと差分トークンは捨てる |
 | 写しの期間 | 過去 30 日〜未来 90 日（`CALENDAR_SYNC_WINDOW`）。範囲外は写しから消す。本番日・期限は期間に関わらず Google へ出す |
-| 変更検知 | Google → アプリは `events.list` の **syncToken 差分同期**（カレンダーごとに `calendarSyncCursors`）。実行は (a) 予定タブを開いたとき（`useSyncCalendarOnOpen`）、(b) マイページ「今すぐ同期」、(c) 1時間ごとの cron（`sync google calendars`, `20 * * * *`）。push 通知（`events.watch`）は webhook のドメイン所有確認が要るため v1 では使わず、後から足せる構造にする |
+| 変更検知 | Google → アプリは `events.list` の **syncToken 差分同期**（カレンダーごとに `calendarSyncCursors`。差分の期間は初回全件の日で固定されるため、`fullSyncedOnJst` から 7 日たったら全件を取り直す）。取り込むカレンダーは表示中のもの + メインカレンダー（表示から外していても Google 側の移動・削除を戻す）。実行は (a) 予定タブを開いたとき（`useSyncCalendarOnOpen`）、(b) マイページ「今すぐ同期」、(c) 1時間ごとの cron（`sync google calendars`, `20 * * * *`）。push 通知（`events.watch`）は webhook のドメイン所有確認が要るため v1 では使わず、後から足せる構造にする |
 | アプリ → Google の即時送信 | 目標・予定を変えるサービス（goals の create / update / remove / setAchieved / setExamResult、boardSchedule の create / update / move / remove / removeForRow）の末尾で `scheduleSourceSync` を呼び、同じトランザクションで `internal.actions.calendarSync.pushSource` を `runAfter(0)` に積む。接続が無ければ何もしない |
 | 対応表 | `calendarSyncLinks { sourceKind: goal / block, sourceId, calendarId, googleEventId, googleUpdated, payloadKey, appChangedAt }`。Google のクライアント指定 ID は base32hex 限定で Convex の `_id` を使えない |
-| 競合 | **後の更新が勝つ**。`appChangedAt`（アプリ側の未送信の変更時刻）と Google の `updated` を比べ、Google が新しければ戻し、そうでなければ次の送信でアプリの値が Google を上書きする。自分の送信の反射（`updated === googleUpdated`）は無視する |
-| 解除 | `disconnect` はアプリ発の Google イベントをできる範囲で消し、接続・対応表・写し・差分トークンを消す。Google アカウントの連携（ログイン手段）は外さない |
-| 失効 | トークンが取れない・401/403 は `status: "needsReauth"` にして同期を止め、マイページに「再接続が必要」を出す。cron は needsReauth の所有者を触らない。一時的な失敗は送信を `[30s, 2m, 10m]` で再試行し、諦めたら `status: "error"` + `lastError` |
+| 競合 | **後の更新が勝つ**。送信の記録（`recordPush`）は計画時の対応表の姿（`expected`）と今の姿を比べる楽観ロックで、別の送信が先に走っていたら書かず、自分が新しく作った予定は消す（cron と即時送信の並走で二重作成・古い値の上書きを起こさない）。対応表より先に取り込みが走って自分の予定が外部予定として写っていたら、記録時に写しを消す。`appChangedAt`（アプリ側の未送信の変更時刻）と Google の `updated` を比べ、Google が新しければ戻し、そうでなければ次の送信でアプリの値が Google を上書きする。自分の送信の反射（`updated === googleUpdated`）は無視する |
+| 解除 | `disconnect` はアプリ発の Google イベントをできる範囲で消し、接続・対応表・写し・差分トークンを消す。Google アカウントの連携（ログイン手段）は外さない。別の Google アカウントで再接続したときも、前のアカウントの対応表・写し・差分トークンは消す |
+| 失効 | トークンが取れない・401・権限系の 403（`insufficientPermissions` / `forbidden` / `accessNotConfigured`）は `status: "needsReauth"` にして同期を止め、マイページに「再接続が必要」を出す。cron は needsReauth の所有者を触らない。一時的な失敗（ネットワーク・5xx・429・レート制限の 403）は送信を `[30s, 2m, 10m]` で再試行し、諦めたら `status: "error"` + `lastError`。外部予定の操作の送信を諦めたときは、そのカレンダーの差分トークンを捨てて次の同期で写しを Google に合わせる |
 | 通知 | 同期エラーは通知欄に出さない（`CONTEXT.md`「通知」の3トリガーを崩さない） |
 | ランタイム | Google を叩く action は `convex/actions/calendarSync/` に `"use node"` 付きで置く（Convex は `actions/` 配下の全ファイルに `"use node"` を要求する。読み書きは `internal.*` の query / mutation 経由） |
 
@@ -30,7 +30,7 @@
 calendarConnections { ownerId, googleAccountId, googleEmail?, primaryCalendarId, calendars: [{ id, summary, primary, backgroundColor? }], visibleCalendarIds: string[], status: ok / needsReauth / error, lastError?, lastSyncedAt? }  // by_owner
 calendarSyncLinks { ownerId, sourceKind, sourceId, calendarId, googleEventId, googleUpdated?, payloadKey?, appChangedAt? }  // by_source, by_owner_and_calendar_and_event
 externalCalendarEvents { ownerId, calendarId, googleEventId, title, allDay, startAt, endAt, googleUpdated }  // by_owner_and_startAt, by_owner_and_calendar_and_event
-calendarSyncCursors { ownerId, calendarId, syncToken }  // by_owner_and_calendar
+calendarSyncCursors { ownerId, calendarId, syncToken, fullSyncedOnJst }  // by_owner_and_calendar
 ```
 
 `startAt` / `endAt` は予定と同じ schedule instant（`YYYY-MM-DD HH:mm:ss`、JST）。終日は `00:00:00`〜`23:59:59` の規約（予定タブの終日判定と同じ）。
@@ -61,6 +61,7 @@ calendarSyncCursors { ownerId, calendarId, syncToken }  // by_owner_and_calendar
 ## 5. テスト
 
 - `convex/calendarSync.test.ts`: fetch を偽 Google（カレンダーごとの予定と変更番号の差分トークン）に差し替え、`lib/googleAccessToken` を `vi.mock`。接続と一覧、スコープ不足の拒否、予定の作成・移動・削除の送信、終了した本番・達成したチェックポイントの削除、外部予定の写しと期間、表示カレンダーの変更、Google 側の移動・削除の反映（予定 / 本番日）、外部予定のアプリからの移動・削除、解除、権限切れ。
+- `convex/calendarSync.test.ts` はさらに、送信記録の楽観ロック（conflict）と、レート制限の 403 を再試行で送り切ることを確かめる。純関数は `services/calendarSync/eventPayload.test.ts`（時刻だけの変更で `payloadKey` が変わる）と `lib/googleCalendar.test.ts`（401 / 403 / 429 の分類）。
 - `convex/authPublicConfig.test.ts`: Google 設定、offline、アカウント連携。
 - UI: `calendar-sync-section.test.tsx`、`login-screen.test.tsx`、`board-schedule-events.test.ts`（外部予定の変換）。
 

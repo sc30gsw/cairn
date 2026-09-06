@@ -199,9 +199,11 @@ export default defineSchema({
     .index("by_owner_and_startAt", ["ownerId", "startAt"])
     .index("by_owner_and_calendar_and_event", ["ownerId", "calendarId", "googleEventId"]),
 
-  //? Google の差分同期トークン（カレンダーごと）。410 で捨てて全件取り直す
+  //? Google の差分同期トークン（カレンダーごと）。410 で捨てて全件取り直す。
+  //? 差分は初回全件の期間に固定されるので、全件を取った日を覚えて期間がずれたら取り直す
   calendarSyncCursors: defineTable({
     calendarId: v.string(),
+    fullSyncedOnJst: v.string(),
     ownerId: v.string(),
     syncToken: v.string(),
   }).index("by_owner_and_calendar", ["ownerId", "calendarId"]),
