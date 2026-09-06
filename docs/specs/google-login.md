@@ -1,6 +1,6 @@
 # Google ログイン
 
-Better Auth の Google OAuth を使い、メール・ユーザー名・パスキーと同じアカウントにログインします。Google カレンダーの権限は、マイページで連携するときに追加で求めます。
+Better Auth の Google OAuth を使い、メール・ユーザー名・パスキーと同じアカウントにログインします。Google カレンダーの権限は、ボードの同期設定で連携するときに追加で求めます。
 
 ## 設定
 
@@ -26,7 +26,7 @@ Better Auth の `baseURL` は Convex 環境変数 `SITE_URL` です。TanStack S
 
 秘密鍵や Google のシークレットに `VITE_` を付けないでください。Convex 側の環境変数として設定し、リポジトリには保存しません。Web アプリの `.env.local` には、同じデプロイメントの `VITE_CONVEX_URL` と `VITE_CONVEX_SITE_URL` を設定します。
 
-`GOOGLE_CLIENT_ID` と `GOOGLE_CLIENT_SECRET` が両方設定されると、ログイン画面に「Googleでログイン」が表示されます。未設定時は非表示です。Google 同意画面をテスト公開している場合は、ログインするアカウントをテストユーザーに登録してください。
+`GOOGLE_CLIENT_ID` と `GOOGLE_CLIENT_SECRET` が両方設定されると、ログイン画面に「Googleでログイン」が表示されます。表示判定中はボタンと同じ寸法のshimmer skeletonを表示し、未設定と判定されたら非表示にします。取得失敗時は再確認できます。待機中もメール・パスキーのログインを操作でき、動きを減らす設定ではshimmerを停止します。Google 同意画面をテスト公開している場合は、ログインするアカウントをテストユーザーに登録してください。
 
 ## 動作確認
 
@@ -40,7 +40,7 @@ Better Auth の `baseURL` は Convex 環境変数 `SITE_URL` です。TanStack S
 
 ボタンの表示可否は、ログイン前に `queries/auth/publicConfig` から取得します。共有の Convex クライアントに `expectAuth: true` を設定すると、この公開クエリも認証待ちになります。`src/router.tsx` ではこのオプションを指定せず、保護されたデータへのアクセスは Convex 側の認証チェックと `OwnerGate` で制御します。
 
-`accessType: offline` を設定していますが、Google は通常、初回同意時だけリフレッシュトークンを発行します。過去の許可が残っていてカレンダーの再接続でも復旧しない場合は、Google アカウントの「サードパーティ製のアプリとサービス」から Cairn のアクセスを取り消した後、マイページから連携をやり直してください。保存する OAuth トークンは Better Auth が暗号化します。
+`accessType: offline` を設定していますが、Google は通常、初回同意時だけリフレッシュトークンを発行します。過去の許可が残っていてカレンダーの再接続でも復旧しない場合は、Google アカウントの「サードパーティ製のアプリとサービス」から Cairn のアクセスを取り消した後、ボードの同期設定から連携をやり直してください。保存する OAuth トークンは Better Auth が暗号化します。
 
 ## 検証範囲
 

@@ -10,17 +10,17 @@
 | --- | --- |
 | 方向 | **双方向**。アプリ → Google は本番日・未達成チェックポイントの期限（終日・空き）と予定（時刻つき・予定あり）。Google → アプリは、アプリ発の予定の**移動・時間変更・削除**（予定）と**日付変更**（本番日・期限。削除は目標を消さず次の同期で予定を戻す）。外部予定は写しとして予定タブに出す |
 | Notion カレンダー | 公開 API が無いので直接は繋がない。接続した Google アカウントの予定を表示する製品なので、Google に書けば出る |
-| 認証 | Notion OAuth を外し、Google を唯一の外部ログインにする。email / username / password とパスキーは残す。アカウント連携を有効化（`trustedProviders: ["google"]`、`allowDifferentEmails: true`）。カレンダー権限はログイン時ではなく、マイページの「Google カレンダーと連携」で `linkSocial({ scopes })` により追加で求める（段階的認可） |
+| 認証 | Notion OAuth を外し、Google を唯一の外部ログインにする。email / username / password とパスキーは残す。アカウント連携を有効化（`trustedProviders: ["google"]`、`allowDifferentEmails: true`）。カレンダー権限はログイン時ではなく、ボードの同期設定の「Google カレンダーと連携」で `linkSocial({ scopes })` により追加で求める（段階的認可） |
 | スコープ | `calendar.events` + `calendar.calendarlist.readonly`（`convex/lib/calendarSync.ts` の `GOOGLE_CALENDAR_SCOPES`）。Google プロバイダは `accessType: "offline"`（リフレッシュトークン） |
 | 書き込み先 | 接続アカウントの**メインカレンダー**。接続時に一覧から `primary` の実 ID（メールアドレス）を `calendarConnections.primaryCalendarId` に写す（取り込みは実 ID で来るので `"primary"` では照合できない） |
-| 表示カレンダー | 接続時の既定は Google 側で表示中かつ空き情報だけではないもの。マイページの `Checkbox.Group` で選び直せる。外したカレンダーの写しと差分トークンは捨てる |
+| 表示カレンダー | 接続時の既定は Google 側で表示中かつ空き情報だけではないもの。ボードの同期設定の `Checkbox.Group` で選び直せる。外したカレンダーの写しと差分トークンは捨てる |
 | 写しの期間 | 過去 30 日〜未来 90 日（`CALENDAR_SYNC_WINDOW`）。範囲外は写しから消す。本番日・期限は期間に関わらず Google へ出す |
-| 変更検知 | Google → アプリは `events.list` の **syncToken 差分同期**（カレンダーごとに `calendarSyncCursors`。差分の期間は初回全件の日で固定されるため、`fullSyncedOnJst` から 7 日たったら全件を取り直す）。取り込むカレンダーは表示中のもの + メインカレンダー（表示から外していても Google 側の移動・削除を戻す）。実行は (a) 予定タブを開いたとき（`useSyncCalendarOnOpen`）、(b) マイページ「今すぐ同期」、(c) 1時間ごとの cron（`sync google calendars`, `20 * * * *`）。push 通知（`events.watch`）は webhook のドメイン所有確認が要るため v1 では使わず、後から足せる構造にする |
+| 変更検知 | Google → アプリは `events.list` の **syncToken 差分同期**（カレンダーごとに `calendarSyncCursors`。差分の期間は初回全件の日で固定されるため、`fullSyncedOnJst` から 7 日たったら全件を取り直す）。取り込むカレンダーは表示中のもの + メインカレンダー（表示から外していても Google 側の移動・削除を戻す）。実行は (a) 予定タブを開いたとき（`useSyncCalendarOnOpen`）、(b) ボードの同期設定「今すぐ同期」、(c) 1時間ごとの cron（`sync google calendars`, `20 * * * *`）。push 通知（`events.watch`）は webhook のドメイン所有確認が要るため v1 では使わず、後から足せる構造にする |
 | アプリ → Google の即時送信 | 目標・予定を変えるサービス（goals の create / update / remove / setAchieved / setExamResult、boardSchedule の create / update / move / remove / removeForRow）の末尾で `scheduleSourceSync` を呼び、同じトランザクションで `internal.actions.calendarSync.pushSource` を `runAfter(0)` に積む。接続が無ければ何もしない |
 | 対応表 | `calendarSyncLinks { sourceKind: goal / block, sourceId, calendarId, googleEventId, googleUpdated, payloadKey, appChangedAt }`。Google のクライアント指定 ID は base32hex 限定で Convex の `_id` を使えない |
 | 競合 | **後の更新が勝つ**。送信の記録（`recordPush`）は計画時の対応表の姿（`expected`）と今の姿を比べる楽観ロックで、別の送信が先に走っていたら書かず、自分が新しく作った予定は消す（cron と即時送信の並走で二重作成・古い値の上書きを起こさない）。対応表より先に取り込みが走って自分の予定が外部予定として写っていたら、記録時に写しを消す。`appChangedAt`（アプリ側の未送信の変更時刻）と Google の `updated` を比べ、Google が新しければ戻し、そうでなければ次の送信でアプリの値が Google を上書きする。自分の送信の反射（`updated === googleUpdated`）は無視する |
 | 解除 | `disconnect` はアプリ発の Google イベントを消し（消せなかった予定があれば解除せずに知らせる。トークンが取れない＝権限が取り消されているときはそのまま解除）、接続・対応表・写し・差分トークンを消す。Google アカウントの連携（ログイン手段）は外さない。別の Google アカウントで再接続したときも、前のアカウントの対応表・写し・差分トークンは消す |
-| 失効 | トークンが取れない・401・権限系の 403（`insufficientPermissions` / `forbidden` / `accessNotConfigured`）は `status: "needsReauth"` にして同期を止め、マイページに「再接続が必要」を出す。cron は needsReauth の所有者を触らない。一時的な失敗（ネットワーク・5xx・429・レート制限の 403）は送信を `[30s, 2m, 10m]` で再試行し、諦めたら `status: "error"` + `lastError`。外部予定の操作の送信を諦めたときは、そのカレンダーの差分トークンを捨てて次の同期で写しを Google に合わせる |
+| 失効 | トークンが取れない・401・権限系の 403（`insufficientPermissions` / `forbidden` / `accessNotConfigured`）は `status: "needsReauth"` にして同期を止め、ボードの同期設定に「再接続が必要」を出す。cron は needsReauth の所有者を触らない。一時的な失敗（ネットワーク・5xx・429・レート制限の 403）は送信を `[30s, 2m, 10m]` で再試行し、諦めたら `status: "error"` + `lastError`。外部予定の操作の送信を諦めたときは、そのカレンダーの差分トークンを捨てて次の同期で写しを Google に合わせる |
 | 通知 | 同期エラーは通知欄に出さない（`CONTEXT.md`「通知」の3トリガーを崩さない） |
 | Google に出す予定の形（Q17） | 予定: 題名 = 予定の題名、説明 = 「項目名 ／ ひとこと」+ アプリの日ページへのリンク（`SITE_URL` があるとき）、色はアプリの色を Google の色に近似、予定あり。本番日: 「本番: 〈内容〉」終日・空き、説明に目標スコア。期限: 「期限: 〈内容〉」終日・空き、説明に親目標 |
 | Google ログインの `prompt` | `select_account`（アカウントを毎回選べる。`consent` にしないのはログインのたびに同意画面を出さないため。リフレッシュトークンはカレンダー権限を付ける同意で得る） |
@@ -57,7 +57,7 @@ calendarSyncCursors { ownerId, calendarId, syncToken, fullSyncedOnJst }  // by_o
 ## 4. UI
 
 - ログイン画面: 「Google でログイン」（`publicConfig.googleSignIn` が true のときだけ）。
-- マイページ **アカウント**タブ `CalendarSyncSection`: 未接続なら「Google カレンダーと連携」。接続後は接続中のアカウント・最終同期・状態バッジ・「表示するカレンダー」（`Checkbox.Group`、メインは「書き込み先」と注記）・「今すぐ同期」・「連携を解除」（Confirm）。権限切れなら「もう一度接続」。同意画面から戻ったことは `sessionStorage` の印（`cairn:calendar-sync:connect-pending`）で知り、`connect` アクションで仕上げる。
+- ボード上部の **カレンダー同期**ボタン（`BoardCalendarSyncButton`）: ホバー・キーボードフォーカス・タッチでTooltipを表示。押すと `CalendarSyncSection` をダイアログで開く（`calendarSync=true`）。閉じても選択中のタブ・日付・週を保持する。 未接続なら「Google カレンダーと連携」。接続後は接続中のアカウント・最終同期・状態バッジ・「表示するカレンダー」（`Checkbox.Group`、メインは「書き込み先」と注記）・「今すぐ同期」・「連携を解除」（Confirm）。権限切れなら「もう一度接続」。同意後は `/board?tab=schedule&calendarSync=true` に戻り、設定を開いたまま予定タブを表示する。同意画面から戻ったことは `sessionStorage` の印（`cairn:calendar-sync:connect-pending`）で知り、`connect` アクションで仕上げる。
 - 実行ボード **予定タブ**: 外部予定を**日・週ビュー**に灰色（紙2の地・muted-2 の文字・点線の縁、`data-board-external`）で並べる。月・年ビューには出さない（`CONTEXT.md`「外部予定」）。終日展開・年ビューの一覧からも開ける。ドラッグ移動は `moveExternal`、クリックで `BoardScheduleExternalModal`（題名・時間・カレンダー名・「Google カレンダーから削除」Confirm）。題名の編集・新規作成・記録への紐づけはしない。タブを開いたとき `syncNow` を一度呼ぶ。
 
 ## 5. テスト
@@ -65,7 +65,7 @@ calendarSyncCursors { ownerId, calendarId, syncToken, fullSyncedOnJst }  // by_o
 - `convex/calendarSync.test.ts`: fetch を偽 Google（カレンダーごとの予定と変更番号の差分トークン）に差し替え、`lib/googleAccessToken` を `vi.mock`。接続と一覧、スコープ不足の拒否、予定の作成・移動・削除の送信、終了した本番・達成したチェックポイントの削除、外部予定の写しと期間、表示カレンダーの変更、Google 側の移動・削除の反映（予定 / 本番日）、外部予定のアプリからの移動・削除、解除、権限切れ。
 - `convex/calendarSync.test.ts` はさらに、送信記録の楽観ロック（conflict）、レート制限の 403 の再試行、差分トークン失効（410）と 7 日ごとの全件取り直し、アプリ側が勝つ競合、Google で終日化された予定の書き戻し、外部予定の送信の再試行と諦め、別アカウントでの再接続を確かめる。純関数は `pulledEvent.test.ts` / `window.test.ts` も。純関数は `services/calendarSync/eventPayload.test.ts`（時刻だけの変更で `payloadKey` が変わる）と `lib/googleCalendar.test.ts`（401 / 403 / 429 の分類）。
 - `convex/authPublicConfig.test.ts`: Google 設定、offline、アカウント連携。
-- UI: `calendar-sync-section.test.tsx`、`login-screen.test.tsx`、`board-schedule-events.test.ts`（外部予定の変換）。
+- UI: `board-calendar-sync-button.test.tsx`（Tooltip、設定の開閉と表示位置の保持、OAuth後の復帰と接続仕上げ）、`calendar-sync-section.test.tsx`、`login-screen.test.tsx`、`board-schedule-events.test.ts`（外部予定の変換）。
 
 ## 6. 運用
 
