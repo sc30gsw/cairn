@@ -3,12 +3,13 @@ import { Result } from "better-result";
 import { internal } from "../../_generated/api";
 import type { ActionCtx } from "../../_generated/server";
 import {
+  CALENDAR_SYNC_DISCONNECT_INCOMPLETE_MESSAGE,
   CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE,
   CALENDAR_SYNC_PRIMARY_MISSING_MESSAGE,
   CALENDAR_SYNC_SCOPE_MISSING_MESSAGE,
   GOOGLE_CALENDAR_SCOPES,
 } from "../../lib/calendarSync";
-import { ValidationFailedError } from "../../lib/errors";
+import { ConflictError, ValidationFailedError } from "../../lib/errors";
 import { getGoogleAccessToken, listGoogleAccounts } from "../../lib/googleAccessToken";
 import {
   calendarSummaryOf,
@@ -19,7 +20,7 @@ import { todayJst } from "../../lib/jst";
 import { throwDomain } from "../../lib/ownerFunctions";
 import type { OwnerSyncOutcome } from "../../lib/validators";
 import { deleteLinkedGoogleEvents } from "./deleteLinkedGoogleEvents";
-import { runOwnerSync } from "./runOwnerSync";
+import { syncConnectedOwner } from "./runOwnerSync";
 
 export async function connect(ctx: ActionCtx, ownerId: string): Promise<OwnerSyncOutcome> {
   const accounts = await listGoogleAccounts(ctx);
@@ -46,8 +47,18 @@ export async function connect(ctx: ActionCtx, ownerId: string): Promise<OwnerSyn
     ownerId,
     todayJst: todayJst(),
   });
+  if (previous?.disconnecting === true) {
+    throwDomain(new ConflictError({ message: CALENDAR_SYNC_DISCONNECT_INCOMPLETE_MESSAGE }));
+  }
   if (previous !== null && previous.googleAccountId !== account.accountId) {
-    await deleteLinkedGoogleEvents(ctx, ownerId, previous);
+    await ctx.runMutation(internal.mutations.calendarSync.operation.beginDisconnect, { ownerId });
+    const deleted = await deleteLinkedGoogleEvents(ctx, ownerId, previous);
+    if (deleted === "failed") {
+      throwDomain(new ConflictError({ message: CALENDAR_SYNC_DISCONNECT_INCOMPLETE_MESSAGE }));
+    }
+    await ctx.runMutation(internal.mutations.calendarSync.clearConnection.clearConnection, {
+      ownerId,
+    });
   }
 
   await ctx.runMutation(internal.mutations.calendarSync.upsertConnection.upsertConnection, {
@@ -57,5 +68,5 @@ export async function connect(ctx: ActionCtx, ownerId: string): Promise<OwnerSyn
     googleEmail: primary.id,
     ownerId,
   });
-  return runOwnerSync(ctx, ownerId);
+  return syncConnectedOwner(ctx, ownerId);
 }

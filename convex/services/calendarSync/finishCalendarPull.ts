@@ -1,5 +1,5 @@
 import type { MutationCtx } from "../../_generated/server";
-import { isWithinWindow, syncWindow } from "./window";
+import { overlapsWindow, syncWindow } from "./window";
 
 export async function finishCalendarPull(
   ctx: MutationCtx,
@@ -19,16 +19,25 @@ export async function finishCalendarPull(
       q.eq("ownerId", args.ownerId).eq("calendarId", args.calendarId),
     )
     .collect();
-  const deletions: Promise<void>[] = [];
-  for (const external of externals) {
-    const stale =
-      !isWithinWindow(external.startAt, window) ||
-      (keep !== null && !keep.has(external.googleEventId));
-    if (stale) {
-      deletions.push(ctx.db.delete("externalCalendarEvents", external._id));
-    }
-  }
-  await Promise.all(deletions);
+  await Promise.all(
+    externals.map(async (external) => {
+      if (overlapsWindow(external, window) && (keep === null || keep.has(external.googleEventId))) {
+        return;
+      }
+      const pending = await ctx.db
+        .query("calendarExternalChanges")
+        .withIndex("by_owner_and_calendar_and_event", (q) =>
+          q
+            .eq("ownerId", args.ownerId)
+            .eq("calendarId", args.calendarId)
+            .eq("googleEventId", external.googleEventId),
+        )
+        .unique();
+      if (pending === null) {
+        await ctx.db.delete("externalCalendarEvents", external._id);
+      }
+    }),
+  );
   const cursor = await ctx.db
     .query("calendarSyncCursors")
     .withIndex("by_owner_and_calendar", (q) =>

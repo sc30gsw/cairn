@@ -4,7 +4,7 @@ import type { UpsertConnectionArgs } from "../../lib/validators";
 import { getConnection } from "./getConnection";
 
 export async function clearSyncState(ctx: MutationCtx, ownerId: string): Promise<void> {
-  const [links, externals, cursors] = await Promise.all([
+  const [links, externals, cursors, changes] = await Promise.all([
     ctx.db
       .query("calendarSyncLinks")
       .withIndex("by_owner_and_calendar_and_event", (q) => q.eq("ownerId", ownerId))
@@ -17,8 +17,13 @@ export async function clearSyncState(ctx: MutationCtx, ownerId: string): Promise
       .query("calendarSyncCursors")
       .withIndex("by_owner_and_calendar", (q) => q.eq("ownerId", ownerId))
       .collect(),
+    ctx.db
+      .query("calendarExternalChanges")
+      .withIndex("by_owner_and_calendar_and_event", (q) => q.eq("ownerId", ownerId))
+      .collect(),
   ]);
   await Promise.all([
+    ...changes.map((change) => ctx.db.delete("calendarExternalChanges", change._id)),
     ...links.map((link) => ctx.db.delete("calendarSyncLinks", link._id)),
     ...externals.map((external) => ctx.db.delete("externalCalendarEvents", external._id)),
     ...cursors.map((cursor) => ctx.db.delete("calendarSyncCursors", cursor._id)),
@@ -66,7 +71,7 @@ export async function markStatus(
   },
 ): Promise<null> {
   const existing = await getConnection(ctx, args.ownerId);
-  if (existing === null) {
+  if (existing === null || existing.disconnecting === true) {
     return null;
   }
   await ctx.db.patch("calendarConnections", existing._id, {

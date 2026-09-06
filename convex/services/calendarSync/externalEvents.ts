@@ -1,13 +1,22 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
 import { type BoardScheduleView, scheduleListRange } from "../../lib/boardScheduleRange";
-import { EXTERNAL_EVENT_NOT_FOUND_MESSAGE } from "../../lib/calendarSync";
+import {
+  CALENDAR_SYNC_DISCONNECT_INCOMPLETE_MESSAGE,
+  EXTERNAL_EVENT_NOT_FOUND_MESSAGE,
+} from "../../lib/calendarSync";
 import { requireDateJst } from "../../lib/dateArgs";
-import { NotFoundError } from "../../lib/errors";
+import { ConflictError, ForbiddenError, NotFoundError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { assertScheduleRange, requireScheduleInstant } from "../../lib/scheduleInstant";
 import type { ExternalCalendarEventDto } from "../../lib/validators";
 import { getConnection } from "./getConnection";
+
+function canEditCalendar(accessRole: string | undefined): boolean {
+  return (
+    accessRole === "owner" || accessRole === "writer" || accessRole === "writerWithoutPrivateAccess"
+  );
+}
 
 export async function listExternal(
   ctx: QueryCtx,
@@ -28,8 +37,9 @@ export async function listExternal(
   const externals = await ctx.db
     .query("externalCalendarEvents")
     .withIndex("by_owner_and_startAt", (q) =>
-      q.eq("ownerId", ownerId).gte("startAt", rangeStart).lt("startAt", rangeEndExclusive),
+      q.eq("ownerId", ownerId).lt("startAt", rangeEndExclusive),
     )
+    .filter((q) => q.gt(q.field("endAt"), rangeStart))
     .collect();
   const result: ExternalCalendarEventDto[] = [];
   for (const external of externals) {
@@ -41,6 +51,9 @@ export async function listExternal(
       allDay: external.allDay,
       calendarId: external.calendarId,
       calendarName: calendarById.get(external.calendarId)?.summary ?? external.calendarId,
+      canEdit:
+        connection.disconnecting !== true &&
+        canEditCalendar(calendarById.get(external.calendarId)?.accessRole),
       color: calendarById.get(external.calendarId)?.backgroundColor ?? null,
       endAt: external.endAt,
       startAt: external.startAt,
@@ -60,6 +73,14 @@ async function requireOwnedExternal(
     throwDomain(
       new NotFoundError({ message: EXTERNAL_EVENT_NOT_FOUND_MESSAGE, resource: "外部予定" }),
     );
+  }
+  const connection = await getConnection(ctx, ownerId);
+  if (connection?.disconnecting === true) {
+    throwDomain(new ConflictError({ message: CALENDAR_SYNC_DISCONNECT_INCOMPLETE_MESSAGE }));
+  }
+  const calendar = connection?.calendars.find((entry) => entry.id === external.calendarId);
+  if (!canEditCalendar(calendar?.accessRole)) {
+    throwDomain(new ForbiddenError({ message: "このカレンダーの予定を変更する権限がありません" }));
   }
   return external;
 }

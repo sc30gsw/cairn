@@ -15,7 +15,7 @@ export async function scheduleSourceSync(
     return;
   }
   await markAppChanged(ctx, ownerId, sourceKind, sourceId);
-  if (connection.status === "needsReauth") {
+  if (connection.status === "needsReauth" || connection.disconnecting === true) {
     return;
   }
   await ctx.scheduler.runAfter(0, internal.actions.calendarSync.pushSource.pushSource, {

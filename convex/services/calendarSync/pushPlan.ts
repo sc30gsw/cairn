@@ -9,7 +9,7 @@ export async function pushPlan(
   args: { ownerId: string; sourceId: string; sourceKind: CalendarSyncSourceKind },
 ): Promise<PushPlan> {
   const connection = await getConnection(ctx, args.ownerId);
-  if (connection === null) {
+  if (connection === null || connection.disconnecting === true) {
     return null;
   }
   const link = await findLink(ctx, args.ownerId, args.sourceKind, args.sourceId);

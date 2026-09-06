@@ -1,8 +1,10 @@
 import { Result } from "better-result";
 
 import {
+  getEvent,
   type GoogleCalendarClient,
   GoogleCalendarError,
+  isGone,
   isSyncTokenExpired,
   listEvents,
 } from "../../lib/googleCalendar";
@@ -18,16 +20,57 @@ type PulledCalendar = {
 
 export async function pullCalendar(
   client: GoogleCalendarClient,
-  args: { calendarId: string; syncToken: string | null; window: SyncWindow },
+  args: {
+    calendarId: string;
+    linkedEventIds?: readonly string[];
+    syncToken: string | null;
+    window: SyncWindow;
+  },
 ): Promise<Result<PulledCalendar, GoogleCalendarError>> {
-  const incremental = await fetchAll(client, args.calendarId, args.syncToken, args.window);
-  if (Result.isOk(incremental)) {
-    return incremental;
+  let pulled = await fetchAll(client, args.calendarId, args.syncToken, args.window);
+  if (Result.isError(pulled) && args.syncToken !== null && isSyncTokenExpired(pulled.error)) {
+    pulled = await fetchAll(client, args.calendarId, null, args.window);
   }
-  if (args.syncToken !== null && isSyncTokenExpired(incremental.error)) {
-    return fetchAll(client, args.calendarId, null, args.window);
+  if (Result.isError(pulled) || pulled.value.keepEventIds === null) {
+    return pulled;
   }
-  return incremental;
+  const seen = new Set(pulled.value.events.map((event) => event.googleEventId));
+  const missing = [...new Set(args.linkedEventIds ?? [])].filter((id) => !seen.has(id));
+  const recovered = await Promise.all(
+    missing.map((id) => fetchLinkedEvent(client, args.calendarId, id)),
+  );
+  for (const event of recovered) {
+    if (Result.isError(event)) {
+      return event;
+    }
+    pulled.value.events.push(event.value);
+    if (event.value.kind === "upsert") {
+      pulled.value.keepEventIds.push(event.value.googleEventId);
+    }
+  }
+  return pulled;
+}
+
+async function fetchLinkedEvent(
+  client: GoogleCalendarClient,
+  calendarId: string,
+  googleEventId: string,
+): Promise<Result<PulledEvent, GoogleCalendarError>> {
+  const event = await getEvent(client, calendarId, googleEventId);
+  if (Result.isError(event)) {
+    return isGone(event.error) ? Result.ok({ calendarId, googleEventId, kind: "delete" }) : event;
+  }
+  const pulled = toPulledEvent(calendarId, event.value);
+  return pulled === null
+    ? Result.err(
+        new GoogleCalendarError({
+          message: "Google カレンダーの予定の日時を読み取れませんでした",
+          operation: "events.get",
+          reason: null,
+          status: null,
+        }),
+      )
+    : Result.ok(pulled);
 }
 
 async function fetchAll(

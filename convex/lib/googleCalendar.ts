@@ -22,7 +22,6 @@ export class GoogleCalendarError extends TaggedError("GoogleCalendar")<{
 
 const AUTH_FAILURE_REASONS = [
   "accessNotConfigured",
-  "forbidden",
   "insufficientPermissions",
 ] as const satisfies readonly string[];
 
@@ -230,6 +229,7 @@ function encodeId(id: string): string {
 
 export function calendarSummaryOf(entry: GoogleCalendarListEntry): GoogleCalendarSummary {
   return {
+    accessRole: entry.accessRole,
     backgroundColor: entry.backgroundColor,
     id: entry.id,
     primary: entry.primary === true,
@@ -310,6 +310,22 @@ export async function listEvents(
       query,
     },
     eventListSchema,
+  );
+}
+
+export async function getEvent(
+  client: GoogleCalendarClient,
+  calendarId: string,
+  eventId: string,
+): Promise<Result<GoogleEvent, GoogleCalendarError>> {
+  return request(
+    client,
+    {
+      method: "GET",
+      operation: "events.get",
+      path: `/calendars/${encodeId(calendarId)}/events/${encodeId(eventId)}`,
+    },
+    googleEventSchema,
   );
 }
 

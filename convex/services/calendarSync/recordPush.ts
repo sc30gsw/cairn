@@ -1,6 +1,8 @@
 import type { MutationCtx } from "../../_generated/server";
 import type { CalendarSyncSourceKind } from "../../lib/calendarSync";
 import type { PushExpectation, PushOutcome, RecordPushResult } from "../../lib/validators";
+import { desiredEvent } from "./desiredEvent";
+import { payloadKey } from "./eventPayload";
 import { getConnection } from "./getConnection";
 import { findLink, linkSummary } from "./syncSource";
 
@@ -15,7 +17,12 @@ export async function recordPush(
     sourceKind: CalendarSyncSourceKind;
   },
 ): Promise<RecordPushResult> {
-  if ((await getConnection(ctx, args.ownerId)) === null) {
+  const connection = await getConnection(ctx, args.ownerId);
+  if (
+    connection === null ||
+    connection.disconnecting === true ||
+    connection.primaryCalendarId !== args.calendarId
+  ) {
     return "disconnected";
   }
   const link = await findLink(ctx, args.ownerId, args.sourceKind, args.sourceId);
@@ -23,11 +30,16 @@ export async function recordPush(
     return "conflict";
   }
   const { outcome } = args;
+  const desired = await desiredEvent(ctx, args.ownerId, args.sourceKind, args.sourceId);
+  const changed =
+    outcome.kind === "deleted"
+      ? desired !== null
+      : desired === null || payloadKey(desired) !== outcome.payloadKey;
   if (outcome.kind === "deleted") {
     if (link !== null) {
       await ctx.db.delete("calendarSyncLinks", link._id);
     }
-    return "recorded";
+    return changed ? "changed" : "recorded";
   }
   const shadow = await ctx.db
     .query("externalCalendarEvents")
@@ -42,7 +54,7 @@ export async function recordPush(
     await ctx.db.delete("externalCalendarEvents", shadow._id);
   }
   const fields = {
-    appChangedAt: undefined,
+    appChangedAt: changed ? (link?.appChangedAt ?? Date.now()) : undefined,
     calendarId: args.calendarId,
     googleEventId: outcome.googleEventId,
     googleUpdated: outcome.googleUpdated,
@@ -50,6 +62,7 @@ export async function recordPush(
   };
   if (link === null) {
     await ctx.db.insert("calendarSyncLinks", {
+      appChangedAt: fields.appChangedAt,
       calendarId: fields.calendarId,
       googleEventId: fields.googleEventId,
       googleUpdated: fields.googleUpdated,
@@ -58,10 +71,10 @@ export async function recordPush(
       sourceId: args.sourceId,
       sourceKind: args.sourceKind,
     });
-    return "recorded";
+    return changed ? "changed" : "recorded";
   }
   await ctx.db.patch("calendarSyncLinks", link._id, fields);
-  return "recorded";
+  return changed ? "changed" : "recorded";
 }
 
 function matchesExpectation(
@@ -71,9 +84,5 @@ function matchesExpectation(
   if (current === null || expected === null) {
     return current === expected;
   }
-  return (
-    current.googleEventId === expected.googleEventId &&
-    current.payloadKey === expected.payloadKey &&
-    current.appChangedAt === expected.appChangedAt
-  );
+  return current.googleEventId === expected.googleEventId;
 }
