@@ -8,7 +8,6 @@ export const applyPull = internalMutation({
   args: {
     calendarId: v.string(),
     events: v.array(pulledEventValidator),
-    //? 最後の塊に付ける。差分トークンの保存と写しの掃除を同じトランザクションで行う
     finish: v.union(
       v.null(),
       v.object({

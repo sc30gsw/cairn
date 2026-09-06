@@ -13,7 +13,6 @@ export async function remove(
   const children = await listChildCheckpoints(ctx, ownerId, goal._id);
   await Promise.all(children.map((child) => ctx.db.delete("goals", child._id)));
   await ctx.db.delete("goals", goal._id);
-  //? 消した目標の予定を Google からも消す（対応表が残っていれば送信アクションが片付ける）
   await scheduleGoalSync(ctx, ownerId, [goal._id, ...children.map((child) => child._id)]);
 
   return children.length;

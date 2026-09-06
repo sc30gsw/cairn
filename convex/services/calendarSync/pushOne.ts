@@ -19,9 +19,6 @@ type PushOneArgs = {
   source: SyncSource;
 };
 
-//? 元1件を Google に合わせる: 載せない → 消す、未登録 → 作る、内容が変わった → 置き換える。
-//? 結果は対応表へ（recordPush、楽観ロック）。別の送信が先に走っていたら（conflict）、自分が作った
-//? 予定は消して相手の結果に譲る。Google 側で消えていた（404 / 410）予定は作り直す
 export async function pushOne(
   ctx: ActionCtx,
   client: GoogleCalendarClient,
@@ -76,9 +73,7 @@ export async function pushOne(
     },
   });
   if (recorded === "conflict") {
-    //? 新しく作った予定が対応表に載らないなら孤児になるので消す（既存の予定を PATCH した場合は残す）
     if (source.link === null || source.link.googleEventId !== upserted.value.id) {
-      //? 後始末は最善努力。消せなくても相手（先に記録した送信）の結果が正で、次の突き合わせで拾う
       await deleteEvent(client, calendarId, upserted.value.id);
     }
     return Result.ok("conflict");

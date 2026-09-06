@@ -70,7 +70,6 @@ export const notificationSettingsDtoValidator = v.object({
   triggers: notificationTriggerPrefsValidator,
 });
 
-//? PushSubscription.toJSON() の形をそのまま保存する（endpoint / keys.p256dh / keys.auth / expirationTime）
 export const pushSubscriptionKeysValidator = v.object({
   auth: v.string(),
   p256dh: v.string(),

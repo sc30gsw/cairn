@@ -62,7 +62,6 @@ export const rowTimerDtoValidator = v.object({
 
 export type RowTimerDto = Infer<typeof rowTimerDtoValidator>;
 
-//? 復習の印。source = 復習に回した元の記録（次の期日と段階）、review = 期日が来て並んだ復習の記録
 export const rowReviewDtoValidator = v.union(
   v.object({ dueJst: v.string(), kind: v.literal("source"), stage: v.number() }),
   v.object({ kind: v.literal("review"), stage: v.number() }),

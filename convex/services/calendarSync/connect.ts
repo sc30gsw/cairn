@@ -21,9 +21,6 @@ import type { OwnerSyncOutcome } from "../../lib/validators";
 import { deleteLinkedGoogleEvents } from "./deleteLinkedGoogleEvents";
 import { runOwnerSync } from "./runOwnerSync";
 
-//? マイページ「Google カレンダーと連携」の本体: linkSocial でカレンダー権限を付けた Google アカウントを探し、
-//? カレンダー一覧を写して接続を作り、その場で最初の同期まで行う。別アカウントへの切替なら旧アカウントに
-//? 作った予定を先に消す（解除と同じ後始末）
 export async function connect(ctx: ActionCtx, ownerId: string): Promise<OwnerSyncOutcome> {
   const accounts = await listGoogleAccounts(ctx);
   const account = accounts.find((candidate) =>
@@ -57,7 +54,6 @@ export async function connect(ctx: ActionCtx, ownerId: string): Promise<OwnerSyn
     calendars: calendars.value.map(calendarSummaryOf),
     defaultVisibleCalendarIds: defaultVisibleCalendarIds(calendars.value),
     googleAccountId: account.accountId,
-    //? Google アカウントではメインカレンダーの ID がそのアカウントのメールアドレス
     googleEmail: primary.id,
     ownerId,
   });

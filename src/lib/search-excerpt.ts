@@ -9,7 +9,6 @@ export type SearchExcerpt = {
 const EXCERPT_RADIUS = 24;
 const ELLIPSIS = "…";
 
-//? 一致箇所の前後だけを抜き出す。位置が取れない（正規化で文字数が変わる）ときは先頭から切る
 export function searchExcerpt(
   text: string,
   normalizedQuery: string,

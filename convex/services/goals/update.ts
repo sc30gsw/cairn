@@ -38,7 +38,6 @@ export async function update(
     if (existing.type !== "exam") {
       throwDomain(new ValidationFailedError({ message: GOAL_TYPE_IMMUTABLE_MESSAGE }));
     }
-    //? 本番の結果は編集で消えない（達成日と同じ扱い）
     await ctx.db.replace("goals", existing._id, {
       ...toGoalDocument(goal, ownerId),
       result: existing.result,

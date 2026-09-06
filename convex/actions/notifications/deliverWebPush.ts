@@ -17,7 +17,6 @@ function statusCodeOf(cause: unknown): number | undefined {
   return undefined;
 }
 
-//? 読み1回（webPushDelivery）→ 外部送信（購読ごと）→ 書き1回（失効した購読の削除）。CVX-05/06/07
 export const deliverWebPush = internalAction({
   args: { notificationId: v.id("notifications") },
   handler: async (ctx, args) => {

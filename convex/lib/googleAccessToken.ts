@@ -4,9 +4,6 @@ import type { ActionCtx } from "../_generated/server";
 import { authComponent, createAuth } from "../auth";
 import { GOOGLE_PROVIDER_ID } from "./calendarSync";
 
-//? Better Auth が暗号化保存している Google のトークンを、期限切れなら更新して取り出す。
-//? スケジュール実行にはセッションが無いので headers は渡さず userId で指名する（1.6.x の挙動）
-
 export class GoogleAuthError extends TaggedError("GoogleAuth")<{
   cause?: unknown;
   message: string;

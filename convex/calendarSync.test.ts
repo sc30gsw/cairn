@@ -7,7 +7,6 @@ import { GOOGLE_CALENDAR_SCOPES } from "./lib/calendarSync";
 import { GoogleAuthError } from "./lib/googleAccessToken";
 import schema from "./schema";
 
-//? Better Auth のトークン取得だけを差し替える。Google API は fetch を偽サーバーで受ける
 const { tokenState } = vi.hoisted(() => ({
   tokenState: { accounts: [{ accountId: "google-sub", scopes: [] as string[] }], fail: false },
 }));
@@ -53,7 +52,6 @@ type FakeEvent = {
   version: number;
 };
 
-//? Google Calendar API の最小の偽物: カレンダーごとの予定と、変更番号で切る差分トークン
 class FakeGoogle {
   calendars = new Map<string, Map<string, FakeEvent>>([
     [PRIMARY, new Map()],
@@ -73,7 +71,6 @@ class FakeGoogle {
     return new Date(Date.UTC(2026, 7, 17, 3, 0, this.sequence)).toISOString();
   }
 
-  //? テストから「Google 側で動かした」を再現する
   upsertExternal(calendarId: string, event: Omit<FakeEvent, "updated" | "version">): void {
     const calendar = this.calendars.get(calendarId);
     if (calendar === undefined) {
@@ -202,7 +199,6 @@ function json(body: unknown, status = 200): Response {
 
 let google: FakeGoogle;
 
-//? runAfter(0) の送信アクションはタイマーで積まれる。タイマーごと偽物にして flush で全部走らせる
 function flush(t: ReturnType<typeof raw>) {
   return t.finishAllScheduledFunctions(() => vi.runAllTimers());
 }
@@ -277,7 +273,6 @@ test("連携すると接続とカレンダー一覧が写り、進行中の本�
     summary: "本番: 本番で900点を取る",
     transparency: "transparent",
   });
-  //? 他人からは何も見えない
   expect(await t.withIdentity(OTHER).query(api.queries.calendarSync.status.status, {})).toBeNull();
 });
 
@@ -394,7 +389,6 @@ test("Google 側の外部予定は写しとして予定タブの範囲で読め�
       title: "歯医者",
     },
   ]);
-  //? 外部予定は日・週ビューにだけ並ぶ。月ビューでは空
   expect(
     await owner.query(api.queries.calendarSync.listExternal.listExternal, {
       anchorDateJst: "2026-09-01",
@@ -420,7 +414,6 @@ test("Google 側の外部予定は写しとして予定タブの範囲で読め�
     }),
   ).toEqual([]);
 
-  //? 表示カレンダーから外すと写しも消える
   await owner.mutation(api.mutations.calendarSync.setVisibleCalendars.setVisibleCalendars, {
     calendarIds: [PRIMARY],
   });
@@ -462,7 +455,6 @@ test("Google で動かした予定はアプリに戻り、消した予定はア�
     endAt: `${TODAY} 16:00:00`,
     startAt: `${TODAY} 15:00:00`,
   });
-  //? 戻した変更をもう一度 Google へ送り返さない（送信すると updated が進む）
   const updatedAfterPull = google.active(PRIMARY)[0]?.updated;
   await syncNow(owner);
   expect(google.active(PRIMARY)[0]?.updated).toBe(updatedAfterPull);
@@ -537,7 +529,6 @@ test("外部予定をアプリで動かす・消すと Google に反映される
   });
   await flush(t);
   expect(google.active(PRIMARY)).toHaveLength(0);
-  //? 他人は触れない
   await expect(
     t.withIdentity(OTHER).mutation(api.mutations.calendarSync.removeExternal.removeExternal, {
       externalId: external._id,
@@ -590,7 +581,6 @@ test("トークンが取れなくなったら再接続が必要になり、cron 
   expect(
     await t.query(internal.queries.calendarSync.listConnectedOwners.listConnectedOwners, {}),
   ).toEqual([]);
-  //? 再接続で戻る
   tokenState.fail = false;
   await owner.action(api.actions.calendarSync.connect.connect, {});
   expect((await owner.query(api.queries.calendarSync.status.status, {}))?.status).toBe("ok");
@@ -610,7 +600,6 @@ test("送信の記録は、計画時と対応表が違えば書かない（並�
     throw new Error("expected a link");
   }
 
-  //? 「対応表は無い」と思って作った送信は、既に対応表があるので conflict
   const stale = await t.mutation(internal.mutations.calendarSync.recordPush.recordPush, {
     calendarId: link.calendarId,
     expected: null,
@@ -623,7 +612,6 @@ test("送信の記録は、計画時と対応表が違えば書かない（並�
   const unchanged = await t.run(async (ctx) => ctx.db.get("calendarSyncLinks", link._id));
   expect(unchanged?.googleEventId).toBe(link.googleEventId);
 
-  //? 今の姿と一致していれば書ける
   const fresh = await t.mutation(internal.mutations.calendarSync.recordPush.recordPush, {
     calendarId: link.calendarId,
     expected: {
@@ -677,7 +665,6 @@ test("差分トークンが失効（410）したら期間の全件を取り直�
     summary: "歯医者",
   });
   await syncNow(owner);
-  //? Google 側で消えたが差分では届かない状況を作る（写しだけ残る）
   google.calendars.get(PRIMARY)?.delete("dentist");
   await t.run(async (ctx) => {
     const cursors = await ctx.db.query("calendarSyncCursors").collect();
@@ -729,7 +716,6 @@ test("アプリ側の未送信の変更が新しければ Google の古い変更
   if (event === undefined) {
     throw new Error("expected the block in Google");
   }
-  //? Google 側の変更（古い updated）を先に置き、あとからアプリで動かす（送信はまだ走らせない）
   google.upsertExternal(PRIMARY, {
     ...event,
     end: { dateTime: "2026-08-17T16:00:00+09:00" },
@@ -846,6 +832,5 @@ test("別の Google アカウントで再接続すると前の同期状態は消
   await owner.action(api.actions.calendarSync.connect.connect, {});
   const status = await owner.query(api.queries.calendarSync.status.status, {});
   expect(status?.visibleCalendarIds).toEqual([PRIMARY, HOLIDAY]);
-  //? 旧アカウントに作った本番日は消され、新アカウント（偽 Google では同じカレンダー）に作り直される
   expect(google.active(PRIMARY).map((event) => event.summary)).toEqual(["本番: 本番で900点を取る"]);
 });

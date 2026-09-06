@@ -59,7 +59,6 @@ const serwist = new Serwist({
   },
 });
 
-//? Web Push。文言はサーバー（convex/lib/webPush.ts の webPushMessage）で組んで送る。SW は形を確かめて出すだけ
 type WebPushMessage = Record<"body" | "tag" | "title" | "url", string>;
 
 const PUSH_SUBSCRIPTION_CHANGED = "PUSH_SUBSCRIPTION_CHANGED";
@@ -125,7 +124,6 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
-//? 購読が push service 側で入れ替わったら同じ鍵で再購読し、開いているページに知らせる（サーバー側の upsert はページが行う）
 self.addEventListener("pushsubscriptionchange", (event) => {
   const changeEvent = event as ExtendableEvent & {
     oldSubscription?: PushSubscription | null;

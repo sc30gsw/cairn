@@ -14,13 +14,11 @@ import { requireOwnedRow } from "../rows/requireOwnedRow";
 import { rowDayLiveness } from "../rows/rowDayLiveness";
 
 export type FlagReviewArgs = {
-  //? 省略なら既定の間隔（今日から1日後）。手直しは日付で渡す
   dueJst?: string;
   rowId: Id<"rows">;
   todayJst: string;
 };
 
-//? 確定した記録にだけ印を付ける。すでに印があれば期日だけを差し替える（段階は保つ）
 export async function flag(ctx: MutationCtx, ownerId: string, args: FlagReviewArgs): Promise<null> {
   const todayJst = requireDateJst(args.todayJst);
   const row = await requireOwnedRow(ctx, ownerId, args.rowId);

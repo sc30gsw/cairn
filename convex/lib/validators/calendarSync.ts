@@ -10,7 +10,6 @@ export const calendarSyncSourceKindValidator = v.union(
   ...CALENDAR_SYNC_SOURCE_KINDS.map((kind) => v.literal(kind)),
 );
 
-//? 接続時・同期時に写す Google のカレンダー一覧（表示カレンダーの選択肢）
 export const googleCalendarSummaryValidator = v.object({
   backgroundColor: v.optional(v.string()),
   id: v.string(),
@@ -47,7 +46,6 @@ export const externalCalendarEventDtoValidator = v.object({
 
 export type ExternalCalendarEventDto = Infer<typeof externalCalendarEventDtoValidator>;
 
-//? Google から取り込んだ差分1件を、アクションからミューテーションへ渡す形
 export const pulledEventValidator = v.union(
   v.object({
     allDay: v.boolean(),
@@ -68,7 +66,6 @@ export const pulledEventValidator = v.union(
 
 export type PulledEvent = Infer<typeof pulledEventValidator>;
 
-//? Google へ送る予定1件の形（RFC 3339 / 終日は date）。純関数 eventPayload の出力
 export const googleEventPayloadValidator = v.object({
   colorId: v.optional(v.string()),
   description: v.string(),
@@ -80,7 +77,6 @@ export const googleEventPayloadValidator = v.object({
 
 export type GoogleEventPayload = Infer<typeof googleEventPayloadValidator>;
 
-//? 同期計画の1行: 元（目標 / 予定）の今の望ましい形と、対応表の現状
 export const syncSourceValidator = v.object({
   desired: v.union(googleEventPayloadValidator, v.null()),
   link: v.union(
@@ -136,7 +132,6 @@ export const pushOutcomeValidator = v.union(
 
 export type PushOutcome = Infer<typeof pushOutcomeValidator>;
 
-//? 送信を計画したときの対応表の姿。recordPush が今の姿と比べ、違えば書かない（楽観ロック）
 export const pushExpectationValidator = syncSourceValidator.fields.link;
 
 export type PushExpectation = Infer<typeof pushExpectationValidator>;
@@ -145,7 +140,6 @@ export const recordPushResultValidator = v.union(v.literal("conflict"), v.litera
 
 export type RecordPushResult = Infer<typeof recordPushResultValidator>;
 
-//? 所有者1人の同期の結果。接続の状態に「未接続」を足したもの（syncNow / connect の戻り値）
 export const ownerSyncOutcomeValidator = v.union(
   calendarSyncStatusValidator,
   v.literal("notConnected"),
@@ -153,7 +147,6 @@ export const ownerSyncOutcomeValidator = v.union(
 
 export type OwnerSyncOutcome = Infer<typeof ownerSyncOutcomeValidator>;
 
-//? 接続の作成・再接続に要る材料（connect アクション → upsertConnection ミューテーション）
 export const upsertConnectionArgsValidator = v.object({
   calendars: v.array(googleCalendarSummaryValidator),
   defaultVisibleCalendarIds: v.array(v.string()),
@@ -164,7 +157,6 @@ export const upsertConnectionArgsValidator = v.object({
 
 export type UpsertConnectionArgs = Infer<typeof upsertConnectionArgsValidator>;
 
-//? 外部予定へのアプリ側の操作（移動 / 削除）を Google へ送る形
 export const externalChangeValidator = v.union(
   v.object({
     allDay: v.boolean(),

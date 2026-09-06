@@ -6,9 +6,6 @@ import { addDaysJst } from "../../lib/jst";
 import type { ExternalChange, GoogleEventPayload } from "../../lib/validators";
 import { scheduleInstantToRfc3339 } from "./instant";
 
-//? Google に出す予定の形を決める純関数（Q17 の決定）。本番日・期限は終日で「空き」、予定は時刻つきで「予定あり」
-
-//? Google のイベント色（1〜11）への近似対応。Mantine の色名 → Google の colorId
 const GOOGLE_EVENT_COLOR_IDS = {
   blue: "9",
   cyan: "7",
@@ -38,7 +35,6 @@ function allDayPayload(args: {
   };
 }
 
-//? 載せるのは進行中の本番の本番日と、未達成のチェックポイントの期限だけ。それ以外は null（= Google から消す）
 export function goalEventPayload(
   goal: Doc<"goals">,
   parent: Doc<"goals"> | null,
@@ -84,13 +80,10 @@ export function blockEventPayload(
   };
 }
 
-//? 「最後に送った内容」との比較に使う文字列。payload はこのファイルの関数が固定のキー順で組むので、
-//? そのまま stringify すれば決定的（replacer 配列はネストにも効いて start / end が落ちるので使わない）
 export function payloadKey(payload: GoogleEventPayload): string {
   return JSON.stringify(payload);
 }
 
-//? Google 側の予定を PATCH で置き換えるときは start / end を両方送る（片方だけだと不整合で 400）
 export function patchPayload(payload: GoogleEventPayload): GoogleEventPayload {
   return {
     ...payload,
@@ -99,7 +92,6 @@ export function patchPayload(payload: GoogleEventPayload): GoogleEventPayload {
   };
 }
 
-//? 外部予定をアプリで動かしたときに Google へ送る start / end。終日は date（終端は排他的）、それ以外は時刻つき
 export function externalChangePayload(
   change: Extract<ExternalChange, { kind: "move" }>,
 ): Pick<GoogleEventPayload, "end" | "start"> {

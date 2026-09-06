@@ -131,7 +131,6 @@ export function useBoardScheduleMove(anchorDateJst: DateJst, view: BoardSchedule
   return { mutateAsync };
 }
 
-//? 外部予定の移動・削除。写しを先に動かし、Google への反映はサーバーの送信アクションが行う
 export function useBoardExternalMove(anchorDateJst: DateJst, view: BoardScheduleView) {
   const mutateAsync = useConvexMutation(
     api.mutations.calendarSync.moveExternal.moveExternal,

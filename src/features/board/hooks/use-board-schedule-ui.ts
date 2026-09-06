@@ -53,7 +53,6 @@ export function useBoardScheduleUi({
 
   const editableBlockIds = boardScheduleBlockIds(blocks);
   const externalEventIds = boardExternalEventIds(externals);
-  //? クリックで開ける予定 = 編集できる予定 + 外部予定（記録の終日イベントは開けない）
   const clickableEventIds = new Set([...editableBlockIds, ...externalEventIds]);
   const baseEvents = [
     ...toBoardScheduleEvents(todayJst, rows, blocks),
@@ -143,7 +142,6 @@ export function useBoardScheduleUi({
     openEdit(block);
   }
 
-  //? 予定タブのどのビュー（週・日・終日展開・年）から開いても同じ入口: 外部予定はモーダル、予定は編集フォーム
   function openFromEvent(event: ScheduleEventData) {
     if (isBoardExternalEvent(event.id)) {
       const externalId = boardExternalEventId(event.id);

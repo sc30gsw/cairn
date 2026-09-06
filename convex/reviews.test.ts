@@ -44,7 +44,6 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-//? プリセットの無い所有者。今日を開いても記録は並ばず、復習だけが並ぶ状態を作れる
 async function seedItem(t: Harness, ownerId: string = OWNER.subject): Promise<Id<"items">> {
   return await t.run(async (ctx) => {
     const categoryId = await ctx.db.insert("categories", {
@@ -168,7 +167,6 @@ test("期日が来た日に今日を開くと、復習が先頭に未着手で�
   const source = await seedConfirmedRow(t, { dateJst: DAY1, itemId });
   await owner.mutation(api.mutations.reviews.flag.flag, { rowId: source, todayJst: DAY1 });
 
-  //? 期日の前日に開いても並ばない
   expect(
     await owner.mutation(api.mutations.days.open.open, { dateJst: DAY1, todayJst: DAY1 }),
   ).toEqual({
@@ -176,7 +174,6 @@ test("期日が来た日に今日を開くと、復習が先頭に未着手で�
   });
   expect((await dayRows(t, DAY1)).filter((row) => row.review?.kind === "review")).toEqual([]);
 
-  //? 期日（翌日）を飛ばして 5 日後に開く: 期日超過でも今日に並ぶ
   vi.setSystemTime(new Date(`${DAY5}T09:00:00+09:00`));
   await t.run(async (ctx) => {
     const day = await ctx.db.insert("days", { dateJst: DAY5, ownerId: OWNER.subject });
@@ -203,10 +200,8 @@ test("期日が来た日に今日を開くと、復習が先頭に未着手で�
     status: "未着手",
   });
   expect(rows[1]?.review).toBeNull();
-  //? もう一度開いても二重には並ばない
   await owner.mutation(api.mutations.days.open.open, { dateJst: DAY5, todayJst: DAY5 });
   expect(await dayRows(t, DAY5)).toHaveLength(2);
-  //? 復習の記録そのものには印を付け直せない
   const reviewRow = rows[0]?._id as Id<"rows">;
   await owner.mutation(api.mutations.rows.confirm.confirm, {
     content: "Unit 1 を音読",
@@ -239,12 +234,10 @@ test("復習を確定すると段階が進み、次の期日はその日から�
   let [flag] = await flags(t);
   expect(flag).toMatchObject({ dueJst: DAY5, stage: 1 });
   expect(flag?.reviewRowId).toBeUndefined();
-  //? 確定した復習の記録は普通の確定した記録になり、元の記録は次の期日を持つ
   const day2 = await dayRows(t, DAY2);
   expect(day2[0]?.review).toBeNull();
   expect((await dayRows(t, DAY1))[0]?.review).toEqual({ dueJst: DAY5, kind: "source", stage: 1 });
 
-  //? 段階 1（3日後）→ 2（7日後）→ 3（14日後）→ 終了
   for (const [dateJst, expectedNext] of [
     [DAY5, 2],
     ["2026-08-28", 3],

@@ -2,7 +2,6 @@ import { v } from "convex/values";
 
 import { internalQuery } from "../../_generated/server";
 
-//? cron の突き合わせ対象。権限切れ（needsReauth）は再接続されるまで触らない
 export const listConnectedOwners = internalQuery({
   args: {},
   handler: async (ctx) => {

@@ -39,7 +39,6 @@ crons.cron(
   {},
 );
 
-//? Google カレンダーとの全件突き合わせ（差分取得 + 取りこぼしの送信）。push 通知は v1 では使わない（ADR-0017）
 crons.cron(
   "sync google calendars",
   "20 * * * *",

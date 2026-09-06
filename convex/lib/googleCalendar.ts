@@ -3,19 +3,14 @@ import * as v from "valibot";
 
 import type { GoogleCalendarSummary, GoogleEventPayload } from "./validators";
 
-//? Google Calendar API v3 の薄いクライアント。fetch だけで Node API は使わない。
-//? 失敗は GoogleCalendarError（status 付き）で返し、呼び手が「権限切れ / 消えている / 再試行」を判定する
-
 export class GoogleCalendarError extends TaggedError("GoogleCalendar")<{
   cause?: unknown;
   message: string;
   operation: string;
-  //? Google の error.errors[].reason（rateLimitExceeded など）。403 の意味を分けるのに使う
   reason: string | null;
   status: number | null;
 }> {}
 
-//? 403 のうち「権限が無い」。それ以外の 403（レート制限・クォータ）は再試行の対象
 const AUTH_FAILURE_REASONS = [
   "accessNotConfigured",
   "forbidden",
@@ -97,7 +92,6 @@ export function isAuthFailure(error: GoogleCalendarError): boolean {
   if (error.status !== 403) {
     return false;
   }
-  //? 理由の無い 403 は権限切れと断定しない（再接続を無駄に求めない）。再試行対象でもないので error に落ちる
   return AUTH_FAILURE_REASONS.some((reason) => reason === error.reason);
 }
 
@@ -232,7 +226,6 @@ export function calendarSummaryOf(entry: GoogleCalendarListEntry): GoogleCalenda
   };
 }
 
-//? 表示カレンダーの既定: Google 側で表示中（selected）かつ空き情報だけの共有ではないもの
 export function defaultVisibleCalendarIds(entries: readonly GoogleCalendarListEntry[]): string[] {
   const ids: string[] = [];
   for (const entry of entries) {
@@ -280,7 +273,6 @@ type ListEventsArgs = {
   timeMin?: string;
 };
 
-//? 差分同期: syncToken があれば timeMin / timeMax は付けない（併用不可）。無ければ期間で全件
 export async function listEvents(
   client: GoogleCalendarClient,
   args: ListEventsArgs,

@@ -1,8 +1,6 @@
 import type { MutationCtx } from "../../_generated/server";
 import { isWithinWindow, syncWindow } from "./window";
 
-//? 1カレンダー分の取り込みの締め: 差分トークンを保存し、全件取得なら「もう無い予定」の写しを消す。
-//? どちらの場合も期間から外れた写しは捨てる
 export async function finishCalendarPull(
   ctx: MutationCtx,
   args: {
@@ -43,7 +41,6 @@ export async function finishCalendarPull(
     }
     return null;
   }
-  //? 全件を取った日を覚える（差分の期間はその日で固定されるため）。差分なら前回の日を引き継ぐ
   const fullSyncedOnJst =
     args.keepEventIds !== null || cursor === null ? args.todayJst : cursor.fullSyncedOnJst;
   if (cursor === null) {

@@ -79,7 +79,6 @@ async function notifications(t: Harness): Promise<Doc<"notifications">[]> {
   return await t.run(async (ctx) => ctx.db.query("notifications").collect());
 }
 
-//? 配信のテストは evaluate を通さず通知の行を直接置く（予約の副作用を切り離す）
 async function seedNotification(t: Harness): Promise<Id<"notifications">> {
   return await t.run(async (ctx) => {
     const goalId = await ctx.db.insert("goals", {
@@ -109,7 +108,6 @@ async function subscriptionEndpoints(t: Harness): Promise<string[]> {
 }
 
 beforeEach(() => {
-  //? scheduler の runAfter(0) が背景で走らないよう時計を止める。予約の有無は _scheduled_functions で見る
   vi.useFakeTimers();
   sendNotification.mockReset();
   vi.stubEnv(WEB_PUSH_ENV.privateKey, "private-key");
@@ -188,7 +186,6 @@ test("通知が作られると、端末があれば押し出しが1回だけ予�
   expect(scheduled).toHaveLength(1);
   expect(scheduled[0]?.args).toEqual([{ notificationId: created[0]?._id }]);
 
-  //? 同じ事実からは通知も押し出しも二度と作らない
   await t.mutation(internal.mutations.notifications.evaluate.evaluate, {
     now: jstAt(THURSDAY, 8),
   });

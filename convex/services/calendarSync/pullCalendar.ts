@@ -12,13 +12,10 @@ import type { SyncWindow } from "./window";
 
 type PulledCalendar = {
   events: PulledEvent[];
-  //? 全件取得（差分トークン無し / 失効）のときだけ、残すべき予定 ID の一覧。差分なら null
   keepEventIds: string[] | null;
   syncToken: string | null;
 };
 
-//? 1カレンダーを Google から取り込む。差分トークンがあれば差分、無ければ期間で全件。
-//? 410（トークン失効）は全件へ切り替える
 export async function pullCalendar(
   client: GoogleCalendarClient,
   args: { calendarId: string; syncToken: string | null; window: SyncWindow },

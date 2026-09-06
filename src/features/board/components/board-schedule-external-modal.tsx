@@ -13,7 +13,6 @@ const EXTERNAL_EVENT_REMOVE_CONFIRM =
   "Google カレンダー側の予定も消えます。記録や学習量には影響しません。";
 const EXTERNAL_EVENT_HINT =
   "Google カレンダーの予定です。ドラッグで動かすと Google 側も動きます。題名の変更や新規作成は Google カレンダーで行ってください。";
-//? モバイル（< sm）はドラッグを出さないので、動かし方の案内も変える
 const EXTERNAL_EVENT_HINT_COMPACT =
   "Google カレンダーの予定です。時刻・題名の変更や新規作成は Google カレンダーで行ってください。";
 

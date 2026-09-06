@@ -48,7 +48,7 @@ export function LoginScreen() {
             </Text>
           ) : null}
           <Group gap="md" justify="center">
-            {/*? ログイン前の1枚紙なのでルーターの Link は使わず、通常の遷移で開く */}
+            {}
             <Anchor c="dimmed" href="/privacy" size="xs">
               プライバシーポリシー
             </Anchor>
