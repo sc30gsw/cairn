@@ -6,10 +6,7 @@ import {
   BoardScheduleWeekPicker,
   type BoardScheduleNavigationProps,
 } from "~/features/board/components/board-schedule-navigation-shared";
-import {
-  DAY_NAVIGATION_DATE_FORMAT,
-  formatDayNavigationLabel,
-} from "~/features/board/lib/board-schedule-navigation-labels";
+import { formatDayNavigationLabel } from "~/features/board/lib/board-schedule-navigation-labels";
 
 export function BoardScheduleDayNavigation({
   onDateChange,
@@ -36,7 +33,6 @@ export function BoardScheduleDayNavigation({
           }}
           todayJst={todayJst}
           value={selectedDateJst}
-          valueFormat={DAY_NAVIGATION_DATE_FORMAT}
         />
       }
       nextDisabled={nextDisabled}

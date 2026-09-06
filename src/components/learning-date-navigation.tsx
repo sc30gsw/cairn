@@ -53,7 +53,6 @@ export function LearningDateNavigation({
                 }
               }}
               value={dateJst}
-              valueFormat="YYYY-MM-DD"
               w="fit-content"
               {...learningDatePickerProps(todayJst)}
             />

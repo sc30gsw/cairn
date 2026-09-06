@@ -58,7 +58,6 @@ export function BoardScheduleDateControl({
   onChange,
   todayJst,
   value,
-  valueFormat,
 }: {
   ariaLabel: string;
   className?: string;
@@ -66,7 +65,6 @@ export function BoardScheduleDateControl({
   onChange: (value: string | null) => void;
   todayJst: DateJst;
   value: DateJst;
-  valueFormat: string;
 }) {
   return (
     <ScheduleHeader.Control
@@ -86,7 +84,6 @@ export function BoardScheduleDateControl({
         classNames={{ month: calendarDayStyleClasses.japaneseCalendar }}
         onChange={onChange}
         value={value}
-        valueFormat={valueFormat}
         {...sharedDatePickerProps(todayJst)}
       />
     </ScheduleHeader.Control>
@@ -119,7 +116,6 @@ export function BoardScheduleWeekPicker({
       onChange={(value) => pickDateInWeek(value, todayJst, onDateChange, onWeekChange)}
       todayJst={todayJst}
       value={pickerValue}
-      valueFormat="M/D"
     />
   );
 }

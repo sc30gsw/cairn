@@ -8,12 +8,17 @@ import { renderWithMantine } from "~/test-utils/render";
 test.each([DatePickerInput, DateTimePicker, DateInput])(
   "%s は共通の祝日・週末色を使い、選択状態を保持する",
   async (Picker) => {
-    const { getByLabelText, findByLabelText } = renderWithMantine(
+    const { getByLabelText, findByLabelText, getByRole } = renderWithMantine(
       <Picker label="日付" value="2026-09-06" defaultDate="2026-09-06" />,
+    );
+    const input = getByLabelText("日付");
+    expect(input instanceof HTMLInputElement ? input.value : input.textContent).toBe(
+      Picker === DateTimePicker ? "2026/09/06 00:00" : "2026/09/06",
     );
     if (Picker === DateInput) fireEvent.focus(getByLabelText("日付"));
     else fireEvent.click(getByLabelText("日付"));
     await findByLabelText("5 9月 2026");
+    expect(getByRole("button", { name: "2026年9月" })).toBeDefined();
     expect([...getByLabelText("5 9月 2026").classList]).toContain(
       calendarDayStyleClasses.saturdayDay,
     );

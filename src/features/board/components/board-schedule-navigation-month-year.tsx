@@ -34,6 +34,7 @@ export function BoardScheduleMonthNavigation({
     <BoardScheduleNavigationFrame
       center={
         <ScheduleHeader.MonthYearSelect
+          labelFormat="YYYY年M月"
           monthValue={dayjs(monthAnchor).month()}
           onMonthChange={(monthValue) => {
             setDate(dayjs(monthAnchor).month(monthValue).startOf("month").format("YYYY-MM-DD"));
@@ -79,6 +80,8 @@ export function BoardScheduleYearNavigation({
         onClick={() => onDateChange(`${Number(selectedDateJst.slice(0, 4)) - 1}-01-01`)}
       />
       <ScheduleHeader.MonthYearSelect
+        labelFormat="YYYY年"
+        withMonths={false}
         monthValue={0}
         onMonthChange={() => undefined}
         onYearChange={(yearValue) => {

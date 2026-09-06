@@ -14,6 +14,10 @@ import {
 } from "@mantine/dates";
 
 import { calendarDayProps, calendarDayStyleClasses } from "~/lib/calendar-day-style";
+import {
+  DATE_PICKER_VALUE_FORMAT,
+  DATE_TIME_PICKER_VALUE_FORMAT,
+} from "~/lib/date-display-formats";
 import { PAPER_TOKENS } from "~/lib/paper-tokens";
 
 const blue = [
@@ -114,10 +118,25 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
 });
 
 const datePickerDefaults = {
+  locale: "ja",
+  monthLabelFormat: "YYYY年M月",
+  yearLabelFormat: "YYYY年",
+  monthsListFormat: "M月",
+  yearsListFormat: "YYYY年",
   firstDayOfWeek: 1,
   getDayProps: calendarDayProps,
   classNames: { month: calendarDayStyleClasses.japaneseCalendar },
-} as const satisfies Pick<CalendarProps, "firstDayOfWeek" | "getDayProps" | "classNames">;
+} as const satisfies Pick<
+  CalendarProps,
+  | "firstDayOfWeek"
+  | "getDayProps"
+  | "classNames"
+  | "locale"
+  | "monthLabelFormat"
+  | "yearLabelFormat"
+  | "monthsListFormat"
+  | "yearsListFormat"
+>;
 
 export const theme = createTheme({
   autoContrast: true,
@@ -136,9 +155,15 @@ export const theme = createTheme({
   components: {
     Calendar: Calendar.extend({ defaultProps: datePickerDefaults }),
     DatePicker: DatePicker.extend({ defaultProps: datePickerDefaults }),
-    DatePickerInput: DatePickerInput.extend({ defaultProps: datePickerDefaults }),
-    DateTimePicker: DateTimePicker.extend({ defaultProps: datePickerDefaults }),
-    DateInput: DateInput.extend({ defaultProps: datePickerDefaults }),
+    DatePickerInput: DatePickerInput.extend({
+      defaultProps: { ...datePickerDefaults, valueFormat: DATE_PICKER_VALUE_FORMAT },
+    }),
+    DateTimePicker: DateTimePicker.extend({
+      defaultProps: { ...datePickerDefaults, valueFormat: DATE_TIME_PICKER_VALUE_FORMAT },
+    }),
+    DateInput: DateInput.extend({
+      defaultProps: { ...datePickerDefaults, valueFormat: DATE_PICKER_VALUE_FORMAT },
+    }),
     AppShell: {
       styles: {
         main: {

@@ -137,12 +137,13 @@ test("件名・色を同じフォームで編集し、失敗時には入力を�
 });
 
 test("Google の各色を濃淡付きで表示し、選択した色を入力欄にも反映する", async () => {
+  const onUpdate = vi.fn().mockResolvedValue(Result.ok(null));
   const view = renderWithMantine(
     <BoardScheduleExternalModal
       external={EXTERNAL}
       onClose={vi.fn()}
       onRemove={vi.fn()}
-      onUpdate={vi.fn()}
+      onUpdate={onUpdate}
     />,
   );
   const colorInput = view.getByRole("combobox", { name: "色" });
@@ -170,4 +171,7 @@ test("Google の各色を濃淡付きで表示し、選択した色を入力欄�
         ?.getAttribute("style"),
     ).toContain("var(--mantine-color-orange-3)");
   });
+  fireEvent.click(view.getByRole("button", { name: "保存" }));
+  await vi.waitFor(() => expect(onUpdate).toHaveBeenCalledOnce());
+  expect(onUpdate.mock.calls[0]?.[0]).toMatchObject({ colorId: "6" });
 });

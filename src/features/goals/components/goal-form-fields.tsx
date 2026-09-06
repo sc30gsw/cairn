@@ -195,7 +195,6 @@ export function GoalDateField({
       onChange={(value) => field.onChange(value ?? "")}
       popoverProps={{ withinPortal: true }}
       value={field.input ?? ""}
-      valueFormat="YYYY-MM-DD"
     />
   );
 }
