@@ -16,15 +16,28 @@ export async function upsertConnection(
   ctx: MutationCtx,
   args: UpsertConnectionArgs,
 ): Promise<Id<"calendarConnections">> {
-  await migrateConnections(ctx, args.ownerId);
-  const existing = await ctx.db
-    .query("calendarConnections")
-    .withIndex("by_owner_and_googleAccountId", (q) =>
-      q.eq("ownerId", args.ownerId).eq("googleAccountId", args.googleAccountId),
-    )
-    .unique();
+  const [settings, existing, anyConnection] = await Promise.all([
+    migrateConnections(ctx, args.ownerId),
+    ctx.db
+      .query("calendarConnections")
+      .withIndex("by_owner_and_googleAccountId", (q) =>
+        q.eq("ownerId", args.ownerId).eq("googleAccountId", args.googleAccountId),
+      )
+      .unique(),
+    ctx.db
+      .query("calendarConnections")
+      .withIndex("by_owner_and_googleAccountId", (q) => q.eq("ownerId", args.ownerId))
+      .first(),
+  ]);
   if (existing?.disconnecting === true) {
     throwDomain(new ConflictError({ message: CALENDAR_SYNC_DISCONNECT_INCOMPLETE_MESSAGE }));
+  }
+  //? 外部予定を編集できるのは所有者が最初に接続した Google アカウント1つ（移行前の接続、
+  //? 無ければ初回接続）。追加アカウントは閲覧専用（Q3）。同じアカウントの再接続は編集権を保つ
+  let editableGoogleAccountId = settings?.editableGoogleAccountId;
+  if (settings !== null && editableGoogleAccountId === undefined && anyConnection === null) {
+    editableGoogleAccountId = args.googleAccountId;
+    await ctx.db.patch("calendarOutputSettings", settings._id, { editableGoogleAccountId });
   }
   const known = new Set(args.calendars.map((calendar) => calendar.id));
   const visibleCalendarIds = (
@@ -32,7 +45,7 @@ export async function upsertConnection(
   ).filter((id) => known.has(id));
   const fields = {
     externalChangesVersion: existing === null ? 1 : existing.externalChangesVersion,
-    externalReadOnly: existing?.externalReadOnly ?? true,
+    externalReadOnly: args.googleAccountId !== editableGoogleAccountId,
     canWrite: args.canWrite ?? existing?.canWrite ?? true,
     calendars: args.calendars,
     googleAccountId: args.googleAccountId,

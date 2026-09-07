@@ -9,10 +9,12 @@ export const connectedPage = internalQuery({
     const page = await ctx.db.query("calendarConnections").paginate(args.paginationOpts);
     return {
       ...page,
-      page: page.page.map((connection) => ({
-        ownerId: connection.ownerId,
-        connectionId: connection._id,
-      })),
+      //? 権限切れ・解除中の接続は cron から触らない。再接続すれば connect が初回同期を行う
+      page: page.page.flatMap((connection) =>
+        connection.status === "needsReauth" || connection.disconnecting === true
+          ? []
+          : [{ ownerId: connection.ownerId, connectionId: connection._id }],
+      ),
     };
   },
   returns: paginationResultValidator(

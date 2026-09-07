@@ -3,7 +3,7 @@ import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
-import { GOOGLE_CALENDAR_SCOPES } from "./lib/calendarSync";
+import { GOOGLE_CALENDAR_WRITE_SCOPES } from "./lib/calendarSync";
 import { GoogleAuthError } from "./lib/googleAccessToken";
 import type { GoalInput } from "./lib/validators";
 import schema from "./schema";
@@ -41,7 +41,7 @@ const OTHER = { email: "other@example.com", subject: "other-subject" };
 const TODAY = "2026-08-17";
 const PRIMARY = "owner@example.com";
 const HOLIDAY = "ja.japanese#holiday@group.v.calendar.google.com";
-const CALENDAR_SCOPES = [...GOOGLE_CALENDAR_SCOPES];
+const CALENDAR_SCOPES = [...GOOGLE_CALENDAR_WRITE_SCOPES];
 
 type FakeEvent = {
   colorId?: string;
@@ -644,7 +644,11 @@ test("トークンが取れなくなったら再接続が必要になり、cron 
     (await owner.query(api.queries.calendarSync.status.status, {})).connections[0]?.status,
   ).toBe("needsReauth");
   expect(
-    await t.query(internal.queries.calendarSync.listConnectedOwners.listConnectedOwners, {}),
+    (
+      await t.query(internal.queries.calendarSync.connectedPage.connectedPage, {
+        paginationOpts: { cursor: null, numItems: 10 },
+      })
+    ).page,
   ).toEqual([]);
   tokenState.fail = false;
   await connectAccount(owner);

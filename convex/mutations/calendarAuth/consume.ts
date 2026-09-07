@@ -3,10 +3,13 @@ import { v } from "convex/values";
 
 import { internalMutation } from "../../_generated/server";
 import { throwDomain } from "../../lib/ownerFunctions";
+import schema from "../../schema";
 import { consumeRequest } from "../../services/calendarAuth/requests";
 
+const requestFields = schema.tables.calendarAuthorizationRequests.validator.fields;
+
 export const consume = internalMutation({
-  args: { ownerId: v.string(), requestId: v.id("calendarAuthorizationRequests") },
+  args: { ownerId: v.string(), requestId: v.string() },
   handler: async (ctx, args) => {
     const result = await consumeRequest(ctx, args.ownerId, args.requestId);
     if (Result.isError(result)) {
@@ -15,8 +18,8 @@ export const consume = internalMutation({
     return result.value;
   },
   returns: v.object({
-    calendarId: v.optional(v.string()),
+    calendarId: requestFields.calendarId,
     googleAccountId: v.string(),
-    purpose: v.union(v.literal("read"), v.literal("write")),
+    purpose: requestFields.purpose,
   }),
 });

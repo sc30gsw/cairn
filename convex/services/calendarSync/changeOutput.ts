@@ -3,6 +3,7 @@ import { Result } from "better-result";
 import { internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
 import type { ActionCtx } from "../../_generated/server";
+import { CALENDAR_OUTPUT_CHANGE_STALLED_MESSAGE } from "../../lib/calendarSync";
 import { ConflictError, ValidationFailedError } from "../../lib/errors";
 import { getGoogleAccessToken } from "../../lib/googleAccessToken";
 import { deleteEvent, insertEvent, isAuthFailure, isGone } from "../../lib/googleCalendar";
@@ -106,12 +107,14 @@ export async function continueOutputChange(
         { ownerId, generation: plan.generation, linkId: link._id, pendingMove: pending },
       );
       if (!recorded) {
+        //? 世代が進んで記録できなかった移行先コピーの補償削除。消せなくても記録先が無いので
+        //? 次の世代の移行（作成応答を失った場合と同じ経路）で決定的 ID から消す
         if (pending.googleEventId !== link.googleEventId || pending.calendarId !== link.calendarId)
-          await deleteEvent(
+          void (await deleteEvent(
             { accessToken: destinationToken.value },
             pending.calendarId,
             pending.googleEventId,
-          );
+          ));
         return "moving";
       }
     }
@@ -167,6 +170,18 @@ export async function continueOutputChange(
       connectionId: plan.connectionId,
     });
     return "ok";
+  }
+  //? 残りの対応表を1件も計画できない（元の接続が消えている）なら、再スケジュールしても
+  //? 進まない。無限ループにせず、状態を残して所有者に知らせる
+  if (plan.links.length === 0) {
+    await markSyncError(
+      ctx,
+      ownerId,
+      CALENDAR_OUTPUT_CHANGE_STALLED_MESSAGE,
+      null,
+      plan.connectionId,
+    );
+    throwDomain(new ConflictError({ message: CALENDAR_OUTPUT_CHANGE_STALLED_MESSAGE }));
   }
   await ctx.scheduler.runAfter(0, internal.actions.calendarSync.continueOutput.continueOutput, {
     ownerId,

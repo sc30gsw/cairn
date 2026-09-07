@@ -5,6 +5,7 @@ import {
   CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE,
   CALENDAR_SYNC_RETRY_DELAYS_MS,
 } from "../../lib/calendarSync";
+import type { GoogleAuthError } from "../../lib/googleAccessToken";
 
 export async function markNeedsReauth(
   ctx: ActionCtx,
@@ -43,7 +44,7 @@ export function retryDelayMs(attempt: number): number | undefined {
 export async function markTokenFailure(
   ctx: ActionCtx,
   ownerId: string,
-  error: { message: string; revoked?: boolean },
+  error: Pick<GoogleAuthError, "message" | "revoked">,
   connectionId?: Id<"calendarConnections">,
 ): Promise<"error" | "needsReauth"> {
   if (error.revoked === true) {

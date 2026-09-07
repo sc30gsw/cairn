@@ -2,7 +2,8 @@ import { Migrations } from "@convex-dev/migrations";
 import type { ComponentApi } from "@convex-dev/migrations/_generated/component.js";
 import { componentsGeneric } from "convex/server";
 
-import type { DataModel } from "./_generated/dataModel";
+import type { DataModel, Id } from "./_generated/dataModel";
+import type { MutationCtx } from "./_generated/server";
 import schema from "./schema";
 import { getConnection } from "./services/calendarSync/getConnection";
 import { migrateConnections } from "./services/calendarSync/migrateConnections";
@@ -47,52 +48,37 @@ export const backfillCalendarConnections = migrations.define({
   },
 });
 
+async function backfillConnectionId(
+  ctx: MutationCtx,
+  row: { connectionId?: Id<"calendarConnections">; ownerId: string },
+) {
+  if (row.connectionId !== undefined) return;
+  await migrateConnections(ctx, row.ownerId);
+  const connection = await getConnection(ctx, row.ownerId);
+  return connection === null ? undefined : { connectionId: connection._id };
+}
+
 export const backfillCalendarLinks = migrations.define({
   table: "calendarSyncLinks",
-  migrateOne: async (ctx, row) => {
-    if (row.connectionId !== undefined) return;
-    await migrateConnections(ctx, row.ownerId);
-    const connection = await getConnection(ctx, row.ownerId);
-    return connection === null ? undefined : { connectionId: connection._id };
-  },
+  migrateOne: backfillConnectionId,
 });
 
 export const backfillCalendarCursors = migrations.define({
   table: "calendarSyncCursors",
-  migrateOne: async (ctx, row) => {
-    if (row.connectionId !== undefined) return;
-    await migrateConnections(ctx, row.ownerId);
-    const connection = await getConnection(ctx, row.ownerId);
-    return connection === null ? undefined : { connectionId: connection._id };
-  },
+  migrateOne: backfillConnectionId,
 });
 
 export const backfillCalendarEvents = migrations.define({
   table: "externalCalendarEvents",
-  migrateOne: async (ctx, row) => {
-    if (row.connectionId !== undefined) return;
-    await migrateConnections(ctx, row.ownerId);
-    const connection = await getConnection(ctx, row.ownerId);
-    return connection === null ? undefined : { connectionId: connection._id };
-  },
+  migrateOne: backfillConnectionId,
 });
 
 export const backfillCalendarChanges = migrations.define({
   table: "calendarExternalChanges",
-  migrateOne: async (ctx, row) => {
-    if (row.connectionId !== undefined) return;
-    await migrateConnections(ctx, row.ownerId);
-    const connection = await getConnection(ctx, row.ownerId);
-    return connection === null ? undefined : { connectionId: connection._id };
-  },
+  migrateOne: backfillConnectionId,
 });
 
 export const backfillCalendarOperations = migrations.define({
   table: "calendarSyncOperations",
-  migrateOne: async (ctx, row) => {
-    if (row.connectionId !== undefined) return;
-    await migrateConnections(ctx, row.ownerId);
-    const connection = await getConnection(ctx, row.ownerId);
-    return connection === null ? undefined : { connectionId: connection._id };
-  },
+  migrateOne: backfillConnectionId,
 });

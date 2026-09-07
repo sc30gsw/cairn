@@ -1,15 +1,22 @@
 import { Result } from "better-result";
+import * as v from "valibot";
 
 import { components, internal } from "../../_generated/api";
-import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
+import {
+  GOOGLE_CALENDAR_READ_SCOPES,
+  GOOGLE_CALENDAR_SCOPE,
+  GOOGLE_CALENDAR_WRITE_SCOPES,
+} from "../../lib/calendarSync";
 import { ForbiddenError, ValidationFailedError } from "../../lib/errors";
+import type { CalendarAuthBeginArgs, CalendarAuthBeginResult } from "../../lib/validators";
 
 const REQUEST_LIFETIME_MS = 10 * 60 * 1000;
-const CALENDAR_LIST_SCOPE = "https://www.googleapis.com/auth/calendar.calendarlist.readonly";
-const READ_EVENTS_SCOPE = "https://www.googleapis.com/auth/calendar.events.readonly";
-const READ_SCOPES = [CALENDAR_LIST_SCOPE, READ_EVENTS_SCOPE];
-const WRITE_SCOPE = "https://www.googleapis.com/auth/calendar.events";
+
+const googleAccountRow = v.object({
+  scope: v.nullish(v.string(), ""),
+  userId: v.string(),
+});
 
 export async function findGoogleAccount(ctx: Pick<QueryCtx, "runQuery">, googleAccountId: string) {
   const account: unknown = await ctx.runQuery(components.betterAuth.adapter.findOne, {
@@ -19,37 +26,15 @@ export async function findGoogleAccount(ctx: Pick<QueryCtx, "runQuery">, googleA
       { field: "accountId", value: googleAccountId },
     ],
   });
-  if (
-    account === null ||
-    typeof account !== "object" ||
-    !("userId" in account) ||
-    typeof account.userId !== "string"
-  ) {
-    return null;
-  }
-  return {
-    scope: "scope" in account && typeof account.scope === "string" ? account.scope : "",
-    userId: account.userId,
-  };
+  const parsed = v.safeParse(googleAccountRow, account);
+  return parsed.success ? parsed.output : null;
 }
 
 export async function beginRequest(
   ctx: MutationCtx,
   ownerId: string,
-  args: {
-    calendarId?: string;
-    googleAccountId?: string;
-    purpose: "read" | "write";
-  },
-): Promise<
-  Result<
-    {
-      requestId: Id<"calendarAuthorizationRequests">;
-      scopes: string[];
-    },
-    ForbiddenError | ValidationFailedError
-  >
-> {
+  args: CalendarAuthBeginArgs,
+): Promise<Result<CalendarAuthBeginResult, ForbiddenError | ValidationFailedError>> {
   if (args.purpose === "write" && !args.googleAccountId) {
     return Result.err(
       new ValidationFailedError({ message: "再接続する Google アカウントを選んでください。" }),
@@ -65,11 +50,11 @@ export async function beginRequest(
   }
   const expiresAt = Date.now() + REQUEST_LIFETIME_MS;
   const requestId = await ctx.db.insert("calendarAuthorizationRequests", {
-    ...args,
+    calendarId: args.calendarId,
     expectedGoogleAccountId: args.googleAccountId,
     expiresAt,
-    googleAccountId: undefined,
     ownerId,
+    purpose: args.purpose,
     state: "pending",
   });
   await ctx.scheduler.runAt(expiresAt, internal.mutations.calendarAuth.expire.expire, {
@@ -77,7 +62,10 @@ export async function beginRequest(
   });
   return Result.ok({
     requestId,
-    scopes: args.purpose === "write" ? [...READ_SCOPES, WRITE_SCOPE] : READ_SCOPES,
+    scopes:
+      args.purpose === "write"
+        ? [...GOOGLE_CALENDAR_WRITE_SCOPES]
+        : [...GOOGLE_CALENDAR_READ_SCOPES],
   });
 }
 
@@ -113,6 +101,8 @@ export async function authorizeRequest(
     return false;
   }
   if (!identity) {
+    //? Better Auth が account を保存する前に呼ばれる。既存 account が無い subject は
+    //? カレンダー専用として記録し、以後どの経路でも Cairn へのログインに使わせない（ADR-0019）
     await ctx.db.insert("googleCalendarIdentities", {
       googleAccountId: args.googleAccountId,
       ownerId: args.ownerId,
@@ -126,33 +116,31 @@ export async function authorizeRequest(
   return true;
 }
 
-export async function consumeRequest(
-  ctx: MutationCtx,
-  ownerId: string,
-  requestId: Id<"calendarAuthorizationRequests">,
-) {
-  const request = await ctx.db.get("calendarAuthorizationRequests", requestId);
+const REQUEST_UNVERIFIED = "Google 連携の確認ができませんでした。連携をやり直してください。";
+
+export async function consumeRequest(ctx: MutationCtx, ownerId: string, rawRequestId: string) {
+  const requestId = ctx.db.normalizeId("calendarAuthorizationRequests", rawRequestId);
+  const request =
+    requestId === null ? null : await ctx.db.get("calendarAuthorizationRequests", requestId);
   if (
+    requestId === null ||
     !request ||
     request.ownerId !== ownerId ||
     request.expiresAt <= Date.now() ||
     request.state !== "authorized" ||
     !request.googleAccountId
   ) {
-    return Result.err(
-      new ForbiddenError({
-        message: "Google 連携の確認ができませんでした。連携をやり直してください。",
-      }),
-    );
+    return Result.err(new ForbiddenError({ message: REQUEST_UNVERIFIED }));
   }
   const account = await findGoogleAccount(ctx, request.googleAccountId);
   const scopes = new Set(account?.scope.split(/[ ,]+/) ?? []);
   const canRead =
-    scopes.has(CALENDAR_LIST_SCOPE) && (scopes.has(READ_EVENTS_SCOPE) || scopes.has(WRITE_SCOPE));
+    scopes.has(GOOGLE_CALENDAR_SCOPE.calendarList) &&
+    (scopes.has(GOOGLE_CALENDAR_SCOPE.readEvents) || scopes.has(GOOGLE_CALENDAR_SCOPE.writeEvents));
   if (
     account?.userId !== ownerId ||
     !canRead ||
-    (request.purpose === "write" && !scopes.has(WRITE_SCOPE))
+    (request.purpose === "write" && !scopes.has(GOOGLE_CALENDAR_SCOPE.writeEvents))
   ) {
     return Result.err(
       new ForbiddenError({

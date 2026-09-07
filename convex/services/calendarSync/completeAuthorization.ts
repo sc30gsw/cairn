@@ -1,5 +1,4 @@
 import { internal } from "../../_generated/api";
-import type { Id } from "../../_generated/dataModel";
 import type { ActionCtx } from "../../_generated/server";
 import { NotFoundError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
@@ -11,7 +10,7 @@ import { withCalendarOperation } from "./operation";
 export async function completeAuthorization(
   ctx: ActionCtx,
   ownerId: string,
-  requestId: Id<"calendarAuthorizationRequests">,
+  requestId: string,
 ): Promise<OwnerSyncOutcome | "moving"> {
   const operation = await withCalendarOperation(
     ctx,

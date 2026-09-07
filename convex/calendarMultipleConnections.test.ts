@@ -2,6 +2,7 @@ import { convexTest } from "convex-test";
 import { expect, test } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
+import type { PulledEvent } from "./lib/validators";
 import schema from "./schema";
 
 const modules = import.meta.glob([
@@ -24,7 +25,7 @@ const event = {
   endAt: "2026-09-07 11:00:00",
   title: "会議",
   updated: "2026-09-07T00:00:00Z",
-} as const;
+} as const satisfies PulledEvent;
 
 async function setup() {
   const t = convexTest(schema, modules);
@@ -209,4 +210,38 @@ test("再認可で一覧から消えた閲覧専用カレンダーの残存コ�
       pendingId,
     }),
   ).toBeNull();
+});
+
+test("初回接続は外部予定を編集でき、追加接続だけが閲覧専用になり、再接続でも編集権を保つ", async () => {
+  const t = convexTest(schema, modules);
+  const upsert = (googleAccountId: string) =>
+    t.mutation(internal.mutations.calendarSync.upsertConnection.upsertConnection, {
+      ownerId: "fresh",
+      googleAccountId,
+      googleEmail: `${googleAccountId}@example.com`,
+      canWrite: true,
+      calendars: [
+        { id: googleAccountId, summary: googleAccountId, primary: true, accessRole: "owner" },
+      ],
+      defaultVisibleCalendarIds: [googleAccountId],
+    });
+  const readOnlyByAccount = async () =>
+    (
+      await t.withIdentity({ subject: "fresh" }).query(api.queries.calendarSync.status.status, {})
+    ).connections.map((connection) => [connection.googleAccountId, connection.externalReadOnly]);
+  const first = await upsert("first");
+  await upsert("second");
+  expect(await readOnlyByAccount()).toEqual([
+    ["first", false],
+    ["second", true],
+  ]);
+  await t.mutation(internal.mutations.calendarSync.clearConnection.clearConnection, {
+    ownerId: "fresh",
+    connectionId: first,
+  });
+  await upsert("first");
+  expect(await readOnlyByAccount()).toEqual([
+    ["second", true],
+    ["first", false],
+  ]);
 });

@@ -1,6 +1,12 @@
 import { type Infer, v } from "convex/values";
 
-import { CALENDAR_SYNC_SOURCE_KINDS, CALENDAR_SYNC_STATUSES } from "../calendarSync";
+import {
+  CALENDAR_AUTH_PURPOSES,
+  CALENDAR_AUTH_REQUEST_STATES,
+  CALENDAR_SYNC_SOURCE_KINDS,
+  CALENDAR_SYNC_SOURCE_PHASES,
+  CALENDAR_SYNC_STATUSES,
+} from "../calendarSync";
 import { GOOGLE_CALENDAR_EVENT_COLORS } from "../googleCalendarColors";
 
 export const calendarSyncStatusValidator = v.union(
@@ -10,6 +16,33 @@ export const calendarSyncStatusValidator = v.union(
 export const calendarSyncSourceKindValidator = v.union(
   ...CALENDAR_SYNC_SOURCE_KINDS.map((kind) => v.literal(kind)),
 );
+
+export const calendarSyncSourcePhaseValidator = v.union(
+  ...CALENDAR_SYNC_SOURCE_PHASES.map((phase) => v.literal(phase)),
+);
+
+export const calendarAuthPurposeValidator = v.union(
+  ...CALENDAR_AUTH_PURPOSES.map((purpose) => v.literal(purpose)),
+);
+
+export const calendarAuthRequestStateValidator = v.union(
+  ...CALENDAR_AUTH_REQUEST_STATES.map((state) => v.literal(state)),
+);
+
+export const calendarAuthBeginArgsValidator = v.object({
+  calendarId: v.optional(v.string()),
+  googleAccountId: v.optional(v.string()),
+  purpose: calendarAuthPurposeValidator,
+});
+
+export type CalendarAuthBeginArgs = Infer<typeof calendarAuthBeginArgsValidator>;
+
+export const calendarAuthBeginResultValidator = v.object({
+  requestId: v.id("calendarAuthorizationRequests"),
+  scopes: v.array(v.string()),
+});
+
+export type CalendarAuthBeginResult = Infer<typeof calendarAuthBeginResultValidator>;
 
 export const googleCalendarSummaryValidator = v.object({
   accessRole: v.optional(v.string()),
@@ -150,7 +183,6 @@ export const syncPlanValidator = v.union(
     cursors: v.array(
       v.object({ calendarId: v.string(), fullSyncedOnJst: v.string(), syncToken: v.string() }),
     ),
-    sources: v.array(syncSourceValidator),
     visibleCalendarIds: v.array(v.string()),
   }),
 );

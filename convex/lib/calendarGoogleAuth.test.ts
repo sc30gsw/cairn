@@ -3,13 +3,11 @@ import { betterAuth } from "better-auth/minimal";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 
 import { calendarGoogleAuth } from "./calendarGoogleAuth";
+import { GOOGLE_CALENDAR_READ_SCOPES } from "./calendarSync";
 
 const ORIGIN = "http://localhost:3000";
 const SECRET = "test-calendar-google-auth-secret-at-least-32-characters";
-const READ_SCOPES = [
-  "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
-  "https://www.googleapis.com/auth/calendar.events.readonly",
-];
+const READ_SCOPES = [...GOOGLE_CALENDAR_READ_SCOPES];
 
 function idToken(subject: string, email = `${subject}@example.com`) {
   return [

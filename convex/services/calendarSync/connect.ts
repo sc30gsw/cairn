@@ -6,6 +6,7 @@ import {
   CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE,
   CALENDAR_SYNC_PRIMARY_MISSING_MESSAGE,
   CALENDAR_SYNC_SCOPE_MISSING_MESSAGE,
+  GOOGLE_CALENDAR_SCOPE,
 } from "../../lib/calendarSync";
 import { ValidationFailedError } from "../../lib/errors";
 import { getGoogleAccessToken, listGoogleAccounts } from "../../lib/googleAccessToken";
@@ -25,15 +26,12 @@ export async function connect(
 ): Promise<OwnerSyncOutcome> {
   const accounts = await listGoogleAccounts(ctx);
   const account = accounts.find((candidate) => candidate.accountId === googleAccountId);
-  const canWrite =
-    account?.scopes.includes("https://www.googleapis.com/auth/calendar.events") === true;
-  const canRead =
-    canWrite ||
-    account?.scopes.includes("https://www.googleapis.com/auth/calendar.events.readonly") === true;
+  const canWrite = account?.scopes.includes(GOOGLE_CALENDAR_SCOPE.writeEvents) === true;
+  const canRead = canWrite || account?.scopes.includes(GOOGLE_CALENDAR_SCOPE.readEvents) === true;
   if (
     account === undefined ||
     !canRead ||
-    !account.scopes.includes("https://www.googleapis.com/auth/calendar.calendarlist.readonly")
+    !account.scopes.includes(GOOGLE_CALENDAR_SCOPE.calendarList)
   ) {
     throwDomain(new ValidationFailedError({ message: CALENDAR_SYNC_SCOPE_MISSING_MESSAGE }));
   }

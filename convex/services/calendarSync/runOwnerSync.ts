@@ -1,9 +1,13 @@
 import { Result } from "better-result";
+import type { FunctionReturnType } from "convex/server";
 
 import { internal } from "../../_generated/api";
-import type { Doc, Id } from "../../_generated/dataModel";
+import type { Id } from "../../_generated/dataModel";
 import type { ActionCtx } from "../../_generated/server";
-import { CALENDAR_SYNC_FULL_RESYNC_DAYS } from "../../lib/calendarSync";
+import {
+  CALENDAR_SYNC_FULL_RESYNC_DAYS,
+  CALENDAR_SYNC_SOURCE_PHASES,
+} from "../../lib/calendarSync";
 import { getGoogleAccessToken } from "../../lib/googleAccessToken";
 import {
   type GoogleCalendarClient,
@@ -11,7 +15,7 @@ import {
   isAuthFailure,
 } from "../../lib/googleCalendar";
 import { daysUntil, todayJst } from "../../lib/jst";
-import type { OwnerSyncOutcome, SyncSource } from "../../lib/validators";
+import type { OwnerSyncOutcome } from "../../lib/validators";
 import { applyPulledEventsInOrder } from "./applyPulledEventsInOrder";
 import { calendarsToPull } from "./calendarsToPull";
 import { withCalendarOperation } from "./operation";
@@ -20,6 +24,12 @@ import { flushExternalChanges } from "./pushExternalChange";
 import { pushOne } from "./pushOne";
 import { markNeedsReauth, markSyncError, markTokenFailure } from "./syncFailure";
 import { syncWindow } from "./window";
+
+type ConnectionsPage = FunctionReturnType<
+  typeof internal.queries.calendarSync.connectionsForOwner.connectionsForOwner
+>;
+type LinkedPage = FunctionReturnType<typeof internal.queries.calendarSync.linkedPage.linkedPage>;
+type SourcePage = FunctionReturnType<typeof internal.queries.calendarSync.sourcePage.sourcePage>;
 
 export async function runOwnerSync(
   ctx: ActionCtx,
@@ -38,13 +48,16 @@ export async function runOwnerSync(
   let cursor: string | null = null;
   let result: OwnerSyncOutcome = "notConnected";
   while (true) {
-    const page: { page: Id<"calendarConnections">[]; isDone: boolean; continueCursor: string } =
-      await ctx.runQuery(internal.queries.calendarSync.connectionsForOwner.connectionsForOwner, {
-        ownerId,
-        paginationOpts: { cursor, numItems: 25 },
-      });
-    const outcomes = await Promise.all(page.page.map((id) => runOwnerSync(ctx, ownerId, id)));
-    for (const outcome of outcomes) {
+    const page: ConnectionsPage = await ctx.runQuery(
+      internal.queries.calendarSync.connectionsForOwner.connectionsForOwner,
+      { ownerId, paginationOpts: { cursor, numItems: 25 } },
+    );
+    //? 1接続の予期しない失敗で他の接続の同期を止めない（allSettled）
+    const outcomes = await Promise.allSettled(
+      page.page.map((id) => runOwnerSync(ctx, ownerId, id)),
+    );
+    for (const settled of outcomes) {
+      const outcome: OwnerSyncOutcome = settled.status === "fulfilled" ? settled.value : "error";
       if (result === "notConnected" || result === "ok" || outcome === "error") result = outcome;
     }
     if (page.isDone) return result;
@@ -62,7 +75,6 @@ export async function syncConnectedOwner(
     ownerId,
     connectionId,
     todayJst: today,
-    includeSources: false,
   });
   if (plan === null) {
     return "notConnected";
@@ -73,7 +85,7 @@ export async function syncConnectedOwner(
     userId: ownerId,
   });
   if (Result.isError(token)) {
-    return markTokenFailure(ctx, ownerId, token.error, connectionId);
+    return markTokenFailure(ctx, ownerId, token.error, plan.connectionId);
   }
   const client: GoogleCalendarClient = { accessToken: token.value };
   const window = syncWindow(today);
@@ -81,7 +93,7 @@ export async function syncConnectedOwner(
   const flushed = await flushExternalChanges(ctx, client, ownerId, plan.connectionId);
   if (Result.isError(flushed)) {
     if (isAuthFailure(flushed.error)) {
-      await markNeedsReauth(ctx, ownerId, connectionId);
+      await markNeedsReauth(ctx, ownerId, plan.connectionId);
       return "needsReauth";
     }
     failures.push(flushed.error);
@@ -89,9 +101,8 @@ export async function syncConnectedOwner(
 
   const pullPlan = await ctx.runQuery(internal.queries.calendarSync.syncPlan.syncPlan, {
     ownerId,
-    connectionId,
+    connectionId: plan.connectionId,
     todayJst: today,
-    includeSources: false,
   });
   if (pullPlan === null) return "notConnected";
   const cursorByCalendar = new Map(pullPlan.cursors.map((entry) => [entry.calendarId, entry]));
@@ -106,13 +117,15 @@ export async function syncConnectedOwner(
     if (pullPlan.isOutput && calendarId === pullPlan.calendarId) {
       let linkCursor: string | null = null;
       while (true) {
-        const page: { page: Doc<"calendarSyncLinks">[]; isDone: boolean; continueCursor: string } =
-          await ctx.runQuery(internal.queries.calendarSync.linkedPage.linkedPage, {
+        const page: LinkedPage = await ctx.runQuery(
+          internal.queries.calendarSync.linkedPage.linkedPage,
+          {
             ownerId,
             connectionId: pullPlan.connectionId,
             calendarId,
             paginationOpts: { cursor: linkCursor, numItems: 100 },
-          });
+          },
+        );
         linkedEventIds.push(...page.page.map((link) => link.googleEventId));
         if (page.isDone) break;
         linkCursor = page.continueCursor;
@@ -126,7 +139,7 @@ export async function syncConnectedOwner(
     });
     if (Result.isError(pulled)) {
       if (isAuthFailure(pulled.error)) {
-        await markNeedsReauth(ctx, ownerId, connectionId);
+        await markNeedsReauth(ctx, ownerId, plan.connectionId);
         return "needsReauth";
       }
       failures.push(pulled.error);
@@ -137,7 +150,7 @@ export async function syncConnectedOwner(
       events: pulled.value.events,
       finish: { keepEventIds: pulled.value.keepEventIds, syncToken: pulled.value.syncToken },
       ownerId,
-      connectionId,
+      connectionId: plan.connectionId,
       todayJst: today,
       generation: pullPlan.generation,
     });
@@ -145,24 +158,25 @@ export async function syncConnectedOwner(
 
   const refreshed = await ctx.runQuery(internal.queries.calendarSync.syncPlan.syncPlan, {
     ownerId,
-    connectionId,
+    connectionId: plan.connectionId,
     todayJst: today,
-    includeSources: false,
   });
   if (refreshed === null) {
     return "notConnected";
   }
-  for (const phase of ["goals", "blocks", "links"] as const) {
+  for (const phase of CALENDAR_SYNC_SOURCE_PHASES) {
     let sourceCursor: string | null = null;
     while (refreshed.isOutput) {
-      const page: { page: SyncSource[]; isDone: boolean; continueCursor: string } =
-        await ctx.runQuery(internal.queries.calendarSync.sourcePage.sourcePage, {
+      const page: SourcePage = await ctx.runQuery(
+        internal.queries.calendarSync.sourcePage.sourcePage,
+        {
           ownerId,
           connectionId: refreshed.connectionId,
           todayJst: today,
           phase,
           paginationOpts: { cursor: sourceCursor, numItems: 50 },
-        });
+        },
+      );
       for (const source of page.page) {
         const pushed = await pushOne(ctx, client, {
           calendarId: refreshed.calendarId,
@@ -173,7 +187,7 @@ export async function syncConnectedOwner(
         });
         if (Result.isError(pushed)) {
           if (isAuthFailure(pushed.error)) {
-            await markNeedsReauth(ctx, ownerId, connectionId);
+            await markNeedsReauth(ctx, ownerId, plan.connectionId);
             return "needsReauth";
           }
           failures.push(pushed.error);
@@ -187,13 +201,19 @@ export async function syncConnectedOwner(
   const now = Date.now();
   if (failures.length > 0) {
     const [first] = failures;
-    await markSyncError(ctx, ownerId, first?.message ?? "同期に失敗しました", now, connectionId);
+    await markSyncError(
+      ctx,
+      ownerId,
+      first?.message ?? "同期に失敗しました",
+      now,
+      plan.connectionId,
+    );
     return "error";
   }
   await ctx.runMutation(internal.mutations.calendarSync.markStatus.markStatus, {
     lastError: null,
     ownerId,
-    connectionId,
+    connectionId: plan.connectionId,
     status: "ok",
     syncedAt: now,
   });

@@ -1,15 +1,17 @@
 import { createAuthMiddleware, getOAuthState } from "better-auth/api";
 import type { BetterAuthOptions } from "better-auth/minimal";
 import { google } from "better-auth/social-providers";
+import type { FunctionArgs } from "convex/server";
+
+import type { internal } from "../_generated/api";
+import { CALENDAR_REQUEST_ID_KEY } from "./calendarSync";
 
 type GoogleOptions = Parameters<typeof google>[0];
 
 export type CalendarGoogleAuthorization = {
-  authorize: (args: {
-    googleAccountId: string;
-    ownerId: string;
-    requestId: string;
-  }) => Promise<boolean>;
+  authorize: (
+    args: FunctionArgs<typeof internal.mutations.calendarAuth.authorize.authorize>,
+  ) => Promise<boolean>;
   canSignIn: (googleAccountId: string) => Promise<boolean>;
 };
 
@@ -28,24 +30,27 @@ export function calendarGoogleAuth(
       return null;
     }
     const googleAccountId = String(profile.user.id);
+    //? /link-social は idToken を直接渡す連携で、OAuth state（所有者と一回限りの要求）を経由しない。
+    //? null を返すと Better Auth が連携を拒否するので、カレンダー接続は常に callback 経由に限定する
     if (path === "/link-social") {
       return null;
     }
     const state = await getOAuthState();
     if (state?.link) {
+      const requestId = state[CALENDAR_REQUEST_ID_KEY];
       if (
-        typeof state.calendarRequestId !== "string" ||
+        typeof requestId !== "string" ||
         !(await authorization.authorize({
           googleAccountId,
           ownerId: state.link.userId,
-          requestId: state.calendarRequestId,
+          requestId,
         }))
       ) {
         return null;
       }
       return profile;
     }
-    if (state?.calendarRequestId || !(await authorization.canSignIn(googleAccountId))) {
+    if (state?.[CALENDAR_REQUEST_ID_KEY] || !(await authorization.canSignIn(googleAccountId))) {
       return null;
     }
     attempt.googleAccountId = googleAccountId;

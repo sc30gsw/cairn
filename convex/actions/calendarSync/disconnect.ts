@@ -19,7 +19,6 @@ export const disconnect = ownerAction({
         ownerId: ctx.ownerId,
         connectionId: args.connectionId,
         todayJst: todayJst(),
-        includeSources: false,
       });
       await ctx.runMutation(internal.mutations.calendarSync.beginDisconnect.beginDisconnect, {
         ownerId: ctx.ownerId,

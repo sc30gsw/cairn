@@ -188,7 +188,6 @@ import type * as queries_calendarSync_connectedPage from "../queries/calendarSyn
 import type * as queries_calendarSync_connectionAccess from "../queries/calendarSync/connectionAccess.js";
 import type * as queries_calendarSync_connectionsForOwner from "../queries/calendarSync/connectionsForOwner.js";
 import type * as queries_calendarSync_linkedPage from "../queries/calendarSync/linkedPage.js";
-import type * as queries_calendarSync_listConnectedOwners from "../queries/calendarSync/listConnectedOwners.js";
 import type * as queries_calendarSync_listExternal from "../queries/calendarSync/listExternal.js";
 import type * as queries_calendarSync_outputMigration from "../queries/calendarSync/outputMigration.js";
 import type * as queries_calendarSync_pendingExternalChange from "../queries/calendarSync/pendingExternalChange.js";
@@ -614,7 +613,6 @@ declare const fullApi: ApiFromModules<{
   "queries/calendarSync/connectionAccess": typeof queries_calendarSync_connectionAccess;
   "queries/calendarSync/connectionsForOwner": typeof queries_calendarSync_connectionsForOwner;
   "queries/calendarSync/linkedPage": typeof queries_calendarSync_linkedPage;
-  "queries/calendarSync/listConnectedOwners": typeof queries_calendarSync_listConnectedOwners;
   "queries/calendarSync/listExternal": typeof queries_calendarSync_listExternal;
   "queries/calendarSync/outputMigration": typeof queries_calendarSync_outputMigration;
   "queries/calendarSync/pendingExternalChange": typeof queries_calendarSync_pendingExternalChange;

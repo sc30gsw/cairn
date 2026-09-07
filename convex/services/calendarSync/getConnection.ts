@@ -71,9 +71,3 @@ export async function listConnections(
     (a, b) => a._creationTime - b._creationTime || a._id.localeCompare(b._id),
   );
 }
-
-export function canWriteCalendar(accessRole: string | undefined) {
-  return (
-    accessRole === "owner" || accessRole === "writer" || accessRole === "writerWithoutPrivateAccess"
-  );
-}

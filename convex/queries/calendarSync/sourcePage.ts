@@ -2,7 +2,7 @@ import { paginationOptsValidator, paginationResultValidator } from "convex/serve
 import { v } from "convex/values";
 
 import { internalQuery } from "../../_generated/server";
-import { syncSourceValidator } from "../../lib/validators";
+import { calendarSyncSourcePhaseValidator, syncSourceValidator } from "../../lib/validators";
 import { getOutput } from "../../services/calendarSync/getConnection";
 import { findLink, syncSource } from "../../services/calendarSync/syncSource";
 import { syncWindow } from "../../services/calendarSync/window";
@@ -12,7 +12,7 @@ export const sourcePage = internalQuery({
     ownerId: v.string(),
     connectionId: v.id("calendarConnections"),
     todayJst: v.string(),
-    phase: v.union(v.literal("goals"), v.literal("blocks"), v.literal("links")),
+    phase: calendarSyncSourcePhaseValidator,
     paginationOpts: paginationOptsValidator,
   },
   returns: paginationResultValidator(syncSourceValidator),

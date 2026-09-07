@@ -1,5 +1,6 @@
 import { Result } from "better-result";
 import type { FunctionReturnType } from "convex/server";
+import { CALENDAR_REQUEST_ID_KEY } from "~domain/calendarSync";
 
 import type { api } from "~/../convex/_generated/api";
 import { type AuthActionResult, runAuthAction } from "~/lib/auth-action-result";
@@ -15,18 +16,16 @@ import {
 const CALENDAR_SYNC_CONNECT_PENDING_KEY = "cairn:calendar-sync:connect-pending";
 type CalendarAuthorization = FunctionReturnType<typeof api.mutations.calendarAuth.begin.begin>;
 
-export function readCalendarSyncConnectPending(): CalendarAuthorization["requestId"] | null {
+function pendingKey(requestId: string): string {
+  return `${CALENDAR_SYNC_CONNECT_PENDING_KEY}:${requestId}`;
+}
+
+export function readCalendarSyncConnectPending(): string | null {
   if (typeof window === "undefined") {
     return null;
   }
-  const requestId = new URLSearchParams(window.location.search).get("calendarRequestId");
-  if (
-    !requestId ||
-    trySessionStorageGet(`${CALENDAR_SYNC_CONNECT_PENDING_KEY}:${requestId}`) !== "1"
-  ) {
-    return null;
-  }
-  return requestId as CalendarAuthorization["requestId"];
+  const requestId = new URLSearchParams(window.location.search).get(CALENDAR_REQUEST_ID_KEY);
+  return requestId && trySessionStorageGet(pendingKey(requestId)) === "1" ? requestId : null;
 }
 
 export function clearCalendarSyncConnectPending(
@@ -35,8 +34,7 @@ export function clearCalendarSyncConnectPending(
   if (typeof window === "undefined") {
     return;
   }
-  if (requestId !== null)
-    trySessionStorageRemove(`${CALENDAR_SYNC_CONNECT_PENDING_KEY}:${requestId}`);
+  if (requestId !== null) trySessionStorageRemove(pendingKey(requestId));
 }
 
 export function readCalendarSyncReturnError(): string | null {
@@ -46,11 +44,11 @@ export function readCalendarSyncReturnError(): string | null {
   return new URLSearchParams(window.location.search).get("error");
 }
 
-function calendarSyncUrl(requestId: CalendarAuthorization["requestId"]): string {
+function calendarSyncUrl(requestId: string): string {
   const url = new URL(window.location.href);
   url.searchParams.delete("error");
   url.searchParams.delete("error_description");
-  url.searchParams.set("calendarRequestId", requestId);
+  url.searchParams.set(CALENDAR_REQUEST_ID_KEY, requestId);
   return url.toString();
 }
 
@@ -58,9 +56,9 @@ export async function linkGoogleCalendar({
   requestId,
   scopes,
 }: CalendarAuthorization): Promise<AuthActionResult> {
-  trySessionStorageSet(`${CALENDAR_SYNC_CONNECT_PENDING_KEY}:${requestId}`, "1");
+  trySessionStorageSet(pendingKey(requestId), "1");
   const result = await runAuthAction(async () => {
-    if (trySessionStorageGet(`${CALENDAR_SYNC_CONNECT_PENDING_KEY}:${requestId}`) !== "1") {
+    if (trySessionStorageGet(pendingKey(requestId)) !== "1") {
       throw new AuthActionError({
         cause: new Error("Calendar authorization request could not be stored"),
         message:
@@ -70,7 +68,7 @@ export async function linkGoogleCalendar({
     const authResult = await authClient.linkSocial({
       callbackURL: calendarSyncUrl(requestId),
       errorCallbackURL: calendarSyncUrl(requestId),
-      additionalData: { calendarRequestId: requestId },
+      additionalData: { [CALENDAR_REQUEST_ID_KEY]: requestId },
       provider: "google",
       scopes,
     });
@@ -79,7 +77,7 @@ export async function linkGoogleCalendar({
     }
   }, "linkGoogleCalendar");
   if (Result.isError(result)) {
-    trySessionStorageRemove(`${CALENDAR_SYNC_CONNECT_PENDING_KEY}:${requestId}`);
+    trySessionStorageRemove(pendingKey(requestId));
   }
   return result;
 }

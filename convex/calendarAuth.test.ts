@@ -4,13 +4,13 @@ import { afterEach, expect, test, vi } from "vite-plus/test";
 
 import { api, components, internal } from "./_generated/api";
 import authSchema from "./betterAuth/schema";
+import { GOOGLE_CALENDAR_READ_SCOPES, GOOGLE_CALENDAR_SCOPE } from "./lib/calendarSync";
 import schema from "./schema";
 import { authorizeRequest, beginRequest, consumeRequest } from "./services/calendarAuth/requests";
 
 const modules = import.meta.glob(["./**/*.ts", "!./**/*.test.ts", "!./betterAuth/**"]);
 const authModules = import.meta.glob("./betterAuth/**/*.ts");
-const SCOPES =
-  "https://www.googleapis.com/auth/calendar.calendarlist.readonly https://www.googleapis.com/auth/calendar.events.readonly";
+const SCOPES = GOOGLE_CALENDAR_READ_SCOPES.join(" ");
 
 function setup() {
   const t = convexTest(schema, modules);
@@ -290,7 +290,7 @@ test("書き込み先の再認可は所有者・Google account・calendarId・�
       }),
     ),
   );
-  expect(request.scopes).toContain("https://www.googleapis.com/auth/calendar.events");
+  expect(request.scopes).toContain(GOOGLE_CALENDAR_SCOPE.writeEvents);
   await t.run((ctx) =>
     authorizeRequest(ctx, {
       googleAccountId: "work",
@@ -307,19 +307,14 @@ test("書き込み先の再認可は所有者・Google account・calendarId・�
 
 test("書き込み権限の再認可だけなら書き込み先を選び直さずに要求を完了できる", async () => {
   const t = setup();
-  await seedAccount(
-    t,
-    "work",
-    "owner",
-    `${SCOPES} https://www.googleapis.com/auth/calendar.events`,
-  );
+  await seedAccount(t, "work", "owner", `${SCOPES} ${GOOGLE_CALENDAR_SCOPE.writeEvents}`);
   const request = await t
     .withIdentity({ subject: "owner" })
     .mutation(api.mutations.calendarAuth.begin.begin, {
       googleAccountId: "work",
       purpose: "write",
     });
-  expect(request.scopes).toContain("https://www.googleapis.com/auth/calendar.events");
+  expect(request.scopes).toContain(GOOGLE_CALENDAR_SCOPE.writeEvents);
   await t.run((ctx) =>
     authorizeRequest(ctx, {
       googleAccountId: "work",
@@ -337,12 +332,7 @@ test("書き込み権限の再認可だけなら書き込み先を選び直さ�
 
 test("書き込み先の変更を伴わない再認可でも他の所有者のアカウントを拒否する", async () => {
   const t = setup();
-  await seedAccount(
-    t,
-    "work",
-    "other",
-    `${SCOPES} https://www.googleapis.com/auth/calendar.events`,
-  );
+  await seedAccount(t, "work", "other", `${SCOPES} ${GOOGLE_CALENDAR_SCOPE.writeEvents}`);
   await expect(
     t.withIdentity({ subject: "owner" }).mutation(api.mutations.calendarAuth.begin.begin, {
       googleAccountId: "work",

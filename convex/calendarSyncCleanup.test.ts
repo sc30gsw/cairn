@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
 import type { TableNames } from "./_generated/dataModel";
-import { GOOGLE_CALENDAR_SCOPES } from "./lib/calendarSync";
+import { GOOGLE_CALENDAR_WRITE_SCOPES } from "./lib/calendarSync";
 import { deleteEvent, listCalendars, listEvents } from "./lib/googleCalendar";
 import schema from "./schema";
 import { connect as connectCalendar } from "./services/calendarSync/connect";
@@ -13,7 +13,9 @@ const account = vi.hoisted(() => ({ id: "google-owner" }));
 
 vi.mock("./lib/googleAccessToken", () => ({
   getGoogleAccessToken: async () => Result.ok("test-token"),
-  listGoogleAccounts: async () => [{ accountId: account.id, scopes: [...GOOGLE_CALENDAR_SCOPES] }],
+  listGoogleAccounts: async () => [
+    { accountId: account.id, scopes: [...GOOGLE_CALENDAR_WRITE_SCOPES] },
+  ],
 }));
 
 vi.mock("./lib/googleCalendar", async (importOriginal) => ({
@@ -213,6 +215,7 @@ test.each(["disconnect", "reconnect"] as const satisfies readonly string[])(
         expect(connection).toMatchObject({
           googleAccountId: account.id,
           externalChangesVersion: 1,
+          externalReadOnly: false,
         });
         expect(connection?.disconnecting).toBeUndefined();
       }

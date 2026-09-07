@@ -1,7 +1,7 @@
 import { Result } from "better-result";
+import type { FunctionReturnType } from "convex/server";
 
 import { internal } from "../../_generated/api";
-import type { Doc } from "../../_generated/dataModel";
 import type { ActionCtx } from "../../_generated/server";
 import { getGoogleAccessToken } from "../../lib/googleAccessToken";
 import { deleteEvent, isAuthFailure, isGone } from "../../lib/googleCalendar";
@@ -9,19 +9,23 @@ import type { SyncPlan } from "../../lib/validators";
 
 export type DeleteLinkedOutcome = "deleted" | "failed" | "noToken";
 
+type LinkedPage = FunctionReturnType<typeof internal.queries.calendarSync.linkedPage.linkedPage>;
+
 export async function deleteLinkedGoogleEvents(
   ctx: ActionCtx,
   ownerId: string,
-  plan: NonNullable<SyncPlan>,
+  plan: Pick<NonNullable<SyncPlan>, "connectionId" | "googleAccountId">,
 ): Promise<DeleteLinkedOutcome> {
   let cursor: string | null = null;
   while (true) {
-    const page: { page: Doc<"calendarSyncLinks">[]; isDone: boolean; continueCursor: string } =
-      await ctx.runQuery(internal.queries.calendarSync.linkedPage.linkedPage, {
+    const page: LinkedPage = await ctx.runQuery(
+      internal.queries.calendarSync.linkedPage.linkedPage,
+      {
         ownerId,
         connectionId: plan.connectionId,
         paginationOpts: { cursor, numItems: 100 },
-      });
+      },
+    );
     if (page.page.length === 0) {
       if (page.isDone) return "deleted";
       cursor = page.continueCursor;

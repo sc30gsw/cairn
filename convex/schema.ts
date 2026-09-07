@@ -3,6 +3,8 @@ import { v } from "convex/values";
 
 import { boardScheduleColorValidator } from "./lib/boardScheduleColors";
 import {
+  calendarAuthPurposeValidator,
+  calendarAuthRequestStateValidator,
   calendarSyncSourceKindValidator,
   calendarSyncStatusValidator,
   categoryValidator,
@@ -160,9 +162,9 @@ export default defineSchema({
     expiresAt: v.number(),
     googleAccountId: v.optional(v.string()),
     ownerId: v.string(),
-    purpose: v.union(v.literal("read"), v.literal("write")),
-    state: v.union(v.literal("pending"), v.literal("authorized"), v.literal("consumed")),
-  }).index("by_expiresAt", ["expiresAt"]),
+    purpose: calendarAuthPurposeValidator,
+    state: calendarAuthRequestStateValidator,
+  }),
 
   googleCalendarIdentities: defineTable({
     googleAccountId: v.string(),
@@ -195,6 +197,7 @@ export default defineSchema({
 
   calendarOutputSettings: defineTable({
     ownerId: v.string(),
+    editableGoogleAccountId: v.optional(v.string()),
     legacyConnectionId: v.optional(v.id("calendarConnections")),
     connectionId: v.optional(v.id("calendarConnections")),
     calendarId: v.optional(v.string()),

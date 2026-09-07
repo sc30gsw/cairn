@@ -1,5 +1,6 @@
 import { Field, Form, useForm } from "@formisch/react";
 import { Button, Group, Select, Stack, Text } from "@mantine/core";
+import { canWriteCalendar } from "~domain/calendarSync";
 
 import { CalendarOutputSchema } from "~/lib/calendar-output-schema";
 import type { CalendarConnection, CalendarOutput } from "~/lib/calendar-sync-types";
@@ -21,12 +22,7 @@ export function CalendarOutputForm({ busy, connections, onSave, output }: Calend
   });
   const groups = connections.flatMap((connection) => {
     const items = connection.calendars.flatMap((calendar) => {
-      if (
-        calendar.accessRole !== "owner" &&
-        calendar.accessRole !== "writer" &&
-        calendar.accessRole !== "writerWithoutPrivateAccess"
-      )
-        return [];
+      if (!canWriteCalendar(calendar.accessRole)) return [];
       return [
         {
           calendarId: calendar.id,

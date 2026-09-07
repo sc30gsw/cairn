@@ -1,8 +1,9 @@
 import type { Doc, Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
+import { canWriteCalendar } from "../../lib/calendarSync";
 import { ConflictError, ForbiddenError, NotFoundError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
-import { canWriteCalendar, getConnection, getOutputSettings } from "./getConnection";
+import { getConnection, getOutputSettings } from "./getConnection";
 import { migrateConnections } from "./migrateConnections";
 
 export async function beginOutputChange(

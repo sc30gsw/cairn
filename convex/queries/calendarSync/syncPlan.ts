@@ -6,7 +6,6 @@ import { syncPlan as buildSyncPlan } from "../../services/calendarSync/syncPlan"
 
 export const syncPlan = internalQuery({
   args: {
-    includeSources: v.optional(v.boolean()),
     connectionId: v.optional(v.id("calendarConnections")),
     ownerId: v.string(),
     todayJst: v.string(),

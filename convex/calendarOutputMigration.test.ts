@@ -3,6 +3,7 @@ import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
+import { GOOGLE_CALENDAR_WRITE_SCOPES } from "./lib/calendarSync";
 import { GoogleCalendarError, deleteEvent, insertEvent } from "./lib/googleCalendar";
 import schema from "./schema";
 import { connect } from "./services/calendarSync/connect";
@@ -16,10 +17,7 @@ vi.mock("./lib/googleAccessToken", () => ({
   listGoogleAccounts: async () => [
     {
       accountId: "personal",
-      scopes: [
-        "https://www.googleapis.com/auth/calendar.events",
-        "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
-      ],
+      scopes: [...GOOGLE_CALENDAR_WRITE_SCOPES],
     },
   ],
 }));
@@ -411,4 +409,51 @@ test("移行保留中の新コピーを別接続から取得しても外部予�
       view: "day",
     }),
   ).toEqual([]);
+});
+
+test("元の接続が消えた対応表だけが残ったら、移動を再スケジュールせずに止めて知らせる", async () => {
+  const { t, owner, work } = await setup();
+  await t.run(async (ctx) => {
+    const ghost = await ctx.db.insert("calendarConnections", {
+      ownerId: "owner",
+      googleAccountId: "ghost",
+      primaryCalendarId: "ghost-calendar",
+      calendars: [],
+      visibleCalendarIds: [],
+      status: "ok",
+    });
+    const sourceId = await ctx.db.insert("goals", {
+      ownerId: "owner",
+      type: "mastery",
+      content: "孤立",
+      criterion: "合格",
+      deadline: "2026-09-15",
+      activeDays: 0,
+      confirmedMinutes: 0,
+    });
+    await ctx.db.insert("calendarSyncLinks", {
+      ownerId: "owner",
+      connectionId: ghost,
+      calendarId: "ghost-calendar",
+      googleEventId: "ghost-event",
+      sourceKind: "goal",
+      sourceId,
+    });
+    await ctx.db.delete("calendarConnections", ghost);
+  });
+  expect(
+    await owner.action(api.actions.calendarSync.setOutput.setOutput, {
+      connectionId: work,
+      calendarId: "work-calendar",
+    }),
+  ).toBe("moving");
+  await expect(
+    owner.action(api.actions.calendarSync.retryOutputChange.retryOutputChange, {}),
+  ).rejects.toThrow(/移動を完了できませんでした/);
+  expect(await owner.query(api.queries.calendarSync.status.status, {})).toMatchObject({
+    outputChanging: true,
+    connections: expect.arrayContaining([
+      expect.objectContaining({ connectionId: work, status: "error" }),
+    ]),
+  });
 });

@@ -101,7 +101,12 @@ export async function applyPull(
       if (existing !== undefined) await ctx.db.delete("externalCalendarEvents", existing._id);
       continue;
     }
-    if (existing !== undefined && existing.googleUpdated > event.updated) continue;
+    if (existing !== undefined && existing.googleUpdated > event.updated) {
+      //? 古い結果は写しに反映しないが、Google が返した予定として全件整理で消されないよう印を付ける
+      if (args.pullId !== undefined)
+        await ctx.db.patch("externalCalendarEvents", existing._id, { lastPullId: args.pullId });
+      continue;
+    }
     const fields = {
       connectionId: connection._id,
       lastPullId: args.pullId,

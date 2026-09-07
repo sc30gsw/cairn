@@ -3,6 +3,7 @@ import { beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { api, components } from "./_generated/api";
 import authSchema from "./betterAuth/schema";
+import { GOOGLE_CALENDAR_WRITE_SCOPES } from "./lib/calendarSync";
 import schema from "./schema";
 import { changeOutput } from "./services/calendarSync/changeOutput";
 import { connect as connectCalendar } from "./services/calendarSync/connect";
@@ -12,8 +13,7 @@ vi.mock("./services/calendarSync/changeOutput", () => ({ changeOutput: vi.fn() }
 
 const modules = import.meta.glob(["./**/*.ts", "!./**/*.test.ts", "!./betterAuth/**"]);
 const authModules = import.meta.glob("./betterAuth/**/*.ts");
-const SCOPES =
-  "https://www.googleapis.com/auth/calendar.calendarlist.readonly https://www.googleapis.com/auth/calendar.events";
+const SCOPES = GOOGLE_CALENDAR_WRITE_SCOPES.join(" ");
 
 async function setup({
   calendarId,
