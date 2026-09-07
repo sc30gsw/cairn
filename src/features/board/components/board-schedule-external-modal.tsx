@@ -6,7 +6,7 @@ import { Result } from "better-result";
 import { useId } from "react";
 import {
   GOOGLE_CALENDAR_EVENT_COLORS,
-  DEFAULT_GOOGLE_CALENDAR_EVENT_COLOR,
+  externalEventDefaultColor,
   googleCalendarEventColor,
 } from "~domain/googleCalendarColors";
 
@@ -42,7 +42,7 @@ function ExternalEventForm({
   const formId = useId();
   const colorId =
     GOOGLE_CALENDAR_EVENT_COLORS.find((color) => color.id === external.colorId)?.id ??
-    DEFAULT_GOOGLE_CALENDAR_EVENT_COLOR.id;
+    externalEventDefaultColor(external.externalReadOnly).id;
   const form = useForm({
     schema: BoardExternalEventSchema,
     initialInput: {

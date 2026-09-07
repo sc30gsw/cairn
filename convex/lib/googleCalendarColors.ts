@@ -19,9 +19,32 @@ export const GOOGLE_CALENDAR_EVENT_COLORS = [
 
 export const DEFAULT_GOOGLE_CALENDAR_EVENT_COLOR = GOOGLE_CALENDAR_EVENT_COLORS[0];
 
+//? 追加した Google アカウント（閲覧専用接続）の外部予定は既定色を分け、Google 側が色を
+//? 付けていない予定でも、編集できる接続の予定とボード上で見分けられるようにする
+export const READ_ONLY_GOOGLE_CALENDAR_EVENT_COLOR = GOOGLE_CALENDAR_EVENT_COLORS[3] satisfies {
+  label: "Flamingo";
+};
+
+function paletteEntry(colorId: string | null | undefined) {
+  return GOOGLE_CALENDAR_EVENT_COLORS.find((entry) => entry.id === colorId);
+}
+
 export function googleCalendarEventColor(colorId: string | null | undefined) {
+  return paletteEntry(colorId)?.color ?? DEFAULT_GOOGLE_CALENDAR_EVENT_COLOR.color;
+}
+
+export function externalEventDefaultColor(externalReadOnly: boolean) {
+  return externalReadOnly
+    ? READ_ONLY_GOOGLE_CALENDAR_EVENT_COLOR
+    : DEFAULT_GOOGLE_CALENDAR_EVENT_COLOR;
+}
+
+export function externalEventColor(external: {
+  colorId: string | null;
+  externalReadOnly: boolean;
+}) {
   return (
-    GOOGLE_CALENDAR_EVENT_COLORS.find((entry) => entry.id === colorId)?.color ??
-    DEFAULT_GOOGLE_CALENDAR_EVENT_COLOR.color
+    paletteEntry(external.colorId)?.color ??
+    externalEventDefaultColor(external.externalReadOnly).color
   );
 }

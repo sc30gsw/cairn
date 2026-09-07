@@ -26,6 +26,7 @@ const external: BoardExternalEvent = {
   colorId: null,
   canEdit: false,
   color: "red",
+  externalReadOnly: false,
   startAt: "2026-09-23 00:00:00",
   endAt: "2026-09-23 23:59:59",
   title: "秋分の日",

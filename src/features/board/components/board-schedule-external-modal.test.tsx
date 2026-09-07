@@ -17,6 +17,7 @@ const EXTERNAL: BoardExternalEvent = {
   colorId: null,
   canEdit: true,
   color: "#9fe1cb",
+  externalReadOnly: false,
   endAt: "2026-08-18 11:00:00",
   startAt: "2026-08-18 10:00:00",
   title: "歯医者",
@@ -179,4 +180,16 @@ test("Googleのパレットで各色を表示し、選択した色を入力欄�
   fireEvent.click(view.getByRole("button", { name: "保存" }));
   await vi.waitFor(() => expect(onUpdate).toHaveBeenCalledOnce());
   expect(onUpdate.mock.calls[0]?.[0]).toMatchObject({ colorId: "6" });
+});
+
+test("追加アカウントの色が未指定の外部予定は、既定色にフラミンゴを表示する", () => {
+  const view = renderWithMantine(
+    <BoardScheduleExternalModal
+      external={{ ...EXTERNAL, canEdit: false, externalReadOnly: true }}
+      onClose={vi.fn()}
+      onRemove={vi.fn()}
+      onUpdate={vi.fn()}
+    />,
+  );
+  expect(view.getByRole("combobox", { name: "色" }).getAttribute("value")).toBe("Flamingo");
 });

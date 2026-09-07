@@ -131,6 +131,7 @@ export async function listExternal(
           calendarName: calendar?.summary ?? external.calendarId,
           canEdit: await canEditWith(ctx, ownerId, connections, connection, external),
           color: calendar?.backgroundColor ?? null,
+          externalReadOnly: connection.externalReadOnly === true,
           endAt: external.endAt,
           startAt: external.startAt,
           title: external.title,

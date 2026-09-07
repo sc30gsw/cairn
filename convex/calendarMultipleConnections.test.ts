@@ -245,3 +245,28 @@ test("初回接続は外部予定を編集でき、追加接続だけが閲覧�
     ["first", false],
   ]);
 });
+
+test("外部予定は取得元の接続が閲覧専用かどうかを伝える", async () => {
+  const { t, owner, personal, third } = await setup();
+  for (const [connectionId, calendarId] of [
+    [personal, "shared"],
+    [third, "third"],
+  ] as const) {
+    await t.mutation(internal.mutations.calendarSync.applyPull.applyPull, {
+      connectionId,
+      ownerId: "owner",
+      calendarId,
+      events: [{ ...event, calendarId }],
+      finish: null,
+      todayJst: "2026-09-07",
+    });
+  }
+  const events = await owner.query(api.queries.calendarSync.listExternal.listExternal, {
+    anchorDateJst: "2026-09-07",
+    view: "day",
+  });
+  expect(events.map((entry) => [entry.calendarId, entry.externalReadOnly]).sort()).toEqual([
+    ["shared", false],
+    ["third", true],
+  ]);
+});

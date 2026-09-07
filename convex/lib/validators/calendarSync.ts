@@ -93,6 +93,7 @@ export const externalCalendarEventDtoValidator = v.object({
   colorId: v.union(v.string(), v.null()),
   canEdit: v.boolean(),
   color: v.union(v.string(), v.null()),
+  externalReadOnly: v.boolean(),
   endAt: v.string(),
   startAt: v.string(),
   title: v.string(),

@@ -15,7 +15,11 @@ import {
   withoutAllDayEvents,
   withAllDayOverflow,
 } from "~/features/board/lib/board-schedule-events";
-import type { BoardRow, BoardScheduleBlock } from "~/features/board/types/board";
+import type {
+  BoardExternalEvent,
+  BoardRow,
+  BoardScheduleBlock,
+} from "~/features/board/types/board";
 
 const [confirmed] = STATUSES;
 
@@ -195,22 +199,23 @@ test("終日イベントだけを除外できる", () => {
   ]);
 });
 
+const EXTERNAL_EVENT = {
+  _id: "ext1" as Id<"externalCalendarEvents">,
+  allDay: false,
+  calendarId: "owner@example.com",
+  calendarName: "owner@example.com",
+  calendarEmail: "owner@example.com",
+  colorId: null,
+  canEdit: true,
+  color: "#9fe1cb",
+  externalReadOnly: false,
+  endAt: "2026-08-17 11:00:00",
+  startAt: "2026-08-17 10:00:00",
+  title: "歯医者",
+} as const satisfies BoardExternalEvent;
+
 test("色が未指定の外部予定はラベンダーの予定になり、印付きの id で見分けられる", () => {
-  const [event] = toExternalScheduleEvents([
-    {
-      _id: "ext1" as Id<"externalCalendarEvents">,
-      allDay: false,
-      calendarId: "owner@example.com",
-      calendarName: "owner@example.com",
-      calendarEmail: "owner@example.com",
-      colorId: null,
-      canEdit: true,
-      color: "#9fe1cb",
-      endAt: "2026-08-17 11:00:00",
-      startAt: "2026-08-17 10:00:00",
-      title: "歯医者",
-    },
-  ]);
+  const [event] = toExternalScheduleEvents([EXTERNAL_EVENT]);
   expect(event).toEqual({
     color: "#a4bdfc",
     end: "2026-08-17 11:00:00",
@@ -222,6 +227,19 @@ test("色が未指定の外部予定はラベンダーの予定になり、印�
   expect(isBoardExternalEvent("external:ext1")).toBe(true);
   expect(isBoardExternalEvent("r1")).toBe(false);
   expect(boardExternalEventId("external:ext1")).toBe("ext1");
+});
+
+test("追加アカウントの色が未指定の外部予定はフラミンゴになる", () => {
+  const [event] = toExternalScheduleEvents([{ ...EXTERNAL_EVENT, externalReadOnly: true }]);
+  expect(event?.color).toBe("#ff887c");
+});
+
+test("Google が色を付けた予定は、追加アカウントでもその色を保つ", () => {
+  const events = toExternalScheduleEvents([
+    { ...EXTERNAL_EVENT, colorId: "10" },
+    { ...EXTERNAL_EVENT, colorId: "10", externalReadOnly: true },
+  ]);
+  expect(events.map((event) => event.color)).toEqual(["#51b749", "#51b749"]);
 });
 
 test("複数日にわたる終日予定は各日の一覧とoverflowに含まれる", () => {
