@@ -6,6 +6,9 @@ import { applyPull as applyPulledEvents } from "../../services/calendarSync/appl
 
 export const applyPull = internalMutation({
   args: {
+    generation: v.optional(v.number()),
+    pullId: v.optional(v.string()),
+    connectionId: v.optional(v.id("calendarConnections")),
     calendarId: v.string(),
     events: v.array(pulledEventValidator),
     finish: v.union(

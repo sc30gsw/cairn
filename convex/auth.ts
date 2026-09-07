@@ -5,8 +5,9 @@ import { convex } from "@convex-dev/better-auth/plugins";
 import { isActionCtx, isQueryCtx } from "@convex-dev/better-auth/utils";
 import { betterAuth, type BetterAuthOptions } from "better-auth/minimal";
 import { username } from "better-auth/plugins/username";
+import { google } from "better-auth/social-providers";
 
-import { components } from "./_generated/api";
+import { components, internal } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
 import authConfig from "./auth.config";
 import authSchema from "./betterAuth/schema";
@@ -16,6 +17,7 @@ import {
   USERNAME_MIN_LENGTH,
   USERNAME_PATTERN,
 } from "./lib/authFields";
+import { calendarGoogleAuth } from "./lib/calendarGoogleAuth";
 import {
   GOOGLE_OAUTH_ENV,
   googleOAuthConfigured,
@@ -44,10 +46,47 @@ export const authComponent = createClient<DataModel, typeof authSchema>(componen
 
 const isLiveConvexCtx = (ctx: GenericCtx<DataModel>) => isQueryCtx(ctx) || isActionCtx(ctx);
 
-export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
+type AuthRuntimeOptions = {
+  onGoogleRefreshError?: (cause: unknown) => void;
+};
+
+export const createAuthOptions = (ctx: GenericCtx<DataModel>, runtime: AuthRuntimeOptions = {}) => {
   const siteUrl = process.env.SITE_URL;
   const googleAuth = googleOAuthConfigured();
   const signUpDisabled = signUpDisabledFromEnv();
+  const googleProvider = {
+    accessType: "offline",
+    clientId: process.env[GOOGLE_OAUTH_ENV.clientId] ?? "",
+    clientSecret: process.env[GOOGLE_OAUTH_ENV.clientSecret] ?? "",
+    disableSignUp: signUpDisabled,
+    prompt: "select_account",
+  } satisfies Parameters<typeof google>[0];
+  const refreshAccessToken = google(googleProvider).refreshAccessToken;
+  const googleOptions = googleAuth
+    ? calendarGoogleAuth(
+        {
+          ...googleProvider,
+          refreshAccessToken: async (refreshToken) => {
+            try {
+              return await refreshAccessToken(refreshToken);
+            } catch (cause) {
+              runtime.onGoogleRefreshError?.(cause);
+              throw cause;
+            }
+          },
+        },
+        {
+          authorize: (args) => {
+            if (!("runMutation" in ctx)) {
+              return Promise.resolve(false);
+            }
+            return ctx.runMutation(internal.mutations.calendarAuth.authorize.authorize, args);
+          },
+          canSignIn: (googleAccountId) =>
+            ctx.runQuery(internal.queries.calendarAuth.canSignIn.canSignIn, { googleAccountId }),
+        },
+      )
+    : { databaseHooks: undefined, hooks: undefined, socialProviders: undefined };
   return {
     account: {
       accountLinking: {
@@ -84,25 +123,15 @@ export const createAuthOptions = (ctx: GenericCtx<DataModel>) => {
       enabled: true,
       storage: "database",
     },
-    socialProviders: googleAuth
-      ? {
-          google: {
-            accessType: "offline",
-            clientId: process.env[GOOGLE_OAUTH_ENV.clientId] ?? "",
-            clientSecret: process.env[GOOGLE_OAUTH_ENV.clientSecret] ?? "",
-            disableSignUp: signUpDisabled,
-            prompt: "select_account",
-          },
-        }
-      : undefined,
+    ...googleOptions,
     trustedOrigins: trustedOriginsFromEnv(siteUrl),
   } satisfies BetterAuthOptions;
 };
 
-export const createAuth = (ctx: GenericCtx<DataModel>) => {
+export const createAuth = (ctx: GenericCtx<DataModel>, runtime: AuthRuntimeOptions = {}) => {
   if (isLiveConvexCtx(ctx)) {
     requireEnv("BETTER_AUTH_SECRET");
     requireEnv("SITE_URL");
   }
-  return betterAuth(createAuthOptions(ctx));
+  return betterAuth(createAuthOptions(ctx, runtime));
 };

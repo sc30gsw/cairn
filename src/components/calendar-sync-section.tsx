@@ -1,262 +1,215 @@
-import { Badge, Button, Checkbox, ColorSwatch, Group, Stack, Text } from "@mantine/core";
+import { Button, Divider, Group, Stack, Text } from "@mantine/core";
 import { modals } from "@mantine/modals";
-import { IconLinkOff, IconRefresh } from "@tabler/icons-react";
 import { Result } from "better-result";
-import { useEffect } from "react";
-import { CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE, type CalendarSyncStatus } from "~domain/calendarSync";
-import type { OwnerSyncOutcome } from "~domain/validators";
 
+import { CalendarConnectionCard } from "~/components/calendar-connection-card";
+import { CalendarOutputForm } from "~/components/calendar-output-form";
 import { GoogleIcon } from "~/components/google-icon";
 import { GoogleLabel } from "~/components/google-label";
 import { useBusy } from "~/hooks/use-busy";
+import { useCalendarAuthorizationReturn } from "~/hooks/use-calendar-authorization-return";
 import {
+  useBeginCalendarAuthorization,
   useCalendarSyncStatus,
-  useConnectCalendarSync,
   useDisconnectCalendarSync,
+  useRetryCalendarOutput,
+  useSetCalendarOutput,
   useSetVisibleCalendars,
   useSyncCalendarNow,
 } from "~/hooks/use-calendar-sync";
-import {
-  clearCalendarSyncConnectPending,
-  linkGoogleCalendar,
-  readCalendarSyncConnectPending,
-  readCalendarSyncReturnError,
-} from "~/lib/calendar-sync-actions";
+import { linkGoogleCalendar } from "~/lib/calendar-sync-actions";
 import {
   CALENDAR_SYNC_CONNECT_LABEL,
-  CALENDAR_SYNC_RECONNECT_LABEL,
-  CALENDAR_SYNC_NOW_LABEL,
   CALENDAR_SYNC_DISCONNECT_LABEL,
-  CALENDAR_SYNC_CALENDARS_LABEL,
 } from "~/lib/calendar-sync-labels";
+import type { CalendarConnection, CalendarOutput } from "~/lib/calendar-sync-types";
 import { notifyError } from "~/lib/notify";
 import { runMutation } from "~/lib/run-mutation";
-import { NUMERAL_FONT } from "~/lib/theme";
-
-const CALENDAR_SYNC_DESCRIPTION =
-  "本番日・チェックポイントの期限・予定を Google のメインカレンダーと同期します。Google カレンダーの予定は、ボードの「予定」タブの日・週・月・年表示に並びます。";
-const CALENDAR_SYNC_CONNECTED_MESSAGE = "Google カレンダーと連携しました";
-const CALENDAR_SYNC_SYNCED_MESSAGE = "同期しました";
-const CALENDAR_SYNC_DISCONNECTED_MESSAGE = "カレンダー同期を解除しました";
-const CALENDAR_SYNC_CONNECTED_PARTIAL_MESSAGE =
-  "連携しましたが、最初の同期に失敗しました。状態を確認してください";
-const CALENDAR_SYNC_DENIED_MESSAGE =
-  "Google カレンダーの権限が許可されなかったため、連携を始められませんでした。";
-const CALENDAR_SYNC_CALENDARS_HINT =
-  "外して良いのは、空き時間の確認に要らないカレンダー（祝日など）。書き込み先はメインカレンダーで、ここでは変わりません。";
-const CALENDAR_SYNC_DISCONNECT_CONFIRM =
-  "このアプリが Google カレンダーに作った本番日・期限・予定は消えます。Google 側で作った予定はそのまま残ります。";
-
-const STATUS_BADGES = {
-  error: { color: "yellow", label: "同期に失敗" },
-  needsReauth: { color: "orange", label: "再接続が必要" },
-  ok: { color: "green", label: "連携済み" },
-} as const satisfies Record<CalendarSyncStatus, { color: string; label: string }>;
-
-const JST_SYNCED_AT = new Intl.DateTimeFormat("ja-JP", {
-  day: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  month: "numeric",
-  timeZone: "Asia/Tokyo",
-});
-
-async function startLink() {
-  const result = await linkGoogleCalendar();
-  if (Result.isError(result)) {
-    notifyError(result.error, result.error.message);
-  }
-}
-
-function connectedMessage(outcome: OwnerSyncOutcome): string {
-  return outcome === "ok"
-    ? CALENDAR_SYNC_CONNECTED_MESSAGE
-    : CALENDAR_SYNC_CONNECTED_PARTIAL_MESSAGE;
-}
-
-function formatSyncedAt(syncedAt: number | null): string {
-  return syncedAt === null ? "まだ同期していません" : JST_SYNCED_AT.format(new Date(syncedAt));
-}
 
 export function CalendarSyncSection() {
   const { data: status } = useCalendarSyncStatus();
-  const connect = useConnectCalendarSync();
+  const begin = useBeginCalendarAuthorization();
+  const authorization = useCalendarAuthorizationReturn();
   const disconnect = useDisconnectCalendarSync();
   const syncNow = useSyncCalendarNow();
   const setVisible = useSetVisibleCalendars();
-  const { busy, setBusy, withBusy } = useBusy(
-    () => readCalendarSyncConnectPending() && readCalendarSyncReturnError() === null,
-  );
+  const setOutput = useSetCalendarOutput();
+  const retryOutput = useRetryCalendarOutput();
+  const { busy: actionBusy, withBusy } = useBusy();
+  const busy = actionBusy || authorization.busy;
 
-  useEffect(() => {
-    if (!readCalendarSyncConnectPending()) {
-      return;
-    }
-    clearCalendarSyncConnectPending();
-    const returnError = readCalendarSyncReturnError();
-    if (returnError !== null) {
-      notifyError(new Error(returnError), CALENDAR_SYNC_DENIED_MESSAGE);
-      return;
-    }
-    void runMutation(() => connect({}), { successMessage: connectedMessage }).then(() =>
-      setBusy(false),
-    );
-  }, [connect, setBusy]);
-
-  function runSyncNow() {
-    return withBusy(
-      () =>
-        runMutation(() => syncNow({}), {
-          successMessage: (outcome) => (outcome === "ok" ? CALENDAR_SYNC_SYNCED_MESSAGE : ""),
-        }),
-      notifyError,
-    );
+  function startLink(input: Parameters<typeof begin>[0]) {
+    return withBusy(async () => {
+      const request = await runMutation(() => begin(input));
+      if (Result.isError(request)) return;
+      const result = await linkGoogleCalendar(request.value);
+      if (Result.isError(result)) notifyError(result.error, result.error.message);
+    }, notifyError);
   }
 
-  function requestDisconnect() {
+  function requestDisconnect(connection: CalendarConnection) {
+    const isOutput = status.output?.connectionId === connection.connectionId;
     modals.openConfirmModal({
-      children: CALENDAR_SYNC_DISCONNECT_CONFIRM,
+      children: isOutput
+        ? "このアカウントのカレンダーに Cairn が作った予定を削除し、保存先の設定を解除します。Cairn の記録・学習予定と、Google で作られた予定は残ります。"
+        : "このアカウントから取得した予定をボードから外します。Google 上の予定と、ほかのアカウントの連携は残ります。",
       confirmProps: { color: "red" },
       labels: { cancel: "キャンセル", confirm: CALENDAR_SYNC_DISCONNECT_LABEL },
       onConfirm: () => {
         void withBusy(
           () =>
-            runMutation(() => disconnect({}), {
-              successMessage: CALENDAR_SYNC_DISCONNECTED_MESSAGE,
+            runMutation(() => disconnect({ connectionId: connection.connectionId }), {
+              successMessage: (result) => result.warning ?? "カレンダーの連携を解除しました",
             }),
           notifyError,
         );
       },
-      title: <GoogleLabel>カレンダー同期を解除しますか？</GoogleLabel>,
+      title: (
+        <GoogleLabel>
+          {connection.googleEmail ?? "このアカウント"} の連携を解除しますか？
+        </GoogleLabel>
+      ),
     });
   }
 
-  function changeVisible(calendarIds: string[]) {
-    void runMutation(() => setVisible({ calendarIds }), { silent: true });
-  }
-
-  if (status === null) {
-    return (
-      <Stack gap="md">
-        <Text c="dimmed" size="sm">
-          {CALENDAR_SYNC_DESCRIPTION}
-        </Text>
-        <Text c="dimmed" size="xs">
-          Google の画面でカレンダーの権限を許可すると、この画面に戻って同期が始まります。
-        </Text>
-        <Group justify="flex-end">
-          <Button
-            leftSection={<GoogleIcon />}
-            loading={busy}
-            onClick={() => void startLink()}
-            type="button"
-          >
-            {CALENDAR_SYNC_CONNECT_LABEL}
-          </Button>
-        </Group>
-      </Stack>
+  async function saveOutput(output: CalendarOutput) {
+    const connection = status.connections.find(
+      (candidate) => candidate.connectionId === output.connectionId,
+    );
+    if (connection === undefined) return;
+    if (!connection.canWrite) {
+      await startLink({
+        googleAccountId: connection.googleAccountId,
+        purpose: "write",
+        calendarId: output.calendarId,
+      });
+      return;
+    }
+    await withBusy(
+      () =>
+        runMutation(() => setOutput(output), {
+          successMessage: (outcome) =>
+            outcome === "moving"
+              ? "Cairn の予定を新しい保存先へ移動しています"
+              : "Cairn の予定の保存先を変更しました",
+        }),
+      notifyError,
     );
   }
 
-  const badge = STATUS_BADGES[status.status];
+  const disabled = busy || status.outputChanging;
 
   return (
-    <Stack gap="md">
-      <Group justify="space-between" wrap="wrap">
-        <Badge color={badge.color} variant="light">
-          {badge.label}
-        </Badge>
-      </Group>
-      <Text c="dimmed" size="sm">
-        {CALENDAR_SYNC_DESCRIPTION}
-      </Text>
-      <Stack gap={2}>
+    <Stack gap="lg">
+      <Stack gap="xs">
         <Text size="sm">
-          接続中の Google アカウント:{" "}
-          <Text fw={600} span>
-            {status.googleEmail ?? "不明"}
-          </Text>
+          個人用・仕事用の Google カレンダーを重ねて、ボードで空き時間を確認できます。
         </Text>
-        <Text c="dimmed" size="sm">
-          最終同期:{" "}
-          <Text ff={NUMERAL_FONT} span>
-            {formatSyncedAt(status.lastSyncedAt)}
-          </Text>
+        <Text c="dimmed" size="xs">
+          追加する Google アカウントは、カレンダーの連携にだけ使います。
         </Text>
-        <Button
-          color="red"
-          disabled={busy}
-          leftSection={<IconLinkOff aria-hidden size={16} />}
-          onClick={requestDisconnect}
-          type="button"
-          variant="subtle"
-        >
-          {CALENDAR_SYNC_DISCONNECT_LABEL}
-        </Button>
-        {status.status === "needsReauth" ? (
-          <Text c="red" size="sm">
-            {CALENDAR_SYNC_NEEDS_REAUTH_MESSAGE}
-          </Text>
-        ) : null}
-        {status.status === "error" && status.lastError !== null ? (
-          <Text c="yellow.8" size="sm">
-            {status.lastError}
-          </Text>
-        ) : null}
+        <Text c="dimmed" size="xs">
+          スケジュールタブを開いたときと、毎日
+          2:00・14:00（日本時間）に予定を取得します。すぐに反映したいときは「今すぐ同期」を使えます。
+        </Text>
       </Stack>
-      <Checkbox.Group
-        description={CALENDAR_SYNC_CALENDARS_HINT}
-        label={CALENDAR_SYNC_CALENDARS_LABEL}
-        onChange={changeVisible}
-        value={status.visibleCalendarIds}
-      >
-        <Stack gap="xs" mt="xs">
-          {status.calendars.map((calendar) => (
-            <Checkbox
-              disabled={busy || status.status === "needsReauth"}
-              key={calendar.id}
-              label={
-                <Group gap="xs" wrap="nowrap">
-                  <ColorSwatch
-                    color={calendar.backgroundColor ?? "var(--cairn-muted-2)"}
-                    radius="sm"
-                    size={12}
-                  />
-                  <span>{calendar.summary}</span>
-                  {calendar.primary ? (
-                    <Text c="dimmed" size="xs" span>
-                      （書き込み先）
-                    </Text>
-                  ) : null}
-                </Group>
-              }
-              value={calendar.id}
-            />
-          ))}
-        </Stack>
-      </Checkbox.Group>
-      <Group gap="sm" justify="space-between" wrap="wrap">
-        {status.status === "needsReauth" ? (
+      {authorization.canRetry ? (
+        <Stack gap="xs">
+          <Text component="output" size="sm">
+            ほかの同期処理が終わるまで接続を待っています。
+          </Text>
           <Button
-            leftSection={<GoogleIcon />}
-            loading={busy}
-            onClick={() => void startLink()}
-            type="button"
-          >
-            {CALENDAR_SYNC_RECONNECT_LABEL}
-          </Button>
-        ) : (
-          <Button
-            leftSection={<IconRefresh aria-hidden size={16} />}
-            loading={busy}
-            onClick={() => void runSyncNow()}
+            disabled={busy}
+            onClick={() => void authorization.retry()}
             type="button"
             variant="light"
           >
-            {CALENDAR_SYNC_NOW_LABEL}
+            接続を完了する
           </Button>
-        )}
+        </Stack>
+      ) : null}
+      {status.connections.map((connection) => (
+        <CalendarConnectionCard
+          busy={busy}
+          connection={connection}
+          key={connection.connectionId}
+          onDisconnect={() => requestDisconnect(connection)}
+          onReconnect={() =>
+            void startLink({
+              googleAccountId: connection.googleAccountId,
+              purpose: connection.canWrite ? "write" : "read",
+            })
+          }
+          onSync={() =>
+            void withBusy(
+              () =>
+                runMutation(() => syncNow({ connectionId: connection.connectionId }), {
+                  successMessage: (outcome) => (outcome === "ok" ? "同期しました" : ""),
+                }),
+              notifyError,
+            )
+          }
+          onVisibleChange={(calendarIds) =>
+            void runMutation(() =>
+              setVisible({ calendarIds, connectionId: connection.connectionId }),
+            )
+          }
+          output={status.output}
+          outputChanging={status.outputChanging}
+        />
+      ))}
+      <Group justify="flex-end">
+        <Button
+          disabled={status.outputChanging}
+          leftSection={<GoogleIcon />}
+          loading={busy}
+          onClick={() => void startLink({ purpose: "read" })}
+          type="button"
+          variant={status.connections.length === 0 ? "filled" : "default"}
+        >
+          {status.connections.length === 0
+            ? CALENDAR_SYNC_CONNECT_LABEL
+            : "Google アカウントを追加"}
+        </Button>
       </Group>
+      {status.connections.length > 0 ? (
+        <>
+          <Divider />
+          {status.outputChanging ? (
+            <Stack gap="xs">
+              <Text component="output" size="sm">
+                Cairn の予定を移動しています。途中で止まった場合は再開できます。
+              </Text>
+              <Button
+                disabled={busy}
+                onClick={() =>
+                  void withBusy(
+                    () =>
+                      runMutation(() => retryOutput({}), {
+                        successMessage: (outcome) =>
+                          outcome === "ok"
+                            ? "Cairn の予定の移動が完了しました"
+                            : "Cairn の予定の移動を再開しました",
+                      }),
+                    notifyError,
+                  )
+                }
+                type="button"
+                variant="light"
+              >
+                移動を再開
+              </Button>
+            </Stack>
+          ) : null}
+          <CalendarOutputForm
+            busy={disabled}
+            connections={status.connections}
+            key={JSON.stringify(status.output)}
+            onSave={saveOutput}
+            output={status.output}
+          />
+        </>
+      ) : null}
     </Stack>
   );
 }

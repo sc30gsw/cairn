@@ -12,7 +12,9 @@ import { clearConnection, upsertConnection } from "./services/calendarSync/conne
 const tokenState = vi.hoisted(() => ({ fail: false }));
 
 vi.mock("./lib/googleAccessToken", () => ({
-  GoogleAuthError: class GoogleAuthError extends Error {},
+  GoogleAuthError: class GoogleAuthError extends Error {
+    revoked = true;
+  },
   getGoogleAccessToken: async () =>
     tokenState.fail
       ? Result.err(new GoogleAuthError({ message: "expired" }))

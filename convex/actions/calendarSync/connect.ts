@@ -1,13 +1,13 @@
 "use node";
 
+import { v } from "convex/values";
+
 import { ownerAction } from "../../lib/ownerFunctions";
 import { ownerSyncOutcomeValidator } from "../../lib/validators";
-import { connect as connectCalendar } from "../../services/calendarSync/connect";
-import { requireCalendarOperation } from "../../services/calendarSync/operation";
+import { completeAuthorization } from "../../services/calendarSync/completeAuthorization";
 
 export const connect = ownerAction({
-  args: {},
-  handler: async (ctx) =>
-    requireCalendarOperation(ctx, ctx.ownerId, () => connectCalendar(ctx, ctx.ownerId)),
-  returns: ownerSyncOutcomeValidator,
+  args: { requestId: v.string() },
+  handler: async (ctx, args) => completeAuthorization(ctx, ctx.ownerId, args.requestId),
+  returns: v.union(ownerSyncOutcomeValidator, v.literal("moving")),
 });

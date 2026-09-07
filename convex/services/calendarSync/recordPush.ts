@@ -1,14 +1,17 @@
+import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import type { CalendarSyncSourceKind } from "../../lib/calendarSync";
 import type { PushExpectation, PushOutcome, RecordPushResult } from "../../lib/validators";
 import { desiredEvent } from "./desiredEvent";
 import { payloadKey } from "./eventPayload";
-import { getConnection } from "./getConnection";
+import { getOutput } from "./getConnection";
 import { findLink } from "./syncSource";
 
 export async function recordPush(
   ctx: MutationCtx,
   args: {
+    connectionId?: Id<"calendarConnections">;
+    generation?: number;
     calendarId: string;
     expected: PushExpectation;
     outcome: PushOutcome;
@@ -17,11 +20,14 @@ export async function recordPush(
     sourceKind: CalendarSyncSourceKind;
   },
 ): Promise<RecordPushResult> {
-  const connection = await getConnection(ctx, args.ownerId);
+  const output = await getOutput(ctx, args.ownerId);
   if (
-    connection === null ||
-    connection.disconnecting === true ||
-    connection.primaryCalendarId !== args.calendarId
+    output === null ||
+    output.changing ||
+    output.connection.disconnecting === true ||
+    output.calendarId !== args.calendarId ||
+    (args.connectionId !== undefined && output.connection._id !== args.connectionId) ||
+    output.generation !== (args.generation ?? 0)
   ) {
     return "disconnected";
   }
@@ -41,7 +47,7 @@ export async function recordPush(
     }
     return changed ? "changed" : "recorded";
   }
-  const shadow = await ctx.db
+  const shadows = await ctx.db
     .query("externalCalendarEvents")
     .withIndex("by_owner_and_calendar_and_event", (q) =>
       q
@@ -49,11 +55,10 @@ export async function recordPush(
         .eq("calendarId", args.calendarId)
         .eq("googleEventId", outcome.googleEventId),
     )
-    .unique();
-  if (shadow !== null) {
-    await ctx.db.delete("externalCalendarEvents", shadow._id);
-  }
+    .collect();
+  await Promise.all(shadows.map((shadow) => ctx.db.delete("externalCalendarEvents", shadow._id)));
   const fields = {
+    connectionId: output.connection._id,
     appChangedAt: changed ? (link?.appChangedAt ?? Date.now()) : undefined,
     calendarId: args.calendarId,
     googleEventId: outcome.googleEventId,
@@ -62,6 +67,7 @@ export async function recordPush(
   };
   if (link === null) {
     await ctx.db.insert("calendarSyncLinks", {
+      connectionId: fields.connectionId,
       appChangedAt: fields.appChangedAt,
       calendarId: fields.calendarId,
       googleEventId: fields.googleEventId,

@@ -12,9 +12,16 @@ export const finishExternalPush = internalMutation({
     }
     await ctx.db.patch("calendarExternalChanges", pending._id, { settledAt: Date.now() });
     if (args.lastError !== undefined) {
-      await resetCalendarCursor(ctx, pending.ownerId, pending.calendarId, { dropExternals: false });
+      await resetCalendarCursor(
+        ctx,
+        pending.ownerId,
+        pending.calendarId,
+        { dropExternals: false },
+        pending.connectionId,
+      );
       await markStatus(ctx, {
         ownerId: pending.ownerId,
+        connectionId: pending.connectionId,
         lastError: args.lastError,
         status: "error",
         syncedAt: null,

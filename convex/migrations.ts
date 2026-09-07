@@ -2,8 +2,11 @@ import { Migrations } from "@convex-dev/migrations";
 import type { ComponentApi } from "@convex-dev/migrations/_generated/component.js";
 import { componentsGeneric } from "convex/server";
 
-import type { DataModel } from "./_generated/dataModel";
+import type { DataModel, Id } from "./_generated/dataModel";
+import type { MutationCtx } from "./_generated/server";
 import schema from "./schema";
+import { getConnection } from "./services/calendarSync/getConnection";
+import { migrateConnections } from "./services/calendarSync/migrateConnections";
 import { backfillCheckpointParents as backfillForOwner } from "./services/goals/backfillCheckpointParents";
 
 const migrationsComponent: ComponentApi = componentsGeneric().migrations as unknown as ComponentApi;
@@ -36,4 +39,46 @@ export const revertCheckpointParents = migrations.define({
       ? { parentGoalId: undefined }
       : undefined,
   table: "goals",
+});
+
+export const backfillCalendarConnections = migrations.define({
+  table: "calendarConnections",
+  migrateOne: async (ctx, connection) => {
+    await migrateConnections(ctx, connection.ownerId);
+  },
+});
+
+async function backfillConnectionId(
+  ctx: MutationCtx,
+  row: { connectionId?: Id<"calendarConnections">; ownerId: string },
+) {
+  if (row.connectionId !== undefined) return;
+  await migrateConnections(ctx, row.ownerId);
+  const connection = await getConnection(ctx, row.ownerId);
+  return connection === null ? undefined : { connectionId: connection._id };
+}
+
+export const backfillCalendarLinks = migrations.define({
+  table: "calendarSyncLinks",
+  migrateOne: backfillConnectionId,
+});
+
+export const backfillCalendarCursors = migrations.define({
+  table: "calendarSyncCursors",
+  migrateOne: backfillConnectionId,
+});
+
+export const backfillCalendarEvents = migrations.define({
+  table: "externalCalendarEvents",
+  migrateOne: backfillConnectionId,
+});
+
+export const backfillCalendarChanges = migrations.define({
+  table: "calendarExternalChanges",
+  migrateOne: backfillConnectionId,
+});
+
+export const backfillCalendarOperations = migrations.define({
+  table: "calendarSyncOperations",
+  migrateOne: backfillConnectionId,
 });

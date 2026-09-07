@@ -7,8 +7,10 @@ import {
 } from "@tanstack/react-router";
 import { act, fireEvent, waitFor, within } from "@testing-library/react";
 import { Result } from "better-result";
+import type { FunctionReturnType } from "convex/server";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
 
+import type { api } from "~/../convex/_generated/api";
 import {
   BOARD_CALENDAR_SYNC_TOOLTIP,
   BoardCalendarSyncButton,
@@ -22,10 +24,28 @@ import {
 } from "~/lib/calendar-sync-actions";
 import { renderWithMantine } from "~/test-utils/render";
 
-const { connect } = vi.hoisted(() => ({ connect: vi.fn().mockResolvedValue("ok") }));
+type Authorization = FunctionReturnType<typeof api.mutations.calendarAuth.begin.begin>;
+const AUTHORIZATION: Authorization = {
+  requestId: "authorization-1" as Authorization["requestId"],
+  scopes: ["calendar.readonly"],
+};
+
+const { connect, syncState } = vi.hoisted(() => ({
+  connect: vi.fn().mockResolvedValue("ok"),
+  syncState: { failed: false },
+}));
 
 vi.mock("~/hooks/use-calendar-sync", () => ({
-  useCalendarSyncStatus: () => ({ data: null }),
+  useBeginCalendarAuthorization: () => vi.fn(),
+  useCalendarSyncStatus: () => ({
+    data: {
+      connections: syncState.failed ? [{ status: "needsReauth" }] : [],
+      output: null,
+      outputChanging: false,
+    },
+  }),
+  useSetCalendarOutput: () => vi.fn(),
+  useRetryCalendarOutput: () => vi.fn(),
   useConnectCalendarSync: () => connect,
   useDisconnectCalendarSync: () => vi.fn(),
   useSetVisibleCalendars: () => vi.fn(),
@@ -56,6 +76,7 @@ async function renderBoard(initialEntry: string) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  syncState.failed = false;
   window.history.replaceState(null, "", "/");
   clearCalendarSyncConnectPending();
 });
@@ -87,19 +108,20 @@ test("キーボードでTooltipを確認でき、設定の開閉後も予定の�
 
 test("Googleの同意後はboardの予定タブで設定を開き、連携の仕上げを一度だけ実行する", async () => {
   window.history.replaceState(null, "", "/board?tab=schedule&calendarSync=true&week=2026-08-31");
-  expect(Result.isOk(await linkGoogleCalendar())).toBe(true);
+  expect(Result.isOk(await linkGoogleCalendar(AUTHORIZATION))).toBe(true);
   const request = vi.mocked(authClient.linkSocial).mock.calls[0]?.[0];
   const callback = new URL(request?.callbackURL ?? "");
   expect(callback.pathname).toBe("/board");
   expect(callback.searchParams.get("tab")).toBe("schedule");
   expect(request?.errorCallbackURL).toBe(request?.callbackURL);
 
+  window.history.replaceState(null, "", `${callback.pathname}${callback.search}`);
   const view = await renderBoard(`${callback.pathname}${callback.search}`);
   expect(
     await view.findByRole("dialog", { hidden: true, name: "Google カレンダー連携" }),
   ).toBeDefined();
   await waitFor(() => expect(connect).toHaveBeenCalledTimes(1));
-  expect(readCalendarSyncConnectPending()).toBe(false);
+  expect(readCalendarSyncConnectPending()).toBeNull();
 });
 
 test.each(["/board", "/board?tab=kanban&calendarSync=true"])(
@@ -113,8 +135,19 @@ test.each(["/board", "/board?tab=kanban&calendarSync=true"])(
 
 test("アカウント設定からの連携はエラーを除去して元の画面に戻る", async () => {
   window.history.replaceState(null, "", "/my-page?error=access_denied&error_description=old");
-  await linkGoogleCalendar();
+  await linkGoogleCalendar(AUTHORIZATION);
   const request = vi.mocked(authClient.linkSocial).mock.calls[0]?.[0];
   expect(new URL(request?.callbackURL ?? "").pathname).toBe("/my-page");
-  expect(new URL(request?.callbackURL ?? "").search).toBe("");
+  const returned = new URL(request?.callbackURL ?? "");
+  expect(returned.searchParams.get("error")).toBeNull();
+  expect(returned.searchParams.get("error_description")).toBeNull();
+  expect(returned.searchParams.get("calendarRequestId")).toBe(AUTHORIZATION.requestId);
+});
+
+test("取得できていない接続の件数をボードの連携ボタンから確認できる", async () => {
+  syncState.failed = true;
+  const view = await renderBoard("/board?tab=schedule");
+  expect(
+    await view.findByRole("button", { name: /Google カレンダー連携.*未同期 1/ }),
+  ).toBeDefined();
 });

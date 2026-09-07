@@ -14,7 +14,12 @@ const MIN_TIMED_LENGTH_MS = 60_000;
 
 export function toPulledEvent(calendarId: string, event: GoogleEvent): PulledEvent | null {
   if (event.status === "cancelled") {
-    return { calendarId, googleEventId: event.id, kind: "delete" };
+    return {
+      calendarId,
+      googleEventId: event.id,
+      kind: "delete",
+      ...(event.updated === undefined ? {} : { updated: event.updated }),
+    };
   }
   const start = event.start;
   if (start === undefined) {

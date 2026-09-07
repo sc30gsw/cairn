@@ -4,15 +4,18 @@ import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { api, internal } from "./_generated/api";
 import type { TableNames } from "./_generated/dataModel";
-import { GOOGLE_CALENDAR_SCOPES } from "./lib/calendarSync";
+import { GOOGLE_CALENDAR_WRITE_SCOPES } from "./lib/calendarSync";
 import { deleteEvent, listCalendars, listEvents } from "./lib/googleCalendar";
 import schema from "./schema";
+import { connect as connectCalendar } from "./services/calendarSync/connect";
 
 const account = vi.hoisted(() => ({ id: "google-owner" }));
 
 vi.mock("./lib/googleAccessToken", () => ({
   getGoogleAccessToken: async () => Result.ok("test-token"),
-  listGoogleAccounts: async () => [{ accountId: account.id, scopes: [...GOOGLE_CALENDAR_SCOPES] }],
+  listGoogleAccounts: async () => [
+    { accountId: account.id, scopes: [...GOOGLE_CALENDAR_WRITE_SCOPES] },
+  ],
 }));
 
 vi.mock("./lib/googleCalendar", async (importOriginal) => ({
@@ -138,7 +141,7 @@ test("清掃を上限付きで確定し、残りがある間は再認証と旧�
       expect(records.filter((record) => record.ownerId === OTHER_OWNER)).toHaveLength(1);
     }
   });
-  for (const googleAccountId of ["google-owner", "another-account"]) {
+  for (const googleAccountId of ["google-owner"]) {
     await expect(
       t.mutation(internal.mutations.calendarSync.upsertConnection.upsertConnection, {
         ownerId: OWNER,
@@ -173,7 +176,7 @@ test("清掃を上限付きで確定し、残りがある間は再認証と旧�
   });
 });
 
-test.each(["disconnect", "reconnect", "switch-account"] as const satisfies readonly string[])(
+test.each(["disconnect", "reconnect"] as const satisfies readonly string[])(
   "清掃途中で停止しても lease 失効後の %s が残りを完了する",
   async (operation) => {
     const { t, owner } = await setup();
@@ -188,13 +191,13 @@ test.each(["disconnect", "reconnect", "switch-account"] as const satisfies reado
         ownerId: OWNER,
       }),
     ).toBe(false);
-    await expect(owner.action(api.actions.calendarSync.syncNow.syncNow, {})).rejects.toThrow();
+    expect(await owner.action(api.actions.calendarSync.syncNow.syncNow, {})).toBe("busy");
     vi.advanceTimersByTime(12 * 60 * 1000);
     if (operation === "disconnect") {
       await owner.action(api.actions.calendarSync.disconnect.disconnect, {});
     } else {
-      if (operation === "switch-account") account.id = "another-account";
-      expect(await owner.action(api.actions.calendarSync.connect.connect, {})).toBe("ok");
+      await owner.action(api.actions.calendarSync.disconnect.disconnect, {});
+      expect(await owner.action((ctx) => connectCalendar(ctx, OWNER, account.id))).toBe("ok");
     }
     await t.run(async (ctx) => {
       for (const table of SYNC_TABLES) {
@@ -212,6 +215,7 @@ test.each(["disconnect", "reconnect", "switch-account"] as const satisfies reado
         expect(connection).toMatchObject({
           googleAccountId: account.id,
           externalChangesVersion: 1,
+          externalReadOnly: false,
         });
         expect(connection?.disconnecting).toBeUndefined();
       }

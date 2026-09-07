@@ -1,8 +1,13 @@
 import { Result } from "better-result";
+import type { FunctionReturnType } from "convex/server";
 
 import { internal } from "../../_generated/api";
+import type { Id } from "../../_generated/dataModel";
 import type { ActionCtx } from "../../_generated/server";
-import { CALENDAR_SYNC_FULL_RESYNC_DAYS } from "../../lib/calendarSync";
+import {
+  CALENDAR_SYNC_FULL_RESYNC_DAYS,
+  CALENDAR_SYNC_SOURCE_PHASES,
+} from "../../lib/calendarSync";
 import { getGoogleAccessToken } from "../../lib/googleAccessToken";
 import {
   type GoogleCalendarClient,
@@ -17,23 +22,58 @@ import { withCalendarOperation } from "./operation";
 import { pullCalendar } from "./pullCalendar";
 import { flushExternalChanges } from "./pushExternalChange";
 import { pushOne } from "./pushOne";
-import { markNeedsReauth, markSyncError } from "./syncFailure";
+import { markNeedsReauth, markSyncError, markTokenFailure } from "./syncFailure";
 import { syncWindow } from "./window";
 
-export async function runOwnerSync(ctx: ActionCtx, ownerId: string): Promise<OwnerSyncOutcome> {
-  const operation = await withCalendarOperation(ctx, ownerId, () =>
-    syncConnectedOwner(ctx, ownerId),
-  );
-  return operation.acquired ? operation.value : "busy";
+type ConnectionsPage = FunctionReturnType<
+  typeof internal.queries.calendarSync.connectionsForOwner.connectionsForOwner
+>;
+type LinkedPage = FunctionReturnType<typeof internal.queries.calendarSync.linkedPage.linkedPage>;
+type SourcePage = FunctionReturnType<typeof internal.queries.calendarSync.sourcePage.sourcePage>;
+
+export async function runOwnerSync(
+  ctx: ActionCtx,
+  ownerId: string,
+  connectionId?: Id<"calendarConnections">,
+): Promise<OwnerSyncOutcome> {
+  if (connectionId !== undefined) {
+    const operation = await withCalendarOperation(
+      ctx,
+      ownerId,
+      () => syncConnectedOwner(ctx, ownerId, connectionId),
+      connectionId,
+    );
+    return operation.acquired ? operation.value : "busy";
+  }
+  let cursor: string | null = null;
+  let result: OwnerSyncOutcome = "notConnected";
+  while (true) {
+    const page: ConnectionsPage = await ctx.runQuery(
+      internal.queries.calendarSync.connectionsForOwner.connectionsForOwner,
+      { ownerId, paginationOpts: { cursor, numItems: 25 } },
+    );
+    //? 1接続の予期しない失敗で他の接続の同期を止めない（allSettled）
+    const outcomes = await Promise.allSettled(
+      page.page.map((id) => runOwnerSync(ctx, ownerId, id)),
+    );
+    for (const settled of outcomes) {
+      const outcome: OwnerSyncOutcome = settled.status === "fulfilled" ? settled.value : "error";
+      if (result === "notConnected" || result === "ok" || outcome === "error") result = outcome;
+    }
+    if (page.isDone) return result;
+    cursor = page.continueCursor;
+  }
 }
 
 export async function syncConnectedOwner(
   ctx: ActionCtx,
   ownerId: string,
+  connectionId?: Id<"calendarConnections">,
 ): Promise<OwnerSyncOutcome> {
   const today = todayJst();
   const plan = await ctx.runQuery(internal.queries.calendarSync.syncPlan.syncPlan, {
     ownerId,
+    connectionId,
     todayJst: today,
   });
   if (plan === null) {
@@ -45,16 +85,15 @@ export async function syncConnectedOwner(
     userId: ownerId,
   });
   if (Result.isError(token)) {
-    await markNeedsReauth(ctx, ownerId);
-    return "needsReauth";
+    return markTokenFailure(ctx, ownerId, token.error, plan.connectionId);
   }
   const client: GoogleCalendarClient = { accessToken: token.value };
   const window = syncWindow(today);
   const failures: GoogleCalendarError[] = [];
-  const flushed = await flushExternalChanges(ctx, client, ownerId);
+  const flushed = await flushExternalChanges(ctx, client, ownerId, plan.connectionId);
   if (Result.isError(flushed)) {
     if (isAuthFailure(flushed.error)) {
-      await markNeedsReauth(ctx, ownerId);
+      await markNeedsReauth(ctx, ownerId, plan.connectionId);
       return "needsReauth";
     }
     failures.push(flushed.error);
@@ -62,6 +101,7 @@ export async function syncConnectedOwner(
 
   const pullPlan = await ctx.runQuery(internal.queries.calendarSync.syncPlan.syncPlan, {
     ownerId,
+    connectionId: plan.connectionId,
     todayJst: today,
   });
   if (pullPlan === null) return "notConnected";
@@ -73,12 +113,24 @@ export async function syncConnectedOwner(
       daysUntil(stored.fullSyncedOnJst, today) >= CALENDAR_SYNC_FULL_RESYNC_DAYS
         ? null
         : stored.syncToken;
-    const linkedEventIds =
-      calendarId === pullPlan.calendarId
-        ? pullPlan.sources.flatMap((source) =>
-            source.link === null ? [] : [source.link.googleEventId],
-          )
-        : [];
+    const linkedEventIds: string[] = [];
+    if (pullPlan.isOutput && calendarId === pullPlan.calendarId) {
+      let linkCursor: string | null = null;
+      while (true) {
+        const page: LinkedPage = await ctx.runQuery(
+          internal.queries.calendarSync.linkedPage.linkedPage,
+          {
+            ownerId,
+            connectionId: pullPlan.connectionId,
+            calendarId,
+            paginationOpts: { cursor: linkCursor, numItems: 100 },
+          },
+        );
+        linkedEventIds.push(...page.page.map((link) => link.googleEventId));
+        if (page.isDone) break;
+        linkCursor = page.continueCursor;
+      }
+    }
     const pulled = await pullCalendar(client, {
       calendarId,
       linkedEventIds,
@@ -87,7 +139,7 @@ export async function syncConnectedOwner(
     });
     if (Result.isError(pulled)) {
       if (isAuthFailure(pulled.error)) {
-        await markNeedsReauth(ctx, ownerId);
+        await markNeedsReauth(ctx, ownerId, plan.connectionId);
         return "needsReauth";
       }
       failures.push(pulled.error);
@@ -98,41 +150,70 @@ export async function syncConnectedOwner(
       events: pulled.value.events,
       finish: { keepEventIds: pulled.value.keepEventIds, syncToken: pulled.value.syncToken },
       ownerId,
+      connectionId: plan.connectionId,
       todayJst: today,
+      generation: pullPlan.generation,
     });
   }
 
   const refreshed = await ctx.runQuery(internal.queries.calendarSync.syncPlan.syncPlan, {
     ownerId,
+    connectionId: plan.connectionId,
     todayJst: today,
   });
   if (refreshed === null) {
     return "notConnected";
   }
-  for (const source of refreshed.sources) {
-    const pushed = await pushOne(ctx, client, {
-      calendarId: refreshed.calendarId,
-      ownerId,
-      source,
-    });
-    if (Result.isError(pushed)) {
-      if (isAuthFailure(pushed.error)) {
-        await markNeedsReauth(ctx, ownerId);
-        return "needsReauth";
+  for (const phase of CALENDAR_SYNC_SOURCE_PHASES) {
+    let sourceCursor: string | null = null;
+    while (refreshed.isOutput) {
+      const page: SourcePage = await ctx.runQuery(
+        internal.queries.calendarSync.sourcePage.sourcePage,
+        {
+          ownerId,
+          connectionId: refreshed.connectionId,
+          todayJst: today,
+          phase,
+          paginationOpts: { cursor: sourceCursor, numItems: 50 },
+        },
+      );
+      for (const source of page.page) {
+        const pushed = await pushOne(ctx, client, {
+          calendarId: refreshed.calendarId,
+          generation: refreshed.generation,
+          ownerId,
+          connectionId: refreshed.connectionId,
+          source,
+        });
+        if (Result.isError(pushed)) {
+          if (isAuthFailure(pushed.error)) {
+            await markNeedsReauth(ctx, ownerId, plan.connectionId);
+            return "needsReauth";
+          }
+          failures.push(pushed.error);
+        }
       }
-      failures.push(pushed.error);
+      if (page.isDone) break;
+      sourceCursor = page.continueCursor;
     }
   }
 
   const now = Date.now();
   if (failures.length > 0) {
     const [first] = failures;
-    await markSyncError(ctx, ownerId, first?.message ?? "同期に失敗しました", now);
+    await markSyncError(
+      ctx,
+      ownerId,
+      first?.message ?? "同期に失敗しました",
+      now,
+      plan.connectionId,
+    );
     return "error";
   }
   await ctx.runMutation(internal.mutations.calendarSync.markStatus.markStatus, {
     lastError: null,
     ownerId,
+    connectionId: plan.connectionId,
     status: "ok",
     syncedAt: now,
   });

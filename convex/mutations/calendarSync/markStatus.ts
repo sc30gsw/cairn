@@ -6,6 +6,7 @@ import { markStatus as markConnectionStatus } from "../../services/calendarSync/
 
 export const markStatus = internalMutation({
   args: {
+    connectionId: v.optional(v.id("calendarConnections")),
     lastError: v.union(v.string(), v.null()),
     ownerId: v.string(),
     status: calendarSyncStatusValidator,

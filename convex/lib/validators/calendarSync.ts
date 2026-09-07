@@ -1,6 +1,12 @@
 import { type Infer, v } from "convex/values";
 
-import { CALENDAR_SYNC_SOURCE_KINDS, CALENDAR_SYNC_STATUSES } from "../calendarSync";
+import {
+  CALENDAR_AUTH_PURPOSES,
+  CALENDAR_AUTH_REQUEST_STATES,
+  CALENDAR_SYNC_SOURCE_KINDS,
+  CALENDAR_SYNC_SOURCE_PHASES,
+  CALENDAR_SYNC_STATUSES,
+} from "../calendarSync";
 import { GOOGLE_CALENDAR_EVENT_COLORS } from "../googleCalendarColors";
 
 export const calendarSyncStatusValidator = v.union(
@@ -10,6 +16,33 @@ export const calendarSyncStatusValidator = v.union(
 export const calendarSyncSourceKindValidator = v.union(
   ...CALENDAR_SYNC_SOURCE_KINDS.map((kind) => v.literal(kind)),
 );
+
+export const calendarSyncSourcePhaseValidator = v.union(
+  ...CALENDAR_SYNC_SOURCE_PHASES.map((phase) => v.literal(phase)),
+);
+
+export const calendarAuthPurposeValidator = v.union(
+  ...CALENDAR_AUTH_PURPOSES.map((purpose) => v.literal(purpose)),
+);
+
+export const calendarAuthRequestStateValidator = v.union(
+  ...CALENDAR_AUTH_REQUEST_STATES.map((state) => v.literal(state)),
+);
+
+export const calendarAuthBeginArgsValidator = v.object({
+  calendarId: v.optional(v.string()),
+  googleAccountId: v.optional(v.string()),
+  purpose: calendarAuthPurposeValidator,
+});
+
+export type CalendarAuthBeginArgs = Infer<typeof calendarAuthBeginArgsValidator>;
+
+export const calendarAuthBeginResultValidator = v.object({
+  requestId: v.id("calendarAuthorizationRequests"),
+  scopes: v.array(v.string()),
+});
+
+export type CalendarAuthBeginResult = Infer<typeof calendarAuthBeginResultValidator>;
 
 export const googleCalendarSummaryValidator = v.object({
   accessRole: v.optional(v.string()),
@@ -21,19 +54,30 @@ export const googleCalendarSummaryValidator = v.object({
 
 export type GoogleCalendarSummary = Infer<typeof googleCalendarSummaryValidator>;
 
-export const calendarConnectionDtoValidator = v.union(
-  v.null(),
-  v.object({
-    calendars: v.array(googleCalendarSummaryValidator),
-    googleEmail: v.union(v.string(), v.null()),
-    lastError: v.union(v.string(), v.null()),
-    lastSyncedAt: v.union(v.number(), v.null()),
-    status: calendarSyncStatusValidator,
-    visibleCalendarIds: v.array(v.string()),
-  }),
-);
-
+export const calendarConnectionDtoValidator = v.object({
+  connectionId: v.id("calendarConnections"),
+  googleAccountId: v.string(),
+  externalReadOnly: v.boolean(),
+  canWrite: v.boolean(),
+  calendars: v.array(googleCalendarSummaryValidator),
+  googleEmail: v.union(v.string(), v.null()),
+  lastError: v.union(v.string(), v.null()),
+  lastSyncedAt: v.union(v.number(), v.null()),
+  status: calendarSyncStatusValidator,
+  visibleCalendarIds: v.array(v.string()),
+});
 export type CalendarConnectionDto = Infer<typeof calendarConnectionDtoValidator>;
+
+export const calendarOutputValidator = v.object({
+  connectionId: v.id("calendarConnections"),
+  calendarId: v.string(),
+});
+export const calendarSyncOverviewValidator = v.object({
+  connections: v.array(calendarConnectionDtoValidator),
+  output: v.union(v.null(), calendarOutputValidator),
+  outputChanging: v.boolean(),
+});
+export type CalendarSyncOverview = Infer<typeof calendarSyncOverviewValidator>;
 
 export const googleEventColorIdValidator = v.union(
   v.null(),
@@ -72,6 +116,7 @@ export const pulledEventValidator = v.union(
     calendarId: v.string(),
     googleEventId: v.string(),
     kind: v.literal("delete"),
+    updated: v.optional(v.string()),
   }),
 );
 
@@ -96,6 +141,8 @@ export const googleEventPayloadValidator = v.object({
 export type GoogleEventPayload = Infer<typeof googleEventPayloadValidator>;
 
 const syncLinkValidator = v.object({
+  connectionId: v.optional(v.id("calendarConnections")),
+  calendarId: v.optional(v.string()),
   appChangedAt: v.union(v.number(), v.null()),
   googleEventId: v.string(),
   payloadKey: v.union(v.string(), v.null()),
@@ -114,6 +161,8 @@ export type SyncSource = Infer<typeof syncSourceValidator>;
 export const pushPlanValidator = v.union(
   v.null(),
   v.object({
+    connectionId: v.id("calendarConnections"),
+    generation: v.number(),
     googleAccountId: v.string(),
     calendarId: v.string(),
     source: syncSourceValidator,
@@ -125,13 +174,15 @@ export type PushPlan = Infer<typeof pushPlanValidator>;
 export const syncPlanValidator = v.union(
   v.null(),
   v.object({
+    connectionId: v.id("calendarConnections"),
+    generation: v.number(),
     googleAccountId: v.string(),
     calendarId: v.string(),
     disconnecting: v.boolean(),
+    isOutput: v.boolean(),
     cursors: v.array(
       v.object({ calendarId: v.string(), fullSyncedOnJst: v.string(), syncToken: v.string() }),
     ),
-    sources: v.array(syncSourceValidator),
     visibleCalendarIds: v.array(v.string()),
   }),
 );
@@ -172,6 +223,7 @@ export const ownerSyncOutcomeValidator = v.union(
 export type OwnerSyncOutcome = Infer<typeof ownerSyncOutcomeValidator>;
 
 export const upsertConnectionArgsValidator = v.object({
+  canWrite: v.optional(v.boolean()),
   calendars: v.array(googleCalendarSummaryValidator),
   defaultVisibleCalendarIds: v.array(v.string()),
   googleAccountId: v.string(),

@@ -13,11 +13,14 @@ import { pushOne } from "../../services/calendarSync/pushOne";
 import {
   markNeedsReauth,
   markSyncError,
+  markTokenFailure,
   retryDelayMs,
 } from "../../services/calendarSync/syncFailure";
 
 export const pushSource = internalAction({
   args: {
+    connectionId: v.optional(v.id("calendarConnections")),
+    generation: v.optional(v.number()),
     attempt: v.number(),
     ownerId: v.string(),
     sourceId: v.string(),
@@ -30,7 +33,11 @@ export const pushSource = internalAction({
         sourceId: args.sourceId,
         sourceKind: args.sourceKind,
       });
-      if (plan === null) {
+      if (
+        plan === null ||
+        (args.connectionId !== undefined && args.connectionId !== plan.connectionId) ||
+        (args.generation ?? 0) !== plan.generation
+      ) {
         return null;
       }
       const token = await getGoogleAccessToken(ctx, {
@@ -38,19 +45,25 @@ export const pushSource = internalAction({
         userId: args.ownerId,
       });
       if (Result.isError(token)) {
-        await markNeedsReauth(ctx, args.ownerId);
+        await markTokenFailure(ctx, args.ownerId, token.error, plan.connectionId);
         return null;
       }
       const pushed = await pushOne(
         ctx,
         { accessToken: token.value },
-        { calendarId: plan.calendarId, ownerId: args.ownerId, source: plan.source },
+        {
+          calendarId: plan.calendarId,
+          connectionId: plan.connectionId,
+          generation: plan.generation,
+          ownerId: args.ownerId,
+          source: plan.source,
+        },
       );
       if (Result.isOk(pushed)) {
         return null;
       }
       if (isAuthFailure(pushed.error)) {
-        await markNeedsReauth(ctx, args.ownerId);
+        await markNeedsReauth(ctx, args.ownerId, plan.connectionId);
         return null;
       }
       const delay = retryDelayMs(args.attempt);
@@ -61,7 +74,7 @@ export const pushSource = internalAction({
         });
         return null;
       }
-      await markSyncError(ctx, args.ownerId, pushed.error.message);
+      await markSyncError(ctx, args.ownerId, pushed.error.message, null, plan.connectionId);
       return null;
     });
     if (!operation.acquired) {

@@ -7,5 +7,5 @@ import { upsertConnection as upsert } from "../../services/calendarSync/connecti
 export const upsertConnection = internalMutation({
   args: upsertConnectionArgsValidator.fields,
   handler: async (ctx, args) => upsert(ctx, args),
-  returns: v.null(),
+  returns: v.id("calendarConnections"),
 });

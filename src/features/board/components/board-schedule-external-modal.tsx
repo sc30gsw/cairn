@@ -82,7 +82,7 @@ function ExternalEventForm({
       title={<GoogleLabel>{external.canEdit ? "予定を編集" : "外部予定"}</GoogleLabel>}
     >
       <Group gap="xs" wrap="nowrap">
-        <Text size="sm">接続中のGoogleアカウント</Text>
+        <Text size="sm">取得元のカレンダー</Text>
         <Stack gap={0}>
           <Text size="sm">{external.calendarName}</Text>
           {external.calendarName !== external.calendarEmail && (
@@ -95,7 +95,7 @@ function ExternalEventForm({
       <Text c="dimmed" size="sm">
         {external.canEdit
           ? "保存・削除すると、Google カレンダー上の予定も変更・削除されます。"
-          : "読み取り専用のカレンダーです。この予定は変更・削除できません。"}
+          : "この外部予定は閲覧専用です。日時や内容を変える場合は、Google カレンダーで確認してください。"}
       </Text>
       <Form id={formId} of={form} onSubmit={handleSubmit}>
         <Stack gap="md">

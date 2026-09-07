@@ -12,15 +12,20 @@ import { isAuthFailure } from "../../lib/googleCalendar";
 import schema from "../../schema";
 import { withCalendarOperation } from "../../services/calendarSync/operation";
 import { pushExternalChange } from "../../services/calendarSync/pushExternalChange";
-import { markNeedsReauth } from "../../services/calendarSync/syncFailure";
+import { markNeedsReauth, markTokenFailure } from "../../services/calendarSync/syncFailure";
 
 async function pushPendingChange(
   ctx: ActionCtx,
-  args: { attempt: number; ownerId: string; pendingId: Id<"calendarExternalChanges"> },
+  args: {
+    connectionId?: Id<"calendarConnections">;
+    attempt: number;
+    ownerId: string;
+    pendingId: Id<"calendarExternalChanges">;
+  },
 ): Promise<void> {
   const access = await ctx.runQuery(
     internal.queries.calendarSync.connectionAccess.connectionAccess,
-    { ownerId: args.ownerId },
+    { ownerId: args.ownerId, connectionId: args.connectionId },
   );
   if (access === null) {
     return;
@@ -30,7 +35,7 @@ async function pushPendingChange(
     userId: args.ownerId,
   });
   if (Result.isError(token)) {
-    await markNeedsReauth(ctx, args.ownerId);
+    await markTokenFailure(ctx, args.ownerId, token.error, args.connectionId);
     return;
   }
   const client = { accessToken: token.value };
@@ -39,7 +44,7 @@ async function pushPendingChange(
     return;
   }
   if (isAuthFailure(outcome.error)) {
-    await markNeedsReauth(ctx, args.ownerId);
+    await markNeedsReauth(ctx, args.ownerId, args.connectionId);
     return;
   }
 }
@@ -74,8 +79,16 @@ export const pushExternal = internalAction({
     if (pending === null) {
       return null;
     }
-    const operation = await withCalendarOperation(ctx, pending.ownerId, async () =>
-      pushPendingChange(ctx, { ...args, ownerId: pending.ownerId }),
+    const operation = await withCalendarOperation(
+      ctx,
+      pending.ownerId,
+      async () =>
+        pushPendingChange(ctx, {
+          ...args,
+          ownerId: pending.ownerId,
+          connectionId: pending.connectionId,
+        }),
+      pending.connectionId,
     );
     if (!operation.acquired) {
       await ctx.scheduler.runAfter(

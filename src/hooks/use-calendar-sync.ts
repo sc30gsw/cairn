@@ -22,6 +22,10 @@ export function useConnectCalendarSync() {
   return useAction(api.actions.calendarSync.connect.connect);
 }
 
+export function useBeginCalendarAuthorization() {
+  return useConvexMutation(api.mutations.calendarAuth.begin.begin);
+}
+
 export function useDisconnectCalendarSync() {
   return useAction(api.actions.calendarSync.disconnect.disconnect);
 }
@@ -30,12 +34,20 @@ export function useSyncCalendarNow() {
   return useAction(api.actions.calendarSync.syncNow.syncNow);
 }
 
+export function useSetCalendarOutput() {
+  return useAction(api.actions.calendarSync.setOutput.setOutput);
+}
+
+export function useRetryCalendarOutput() {
+  return useAction(api.actions.calendarSync.retryOutputChange.retryOutputChange);
+}
+
 export function useSetVisibleCalendars() {
   return useConvexMutation(
     api.mutations.calendarSync.setVisibleCalendars.setVisibleCalendars,
   ).withOptimisticUpdate((localStore, args) => {
     const current = localStore.getQuery(api.queries.calendarSync.status.status, {});
-    if (current === undefined || current === null) {
+    if (current === undefined) {
       return;
     }
     localStore.setQuery(
@@ -43,7 +55,11 @@ export function useSetVisibleCalendars() {
       {},
       {
         ...current,
-        visibleCalendarIds: args.calendarIds,
+        connections: current.connections.map((connection) =>
+          connection.connectionId === args.connectionId
+            ? { ...connection, visibleCalendarIds: args.calendarIds }
+            : connection,
+        ),
       },
     );
   });
@@ -68,7 +84,7 @@ export function useSyncCalendarOnOpen() {
   const { data: status } = useCalendarSyncStatus();
   const syncNow = useSyncCalendarNow();
   const started = useRef(false);
-  const connected = status !== null && status.status !== "needsReauth";
+  const connected = status.connections.some((connection) => connection.status !== "needsReauth");
 
   useEffect(() => {
     if (!connected || started.current) {

@@ -1,20 +1,22 @@
-import type { Doc } from "../../_generated/dataModel";
+import type { Doc, Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { isDateJst } from "../../lib/jst";
 import type { PulledEvent } from "../../lib/validators";
 import { desiredEvent } from "./desiredEvent";
 import { payloadKey } from "./eventPayload";
+import { findAppLink } from "./findAppLink";
 import { finishCalendarPull } from "./finishCalendarPull";
-import { overlapsWindow, syncWindow, type SyncWindow } from "./window";
+import { getConnection, getOutput } from "./getConnection";
+import { overlapsWindow, syncWindow } from "./window";
 
-export type PullFinish = {
-  keepEventIds: readonly string[] | null;
-  syncToken: string | null;
-};
+export type PullFinish = { keepEventIds: readonly string[] | null; syncToken: string | null };
 
 export async function applyPull(
   ctx: MutationCtx,
   args: {
+    connectionId?: Id<"calendarConnections">;
+    generation?: number;
+    pullId?: string;
     calendarId: string;
     events: readonly PulledEvent[];
     finish: PullFinish | null;
@@ -22,10 +24,39 @@ export async function applyPull(
     todayJst: string;
   },
 ): Promise<null> {
+  const connection = await getConnection(ctx, args.ownerId, args.connectionId);
+  if (connection === null || connection.disconnecting === true) return null;
+  const [legacy, output] = await Promise.all([
+    getConnection(ctx, args.ownerId),
+    getOutput(ctx, args.ownerId),
+  ]);
   const window = syncWindow(args.todayJst);
   for (const event of args.events) {
-    const link = await ctx.db
-      .query("calendarSyncLinks")
+    const link = await findAppLink(ctx, args.ownerId, event.calendarId, event.googleEventId);
+    const copies = await ctx.db
+      .query("externalCalendarEvents")
+      .withIndex("by_owner_and_calendar_and_event", (q) =>
+        q
+          .eq("ownerId", args.ownerId)
+          .eq("calendarId", event.calendarId)
+          .eq("googleEventId", event.googleEventId),
+      )
+      .collect();
+    if (link !== null) {
+      await Promise.all(copies.map((copy) => ctx.db.delete("externalCalendarEvents", copy._id)));
+      if (
+        output?.connection._id === connection._id &&
+        !output.changing &&
+        link.calendarId === event.calendarId &&
+        link.googleEventId === event.googleEventId &&
+        (args.generation ?? 0) === output.generation
+      ) {
+        await applyToSource(ctx, link, event);
+      }
+      continue;
+    }
+    const tombstone = await ctx.db
+      .query("calendarEventDeletions")
       .withIndex("by_owner_and_calendar_and_event", (q) =>
         q
           .eq("ownerId", args.ownerId)
@@ -33,87 +64,79 @@ export async function applyPull(
           .eq("googleEventId", event.googleEventId),
       )
       .unique();
-    if (link !== null) {
-      const shadow = await findExternal(ctx, args.ownerId, event);
-      if (shadow !== null) {
-        await ctx.db.delete("externalCalendarEvents", shadow._id);
+    if (event.kind === "delete") {
+      const deletedAt = event.updated ?? new Date().toISOString();
+      if (tombstone === null) {
+        await ctx.db.insert("calendarEventDeletions", {
+          ownerId: args.ownerId,
+          calendarId: event.calendarId,
+          googleEventId: event.googleEventId,
+          deletedAt,
+        });
+      } else if (deletedAt > tombstone.deletedAt) {
+        await ctx.db.patch("calendarEventDeletions", tombstone._id, { deletedAt });
       }
-      await applyToSource(ctx, link, event);
+      await Promise.all(
+        copies.flatMap((copy) =>
+          copy.googleUpdated <= deletedAt
+            ? [ctx.db.delete("externalCalendarEvents", copy._id)]
+            : [],
+        ),
+      );
       continue;
     }
-    await applyToExternal(ctx, args.ownerId, event, window);
+    if (tombstone !== null && event.updated <= tombstone.deletedAt) continue;
+    const pending = await ctx.db
+      .query("calendarExternalChanges")
+      .withIndex("by_owner_and_calendar_and_event", (q) =>
+        q
+          .eq("ownerId", args.ownerId)
+          .eq("calendarId", event.calendarId)
+          .eq("googleEventId", event.googleEventId),
+      )
+      .unique();
+    if (pending !== null && pending.settledAt === undefined) continue;
+    const existing = copies.find((copy) => (copy.connectionId ?? legacy?._id) === connection._id);
+    if (!overlapsWindow(event, window)) {
+      if (existing !== undefined) await ctx.db.delete("externalCalendarEvents", existing._id);
+      continue;
+    }
+    if (existing !== undefined && existing.googleUpdated > event.updated) {
+      //? 古い結果は写しに反映しないが、Google が返した予定として全件整理で消されないよう印を付ける
+      if (args.pullId !== undefined)
+        await ctx.db.patch("externalCalendarEvents", existing._id, { lastPullId: args.pullId });
+      continue;
+    }
+    const fields = {
+      connectionId: connection._id,
+      lastPullId: args.pullId,
+      allDay: event.allDay,
+      colorId: event.colorId,
+      endAt: event.endAt,
+      googleUpdated: event.updated,
+      startAt: event.startAt,
+      title: event.title,
+    };
+    if (existing === undefined) {
+      await ctx.db.insert("externalCalendarEvents", {
+        ...fields,
+        calendarId: event.calendarId,
+        googleEventId: event.googleEventId,
+        ownerId: args.ownerId,
+      });
+    } else {
+      await ctx.db.patch("externalCalendarEvents", existing._id, fields);
+    }
   }
   if (args.finish !== null) {
     await finishCalendarPull(ctx, {
-      calendarId: args.calendarId,
+      ...args,
+      connectionId: connection._id,
       keepEventIds: args.finish.keepEventIds,
-      ownerId: args.ownerId,
       syncToken: args.finish.syncToken,
-      todayJst: args.todayJst,
     });
   }
   return null;
-}
-
-async function findExternal(
-  ctx: MutationCtx,
-  ownerId: string,
-  event: Pick<PulledEvent, "calendarId" | "googleEventId">,
-): Promise<Doc<"externalCalendarEvents"> | null> {
-  return await ctx.db
-    .query("externalCalendarEvents")
-    .withIndex("by_owner_and_calendar_and_event", (q) =>
-      q
-        .eq("ownerId", ownerId)
-        .eq("calendarId", event.calendarId)
-        .eq("googleEventId", event.googleEventId),
-    )
-    .unique();
-}
-
-async function applyToExternal(
-  ctx: MutationCtx,
-  ownerId: string,
-  event: PulledEvent,
-  window: SyncWindow,
-): Promise<void> {
-  const pending = await ctx.db
-    .query("calendarExternalChanges")
-    .withIndex("by_owner_and_calendar_and_event", (q) =>
-      q
-        .eq("ownerId", ownerId)
-        .eq("calendarId", event.calendarId)
-        .eq("googleEventId", event.googleEventId),
-    )
-    .unique();
-  if (pending !== null && pending.settledAt === undefined) {
-    return;
-  }
-  const existing = await findExternal(ctx, ownerId, event);
-  if (event.kind === "delete" || !overlapsWindow(event, window)) {
-    if (existing !== null) {
-      await ctx.db.delete("externalCalendarEvents", existing._id);
-    }
-    return;
-  }
-  const fields = {
-    allDay: event.allDay,
-    colorId: event.colorId,
-    endAt: event.endAt,
-    googleUpdated: event.updated,
-    startAt: event.startAt,
-    title: event.title,
-  };
-  if (existing === null) {
-    await ctx.db.insert("externalCalendarEvents", {
-      ...fields,
-      calendarId: event.calendarId,
-      googleEventId: event.googleEventId,
-      ownerId,
-    });
-    return;
-  }
-  await ctx.db.patch("externalCalendarEvents", existing._id, fields);
 }
 
 function googleWins(link: Doc<"calendarSyncLinks">, updated: string): boolean {

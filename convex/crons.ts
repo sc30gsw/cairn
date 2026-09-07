@@ -41,7 +41,7 @@ crons.cron(
 
 crons.cron(
   "sync google calendars",
-  "20 * * * *",
+  "0 5,17 * * *",
   internal.actions.calendarSync.syncAll.syncAll,
   {},
 );
