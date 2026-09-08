@@ -10,6 +10,7 @@ import {
   insertEvent,
   isRetryable,
   listCalendars,
+  meetingUrlOf,
 } from "./googleCalendar";
 
 afterEach(() => {
@@ -48,6 +49,24 @@ test("表示カレンダーの既定は Google 側で表示中のものだけで
       { accessRole: "freeBusyReader", id: "busy-only", selected: true },
     ]),
   ).toEqual(["mine", "team"]);
+});
+
+test("会議URLは hangoutLink を優先し、無ければ conferenceData の video entryPoint、どちらも無ければ undefined", () => {
+  expect(meetingUrlOf({ id: "a", hangoutLink: "https://meet.google.com/abc-defg-hij" })).toBe(
+    "https://meet.google.com/abc-defg-hij",
+  );
+  expect(
+    meetingUrlOf({
+      id: "b",
+      conferenceData: {
+        entryPoints: [
+          { entryPointType: "phone", uri: "tel:+81-0000000000" },
+          { entryPointType: "video", uri: "https://meet.google.com/xyz-uvwx-yz" },
+        ],
+      },
+    }),
+  ).toBe("https://meet.google.com/xyz-uvwx-yz");
+  expect(meetingUrlOf({ id: "c" })).toBeUndefined();
 });
 
 test.each([200, 503])(

@@ -50,3 +50,22 @@ test("時刻つきは JST の schedule instant に直し、終了が開始以前
   });
   expect(zero).toMatchObject({ endAt: "2026-08-18 10:01:00", startAt: "2026-08-18 10:00:00" });
 });
+
+test("hangoutLink があれば meetingUrl として引き継ぎ、無ければ含めない", () => {
+  const withMeeting = toPulledEvent(CALENDAR, {
+    end: { dateTime: "2026-08-18T02:30:00Z" },
+    hangoutLink: "https://meet.google.com/abc-defg-hij",
+    id: "f",
+    start: { dateTime: "2026-08-18T01:00:00Z" },
+    summary: "定例会議",
+  });
+  expect(withMeeting).toMatchObject({ meetingUrl: "https://meet.google.com/abc-defg-hij" });
+
+  const withoutMeeting = toPulledEvent(CALENDAR, {
+    end: { dateTime: "2026-08-18T02:30:00Z" },
+    id: "g",
+    start: { dateTime: "2026-08-18T01:00:00Z" },
+    summary: "歯医者",
+  });
+  expect(withoutMeeting && "meetingUrl" in withoutMeeting).toBe(false);
+});

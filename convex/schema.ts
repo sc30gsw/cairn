@@ -273,6 +273,7 @@ export default defineSchema({
     endAt: v.string(),
     googleEventId: v.string(),
     googleUpdated: v.string(),
+    meetingUrl: v.optional(v.string()),
     ownerId: v.string(),
     startAt: v.string(),
     title: v.string(),

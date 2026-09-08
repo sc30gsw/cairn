@@ -47,6 +47,7 @@ type FakeEvent = {
   colorId?: string;
   description?: string;
   end: { date?: string; dateTime?: string };
+  hangoutLink?: string;
   id: string;
   start: { date?: string; dateTime?: string };
   status: "cancelled" | "confirmed";
@@ -406,6 +407,7 @@ test("Google 側の外部予定は写しとして予定タブの範囲で読め�
   const { owner, t } = await connectedOwner();
   google.upsertExternal(PRIMARY, {
     end: { dateTime: "2026-08-18T11:00:00+09:00" },
+    hangoutLink: "https://meet.google.com/abc-defg-hij",
     id: "dentist",
     start: { dateTime: "2026-08-18T10:00:00+09:00" },
     status: "confirmed",
@@ -444,6 +446,7 @@ test("Google 側の外部予定は写しとして予定タブの範囲で読め�
       color: "#9fe1cb",
       externalReadOnly: false,
       endAt: "2026-08-18 11:00:00",
+      meetingUrl: "https://meet.google.com/abc-defg-hij",
       startAt: "2026-08-18 10:00:00",
       title: "歯医者",
     },
