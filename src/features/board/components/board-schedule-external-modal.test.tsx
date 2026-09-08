@@ -19,6 +19,7 @@ const EXTERNAL: BoardExternalEvent = {
   color: "#9fe1cb",
   externalReadOnly: false,
   endAt: "2026-08-18 11:00:00",
+  meetingUrl: null,
   startAt: "2026-08-18 10:00:00",
   title: "歯医者",
 };
@@ -180,6 +181,33 @@ test("Googleのパレットで各色を表示し、選択した色を入力欄�
   fireEvent.click(view.getByRole("button", { name: "保存" }));
   await vi.waitFor(() => expect(onUpdate).toHaveBeenCalledOnce());
   expect(onUpdate.mock.calls[0]?.[0]).toMatchObject({ colorId: "6" });
+});
+
+test("会議URLがある外部予定には参加リンクを表示する", () => {
+  const { getByRole } = renderWithMantine(
+    <BoardScheduleExternalModal
+      external={{ ...EXTERNAL, meetingUrl: "https://meet.google.com/abc-defg-hij" }}
+      onClose={vi.fn()}
+      onRemove={vi.fn()}
+      onUpdate={vi.fn()}
+    />,
+  );
+  const link = getByRole("link", { name: /会議に参加する/ });
+  expect(link.getAttribute("href")).toBe("https://meet.google.com/abc-defg-hij");
+  expect(link.getAttribute("target")).toBe("_blank");
+  expect(link.getAttribute("rel")).toBe("noopener noreferrer");
+});
+
+test("会議URLが無い外部予定には参加リンクを表示しない", () => {
+  const { queryByRole } = renderWithMantine(
+    <BoardScheduleExternalModal
+      external={EXTERNAL}
+      onClose={vi.fn()}
+      onRemove={vi.fn()}
+      onUpdate={vi.fn()}
+    />,
+  );
+  expect(queryByRole("link", { name: /会議に参加する/ })).toBeNull();
 });
 
 test("追加アカウントの色が未指定の外部予定は、既定色にフラミンゴを表示する", () => {

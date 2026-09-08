@@ -210,6 +210,7 @@ const EXTERNAL_EVENT = {
   color: "#9fe1cb",
   externalReadOnly: false,
   endAt: "2026-08-17 11:00:00",
+  meetingUrl: null,
   startAt: "2026-08-17 10:00:00",
   title: "歯医者",
 } as const satisfies BoardExternalEvent;

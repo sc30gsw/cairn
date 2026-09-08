@@ -133,6 +133,7 @@ export async function listExternal(
           color: calendar?.backgroundColor ?? null,
           externalReadOnly: connection.externalReadOnly === true,
           endAt: external.endAt,
+          meetingUrl: external.meetingUrl ?? null,
           startAt: external.startAt,
           title: external.title,
         };

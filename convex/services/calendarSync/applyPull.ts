@@ -114,6 +114,7 @@ export async function applyPull(
       colorId: event.colorId,
       endAt: event.endAt,
       googleUpdated: event.updated,
+      meetingUrl: event.meetingUrl,
       startAt: event.startAt,
       title: event.title,
     };

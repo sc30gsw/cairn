@@ -1,7 +1,8 @@
 import { Field, Form, useForm, type SubmitHandler } from "@formisch/react";
-import { ColorSwatch, Group, Select, Stack, Text, TextInput } from "@mantine/core";
+import { Anchor, ColorSwatch, Group, Select, Stack, Text, TextInput } from "@mantine/core";
 import { DatePickerInput, DateTimePicker } from "@mantine/dates";
 import { modals } from "@mantine/modals";
+import { IconVideo } from "@tabler/icons-react";
 import { Result } from "better-result";
 import { useId } from "react";
 import {
@@ -97,6 +98,14 @@ function ExternalEventForm({
           ? "保存・削除すると、Google カレンダー上の予定も変更・削除されます。"
           : "この外部予定は閲覧専用です。日時や内容を変える場合は、Google カレンダーで確認してください。"}
       </Text>
+      {external.meetingUrl !== null && (
+        <Anchor href={external.meetingUrl} rel="noopener noreferrer" size="sm" target="_blank">
+          <Group gap="xs" wrap="nowrap">
+            <IconVideo size={16} />
+            会議に参加する
+          </Group>
+        </Anchor>
+      )}
       <Form id={formId} of={form} onSubmit={handleSubmit}>
         <Stack gap="md">
           <Field of={form} path={["title"]}>

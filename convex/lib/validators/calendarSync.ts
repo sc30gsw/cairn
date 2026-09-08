@@ -95,6 +95,7 @@ export const externalCalendarEventDtoValidator = v.object({
   color: v.union(v.string(), v.null()),
   externalReadOnly: v.boolean(),
   endAt: v.string(),
+  meetingUrl: v.union(v.string(), v.null()),
   startAt: v.string(),
   title: v.string(),
 });
@@ -109,6 +110,7 @@ export const pulledEventValidator = v.union(
     googleEventId: v.string(),
     kind: v.literal("upsert"),
     colorId: v.optional(v.string()),
+    meetingUrl: v.optional(v.string()),
     startAt: v.string(),
     title: v.string(),
     updated: v.string(),

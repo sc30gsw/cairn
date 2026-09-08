@@ -1,4 +1,4 @@
-import type { GoogleEvent } from "../../lib/googleCalendar";
+import { meetingUrlOf, type GoogleEvent } from "../../lib/googleCalendar";
 import { isDateJst } from "../../lib/jst";
 import type { PulledEvent } from "../../lib/validators";
 import {
@@ -28,6 +28,7 @@ export function toPulledEvent(calendarId: string, event: GoogleEvent): PulledEve
   const title =
     event.summary === undefined || event.summary === "" ? UNTITLED_EVENT_TITLE : event.summary;
   const updated = event.updated ?? "";
+  const meetingUrl = meetingUrlOf(event);
   if (start.date !== undefined) {
     if (!isDateJst(start.date)) {
       return null;
@@ -40,6 +41,7 @@ export function toPulledEvent(calendarId: string, event: GoogleEvent): PulledEve
       googleEventId: event.id,
       kind: "upsert",
       ...(event.colorId === undefined ? {} : { colorId: event.colorId }),
+      ...(meetingUrl === undefined ? {} : { meetingUrl }),
       startAt: range.startAt,
       title,
       updated,
@@ -66,6 +68,7 @@ export function toPulledEvent(calendarId: string, event: GoogleEvent): PulledEve
     googleEventId: event.id,
     kind: "upsert",
     ...(event.colorId === undefined ? {} : { colorId: event.colorId }),
+    ...(meetingUrl === undefined ? {} : { meetingUrl }),
     startAt,
     title,
     updated,

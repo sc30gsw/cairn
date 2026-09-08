@@ -44,10 +44,21 @@ const dateTimeSchema = v.object({
   timeZone: v.optional(v.string()),
 });
 
+const conferenceEntryPointSchema = v.looseObject({
+  entryPointType: v.optional(v.string()),
+  uri: v.optional(v.string()),
+});
+
+const conferenceDataSchema = v.looseObject({
+  entryPoints: v.optional(v.array(conferenceEntryPointSchema)),
+});
+
 export const googleEventSchema = v.looseObject({
   colorId: v.optional(v.string()),
+  conferenceData: v.optional(conferenceDataSchema),
   end: v.optional(dateTimeSchema),
   etag: v.optional(v.string()),
+  hangoutLink: v.optional(v.string()),
   id: v.string(),
   start: v.optional(dateTimeSchema),
   status: v.optional(v.string()),
@@ -56,6 +67,16 @@ export const googleEventSchema = v.looseObject({
 });
 
 export type GoogleEvent = v.InferOutput<typeof googleEventSchema>;
+
+export function meetingUrlOf(event: GoogleEvent): string | undefined {
+  if (event.hangoutLink !== undefined) {
+    return event.hangoutLink;
+  }
+  const video = event.conferenceData?.entryPoints?.find(
+    (entryPoint) => entryPoint.entryPointType === "video",
+  );
+  return video?.uri;
+}
 
 const eventListSchema = v.looseObject({
   items: v.optional(v.array(googleEventSchema)),
