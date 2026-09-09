@@ -177,6 +177,7 @@ import type * as mutations_targets_remove from "../mutations/targets/remove.js";
 import type * as mutations_targets_save from "../mutations/targets/save.js";
 import type * as mutations_trash_purgeDay from "../mutations/trash/purgeDay.js";
 import type * as mutations_trash_purgeExpired from "../mutations/trash/purgeExpired.js";
+import type * as mutations_trash_purgeMany from "../mutations/trash/purgeMany.js";
 import type * as mutations_trash_purgeRow from "../mutations/trash/purgeRow.js";
 import type * as mutations_trash_removeDay from "../mutations/trash/removeDay.js";
 import type * as mutations_trash_restoreDay from "../mutations/trash/restoreDay.js";
@@ -423,9 +424,11 @@ import type * as services_targets_save from "../services/targets/save.js";
 import type * as services_trash_list from "../services/trash/list.js";
 import type * as services_trash_purgeDay from "../services/trash/purgeDay.js";
 import type * as services_trash_purgeExpired from "../services/trash/purgeExpired.js";
+import type * as services_trash_purgeMany from "../services/trash/purgeMany.js";
 import type * as services_trash_purgeRow from "../services/trash/purgeRow.js";
 import type * as services_trash_removeDay from "../services/trash/removeDay.js";
 import type * as services_trash_restoreDay from "../services/trash/restoreDay.js";
+import type * as services_trash_restoreMany from "../services/trash/restoreMany.js";
 
 import type {
   ApiFromModules,
@@ -603,6 +606,7 @@ declare const fullApi: ApiFromModules<{
   "mutations/targets/save": typeof mutations_targets_save;
   "mutations/trash/purgeDay": typeof mutations_trash_purgeDay;
   "mutations/trash/purgeExpired": typeof mutations_trash_purgeExpired;
+  "mutations/trash/purgeMany": typeof mutations_trash_purgeMany;
   "mutations/trash/purgeRow": typeof mutations_trash_purgeRow;
   "mutations/trash/removeDay": typeof mutations_trash_removeDay;
   "mutations/trash/restoreDay": typeof mutations_trash_restoreDay;
@@ -849,9 +853,11 @@ declare const fullApi: ApiFromModules<{
   "services/trash/list": typeof services_trash_list;
   "services/trash/purgeDay": typeof services_trash_purgeDay;
   "services/trash/purgeExpired": typeof services_trash_purgeExpired;
+  "services/trash/purgeMany": typeof services_trash_purgeMany;
   "services/trash/purgeRow": typeof services_trash_purgeRow;
   "services/trash/removeDay": typeof services_trash_removeDay;
   "services/trash/restoreDay": typeof services_trash_restoreDay;
+  "services/trash/restoreMany": typeof services_trash_restoreMany;
 }>;
 
 /**

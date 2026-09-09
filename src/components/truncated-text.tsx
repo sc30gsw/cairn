@@ -1,27 +1,27 @@
-import { Text, Tooltip, type TextProps } from "@mantine/core";
-import { useRef } from "react";
+import { Text, type TextProps } from "@mantine/core";
+import type { ComponentPropsWithoutRef } from "react";
 
-import { useIsTextTruncated } from "~/hooks/use-is-text-truncated";
+import { OverflowTooltip } from "~/components/overflow-tooltip";
 
 type TruncatedTextProps = TextProps & {
   children: string;
+  tabIndex?: ComponentPropsWithoutRef<"p">["tabIndex"];
   tooltipLabel?: string;
 };
 
-export function TruncatedText({ children, tooltipLabel, ...textProps }: TruncatedTextProps) {
-  const elementRef = useRef<HTMLElement | null>(null);
-  const truncated = useIsTextTruncated(elementRef, children);
-  const label = tooltipLabel ?? children;
-
-  function setElementRef(node: HTMLDivElement | HTMLParagraphElement | null) {
-    elementRef.current = node;
-  }
-
+export function TruncatedText({
+  children,
+  tabIndex,
+  tooltipLabel,
+  ...textProps
+}: TruncatedTextProps) {
   return (
-    <Tooltip disabled={!truncated} label={label} withArrow>
-      <Text ref={setElementRef} {...textProps}>
-        {children}
-      </Text>
-    </Tooltip>
+    <OverflowTooltip<HTMLParagraphElement> content={children} label={tooltipLabel}>
+      {(ref, truncated) => (
+        <Text ref={ref} tabIndex={truncated ? (tabIndex ?? 0) : tabIndex} {...textProps}>
+          {children}
+        </Text>
+      )}
+    </OverflowTooltip>
   );
 }

@@ -5,6 +5,7 @@ import { TrashList } from "~/features/trash/components/trash-list";
 import { TrashPending } from "~/features/trash/components/trash-pending";
 import {
   usePurgeDay,
+  usePurgeMany,
   usePurgeRow,
   useRestoreDay,
   useRestoreMany,
@@ -27,6 +28,7 @@ function TrashReady() {
   const restoreMany = useRestoreMany();
   const restoreRow = useRestoreRow();
   const purgeDay = usePurgeDay();
+  const purgeMany = usePurgeMany();
   const purgeRow = usePurgeRow();
 
   return (
@@ -36,6 +38,11 @@ function TrashReady() {
           successMessage: "日を完全に削除しました",
         });
       }}
+      onPurgeMany={(input) =>
+        runMutation(() => purgeMany.mutateAsync(input), {
+          successMessage: "選択した項目を完全に削除しました",
+        })
+      }
       onPurgeRow={(rowId) => {
         void runMutation(() => purgeRow.mutateAsync({ rowId }), {
           successMessage: "記録を完全に削除しました",

@@ -8,14 +8,16 @@ import {
   Popover,
   Stack,
   Text,
-  UnstyledButton,
   getThemeColor,
   useMantineTheme,
 } from "@mantine/core";
 import type { ScheduleEventData } from "@mantine/schedule";
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 
-import { BoardScheduleEventSource } from "~/features/board/components/board-schedule-event-source";
+import {
+  BoardScheduleEventBadge,
+  BoardScheduleEventButton,
+} from "~/features/board/components/board-schedule-event-source";
 import { boardScheduleEventColors } from "~/features/board/lib/board-schedule-color-ui";
 import {
   allDayEventsForDay,
@@ -45,36 +47,50 @@ function YearPopoverTimedEvent({
 }: YearPopoverTimedEventProps) {
   const theme = useMantineTheme();
   const timeLabel = `${formatScheduleTimeLabel(event.start)}–${formatScheduleTimeLabel(event.end)}`;
-  const badge = (
-    <Badge
-      autoContrast
-      c={boardScheduleEventColors({ ...event, theme }).color}
-      color={event.color ?? "gray"}
-      fullWidth
-      size="sm"
-      variant={event.variant ?? "light"}
-    >
-      {event.title} · {timeLabel}
-    </Badge>
-  );
+  const label = `${event.title} · ${timeLabel}`;
 
   if (!editable) {
-    return <BoardScheduleEventSource eventId={event.id}>{badge}</BoardScheduleEventSource>;
+    return (
+      <BoardScheduleEventBadge
+        autoContrast
+        c={boardScheduleEventColors({ ...event, theme }).color}
+        color={event.color ?? "gray"}
+        event={event}
+        fullWidth
+        size="sm"
+        variant={event.variant ?? "light"}
+      >
+        {label}
+      </BoardScheduleEventBadge>
+    );
   }
 
   return (
-    <BoardScheduleEventSource eventId={event.id}>
-      <UnstyledButton
-        onClick={(clickEvent) => {
+    <BoardScheduleEventButton
+      buttonProps={{
+        className: "w-full",
+        children: (
+          <Badge
+            autoContrast
+            c={boardScheduleEventColors({ ...event, theme }).color}
+            color={event.color ?? "gray"}
+            fullWidth
+            size="sm"
+            variant={event.variant ?? "light"}
+          >
+            {label}
+          </Badge>
+        ),
+        onClick: (clickEvent) => {
           stopDayClick(clickEvent);
           onClose();
           onEditBlock(event);
-        }}
-        type="button"
-      >
-        {badge}
-      </UnstyledButton>
-    </BoardScheduleEventSource>
+        },
+        type: "button",
+      }}
+      event={event}
+      tooltipLabel={label}
+    />
   );
 }
 
@@ -203,18 +219,18 @@ export function BoardScheduleYearDayPopover({
           ) : (
             <Stack gap={4}>
               {allDayEvents.map((event) => (
-                <BoardScheduleEventSource eventId={event.id} key={String(event.id)}>
-                  <Badge
-                    autoContrast
-                    c={boardScheduleEventColors({ ...event, theme }).color}
-                    color={event.color ?? "gray"}
-                    fullWidth
-                    size="sm"
-                    variant={event.variant ?? "light"}
-                  >
-                    {event.title}
-                  </Badge>
-                </BoardScheduleEventSource>
+                <BoardScheduleEventBadge
+                  autoContrast
+                  c={boardScheduleEventColors({ ...event, theme }).color}
+                  color={event.color ?? "gray"}
+                  event={event}
+                  fullWidth
+                  key={String(event.id)}
+                  size="sm"
+                  variant={event.variant ?? "light"}
+                >
+                  {event.title}
+                </BoardScheduleEventBadge>
               ))}
             </Stack>
           )}

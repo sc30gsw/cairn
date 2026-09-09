@@ -30,12 +30,18 @@ export const trashPageValidator = v.object({
 
 export type TrashPageDto = Infer<typeof trashPageValidator>;
 
-export const restoreManyArgsValidator = v.object({
+const trashSelectionArgsValidator = v.object({
   dayIds: v.array(v.id("days")),
   rowIds: v.array(v.id("rows")),
 });
 
+export const restoreManyArgsValidator = trashSelectionArgsValidator;
+
 export type RestoreManyArgs = Infer<typeof restoreManyArgsValidator>;
+
+export const purgeManyArgsValidator = trashSelectionArgsValidator;
+
+export type PurgeManyArgs = Infer<typeof purgeManyArgsValidator>;
 
 export const restoreTrashResultValidator = v.object({
   failedDayIds: v.array(v.id("days")),

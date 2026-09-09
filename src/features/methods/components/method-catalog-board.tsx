@@ -23,6 +23,7 @@ import { Result } from "better-result";
 import { useState, type ReactNode } from "react";
 import { groupBy, mapValues, prop, sortBy } from "remeda";
 
+import { TruncatedText } from "~/components/truncated-text";
 import { MethodCardModal } from "~/features/methods/components/method-card-modal";
 import {
   useMethodCatalogActions,
@@ -195,20 +196,22 @@ function NowViewingCard({ method, onOpen }: { method: Method; onOpen: () => void
     <Paper p="md" radius="sm" style={{ borderColor: "var(--mantine-color-orange-4)" }} withBorder>
       <Stack gap="xs">
         <Group gap="xs" justify="space-between" wrap="nowrap">
-          <Group gap="xs" wrap="nowrap">
+          <Group gap="xs" miw={0} wrap="nowrap">
             <Badge color="orange" variant="filled">
               いま見る
             </Badge>
-            <Text fw={600}>{method.name}</Text>
+            <TruncatedText fw={600} lineClamp={1} style={{ flex: 1, minWidth: 0 }}>
+              {method.name}
+            </TruncatedText>
           </Group>
           <Button onClick={onOpen} size="compact-sm" type="button" variant="default">
             開く
           </Button>
         </Group>
         {method.bodyText !== "" && (
-          <Text c="dimmed" lineClamp={2} size="sm" style={{ whiteSpace: "pre-line" }}>
+          <TruncatedText c="dimmed" lineClamp={2} size="sm" style={{ whiteSpace: "pre-line" }}>
             {method.bodyText}
-          </Text>
+          </TruncatedText>
         )}
       </Stack>
     </Paper>
@@ -360,9 +363,9 @@ function LaneColumn({
                               </ActionIcon>
                             </Tooltip>
                             <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
-                              <Text fw={600} size="sm" truncate>
+                              <TruncatedText fw={600} lineClamp={1} size="sm">
                                 {method.name}
-                              </Text>
+                              </TruncatedText>
                               {method.nowViewing && (
                                 <Badge color="orange" size="sm" variant="filled" w="fit-content">
                                   いま見る

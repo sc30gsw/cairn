@@ -24,6 +24,7 @@ import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
 import { LabelAlignedCell } from "~/components/label-aligned-cell";
+import { OverflowTooltip } from "~/components/overflow-tooltip";
 import { PageTitle } from "~/components/page-title";
 import {
   useCatalogPresetActions,
@@ -108,6 +109,15 @@ function removeLineLabel(items: ItemDto[], itemId: string | undefined) {
   return `「${name}」を外す`;
 }
 
+function presetSummary(preset: PresetDto): string {
+  const weekday = isWeekday(preset.weekday) ? WEEKDAY_NAMES[preset.weekday] : "";
+  const items =
+    preset.lines.length === 0
+      ? "記録なし"
+      : preset.lines.map((line: PresetLineDto) => line.itemName).join("、");
+  return `${weekday} · ${items}`;
+}
+
 export function PresetList({ items, presets, settingsCard }: PresetListProps) {
   const { onCreate, onRemove, onUpdate } = useCatalogPresetActions();
   const { weekday: focusWeekday } = presetsRoute.useSearch();
@@ -147,18 +157,22 @@ export function PresetList({ items, presets, settingsCard }: PresetListProps) {
                 key={preset._id}
                 value={preset._id}
               >
-                <Accordion.Control>
-                  <Stack gap={2}>
-                    <Text fw={600}>{preset.name}</Text>
-                    <Text c="dimmed" size="sm">
-                      {isWeekday(preset.weekday) ? WEEKDAY_NAMES[preset.weekday] : undefined}
-                      {" · "}
-                      {preset.lines.length === 0
-                        ? "記録なし"
-                        : preset.lines.map((line: PresetLineDto) => line.itemName).join("、")}
-                    </Text>
-                  </Stack>
-                </Accordion.Control>
+                <OverflowTooltip<HTMLButtonElement>
+                  content={`${preset.name}\n${presetSummary(preset)}`}
+                >
+                  {(ref) => (
+                    <Accordion.Control ref={ref}>
+                      <Stack gap={2} miw={0}>
+                        <Text fw={600} lineClamp={1}>
+                          {preset.name}
+                        </Text>
+                        <Text c="dimmed" lineClamp={2} size="sm">
+                          {presetSummary(preset)}
+                        </Text>
+                      </Stack>
+                    </Accordion.Control>
+                  )}
+                </OverflowTooltip>
                 <Accordion.Panel>
                   <Box
                     data-onboarding-tour-id={
@@ -343,21 +357,22 @@ function PresetEditor({
             </Grid.Col>
             <Grid.Col span={{ base: 6, sm: 3 }}>
               <LabelAlignedCell>
-                <Button fullWidth type="submit">
-                  {preset.name}を保存
+                <Button aria-label={`${preset.name}を保存`} fullWidth type="submit">
+                  保存
                 </Button>
               </LabelAlignedCell>
             </Grid.Col>
             <Grid.Col span={{ base: 6, sm: 2 }}>
               <LabelAlignedCell>
                 <Button
+                  aria-label={`${preset.name}を削除`}
                   color="red"
                   fullWidth
                   onClick={() => onRemove(preset._id)}
                   type="button"
                   variant="subtle"
                 >
-                  {preset.name}を削除
+                  削除
                 </Button>
               </LabelAlignedCell>
             </Grid.Col>

@@ -6,6 +6,13 @@ function isElementTruncated(element: HTMLElement): boolean {
   );
 }
 
+function hasTruncatedContent(element: HTMLElement): boolean {
+  if (isElementTruncated(element)) {
+    return true;
+  }
+  return [...element.querySelectorAll<HTMLElement>("*")].some(isElementTruncated);
+}
+
 export function useIsTextTruncated(ref: RefObject<HTMLElement | null>, content: string): boolean {
   const [truncated, setTruncated] = useState(false);
 
@@ -21,13 +28,16 @@ export function useIsTextTruncated(ref: RefObject<HTMLElement | null>, content: 
       if (current === null) {
         return;
       }
-      setTruncated(isElementTruncated(current));
+      setTruncated(hasTruncatedContent(current));
     }
 
     update();
 
     const observer = new ResizeObserver(update);
     observer.observe(element);
+    for (const descendant of element.querySelectorAll<HTMLElement>("*")) {
+      observer.observe(descendant);
+    }
     return () => observer.disconnect();
   }, [content, ref]);
 

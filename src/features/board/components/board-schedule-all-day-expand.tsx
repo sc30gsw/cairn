@@ -1,9 +1,11 @@
-import { useMantineTheme } from "@mantine/core";
-import { Badge, Paper, Stack, Text, UnstyledButton } from "@mantine/core";
+import { Badge, Paper, Stack, Text, useMantineTheme } from "@mantine/core";
 import type { ScheduleEventData } from "@mantine/schedule";
 import type { CSSProperties } from "react";
 
-import { BoardScheduleEventSource } from "~/features/board/components/board-schedule-event-source";
+import {
+  BoardScheduleEventBadge,
+  BoardScheduleEventButton,
+} from "~/features/board/components/board-schedule-event-source";
 import { boardScheduleEventColors } from "~/features/board/lib/board-schedule-color-ui";
 import { cn } from "~/lib/utils";
 
@@ -59,45 +61,48 @@ export function BoardScheduleAllDayExpand({
 
           if (!clickable) {
             return (
-              <BoardScheduleEventSource eventId={event.id} key={String(event.id)}>
-                <Badge
-                  autoContrast
-                  c={boardScheduleEventColors({ ...event, theme }).color}
-                  color={event.color ?? "gray"}
-                  fullWidth
-                  size="sm"
-                  variant={event.variant ?? "light"}
-                >
-                  {event.title}
-                </Badge>
-              </BoardScheduleEventSource>
+              <BoardScheduleEventBadge
+                autoContrast
+                c={boardScheduleEventColors({ ...event, theme }).color}
+                color={event.color ?? "gray"}
+                event={event}
+                fullWidth
+                key={String(event.id)}
+                size="sm"
+                variant={event.variant ?? "light"}
+              >
+                {event.title}
+              </BoardScheduleEventBadge>
             );
           }
 
           return (
-            <BoardScheduleEventSource eventId={event.id} key={String(event.id)}>
-              <UnstyledButton
-                className={cn(
+            <BoardScheduleEventButton
+              buttonProps={{
+                className: cn(
                   classes.editableItem,
                   "w-full rounded-sm px-2 py-1 text-left text-sm",
-                )}
-                onClick={() => {
+                ),
+                children: (
+                  <Badge
+                    autoContrast
+                    c={boardScheduleEventColors({ ...event, theme }).color}
+                    color={event.color ?? "gray"}
+                    fullWidth
+                    size="sm"
+                    variant={event.variant ?? "light"}
+                  >
+                    {event.title}
+                  </Badge>
+                ),
+                onClick: () => {
                   onEventClick(event);
-                }}
-                type="button"
-              >
-                <Badge
-                  autoContrast
-                  c={boardScheduleEventColors({ ...event, theme }).color}
-                  color={event.color ?? "gray"}
-                  fullWidth
-                  size="sm"
-                  variant={event.variant ?? "light"}
-                >
-                  {event.title}
-                </Badge>
-              </UnstyledButton>
-            </BoardScheduleEventSource>
+                },
+                type: "button",
+              }}
+              event={event}
+              key={String(event.id)}
+            />
           );
         })}
       </Stack>

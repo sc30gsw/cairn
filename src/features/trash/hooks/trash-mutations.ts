@@ -20,3 +20,7 @@ export function usePurgeDay() {
 export function usePurgeRow() {
   return useConvexMutation(api.mutations.trash.purgeRow.purgeRow);
 }
+
+export function usePurgeMany() {
+  return useConvexMutation(api.mutations.trash.purgeMany.purgeMany);
+}

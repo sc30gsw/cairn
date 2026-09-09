@@ -22,3 +22,5 @@ export type PurgeRowInput = Pick<
   FunctionArgs<typeof api.mutations.trash.purgeRow.purgeRow>,
   "rowId"
 >;
+export type PurgeManyInput = FunctionArgs<typeof api.mutations.trash.purgeMany.purgeMany>;
+export type PurgeManyResult = FunctionReturnType<typeof api.mutations.trash.purgeMany.purgeMany>;

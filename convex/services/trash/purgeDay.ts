@@ -1,13 +1,14 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { NotFoundError } from "../../lib/errors";
+import type { OwnerId } from "../../lib/owner";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { deleteDayAndRows } from "../../lib/trash";
 import { withMasteryProgressDelta } from "../goals/withMasteryProgressDelta";
 
 export async function purgeDay(
   ctx: MutationCtx,
-  ownerId: string,
+  ownerId: OwnerId,
   args: { dayId: Id<"days"> },
 ): Promise<null> {
   const day = await ctx.db.get("days", args.dayId);

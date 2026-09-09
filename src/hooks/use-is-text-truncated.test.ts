@@ -10,6 +10,7 @@ function mockElement(partial: Partial<HTMLElement>): HTMLElement {
     clientWidth: 100,
     scrollHeight: 20,
     scrollWidth: 100,
+    querySelectorAll: () => [] as unknown as NodeListOf<HTMLElement>,
     ...partial,
   } as HTMLElement;
 }
@@ -48,4 +49,16 @@ test("useIsTextTruncated は省略されていなければ false", () => {
   const { result } = renderHook(() => useIsTextTruncated(ref, "短い"));
 
   expect(result.current).toBe(false);
+});
+
+test("useIsTextTruncated は操作要素内で省略された子要素を検知する", () => {
+  const child = mockElement({ clientWidth: 50, scrollWidth: 200 });
+  const ref = createRef<HTMLElement>();
+  ref.current = mockElement({
+    querySelectorAll: () => [child] as unknown as NodeListOf<HTMLElement>,
+  });
+
+  const { result } = renderHook(() => useIsTextTruncated(ref, "長い予定名"));
+
+  expect(result.current).toBe(true);
 });

@@ -1,4 +1,4 @@
-import { Card, Group, Stack, Text, Title } from "@mantine/core";
+import { Card, Group, Stack, Text, Title, UnstyledButton } from "@mantine/core";
 import {
   MonthView,
   ScheduleHeader,
@@ -10,7 +10,7 @@ import dayjs from "dayjs";
 import type { DateJst } from "~domain/jst";
 import { isFutureDateJst } from "~domain/jst";
 
-import { TruncatedText } from "~/components/truncated-text";
+import { OverflowTooltip } from "~/components/overflow-tooltip";
 import { monthDayOverlayAttrs } from "~/features/history/lib/month-day-overlay";
 import {
   confirmedMonthEvents,
@@ -146,19 +146,27 @@ export function HistoryMonthView({
             onDateChange={setDate}
             onDayClick={handleDayClick}
             onEventClick={handleEventClick}
-            renderEventBody={(event) => {
+            renderEvent={(event, props) => {
               const minutes = minutesByEventId.get(String(event.id));
               return (
-                <Group gap={4} wrap="nowrap">
-                  <TruncatedText fw={600} lineClamp={1} size="xs">
-                    {event.title}
-                  </TruncatedText>
-                  {minutes !== undefined ? (
-                    <Text c="blue.7" fw={600} size="xs">
-                      {minutes}分
-                    </Text>
-                  ) : null}
-                </Group>
+                <OverflowTooltip<HTMLButtonElement>
+                  content={minutes === undefined ? event.title : `${event.title} · ${minutes}分`}
+                >
+                  {(ref) => (
+                    <UnstyledButton {...props} ref={ref} title={undefined}>
+                      <Group gap={4} wrap="nowrap">
+                        <Text fw={600} lineClamp={1} size="xs">
+                          {event.title}
+                        </Text>
+                        {minutes !== undefined ? (
+                          <Text c="blue.7" fw={600} size="xs">
+                            {minutes}分
+                          </Text>
+                        ) : null}
+                      </Group>
+                    </UnstyledButton>
+                  )}
+                </OverflowTooltip>
               );
             }}
             scrollAreaProps={{ type: "never" }}

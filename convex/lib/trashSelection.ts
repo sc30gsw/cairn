@@ -1,0 +1,1 @@
+export const TRASH_PURGE_SELECTION_LIMIT = 100;

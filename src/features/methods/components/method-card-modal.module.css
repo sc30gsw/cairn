@@ -2,6 +2,14 @@
   min-height: calc(5.5rem * var(--mantine-scale));
 }
 
+.content :global(.ProseMirror [data-type="details"] summary) {
+  list-style: none;
+}
+
+.content :global(.ProseMirror [data-type="details"] summary::-webkit-details-marker) {
+  display: none;
+}
+
 .content :global(.ProseMirror) ul:not([data-type="taskList"]) {
   list-style-type: disc;
 }

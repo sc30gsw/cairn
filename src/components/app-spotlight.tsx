@@ -6,6 +6,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { Suspense, useState } from "react";
 import { isSearchableQuery, normalizeSearchQuery, normalizeSearchText } from "~domain/searchText";
 
+import { OverflowTooltip } from "~/components/overflow-tooltip";
 import { useHistorySearch } from "~/hooks/history-search-queries";
 import { NAV, type NavEntry } from "~/lib/app-nav";
 import { searchExcerpt } from "~/lib/search-excerpt";
@@ -51,32 +52,38 @@ function SpotlightRecordActions({ navCount, query }: SpotlightRecordActionsProps
     <Spotlight.ActionsGroup label={SPOTLIGHT_RECORDS_GROUP}>
       {hits.map((hit) => {
         const excerpt = searchExcerpt(hit.text, normalized);
+        const excerptText = `${excerpt.before}${excerpt.match}${excerpt.after}`;
         return (
-          <Spotlight.Action
+          <OverflowTooltip<HTMLButtonElement>
+            content={`${hit.title}\n${excerptText}`}
             key={hit.rowId ?? `memo-${hit.dateJst}`}
-            onClick={() => {
-              void navigate({ params: { dateJst: hit.dateJst }, to: "/days/$dateJst" });
-            }}
           >
-            <Group gap="sm" w="100%" wrap="nowrap">
-              <Text c="dimmed" ff={NUMERAL_FONT} size="sm">
-                {hit.dateJst}
-              </Text>
-              <Badge color={hit.kind === "memo" ? "orange" : "green"} size="sm" variant="light">
-                {SPOTLIGHT_KIND_LABELS[hit.kind]}
-              </Badge>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <Text size="sm" truncate>
-                  {hit.title}
-                </Text>
-                <Text c="dimmed" size="xs" truncate>
-                  {excerpt.before}
-                  {excerpt.match}
-                  {excerpt.after}
-                </Text>
-              </div>
-            </Group>
-          </Spotlight.Action>
+            {(ref) => (
+              <Spotlight.Action
+                ref={ref}
+                onClick={() => {
+                  void navigate({ params: { dateJst: hit.dateJst }, to: "/days/$dateJst" });
+                }}
+              >
+                <Group gap="sm" w="100%" wrap="nowrap">
+                  <Text c="dimmed" ff={NUMERAL_FONT} size="sm">
+                    {hit.dateJst}
+                  </Text>
+                  <Badge color={hit.kind === "memo" ? "orange" : "green"} size="sm" variant="light">
+                    {SPOTLIGHT_KIND_LABELS[hit.kind]}
+                  </Badge>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Text lineClamp={1} size="sm">
+                      {hit.title}
+                    </Text>
+                    <Text c="dimmed" lineClamp={1} size="xs">
+                      {excerptText}
+                    </Text>
+                  </div>
+                </Group>
+              </Spotlight.Action>
+            )}
+          </OverflowTooltip>
         );
       })}
     </Spotlight.ActionsGroup>

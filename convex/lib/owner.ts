@@ -1,15 +1,14 @@
 import { Result } from "better-result";
+import type { UserIdentity } from "convex/server";
 
 import { UnauthenticatedError } from "./errors";
 
-export type IdentityLike = {
-  email?: null | string;
-  subject: string;
-};
+export type IdentityLike = Pick<UserIdentity, "email" | "subject">;
+export type OwnerId = IdentityLike["subject"];
 
 export function ownerFromIdentity(
   identity: IdentityLike | null | undefined,
-): Result<{ ownerId: string }, UnauthenticatedError> {
+): Result<{ ownerId: OwnerId }, UnauthenticatedError> {
   if (identity === null || identity === undefined) {
     return Result.err(
       new UnauthenticatedError({

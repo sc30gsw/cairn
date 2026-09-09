@@ -1,0 +1,29 @@
+.selectionActionBar {
+  max-height: calc(100dvh - var(--cairn-bottom-nav-h) - 2rem);
+  max-width: calc(100vw - 1.5rem);
+  overflow-y: auto;
+}
+
+.selectionActions {
+  flex-shrink: 0;
+}
+
+@media (max-width: 47.99em) {
+  .selectionActionBar {
+    align-items: stretch;
+    flex-direction: column;
+    width: calc(100vw - 1.5rem);
+  }
+
+  .selectionDivider {
+    display: none;
+  }
+
+  .selectionActions {
+    width: 100%;
+  }
+
+  .selectionActionButton {
+    flex: 1;
+  }
+}
