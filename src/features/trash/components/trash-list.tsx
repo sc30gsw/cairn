@@ -96,7 +96,7 @@ function TrashRowLabel({ row }: { row: TrashRow }) {
   return (
     <OverflowTooltip<HTMLSpanElement> content={summary}>
       {(ref) => (
-        <Text ref={ref} lineClamp={1} span>
+        <Text component="span" ref={ref} lineClamp={1}>
           {summary}
         </Text>
       )}

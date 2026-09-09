@@ -28,43 +28,80 @@ function throwTooMuchWork(): never {
   );
 }
 
+async function collectRowsForDays(
+  ctx: MutationCtx,
+  dayIds: readonly Id<"days">[],
+  affectedRowIds: Set<Id<"rows">>,
+  index = 0,
+): Promise<void> {
+  const dayId = dayIds[index];
+  if (dayId === undefined) {
+    return;
+  }
+  const remaining = TRASH_PURGE_EXPANDED_DOCUMENT_LIMIT - dayIds.length - affectedRowIds.size;
+  const rows = await ctx.db
+    .query("rows")
+    .withIndex("by_day", (q) => q.eq("dayId", dayId))
+    .take(remaining + 1);
+  for (const row of rows) {
+    affectedRowIds.add(row._id);
+  }
+  if (affectedRowIds.size + dayIds.length > TRASH_PURGE_EXPANDED_DOCUMENT_LIMIT) {
+    throwTooMuchWork();
+  }
+  await collectRowsForDays(ctx, dayIds, affectedRowIds, index + 1);
+}
+
+async function countScheduleEvents(
+  ctx: MutationCtx,
+  rowIds: readonly Id<"rows">[],
+  workCount: number,
+  index = 0,
+): Promise<number> {
+  const rowId = rowIds[index];
+  if (rowId === undefined) {
+    return workCount;
+  }
+  const events = await ctx.db
+    .query("boardScheduleEvents")
+    .withIndex("by_row", (q) => q.eq("rowId", rowId))
+    .take(TRASH_PURGE_EXPANDED_DOCUMENT_LIMIT - workCount + 1);
+  const nextWorkCount = workCount + events.length;
+  if (nextWorkCount > TRASH_PURGE_EXPANDED_DOCUMENT_LIMIT) {
+    return nextWorkCount;
+  }
+  return countScheduleEvents(ctx, rowIds, nextWorkCount, index + 1);
+}
+
 async function assertBoundedPurgeWork(
   ctx: MutationCtx,
   dayIds: readonly Id<"days">[],
   directRowIds: readonly Id<"rows">[],
 ): Promise<void> {
-  let remaining = TRASH_PURGE_EXPANDED_DOCUMENT_LIMIT - dayIds.length;
   const affectedRowIds = new Set(directRowIds);
-
-  for (const dayId of dayIds) {
-    const rows = await ctx.db
-      .query("rows")
-      .withIndex("by_day", (q) => q.eq("dayId", dayId))
-      .take(remaining + 1);
-    for (const row of rows) {
-      affectedRowIds.add(row._id);
-    }
-    remaining = TRASH_PURGE_EXPANDED_DOCUMENT_LIMIT - dayIds.length - affectedRowIds.size;
-    if (remaining < 0) {
-      throwTooMuchWork();
-    }
-  }
-
-  let workCount = dayIds.length + affectedRowIds.size;
-  for (const rowId of affectedRowIds) {
-    const events = await ctx.db
-      .query("boardScheduleEvents")
-      .withIndex("by_row", (q) => q.eq("rowId", rowId))
-      .take(TRASH_PURGE_EXPANDED_DOCUMENT_LIMIT - workCount + 1);
-    workCount += events.length;
-    if (workCount > TRASH_PURGE_EXPANDED_DOCUMENT_LIMIT) {
-      break;
-    }
-  }
-
+  await collectRowsForDays(ctx, dayIds, affectedRowIds);
+  const workCount = await countScheduleEvents(
+    ctx,
+    [...affectedRowIds],
+    dayIds.length + affectedRowIds.size,
+  );
   if (workCount > TRASH_PURGE_EXPANDED_DOCUMENT_LIMIT) {
     throwTooMuchWork();
   }
+}
+
+async function purgeDaysSequentially(
+  ctx: MutationCtx,
+  ownerId: OwnerId,
+  dayIds: readonly Id<"days">[],
+  index = 0,
+): Promise<null> {
+  const dayId = dayIds[index];
+  if (dayId === undefined) {
+    return null;
+  }
+  await purgeDay(ctx, ownerId, { dayId });
+  return purgeDaysSequentially(ctx, ownerId, dayIds, index + 1);
 }
 
 export async function purgeMany(
@@ -100,9 +137,7 @@ export async function purgeMany(
   });
 
   await assertBoundedPurgeWork(ctx, dayIds, directRowIds);
-  for (const dayId of dayIds) {
-    await purgeDay(ctx, ownerId, { dayId });
-  }
+  await purgeDaysSequentially(ctx, ownerId, dayIds);
   await deleteRowsByIds(ctx, directRowIds);
   return null;
 }
