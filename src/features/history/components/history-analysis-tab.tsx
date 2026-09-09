@@ -61,6 +61,7 @@ export function HistoryAnalysisTab() {
           todayJst={today}
           week={weekBreakdown}
           weekDays={weekPage.days}
+          weekEvents={weekPage.events}
           yearMonth={yearMonth}
         />
       </Card>

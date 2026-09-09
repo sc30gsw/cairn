@@ -1,0 +1,58 @@
+.root {
+  container-type: inline-size;
+}
+
+.root .steps {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--mantine-spacing-md);
+}
+
+.root .step {
+  min-inline-size: 0;
+  max-inline-size: none;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--mantine-spacing-sm);
+}
+
+.root .stepBody {
+  min-inline-size: 0;
+  align-items: flex-start;
+  margin: 0;
+  text-align: start;
+}
+
+.root .stepDescription {
+  line-height: 1.5;
+}
+
+.root .separator {
+  display: none;
+}
+
+@container (min-width: 48em) {
+  .root .steps {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--mantine-spacing-xs);
+  }
+
+  .root .step {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--mantine-spacing-xs);
+  }
+
+  .root .stepBody {
+    align-items: center;
+    text-align: center;
+  }
+
+  .root .separator {
+    display: block;
+    flex: 0 1 var(--mantine-spacing-xl);
+    margin-inline: 0;
+  }
+}

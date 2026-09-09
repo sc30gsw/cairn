@@ -1,9 +1,11 @@
 import { CompositeChart, DonutChart } from "@mantine/charts";
+import type { ChartReferenceAreaProps, ChartReferenceDotProps } from "@mantine/charts";
 import { Alert, Button, Card, Grid, SegmentedControl, Stack, Text, Title } from "@mantine/core";
 import { Link } from "@tanstack/react-router";
 import type { DateJst } from "~domain/jst";
 
 import { HistoryConditionMemoSections } from "~/features/history/components/analysis/history-condition-memo-sections";
+import { WeekdayCategoryMatrix } from "~/features/history/components/analysis/weekday-category-matrix";
 import { BreakdownTable } from "~/features/history/components/breakdown-table";
 import { ConditionVolumeTable } from "~/features/history/components/condition-volume-table";
 import { HeatmapLegend } from "~/features/history/components/heatmap-legend";
@@ -11,6 +13,8 @@ import { HistoryLearningHeatmap } from "~/features/history/components/history-le
 import {
   buildDonutCells,
   buildMonthPaceChartData,
+  buildPaceSelectedDateReferenceDots,
+  buildPaceWeekendReferenceAreas,
   buildWeekPaceChartData,
   paceChartMonthTitle,
   paceChartWeekTitle,
@@ -23,10 +27,13 @@ import type {
   DayBreakdown,
   HeatmapDay,
   MonthBreakdown,
+  WeekEvent,
   WeekBreakdown,
 } from "~/features/history/types/history";
 
 import tabBarClasses from "~/components/pills-tab-bar.module.css";
+
+const EMPTY_WEEK_EVENTS: readonly WeekEvent[] = [];
 
 type HistoryAnalysisPanelProps = {
   day: DayBreakdown;
@@ -39,6 +46,7 @@ type HistoryAnalysisPanelProps = {
   todayJst: DateJst;
   week: WeekBreakdown;
   weekDays: HeatmapDay[];
+  weekEvents?: readonly WeekEvent[];
   yearMonth: string;
 };
 
@@ -67,9 +75,13 @@ function PaceChartCard({
   data,
   subtitle,
   title,
+  referenceAreas,
+  referenceDots,
   xAxisAngle,
 }: {
   data: PaceChartPoint[];
+  referenceAreas?: ChartReferenceAreaProps[];
+  referenceDots?: ChartReferenceDotProps[];
   subtitle?: string;
   title: string;
   xAxisAngle?: number;
@@ -84,6 +96,11 @@ function PaceChartCard({
           {subtitle}
         </Text>
       ) : null}
+      {referenceAreas?.length || referenceDots?.length ? (
+        <Text c="dimmed" size="xs">
+          オレンジ帯:週末 / オレンジ点:選択日
+        </Text>
+      ) : null}
       <CompositeChart
         data={data}
         dataKey="label"
@@ -95,6 +112,8 @@ function PaceChartCard({
         tickLine="y"
         valueFormatter={(value) => `${value}分`}
         withLegend
+        referenceAreas={referenceAreas}
+        referenceDots={referenceDots}
         xAxisProps={xAxisAngle === undefined ? undefined : { angle: xAxisAngle }}
       />
     </Card>
@@ -163,9 +182,19 @@ export function HistoryAnalysisPanel({
   todayJst,
   week,
   weekDays,
+  weekEvents = EMPTY_WEEK_EVENTS,
   yearMonth,
 }: HistoryAnalysisPanelProps) {
   const scopeDays = daysInAnalysisScope(scope, selectedDateJst, month, heatmapDays, weekDays);
+  const weekPaceData = buildWeekPaceChartData(week.byDay, heatmapDays);
+  const monthPaceData = buildMonthPaceChartData(month.days);
+  const breakdown = { day, week, month }[scope];
+  const breakdownTitle = { day: "日次内訳", week: "週次内訳", month: "月次内訳" }[scope];
+  const periodLabel = {
+    day: selectedDateJst,
+    week: `${week.weekStart} 〜 ${week.weekEnd}`,
+    month: formatYearMonth(yearMonth),
+  }[scope];
 
   return (
     <Stack gap="md">
@@ -181,9 +210,7 @@ export function HistoryAnalysisPanel({
         value={scope}
       />
       <Text c="dimmed" size="sm" ta="center">
-        {scope === "day" && selectedDateJst}
-        {scope === "week" && `${week.weekStart} 〜 ${week.weekEnd}`}
-        {scope === "month" && formatYearMonth(yearMonth)}
+        {periodLabel}
       </Text>
 
       {scope === "month" ? (
@@ -203,7 +230,9 @@ export function HistoryAnalysisPanel({
         {scope === "week" ? (
           <Grid.Col span={{ base: 12, md: 6 }}>
             <PaceChartCard
-              data={buildWeekPaceChartData(week.byDay, heatmapDays)}
+              data={weekPaceData}
+              referenceAreas={buildPaceWeekendReferenceAreas(weekPaceData)}
+              referenceDots={buildPaceSelectedDateReferenceDots(weekPaceData, selectedDateJst)}
               subtitle="日別ペース"
               title={paceChartWeekTitle(week.weekStart, week.weekEnd)}
             />
@@ -212,7 +241,9 @@ export function HistoryAnalysisPanel({
         {scope === "month" ? (
           <Grid.Col span={{ base: 12, md: 6 }}>
             <PaceChartCard
-              data={buildMonthPaceChartData(month.days)}
+              data={monthPaceData}
+              referenceAreas={buildPaceWeekendReferenceAreas(monthPaceData)}
+              referenceDots={buildPaceSelectedDateReferenceDots(monthPaceData, selectedDateJst)}
               subtitle="日別ペース"
               title={paceChartMonthTitle(yearMonth)}
               xAxisAngle={-45}
@@ -220,38 +251,37 @@ export function HistoryAnalysisPanel({
           </Grid.Col>
         ) : null}
         <Grid.Col span={{ base: 12, md: scope === "day" ? 12 : 6 }}>
-          <DonutSection
-            breakdown={scope === "day" ? day : scope === "week" ? week : month}
-            title={scope === "day" ? "日次内訳" : scope === "week" ? "週次内訳" : "月次内訳"}
-          />
+          <DonutSection breakdown={breakdown} title={breakdownTitle} />
         </Grid.Col>
       </Grid>
 
+      {scope === "week" ? (
+        <WeekdayCategoryMatrix
+          categories={week.byCategory.map((entry) => entry.category)}
+          days={weekDays}
+          events={weekEvents}
+          title={paceChartWeekTitle(week.weekStart, week.weekEnd)}
+          todayJst={todayJst}
+        />
+      ) : null}
+      {scope === "month" ? (
+        <WeekdayCategoryMatrix
+          categories={month.byCategory.map((entry) => entry.category)}
+          days={month.days}
+          events={month.events}
+          title={paceChartMonthTitle(yearMonth)}
+          todayJst={todayJst}
+        />
+      ) : null}
+
       <Stack gap="xs">
         <Title order={4}>完了内訳</Title>
-        <BreakdownTable
-          confirmedMinutes={
-            scope === "day"
-              ? day.confirmedMinutes
-              : scope === "week"
-                ? week.confirmedMinutes
-                : month.confirmedMinutes
-          }
-          rows={scope === "day" ? day.rows : scope === "week" ? week.rows : month.rows}
-        />
+        <BreakdownTable confirmedMinutes={breakdown.confirmedMinutes} rows={breakdown.rows} />
       </Stack>
 
       <Stack gap="xs">
         <Title order={4}>コンディション別の学習量</Title>
-        <ConditionVolumeTable
-          rows={
-            scope === "day"
-              ? day.byCondition
-              : scope === "week"
-                ? week.byCondition
-                : month.byCondition
-          }
-        />
+        <ConditionVolumeTable rows={breakdown.byCondition} />
       </Stack>
 
       <HistoryConditionMemoSections

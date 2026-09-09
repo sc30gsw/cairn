@@ -180,6 +180,7 @@ import type * as mutations_trash_purgeExpired from "../mutations/trash/purgeExpi
 import type * as mutations_trash_purgeRow from "../mutations/trash/purgeRow.js";
 import type * as mutations_trash_removeDay from "../mutations/trash/removeDay.js";
 import type * as mutations_trash_restoreDay from "../mutations/trash/restoreDay.js";
+import type * as mutations_trash_restoreMany from "../mutations/trash/restoreMany.js";
 import type * as queries_auth_publicConfig from "../queries/auth/publicConfig.js";
 import type * as queries_boardSchedule_listForWeek from "../queries/boardSchedule/listForWeek.js";
 import type * as queries_calendarAuth_canSignIn from "../queries/calendarAuth/canSignIn.js";
@@ -605,6 +606,7 @@ declare const fullApi: ApiFromModules<{
   "mutations/trash/purgeRow": typeof mutations_trash_purgeRow;
   "mutations/trash/removeDay": typeof mutations_trash_removeDay;
   "mutations/trash/restoreDay": typeof mutations_trash_restoreDay;
+  "mutations/trash/restoreMany": typeof mutations_trash_restoreMany;
   "queries/auth/publicConfig": typeof queries_auth_publicConfig;
   "queries/boardSchedule/listForWeek": typeof queries_boardSchedule_listForWeek;
   "queries/calendarAuth/canSignIn": typeof queries_calendarAuth_canSignIn;

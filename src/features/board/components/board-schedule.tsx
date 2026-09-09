@@ -2,8 +2,8 @@ import { Card, Stack } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { Schedule, type ScheduleProps, type DateStringValue } from "@mantine/schedule";
 import { Result } from "better-result";
-import type { CSSProperties } from "react";
-import { useRef } from "react";
+import type { CSSProperties, MouseEvent } from "react";
+import { useId, useRef, useState } from "react";
 import { addDaysJst, mondayOfWeek } from "~domain/jst";
 
 import { BoardScheduleAllDayExpand } from "~/features/board/components/board-schedule-all-day-expand";
@@ -13,18 +13,12 @@ import { BoardScheduleEventForm } from "~/features/board/components/board-schedu
 import { renderBoardScheduleEvent } from "~/features/board/components/board-schedule-event-source";
 import { BoardScheduleExternalModal } from "~/features/board/components/board-schedule-external-modal";
 import { BoardScheduleNavigation } from "~/features/board/components/board-schedule-navigation";
-import { createBoardScheduleYearRenderDay } from "~/features/board/components/board-schedule-year-render-day";
+import { BoardScheduleYearDayPopover } from "~/features/board/components/board-schedule-year-day-popover";
 import { useBoardScheduleActions } from "~/features/board/hooks/use-board-schedule-actions";
+import { useBoardScheduleInteractions } from "~/features/board/hooks/use-board-schedule-interactions";
 import { useBoardScheduleUi } from "~/features/board/hooks/use-board-schedule-ui";
 import type { BoardViewState } from "~/features/board/hooks/use-board-view";
-import {
-  BOARD_ALL_DAY_VISIBLE_LIMIT,
-  boardExternalEventId,
-  boardScheduleEventSourceId,
-  movedScheduleRange,
-  isBoardAllDayMoreEvent,
-  isBoardExternalEvent,
-} from "~/features/board/lib/board-schedule-events";
+import { BOARD_ALL_DAY_VISIBLE_LIMIT } from "~/features/board/lib/board-schedule-events";
 import {
   ALL_DAY_ROW_HEIGHT,
   ALL_DAY_VISIBLE_ROWS,
@@ -60,6 +54,8 @@ const BOARD_WEEK_VIEW_PROPS = {
     weekViewAllDaySlotsList: classes.weekAllDaySlotsList,
   },
   firstDayOfWeek: 1,
+  eventDragInterval: 15,
+  eventResizeInterval: 15,
   renderEvent: boardScheduleAllDayRenderEvent,
 } as const satisfies ScheduleProps["weekViewProps"];
 
@@ -77,6 +73,77 @@ type BoardScheduleProps = {
   rows: readonly BoardRow[];
   view: BoardViewState;
 };
+
+type BoardScheduleActions = ReturnType<typeof useBoardScheduleActions>;
+type BoardScheduleUi = ReturnType<typeof useBoardScheduleUi>;
+type BoardScheduleDialogsProps = {
+  actions: BoardScheduleActions;
+  pending: boolean;
+  rows: readonly BoardRow[];
+  ui: BoardScheduleUi;
+};
+
+function BoardScheduleDialogs({ actions, pending, rows, ui }: BoardScheduleDialogsProps) {
+  return (
+    <>
+      <BoardScheduleExternalModal
+        external={ui.openedExternal}
+        onClose={ui.closeExternal}
+        onRemove={(externalId) => actions.onRemoveExternal({ externalId })}
+        onUpdate={(values) => {
+          if (ui.openedExternal === null) throw new Error("外部予定が選択されていません");
+          return actions.onMoveExternal({
+            externalId: ui.openedExternal._id,
+            title: values.title,
+            colorId: values.colorId,
+            startAt: dateToScheduleInstant(values.start),
+            endAt: dateToScheduleInstant(values.end),
+          });
+        }}
+      />
+      {pending ? null : (
+        <BoardScheduleEventForm
+          initialValues={ui.formValues}
+          onClose={() => ui.setFormOpened(false)}
+          onDelete={
+            ui.formValues?.blockId === undefined
+              ? undefined
+              : async () => {
+                  const blockId = ui.formValues?.blockId;
+                  if (blockId === undefined) {
+                    return;
+                  }
+                  const result = await actions.onRemoveBlock({ blockId });
+                  if (Result.isOk(result)) ui.setFormOpened(false);
+                  return result;
+                }
+          }
+          onSubmit={async (values) => {
+            const blockId = values.blockId ?? ui.formValues?.blockId;
+            const payload = {
+              color: values.color,
+              endAt: dateToScheduleInstant(values.end),
+              startAt: dateToScheduleInstant(values.start),
+            };
+            if (blockId === undefined) {
+              return await actions.onCreateBlock({
+                ...payload,
+                rowId: values.rowId,
+              });
+            }
+            return await actions.onUpdateBlock({
+              blockId,
+              rowId: values.rowId,
+              ...payload,
+            });
+          }}
+          opened={ui.formOpened}
+          rows={rows}
+        />
+      )}
+    </>
+  );
+}
 
 export function BoardSchedule({
   blocks,
@@ -107,6 +174,9 @@ export function BoardSchedule({
     onUpdateBlock,
   } = useBoardScheduleActions(anchorDateJst, scheduleView);
   const scheduleRootRef = useRef<HTMLDivElement | null>(null);
+  const [openedYearDay, setOpenedYearDay] = useState<DateStringValue | null>(null);
+  const yearDayTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const yearPopoverId = useId();
   const isCompact = useMediaQuery("(max-width: 47.9375em)", false, {
     getInitialValueInEffect: true,
   });
@@ -138,12 +208,26 @@ export function BoardSchedule({
       dayViewAllDayEvents: classes.dayAllDayEventsContainer,
     },
     moreEventsProps: { mode: "static" },
+    eventDragInterval: 15,
+    eventResizeInterval: 15,
     renderEvent: dayAllDayRenderEvent,
     withAllDaySlot: ui.dayAllDayEvents.length > 0,
   } as const satisfies ScheduleProps["dayViewProps"];
 
-  function handleDayClick(day: DateStringValue) {
+  const interactionProps = useBoardScheduleInteractions({
+    actions: { onMoveBlock, onMoveExternal },
+    blocks,
+    canCreate: rows.length > 0,
+    externals,
+    isCompact,
+    pending,
+    ui,
+  });
+
+  function handleDayClick(day: DateStringValue, event: MouseEvent<HTMLButtonElement>) {
     if (scheduleView === "year") {
+      yearDayTriggerRef.current = event.currentTarget;
+      setOpenedYearDay((current) => (current === day ? null : day));
       return;
     }
     ui.collapseAllDayExpand();
@@ -156,16 +240,32 @@ export function BoardSchedule({
   const yearViewProps = {
     ...BOARD_SCHEDULE_WITHOUT_HEADER,
     firstDayOfWeek: 1,
-    getDayProps: calendarDayProps,
-    renderDay: createBoardScheduleYearRenderDay({
-      baseEvents: ui.baseEvents,
-      canAdd: rows.length > 0,
-      clickableEventIds: ui.clickableEventIds,
-      onAdd: (day) => {
-        ui.openCreate(`${day} ${DEFAULT_DAY_BLOCK_START}`, `${day} ${DEFAULT_DAY_BLOCK_END}`);
-      },
-      onEditBlock: ui.openFromEvent,
+    getDayProps: (day) => ({
+      ...calendarDayProps(day),
+      "aria-controls": openedYearDay === day ? `${yearPopoverId}-${day}-dropdown` : undefined,
+      "aria-expanded": openedYearDay === day,
+      "aria-haspopup": "dialog",
     }),
+    withOutsideDays: false,
+    renderDay: (date, dayEvents) => (
+      <BoardScheduleYearDayPopover
+        baseEvents={ui.baseEvents}
+        canAdd={rows.length > 0}
+        clickableEventIds={ui.clickableEventIds}
+        dateJst={date}
+        dayEvents={dayEvents}
+        selected={openedYearDay === date}
+        popoverId={`${yearPopoverId}-${date}`}
+        onClose={() => {
+          setOpenedYearDay(null);
+          yearDayTriggerRef.current?.focus();
+        }}
+        onAdd={(day) => {
+          ui.openCreate(`${day} ${DEFAULT_DAY_BLOCK_START}`, `${day} ${DEFAULT_DAY_BLOCK_END}`);
+        }}
+        onEditBlock={ui.openFromEvent}
+      />
+    ),
   } as const satisfies ScheduleProps["yearViewProps"];
 
   return (
@@ -201,62 +301,7 @@ export function BoardSchedule({
           />
           <div className={classes.boardScheduleRoot} data-view={scheduleView} ref={scheduleRootRef}>
             <Schedule
-              {...(scheduleView === "year"
-                ? {}
-                : {
-                    canDragEvent: (event) =>
-                      !pending &&
-                      (ui.editableBlockIds.has(boardScheduleEventSourceId(event.id)) ||
-                        ui.editableExternalEventIds.has(boardScheduleEventSourceId(event.id))),
-                    onEventClick: pending ? undefined : ui.handleEventClick,
-                    onEventDrop: pending
-                      ? undefined
-                      : ({ event, eventId, newStart }) => {
-                          ui.collapseAllDayExpand();
-                          if (
-                            ui.editableExternalEventIds.has(boardScheduleEventSourceId(eventId))
-                          ) {
-                            const external = externals.find(
-                              (entry) => entry._id === boardExternalEventId(eventId),
-                            );
-                            if (external === undefined) {
-                              return;
-                            }
-                            void onMoveExternal({
-                              ...movedScheduleRange(external, event.start, newStart),
-                              externalId: boardExternalEventId(eventId),
-                            });
-                            return;
-                          }
-                          const block = blocks.find(
-                            (entry) => entry._id === boardScheduleEventSourceId(eventId),
-                          );
-                          if (block === undefined) {
-                            return;
-                          }
-                          void onMoveBlock({
-                            ...movedScheduleRange(block, event.start, newStart),
-                            blockId: block._id,
-                          });
-                        },
-                    onTimeSlotClick: pending
-                      ? undefined
-                      : ({ slotEnd, slotStart }) => {
-                          ui.openCreate(slotStart, slotEnd);
-                        },
-                    onSlotDragEnd: pending ? undefined : ui.openCreate,
-                    renderEventBody: (event) => {
-                      if (isBoardAllDayMoreEvent(event.id)) {
-                        return <span data-board-all-day-more="true">{event.title}</span>;
-                      }
-                      if (isBoardExternalEvent(event.id)) {
-                        return <span data-board-external="true">{event.title}</span>;
-                      }
-                      return event.title;
-                    },
-                    withDragSlotSelect: !pending && rows.length > 0 && !isCompact,
-                    withEventsDragAndDrop: !pending && !isCompact,
-                  })}
+              {...(scheduleView === "year" ? {} : interactionProps)}
               date={anchorDateJst}
               events={
                 scheduleView === "day" || scheduleView === "week"
@@ -285,61 +330,19 @@ export function BoardSchedule({
           </div>
         </Stack>
       </Card>
-      <BoardScheduleExternalModal
-        external={ui.openedExternal}
-        onClose={ui.closeExternal}
-        onRemove={(externalId) => onRemoveExternal({ externalId })}
-        onUpdate={(values) => {
-          if (ui.openedExternal === null) throw new Error("外部予定が選択されていません");
-          return onMoveExternal({
-            externalId: ui.openedExternal._id,
-            title: values.title,
-            colorId: values.colorId,
-            startAt: dateToScheduleInstant(values.start),
-            endAt: dateToScheduleInstant(values.end),
-          });
+      <BoardScheduleDialogs
+        actions={{
+          onCreateBlock,
+          onMoveBlock,
+          onMoveExternal,
+          onRemoveBlock,
+          onRemoveExternal,
+          onUpdateBlock,
         }}
+        pending={pending}
+        rows={rows}
+        ui={ui}
       />
-      {pending ? null : (
-        <BoardScheduleEventForm
-          initialValues={ui.formValues}
-          onClose={() => ui.setFormOpened(false)}
-          onDelete={
-            ui.formValues?.blockId === undefined
-              ? undefined
-              : async () => {
-                  const blockId = ui.formValues?.blockId;
-                  if (blockId === undefined) {
-                    return;
-                  }
-                  const result = await onRemoveBlock({ blockId });
-                  if (Result.isOk(result)) ui.setFormOpened(false);
-                  return result;
-                }
-          }
-          onSubmit={async (values) => {
-            const blockId = values.blockId ?? ui.formValues?.blockId;
-            const payload = {
-              color: values.color,
-              endAt: dateToScheduleInstant(values.end),
-              startAt: dateToScheduleInstant(values.start),
-            };
-            if (blockId === undefined) {
-              return await onCreateBlock({
-                ...payload,
-                rowId: values.rowId,
-              });
-            }
-            return await onUpdateBlock({
-              blockId,
-              rowId: values.rowId,
-              ...payload,
-            });
-          }}
-          opened={ui.formOpened}
-          rows={rows}
-        />
-      )}
     </>
   );
 }

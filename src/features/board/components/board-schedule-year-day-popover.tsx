@@ -2,7 +2,9 @@ import {
   Badge,
   Box,
   Button,
+  CloseButton,
   Divider,
+  Group,
   Popover,
   Stack,
   Text,
@@ -11,7 +13,7 @@ import {
   useMantineTheme,
 } from "@mantine/core";
 import type { ScheduleEventData } from "@mantine/schedule";
-import { useRef, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 
 import { BoardScheduleEventSource } from "~/features/board/components/board-schedule-event-source";
 import { boardScheduleEventColors } from "~/features/board/lib/board-schedule-color-ui";
@@ -82,6 +84,9 @@ type BoardScheduleYearDayPopoverProps = {
   dateJst: string;
   dayEvents: readonly ScheduleEventData[];
   clickableEventIds: ReadonlySet<string>;
+  selected: boolean;
+  popoverId: string;
+  onClose: () => void;
   onAdd: (dateJst: string) => void;
   onEditBlock: (event: ScheduleEventData) => void;
 };
@@ -92,12 +97,16 @@ export function BoardScheduleYearDayPopover({
   dateJst,
   dayEvents,
   clickableEventIds,
+  selected,
+  popoverId,
+  onClose,
   onAdd,
   onEditBlock,
 }: BoardScheduleYearDayPopoverProps) {
   const theme = useMantineTheme();
   const [opened, setOpened] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(closeTimerRef.current), []);
   const allDayEvents = allDayEventsForDay(baseEvents, dateJst);
   const timedEvents = timedEventsForDay(baseEvents, dateJst);
   const indicatorEvents = dayEvents
@@ -126,16 +135,19 @@ export function BoardScheduleYearDayPopover({
   function closePopover() {
     clearCloseTimer();
     setOpened(false);
+    if (selected) onClose();
   }
 
   return (
     <Popover
       closeOnClickOutside
-      closeOnEscape
-      onChange={setOpened}
-      opened={opened}
+      closeOnEscape={false}
+      id={popoverId}
+      onDismiss={closePopover}
+      opened={opened || selected}
       position="bottom"
       shadow="sm"
+      trapFocus={selected}
       width={280}
       withArrow
     >
@@ -159,11 +171,27 @@ export function BoardScheduleYearDayPopover({
           </Box>
         </Box>
       </Popover.Target>
-      <Popover.Dropdown onMouseEnter={openPopover} onMouseLeave={scheduleClose} p="sm">
+      <Popover.Dropdown
+        aria-labelledby={`${popoverId}-label`}
+        onClick={stopDayClick}
+        onKeyDownCapture={(event) => {
+          if (event.key === "Escape") {
+            event.stopPropagation();
+            closePopover();
+          }
+        }}
+        onKeyDown={(event) => event.stopPropagation()}
+        onMouseEnter={openPopover}
+        onMouseLeave={scheduleClose}
+        p="sm"
+      >
         <Stack gap="xs">
-          <Text fw={600} size="sm">
-            {dateJst}
-          </Text>
+          <Group justify="space-between">
+            <Text fw={600} id={`${popoverId}-label`} size="sm">
+              {dateJst}の予定
+            </Text>
+            <CloseButton aria-label="予定一覧を閉じる" onClick={closePopover} size="sm" />
+          </Group>
           <Divider />
           <Text c="dimmed" size="xs">
             終日

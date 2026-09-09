@@ -9,6 +9,10 @@ export function useRestoreRow() {
   return useConvexMutation(api.mutations.rows.restore.restore);
 }
 
+export function useRestoreMany() {
+  return useConvexMutation(api.mutations.trash.restoreMany.restoreMany);
+}
+
 export function usePurgeDay() {
   return useConvexMutation(api.mutations.trash.purgeDay.purgeDay);
 }

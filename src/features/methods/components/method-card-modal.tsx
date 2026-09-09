@@ -1,6 +1,7 @@
 import { Field, Form, useForm } from "@formisch/react";
 import { Button, Group, Input, Modal, Stack, TextInput, Textarea } from "@mantine/core";
 import { getTaskListExtension, Link, RichTextEditor } from "@mantine/tiptap";
+import { Details, DetailsContent, DetailsSummary } from "@tiptap/extension-details";
 import TaskItem from "@tiptap/extension-task-item";
 import TipTapTaskList from "@tiptap/extension-task-list";
 import { useEditor } from "@tiptap/react";
@@ -37,7 +38,19 @@ export function MethodCardModal({ method, onClose, onRemove, onUpdate }: MethodC
   });
   const memoEditor = useEditor({
     content: method.memoHtml === "" ? undefined : method.memoHtml,
-    extensions: [StarterKit.configure({ link: false }), Link],
+    extensions: [
+      StarterKit.configure({ link: false }),
+      Link,
+      Details.configure({
+        persist: false,
+        renderToggleButton: ({ element, isOpen }) => {
+          element.setAttribute("aria-expanded", String(isOpen));
+          element.setAttribute("aria-label", isOpen ? "補足を閉じる" : "補足を開く");
+        },
+      }),
+      DetailsSummary,
+      DetailsContent,
+    ],
     immediatelyRender: false,
   });
 
@@ -93,12 +106,17 @@ export function MethodCardModal({ method, onClose, onRemove, onUpdate }: MethodC
             </RichTextEditor>
           </Input.Wrapper>
           <Input.Wrapper label="メモ">
-            <RichTextEditor classNames={{ content: classes.content }} editor={memoEditor}>
+            <RichTextEditor
+              classNames={{ content: classes.content }}
+              editor={memoEditor}
+              labels={{ detailsControlLabel: "折りたたみを挿入" }}
+            >
               <RichTextEditor.Toolbar>
                 <RichTextEditor.ControlsGroup>
                   <RichTextEditor.Bold />
                   <RichTextEditor.Italic />
                   <RichTextEditor.BulletList />
+                  <RichTextEditor.Details />
                 </RichTextEditor.ControlsGroup>
                 <RichTextEditor.ControlsGroup>
                   <RichTextEditor.Link />
