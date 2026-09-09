@@ -25,20 +25,22 @@ export function WeekdayCategoryMatrix({
 }: WeekdayCategoryMatrixProps) {
   const data = buildWeekdayCategoryMatrix(events, days, todayJst, categories);
   const hasEligibleDay = data.some((cell) => cell.value !== null);
+  const maxAverage = Math.max(0, ...data.map((cell) => cell.value ?? 0));
 
   return (
     <Card aria-labelledby="weekday-category-matrix-title" padding="md">
       <Title id="weekday-category-matrix-title" order={3}>
-        曜日 × カテゴリ
+        曜日ごとの平均学習量
       </Title>
       <Text c="dimmed" size="sm">
-        {title}の昨日まで。休養日は0分として、曜日ごとの1日平均を表示します。
+        {title}の昨日まで。休養日は0分として、カテゴリごとの曜日別1日平均を表示します。
       </Text>
       {hasEligibleDay ? (
         <MatrixChart
           aria-label={`${title}の曜日別カテゴリ平均分数`}
           cellRadius={4}
           data={data}
+          domain={[0, maxAverage]}
           gap={3}
           getTooltipLabel={({ x, y, value }) => {
             const cell = data.find((entry) => entry.x === x && entry.y === y);
@@ -51,6 +53,7 @@ export function WeekdayCategoryMatrix({
           xLabels={[...WEEKDAY_CATEGORY_MATRIX_LABELS]}
           xLabelsRotation={-45}
           yLabels={[...categories]}
+          legendLabels={["0分", `${maxAverage}分`]}
         />
       ) : (
         <Text c="dimmed" mt="md" ta="center">
@@ -67,7 +70,11 @@ export function WeekdayCategoryMatrix({
               <Table.Tr>
                 <Table.Th>カテゴリ</Table.Th>
                 {WEEKDAY_CATEGORY_MATRIX_LABELS.map((weekday) => (
-                  <Table.Th key={weekday}>{weekday}</Table.Th>
+                  <Table.Th key={weekday}>
+                    {weekday}
+                    <br />
+                    平均 / 合計 / 日数
+                  </Table.Th>
                 ))}
               </Table.Tr>
             </Table.Thead>
@@ -80,8 +87,8 @@ export function WeekdayCategoryMatrix({
                     return (
                       <Table.Td key={weekday}>
                         {cell?.value === null
-                          ? "—"
-                          : `${cell?.value ?? 0}分（${cell?.days ?? 0}日）`}
+                          ? "対象日なし"
+                          : `${cell?.value ?? 0}分 / ${cell?.totalMinutes ?? 0}分 / ${cell?.days ?? 0}日`}
                       </Table.Td>
                     );
                   })}

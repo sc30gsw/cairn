@@ -23,6 +23,7 @@ type MatrixDay = Pick<HeatmapDay, "dateJst" | "kind">;
 
 export type WeekdayCategoryMatrixCell = {
   days: number;
+  totalMinutes: number;
   value: number | null;
   x: string;
   y: string;
@@ -185,6 +186,7 @@ export function buildWeekdayCategoryMatrix(
       const total = minutesByWeekdayAndCategory.get(`${weekday}:${category}`) ?? 0;
       return {
         days: denominator,
+        totalMinutes: total,
         value: denominator === 0 ? null : Math.round((total / denominator) * 10) / 10,
         x,
         y: category,

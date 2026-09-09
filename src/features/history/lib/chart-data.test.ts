@@ -82,12 +82,12 @@ test("曜日×カテゴリは昨日までの対象日を分母にして平均す
       ["多聴"],
     ),
   ).toEqual([
-    { days: 1, value: 30, x: "月", y: "多聴" },
-    { days: 1, value: 20, x: "火", y: "多聴" },
-    { days: 0, value: null, x: "水", y: "多聴" },
-    { days: 0, value: null, x: "木", y: "多聴" },
-    { days: 0, value: null, x: "金", y: "多聴" },
-    { days: 0, value: null, x: "土", y: "多聴" },
-    { days: 0, value: null, x: "日", y: "多聴" },
+    { days: 1, totalMinutes: 30, value: 30, x: "月", y: "多聴" },
+    { days: 1, totalMinutes: 20, value: 20, x: "火", y: "多聴" },
+    { days: 0, totalMinutes: 0, value: null, x: "水", y: "多聴" },
+    { days: 0, totalMinutes: 0, value: null, x: "木", y: "多聴" },
+    { days: 0, totalMinutes: 0, value: null, x: "金", y: "多聴" },
+    { days: 0, totalMinutes: 0, value: null, x: "土", y: "多聴" },
+    { days: 0, totalMinutes: 0, value: null, x: "日", y: "多聴" },
   ]);
 });
