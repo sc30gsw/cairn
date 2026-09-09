@@ -84,7 +84,7 @@ test("記録の選択では親の日も一括復元対象になる", async () =>
   );
 
   fireEvent.click(getByRole("checkbox", { name: /Unit 1/ }));
-  expect(getByText("選択した記録の親の日も復元します")).toBeDefined();
+  expect(getByText(/選択した記録の親の日も復元します/)).toBeDefined();
   fireEvent.click(getByRole("button", { name: "選択を復元" }));
   await waitFor(() => {
     expect(onRestoreMany).toHaveBeenCalledWith({ dayIds: ["d1"], rowIds: ["r1"] });

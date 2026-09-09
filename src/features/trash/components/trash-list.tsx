@@ -41,6 +41,143 @@ function rowSummary(row: TrashRow) {
   return `${row.dateJst} ${row.itemName}（${detail}・${trashStatusLabel(row.status)}）`;
 }
 
+function TrashPurgeModals({
+  onPurgeDay,
+  onPurgeRow,
+  purgeDayTarget,
+  purgeRowTarget,
+  clearDaySelection,
+  clearRowSelection,
+  setPurgeDayTarget,
+  setPurgeRowTarget,
+}: {
+  clearDaySelection: (dayId: TrashDay["_id"]) => void;
+  clearRowSelection: (rowId: TrashRow["_id"]) => void;
+  onPurgeDay: (dayId: PurgeDayInput["dayId"]) => void;
+  onPurgeRow: (rowId: PurgeRowInput["rowId"]) => void;
+  purgeDayTarget: TrashDay | null;
+  purgeRowTarget: TrashRow | null;
+  setPurgeDayTarget: (day: TrashDay | null) => void;
+  setPurgeRowTarget: (row: TrashRow | null) => void;
+}) {
+  return (
+    <>
+      <Modal
+        centered
+        onClose={() => setPurgeDayTarget(null)}
+        opened={purgeDayTarget !== null}
+        title="日を完全削除"
+      >
+        <Stack gap="md">
+          <Text>
+            {purgeDayTarget?.dateJst} と、その日の記録を完全に削除します。元に戻せません。
+          </Text>
+          <Group justify="flex-end">
+            <Button onClick={() => setPurgeDayTarget(null)} variant="default">
+              キャンセル
+            </Button>
+            <Button
+              color="red"
+              onClick={() => {
+                if (purgeDayTarget !== null) {
+                  clearDaySelection(purgeDayTarget._id);
+                  onPurgeDay(purgeDayTarget._id);
+                  setPurgeDayTarget(null);
+                }
+              }}
+            >
+              完全削除
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+      <Modal
+        centered
+        onClose={() => setPurgeRowTarget(null)}
+        opened={purgeRowTarget !== null}
+        title="記録を完全削除"
+      >
+        <Stack gap="md">
+          <Text>
+            {purgeRowTarget === null ? "" : rowSummary(purgeRowTarget)}
+            を完全に削除します。元に戻せません。
+          </Text>
+          <Group justify="flex-end">
+            <Button onClick={() => setPurgeRowTarget(null)} variant="default">
+              キャンセル
+            </Button>
+            <Button
+              color="red"
+              onClick={() => {
+                if (purgeRowTarget !== null) {
+                  clearRowSelection(purgeRowTarget._id);
+                  onPurgeRow(purgeRowTarget._id);
+                  setPurgeRowTarget(null);
+                }
+              }}
+            >
+              完全削除
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
+    </>
+  );
+}
+
+function TrashSelectionActionBar({
+  effectiveDayCount,
+  hasFailedSelection,
+  isRestoring,
+  onClear,
+  onRestore,
+  requiredDayCount,
+  selectedRowCount,
+  selectionCount,
+}: {
+  effectiveDayCount: number;
+  hasFailedSelection: boolean;
+  isRestoring: boolean;
+  onClear: () => void;
+  onRestore: () => void;
+  requiredDayCount: number;
+  selectedRowCount: number;
+  selectionCount: number;
+}) {
+  return (
+    <ActionBar
+      opened={selectionCount > 0}
+      onClose={onClear}
+      styles={{
+        root: {
+          bottom: "calc(var(--cairn-bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 12px)",
+        },
+      }}
+    >
+      <Stack gap={2}>
+        <Text size="sm">
+          日 {effectiveDayCount}件・記録 {selectedRowCount}件を選択中
+        </Text>
+        {requiredDayCount > 0 ? (
+          <Text c="dimmed" size="xs">
+            選択した記録の親の日も復元します。個別に削除していない記録も表示されます。
+          </Text>
+        ) : null}
+        {hasFailedSelection ? (
+          <Text c="red" size="xs">
+            一部の対象を復元できませんでした。失敗対象を選択したまま再試行できます。
+          </Text>
+        ) : null}
+      </Stack>
+      <ActionBar.Divider />
+      <Button disabled={isRestoring} onClick={onRestore} size="compact-sm">
+        {isRestoring ? "復元中…" : hasFailedSelection ? "失敗した対象を再試行" : "選択を復元"}
+      </Button>
+      <ActionBar.CloseButton />
+    </ActionBar>
+  );
+}
+
 export function TrashList({
   onPurgeDay,
   onPurgeRow,
@@ -54,6 +191,7 @@ export function TrashList({
   const [selectedDayIds, setSelectedDayIds] = useState<Set<TrashDay["_id"]>>(() => new Set());
   const [selectedRowIds, setSelectedRowIds] = useState<Set<TrashRow["_id"]>>(() => new Set());
   const [isRestoring, setIsRestoring] = useState(false);
+  const [hasFailedSelection, setHasFailedSelection] = useState(false);
   const trashedDayIds = new Set(trash.days.map((day) => day._id));
   const requiredDayIds = new Set<TrashDay["_id"]>();
   for (const row of trash.rows) {
@@ -112,6 +250,7 @@ export function TrashList({
       if (result === null) {
         return;
       }
+      setHasFailedSelection(result.failedDayIds.length > 0 || result.failedRowIds.length > 0);
       setSelectedDayIds((current) => {
         const restored = new Set(result.restoredDayIds);
         return new Set([...current].filter((dayId) => !restored.has(dayId)));
@@ -123,6 +262,30 @@ export function TrashList({
     } finally {
       setIsRestoring(false);
     }
+  };
+
+  const clearDaySelection = (dayId: TrashDay["_id"]) => {
+    setSelectedDayIds((current) => {
+      const next = new Set(current);
+      next.delete(dayId);
+      return next;
+    });
+    setSelectedRowIds(
+      (current) =>
+        new Set(
+          [...current].filter(
+            (rowId) => trash.rows.find((row) => row._id === rowId)?.dayId !== dayId,
+          ),
+        ),
+    );
+  };
+
+  const clearRowSelection = (rowId: TrashRow["_id"]) => {
+    setSelectedRowIds((current) => {
+      const next = new Set(current);
+      next.delete(rowId);
+      return next;
+    });
   };
 
   return (
@@ -168,7 +331,13 @@ export function TrashList({
                   </Grid.Col>
                   <Grid.Col span="content">
                     <Group gap="xs">
-                      <Button onClick={() => onRestoreDay(day._id)} variant="light">
+                      <Button
+                        onClick={() => {
+                          clearDaySelection(day._id);
+                          onRestoreDay(day._id);
+                        }}
+                        variant="light"
+                      >
                         戻す
                       </Button>
                       <Button color="red" onClick={() => setPurgeDayTarget(day)} variant="subtle">
@@ -215,7 +384,13 @@ export function TrashList({
                   </Grid.Col>
                   <Grid.Col span="content">
                     <Group gap="xs">
-                      <Button onClick={() => onRestoreRow(row._id)} variant="light">
+                      <Button
+                        onClick={() => {
+                          clearRowSelection(row._id);
+                          onRestoreRow(row._id);
+                        }}
+                        variant="light"
+                      >
                         戻す
                       </Button>
                       <Button color="red" onClick={() => setPurgeRowTarget(row)} variant="subtle">
@@ -229,89 +404,30 @@ export function TrashList({
           </Card>
         </Grid.Col>
       </Grid>
-      <Modal
-        centered
-        onClose={() => setPurgeDayTarget(null)}
-        opened={purgeDayTarget !== null}
-        title="日を完全削除"
-      >
-        <Stack gap="md">
-          <Text>
-            {purgeDayTarget?.dateJst} と、その日の記録を完全に削除します。元に戻せません。
-          </Text>
-          <Group justify="flex-end">
-            <Button onClick={() => setPurgeDayTarget(null)} variant="default">
-              キャンセル
-            </Button>
-            <Button
-              color="red"
-              onClick={() => {
-                if (purgeDayTarget !== null) {
-                  onPurgeDay(purgeDayTarget._id);
-                  setPurgeDayTarget(null);
-                }
-              }}
-            >
-              完全削除
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
-      <Modal
-        centered
-        onClose={() => setPurgeRowTarget(null)}
-        opened={purgeRowTarget !== null}
-        title="記録を完全削除"
-      >
-        <Stack gap="md">
-          <Text>
-            {purgeRowTarget === null ? "" : rowSummary(purgeRowTarget)}
-            を完全に削除します。元に戻せません。
-          </Text>
-          <Group justify="flex-end">
-            <Button onClick={() => setPurgeRowTarget(null)} variant="default">
-              キャンセル
-            </Button>
-            <Button
-              color="red"
-              onClick={() => {
-                if (purgeRowTarget !== null) {
-                  onPurgeRow(purgeRowTarget._id);
-                  setPurgeRowTarget(null);
-                }
-              }}
-            >
-              完全削除
-            </Button>
-          </Group>
-        </Stack>
-      </Modal>
-      <ActionBar
-        opened={selectionCount > 0}
-        onClose={() => {
+      <TrashPurgeModals
+        clearDaySelection={clearDaySelection}
+        clearRowSelection={clearRowSelection}
+        onPurgeDay={onPurgeDay}
+        onPurgeRow={onPurgeRow}
+        purgeDayTarget={purgeDayTarget}
+        purgeRowTarget={purgeRowTarget}
+        setPurgeDayTarget={setPurgeDayTarget}
+        setPurgeRowTarget={setPurgeRowTarget}
+      />
+      <TrashSelectionActionBar
+        effectiveDayCount={effectiveDayIds.size}
+        hasFailedSelection={hasFailedSelection}
+        isRestoring={isRestoring}
+        onClear={() => {
           setSelectedDayIds(new Set());
           setSelectedRowIds(new Set());
+          setHasFailedSelection(false);
         }}
-        styles={{
-          root: {
-            bottom: "calc(var(--cairn-bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 12px)",
-          },
-        }}
-      >
-        <Stack gap={2}>
-          <Text size="sm">{selectionCount}件を選択中</Text>
-          {requiredDayIds.size > 0 ? (
-            <Text c="dimmed" size="xs">
-              選択した記録の親の日も復元します
-            </Text>
-          ) : null}
-        </Stack>
-        <ActionBar.Divider />
-        <Button disabled={isRestoring} onClick={() => void restoreSelected()} size="compact-sm">
-          {isRestoring ? "復元中…" : "選択を復元"}
-        </Button>
-        <ActionBar.CloseButton />
-      </ActionBar>
+        onRestore={() => void restoreSelected()}
+        requiredDayCount={requiredDayIds.size}
+        selectedRowCount={selectedRowIds.size}
+        selectionCount={selectionCount}
+      />
     </>
   );
 }

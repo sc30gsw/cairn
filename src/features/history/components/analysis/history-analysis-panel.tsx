@@ -96,6 +96,11 @@ function PaceChartCard({
           {subtitle}
         </Text>
       ) : null}
+      {referenceAreas?.length || referenceDots?.length ? (
+        <Text c="dimmed" size="xs">
+          オレンジ帯:週末 / オレンジ点:選択日
+        </Text>
+      ) : null}
       <CompositeChart
         data={data}
         dataKey="label"
