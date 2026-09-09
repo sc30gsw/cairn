@@ -14,14 +14,15 @@ async function restoreDaysSequentially(
   ownerId: string,
   dayIds: readonly Id<"days">[],
   index = 0,
+  results: Id<"days">[] = [],
 ): Promise<Id<"days">[]> {
   const dayId = dayIds[index];
   if (dayId === undefined) {
-    return [];
+    return results;
   }
   await restoreDay(ctx, ownerId, { dayId });
-  const remaining = await restoreDaysSequentially(ctx, ownerId, dayIds, index + 1);
-  return [dayId, ...remaining];
+  results.push(dayId);
+  return restoreDaysSequentially(ctx, ownerId, dayIds, index + 1, results);
 }
 
 async function restoreRowsSequentially(
@@ -32,10 +33,11 @@ async function restoreRowsSequentially(
   trashedParentDayIds: ReadonlySet<Id<"days">>,
   failedDayIds: ReadonlySet<Id<"days">>,
   index = 0,
+  results: Id<"rows">[] = [],
 ): Promise<Id<"rows">[]> {
   const rowId = rowIds[index];
   if (rowId === undefined) {
-    return [];
+    return results;
   }
   const dayId = rowDayIds.get(rowId);
   if (dayId !== undefined && trashedParentDayIds.has(dayId) && failedDayIds.has(dayId)) {
@@ -47,10 +49,12 @@ async function restoreRowsSequentially(
       trashedParentDayIds,
       failedDayIds,
       index + 1,
+      results,
     );
   }
   await restoreRow(ctx, ownerId, { rowId });
-  const remaining = await restoreRowsSequentially(
+  results.push(rowId);
+  return restoreRowsSequentially(
     ctx,
     ownerId,
     rowIds,
@@ -58,8 +62,8 @@ async function restoreRowsSequentially(
     trashedParentDayIds,
     failedDayIds,
     index + 1,
+    results,
   );
-  return [rowId, ...remaining];
 }
 
 export async function restoreMany(
