@@ -257,7 +257,7 @@ function PresetCreateForm({
           });
         }}
       >
-        <Grid align="flex-start" gap="sm">
+        <Grid align="flex-end" gap="sm">
           <Grid.Col span={{ base: 12, sm: 5 }}>
             <Field of={form} path={["name"]}>
               {(field) => (
@@ -343,7 +343,7 @@ function PresetEditor({
         }}
       >
         <Stack gap="sm">
-          <Grid align="flex-start" gap="sm">
+          <Grid align="flex-end" gap="sm">
             <Grid.Col span={{ base: 12, sm: 4 }}>
               <Field of={form} path={["name"]}>
                 {(field) => (
