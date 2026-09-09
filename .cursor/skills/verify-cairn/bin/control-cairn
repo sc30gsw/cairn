@@ -99,6 +99,45 @@ def start(name, args):
     tmux("new-session", "-d", "-s", name, "-c", str(WORK), command)
 
 
+def record_listeners(name, ports):
+    pid = int(tmux("display-message", "-p", "-t", name, "#{pane_pid}"))
+    tree = descendants(pid)
+    path = STATE / "owned-listeners.json"
+    recorded = json.loads(path.read_text()) if path.exists() else {}
+    for port in ports:
+        pids = listeners(port)
+        if not pids or not pids <= tree:
+            raise RuntimeError(f"Cannot record ownership for port {port}")
+        recorded[str(port)] = sorted(pids)
+    path.write_text(json.dumps(recorded, indent=2) + "\n")
+
+
+def stop_recorded_listeners():
+    path = STATE / "owned-listeners.json"
+    if not path.exists():
+        return
+    recorded = json.loads(path.read_text())
+    targets = set()
+    for port, pids in recorded.items():
+        targets |= listeners(int(port)) & set(pids)
+    for sig in (signal.SIGTERM, signal.SIGKILL):
+        for pid in targets:
+            try:
+                os.kill(pid, sig)
+            except ProcessLookupError:
+                pass
+        for _ in range(10):
+            remaining = {pid for pid in targets if Path(f"/proc/{pid}").exists()} if sys.platform != "darwin" else set()
+            if sys.platform == "darwin":
+                remaining = set()
+                for port, pids in recorded.items():
+                    remaining |= listeners(int(port)) & set(pids)
+            if not remaining:
+                return
+            time.sleep(0.2)
+        targets = remaining
+
+
 def local_env():
     path = WORK / ".env.local"
     if not path.exists():
@@ -138,6 +177,7 @@ def cleanup():
                 time.sleep(0.3)
             if alive(name):
                 tmux("kill-session", "-t", name)
+    stop_recorded_listeners()
     # 専用ソケットのサーバーだけを終了する。
     if Path(SOCKET).exists():
         try:
@@ -202,6 +242,7 @@ def launch():
         start("convex", ["vp", "exec", "convex", "dev", "--typecheck", "disable"])
         wait_for(lambda: local_env() and owned("convex", 3210) and http("http://127.0.0.1:3210/version")[0] == 200,
                  "owned local Convex and anonymous .env.local")
+        record_listeners("convex", (3210, 3211))
         auth = STATE / "auth.env"
         auth.write_text("BETTER_AUTH_SECRET=" + secrets.token_hex(32) + "\nSITE_URL=" + URL +
                         "\nBETTER_AUTH_TRUSTED_ORIGINS=" + URL + "\n")
@@ -213,6 +254,7 @@ def launch():
                  "Convex functions deployed")
         start("web", ["vp", "dev", "--host", "127.0.0.1", "--port", "3000", "--strictPort"])
         wait_for(lambda: owned("web", 3000) and http(URL)[0] == 200, "owned Cairn web")
+        record_listeners("web", (3000,))
         doctor()
     except BaseException:
         cleanup()
