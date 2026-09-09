@@ -1,15 +1,6 @@
 import { Input } from "@mantine/core";
 import type { ReactNode } from "react";
 
-type LabelAlignedCellProps = {
-  children: ReactNode;
-  description?: ReactNode;
-};
-
-export function LabelAlignedCell({ children, description }: LabelAlignedCellProps) {
-  return (
-    <Input.Wrapper description={description} label=" ">
-      {children}
-    </Input.Wrapper>
-  );
+export function LabelAlignedCell({ children }: Record<"children", ReactNode>) {
+  return <Input.Wrapper label=" ">{children}</Input.Wrapper>;
 }

@@ -47,8 +47,6 @@ type PresetListProps = {
   settingsCard?: ReactNode;
 };
 
-const EMPTY_FIELD_DESCRIPTION = <span aria-hidden="true">&nbsp;</span>;
-
 function weekdaySelectOptions(takenWeekdays: ReadonlySet<Weekday>) {
   return WEEKDAYS.map((value) => ({
     disabled: takenWeekdays.has(value),
@@ -265,7 +263,6 @@ function PresetCreateForm({
               {(field) => (
                 <TextInput
                   {...field.props}
-                  description={EMPTY_FIELD_DESCRIPTION}
                   error={field.errors?.[0]}
                   label="プリセット名"
                   value={field.input}
@@ -280,7 +277,6 @@ function PresetCreateForm({
                   {...field.props}
                   clearable
                   data={weekdayOptions}
-                  description="複数選択できます"
                   error={field.errors?.[0]}
                   label="曜日"
                   nothingFoundMessage="該当する曜日はありません"
@@ -293,7 +289,7 @@ function PresetCreateForm({
             </Field>
           </Grid.Col>
           <Grid.Col span={{ base: 12, sm: 2 }}>
-            <LabelAlignedCell description={EMPTY_FIELD_DESCRIPTION}>
+            <LabelAlignedCell>
               <Button fullWidth type="submit">
                 プリセットを追加
               </Button>
@@ -353,7 +349,6 @@ function PresetEditor({
                   <TextInput
                     {...field.props}
                     aria-label={`${preset.name}の新しい名前`}
-                    description={EMPTY_FIELD_DESCRIPTION}
                     error={field.errors?.[0]}
                     label="名前"
                     value={field.input}
@@ -369,7 +364,6 @@ function PresetEditor({
                     clearable
                     aria-label={`${preset.name}の曜日`}
                     data={weekdaySelectOptions(takenWeekdays(presets, preset._id))}
-                    description="複数選択できます"
                     error={field.errors?.[0]}
                     label="曜日"
                     nothingFoundMessage="該当する曜日はありません"
@@ -382,14 +376,14 @@ function PresetEditor({
               </Field>
             </Grid.Col>
             <Grid.Col span={{ base: 6, sm: 2 }}>
-              <LabelAlignedCell description={EMPTY_FIELD_DESCRIPTION}>
+              <LabelAlignedCell>
                 <Button aria-label={`${preset.name}を保存`} fullWidth type="submit">
                   保存
                 </Button>
               </LabelAlignedCell>
             </Grid.Col>
             <Grid.Col span={{ base: 6, sm: 2 }}>
-              <LabelAlignedCell description={EMPTY_FIELD_DESCRIPTION}>
+              <LabelAlignedCell>
                 <Button
                   aria-label={`${preset.name}を削除`}
                   color="red"
