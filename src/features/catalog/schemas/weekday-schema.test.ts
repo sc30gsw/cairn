@@ -8,11 +8,14 @@ import { presetWeekdayHash } from "~/lib/preset-weekday-hash";
 test("フォームの曜日も URL と同じ 0〜6 だけ通す", () => {
   expect(v.parse(WeekdaySchema, 1)).toBe(1);
   expect(() => v.parse(WeekdaySchema, 7)).toThrow();
-  expect(v.parse(CreatePresetSchema, { name: "月", weekday: 1 })).toEqual({
-    name: "月",
-    weekday: 1,
+  expect(v.parse(CreatePresetSchema, { name: "月・水", weekdays: ["3", "1"] })).toEqual({
+    name: "月・水",
+    weekdays: [3, 1],
   });
-  expect(() => v.parse(CreatePresetSchema, { name: "月" })).toThrow();
+  expect(() => v.parse(CreatePresetSchema, { name: "月", weekdays: [] })).toThrow();
+  expect(() => v.parse(CreatePresetSchema, { name: "月", weekdays: ["1", "1"] })).toThrow();
+  expect(() => v.parse(CreatePresetSchema, { name: "月", weekdays: [""] })).toThrow();
+  expect(() => v.parse(CreatePresetSchema, { name: "月", weekdays: ["7"] })).toThrow();
 });
 
 test("Select の文字列は同じスキーマで曜日にする", () => {

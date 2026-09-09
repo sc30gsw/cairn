@@ -86,6 +86,39 @@ export function isWeekday(value: number): value is Weekday {
   return Number.isInteger(value) && value >= 0 && value < WEEKDAY_NAMES.length;
 }
 
+export type PresetWeekdayFields = {
+  weekday?: number;
+  weekdays?: readonly number[];
+};
+
+export type PresetWeekdayMigrationPatch =
+  | { weekday: undefined }
+  | { weekday: undefined; weekdays: Weekday[] };
+
+export function normalizePresetWeekdays(preset: PresetWeekdayFields): Weekday[] {
+  const values = preset.weekdays ?? (preset.weekday === undefined ? [] : [preset.weekday]);
+  return [...new Set(values.filter(isWeekday))].toSorted((left, right) => left - right);
+}
+
+export function migratePresetWeekdayFields(
+  preset: PresetWeekdayFields,
+): PresetWeekdayMigrationPatch | undefined {
+  if (preset.weekdays !== undefined) {
+    return preset.weekday === undefined ? undefined : { weekday: undefined };
+  }
+  if (preset.weekday === undefined) {
+    return undefined;
+  }
+  return {
+    weekday: undefined,
+    weekdays: isWeekday(preset.weekday) ? [preset.weekday] : [],
+  };
+}
+
+export function presetUsesWeekday(preset: PresetWeekdayFields, weekday: Weekday): boolean {
+  return normalizePresetWeekdays(preset).includes(weekday);
+}
+
 export function seedLineNamesForWeekday(weekday: Weekday): readonly SeedItemName[] {
   if (weekday === 0 || weekday === 6) {
     return [];

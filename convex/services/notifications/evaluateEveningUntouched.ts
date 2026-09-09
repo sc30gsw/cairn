@@ -4,6 +4,7 @@ import { weekdayFromDateJst } from "../../lib/jst";
 import type { NotificationPayload } from "../../lib/validators";
 import { getLiveDay } from "../days/getLiveDay";
 import { liveRowsForDay } from "../days/liveRowsForDay";
+import { findUniquePresetForWeekday } from "../presets/helpers";
 
 const [, pendingStatus] = STATUSES;
 
@@ -21,13 +22,12 @@ export async function evaluateEveningUntouched(
     }
     return { dateJst, kind: "eveningUntouched", pendingCount, source: "day" };
   }
-  const preset = await ctx.db
+  const presets = await ctx.db
     .query("presets")
-    .withIndex("by_owner_and_weekday", (q) =>
-      q.eq("ownerId", ownerId).eq("weekday", weekdayFromDateJst(dateJst)),
-    )
-    .unique();
-  if (preset === null || preset.lines.length === 0) {
+    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+    .collect();
+  const preset = findUniquePresetForWeekday(presets, weekdayFromDateJst(dateJst));
+  if (preset === undefined || preset.lines.length === 0) {
     return null;
   }
   return { dateJst, kind: "eveningUntouched", pendingCount: preset.lines.length, source: "preset" };

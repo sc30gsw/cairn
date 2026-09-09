@@ -4,6 +4,7 @@ import { componentsGeneric } from "convex/server";
 
 import type { DataModel, Id } from "./_generated/dataModel";
 import type { MutationCtx } from "./_generated/server";
+import { migratePresetWeekdayFields } from "./lib/catalog";
 import schema from "./schema";
 import { getConnection } from "./services/calendarSync/getConnection";
 import { migrateConnections } from "./services/calendarSync/migrateConnections";
@@ -39,6 +40,11 @@ export const revertCheckpointParents = migrations.define({
       ? { parentGoalId: undefined }
       : undefined,
   table: "goals",
+});
+
+export const backfillPresetWeekdays = migrations.define({
+  migrateOne: (_ctx, preset) => migratePresetWeekdayFields(preset),
+  table: "presets",
 });
 
 export const backfillCalendarConnections = migrations.define({

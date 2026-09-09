@@ -1,6 +1,14 @@
 import * as v from "valibot";
 
-import { WeekdaySchema } from "~/features/catalog/schemas/weekday-schema";
+import { WeekdayFromSelectSchema } from "~/features/catalog/schemas/weekday-schema";
+
+const WEEKDAY_REQUIRED_MESSAGE = "曜日を1つ以上選んでください";
+
+const PresetWeekdaysSchema = v.pipe(
+  v.array(WeekdayFromSelectSchema),
+  v.minLength(1, WEEKDAY_REQUIRED_MESSAGE),
+  v.check((weekdays) => new Set(weekdays).size === weekdays.length, "同じ曜日を重複して選べません"),
+);
 
 const PresetLineSchema = v.object({
   content: v.pipe(v.string(), v.trim()),
@@ -10,12 +18,12 @@ const PresetLineSchema = v.object({
 
 export const CreatePresetSchema = v.object({
   name: v.pipe(v.string(), v.minLength(1, "名前は必須です")),
-  weekday: v.nonOptional(v.optional(WeekdaySchema), "曜日を選んでください"),
+  weekdays: PresetWeekdaysSchema,
 });
 
 const PresetMetaSchema = v.object({
   name: v.pipe(v.string(), v.minLength(1, "名前は必須です")),
-  weekday: WeekdaySchema,
+  weekdays: PresetWeekdaysSchema,
 });
 
 export const PresetSchema = v.object({

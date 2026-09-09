@@ -1,6 +1,35 @@
 import { expect, test } from "vite-plus/test";
 
-import { SEED_ITEMS, seedLineNamesForWeekday } from "./catalog";
+import {
+  migratePresetWeekdayFields,
+  normalizePresetWeekdays,
+  presetUsesWeekday,
+  SEED_ITEMS,
+  seedLineNamesForWeekday,
+} from "./catalog";
+
+test("旧プリセットの曜日を複数曜日の形で読める", () => {
+  expect(normalizePresetWeekdays({ weekday: 3 })).toEqual([3]);
+  expect(normalizePresetWeekdays({ weekday: 3, weekdays: [5, 1, 5] })).toEqual([1, 5]);
+  expect(presetUsesWeekday({ weekdays: [1, 3] }, 3)).toBe(true);
+  expect(presetUsesWeekday({ weekdays: [1, 3] }, 2)).toBe(false);
+});
+
+test("プリセットの曜日バックフィルは旧形式・不正値・再実行を扱う", () => {
+  expect(migratePresetWeekdayFields({ weekday: 3 })).toEqual({
+    weekday: undefined,
+    weekdays: [3],
+  });
+  expect(migratePresetWeekdayFields({ weekday: 99 })).toEqual({
+    weekday: undefined,
+    weekdays: [],
+  });
+  expect(migratePresetWeekdayFields({ weekdays: [1, 3] })).toBeUndefined();
+  expect(migratePresetWeekdayFields({ weekday: 1, weekdays: [1] })).toEqual({
+    weekday: undefined,
+  });
+  expect(migratePresetWeekdayFields({})).toBeUndefined();
+});
 
 test("初期項目は模試なしで CONTEXT の8つ", () => {
   expect(SEED_ITEMS.map((item) => item.name)).toEqual([

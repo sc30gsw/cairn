@@ -1,19 +1,18 @@
 import type { Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
-import { isWeekday, type Weekday } from "../../lib/catalog";
 import { requireValidMinutes } from "../../lib/domain";
 import { NotFoundError, ValidationFailedError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
-import { assertOwnedLines, assertWeekdayFree } from "./helpers";
+import type { PresetWeekdayInput } from "../../lib/validators";
+import { assertOwnedLines, assertWeekdaysFree, resolvePresetWeekdays } from "./helpers";
 
 export async function update(
   ctx: MutationCtx,
   ownerId: string,
-  args: {
+  args: PresetWeekdayInput & {
     lines: { content: string; itemId: Id<"items">; minutes: number }[];
     name: string;
     presetId: Id<"presets">;
-    weekday: Weekday;
   },
 ): Promise<null> {
   const preset = await ctx.db.get("presets", args.presetId);
@@ -26,20 +25,19 @@ export async function update(
   if (name === "") {
     throwDomain(new ValidationFailedError({ message: "プリセット名は必須です" }));
   }
-  if (!isWeekday(args.weekday)) {
-    throwDomain(new ValidationFailedError({ message: "曜日が不正です" }));
-  }
+  const weekdays = resolvePresetWeekdays(args);
   const lines = args.lines.map((line) => ({
     ...line,
     content: line.content.trim(),
     minutes: requireValidMinutes(line.minutes),
   }));
-  await assertWeekdayFree(ctx, ownerId, args.weekday, args.presetId);
+  await assertWeekdaysFree(ctx, ownerId, weekdays, args.presetId);
   await assertOwnedLines(ctx, ownerId, lines);
   await ctx.db.patch("presets", args.presetId, {
     lines,
     name,
-    weekday: args.weekday,
+    weekday: undefined,
+    weekdays,
   });
   return null;
 }

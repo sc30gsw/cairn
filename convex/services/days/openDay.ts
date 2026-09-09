@@ -1,6 +1,7 @@
 import type { MutationCtx } from "../../_generated/server";
 import { presetWeekdayFor } from "../../lib/holidayPreset";
 import { getSettings as getPresetSettings } from "../presets/getSettings";
+import { findUniquePresetForWeekday } from "../presets/helpers";
 import { loadOwnerReviewFlags } from "../reviews/loadOwnerReviewFlags";
 import { dueUnplacedFlags, placeDueReviews } from "../reviews/placeDueReviews";
 import { collapseExtraLiveDays } from "./collapseExtraLiveDays";
@@ -20,14 +21,15 @@ export async function openDay(
     return { applied: false };
   }
   const weekday = presetWeekdayFor(args.dateJst, await getPresetSettings(ctx, ownerId));
-  const [preset, flags] = await Promise.all([
+  const [presets, flags] = await Promise.all([
     ctx.db
       .query("presets")
-      .withIndex("by_owner_and_weekday", (q) => q.eq("ownerId", ownerId).eq("weekday", weekday))
-      .unique(),
+      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
+      .collect(),
     loadOwnerReviewFlags(ctx, ownerId),
   ]);
-  const presetLines = preset === null ? [] : preset.lines;
+  const preset = findUniquePresetForWeekday(presets, weekday);
+  const presetLines = preset?.lines ?? [];
   const dueFlags = dueUnplacedFlags(flags, args.dateJst);
   if (presetLines.length === 0 && dueFlags.length === 0) {
     return { applied: false };

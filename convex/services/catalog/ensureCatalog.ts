@@ -8,6 +8,7 @@ import {
   SEED_MINUTES,
   WEEKDAYS,
   WEEKDAY_NAMES,
+  normalizePresetWeekdays,
   seedLineNamesForWeekday,
 } from "../../lib/catalog";
 import { SEED_CATEGORIES } from "../../lib/categories";
@@ -111,9 +112,9 @@ export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<
 
   const existingPresets = await ctx.db
     .query("presets")
-    .withIndex("by_owner_and_weekday", (q) => q.eq("ownerId", ownerId))
+    .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
     .collect();
-  if (existingPresets.length === 0) {
+  if (!existingPresets.some((preset) => normalizePresetWeekdays(preset).length > 0)) {
     await Promise.all(
       WEEKDAYS.map((weekday) => {
         const name = WEEKDAY_NAMES[weekday];
@@ -134,7 +135,7 @@ export async function ensureCatalog(ctx: MutationCtx, ownerId: string): Promise<
           lines,
           name,
           ownerId,
-          weekday,
+          weekdays: [weekday],
         });
       }),
     );

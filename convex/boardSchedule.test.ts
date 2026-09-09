@@ -275,7 +275,7 @@ test("switchPreset で消える未着手の記録は boardScheduleEvents も一�
   });
 
   const presets = await t.query(api.queries.presets.list.list, {});
-  const otherPreset = presets.find((preset) => preset.weekday !== 1);
+  const otherPreset = presets.find((preset) => !preset.weekdays.includes(1));
   if (otherPreset === undefined) {
     throw new Error("expected another weekday preset");
   }

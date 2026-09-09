@@ -51,12 +51,12 @@ async function ownerWithWeekdayAndSundayPresets() {
   await t.mutation(api.mutations.presets.create.create, {
     lines: [{ content: "", itemId: weekdayItem, minutes: 20 }],
     name: "月曜",
-    weekday: 1,
+    weekdays: [1],
   });
   await t.mutation(api.mutations.presets.create.create, {
     lines: [{ content: "", itemId: sundayItem, minutes: 30 }],
     name: "日曜",
-    weekday: 0,
+    weekdays: [0],
   });
   return t;
 }

@@ -316,7 +316,7 @@ test("セクションはプリセット、記録、コンディションの順�
       day={day}
       todayJst="2026-08-17"
       items={items}
-      presets={[{ _id: "p1" as never, lines: [], name: "月曜日", weekday: 1 }]}
+      presets={[{ _id: "p1" as never, lines: [], name: "月曜日", weekdays: [1] }]}
     />,
   );
   const sectionTitles = getAllByRole("heading")
@@ -341,8 +341,8 @@ test("プリセットを選ぶと表示名が変わる", async () => {
       todayJst="2026-08-17"
       items={items}
       presets={[
-        { _id: "p1" as never, lines: [], name: "月曜日", weekday: 1 },
-        { _id: "p2" as never, lines: [], name: "火の雛形", weekday: 2 },
+        { _id: "p1" as never, lines: [], name: "月曜日", weekdays: [1] },
+        { _id: "p2" as never, lines: [], name: "火の雛形", weekdays: [2] },
       ]}
     />,
   );
@@ -420,7 +420,7 @@ test("過去の空日は休養で、プリセット切替とコピーがある",
       dateJst="2026-08-15"
       day={restDay}
       items={items}
-      presets={[{ _id: "p1" as never, lines: [], name: "土曜日", weekday: 6 }]}
+      presets={[{ _id: "p1" as never, lines: [], name: "土曜日", weekdays: [6] }]}
       todayJst="2026-08-17"
     />,
   );
@@ -487,8 +487,8 @@ test("昨日の確定をコピーできるときは押せる", () => {
   expect(onCopyYesterday).toHaveBeenCalledTimes(1);
 });
 
-const SATURDAY_PRESET = { _id: "pSat" as never, lines: [], name: "土曜日", weekday: 6 };
-const MONDAY_PRESET = { _id: "pMon" as never, lines: [], name: "月曜日", weekday: 1 };
+const SATURDAY_PRESET = { _id: "pSat" as never, lines: [], name: "土曜日", weekdays: [6] };
+const MONDAY_PRESET = { _id: "pMon" as never, lines: [], name: "月曜日", weekdays: [1] };
 
 test("過去の休養でその曜日の雛形を選ぶと切り替わる", async () => {
   onSwitchPreset.mockClear();

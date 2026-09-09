@@ -15,6 +15,7 @@ import {
   notificationPayloadValidator,
   notificationTriggerPrefsValidator,
   presetLineValidator,
+  presetWeekdaysValidator,
   pushSubscriptionKeysValidator,
   statusValidator,
   targetMetricValidator,
@@ -86,8 +87,9 @@ export default defineSchema({
     lines: v.array(presetLineValidator),
     name: v.string(),
     ownerId: v.string(),
-    weekday: v.number(),
-  }).index("by_owner_and_weekday", ["ownerId", "weekday"]),
+    weekday: v.optional(v.number()),
+    weekdays: v.optional(presetWeekdaysValidator),
+  }).index("by_owner", ["ownerId"]),
 
   rows: defineTable({
     content: v.string(),
