@@ -13,18 +13,12 @@ import { BoardScheduleEventForm } from "~/features/board/components/board-schedu
 import { renderBoardScheduleEvent } from "~/features/board/components/board-schedule-event-source";
 import { BoardScheduleExternalModal } from "~/features/board/components/board-schedule-external-modal";
 import { BoardScheduleNavigation } from "~/features/board/components/board-schedule-navigation";
-import { createBoardScheduleYearRenderDay } from "~/features/board/components/board-schedule-year-render-day";
+import { BoardScheduleYearDayPopover } from "~/features/board/components/board-schedule-year-day-popover";
 import { useBoardScheduleActions } from "~/features/board/hooks/use-board-schedule-actions";
+import { useBoardScheduleInteractions } from "~/features/board/hooks/use-board-schedule-interactions";
 import { useBoardScheduleUi } from "~/features/board/hooks/use-board-schedule-ui";
 import type { BoardViewState } from "~/features/board/hooks/use-board-view";
-import {
-  BOARD_ALL_DAY_VISIBLE_LIMIT,
-  boardExternalEventId,
-  boardScheduleEventSourceId,
-  movedScheduleRange,
-  isBoardAllDayMoreEvent,
-  isBoardExternalEvent,
-} from "~/features/board/lib/board-schedule-events";
+import { BOARD_ALL_DAY_VISIBLE_LIMIT } from "~/features/board/lib/board-schedule-events";
 import {
   ALL_DAY_ROW_HEIGHT,
   ALL_DAY_VISIBLE_ROWS,
@@ -88,10 +82,6 @@ type BoardScheduleDialogsProps = {
   rows: readonly BoardRow[];
   ui: BoardScheduleUi;
 };
-
-type EditableScheduleEvent =
-  | { kind: "block"; value: BoardScheduleBlock }
-  | { kind: "external"; value: BoardExternalEvent };
 
 function BoardScheduleDialogs({ actions, pending, rows, ui }: BoardScheduleDialogsProps) {
   return (
@@ -224,30 +214,15 @@ export function BoardSchedule({
     withAllDaySlot: ui.dayAllDayEvents.length > 0,
   } as const satisfies ScheduleProps["dayViewProps"];
 
-  function findEditableScheduleEvent(eventId: string | number): EditableScheduleEvent | null {
-    const sourceId = boardScheduleEventSourceId(eventId);
-    if (ui.editableExternalEventIds.has(sourceId)) {
-      const external = externals.find((entry) => entry._id === boardExternalEventId(eventId));
-      return external === undefined ? null : { kind: "external", value: external };
-    }
-    if (!ui.editableBlockIds.has(sourceId)) {
-      return null;
-    }
-    const block = blocks.find((entry) => entry._id === sourceId);
-    return block === undefined ? null : { kind: "block", value: block };
-  }
-
-  function saveEventRange(eventId: string | number, startAt: string, endAt: string) {
-    const editableEvent = findEditableScheduleEvent(eventId);
-    if (editableEvent === null) {
-      return;
-    }
-    if (editableEvent.kind === "external") {
-      void onMoveExternal({ endAt, externalId: editableEvent.value._id, startAt });
-      return;
-    }
-    void onMoveBlock({ blockId: editableEvent.value._id, endAt, startAt });
-  }
+  const interactionProps = useBoardScheduleInteractions({
+    actions: { onMoveBlock, onMoveExternal },
+    blocks,
+    canCreate: rows.length > 0,
+    externals,
+    isCompact,
+    pending,
+    ui,
+  });
 
   function handleDayClick(day: DateStringValue, event: MouseEvent<HTMLButtonElement>) {
     if (scheduleView === "year") {
@@ -272,21 +247,25 @@ export function BoardSchedule({
       "aria-haspopup": "dialog",
     }),
     withOutsideDays: false,
-    renderDay: createBoardScheduleYearRenderDay({
-      baseEvents: ui.baseEvents,
-      canAdd: rows.length > 0,
-      clickableEventIds: ui.clickableEventIds,
-      openedDate: openedYearDay,
-      popoverId: yearPopoverId,
-      onClose: () => {
-        setOpenedYearDay(null);
-        yearDayTriggerRef.current?.focus();
-      },
-      onAdd: (day) => {
-        ui.openCreate(`${day} ${DEFAULT_DAY_BLOCK_START}`, `${day} ${DEFAULT_DAY_BLOCK_END}`);
-      },
-      onEditBlock: ui.openFromEvent,
-    }),
+    renderDay: (date, dayEvents) => (
+      <BoardScheduleYearDayPopover
+        baseEvents={ui.baseEvents}
+        canAdd={rows.length > 0}
+        clickableEventIds={ui.clickableEventIds}
+        dateJst={date}
+        dayEvents={dayEvents}
+        selected={openedYearDay === date}
+        popoverId={`${yearPopoverId}-${date}`}
+        onClose={() => {
+          setOpenedYearDay(null);
+          yearDayTriggerRef.current?.focus();
+        }}
+        onAdd={(day) => {
+          ui.openCreate(`${day} ${DEFAULT_DAY_BLOCK_START}`, `${day} ${DEFAULT_DAY_BLOCK_END}`);
+        }}
+        onEditBlock={ui.openFromEvent}
+      />
+    ),
   } as const satisfies ScheduleProps["yearViewProps"];
 
   return (
@@ -322,58 +301,7 @@ export function BoardSchedule({
           />
           <div className={classes.boardScheduleRoot} data-view={scheduleView} ref={scheduleRootRef}>
             <Schedule
-              {...(scheduleView === "year"
-                ? {}
-                : {
-                    canDragEvent: (event) =>
-                      !pending &&
-                      (ui.editableBlockIds.has(boardScheduleEventSourceId(event.id)) ||
-                        ui.editableExternalEventIds.has(boardScheduleEventSourceId(event.id))),
-                    onEventClick: pending ? undefined : ui.handleEventClick,
-                    onEventDrop: pending
-                      ? undefined
-                      : ({ event, eventId, newStart }) => {
-                          ui.collapseAllDayExpand();
-                          const editableEvent = findEditableScheduleEvent(eventId);
-                          if (editableEvent === null) {
-                            return;
-                          }
-                          const range = movedScheduleRange(
-                            editableEvent.value,
-                            event.start,
-                            newStart,
-                          );
-                          saveEventRange(eventId, range.startAt, range.endAt);
-                        },
-                    canResizeEvent: (event) =>
-                      !pending &&
-                      (ui.editableBlockIds.has(boardScheduleEventSourceId(event.id)) ||
-                        ui.editableExternalEventIds.has(boardScheduleEventSourceId(event.id))),
-                    onEventResize: pending
-                      ? undefined
-                      : ({ eventId, newEnd, newStart }) => {
-                          ui.collapseAllDayExpand();
-                          saveEventRange(eventId, newStart, newEnd);
-                        },
-                    onTimeSlotClick: pending
-                      ? undefined
-                      : ({ slotEnd, slotStart }) => {
-                          ui.openCreate(slotStart, slotEnd);
-                        },
-                    onSlotDragEnd: pending ? undefined : ui.openCreate,
-                    renderEventBody: (event) => {
-                      if (isBoardAllDayMoreEvent(event.id)) {
-                        return <span data-board-all-day-more="true">{event.title}</span>;
-                      }
-                      if (isBoardExternalEvent(event.id)) {
-                        return <span data-board-external="true">{event.title}</span>;
-                      }
-                      return event.title;
-                    },
-                    withDragSlotSelect: !pending && rows.length > 0 && !isCompact,
-                    withEventsDragAndDrop: !pending && !isCompact,
-                    withEventResize: !pending && !isCompact,
-                  })}
+              {...(scheduleView === "year" ? {} : interactionProps)}
               date={anchorDateJst}
               events={
                 scheduleView === "day" || scheduleView === "week"

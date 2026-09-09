@@ -188,6 +188,13 @@ export function HistoryAnalysisPanel({
   const scopeDays = daysInAnalysisScope(scope, selectedDateJst, month, heatmapDays, weekDays);
   const weekPaceData = buildWeekPaceChartData(week.byDay, heatmapDays);
   const monthPaceData = buildMonthPaceChartData(month.days);
+  const breakdown = { day, week, month }[scope];
+  const breakdownTitle = { day: "日次内訳", week: "週次内訳", month: "月次内訳" }[scope];
+  const periodLabel = {
+    day: selectedDateJst,
+    week: `${week.weekStart} 〜 ${week.weekEnd}`,
+    month: formatYearMonth(yearMonth),
+  }[scope];
 
   return (
     <Stack gap="md">
@@ -203,9 +210,7 @@ export function HistoryAnalysisPanel({
         value={scope}
       />
       <Text c="dimmed" size="sm" ta="center">
-        {scope === "day" && selectedDateJst}
-        {scope === "week" && `${week.weekStart} 〜 ${week.weekEnd}`}
-        {scope === "month" && formatYearMonth(yearMonth)}
+        {periodLabel}
       </Text>
 
       {scope === "month" ? (
@@ -246,10 +251,7 @@ export function HistoryAnalysisPanel({
           </Grid.Col>
         ) : null}
         <Grid.Col span={{ base: 12, md: scope === "day" ? 12 : 6 }}>
-          <DonutSection
-            breakdown={scope === "day" ? day : scope === "week" ? week : month}
-            title={scope === "day" ? "日次内訳" : scope === "week" ? "週次内訳" : "月次内訳"}
-          />
+          <DonutSection breakdown={breakdown} title={breakdownTitle} />
         </Grid.Col>
       </Grid>
 
@@ -274,29 +276,12 @@ export function HistoryAnalysisPanel({
 
       <Stack gap="xs">
         <Title order={4}>完了内訳</Title>
-        <BreakdownTable
-          confirmedMinutes={
-            scope === "day"
-              ? day.confirmedMinutes
-              : scope === "week"
-                ? week.confirmedMinutes
-                : month.confirmedMinutes
-          }
-          rows={scope === "day" ? day.rows : scope === "week" ? week.rows : month.rows}
-        />
+        <BreakdownTable confirmedMinutes={breakdown.confirmedMinutes} rows={breakdown.rows} />
       </Stack>
 
       <Stack gap="xs">
         <Title order={4}>コンディション別の学習量</Title>
-        <ConditionVolumeTable
-          rows={
-            scope === "day"
-              ? day.byCondition
-              : scope === "week"
-                ? week.byCondition
-                : month.byCondition
-          }
-        />
+        <ConditionVolumeTable rows={breakdown.byCondition} />
       </Stack>
 
       <HistoryConditionMemoSections
