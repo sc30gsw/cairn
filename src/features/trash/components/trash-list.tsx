@@ -16,6 +16,7 @@ import { Result } from "better-result";
 import { useState } from "react";
 import { TRASH_PURGE_SELECTION_LIMIT } from "~domain/trashSelection";
 
+import { OverflowTooltip } from "~/components/overflow-tooltip";
 import { PageTitle } from "~/components/page-title";
 import type {
   PurgeDayInput,
@@ -88,6 +89,19 @@ function rowSummary(row: TrashRow) {
   const content = row.content.trim();
   const detail = content === "" ? `${row.minutes}分` : `${content} ${row.minutes}分`;
   return `${row.dateJst} ${row.itemName}（${detail}・${trashStatusLabel(row.status)}）`;
+}
+
+function TrashRowLabel({ row }: { row: TrashRow }) {
+  const summary = rowSummary(row);
+  return (
+    <OverflowTooltip<HTMLSpanElement> content={summary}>
+      {(ref) => (
+        <Text component="span" ref={ref} lineClamp={1}>
+          {summary}
+        </Text>
+      )}
+    </OverflowTooltip>
+  );
 }
 
 function TrashPurgeModals({
@@ -395,7 +409,7 @@ function TrashRowCard({
             <Grid.Col span="auto">
               <Checkbox
                 checked={selectedRowIds.has(row._id)}
-                label={rowSummary(row)}
+                label={<TrashRowLabel row={row} />}
                 onChange={() => onToggle(row)}
               />
             </Grid.Col>

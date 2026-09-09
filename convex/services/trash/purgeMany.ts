@@ -4,7 +4,10 @@ import { NotFoundError, ValidationFailedError } from "../../lib/errors";
 import type { OwnerId } from "../../lib/owner";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { deleteRowsByIds } from "../../lib/trash";
-import { TRASH_PURGE_SELECTION_LIMIT } from "../../lib/trashSelection";
+import {
+  TRASH_PURGE_EXPANDED_DOCUMENT_LIMIT,
+  TRASH_PURGE_SELECTION_LIMIT,
+} from "../../lib/trashSelection";
 import type { PurgeManyArgs } from "../../lib/validators/trash";
 import { purgeDay } from "./purgeDay";
 
@@ -15,6 +18,76 @@ function throwMissing(resource: "日" | "記録"): never {
       resource,
     }),
   );
+}
+
+function throwTooMuchWork(): never {
+  throwDomain(
+    new ValidationFailedError({
+      message: "関連する記録と予定が多すぎます。選択を減らしてもう一度お試しください",
+    }),
+  );
+}
+
+async function collectRowsForDays(
+  ctx: MutationCtx,
+  dayIds: readonly Id<"days">[],
+  affectedRowIds: Set<Id<"rows">>,
+  index = 0,
+): Promise<void> {
+  const dayId = dayIds[index];
+  if (dayId === undefined) {
+    return;
+  }
+  const remaining = TRASH_PURGE_EXPANDED_DOCUMENT_LIMIT - dayIds.length - affectedRowIds.size;
+  const rows = await ctx.db
+    .query("rows")
+    .withIndex("by_day", (q) => q.eq("dayId", dayId))
+    .take(remaining + 1);
+  for (const row of rows) {
+    affectedRowIds.add(row._id);
+  }
+  if (affectedRowIds.size + dayIds.length > TRASH_PURGE_EXPANDED_DOCUMENT_LIMIT) {
+    throwTooMuchWork();
+  }
+  await collectRowsForDays(ctx, dayIds, affectedRowIds, index + 1);
+}
+
+async function countScheduleEvents(
+  ctx: MutationCtx,
+  rowIds: readonly Id<"rows">[],
+  workCount: number,
+  index = 0,
+): Promise<number> {
+  const rowId = rowIds[index];
+  if (rowId === undefined) {
+    return workCount;
+  }
+  const events = await ctx.db
+    .query("boardScheduleEvents")
+    .withIndex("by_row", (q) => q.eq("rowId", rowId))
+    .take(TRASH_PURGE_EXPANDED_DOCUMENT_LIMIT - workCount + 1);
+  const nextWorkCount = workCount + events.length;
+  if (nextWorkCount > TRASH_PURGE_EXPANDED_DOCUMENT_LIMIT) {
+    return nextWorkCount;
+  }
+  return countScheduleEvents(ctx, rowIds, nextWorkCount, index + 1);
+}
+
+async function assertBoundedPurgeWork(
+  ctx: MutationCtx,
+  dayIds: readonly Id<"days">[],
+  directRowIds: readonly Id<"rows">[],
+): Promise<void> {
+  const affectedRowIds = new Set(directRowIds);
+  await collectRowsForDays(ctx, dayIds, affectedRowIds);
+  const workCount = await countScheduleEvents(
+    ctx,
+    [...affectedRowIds],
+    dayIds.length + affectedRowIds.size,
+  );
+  if (workCount > TRASH_PURGE_EXPANDED_DOCUMENT_LIMIT) {
+    throwTooMuchWork();
+  }
 }
 
 async function purgeDaysSequentially(
@@ -63,6 +136,7 @@ export async function purgeMany(
     return row !== null && rowId !== undefined && !selectedDayIds.has(row.dayId) ? [rowId] : [];
   });
 
+  await assertBoundedPurgeWork(ctx, dayIds, directRowIds);
   await purgeDaysSequentially(ctx, ownerId, dayIds);
   await deleteRowsByIds(ctx, directRowIds);
   return null;

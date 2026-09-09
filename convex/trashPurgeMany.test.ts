@@ -4,7 +4,10 @@ import { expect, test } from "vite-plus/test";
 
 import { api, components } from "./_generated/api";
 import authSchema from "./betterAuth/schema";
-import { TRASH_PURGE_SELECTION_LIMIT } from "./lib/trashSelection";
+import {
+  TRASH_PURGE_EXPANDED_DOCUMENT_LIMIT,
+  TRASH_PURGE_SELECTION_LIMIT,
+} from "./lib/trashSelection";
 import schema from "./schema";
 
 const modules = import.meta.glob([
@@ -267,4 +270,44 @@ test("一括完全削除の上限を超えた場合は削除しない", async ()
     t.mutation(api.mutations.trash.purgeMany.purgeMany, { dayIds, rowIds: [] }),
   ).rejects.toThrow();
   expect(await t.run((ctx) => ctx.db.get("days", firstDayId))).not.toBeNull();
+});
+
+test("選択した日の配下を含めて削除上限を超える場合は削除しない", async () => {
+  const t = await ownerWithCatalog();
+  await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
+  const page = await t.query(api.queries.days.get.get, {
+    dateJst: MONDAY,
+    todayJst: MONDAY,
+  });
+  const template = page.rows[0];
+  if (page.day === null || template === undefined) {
+    throw new Error("expected a day and row");
+  }
+  const day = page.day;
+  await t.run((ctx) =>
+    Promise.all(
+      Array.from({ length: TRASH_PURGE_EXPANDED_DOCUMENT_LIMIT }, (_, index) =>
+        ctx.db.insert("rows", {
+          content: `row ${index}`,
+          dateJst: MONDAY,
+          dayId: day._id,
+          deletedAt: 1,
+          itemId: template.itemId,
+          minutes: 1,
+          ownerId: OWNER.subject,
+          sortOrder: index,
+          status: template.status,
+        }),
+      ),
+    ),
+  );
+  await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: MONDAY });
+
+  await expect(
+    t.mutation(api.mutations.trash.purgeMany.purgeMany, {
+      dayIds: [day._id],
+      rowIds: [],
+    }),
+  ).rejects.toThrow();
+  expect(await t.run((ctx) => ctx.db.get("days", day._id))).not.toBeNull();
 });
