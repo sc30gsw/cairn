@@ -191,7 +191,8 @@ export function TrashList({
   const [selectedDayIds, setSelectedDayIds] = useState<Set<TrashDay["_id"]>>(() => new Set());
   const [selectedRowIds, setSelectedRowIds] = useState<Set<TrashRow["_id"]>>(() => new Set());
   const [isRestoring, setIsRestoring] = useState(false);
-  const [hasFailedSelection, setHasFailedSelection] = useState(false);
+  const [failedDayIds, setFailedDayIds] = useState<Set<TrashDay["_id"]>>(() => new Set());
+  const [failedRowIds, setFailedRowIds] = useState<Set<TrashRow["_id"]>>(() => new Set());
   const trashedDayIds = new Set(trash.days.map((day) => day._id));
   const requiredDayIds = new Set<TrashDay["_id"]>();
   for (const row of trash.rows) {
@@ -201,6 +202,9 @@ export function TrashList({
   }
   const effectiveDayIds = new Set([...selectedDayIds, ...requiredDayIds]);
   const selectionCount = effectiveDayIds.size + selectedRowIds.size;
+  const hasFailedSelection =
+    [...effectiveDayIds].some((dayId) => failedDayIds.has(dayId)) ||
+    [...selectedRowIds].some((rowId) => failedRowIds.has(rowId));
   const allDaysSelected =
     trash.days.length > 0 && trash.days.every((day) => effectiveDayIds.has(day._id));
   const allRowsSelected =
@@ -250,7 +254,8 @@ export function TrashList({
       if (result === null) {
         return;
       }
-      setHasFailedSelection(result.failedDayIds.length > 0 || result.failedRowIds.length > 0);
+      setFailedDayIds(new Set(result.failedDayIds));
+      setFailedRowIds(new Set(result.failedRowIds));
       setSelectedDayIds((current) => {
         const restored = new Set(result.restoredDayIds);
         return new Set([...current].filter((dayId) => !restored.has(dayId)));
@@ -278,10 +283,20 @@ export function TrashList({
           ),
         ),
     );
+    setFailedDayIds((current) => {
+      const next = new Set(current);
+      next.delete(dayId);
+      return next;
+    });
   };
 
   const clearRowSelection = (rowId: TrashRow["_id"]) => {
     setSelectedRowIds((current) => {
+      const next = new Set(current);
+      next.delete(rowId);
+      return next;
+    });
+    setFailedRowIds((current) => {
       const next = new Set(current);
       next.delete(rowId);
       return next;
@@ -421,7 +436,8 @@ export function TrashList({
         onClear={() => {
           setSelectedDayIds(new Set());
           setSelectedRowIds(new Set());
-          setHasFailedSelection(false);
+          setFailedDayIds(new Set());
+          setFailedRowIds(new Set());
         }}
         onRestore={() => void restoreSelected()}
         requiredDayCount={requiredDayIds.size}
