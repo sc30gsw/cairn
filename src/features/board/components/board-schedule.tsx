@@ -82,18 +82,18 @@ type BoardScheduleProps = {
 
 type BoardScheduleActions = ReturnType<typeof useBoardScheduleActions>;
 type BoardScheduleUi = ReturnType<typeof useBoardScheduleUi>;
-
-function BoardScheduleDialogs({
-  actions,
-  pending,
-  rows,
-  ui,
-}: {
+type BoardScheduleDialogsProps = {
   actions: BoardScheduleActions;
   pending: boolean;
   rows: readonly BoardRow[];
   ui: BoardScheduleUi;
-}) {
+};
+
+type EditableScheduleEvent =
+  | { kind: "block"; value: BoardScheduleBlock }
+  | { kind: "external"; value: BoardExternalEvent };
+
+function BoardScheduleDialogs({ actions, pending, rows, ui }: BoardScheduleDialogsProps) {
   return (
     <>
       <BoardScheduleExternalModal
@@ -224,29 +224,29 @@ export function BoardSchedule({
     withAllDaySlot: ui.dayAllDayEvents.length > 0,
   } as const satisfies ScheduleProps["dayViewProps"];
 
-  function saveEventRange(eventId: string | number, startAt: string, endAt: string) {
+  function findEditableScheduleEvent(eventId: string | number): EditableScheduleEvent | null {
     const sourceId = boardScheduleEventSourceId(eventId);
     if (ui.editableExternalEventIds.has(sourceId)) {
       const external = externals.find((entry) => entry._id === boardExternalEventId(eventId));
-      if (external === undefined) {
-        return;
-      }
-      void onMoveExternal({
-        endAt,
-        externalId: external._id,
-        startAt,
-      });
-      return;
+      return external === undefined ? null : { kind: "external", value: external };
+    }
+    if (!ui.editableBlockIds.has(sourceId)) {
+      return null;
     }
     const block = blocks.find((entry) => entry._id === sourceId);
-    if (block === undefined || !ui.editableBlockIds.has(sourceId)) {
+    return block === undefined ? null : { kind: "block", value: block };
+  }
+
+  function saveEventRange(eventId: string | number, startAt: string, endAt: string) {
+    const editableEvent = findEditableScheduleEvent(eventId);
+    if (editableEvent === null) {
       return;
     }
-    void onMoveBlock({
-      blockId: block._id,
-      endAt,
-      startAt,
-    });
+    if (editableEvent.kind === "external") {
+      void onMoveExternal({ endAt, externalId: editableEvent.value._id, startAt });
+      return;
+    }
+    void onMoveBlock({ blockId: editableEvent.value._id, endAt, startAt });
   }
 
   function handleDayClick(day: DateStringValue, event: MouseEvent<HTMLButtonElement>) {
@@ -334,26 +334,15 @@ export function BoardSchedule({
                       ? undefined
                       : ({ event, eventId, newStart }) => {
                           ui.collapseAllDayExpand();
-                          if (
-                            ui.editableExternalEventIds.has(boardScheduleEventSourceId(eventId))
-                          ) {
-                            const external = externals.find(
-                              (entry) => entry._id === boardExternalEventId(eventId),
-                            );
-                            if (external === undefined) {
-                              return;
-                            }
-                            const range = movedScheduleRange(external, event.start, newStart);
-                            saveEventRange(eventId, range.startAt, range.endAt);
+                          const editableEvent = findEditableScheduleEvent(eventId);
+                          if (editableEvent === null) {
                             return;
                           }
-                          const block = blocks.find(
-                            (entry) => entry._id === boardScheduleEventSourceId(eventId),
+                          const range = movedScheduleRange(
+                            editableEvent.value,
+                            event.start,
+                            newStart,
                           );
-                          if (block === undefined) {
-                            return;
-                          }
-                          const range = movedScheduleRange(block, event.start, newStart);
                           saveEventRange(eventId, range.startAt, range.endAt);
                         },
                     canResizeEvent: (event) =>

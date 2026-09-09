@@ -29,7 +29,15 @@ export type WeekdayCategoryMatrixCell = {
   y: string;
 };
 
-export const WEEKDAY_CATEGORY_MATRIX_LABELS = ["月", "火", "水", "木", "金", "土", "日"] as const;
+export const WEEKDAY_CATEGORY_MATRIX_LABELS = [
+  "月",
+  "火",
+  "水",
+  "木",
+  "金",
+  "土",
+  "日",
+] as const satisfies readonly string[];
 
 const WEEKDAY_LABEL_BY_VALUE = new Map(
   WEEKDAY_DISPLAY_ORDER.map((weekday, index) => [weekday, WEEKDAY_CATEGORY_MATRIX_LABELS[index]]),
@@ -62,6 +70,7 @@ export function buildDonutCells(
 
 export type PaceChartPoint = {
   dateJst: DateJst;
+  kind: HeatmapDay["kind"];
   label: string;
   完了: number;
   均: number;
@@ -95,10 +104,14 @@ export function paceChartMonthTitle(yearMonth: string): string {
 }
 
 export function buildMonthPaceChartData(
-  days: readonly Pick<MonthBreakdown["days"][number], "dateJst" | "minutes" | "movingAverage">[],
+  days: readonly Pick<
+    MonthBreakdown["days"][number],
+    "dateJst" | "kind" | "minutes" | "movingAverage"
+  >[],
 ): PaceChartPoint[] {
   return days.map((day) => ({
     dateJst: day.dateJst,
+    kind: day.kind,
     label: paceChartDayLabel(day.dateJst),
     完了: day.minutes,
     均: day.movingAverage,
@@ -106,12 +119,13 @@ export function buildMonthPaceChartData(
 }
 
 export function buildWeekPaceChartData(
-  byDay: readonly Pick<WeekBreakdown["byDay"][number], "confirmedMinutes" | "dateJst">[],
+  byDay: readonly Pick<WeekBreakdown["byDay"][number], "confirmedMinutes" | "dateJst" | "kind">[],
   heatmapDays: readonly Pick<HeatmapDay, "dateJst" | "movingAverage">[],
 ): PaceChartPoint[] {
   const avgByDate = new Map(heatmapDays.map((day) => [day.dateJst, day.movingAverage]));
   return byDay.map((day) => ({
     dateJst: day.dateJst,
+    kind: day.kind,
     label: paceChartDayLabel(day.dateJst),
     完了: day.confirmedMinutes,
     均: avgByDate.get(day.dateJst) ?? 0,
@@ -144,7 +158,12 @@ export function buildPaceSelectedDateReferenceDots(
   selectedDateJst: DateJst,
 ): ChartReferenceDotProps[] {
   const point = data.find((entry) => entry.dateJst === selectedDateJst);
-  if (point === undefined) {
+  if (
+    point === undefined ||
+    point.kind === "todayEmpty" ||
+    point.kind === "unrecorded" ||
+    point.kind === "beforeRegistration"
+  ) {
     return [];
   }
   return [{ color: "orange.7", label: "選択日", x: point.label, y: point.完了 }];

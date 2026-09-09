@@ -30,9 +30,18 @@ export const trashPageValidator = v.object({
 
 export type TrashPageDto = Infer<typeof trashPageValidator>;
 
+export const restoreManyArgsValidator = v.object({
+  dayIds: v.array(v.id("days")),
+  rowIds: v.array(v.id("rows")),
+});
+
+export type RestoreManyArgs = Infer<typeof restoreManyArgsValidator>;
+
 export const restoreTrashResultValidator = v.object({
   failedDayIds: v.array(v.id("days")),
+  failedDayReasons: v.array(v.object({ dayId: v.id("days"), reason: v.string() })),
   failedRowIds: v.array(v.id("rows")),
+  failedRowReasons: v.array(v.object({ reason: v.string(), rowId: v.id("rows") })),
   restoredDayIds: v.array(v.id("days")),
   restoredRowIds: v.array(v.id("rows")),
 });

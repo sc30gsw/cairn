@@ -24,7 +24,11 @@ export function WeekdayCategoryMatrix({
   title,
 }: WeekdayCategoryMatrixProps) {
   const data = buildWeekdayCategoryMatrix(events, days, todayJst, categories);
-  const hasEligibleDay = data.some((cell) => cell.value !== null);
+  const hasEligibleDay = days.some(
+    (day) =>
+      day.dateJst < todayJst && day.kind !== "beforeRegistration" && day.kind !== "unrecorded",
+  );
+  const hasMatrix = hasEligibleDay && data.length > 0;
   const maxAverage = Math.max(0, ...data.map((cell) => cell.value ?? 0));
 
   return (
@@ -35,7 +39,7 @@ export function WeekdayCategoryMatrix({
       <Text c="dimmed" size="sm">
         {title}の昨日まで。休養日は0分として、カテゴリごとの曜日別1日平均を表示します。
       </Text>
-      {hasEligibleDay ? (
+      {hasMatrix ? (
         <MatrixChart
           aria-label={`${title}の曜日別カテゴリ平均分数`}
           cellRadius={4}
@@ -57,10 +61,12 @@ export function WeekdayCategoryMatrix({
         />
       ) : (
         <Text c="dimmed" mt="md" ta="center">
-          比較できる対象日がありません。
+          {hasEligibleDay
+            ? "対象期間に確定した記録がありません。"
+            : "比較できる対象日がありません。"}
         </Text>
       )}
-      {hasEligibleDay ? (
+      {hasMatrix ? (
         <ScrollArea mt="md" type="auto">
           <Table captionSide="bottom" highlightOnHover miw={560} striped withTableBorder>
             <Table.Caption>

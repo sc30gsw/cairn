@@ -67,7 +67,9 @@ test("記録を選ぶと親の日を先に復元し、指定した記録だけ�
 
   expect(result).toEqual({
     failedDayIds: [],
+    failedDayReasons: [],
     failedRowIds: [],
+    failedRowReasons: [],
     restoredDayIds: [page.day._id],
     restoredRowIds: [row._id],
   });
@@ -109,8 +111,42 @@ test("すでに復元された対象は失敗として残り、再試行結果�
 
   expect(result).toEqual({
     failedDayIds: [page.day._id],
+    failedDayReasons: [{ dayId: page.day._id, reason: "ゴミ箱にその日はありません" }],
     failedRowIds: [row._id],
+    failedRowReasons: [{ reason: "ゴミ箱にその記録がありません", rowId: row._id }],
     restoredDayIds: [],
     restoredRowIds: [],
   });
+});
+
+test("一部の復元に失敗しても成功した対象は復元済みになる", async () => {
+  const t = await owner();
+  await t.mutation(api.mutations.catalog.ensure.ensure, {});
+  await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
+  const page = await t.query(api.queries.days.get.get, {
+    dateJst: MONDAY,
+    todayJst: MONDAY,
+  });
+  if (page.day === null) {
+    throw new Error("expected a day");
+  }
+
+  await t.mutation(api.mutations.trash.removeDay.removeDay, { dateJst: MONDAY });
+  const missingDayId = await t.run((ctx) =>
+    ctx.db.insert("days", {
+      dateJst: "2026-08-18",
+      deletedAt: 1,
+      ownerId: "another-owner",
+    }),
+  );
+  const result = await t.mutation(api.mutations.trash.restoreMany.restoreMany, {
+    dayIds: [page.day._id, missingDayId],
+    rowIds: [],
+  });
+
+  expect(result.restoredDayIds).toEqual([page.day._id]);
+  expect(result.failedDayIds).toEqual([missingDayId]);
+  expect(result.failedDayReasons).toEqual([
+    { dayId: missingDayId, reason: "ゴミ箱にその日はありません" },
+  ]);
 });

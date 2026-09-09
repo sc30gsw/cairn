@@ -33,7 +33,7 @@
 
 ## 追加機能の採用計画
 
-以下は対話で選んだ追加機能の計画であり、実装には未着手。既存のデザインを保ち、履歴・方法カタログ・ゴミ箱を改善する。実装順は次のとおり。
+以下は対話で選んだ追加機能の計画であり、既存のデザインを保ったまま今回実装した。履歴・方法カタログ・ゴミ箱を改善し、実装順は次のとおり。
 
 | 順序 | 採用する機能 | 画面と目的 |
 | --- | --- | --- |
@@ -100,13 +100,13 @@ Mantine の [MatrixChart](https://mantine.dev/charts/matrix-chart/) は数値と
 
 ### 5. 予定の移動・リサイズ間隔
 
-[Schedule drag and resize intervals](https://mantine.dev/changelog/9-6-0/#schedule-drag-and-resize-intervals) を追加の採用機能とする。移動・リサイズとも15分刻みとすることで合意済み。実装には未着手。
+[Schedule drag and resize intervals](https://mantine.dev/changelog/9-6-0/#schedule-drag-and-resize-intervals) を追加の採用機能として実装した。移動・リサイズとも15分刻みとすることで合意済みである。
 
-現行の [BoardSchedule](../../src/features/board/components/board-schedule.tsx) は `intervalMinutes`・`eventDragInterval`・`eventResizeInterval` を設定しておらず、日表示は15分、週表示は60分という Mantine のグリッドの既定値に依存している。`withEventResize` と `onEventResize` も未設定で、端をドラッグするリサイズは無効。
+現行の [BoardSchedule](../../src/features/board/components/board-schedule.tsx) は日・週表示に `eventDragInterval={15}` と `eventResizeInterval={15}` を設定し、表示グリッドとは独立した刻みで移動・リサイズできる。`canResizeEvent` と `onEventResize` で編集可能な時間付き予定だけを保存対象にしている。
 
-日・週表示の時間付き予定について `eventDragInterval={15}` と `eventResizeInterval={15}` を明示し、表示グリッドとは独立した15分刻みで移動・長さ変更を行えるようにする。移動時のゴーストプレビューも確認する。
+移動時は元の長さを保ち、リサイズ時は新しい開始・終了時刻を保存する。Mantine のゴーストプレビューと保存結果を同じ15分刻みで扱う。
 
-`withEventResize`・`canResizeEvent`・`onEventResize` を接続する。対象は既に編集可能な時間付き予定とし、外部予定の編集可否・保存中・狭い画面の操作制限を引き継ぐ。移動は元の長さを保持し、リサイズは新しい開始・終了時刻を保存する。リサイズに、長さを保持する既存の移動用計算をそのまま使わない。月・年表示と終日予定は今回の間隔調整の対象外。フォームでの時刻入力も引き続き利用できる。
+対象は既に編集可能な時間付き予定とし、外部予定の編集可否・保存中・狭い画面の操作制限を引き継ぐ。リサイズに、長さを保持する既存の移動用計算をそのまま使わない。月・年表示と終日予定は今回の間隔調整の対象外。フォームでの時刻入力も引き続き利用できる。
 
 実装時は日・週それぞれで移動先と端の刻み、プレビューと保存結果の一致、移動時の長さ保持、リサイズ後の再表示、読み取り専用・保存中の操作制限を確認する。グリッドの `intervalMinutes` は変えず、時間枠選択による新規作成の刻みまで変更しない。
 
@@ -136,7 +136,7 @@ Mantine の [MatrixChart](https://mantine.dev/charts/matrix-chart/) は数値と
 | 予定の移動・リサイズ | 日・週で15分刻みになり、グリッド表示は変わらない。プレビューと保存結果が一致し、移動は長さを保持、リサイズは新しい開始・終了を反映する。編集不可・保存中・狭い画面の操作制限を守る |
 | 画面操作 | 認証済みの実画面でデスクトップ／狭い画面を確認し、キーボードとタッチで操作できる。下端ナビ、safe area、横スクロール、フォーカス、トーストの積み重ねを確認する |
 
-実装時は集計・保存往復・親子復元の振る舞いを重点的にテストする。`vp check` → `vp test` → `vp build` と React doctor を実行し、既存改善も含めて認証済みブラウザで確認する。今回の計画編集では、アプリのコード変更やこれらのテスト再実行は行わない。
+実装時は集計・保存往復・親子復元の振る舞いを重点的にテストする。`vp check` → `vp test` → `vp build` と React doctor を実行し、既存改善も含めて認証済みブラウザで確認する。計画編集時点では、アプリのコード変更やこれらのテスト再実行は行わない。
 
 ## 実装済み改善の検証結果
 
@@ -144,7 +144,7 @@ Mantine の [MatrixChart](https://mantine.dev/charts/matrix-chart/) は数値と
 
 認証済み実画面でのドラッグ、通知の積み重ね、各画面幅での表示は、ログイン可能なブラウザでの確認が別途必要。
 
-実行結果：`vp check` 成功、`vp test` は249ファイル・1,500件成功、`vp build` 成功。React doctor の診断は指摘なし（スコアAPIには接続できなかった）。ビルドには依存側の `rrule` の default export と Tabler icons の大量再エクスポートに関する警告が残る。ログイン済みブラウザを操作できなかったため、実画面の目視と実際のドラッグ・通知ジェスチャーの確認は未実施。
+実行結果：`vp check` 成功、`vp test` は251ファイル・1,512件成功、`vp build` 成功。React doctor の診断は指摘なし（スコアAPIには接続できなかった）。ビルドには依存側の `rrule` の default export と Tabler icons の大量再エクスポートに関する警告が残る。ログイン済みブラウザを操作できなかったため、実画面の目視と実際のドラッグ・通知ジェスチャーの確認は未実施。
 
 ## 一次資料
 

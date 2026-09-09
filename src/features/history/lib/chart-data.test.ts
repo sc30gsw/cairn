@@ -37,23 +37,25 @@ test("paceChartMonthTitle", () => {
 
 test("月の日別ペースは完了と7日平均を持つ", () => {
   expect(
-    buildMonthPaceChartData([{ dateJst: "2026-08-17", minutes: 30, movingAverage: 10 }]),
-  ).toEqual([{ dateJst: "2026-08-17", label: "08/17", 完了: 30, 均: 10 }]);
+    buildMonthPaceChartData([
+      { dateJst: "2026-08-17", kind: "live", minutes: 30, movingAverage: 10 },
+    ]),
+  ).toEqual([{ dateJst: "2026-08-17", kind: "live", label: "08/17", 完了: 30, 均: 10 }]);
 });
 
 test("週の日別ペースは heatmap から均を引く", () => {
   expect(
     buildWeekPaceChartData(
-      [{ confirmedMinutes: 10, dateJst: "2026-08-17" }],
+      [{ confirmedMinutes: 10, dateJst: "2026-08-17", kind: "live" }],
       [{ dateJst: "2026-08-17", movingAverage: 12 }],
     ),
-  ).toEqual([{ dateJst: "2026-08-17", label: "08/17", 完了: 10, 均: 12 }]);
+  ).toEqual([{ dateJst: "2026-08-17", kind: "live", label: "08/17", 完了: 10, 均: 12 }]);
 });
 
 test("週末の帯と選択日の点を日別ペースへ追加する", () => {
   const data = buildMonthPaceChartData([
-    { dateJst: "2026-08-15", minutes: 20, movingAverage: 10 },
-    { dateJst: "2026-08-16", minutes: 0, movingAverage: 10 },
+    { dateJst: "2026-08-15", kind: "live", minutes: 20, movingAverage: 10 },
+    { dateJst: "2026-08-16", kind: "rest", minutes: 0, movingAverage: 10 },
   ]);
   expect(buildPaceWeekendReferenceAreas(data)).toEqual([
     { color: "orange.2", x1: "08/15", x2: "08/16" },
@@ -61,6 +63,7 @@ test("週末の帯と選択日の点を日別ペースへ追加する", () => {
   expect(buildPaceSelectedDateReferenceDots(data, "2026-08-15")).toEqual([
     { color: "orange.7", label: "選択日", x: "08/15", y: 20 },
   ]);
+  expect(buildPaceSelectedDateReferenceDots(data, "2026-08-17")).toEqual([]);
 });
 
 test("曜日×カテゴリは昨日までの対象日を分母にして平均する", () => {

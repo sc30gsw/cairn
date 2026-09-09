@@ -41,7 +41,13 @@ export function MethodCardModal({ method, onClose, onRemove, onUpdate }: MethodC
     extensions: [
       StarterKit.configure({ link: false }),
       Link,
-      Details.configure({ persist: false }),
+      Details.configure({
+        persist: false,
+        renderToggleButton: ({ element, isOpen }) => {
+          element.setAttribute("aria-expanded", String(isOpen));
+          element.setAttribute("aria-label", isOpen ? "補足を閉じる" : "補足を開く");
+        },
+      }),
       DetailsSummary,
       DetailsContent,
     ],
@@ -100,7 +106,11 @@ export function MethodCardModal({ method, onClose, onRemove, onUpdate }: MethodC
             </RichTextEditor>
           </Input.Wrapper>
           <Input.Wrapper label="メモ">
-            <RichTextEditor classNames={{ content: classes.content }} editor={memoEditor}>
+            <RichTextEditor
+              classNames={{ content: classes.content }}
+              editor={memoEditor}
+              labels={{ detailsControlLabel: "折りたたみを挿入" }}
+            >
               <RichTextEditor.Toolbar>
                 <RichTextEditor.ControlsGroup>
                   <RichTextEditor.Bold />

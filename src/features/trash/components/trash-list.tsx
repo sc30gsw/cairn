@@ -35,6 +35,34 @@ type TrashListProps = {
   trash: TrashPage;
 };
 
+type TrashPurgeModalsProps = {
+  clearDaySelection: (dayId: TrashDay["_id"]) => void;
+  clearRowSelection: (rowId: TrashRow["_id"]) => void;
+  onPurgeDay: (dayId: PurgeDayInput["dayId"]) => void;
+  onPurgeRow: (rowId: PurgeRowInput["rowId"]) => void;
+  purgeDayTarget: TrashDay | null;
+  purgeRowTarget: TrashRow | null;
+  setPurgeDayTarget: (day: TrashDay | null) => void;
+  setPurgeRowTarget: (row: TrashRow | null) => void;
+};
+
+type RestoreFailureMessage = {
+  id: string;
+  label: string;
+  reason: string;
+};
+
+type TrashSelectionActionBarProps = {
+  effectiveDayCount: number;
+  failureMessages: readonly RestoreFailureMessage[];
+  isRestoring: boolean;
+  onClear: () => void;
+  onRestore: () => void;
+  requiredDayCount: number;
+  selectedRowCount: number;
+  selectionCount: number;
+};
+
 function rowSummary(row: TrashRow) {
   const content = row.content.trim();
   const detail = content === "" ? `${row.minutes}分` : `${content} ${row.minutes}分`;
@@ -50,16 +78,7 @@ function TrashPurgeModals({
   clearRowSelection,
   setPurgeDayTarget,
   setPurgeRowTarget,
-}: {
-  clearDaySelection: (dayId: TrashDay["_id"]) => void;
-  clearRowSelection: (rowId: TrashRow["_id"]) => void;
-  onPurgeDay: (dayId: PurgeDayInput["dayId"]) => void;
-  onPurgeRow: (rowId: PurgeRowInput["rowId"]) => void;
-  purgeDayTarget: TrashDay | null;
-  purgeRowTarget: TrashRow | null;
-  setPurgeDayTarget: (day: TrashDay | null) => void;
-  setPurgeRowTarget: (row: TrashRow | null) => void;
-}) {
+}: TrashPurgeModalsProps) {
   return (
     <>
       <Modal
@@ -127,23 +146,15 @@ function TrashPurgeModals({
 
 function TrashSelectionActionBar({
   effectiveDayCount,
-  hasFailedSelection,
+  failureMessages,
   isRestoring,
   onClear,
   onRestore,
   requiredDayCount,
   selectedRowCount,
   selectionCount,
-}: {
-  effectiveDayCount: number;
-  hasFailedSelection: boolean;
-  isRestoring: boolean;
-  onClear: () => void;
-  onRestore: () => void;
-  requiredDayCount: number;
-  selectedRowCount: number;
-  selectionCount: number;
-}) {
+}: TrashSelectionActionBarProps) {
+  const hasFailedSelection = failureMessages.length > 0;
   return (
     <ActionBar
       opened={selectionCount > 0}
@@ -164,16 +175,23 @@ function TrashSelectionActionBar({
           </Text>
         ) : null}
         {hasFailedSelection ? (
-          <Text c="red" size="xs">
-            一部の対象を復元できませんでした。失敗対象を選択したまま再試行できます。
-          </Text>
+          <Stack gap={2}>
+            <Text c="red" size="xs">
+              一部の対象を復元できませんでした。失敗対象を選択したまま再試行できます。
+            </Text>
+            {failureMessages.map((failure) => (
+              <Text c="red" key={failure.id} size="xs">
+                {failure.label}: {failure.reason}
+              </Text>
+            ))}
+          </Stack>
         ) : null}
       </Stack>
       <ActionBar.Divider />
       <Button disabled={isRestoring} onClick={onRestore} size="compact-sm">
-        {isRestoring ? "復元中…" : hasFailedSelection ? "失敗した対象を再試行" : "選択を復元"}
+        {isRestoring ? "復元中…" : hasFailedSelection ? "失敗した対象を再試行" : "まとめて戻す"}
       </Button>
-      <ActionBar.CloseButton />
+      <ActionBar.CloseButton aria-label="選択解除" />
     </ActionBar>
   );
 }
@@ -191,8 +209,12 @@ export function TrashList({
   const [selectedDayIds, setSelectedDayIds] = useState<Set<TrashDay["_id"]>>(() => new Set());
   const [selectedRowIds, setSelectedRowIds] = useState<Set<TrashRow["_id"]>>(() => new Set());
   const [isRestoring, setIsRestoring] = useState(false);
-  const [failedDayIds, setFailedDayIds] = useState<Set<TrashDay["_id"]>>(() => new Set());
-  const [failedRowIds, setFailedRowIds] = useState<Set<TrashRow["_id"]>>(() => new Set());
+  const [failedDayReasons, setFailedDayReasons] = useState<Map<TrashDay["_id"], string>>(
+    () => new Map(),
+  );
+  const [failedRowReasons, setFailedRowReasons] = useState<Map<TrashRow["_id"], string>>(
+    () => new Map(),
+  );
   const trashedDayIds = new Set(trash.days.map((day) => day._id));
   const requiredDayIds = new Set<TrashDay["_id"]>();
   for (const row of trash.rows) {
@@ -202,41 +224,77 @@ export function TrashList({
   }
   const effectiveDayIds = new Set([...selectedDayIds, ...requiredDayIds]);
   const selectionCount = effectiveDayIds.size + selectedRowIds.size;
-  const hasFailedSelection =
-    [...effectiveDayIds].some((dayId) => failedDayIds.has(dayId)) ||
-    [...selectedRowIds].some((rowId) => failedRowIds.has(rowId));
+  const failureMessages: RestoreFailureMessage[] = [
+    ...[...failedDayReasons].map(([dayId, reason]) => ({
+      id: `day:${dayId}`,
+      label: `${trash.days.find((day) => day._id === dayId)?.dateJst ?? "日"}の日`,
+      reason,
+    })),
+    ...[...failedRowReasons].map(([rowId, reason]) => ({
+      id: `row:${rowId}`,
+      label: trash.rows.find((row) => row._id === rowId)?.itemName ?? "記録",
+      reason,
+    })),
+  ];
   const allDaysSelected =
     trash.days.length > 0 && trash.days.every((day) => effectiveDayIds.has(day._id));
   const allRowsSelected =
     trash.rows.length > 0 && trash.rows.every((row) => selectedRowIds.has(row._id));
 
+  const clearDaySelection = (dayId: TrashDay["_id"]) => {
+    const rowIdsForDay = new Set(
+      trash.rows.reduce<TrashRow["_id"][]>(
+        (rowIds, row) => (row.dayId === dayId ? rowIds.concat(row._id) : rowIds),
+        [],
+      ),
+    );
+    setSelectedDayIds((current) => {
+      const next = new Set(current);
+      next.delete(dayId);
+      return next;
+    });
+    setSelectedRowIds(
+      (current) => new Set([...current].filter((rowId) => !rowIdsForDay.has(rowId))),
+    );
+    setFailedDayReasons((current) => {
+      const next = new Map(current);
+      next.delete(dayId);
+      return next;
+    });
+    setFailedRowReasons(
+      (current) => new Map([...current].filter(([rowId]) => !rowIdsForDay.has(rowId))),
+    );
+  };
+
+  const clearRowSelection = (rowId: TrashRow["_id"]) => {
+    setSelectedRowIds((current) => {
+      const next = new Set(current);
+      next.delete(rowId);
+      return next;
+    });
+    setFailedRowReasons((current) => {
+      const next = new Map(current);
+      next.delete(rowId);
+      return next;
+    });
+  };
+
   const toggleDay = (dayId: TrashDay["_id"]) => {
     if (effectiveDayIds.has(dayId)) {
-      setSelectedDayIds((current) => {
-        const next = new Set(current);
-        next.delete(dayId);
-        return next;
-      });
-      setSelectedRowIds((current) => {
-        return new Set(
-          [...current].filter(
-            (rowId) => trash.rows.find((row) => row._id === rowId)?.dayId !== dayId,
-          ),
-        );
-      });
+      clearDaySelection(dayId);
       return;
     }
     setSelectedDayIds((current) => new Set(current).add(dayId));
   };
 
   const toggleRow = (row: TrashRow) => {
+    if (selectedRowIds.has(row._id)) {
+      clearRowSelection(row._id);
+      return;
+    }
     setSelectedRowIds((current) => {
       const next = new Set(current);
-      if (next.has(row._id)) {
-        next.delete(row._id);
-      } else {
-        next.add(row._id);
-      }
+      next.add(row._id);
       return next;
     });
   };
@@ -254,8 +312,12 @@ export function TrashList({
       if (result === null) {
         return;
       }
-      setFailedDayIds(new Set(result.failedDayIds));
-      setFailedRowIds(new Set(result.failedRowIds));
+      setFailedDayReasons(
+        new Map(result.failedDayReasons.map((failure) => [failure.dayId, failure.reason])),
+      );
+      setFailedRowReasons(
+        new Map(result.failedRowReasons.map((failure) => [failure.rowId, failure.reason])),
+      );
       setSelectedDayIds((current) => {
         const restored = new Set(result.restoredDayIds);
         return new Set([...current].filter((dayId) => !restored.has(dayId)));
@@ -267,40 +329,6 @@ export function TrashList({
     } finally {
       setIsRestoring(false);
     }
-  };
-
-  const clearDaySelection = (dayId: TrashDay["_id"]) => {
-    setSelectedDayIds((current) => {
-      const next = new Set(current);
-      next.delete(dayId);
-      return next;
-    });
-    setSelectedRowIds(
-      (current) =>
-        new Set(
-          [...current].filter(
-            (rowId) => trash.rows.find((row) => row._id === rowId)?.dayId !== dayId,
-          ),
-        ),
-    );
-    setFailedDayIds((current) => {
-      const next = new Set(current);
-      next.delete(dayId);
-      return next;
-    });
-  };
-
-  const clearRowSelection = (rowId: TrashRow["_id"]) => {
-    setSelectedRowIds((current) => {
-      const next = new Set(current);
-      next.delete(rowId);
-      return next;
-    });
-    setFailedRowIds((current) => {
-      const next = new Set(current);
-      next.delete(rowId);
-      return next;
-    });
   };
 
   return (
@@ -431,13 +459,13 @@ export function TrashList({
       />
       <TrashSelectionActionBar
         effectiveDayCount={effectiveDayIds.size}
-        hasFailedSelection={hasFailedSelection}
+        failureMessages={failureMessages}
         isRestoring={isRestoring}
         onClear={() => {
           setSelectedDayIds(new Set());
           setSelectedRowIds(new Set());
-          setFailedDayIds(new Set());
-          setFailedRowIds(new Set());
+          setFailedDayReasons(new Map());
+          setFailedRowReasons(new Map());
         }}
         onRestore={() => void restoreSelected()}
         requiredDayCount={requiredDayIds.size}
