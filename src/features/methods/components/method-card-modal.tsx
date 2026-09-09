@@ -1,6 +1,7 @@
 import { Field, Form, useForm } from "@formisch/react";
 import { Button, Group, Input, Modal, Stack, TextInput, Textarea } from "@mantine/core";
 import { getTaskListExtension, Link, RichTextEditor } from "@mantine/tiptap";
+import { Details, DetailsContent, DetailsSummary } from "@tiptap/extension-details";
 import TaskItem from "@tiptap/extension-task-item";
 import TipTapTaskList from "@tiptap/extension-task-list";
 import { useEditor } from "@tiptap/react";
@@ -37,7 +38,13 @@ export function MethodCardModal({ method, onClose, onRemove, onUpdate }: MethodC
   });
   const memoEditor = useEditor({
     content: method.memoHtml === "" ? undefined : method.memoHtml,
-    extensions: [StarterKit.configure({ link: false }), Link],
+    extensions: [
+      StarterKit.configure({ link: false }),
+      Link,
+      Details.configure({ persist: false }),
+      DetailsSummary,
+      DetailsContent,
+    ],
     immediatelyRender: false,
   });
 
@@ -99,6 +106,7 @@ export function MethodCardModal({ method, onClose, onRemove, onUpdate }: MethodC
                   <RichTextEditor.Bold />
                   <RichTextEditor.Italic />
                   <RichTextEditor.BulletList />
+                  <RichTextEditor.Details />
                 </RichTextEditor.ControlsGroup>
                 <RichTextEditor.ControlsGroup>
                   <RichTextEditor.Link />

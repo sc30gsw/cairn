@@ -19,6 +19,7 @@ test("ゴミ箱と復元・完全削除が見える", async () => {
         content: "Unit 1",
         dateJst: "2026-08-17",
         deletedAt: 1,
+        dayId: "d1" as never,
         itemName: "Distinction 2000",
         minutes: 30,
         status: confirmed,
@@ -31,6 +32,7 @@ test("ゴミ箱と復元・完全削除が見える", async () => {
       onPurgeDay={vi.fn()}
       onPurgeRow={onPurgeRow}
       onRestoreDay={vi.fn()}
+      onRestoreMany={vi.fn(async () => null)}
       onRestoreRow={onRestoreRow}
       trash={trash}
     />,
@@ -45,4 +47,46 @@ test("ゴミ箱と復元・完全削除が見える", async () => {
   });
   fireEvent.click(within(document.body).getAllByRole("button", { name: "完全削除" }).at(-1)!);
   expect(onPurgeRow).toHaveBeenCalled();
+});
+
+test("記録の選択では親の日も一括復元対象になる", async () => {
+  const onRestoreMany = vi.fn(async () => ({
+    failedDayIds: [],
+    failedRowIds: [],
+    restoredDayIds: ["d1" as never],
+    restoredRowIds: ["r1" as never],
+  }));
+  const trash = {
+    days: [{ _id: "d1" as never, dateJst: "2026-08-17", deletedAt: 1 }],
+    rows: [
+      {
+        _id: "r1" as never,
+        content: "Unit 1",
+        dateJst: "2026-08-17",
+        deletedAt: 1,
+        dayId: "d1" as never,
+        itemName: "Distinction 2000",
+        minutes: 30,
+        status: confirmed,
+      },
+    ],
+  } satisfies TrashPage;
+
+  const { getByRole, getByText } = renderWithMantine(
+    <TrashList
+      onPurgeDay={vi.fn()}
+      onPurgeRow={vi.fn()}
+      onRestoreDay={vi.fn()}
+      onRestoreMany={onRestoreMany}
+      onRestoreRow={vi.fn()}
+      trash={trash}
+    />,
+  );
+
+  fireEvent.click(getByRole("checkbox", { name: /Unit 1/ }));
+  expect(getByText("選択した記録の親の日も復元します")).toBeDefined();
+  fireEvent.click(getByRole("button", { name: "選択を復元" }));
+  await waitFor(() => {
+    expect(onRestoreMany).toHaveBeenCalledWith({ dayIds: ["d1"], rowIds: ["r1"] });
+  });
 });

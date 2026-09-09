@@ -45,6 +45,7 @@ type ConfirmTarget = {
 function RecordCard({
   disabled,
   dragHandleProps,
+  dragging,
   onConfirm,
   onFlagReview,
   onResume,
@@ -58,6 +59,7 @@ function RecordCard({
 }: {
   disabled: boolean;
   dragHandleProps: React.HTMLAttributes<HTMLElement> | undefined;
+  dragging: boolean;
   onConfirm: () => void;
   onFlagReview: (row: BoardRow, dueJst: DateJst) => void;
   onResume: () => void;
@@ -73,13 +75,14 @@ function RecordCard({
   const detail = row.content === "" ? row.category : `${row.category} · ${row.content}`;
 
   return (
-    <Card padding="sm" withBorder>
+    <Card className={classes.card} data-dragging={dragging || undefined} padding="sm" withBorder>
       <Group align="flex-start" gap="xs" wrap="nowrap">
         <Box visibleFrom="md">
           <Tooltip label="ドラッグして並べ替え・移動" withArrow>
             <ActionIcon
               aria-label={`${row.itemName} の順序を変更`}
               color="gray"
+              disabled={disabled}
               size="sm"
               variant="subtle"
               {...dragHandleProps}
@@ -128,19 +131,19 @@ function RecordCard({
   );
 }
 
-function columnHeadingLabel(
+function columnTimerLabel(
   status: KanbanColumn,
   rows: readonly BoardRow[],
   nowMs: number,
-): string {
+): string | null {
   if (status !== "進行中") {
-    return status;
+    return null;
   }
   const measuring = rows.find((row) => timerRunState(row.timer) === "計測中");
   if (measuring === undefined) {
-    return status;
+    return null;
   }
-  return `${status} · 計測 ${formatTimerClock(measuredMs(measuring.timer, nowMs))}`;
+  return `計測 ${formatTimerClock(measuredMs(measuring.timer, nowMs))}`;
 }
 
 export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanProps) {
@@ -272,38 +275,57 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
         <section aria-label="カンバンの列" className={classes.columns}>
           {KANBAN_COLUMNS.map((status) => {
             const columnRows = grouped[status];
+            const timerLabel = columnTimerLabel(status, columnRows, nowMs);
+            const statusColor = RECORD_STATUS_UI[status].color;
             return (
-              <Droppable droppableId={status} key={status}>
-                {(provided) => (
+              <Droppable droppableId={status} isDropDisabled={!interactive} key={status}>
+                {(provided, snapshot) => (
                   <Stack
                     aria-label={`${status} ${String(columnRows.length)}件`}
                     className={classes.column}
+                    data-drag-over={snapshot.isDraggingOver || undefined}
                     gap="xs"
                     ref={provided.innerRef}
                     {...provided.droppableProps}
                   >
-                    <Group gap="xs" wrap="nowrap">
-                      <Tooltip label={statusTooltip(status)} withArrow>
-                        <Text fw={600} size="sm">
-                          {columnHeadingLabel(status, columnRows, nowMs)}
+                    <Stack className={classes.columnHeader} gap={4}>
+                      <Group gap="xs" justify="space-between" wrap="nowrap">
+                        <Group gap={6} wrap="nowrap">
+                          <Box aria-hidden bg={`${statusColor}.6`} className={classes.statusDot} />
+                          <Tooltip label={statusTooltip(status)} withArrow>
+                            <Text fw={600} size="sm">
+                              {status}
+                            </Text>
+                          </Tooltip>
+                        </Group>
+                        <Badge color={statusColor} size="sm" variant="light">
+                          {columnRows.length}
+                        </Badge>
+                      </Group>
+                      {timerLabel === null ? null : (
+                        <Text c="dimmed" size="xs">
+                          {timerLabel}
                         </Text>
-                      </Tooltip>
-                      <Badge color="gray" size="sm" variant="light">
-                        {columnRows.length}
-                      </Badge>
-                    </Group>
+                      )}
+                    </Stack>
                     {columnRows.length === 0 ? (
-                      <Text c="dimmed" size="sm">
-                        なし
+                      <Text c="dimmed" className={classes.emptyColumn} size="xs" ta="center">
+                        {status}の記録はありません
                       </Text>
                     ) : (
                       columnRows.map((row, index) => (
-                        <Draggable draggableId={row._id} index={index} key={row._id}>
-                          {(dragProvided) => (
+                        <Draggable
+                          draggableId={row._id}
+                          index={index}
+                          isDragDisabled={!interactive}
+                          key={row._id}
+                        >
+                          {(dragProvided, dragSnapshot) => (
                             <div ref={dragProvided.innerRef} {...dragProvided.draggableProps}>
                               <RecordCard
                                 disabled={!interactive}
                                 dragHandleProps={dragProvided.dragHandleProps ?? undefined}
+                                dragging={dragSnapshot.isDragging}
                                 onConfirm={() => void requestConfirm(row)}
                                 onFlagReview={onFlagReview}
                                 onResume={() => void onResumeTimer({ rowId: row._id })}

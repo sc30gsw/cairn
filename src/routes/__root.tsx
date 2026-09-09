@@ -125,6 +125,7 @@ function RootDocument({ children }: Record<"children", ReactNode>) {
               <DatesProvider settings={{ locale: "ja" }}>{children}</DatesProvider>
             </ModalsProvider>
             <Notifications
+              layout="stacked"
               position="top-center"
               style={{ marginTop: "env(safe-area-inset-top)" }}
             />

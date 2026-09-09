@@ -1,3 +1,4 @@
+import { Result } from "better-result";
 import { Suspense } from "react";
 
 import { TrashList } from "~/features/trash/components/trash-list";
@@ -6,6 +7,7 @@ import {
   usePurgeDay,
   usePurgeRow,
   useRestoreDay,
+  useRestoreMany,
   useRestoreRow,
 } from "~/features/trash/hooks/trash-mutations";
 import { useTrashList } from "~/features/trash/hooks/trash-queries";
@@ -22,6 +24,7 @@ export function TrashPage() {
 function TrashReady() {
   const { data: trash } = useTrashList();
   const restoreDay = useRestoreDay();
+  const restoreMany = useRestoreMany();
   const restoreRow = useRestoreRow();
   const purgeDay = usePurgeDay();
   const purgeRow = usePurgeRow();
@@ -42,6 +45,18 @@ function TrashReady() {
         void runMutation(() => restoreDay.mutateAsync({ dayId }), {
           successMessage: "日を復元しました",
         });
+      }}
+      onRestoreMany={async (input) => {
+        const result = await runMutation(() => restoreMany.mutateAsync(input), {
+          successMessage: (value) => {
+            const restored = value.restoredDayIds.length + value.restoredRowIds.length;
+            const failed = value.failedDayIds.length + value.failedRowIds.length;
+            return failed === 0
+              ? `${restored}件を復元しました`
+              : `${restored}件を復元しました。${failed}件は再試行できます`;
+          },
+        });
+        return Result.isOk(result) ? result.value : null;
       }}
       onRestoreRow={(rowId) => {
         void runMutation(() => restoreRow.mutateAsync({ rowId }), {

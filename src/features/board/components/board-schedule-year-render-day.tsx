@@ -7,6 +7,9 @@ type CreateBoardScheduleYearRenderDayOptions = {
   baseEvents: readonly ScheduleEventData[];
   canAdd: boolean;
   clickableEventIds: ReadonlySet<string>;
+  openedDate: DateStringValue | null;
+  popoverId: string;
+  onClose: () => void;
   onAdd: (dateJst: string) => void;
   onEditBlock: (event: ScheduleEventData) => void;
 };
@@ -15,6 +18,9 @@ export function createBoardScheduleYearRenderDay({
   baseEvents,
   canAdd,
   clickableEventIds,
+  openedDate,
+  popoverId,
+  onClose,
   onAdd,
   onEditBlock,
 }: CreateBoardScheduleYearRenderDayOptions) {
@@ -26,6 +32,9 @@ export function createBoardScheduleYearRenderDay({
         dateJst={date}
         dayEvents={dayEvents}
         clickableEventIds={clickableEventIds}
+        selected={openedDate === date}
+        popoverId={`${popoverId}-${date}`}
+        onClose={onClose}
         onAdd={onAdd}
         onEditBlock={onEditBlock}
       />

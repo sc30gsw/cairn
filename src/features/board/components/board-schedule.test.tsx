@@ -1,4 +1,4 @@
-import { fireEvent, within } from "@testing-library/react";
+import { fireEvent, waitFor, within } from "@testing-library/react";
 import { expect, test, vi } from "vite-plus/test";
 
 import { BoardSchedule } from "~/features/board/components/board-schedule";
@@ -68,4 +68,60 @@ test("年表示で連携予定の日にマーカーを表示し、予定を確�
   if (target === null) throw new Error("日付の表示がありません");
   fireEvent.mouseEnter(target);
   expect(await view.findByText("秋分の日")).toBeDefined();
+});
+
+test("年表示はホバーなしで日を選び、読み取り専用の予定を確認して閉じられる", async () => {
+  const view = renderSchedule("year");
+  const day = view.getByRole("button", { name: "9月 23, 2026" });
+
+  day.focus();
+  fireEvent.click(day);
+
+  const dialog = await view.findByRole("dialog", { name: "2026-09-23の予定", hidden: true });
+  expect(day.getAttribute("aria-expanded")).toBe("true");
+  expect(day.getAttribute("aria-controls")).toBe(dialog.id);
+  expect(within(dialog).getByText("秋分の日")).toBeDefined();
+  expect(within(dialog).queryByRole("button", { name: /秋分の日/, hidden: true })).toBeNull();
+  expect(
+    within(dialog)
+      .getByRole("button", { name: "予定を追加", hidden: true })
+      .hasAttribute("disabled"),
+  ).toBe(true);
+
+  fireEvent.keyDown(dialog, { key: "Escape" });
+
+  await waitFor(() => expect(day.getAttribute("aria-expanded")).toBe("false"));
+});
+
+test("年表示は予定のない日も選択でき、閉じるボタンで一覧を閉じられる", async () => {
+  const view = renderSchedule("year");
+  const day = view.getByRole("button", { name: "9月 24, 2026" });
+  fireEvent.click(day);
+
+  const dialog = await view.findByRole("dialog", { name: "2026-09-24の予定", hidden: true });
+  expect(within(dialog).getAllByText("なし")).toHaveLength(2);
+  fireEvent.click(within(dialog).getByRole("button", { name: "予定一覧を閉じる", hidden: true }));
+
+  await waitFor(() => expect(day.getAttribute("aria-expanded")).toBe("false"));
+});
+
+test("ホバー後に選択した年表示の日を閉じると、選択した日へフォーカスが戻る", async () => {
+  const view = renderSchedule("year");
+  const previousDay = view.getByRole("button", { name: "9月 22, 2026" });
+  const day = view.getByRole("button", { name: "9月 23, 2026" });
+  previousDay.focus();
+  const target = day.querySelector("span");
+  if (target === null) throw new Error("日付の表示がありません");
+  fireEvent.mouseEnter(target);
+  await view.findByRole("dialog", { name: "2026-09-23の予定", hidden: true });
+  day.focus();
+  fireEvent.click(day);
+  const dialog = view.getByRole("dialog", { name: "2026-09-23の予定", hidden: true });
+  within(dialog).getByRole("button", { name: "予定一覧を閉じる", hidden: true }).focus();
+  fireEvent.keyDown(dialog, { key: "Escape" });
+
+  await waitFor(() => {
+    expect(day.getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(day);
+  });
 });

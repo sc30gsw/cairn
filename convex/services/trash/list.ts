@@ -27,6 +27,7 @@ export async function list(ctx: QueryCtx, ownerId: string) {
         content: row.content,
         dateJst: row.dateJst,
         deletedAt: row.deletedAt ?? 0,
+        dayId: row.dayId,
         itemName: itemById.get(row.itemId)?.name ?? "不明",
         minutes: row.minutes,
         status: row.status,

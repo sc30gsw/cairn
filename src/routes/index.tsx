@@ -16,13 +16,20 @@ export const Route = createFileRoute("/")({
 });
 
 function HomeSetupStepper() {
-  const { dismissStep, firstStep, showHomeStepper } = useSetupStatus();
+  const { dismissStep, dismissed, firstStep, showHomeStepper, status } = useSetupStatus();
 
   if (!showHomeStepper || firstStep === null) {
     return null;
   }
 
-  return <SetupStepper activeStep={firstStep} onDismiss={() => dismissStep(firstStep.id)} />;
+  return (
+    <SetupStepper
+      activeStep={firstStep}
+      dismissed={dismissed}
+      onDismiss={() => dismissStep(firstStep.id)}
+      status={status}
+    />
+  );
 }
 
 function HomeRoute() {

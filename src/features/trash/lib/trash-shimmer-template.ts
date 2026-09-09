@@ -12,6 +12,7 @@ export const trashShimmerPage = {
       content: "Unit 1",
       dateJst: "2026-08-17",
       deletedAt: 1,
+      dayId: "shimmer-day" as never,
       itemName: "Distinction 2000",
       minutes: 30,
       status: confirmed,

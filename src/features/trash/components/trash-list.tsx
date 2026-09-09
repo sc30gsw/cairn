@@ -1,4 +1,16 @@
-import { Button, Card, EmptyState, Grid, Group, Modal, Stack, Text, Title } from "@mantine/core";
+import {
+  ActionBar,
+  Button,
+  Card,
+  Checkbox,
+  EmptyState,
+  Grid,
+  Group,
+  Modal,
+  Stack,
+  Text,
+  Title,
+} from "@mantine/core";
 import { IconCalendarEvent, IconNotes } from "@tabler/icons-react";
 import { useState } from "react";
 
@@ -7,6 +19,8 @@ import type {
   PurgeDayInput,
   PurgeRowInput,
   RestoreDayInput,
+  RestoreManyInput,
+  RestoreManyResult,
   RestoreRowInput,
 } from "~/features/trash/types/mutations";
 import type { TrashDay, TrashPage, TrashRow } from "~/features/trash/types/trash";
@@ -16,6 +30,7 @@ type TrashListProps = {
   onPurgeDay: (dayId: PurgeDayInput["dayId"]) => void;
   onPurgeRow: (rowId: PurgeRowInput["rowId"]) => void;
   onRestoreDay: (dayId: RestoreDayInput["dayId"]) => void;
+  onRestoreMany: (input: RestoreManyInput) => Promise<RestoreManyResult | null>;
   onRestoreRow: (rowId: RestoreRowInput["rowId"]) => void;
   trash: TrashPage;
 };
@@ -30,15 +45,89 @@ export function TrashList({
   onPurgeDay,
   onPurgeRow,
   onRestoreDay,
+  onRestoreMany,
   onRestoreRow,
   trash,
 }: TrashListProps) {
   const [purgeDayTarget, setPurgeDayTarget] = useState<null | TrashDay>(null);
   const [purgeRowTarget, setPurgeRowTarget] = useState<null | TrashRow>(null);
+  const [selectedDayIds, setSelectedDayIds] = useState<Set<TrashDay["_id"]>>(() => new Set());
+  const [selectedRowIds, setSelectedRowIds] = useState<Set<TrashRow["_id"]>>(() => new Set());
+  const [isRestoring, setIsRestoring] = useState(false);
+  const trashedDayIds = new Set(trash.days.map((day) => day._id));
+  const requiredDayIds = new Set<TrashDay["_id"]>();
+  for (const row of trash.rows) {
+    if (selectedRowIds.has(row._id) && trashedDayIds.has(row.dayId)) {
+      requiredDayIds.add(row.dayId);
+    }
+  }
+  const effectiveDayIds = new Set([...selectedDayIds, ...requiredDayIds]);
+  const selectionCount = effectiveDayIds.size + selectedRowIds.size;
+  const allDaysSelected =
+    trash.days.length > 0 && trash.days.every((day) => effectiveDayIds.has(day._id));
+  const allRowsSelected =
+    trash.rows.length > 0 && trash.rows.every((row) => selectedRowIds.has(row._id));
+
+  const toggleDay = (dayId: TrashDay["_id"]) => {
+    if (effectiveDayIds.has(dayId)) {
+      setSelectedDayIds((current) => {
+        const next = new Set(current);
+        next.delete(dayId);
+        return next;
+      });
+      setSelectedRowIds((current) => {
+        return new Set(
+          [...current].filter(
+            (rowId) => trash.rows.find((row) => row._id === rowId)?.dayId !== dayId,
+          ),
+        );
+      });
+      return;
+    }
+    setSelectedDayIds((current) => new Set(current).add(dayId));
+  };
+
+  const toggleRow = (row: TrashRow) => {
+    setSelectedRowIds((current) => {
+      const next = new Set(current);
+      if (next.has(row._id)) {
+        next.delete(row._id);
+      } else {
+        next.add(row._id);
+      }
+      return next;
+    });
+  };
+
+  const restoreSelected = async () => {
+    if (isRestoring) {
+      return;
+    }
+    setIsRestoring(true);
+    try {
+      const result = await onRestoreMany({
+        dayIds: [...effectiveDayIds],
+        rowIds: [...selectedRowIds],
+      });
+      if (result === null) {
+        return;
+      }
+      setSelectedDayIds((current) => {
+        const restored = new Set(result.restoredDayIds);
+        return new Set([...current].filter((dayId) => !restored.has(dayId)));
+      });
+      setSelectedRowIds((current) => {
+        const restored = new Set(result.restoredRowIds);
+        return new Set([...current].filter((rowId) => !restored.has(rowId)));
+      });
+    } finally {
+      setIsRestoring(false);
+    }
+  };
 
   return (
     <>
-      <Grid gap="md">
+      <Grid gap="md" pb={selectionCount > 0 ? 80 : undefined}>
         <Grid.Col span={12}>
           <PageTitle>ゴミ箱</PageTitle>
           <Text c="dimmed" mt="xs" size="sm">
@@ -48,7 +137,19 @@ export function TrashList({
         <Grid.Col span={{ base: 12, md: 6 }}>
           <Card h="100%">
             <Stack gap="md">
-              <Title order={2}>日</Title>
+              <Group justify="space-between">
+                <Title order={2}>日</Title>
+                <Checkbox
+                  checked={allDaysSelected}
+                  indeterminate={!allDaysSelected && effectiveDayIds.size > 0}
+                  label="すべて選択"
+                  onChange={() =>
+                    setSelectedDayIds(
+                      allDaysSelected ? new Set() : new Set(trash.days.map((day) => day._id)),
+                    )
+                  }
+                />
+              </Group>
               {trash.days.length === 0 ? (
                 <EmptyState
                   description="見送りにした日はここに入ります。"
@@ -59,9 +160,11 @@ export function TrashList({
               {trash.days.map((day) => (
                 <Grid key={day._id} align="center" gap="sm">
                   <Grid.Col span="auto">
-                    <Text c="var(--cairn-muted)" td="line-through">
-                      {day.dateJst}
-                    </Text>
+                    <Checkbox
+                      checked={effectiveDayIds.has(day._id)}
+                      label={day.dateJst}
+                      onChange={() => toggleDay(day._id)}
+                    />
                   </Grid.Col>
                   <Grid.Col span="content">
                     <Group gap="xs">
@@ -81,7 +184,19 @@ export function TrashList({
         <Grid.Col span={{ base: 12, md: 6 }}>
           <Card h="100%">
             <Stack gap="md">
-              <Title order={2}>記録</Title>
+              <Group justify="space-between">
+                <Title order={2}>記録</Title>
+                <Checkbox
+                  checked={allRowsSelected}
+                  indeterminate={!allRowsSelected && selectedRowIds.size > 0}
+                  label="すべて選択"
+                  onChange={() =>
+                    setSelectedRowIds(
+                      allRowsSelected ? new Set() : new Set(trash.rows.map((row) => row._id)),
+                    )
+                  }
+                />
+              </Group>
               {trash.rows.length === 0 ? (
                 <EmptyState
                   description="見送りにした記録はここに入ります。"
@@ -92,9 +207,11 @@ export function TrashList({
               {trash.rows.map((row) => (
                 <Grid key={row._id} align="center" gap="sm">
                   <Grid.Col span="auto">
-                    <Text c="var(--cairn-muted)" td="line-through">
-                      {rowSummary(row)}
-                    </Text>
+                    <Checkbox
+                      checked={selectedRowIds.has(row._id)}
+                      label={rowSummary(row)}
+                      onChange={() => toggleRow(row)}
+                    />
                   </Grid.Col>
                   <Grid.Col span="content">
                     <Group gap="xs">
@@ -169,6 +286,32 @@ export function TrashList({
           </Group>
         </Stack>
       </Modal>
+      <ActionBar
+        opened={selectionCount > 0}
+        onClose={() => {
+          setSelectedDayIds(new Set());
+          setSelectedRowIds(new Set());
+        }}
+        styles={{
+          root: {
+            bottom: "calc(var(--cairn-bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 12px)",
+          },
+        }}
+      >
+        <Stack gap={2}>
+          <Text size="sm">{selectionCount}件を選択中</Text>
+          {requiredDayIds.size > 0 ? (
+            <Text c="dimmed" size="xs">
+              選択した記録の親の日も復元します
+            </Text>
+          ) : null}
+        </Stack>
+        <ActionBar.Divider />
+        <Button disabled={isRestoring} onClick={() => void restoreSelected()} size="compact-sm">
+          {isRestoring ? "復元中…" : "選択を復元"}
+        </Button>
+        <ActionBar.CloseButton />
+      </ActionBar>
     </>
   );
 }

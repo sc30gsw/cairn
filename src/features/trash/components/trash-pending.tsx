@@ -11,6 +11,7 @@ export function TrashPending() {
         onPurgeDay={shimmerNoop}
         onPurgeRow={shimmerNoop}
         onRestoreDay={shimmerNoop}
+        onRestoreMany={async () => null}
         onRestoreRow={shimmerNoop}
         trash={trashShimmerPage}
       />

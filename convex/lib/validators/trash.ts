@@ -15,6 +15,7 @@ export const trashedRowValidator = v.object({
   content: v.string(),
   dateJst: v.string(),
   deletedAt: v.number(),
+  dayId: v.id("days"),
   itemName: v.string(),
   minutes: v.number(),
   status: statusValidator,
@@ -28,3 +29,12 @@ export const trashPageValidator = v.object({
 });
 
 export type TrashPageDto = Infer<typeof trashPageValidator>;
+
+export const restoreTrashResultValidator = v.object({
+  failedDayIds: v.array(v.id("days")),
+  failedRowIds: v.array(v.id("rows")),
+  restoredDayIds: v.array(v.id("days")),
+  restoredRowIds: v.array(v.id("rows")),
+});
+
+export type RestoreTrashResult = Infer<typeof restoreTrashResultValidator>;

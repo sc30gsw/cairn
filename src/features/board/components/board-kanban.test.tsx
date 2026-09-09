@@ -124,6 +124,23 @@ test("列は名前付きの束で、各列に件数が付く", () => {
   expect(getByLabelText("確定 0件")).toBeDefined();
 });
 
+test("操作できないボードではドラッグハンドルと移動メニューを無効にする", () => {
+  const { getByRole } = renderWithMantine(
+    <BoardKanban
+      dateJst="2026-08-17"
+      interactive={false}
+      rows={[row("r1", pending, "Distinction 2000")]}
+    />,
+  );
+
+  expect(
+    getByRole("button", { name: "Distinction 2000 の順序を変更" }).hasAttribute("disabled"),
+  ).toBe(true);
+  expect(getByRole("button", { name: "Distinction 2000 の操作" }).hasAttribute("disabled")).toBe(
+    true,
+  );
+});
+
 test("計測がある進行中の行を確定すると、stopTimer の分数でモーダルなしに確定する", async () => {
   const { getByRole, queryByLabelText } = renderWithMantine(
     <BoardKanban
