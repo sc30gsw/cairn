@@ -6,7 +6,6 @@ import {
   itemIdIsInUse,
   keptRowsAfterSwitch,
   materializePresetRows,
-  weekdayAlreadyTaken,
   type ExistingRow,
 } from "./preset";
 
@@ -39,12 +38,6 @@ test("切替は未着手だけ差し替え、確定・進行中・スキップ�
     { status: skipped },
     { status: ongoing },
   ]);
-});
-
-test("同じ曜日のプリセットが二つある状態は拒否する", () => {
-  expect(weekdayAlreadyTaken(1, [1, 2])).toBe(true);
-  expect(weekdayAlreadyTaken(3, [1, 2])).toBe(false);
-  expect(weekdayAlreadyTaken(1, [1, 2], 1)).toBe(false);
 });
 
 test("使っている行または雛形がある項目は削除不可", () => {

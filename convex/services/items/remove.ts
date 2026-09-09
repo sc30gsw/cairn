@@ -18,7 +18,7 @@ export async function remove(
       .first(),
     ctx.db
       .query("presets")
-      .withIndex("by_owner_and_weekday", (q) => q.eq("ownerId", ownerId))
+      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
       .collect(),
   ]);
   const holders = [

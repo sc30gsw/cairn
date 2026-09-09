@@ -22,14 +22,6 @@ export function keptRowsAfterSwitch<T extends ExistingRow>(existing: readonly T[
   );
 }
 
-export function weekdayAlreadyTaken(
-  weekday: number,
-  existingWeekdays: readonly number[],
-  ignoreWeekday?: number,
-): boolean {
-  return existingWeekdays.some((value) => value === weekday && value !== ignoreWeekday);
-}
-
 export function itemIdIsInUse(
   itemId: PresetLine["itemId"],
   holders: readonly { itemId: PresetLine["itemId"] }[],

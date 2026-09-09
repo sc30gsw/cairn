@@ -75,6 +75,6 @@ export const dayBoardShimmerPresets = [
       },
     ],
     name: "月曜日",
-    weekday: 1,
+    weekdays: [1],
   },
 ] satisfies PresetDto[];

@@ -228,7 +228,7 @@ test("項目 CRUD・使用中削除失敗・プリセット切替", async () => 
   });
   await t.mutation(api.mutations.items.remove.remove, { itemId: extraId });
   const presets = await t.query(api.queries.presets.list.list, {});
-  const saturday = presets.find((preset) => preset.weekday === 6);
+  const saturday = presets.find((preset) => preset.weekdays.includes(6));
   const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   const first = day.rows[0];
   if (first === undefined || saturday === undefined) {
@@ -286,8 +286,8 @@ test("プリセット行の分数が NaN/Infinity なら作成・更新を弾く
   if (distinction === undefined) {
     throw new Error("Distinction がない");
   }
-  const seededSunday = (await t.query(api.queries.presets.list.list, {})).find(
-    (preset) => preset.weekday === 0,
+  const seededSunday = (await t.query(api.queries.presets.list.list, {})).find((preset) =>
+    preset.weekdays.includes(0),
   );
   if (seededSunday === undefined) {
     throw new Error("日曜プリセットがない");
@@ -297,20 +297,42 @@ test("プリセット行の分数が NaN/Infinity なら作成・更新を弾く
     t.mutation(api.mutations.presets.create.create, {
       lines: [{ content: "x", itemId: distinction._id, minutes: Number.NaN }],
       name: "不正",
-      weekday: 0,
+      weekdays: [0],
     }),
   ).rejects.toThrow();
+  await expect(
+    t.mutation(api.mutations.presets.create.create, {
+      lines: [],
+      name: "曜日なし",
+      weekdays: [],
+    }),
+  ).rejects.toThrow("曜日を1つ以上選んでください");
+  await expect(
+    t.mutation(api.mutations.presets.create.create, {
+      lines: [],
+      name: "曜日重複",
+      weekdays: [0, 0],
+    }),
+  ).rejects.toThrow("同じ曜日を重複して選べません");
+  await expect(
+    t.mutation(api.mutations.presets.create.create, {
+      lines: [],
+      name: "曜日指定重複",
+      weekday: 0,
+      weekdays: [0],
+    }),
+  ).rejects.toThrow("曜日の指定方法が重複しています");
   const presetId = await t.mutation(api.mutations.presets.create.create, {
     lines: [{ content: "x", itemId: distinction._id, minutes: 10 }],
     name: "正常",
-    weekday: 0,
+    weekdays: [0],
   });
   await expect(
     t.mutation(api.mutations.presets.update.update, {
       lines: [{ content: "x", itemId: distinction._id, minutes: Number.POSITIVE_INFINITY }],
       name: "正常",
       presetId,
-      weekday: 0,
+      weekdays: [0],
     }),
   ).rejects.toThrow();
 });
@@ -476,7 +498,7 @@ test("空のメモだけでは日を作らない。土日でも今日のプリ�
     (await t.query(api.queries.days.get.get, { dateJst: SATURDAY, todayJst: SATURDAY })).day,
   ).toBeNull();
   const presets = await t.query(api.queries.presets.list.list, {});
-  const monday = presets.find((preset) => preset.weekday === 1);
+  const monday = presets.find((preset) => preset.weekdays.includes(1));
   if (monday === undefined) {
     throw new Error("月曜日のプリセットがない");
   }
@@ -701,7 +723,7 @@ test("分析内訳は同一項目の確定を合算し、未着手を載せな�
   ]);
 });
 
-test("プリセット CRUD と曜日重複は失敗", async () => {
+test("プリセットは複数曜日を持ち、曜日重複は失敗", async () => {
   const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const items = await t.query(api.queries.items.list.list, {});
@@ -713,35 +735,99 @@ test("プリセット CRUD と曜日重複は失敗", async () => {
     t.mutation(api.mutations.presets.create.create, {
       lines: [{ content: "x", itemId: distinction._id, minutes: 10 }],
       name: "重複月曜",
-      weekday: 1,
+      weekdays: [1, 2],
     }),
   ).rejects.toThrow();
-  const seededSunday = (await t.query(api.queries.presets.list.list, {})).find(
-    (preset) => preset.weekday === 0,
+  const seededSunday = (await t.query(api.queries.presets.list.list, {})).find((preset) =>
+    preset.weekdays.includes(0),
   );
-  if (seededSunday === undefined) {
-    throw new Error("日曜プリセットがない");
+  const seededSaturday = (await t.query(api.queries.presets.list.list, {})).find((preset) =>
+    preset.weekdays.includes(6),
+  );
+  if (seededSunday === undefined || seededSaturday === undefined) {
+    throw new Error("週末のプリセットがない");
   }
   await t.mutation(api.mutations.presets.remove.remove, { presetId: seededSunday._id });
+  await t.mutation(api.mutations.presets.remove.remove, { presetId: seededSaturday._id });
   const presetId = await t.mutation(api.mutations.presets.create.create, {
     lines: [{ content: "日曜日のTrackを1周聞く", itemId: distinction._id, minutes: 20 }],
     name: "日曜",
-    weekday: 0,
+    weekdays: [6, 0],
   });
+  expect(
+    await t.mutation(api.mutations.days.open.open, {
+      dateJst: SATURDAY,
+      todayJst: SATURDAY,
+    }),
+  ).toEqual({ applied: true });
+  expect(
+    await t.mutation(api.mutations.days.open.open, {
+      dateJst: "2026-08-16",
+      todayJst: "2026-08-16",
+    }),
+  ).toEqual({ applied: true });
   await t.mutation(api.mutations.presets.update.update, {
     lines: [{ content: "日曜日のTrackを2周聞く", itemId: distinction._id, minutes: 25 }],
     name: "日曜改",
     presetId,
-    weekday: 0,
+    weekdays: [0, 6],
   });
   const presets = await t.query(api.queries.presets.list.list, {});
   const sunday = presets.find((preset) => preset._id === presetId);
   expect(sunday?.name).toBe("日曜改");
+  expect(sunday?.weekdays).toEqual([0, 6]);
   expect(sunday?.lines[0]?.content).toBe("日曜日のTrackを2周聞く");
   await t.mutation(api.mutations.presets.remove.remove, { presetId });
   expect((await t.query(api.queries.presets.list.list, {})).some((p) => p._id === presetId)).toBe(
     false,
   );
+});
+
+test("旧クライアントの曜日引数を新しい曜日配列へ互換変換する", async () => {
+  const t = await ownerWithCatalog();
+  const items = await t.query(api.queries.items.list.list, {});
+  const distinction = items.find((item) => item.name === "Distinction 2000");
+  const sunday = (await t.query(api.queries.presets.list.list, {})).find((preset) =>
+    preset.weekdays.includes(0),
+  );
+  if (distinction === undefined || sunday === undefined) {
+    throw new Error("互換テストの材料がない");
+  }
+  await t.mutation(api.mutations.presets.remove.remove, { presetId: sunday._id });
+
+  const presetId = await t.mutation(api.mutations.presets.create.create, {
+    lines: [{ content: "旧クライアント", itemId: distinction._id, minutes: 10 }],
+    name: "旧形式",
+    weekday: 0,
+  });
+  expect(
+    (await t.query(api.queries.presets.list.list, {})).find((preset) => preset._id === presetId),
+  ).toMatchObject({ weekday: 0, weekdays: [0] });
+
+  await t.mutation(api.mutations.presets.update.update, {
+    lines: [{ content: "旧クライアント更新", itemId: distinction._id, minutes: 15 }],
+    name: "旧形式更新",
+    presetId,
+    weekday: 0,
+  });
+  expect(
+    (await t.query(api.queries.presets.list.list, {})).find((preset) => preset._id === presetId),
+  ).toMatchObject({ name: "旧形式更新", weekday: 0, weekdays: [0] });
+});
+
+test("同じ曜日の既存プリセットは自動適用時に曖昧なまま使わない", async () => {
+  const t = await ownerWithCatalog();
+  await t.run(async (ctx) => {
+    await ctx.db.insert("presets", {
+      lines: [],
+      name: "重複した月曜",
+      ownerId: OWNER.subject,
+      weekday: 1,
+    });
+  });
+  await expect(
+    t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY }),
+  ).rejects.toThrow("各曜日はプリセット1つだけです");
 });
 
 test("applyOrder で項目順とカテゴリを更新", async () => {
@@ -845,7 +931,7 @@ test("過去の日でもプリセットを切り替えられる。未来は切�
   const t = await ownerWithCatalog();
   await t.mutation(api.mutations.days.open.open, { dateJst: SATURDAY, todayJst: SATURDAY });
   const presets = await t.query(api.queries.presets.list.list, {});
-  const mondayPreset = presets.find((preset) => preset.weekday === 1);
+  const mondayPreset = presets.find((preset) => preset.weekdays.includes(1));
   if (mondayPreset === undefined) {
     throw new Error("月曜日のプリセットがない");
   }

@@ -78,7 +78,7 @@ test("カテゴリーの下に学習内容が並び、カテゴリーも編集�
               },
             ],
             name: "月曜日",
-            weekday: 1,
+            weekdays: [1],
           },
         ]}
       />
@@ -111,37 +111,37 @@ test("プリセット追加は未登録の曜日だけ選べ、1つだけなら�
           _id: "p1" as never,
           lines: [],
           name: "月曜日",
-          weekday: 1,
+          weekdays: [1],
         },
         {
           _id: "p2" as never,
           lines: [],
           name: "火曜日",
-          weekday: 2,
+          weekdays: [2],
         },
         {
           _id: "p3" as never,
           lines: [],
           name: "水曜日",
-          weekday: 3,
+          weekdays: [3],
         },
         {
           _id: "p4" as never,
           lines: [],
           name: "木曜日",
-          weekday: 4,
+          weekdays: [4],
         },
         {
           _id: "p5" as never,
           lines: [],
           name: "金曜日",
-          weekday: 5,
+          weekdays: [5],
         },
         {
           _id: "p6" as never,
           lines: [],
           name: "土曜日",
-          weekday: 6,
+          weekdays: [6],
         },
       ]}
     />,
@@ -149,7 +149,8 @@ test("プリセット追加は未登録の曜日だけ選べ、1つだけなら�
   );
 
   const weekday = getByRole("combobox", { name: "曜日" });
-  expect((weekday as HTMLInputElement).value).toBe("日曜日");
+  expect((weekday as HTMLInputElement).value).toBe("");
+  expect(weekday.parentElement?.parentElement?.textContent).toContain("日曜日");
 });
 
 test("プリセット追加は未登録曜日が2つ以上なら初期値は空", async () => {
@@ -163,7 +164,7 @@ test("プリセット追加は未登録曜日が2つ以上なら初期値は空"
           _id: "p1" as never,
           lines: [],
           name: "月曜日",
-          weekday: 1,
+          weekdays: [1],
         },
       ]}
     />,
@@ -172,7 +173,7 @@ test("プリセット追加は未登録曜日が2つ以上なら初期値は空"
 
   const weekday = getByRole("combobox", { name: "曜日" });
   expect((weekday as HTMLInputElement).value).toBe("");
-  expect(weekday.getAttribute("placeholder")).toBe("曜日を選ぶ");
+  expect(weekday.getAttribute("placeholder")).toBe("曜日を選択");
 });
 
 test("プリセット雛形を足すと未使用の項目が選ばれる", async () => {
@@ -189,7 +190,7 @@ test("プリセット雛形を足すと未使用の項目が選ばれる", async
             { content: "", itemId: "i1" as never, itemName: "Distinction 2000", minutes: 30 },
           ],
           name: "月曜日",
-          weekday: 1,
+          weekdays: [1],
         },
       ]}
     />,
@@ -217,7 +218,7 @@ test("プリセット雛形ですべての項目を使うと雛形を足すは�
             { content: "", itemId: "i2" as never, itemName: "英会話", minutes: 20 },
           ],
           name: "月曜日",
-          weekday: 1,
+          weekdays: [1],
         },
       ]}
     />,

@@ -34,12 +34,12 @@ export const catalogShimmerPresets = [
       },
     ],
     name: "月曜日",
-    weekday: 1,
+    weekdays: [1],
   },
   {
     _id: shimmerId<PresetDto["_id"]>("preset-2"),
     lines: [{ content: "", itemId, itemName: "Distinction 2000", minutes: 30 }],
     name: "火曜日",
-    weekday: 2,
+    weekdays: [2],
   },
 ] satisfies PresetDto[];

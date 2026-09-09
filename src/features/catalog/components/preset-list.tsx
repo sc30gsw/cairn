@@ -9,6 +9,7 @@ import {
   Grid,
   Group,
   Input,
+  MultiSelect,
   NumberInput,
   Select,
   Stack,
@@ -18,7 +19,7 @@ import {
 } from "@mantine/core";
 import { IconTemplate, IconTrash } from "@tabler/icons-react";
 import { useEffect, type ReactNode } from "react";
-import { WEEKDAYS, WEEKDAY_NAMES, isWeekday, type Weekday } from "~domain/catalog";
+import { WEEKDAYS, WEEKDAY_NAMES, type Weekday } from "~domain/catalog";
 
 import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action-field-with-suggestions";
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
@@ -33,7 +34,6 @@ import {
 import { presetsRoute } from "~/features/catalog/lib/preset-route-api";
 import { CreatePresetSchema, PresetSchema } from "~/features/catalog/schemas/preset-schema";
 import type { PresetLineInput } from "~/features/catalog/schemas/preset-schema";
-import { weekdayFromSelect } from "~/features/catalog/schemas/weekday-schema";
 import { presetWeekdayHash } from "~/lib/preset-weekday-hash";
 import { onRequiredSelect } from "~/lib/select";
 import type { ItemDto, PresetDto } from "~/types/item";
@@ -47,14 +47,17 @@ type PresetListProps = {
   settingsCard?: ReactNode;
 };
 
-function weekdaySelectOptions(weekdays: readonly Weekday[]) {
-  return weekdays.map((value) => ({
-    label: WEEKDAY_NAMES[value],
+function weekdaySelectOptions(takenWeekdays: ReadonlySet<Weekday>) {
+  return WEEKDAYS.map((value) => ({
+    disabled: takenWeekdays.has(value),
+    label: takenWeekdays.has(value) ? `${WEEKDAY_NAMES[value]}（使用中）` : WEEKDAY_NAMES[value],
     value: String(value),
   }));
 }
 
-const WEEKDAY_OPTIONS = weekdaySelectOptions(WEEKDAYS);
+function sortedWeekdayValues(values: string[]) {
+  return values.slice().sort((left, right) => Number(left) - Number(right));
+}
 
 function presetEditorInitialInput(preset: PresetDto) {
   return {
@@ -64,7 +67,7 @@ function presetEditorInitialInput(preset: PresetDto) {
       minutes: line.minutes,
     })),
     name: preset.name,
-    weekday: preset.weekday,
+    weekdays: preset.weekdays.map(String),
   };
 }
 
@@ -100,8 +103,17 @@ function firstAvailableItem(items: ItemDto[], lines: readonly Partial<PresetLine
 }
 
 function availableWeekdays(presets: PresetDto[]): Weekday[] {
-  const taken = new Set(presets.map((preset) => preset.weekday));
+  const taken = new Set(presets.flatMap((preset) => preset.weekdays));
   return WEEKDAYS.filter((weekday) => !taken.has(weekday));
+}
+
+function takenWeekdays(presets: PresetDto[], currentPresetId?: PresetDto["_id"]) {
+  const taken = new Set<Weekday>();
+  for (const preset of presets) {
+    if (preset._id === currentPresetId) continue;
+    for (const weekday of preset.weekdays) taken.add(weekday);
+  }
+  return taken;
 }
 
 function removeLineLabel(items: ItemDto[], itemId: string | undefined) {
@@ -110,25 +122,33 @@ function removeLineLabel(items: ItemDto[], itemId: string | undefined) {
 }
 
 function presetSummary(preset: PresetDto): string {
-  const weekday = isWeekday(preset.weekday) ? WEEKDAY_NAMES[preset.weekday] : "";
+  const weekdays = preset.weekdays.map((weekday: Weekday) => WEEKDAY_NAMES[weekday]).join("・");
   const items =
     preset.lines.length === 0
       ? "記録なし"
       : preset.lines.map((line: PresetLineDto) => line.itemName).join("、");
-  return `${weekday} · ${items}`;
+  return `${weekdays || "曜日未設定"} · ${items}`;
+}
+
+function presetAnchorId(preset: PresetDto, focusWeekday: Weekday | undefined) {
+  const weekday =
+    focusWeekday !== undefined && preset.weekdays.includes(focusWeekday)
+      ? focusWeekday
+      : preset.weekdays[0];
+  return weekday === undefined ? undefined : presetWeekdayHash(weekday);
 }
 
 export function PresetList({ items, presets, settingsCard }: PresetListProps) {
   const { onCreate, onRemove, onUpdate } = useCatalogPresetActions();
   const { weekday: focusWeekday } = presetsRoute.useSearch();
   const createFormKey = [...presets]
-    .map((preset) => preset.weekday)
+    .flatMap((preset) => preset.weekdays)
     .sort((left, right) => left - right)
     .join(",");
   const focusedPresetId =
     focusWeekday === undefined
       ? presets[0]?._id
-      : presets.find((preset) => preset.weekday === focusWeekday)?._id;
+      : presets.find((preset) => preset.weekdays.includes(focusWeekday))?._id;
 
   return (
     <ConcreteActionTour screen="presets">
@@ -153,7 +173,7 @@ export function PresetList({ items, presets, settingsCard }: PresetListProps) {
           >
             {presets.map((preset) => (
               <Accordion.Item
-                id={isWeekday(preset.weekday) ? presetWeekdayHash(preset.weekday) : undefined}
+                id={presetAnchorId(preset, focusWeekday)}
                 key={preset._id}
                 value={preset._id}
               >
@@ -186,6 +206,7 @@ export function PresetList({ items, presets, settingsCard }: PresetListProps) {
                       onRemove={onRemove}
                       onUpdate={onUpdate}
                       preset={preset}
+                      presets={presets}
                     />
                   </Box>
                 </Accordion.Panel>
@@ -206,12 +227,12 @@ function PresetCreateForm({
   presets: PresetDto[];
 }) {
   const remainingWeekdays = availableWeekdays(presets);
-  const weekdayOptions = weekdaySelectOptions(remainingWeekdays);
+  const weekdayOptions = weekdaySelectOptions(takenWeekdays(presets));
   const onlyWeekday = remainingWeekdays.length === 1 ? remainingWeekdays[0] : undefined;
   const form = useForm({
     initialInput: {
       name: "",
-      weekday: onlyWeekday,
+      weekdays: onlyWeekday === undefined ? [] : [String(onlyWeekday)],
     },
     schema: CreatePresetSchema,
   });
@@ -232,12 +253,12 @@ function PresetCreateForm({
           onCreate({
             lines: [],
             name: output.name,
-            weekday: output.weekday,
+            weekdays: output.weekdays,
           });
         }}
       >
         <Grid align="flex-start" gap="sm">
-          <Grid.Col span={{ base: 12, sm: 6 }}>
+          <Grid.Col span={{ base: 12, sm: 5 }}>
             <Field of={form} path={["name"]}>
               {(field) => (
                 <TextInput
@@ -249,22 +270,21 @@ function PresetCreateForm({
               )}
             </Field>
           </Grid.Col>
-          <Grid.Col span={{ base: 12, sm: 4 }}>
-            <Field of={form} path={["weekday"]}>
+          <Grid.Col span={{ base: 12, sm: 5 }}>
+            <Field of={form} path={["weekdays"]}>
               {(field) => (
-                <Select
+                <MultiSelect
                   {...field.props}
+                  clearable
                   data={weekdayOptions}
+                  description="複数選択できます"
                   error={field.errors?.[0]}
                   label="曜日"
-                  placeholder="曜日を選ぶ"
-                  onChange={onRequiredSelect((value) => {
-                    const weekday = weekdayFromSelect(value);
-                    if (weekday !== undefined) {
-                      field.onChange(weekday);
-                    }
-                  })}
-                  value={field.input === undefined ? null : String(field.input)}
+                  nothingFoundMessage="該当する曜日はありません"
+                  onChange={(values) => field.onChange(sortedWeekdayValues(values))}
+                  placeholder="曜日を選択"
+                  searchable
+                  value={field.input}
                 />
               )}
             </Field>
@@ -287,11 +307,13 @@ function PresetEditor({
   onRemove,
   onUpdate,
   preset,
+  presets,
 }: {
   items: ItemDto[];
   onRemove: CatalogPresetActions["onRemove"];
   onUpdate: CatalogPresetActions["onUpdate"];
   preset: PresetDto;
+  presets: PresetDto[];
 }) {
   const form = useForm({
     initialInput: presetEditorInitialInput(preset),
@@ -316,7 +338,7 @@ function PresetEditor({
             lines: parsedLines(output.lines),
             name: output.name,
             presetId: preset._id,
-            weekday: output.weekday,
+            weekdays: output.weekdays,
           });
         }}
       >
@@ -335,27 +357,27 @@ function PresetEditor({
                 )}
               </Field>
             </Grid.Col>
-            <Grid.Col span={{ base: 12, sm: 3 }}>
-              <Field of={form} path={["weekday"]}>
+            <Grid.Col span={{ base: 12, sm: 4 }}>
+              <Field of={form} path={["weekdays"]}>
                 {(field) => (
-                  <Select
+                  <MultiSelect
                     {...field.props}
+                    clearable
                     aria-label={`${preset.name}の曜日`}
-                    data={WEEKDAY_OPTIONS}
+                    data={weekdaySelectOptions(takenWeekdays(presets, preset._id))}
+                    description="複数選択できます"
                     error={field.errors?.[0]}
-                    label=" "
-                    onChange={onRequiredSelect((value) => {
-                      const weekday = weekdayFromSelect(value);
-                      if (weekday !== undefined) {
-                        field.onChange(weekday);
-                      }
-                    })}
-                    value={String(field.input)}
+                    label="曜日"
+                    nothingFoundMessage="該当する曜日はありません"
+                    onChange={(values) => field.onChange(sortedWeekdayValues(values))}
+                    placeholder="曜日を選択"
+                    searchable
+                    value={field.input}
                   />
                 )}
               </Field>
             </Grid.Col>
-            <Grid.Col span={{ base: 6, sm: 3 }}>
+            <Grid.Col span={{ base: 6, sm: 2 }}>
               <LabelAlignedCell>
                 <Button aria-label={`${preset.name}を保存`} fullWidth type="submit">
                   保存

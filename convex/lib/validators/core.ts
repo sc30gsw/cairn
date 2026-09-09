@@ -25,6 +25,15 @@ export const statusValidator = v.union(...STATUSES.map((status) => v.literal(sta
 
 export const weekdayValidator = v.union(...WEEKDAYS.map((weekday) => v.literal(weekday)));
 
+export const presetWeekdaysValidator = v.array(weekdayValidator);
+
+export const presetWeekdayInputValidator = v.object({
+  weekday: v.optional(weekdayValidator),
+  weekdays: v.optional(presetWeekdaysValidator),
+});
+
+export type PresetWeekdayInput = Infer<typeof presetWeekdayInputValidator>;
+
 export type StatusDto = Infer<typeof statusValidator>;
 
 export type RowStatus = StatusDto;
@@ -117,7 +126,8 @@ export const presetDtoValidator = v.object({
   _id: v.id("presets"),
   lines: v.array(presetLineDtoValidator),
   name: v.string(),
-  weekday: v.number(),
+  weekday: v.optional(weekdayValidator),
+  weekdays: presetWeekdaysValidator,
 });
 
 export const presetApplyResultValidator = v.object({
