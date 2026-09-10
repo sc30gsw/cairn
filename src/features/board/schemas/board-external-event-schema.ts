@@ -23,5 +23,4 @@ export const BoardExternalEventSchema = v.pipe(
   ),
 );
 
-export type BoardExternalEventInput = v.InferInput<typeof BoardExternalEventSchema>;
 export type BoardExternalEventOutput = v.InferOutput<typeof BoardExternalEventSchema>;

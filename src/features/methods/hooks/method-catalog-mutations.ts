@@ -1,34 +1,173 @@
 import { applyLaneOrderToList, applyMethodOrderToList } from "~domain/methodOrder";
 
 import { api } from "~/../convex/_generated/api";
+import { optimisticId } from "~/lib/optimistic-id";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export function useCreateLane() {
-  return useConvexMutation(api.mutations.methods.createLane.createLane);
+  const mutation = useConvexMutation(api.mutations.methods.createLane.createLane);
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.methods.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    const sortOrder = current.lanes.reduce((max, lane) => Math.max(max, lane.sortOrder), -1) + 1;
+    localStore.setQuery(
+      api.queries.methods.list.list,
+      {},
+      {
+        lanes: [
+          ...current.lanes,
+          { _id: optimisticId("methodLanes"), name: args.name.trim(), sortOrder },
+        ],
+        methods: current.methods,
+      },
+    );
+  });
 }
 
 export function useRenameLane() {
-  return useConvexMutation(api.mutations.methods.renameLane.renameLane);
+  const mutation = useConvexMutation(api.mutations.methods.renameLane.renameLane);
+
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.methods.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.methods.list.list,
+      {},
+      {
+        lanes: current.lanes.map((lane) =>
+          lane._id === args.laneId ? { ...lane, name: args.name.trim() } : lane,
+        ),
+        methods: current.methods,
+      },
+    );
+  });
 }
 
 export function useRemoveLane() {
-  return useConvexMutation(api.mutations.methods.removeLane.removeLane);
+  const mutation = useConvexMutation(api.mutations.methods.removeLane.removeLane);
+
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.methods.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.methods.list.list,
+      {},
+      {
+        lanes: current.lanes.filter((lane) => lane._id !== args.laneId),
+        methods: current.methods.filter((method) => method.laneId !== args.laneId),
+      },
+    );
+  });
 }
 
 export function useCreateMethod() {
-  return useConvexMutation(api.mutations.methods.createMethod.createMethod);
+  const mutation = useConvexMutation(api.mutations.methods.createMethod.createMethod);
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.methods.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    const sortOrder =
+      current.methods
+        .filter((method) => method.laneId === args.laneId)
+        .reduce((max, method) => Math.max(max, method.sortOrder), -1) + 1;
+    localStore.setQuery(
+      api.queries.methods.list.list,
+      {},
+      {
+        lanes: current.lanes,
+        methods: [
+          ...current.methods,
+          {
+            _id: optimisticId("methods"),
+            bodyText: "",
+            completionHtml: "",
+            laneId: args.laneId,
+            memoHtml: "",
+            name: args.name.trim(),
+            nowViewing: false,
+            sortOrder,
+          },
+        ],
+      },
+    );
+  });
 }
 
 export function useUpdateMethod() {
-  return useConvexMutation(api.mutations.methods.updateMethod.updateMethod);
+  const mutation = useConvexMutation(api.mutations.methods.updateMethod.updateMethod);
+
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.methods.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.methods.list.list,
+      {},
+      {
+        lanes: current.lanes,
+        methods: current.methods.map((method) =>
+          method._id === args.methodId
+            ? {
+                ...method,
+                bodyText: args.bodyText,
+                completionHtml: args.completionHtml,
+                memoHtml: args.memoHtml,
+                name: args.name.trim(),
+              }
+            : method,
+        ),
+      },
+    );
+  });
 }
 
 export function useRemoveMethod() {
-  return useConvexMutation(api.mutations.methods.removeMethod.removeMethod);
+  const mutation = useConvexMutation(api.mutations.methods.removeMethod.removeMethod);
+
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.methods.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.methods.list.list,
+      {},
+      {
+        lanes: current.lanes,
+        methods: current.methods.filter((method) => method._id !== args.methodId),
+      },
+    );
+  });
 }
 
 export function useSetNowViewing() {
-  return useConvexMutation(api.mutations.methods.setNowViewing.setNowViewing);
+  const mutation = useConvexMutation(api.mutations.methods.setNowViewing.setNowViewing);
+
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.methods.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.methods.list.list,
+      {},
+      {
+        lanes: current.lanes,
+        methods: current.methods.map((method) => ({
+          ...method,
+          nowViewing: method._id === args.methodId ? args.nowViewing : false,
+        })),
+      },
+    );
+  });
 }
 
 export function useApplyLaneOrder() {

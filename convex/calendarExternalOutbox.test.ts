@@ -2,6 +2,7 @@ import { Result } from "better-result";
 import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
+import { convexModules } from "../src/test-utils/convex-modules";
 import { api, internal } from "./_generated/api";
 import { GoogleAuthError } from "./lib/googleAccessToken";
 import type { ExternalChange } from "./lib/validators";
@@ -21,18 +22,6 @@ vi.mock("./lib/googleAccessToken", () => ({
       : Result.ok("test-token"),
 }));
 
-const modules = import.meta.glob([
-  "./**/*.ts",
-  "!./**/*.test.ts",
-  "!./auth.config.ts",
-  "!./auth.ts",
-  "!./betterAuth/**",
-  "!./convex.config.ts",
-  "!./crons.ts",
-  "!./http.ts",
-  "!./migrations.ts",
-]);
-
 const OWNER = "owner";
 const CALENDAR = "owner@example.com";
 const TODAY = "2026-08-17";
@@ -51,7 +40,7 @@ afterEach(() => {
 });
 
 async function setup() {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   const externalId = await t.run(async (ctx) => {
     await ctx.db.insert("calendarConnections", {
       calendars: [{ accessRole: "owner", id: CALENDAR, primary: true, summary: "予定" }],

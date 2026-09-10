@@ -1,25 +1,14 @@
 import { convexTest } from "convex-test";
 import { expect, test } from "vite-plus/test";
 
+import { convexModules } from "../src/test-utils/convex-modules";
 import { api } from "./_generated/api";
 import type { BoardScheduleView } from "./lib/boardScheduleRange";
 import schema from "./schema";
 import { moveExternal, removeExternal } from "./services/calendarSync/externalEvents";
 
-const modules = import.meta.glob([
-  "./**/*.ts",
-  "!./**/*.test.ts",
-  "!./auth.config.ts",
-  "!./auth.ts",
-  "!./betterAuth/**",
-  "!./convex.config.ts",
-  "!./crons.ts",
-  "!./http.ts",
-  "!./migrations.ts",
-]);
-
 async function setup(accessRole: string | undefined) {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   const externalId = await t.run(async (ctx) => {
     await ctx.db.insert("calendarConnections", {
       calendars: [{ accessRole, id: "calendar", primary: true, summary: "予定" }],

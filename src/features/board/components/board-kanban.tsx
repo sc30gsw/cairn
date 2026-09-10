@@ -2,20 +2,24 @@ import type { DropResult } from "@hello-pangea/dnd";
 import { ActionIcon, Badge, Box, Card, Group, Stack, Text, Tooltip } from "@mantine/core";
 import { IconGripVertical } from "@tabler/icons-react";
 import { Result } from "better-result";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { DateJst } from "~domain/jst";
 import { hasTimerState, measuredMs, timerMinutes, timerRunState } from "~domain/rowTimer";
 
 import { ReviewBadge } from "~/components/review-badge";
 import { TruncatedText } from "~/components/truncated-text";
 import { BoardKanbanCardMenu } from "~/features/board/components/board-kanban-card-menu";
-import { BoardKanbanConfirmModal } from "~/features/board/components/board-kanban-confirm-modal";
+import {
+  BoardKanbanConfirmModal,
+  needsKanbanConfirmEditor,
+} from "~/features/board/components/board-kanban-confirm-modal";
 import { RowTimerChip } from "~/features/board/components/row-timer-chip";
 import { useBoardKanbanActions } from "~/features/board/hooks/use-board-kanban-actions";
 import {
   computeOrderedRowIds,
   groupRowsByKanbanColumn,
   hasRowOrderChanged,
+  isKanbanColumn,
   KANBAN_COLUMNS,
   shiftRowWithinColumn,
   type KanbanColumn,
@@ -38,6 +42,7 @@ type BoardKanbanProps = {
 };
 
 type ConfirmTarget = {
+  orderedRowIds: BoardRow["_id"][];
   prefillMinutes: number | null;
   row: BoardRow;
 };
@@ -149,8 +154,8 @@ function columnTimerLabel(
 export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanProps) {
   const {
     onApplyOrder,
-    onConfirm,
     onFlagReview,
+    onMoveAndApplyOrder,
     onUnstart,
     onResumeTimer,
     onSkip,
@@ -164,52 +169,73 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
   const hasMeasuringRow = rows.some((row) => timerRunState(row.timer) === "計測中");
   const nowMs = useTimerTick(hasMeasuringRow);
   const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget | null>(null);
-  const pendingOrderRef = useRef<{
-    dateJst: DateJst;
-    orderedRowIds: BoardRow["_id"][];
-  } | null>(null);
+  const mutationQueueRef = useRef<Promise<void> | null>(null);
+  const rowsRef = useRef(rows);
+  useEffect(() => {
+    rowsRef.current = rows;
+  }, [rows]);
 
-  async function applyPendingOrder() {
-    const pendingOrder = pendingOrderRef.current;
-    if (pendingOrder === null) {
-      return;
-    }
-    const result = await onApplyOrder(pendingOrder);
-    if (Result.isOk(result)) pendingOrderRef.current = null;
-    return result;
+  function enqueueMutation<T>(operation: () => Promise<T>): Promise<T> {
+    const next = (mutationQueueRef.current ?? Promise.resolve()).then(operation);
+    mutationQueueRef.current = next.then(
+      () => undefined,
+      () => undefined,
+    );
+    return next;
   }
 
   async function moveRow(
     move: Exclude<KanbanStatusMove, "noop">,
     row: BoardRow,
   ): Promise<"applied" | "deferred" | "failed"> {
-    if ((move === "skip" || move === "unstart") && hasTimerState(row.timer)) {
-      const measuredMinutes = timerMinutes(measuredMs(row.timer, serverNowMs()));
-      const successMessage = `計測 ${String(measuredMinutes)}分を捨てました`;
-      const result = await (move === "skip"
-        ? onSkip({ rowId: row._id }, successMessage)
-        : onUnstart({ rowId: row._id }, successMessage));
-      return Result.isError(result) ? "failed" : "applied";
-    }
-    let deferred = false;
-    const result = await onStatusMove(move, row, (target) => {
-      deferred = true;
-      setConfirmTarget(target);
+    return await enqueueMutation(async () => {
+      const currentRows = rowsRef.current;
+      const currentRow = currentRows.find((entry) => entry._id === row._id) ?? row;
+      if ((move === "skip" || move === "unstart") && hasTimerState(currentRow.timer)) {
+        const measuredMinutes = timerMinutes(measuredMs(currentRow.timer, serverNowMs()));
+        const successMessage = `計測 ${String(measuredMinutes)}分を捨てました`;
+        const result = await (move === "skip"
+          ? onSkip({ rowId: currentRow._id }, successMessage)
+          : onUnstart({ rowId: currentRow._id }, successMessage));
+        return Result.isError(result) ? "failed" : "applied";
+      }
+      let deferred = false;
+      const result = await onStatusMove(
+        move,
+        currentRow,
+        (target) => {
+          deferred = true;
+          setConfirmTarget({ ...target, orderedRowIds: currentRows.map((entry) => entry._id) });
+        },
+        currentRows.map((entry) => entry._id),
+      );
+      if (deferred) return "deferred";
+      return result !== undefined && Result.isError(result) ? "failed" : "applied";
     });
-    if (deferred) return "deferred";
-    return result !== undefined && Result.isError(result) ? "failed" : "applied";
   }
 
   async function requestConfirm(row: BoardRow) {
-    await onStatusMove("confirm", row, setConfirmTarget);
+    await enqueueMutation(async () => {
+      const currentRows = rowsRef.current;
+      const currentRow = currentRows.find((entry) => entry._id === row._id) ?? row;
+      await onStatusMove(
+        "confirm",
+        currentRow,
+        (target) => {
+          setConfirmTarget({ ...target, orderedRowIds: currentRows.map((entry) => entry._id) });
+        },
+        currentRows.map((entry) => entry._id),
+      );
+    });
   }
 
   function shiftRow(direction: -1 | 1, row: BoardRow) {
-    const orderedRowIds = shiftRowWithinColumn(rows, row._id, direction);
-    if (orderedRowIds === null) {
-      return;
-    }
-    void onApplyOrder({ dateJst, orderedRowIds });
+    void enqueueMutation(() => {
+      const orderedRowIds = shiftRowWithinColumn(rowsRef.current, row._id, direction);
+      return orderedRowIds === null
+        ? Promise.resolve(undefined)
+        : onApplyOrder({ dateJst, orderedRowIds });
+    });
   }
 
   async function handleDragEnd(result: DropResult) {
@@ -217,41 +243,76 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
       return;
     }
 
+    const currentRows = rowsRef.current;
     const { destination, draggableId, source } = result;
     if (destination === null) {
       return;
     }
 
-    const sourceStatus = source.droppableId as KanbanColumn;
-    const destinationStatus = destination.droppableId as KanbanColumn;
-    const row = rows.find((entry) => entry._id === draggableId);
+    const sourceStatus = source.droppableId;
+    const destinationStatus = destination.droppableId;
+    if (!isKanbanColumn(sourceStatus) || !isKanbanColumn(destinationStatus)) {
+      return;
+    }
+    const row = currentRows.find((entry) => entry._id === draggableId);
     if (row === undefined) {
       return;
     }
 
     const orderedRowIds = computeOrderedRowIds(
-      rows,
+      currentRows,
       { index: source.index, status: sourceStatus },
       { index: destination.index, status: destinationStatus },
       row._id,
     );
 
     const statusMove = resolveKanbanStatusMove(row.status, destinationStatus);
-    const orderChanged = hasRowOrderChanged(rows, orderedRowIds);
-    if (orderChanged) {
-      pendingOrderRef.current = { dateJst, orderedRowIds };
-    }
-
-    if (statusMove !== "noop") {
-      const outcome = await moveRow(statusMove, row);
-      if (outcome !== "applied") {
-        if (outcome === "failed") pendingOrderRef.current = null;
-        return;
+    if (statusMove === "noop") {
+      if (hasRowOrderChanged(currentRows, orderedRowIds)) {
+        await enqueueMutation(() => onApplyOrder({ dateJst, orderedRowIds }));
       }
+      return;
     }
 
-    const outcome = await applyPendingOrder();
-    if (outcome !== undefined && Result.isError(outcome)) pendingOrderRef.current = null;
+    if (statusMove === "confirm" && needsKanbanConfirmEditor(row)) {
+      setConfirmTarget({ orderedRowIds, prefillMinutes: null, row });
+      return;
+    }
+
+    const successMessage =
+      statusMove === "confirm"
+        ? "記録を確定しました"
+        : statusMove === "skip"
+          ? "スキップしました"
+          : statusMove === "unskip"
+            ? "スキップを取り消しました"
+            : statusMove === "unconfirm"
+              ? "確定を取り消しました"
+              : statusMove === "start"
+                ? "計測を開始しました"
+                : statusMove === "unstart"
+                  ? "計測を停止しました"
+                  : statusMove === "reopen"
+                    ? "記録を再開しました"
+                    : undefined;
+    await enqueueMutation(() =>
+      onMoveAndApplyOrder(
+        {
+          dateJst,
+          move:
+            statusMove === "confirm"
+              ? {
+                  content: row.content,
+                  kind: "confirm",
+                  minutes: hasTimerState(row.timer) ? undefined : row.minutes,
+                }
+              : { kind: statusMove },
+          orderedRowIds,
+          rowId: row._id,
+        },
+        successMessage,
+      ),
+    );
   }
 
   return (
@@ -259,13 +320,22 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
       <BoardKanbanConfirmModal
         onClose={() => {
           setConfirmTarget(null);
-          pendingOrderRef.current = null;
         }}
         onConfirm={async (input) => {
-          const result = await onConfirm(input);
-          if (Result.isError(result)) return result;
-          const ordered = await applyPendingOrder();
-          return ordered ?? result;
+          if (confirmTarget === null) {
+            return;
+          }
+          return await enqueueMutation(() =>
+            onMoveAndApplyOrder(
+              {
+                dateJst,
+                move: { content: input.content, kind: "confirm", minutes: input.minutes },
+                orderedRowIds: confirmTarget.orderedRowIds,
+                rowId: input.rowId,
+              },
+              `学習時間 ${String(input.minutes)}分を記録しました`,
+            ),
+          );
         }}
         opened={confirmTarget !== null}
         prefillMinutes={confirmTarget?.prefillMinutes ?? null}
@@ -327,12 +397,18 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
                                 dragHandleProps={dragProvided.dragHandleProps ?? undefined}
                                 dragging={dragSnapshot.isDragging}
                                 onConfirm={() => void requestConfirm(row)}
-                                onFlagReview={onFlagReview}
-                                onResume={() => void onResumeTimer({ rowId: row._id })}
+                                onFlagReview={(flaggedRow, dueJst) => {
+                                  void enqueueMutation(() => onFlagReview(flaggedRow, dueJst));
+                                }}
+                                onResume={() =>
+                                  void enqueueMutation(() => onResumeTimer({ rowId: row._id }))
+                                }
                                 onShift={shiftRow}
                                 onStatusMove={moveRow}
-                                onStop={() => void onStopTimer(row._id)}
-                                onUnflagReview={onUnflagReview}
+                                onStop={() => void enqueueMutation(() => onStopTimer(row._id))}
+                                onUnflagReview={(flaggedRow) => {
+                                  void enqueueMutation(() => onUnflagReview(flaggedRow));
+                                }}
                                 row={row}
                                 rows={rows}
                                 todayJst={today}

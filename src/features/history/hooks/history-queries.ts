@@ -3,6 +3,10 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import type { DateJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
+import {
+  useOptionalHistoryMonthBreakdownLiveQuery,
+  useOptionalHistoryWeekLiveQuery,
+} from "~/lib/tanstack-db/collections";
 
 export function historyMonthBreakdownQuery(todayJst: DateJst, yearMonth: string) {
   return convexQuery(api.queries.history.monthBreakdown.monthBreakdown, { todayJst, yearMonth });
@@ -29,9 +33,19 @@ export function historyPresetReviewQuery(todayJst: DateJst) {
 }
 
 export function useHistoryMonthBreakdown(todayJst: DateJst, yearMonth: string) {
-  return useSuspenseQuery(historyMonthBreakdownQuery(todayJst, yearMonth));
+  const live = useOptionalHistoryMonthBreakdownLiveQuery({ todayJst, yearMonth });
+  const queryResult = useSuspenseQuery(historyMonthBreakdownQuery(todayJst, yearMonth));
+  return {
+    ...queryResult,
+    data: live.isReady && live.data !== undefined ? live.data : queryResult.data,
+  };
 }
 
 export function useHistoryWeek(dateJst: DateJst, todayJst: DateJst) {
-  return useSuspenseQuery(historyWeekQuery(dateJst, todayJst));
+  const live = useOptionalHistoryWeekLiveQuery({ dateJst, todayJst });
+  const queryResult = useSuspenseQuery(historyWeekQuery(dateJst, todayJst));
+  return {
+    ...queryResult,
+    data: live.isReady && live.data !== undefined ? live.data : queryResult.data,
+  };
 }

@@ -12,6 +12,7 @@ const noop = vi.fn(async () => undefined);
 const onConfirmMock = vi.fn(async () => null);
 const onStopTimerMock = vi.fn(async (): Promise<number | null> => 754_000);
 const onApplyOrderMock = vi.fn(async () => undefined);
+const onMoveAndApplyOrderMock = vi.fn(async () => undefined);
 const onSkipMock = vi.fn(async () => undefined);
 const onUnstartMock = vi.fn(async () => undefined);
 const onUnconfirmMock = vi.fn(async () => undefined);
@@ -19,6 +20,8 @@ const onUnconfirmMock = vi.fn(async () => undefined);
 const { notificationsShowMock } = vi.hoisted(() => ({ notificationsShowMock: vi.fn() }));
 vi.mock("~/hooks/use-row-mutations", () => ({
   useFlagReview: () => ({ mutateAsync: vi.fn(async () => null) }),
+  useOptimisticFlagReview: () => ({ mutateAsync: vi.fn(async () => null) }),
+  useOptimisticUnflagReview: () => ({ mutateAsync: vi.fn(async () => null) }),
   useUnflagReview: () => ({ mutateAsync: vi.fn(async () => null) }),
 }));
 
@@ -29,6 +32,7 @@ vi.mock("@mantine/notifications", () => ({
 vi.mock("~/features/board/hooks/board-mutations", () => ({
   useBoardApplyRowOrder: () => ({ mutateAsync: onApplyOrderMock }),
   useBoardConfirmRow: () => ({ mutateAsync: onConfirmMock }),
+  useBoardMoveAndApplyRowOrder: () => ({ mutateAsync: onMoveAndApplyOrderMock }),
   useBoardUnstartRow: () => ({ mutateAsync: onUnstartMock }),
   useBoardReopenRow: () => ({ mutateAsync: noop }),
   useBoardResumeRowTimer: () => ({ mutateAsync: noop }),
@@ -42,6 +46,7 @@ vi.mock("~/features/board/hooks/board-mutations", () => ({
 beforeEach(() => {
   noop.mockClear();
   onApplyOrderMock.mockClear();
+  onMoveAndApplyOrderMock.mockClear();
   onConfirmMock.mockClear();
   onUnstartMock.mockClear();
   onSkipMock.mockClear();
@@ -141,7 +146,7 @@ test("操作できないボードではドラッグハンドルと移動メニ�
   );
 });
 
-test("計測がある進行中の行を確定すると、stopTimer の分数でモーダルなしに確定する", async () => {
+test("計測がある進行中の行を確定すると、1 回の mutation で分数を記録する", async () => {
   const { getByRole, queryByLabelText } = renderWithMantine(
     <BoardKanban
       dateJst="2026-08-17"
@@ -159,15 +164,20 @@ test("計測がある進行中の行を確定すると、stopTimer の分数で�
   getByRole("button", { name: "確定する" }).click();
 
   await vi.waitFor(() => {
-    expect(onConfirmMock).toHaveBeenCalledWith({ content: "Unit 1", minutes: 13, rowId: "r1" });
+    expect(onMoveAndApplyOrderMock).toHaveBeenCalledWith({
+      dateJst: "2026-08-17",
+      move: { content: "Unit 1", kind: "confirm" },
+      orderedRowIds: ["r1"],
+      rowId: "r1",
+    });
     expect(hasSuccessToast("学習時間 13分を記録しました")).toBe(true);
   });
-  expect(onStopTimerMock).toHaveBeenCalledWith({ rowId: "r1" });
+  expect(onStopTimerMock).not.toHaveBeenCalled();
   expect(queryByLabelText("分数")).toBeNull();
 });
 
-test("stopTimer が失敗したら確定せず、再試行で計測値を保存する", async () => {
-  onStopTimerMock.mockRejectedValueOnce(new Error("offline"));
+test("統合 mutation が失敗したら確定せず、再試行で計測値を保存する", async () => {
+  onMoveAndApplyOrderMock.mockRejectedValueOnce(new Error("offline"));
   const { queryByLabelText, getByRole } = renderWithMantine(
     <BoardKanban
       dateJst="2026-08-17"
@@ -184,13 +194,11 @@ test("stopTimer が失敗したら確定せず、再試行で計測値を保存�
 
   getByRole("button", { name: "確定する" }).click();
 
-  await waitFor(() => expect(onStopTimerMock).toHaveBeenCalledOnce());
+  await waitFor(() => expect(onMoveAndApplyOrderMock).toHaveBeenCalledOnce());
   expect(onConfirmMock).not.toHaveBeenCalled();
   expect(queryByLabelText("分数")).toBeNull();
   fireEvent.click(getByRole("button", { name: "確定する" }));
-  await waitFor(() =>
-    expect(onConfirmMock).toHaveBeenCalledWith({ content: "Unit 1", minutes: 13, rowId: "r1" }),
-  );
+  await waitFor(() => expect(onMoveAndApplyOrderMock).toHaveBeenCalledTimes(2));
 });
 
 test("計測が無く内容と分数が埋まった行はモーダルなしで確定する", async () => {
@@ -230,7 +238,7 @@ test("計測が無く分数が0の行は確定エディタを開く", async () =
   expect((minutesInput as HTMLInputElement).value).toBe("0");
 });
 
-test("メニューから完了にすると、計測がある行は stopTimer の分数でモーダルなしに確定する", async () => {
+test("メニューから完了にすると、計測がある行は1回の mutation で確定する", async () => {
   const { getByRole, queryByLabelText } = renderWithMantine(
     <BoardKanban
       dateJst="2026-08-17"
@@ -249,9 +257,14 @@ test("メニューから完了にすると、計測がある行は stopTimer の
   fireEvent.click(await waitFor(() => getByRole("menuitem", { hidden: true, name: "完了にする" })));
 
   await vi.waitFor(() => {
-    expect(onConfirmMock).toHaveBeenCalledWith({ content: "Unit 1", minutes: 13, rowId: "r1" });
+    expect(onMoveAndApplyOrderMock).toHaveBeenCalledWith({
+      dateJst: "2026-08-17",
+      move: { content: "Unit 1", kind: "confirm" },
+      orderedRowIds: ["r1"],
+      rowId: "r1",
+    });
   });
-  expect(onStopTimerMock).toHaveBeenCalledWith({ rowId: "r1" });
+  expect(onStopTimerMock).not.toHaveBeenCalled();
   expect(queryByLabelText("分数")).toBeNull();
 });
 

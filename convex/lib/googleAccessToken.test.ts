@@ -4,12 +4,12 @@ import { validate } from "convex-helpers/validators";
 import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
+import { convexModules } from "../../src/test-utils/convex-modules";
 import { components } from "../_generated/api";
 import authSchema from "../betterAuth/schema";
 import schema from "../schema";
 import { getGoogleAccessToken } from "./googleAccessToken";
 
-const modules = import.meta.glob(["../**/*.ts", "!../**/*.test.ts", "!../betterAuth/**"]);
 const authModules = import.meta.glob("../betterAuth/**/*.ts");
 const secret = "calendar-token-test-secret-with-more-than-32-characters";
 
@@ -26,7 +26,7 @@ afterEach(() => {
 });
 
 async function setup() {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   t.registerComponent("betterAuth", authSchema, authModules);
   const [accessToken, refreshToken] = await Promise.all([
     symmetricEncrypt({ key: secret, data: "old-access-token" }),

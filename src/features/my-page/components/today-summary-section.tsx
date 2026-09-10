@@ -13,16 +13,25 @@ import { goalsListQuery } from "~/hooks/goals-queries";
 import { targetsWithProgressQuery } from "~/hooks/targets-queries";
 import { useTodayJst } from "~/hooks/use-today-jst";
 import { parallelConvexQuery } from "~/lib/parallel-convex-query";
+import {
+  useOptionalGoalsLiveQuery,
+  useOptionalTargetsWithProgressLiveQuery,
+} from "~/lib/tanstack-db/collections";
 
 export function TodaySummarySection() {
   const today = useTodayJst();
   const weekStart = mondayOfWeek(today);
-  const [{ data: goals }, { data: targets }] = useSuspenseQueries({
+  const liveGoals = useOptionalGoalsLiveQuery();
+  const liveTargets = useOptionalTargetsWithProgressLiveQuery(weekStart);
+  const [{ data: queriedGoals }, { data: queriedTargets }] = useSuspenseQueries({
     queries: [
       parallelConvexQuery(goalsListQuery()),
       parallelConvexQuery(targetsWithProgressQuery(weekStart)),
     ],
   });
+  const goals = liveGoals.isReady && liveGoals.data !== undefined ? liveGoals.data : queriedGoals;
+  const targets =
+    liveTargets.isReady && liveTargets.data !== undefined ? liveTargets.data : queriedTargets;
 
   const examGoal = findActiveExamGoal(goals);
 

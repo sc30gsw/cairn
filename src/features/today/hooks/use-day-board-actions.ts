@@ -1,21 +1,21 @@
 import { Result } from "better-result";
 import type { DateJst } from "~domain/jst";
-import { hasTimerState, timerMinutes } from "~domain/rowTimer";
+import { hasTimerState } from "~domain/rowTimer";
 
 import {
   useAddRow,
-  useConfirmRow,
   useCopyYesterdayConfirmed,
-  useFlagReview,
-  useOptimisticStopRowTimer,
+  useOptimisticConfirmRow,
+  useOptimisticFlagReview,
+  useOptimisticMoveAndApplyRowOrder,
+  useOptimisticSkipRow,
+  useOptimisticUnflagReview,
+  useOptimisticUnskipRow,
   useRemoveDay,
   useRemoveRow,
-  useSetDayCondition,
-  useSetDayMemo,
-  useSkipRow,
+  useOptimisticSetDayCondition,
+  useOptimisticSetDayMemo,
   useSwitchPreset,
-  useUnflagReview,
-  useUnskipRow,
 } from "~/features/today/hooks/day-mutations";
 import type { DayRow } from "~/features/today/types/day";
 import type {
@@ -41,19 +41,19 @@ export function useDayBoardActions(
   options: UseDayBoardActionsOptions = {},
 ) {
   const today = useTodayJst();
-  const confirm = useConfirmRow();
-  const skip = useSkipRow();
-  const unskip = useUnskipRow();
-  const add = useAddRow();
-  const removeRow = useRemoveRow();
-  const setCondition = useSetDayCondition();
-  const setMemo = useSetDayMemo();
-  const removeDay = useRemoveDay();
-  const copyYesterday = useCopyYesterdayConfirmed();
-  const switchPreset = useSwitchPreset();
-  const stopTimer = useOptimisticStopRowTimer(dateJst, today);
-  const flagReview = useFlagReview();
-  const unflagReview = useUnflagReview();
+  const confirm = useOptimisticConfirmRow(dateJst, today);
+  const moveAndApplyOrder = useOptimisticMoveAndApplyRowOrder(dateJst, today);
+  const skip = useOptimisticSkipRow(dateJst, today);
+  const unskip = useOptimisticUnskipRow(dateJst, today);
+  const add = useAddRow(dateJst, today);
+  const removeRow = useRemoveRow(dateJst, today);
+  const setCondition = useOptimisticSetDayCondition(dateJst, today);
+  const setMemo = useOptimisticSetDayMemo(dateJst, today);
+  const removeDay = useRemoveDay(dateJst, today);
+  const copyYesterday = useCopyYesterdayConfirmed(dateJst, today);
+  const switchPreset = useSwitchPreset(dateJst, today);
+  const flagReview = useOptimisticFlagReview(dateJst, today);
+  const unflagReview = useOptimisticUnflagReview(dateJst, today);
 
   return {
     onAddRow: (input: AddRowInput) =>
@@ -64,13 +64,17 @@ export function useDayBoardActions(
       runMutation(
         async () => {
           const row = rows.find((entry) => entry._id === input.rowId);
-          const measuredMinutes =
-            row !== undefined && hasTimerState(row.timer)
-              ? timerMinutes(await stopTimer.mutateAsync({ rowId: input.rowId }))
-              : null;
-          await confirm.mutateAsync(
-            measuredMinutes === null ? input : { ...input, minutes: measuredMinutes },
-          );
+          let measuredMinutes: number | null = null;
+          if (row === undefined || !hasTimerState(row.timer)) {
+            await confirm.mutateAsync(input);
+          } else {
+            measuredMinutes = await moveAndApplyOrder.mutateAsync({
+              dateJst,
+              move: { content: input.content, kind: "confirm" },
+              orderedRowIds: rows.map((entry) => entry._id),
+              rowId: input.rowId,
+            });
+          }
           if (row !== undefined) {
             options.onConfirmedCategory?.(row.category);
           }

@@ -2,22 +2,11 @@ import { convexTest } from "convex-test";
 import { makeFunctionReference } from "convex/server";
 import { expect, test } from "vite-plus/test";
 
+import { convexModules } from "../src/test-utils/convex-modules";
 import type { Doc } from "./_generated/dataModel";
 import { CHECKPOINT_AUDIT_LIMIT } from "./lib/domain";
 import type { CheckpointParentAudit } from "./lib/validators";
 import schema from "./schema";
-
-const modules = import.meta.glob([
-  "./**/*.ts",
-  "!./**/*.test.ts",
-  "!./auth.config.ts",
-  "!./auth.ts",
-  "!./betterAuth/**",
-  "!./convex.config.ts",
-  "!./crons.ts",
-  "!./http.ts",
-  "!./migrations.ts",
-]);
 
 const auditRef = makeFunctionReference<"query", Record<string, never>, CheckpointParentAudit>(
   "queries/goals/auditCheckpointParents:auditCheckpointParents",
@@ -37,7 +26,7 @@ const MASTERY_FIELDS = {
 >;
 
 function raw() {
-  return convexTest(schema, modules);
+  return convexTest(schema, convexModules);
 }
 
 test("孤児・dangling・chained・self・cross-owner・親あり期限なしをそれぞれ1件数える", async () => {

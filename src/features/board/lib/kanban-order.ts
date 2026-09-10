@@ -1,5 +1,8 @@
+import type { FunctionArgs } from "convex/server";
+import * as v from "valibot";
 import { STATUSES } from "~domain/domain";
 
+import { api } from "~/../convex/_generated/api";
 import type { Id } from "~/../convex/_generated/dataModel";
 import type { BoardRow } from "~/features/board/types/board";
 
@@ -10,17 +13,19 @@ export const KANBAN_COLUMNS = [
   "スキップ",
 ] as const satisfies readonly (typeof STATUSES)[number][];
 
-export type KanbanColumn = (typeof KANBAN_COLUMNS)[number];
+const KanbanColumnSchema = v.picklist(KANBAN_COLUMNS);
 
-export type KanbanStatusMove =
-  | "confirm"
-  | "noop"
-  | "unstart"
-  | "reopen"
-  | "skip"
-  | "start"
-  | "unconfirm"
-  | "unskip";
+export type KanbanColumn = v.InferOutput<typeof KanbanColumnSchema>;
+
+export function isKanbanColumn(value: unknown): value is KanbanColumn {
+  return v.is(KanbanColumnSchema, value);
+}
+
+type RowMove = FunctionArgs<
+  typeof api.mutations.rows.moveAndApplyOrder.moveAndApplyOrder
+>["move"]["kind"];
+
+export type KanbanStatusMove = RowMove | "noop";
 
 export function groupRowsByKanbanColumn(
   rows: readonly BoardRow[],
@@ -113,10 +118,10 @@ export function shiftRowWithinColumn(
     return null;
   }
   const column = row.status;
-  if (!KANBAN_COLUMNS.some((status) => status === column)) {
+  if (!isKanbanColumn(column)) {
     return null;
   }
-  const columnRows = groupRowsByKanbanColumn(rows)[column as KanbanColumn];
+  const columnRows = groupRowsByKanbanColumn(rows)[column];
   const index = columnRows.findIndex((entry) => entry._id === rowId);
   const nextIndex = index + direction;
   if (index === -1 || nextIndex < 0 || nextIndex >= columnRows.length) {
@@ -124,8 +129,8 @@ export function shiftRowWithinColumn(
   }
   return computeOrderedRowIds(
     rows,
-    { index, status: column as KanbanColumn },
-    { index: nextIndex, status: column as KanbanColumn },
+    { index, status: column },
+    { index: nextIndex, status: column },
     rowId,
   );
 }

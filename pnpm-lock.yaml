@@ -68,12 +68,24 @@ importers:
       '@tabler/icons-react':
         specifier: ^3.34.1
         version: 3.46.0(react@19.2.7)
+      '@tanstack/db':
+        specifier: ^0.8.7
+        version: 0.8.7(typescript@7.0.2)
+      '@tanstack/query-db-collection':
+        specifier: ^1.2.12
+        version: 1.2.12(@tanstack/query-core@5.101.4)(typescript@7.0.2)
+      '@tanstack/react-db':
+        specifier: ^0.3.7
+        version: 0.3.7(react@19.2.7)(typescript@7.0.2)
       '@tanstack/react-query':
         specifier: ^5.101.4
         version: 5.101.4(react@19.2.7)
       '@tanstack/react-router':
         specifier: ^1.170.16
         version: 1.170.16(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@tanstack/react-router-devtools':
+        specifier: ^1.167.0
+        version: 1.167.0(@tanstack/react-router@1.170.16(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@tanstack/router-core@1.171.13)(csstype@3.2.3)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@tanstack/react-router-ssr-query':
         specifier: ^1.167.1
         version: 1.167.1(@tanstack/query-core@5.101.4)(@tanstack/react-query@5.101.4(react@19.2.7))(@tanstack/react-router@1.170.16(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@tanstack/router-core@1.171.13)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -119,9 +131,6 @@ importers:
       dayjs:
         specifier: ^1.11.13
         version: 1.11.21
-      nitro:
-        specifier: 3.0.260610-beta
-        version: 3.0.260610-beta(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.2.0)(esbuild@0.27.0)(jiti@2.7.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(chokidar@5.0.0)(jiti@2.7.0)(lru-cache@11.5.2)
       react:
         specifier: ^19.2.7
         version: 19.2.7
@@ -143,6 +152,9 @@ importers:
       tailwind-preset-mantine:
         specifier: ^4.1.0
         version: 4.1.0(@mantine/core@9.6.0(@mantine/hooks@9.6.0(react@19.2.7))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(tailwindcss@4.3.1)
+      tailwindcss:
+        specifier: ^4.3.1
+        version: 4.3.1
       valibot:
         specifier: ^1.4.2
         version: 1.4.2(typescript@7.0.2)
@@ -162,9 +174,6 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.3.1
         version: 4.3.1(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.2.0)(esbuild@0.27.0)(jiti@2.7.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))
-      '@tanstack/react-router-devtools':
-        specifier: ^1.167.0
-        version: 1.167.0(@tanstack/react-router@1.170.16(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(@tanstack/router-core@1.171.13)(csstype@3.2.3)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@testing-library/dom':
         specifier: ^10.4.1
         version: 10.4.1
@@ -201,6 +210,9 @@ importers:
       happy-dom:
         specifier: ^20.11.2
         version: 20.11.2
+      nitro:
+        specifier: 3.0.260610-beta
+        version: 3.0.260610-beta(@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.2.0)(esbuild@0.27.0)(jiti@2.7.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0))(chokidar@5.0.0)(jiti@2.7.0)(lru-cache@11.5.2)
       oxlint-plugin-react-doctor:
         specifier: ^0.9.11
         version: 0.9.12
@@ -210,9 +222,6 @@ importers:
       sharp:
         specifier: ^0.35.3
         version: 0.35.3(@types/node@26.2.0)
-      tailwindcss:
-        specifier: ^4.3.1
-        version: 4.3.1
       vite:
         specifier: npm:@voidzero-dev/vite-plus-core@0.2.1
         version: '@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.2.0)(esbuild@0.27.0)(jiti@2.7.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)'
@@ -2409,12 +2418,37 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
 
+  '@tanstack/db-ivm@0.1.19':
+    resolution: {integrity: sha512-3VGvgNXAPSVqny/pL8Y6n/txnaZzV49WmgSQ9N5eyCQNgMtuOEOJHKDatqqCy3gDxVu6pkhSHDKxcNFOtxMouw==}
+    peerDependencies:
+      typescript: '>=4.7'
+
+  '@tanstack/db@0.8.7':
+    resolution: {integrity: sha512-NIocfK737qPvkE1Ot2iM5PXN6CSBZY5cw1ovAwo0RvQDc/iinyr3x7v+kavoiWxClbkul98J/wRzr0KLanMxOA==}
+    peerDependencies:
+      typescript: '>=4.7'
+
   '@tanstack/history@1.162.0':
     resolution: {integrity: sha512-79pf/RkhteYZTRgcR4F9kbk84P2N8rugQJswxfIqovlbRiT3yI7eBE+5QorIrZaOKktsgzRlXh1l/du/xpl4iA==}
     engines: {node: '>=20.19'}
 
+  '@tanstack/pacer-lite@0.2.2':
+    resolution: {integrity: sha512-eQ1MyLKCHyXiH7NbdmB80W77OhiMgGBUb+qDx/8WMGbwg5Lf/NlfD0TfNYAqY77i8V3AxoDoYdICrQE5ADw4Yw==}
+    engines: {node: '>=18'}
+
   '@tanstack/query-core@5.101.4':
     resolution: {integrity: sha512-gNwcvOJcRbLWPOLG/2OBm+zM+Yv+MKsXKEOWC57USuZDEsI71hEErQsiEGx5wX9rzWWkfwM0fVSPoiIFSsxfiw==}
+
+  '@tanstack/query-db-collection@1.2.12':
+    resolution: {integrity: sha512-cvts5dWl/Q35RBg1qv5JP82+DJczn0LlmQtO7JslGkPPJq8BT6H1CitcCb+kjhh0TLtB97VLRRV63MEYZkzzZw==}
+    peerDependencies:
+      '@tanstack/query-core': ^5.0.0
+      typescript: '>=4.7'
+
+  '@tanstack/react-db@0.3.7':
+    resolution: {integrity: sha512-u0AmiKNyyZoYcTVWEFJ5NG+6mQ6mFKzxwQNeljW8mLPzM7vIBZMVfD5QxUDg7j/54ggsVNkp+MIFisaWEXxVug==}
+    peerDependencies:
+      react: '>=16.8.0'
 
   '@tanstack/react-query@5.101.4':
     resolution: {integrity: sha512-yRg2pfOCxIs4ZJW3XYYHU/WgtD04FHSnfHlpRT7h7pR77hwkdRG4wxbKe4aq6P0RvXUTBSQpQeadS1SUYUe+KA==}
@@ -3800,6 +3834,10 @@ packages:
   flatted@3.4.4:
     resolution: {integrity: sha512-5+ybhBZANEJxaH3X5evAFatUxLfEHSr7n6kYJ+1Qd0mUqr4eu9gIf6GDbWHf8RJijHrjjO8G+la14SlL2SeS1Q==}
 
+  fractional-indexing@3.4.0:
+    resolution: {integrity: sha512-8J3glhz2rrpKG6KmI7wmJo3zH1VjeOpN+vTJSw1fOyO+Viqq3zX6/5NGh6oaZB2qIAYdOYuu5Dz9xp4faOO0Pg==}
+    engines: {node: ^14.13.1 || >=16.0.0}
+
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -4733,6 +4771,9 @@ packages:
 
   sisteransi@1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
+
+  sorted-btree@1.8.1:
+    resolution: {integrity: sha512-395+XIP+wqNn3USkFSrNz7G3Ss/MXlZEqesxvzCRFwL14h6e8LukDHdLBePn5pwbm5OQ9vGu8mDyz2lLDIqamQ==}
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -6842,9 +6883,39 @@ snapshots:
       tailwindcss: 4.3.1
       vite: '@voidzero-dev/vite-plus-core@0.2.1(@types/node@26.2.0)(esbuild@0.27.0)(jiti@2.7.0)(tsx@4.23.12)(typescript@7.0.2)(yaml@2.9.0)'
 
+  '@tanstack/db-ivm@0.1.19(typescript@7.0.2)':
+    dependencies:
+      fractional-indexing: 3.4.0
+      sorted-btree: 1.8.1
+      typescript: 7.0.2
+
+  '@tanstack/db@0.8.7(typescript@7.0.2)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      '@tanstack/db-ivm': 0.1.19(typescript@7.0.2)
+      '@tanstack/pacer-lite': 0.2.2
+      typescript: 7.0.2
+
   '@tanstack/history@1.162.0': {}
 
+  '@tanstack/pacer-lite@0.2.2': {}
+
   '@tanstack/query-core@5.101.4': {}
+
+  '@tanstack/query-db-collection@1.2.12(@tanstack/query-core@5.101.4)(typescript@7.0.2)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      '@tanstack/db': 0.8.7(typescript@7.0.2)
+      '@tanstack/query-core': 5.101.4
+      typescript: 7.0.2
+
+  '@tanstack/react-db@0.3.7(react@19.2.7)(typescript@7.0.2)':
+    dependencies:
+      '@tanstack/db': 0.8.7(typescript@7.0.2)
+      react: 19.2.7
+      use-sync-external-store: 1.6.0(react@19.2.7)
+    transitivePeerDependencies:
+      - typescript
 
   '@tanstack/react-query@5.101.4(react@19.2.7)':
     dependencies:
@@ -8176,6 +8247,8 @@ snapshots:
 
   flatted@3.4.4: {}
 
+  fractional-indexing@3.4.0: {}
+
   fsevents@2.3.3:
     optional: true
 
@@ -9187,6 +9260,8 @@ snapshots:
       totalist: 3.0.1
 
   sisteransi@1.0.5: {}
+
+  sorted-btree@1.8.1: {}
 
   source-map-js@1.2.1: {}
 

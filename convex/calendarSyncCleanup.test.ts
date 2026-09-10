@@ -2,6 +2,7 @@ import { Result } from "better-result";
 import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
+import { convexModules } from "../src/test-utils/convex-modules";
 import { api, internal } from "./_generated/api";
 import type { TableNames } from "./_generated/dataModel";
 import { GOOGLE_CALENDAR_WRITE_SCOPES } from "./lib/calendarSync";
@@ -24,18 +25,6 @@ vi.mock("./lib/googleCalendar", async (importOriginal) => ({
   listCalendars: vi.fn(),
   listEvents: vi.fn(),
 }));
-
-const modules = import.meta.glob([
-  "./**/*.ts",
-  "!./**/*.test.ts",
-  "!./auth.config.ts",
-  "!./auth.ts",
-  "!./betterAuth/**",
-  "!./convex.config.ts",
-  "!./crons.ts",
-  "!./http.ts",
-  "!./migrations.ts",
-]);
 
 const OWNER = "cleanup-owner";
 const OTHER_OWNER = "another-owner";
@@ -72,7 +61,7 @@ afterEach(() => {
 });
 
 async function setup() {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   await t.run(async (ctx) => {
     await ctx.db.insert("calendarConnections", {
       calendars: [{ accessRole: "owner", id: CALENDAR, primary: true, summary: "予定" }],

@@ -10,6 +10,13 @@ import { categoriesListQuery } from "~/hooks/use-categories-list";
 import { itemsListQuery } from "~/hooks/use-items-list";
 import { useTodayJst } from "~/hooks/use-today-jst";
 import { parallelConvexQuery } from "~/lib/parallel-convex-query";
+import {
+  useOptionalCategoriesLiveQuery,
+  useOptionalGoalsLiveQuery,
+  useOptionalItemsLiveQuery,
+  useOptionalObstaclesLiveQuery,
+  useOptionalTargetsWithProgressLiveQuery,
+} from "~/lib/tanstack-db/collections";
 
 export function GoalsPage() {
   return (
@@ -22,12 +29,17 @@ export function GoalsPage() {
 function GoalsReady() {
   const today = useTodayJst();
   const weekStart = mondayOfWeek(today);
+  const liveCategories = useOptionalCategoriesLiveQuery();
+  const liveGoals = useOptionalGoalsLiveQuery();
+  const liveItems = useOptionalItemsLiveQuery();
+  const liveObstacles = useOptionalObstaclesLiveQuery();
+  const liveTargets = useOptionalTargetsWithProgressLiveQuery(weekStart);
   const [
-    { data: categories },
-    { data: goals },
-    { data: items },
-    { data: obstacles },
-    { data: targets },
+    { data: queriedCategories },
+    { data: queriedGoals },
+    { data: queriedItems },
+    { data: queriedObstacles },
+    { data: queriedTargets },
   ] = useSuspenseQueries({
     queries: [
       parallelConvexQuery(categoriesListQuery()),
@@ -40,11 +52,21 @@ function GoalsReady() {
 
   return (
     <GoalsBoard
-      categories={categories}
-      goals={goals}
-      items={items}
-      obstacles={obstacles}
-      targets={targets}
+      categories={
+        liveCategories.isReady && liveCategories.data !== undefined
+          ? liveCategories.data
+          : queriedCategories
+      }
+      goals={liveGoals.isReady && liveGoals.data !== undefined ? liveGoals.data : queriedGoals}
+      items={liveItems.isReady && liveItems.data !== undefined ? liveItems.data : queriedItems}
+      obstacles={
+        liveObstacles.isReady && liveObstacles.data !== undefined
+          ? liveObstacles.data
+          : queriedObstacles
+      }
+      targets={
+        liveTargets.isReady && liveTargets.data !== undefined ? liveTargets.data : queriedTargets
+      }
       todayJst={today}
     />
   );

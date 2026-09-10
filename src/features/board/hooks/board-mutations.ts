@@ -1,67 +1,25 @@
-import { DEFAULT_BOARD_SCHEDULE_COLOR } from "~domain/boardScheduleColors";
 import type { DateJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
-import type { Id } from "~/../convex/_generated/dataModel";
-import {
-  patchBoardScheduleBlocks,
-  patchExternalCalendarEvents,
-} from "~/features/board/lib/optimistic-board-schedule";
+import { patchBoardScheduleBlocks } from "~/features/board/lib/optimistic-board-schedule";
 import type { BoardScheduleView } from "~/features/board/schemas/board-search-schema";
-import {
-  useOptimisticApplyRowOrder,
-  useOptimisticConfirmRow,
-  useOptimisticUnstartRow,
-  useOptimisticReopenRow,
-  useOptimisticResumeRowTimer,
-  useOptimisticSkipRow,
-  useOptimisticStartRow,
-  useOptimisticStopRowTimer,
-  useOptimisticUnconfirmRow,
-  useOptimisticUnskipRow,
+export {
+  useOptimisticApplyRowOrder as useBoardApplyRowOrder,
+  useOptimisticConfirmRow as useBoardConfirmRow,
+  useOptimisticMoveAndApplyRowOrder as useBoardMoveAndApplyRowOrder,
+  useOptimisticReopenRow as useBoardReopenRow,
+  useOptimisticResumeRowTimer as useBoardResumeRowTimer,
+  useOptimisticSkipRow as useBoardSkipRow,
+  useOptimisticStartRow as useBoardStartRow,
+  useOptimisticStopRowTimer as useBoardStopRowTimer,
+  useOptimisticUnconfirmRow as useBoardUnconfirmRow,
+  useOptimisticUnskipRow as useBoardUnskipRow,
+  useOptimisticUnstartRow as useBoardUnstartRow,
 } from "~/hooks/use-row-mutations";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
-export const useBoardSkipRow = useOptimisticSkipRow;
-export const useBoardUnskipRow = useOptimisticUnskipRow;
-export const useBoardUnconfirmRow = useOptimisticUnconfirmRow;
-export const useBoardStartRow = useOptimisticStartRow;
-export const useBoardUnstartRow = useOptimisticUnstartRow;
-export const useBoardReopenRow = useOptimisticReopenRow;
-export const useBoardApplyRowOrder = useOptimisticApplyRowOrder;
-export const useBoardConfirmRow = useOptimisticConfirmRow;
-export const useBoardStopRowTimer = useOptimisticStopRowTimer;
-export const useBoardResumeRowTimer = useOptimisticResumeRowTimer;
-
-export function useBoardScheduleCreate(
-  anchorDateJst: DateJst,
-  todayJst: DateJst,
-  view: BoardScheduleView,
-) {
-  const mutateAsync = useConvexMutation(
-    api.mutations.boardSchedule.create.create,
-  ).withOptimisticUpdate((localStore, args) => {
-    const day = localStore.getQuery(api.queries.days.get.get, {
-      dateJst: todayJst,
-      todayJst,
-    });
-    const row = day?.rows.find((entry) => entry._id === args.rowId);
-    patchBoardScheduleBlocks(localStore, {
-      anchorDateJst,
-      view,
-      updater: (blocks) => [
-        ...blocks,
-        {
-          _id: `optimistic-${crypto.randomUUID()}` as Id<"boardScheduleEvents">,
-          color: args.color ?? DEFAULT_BOARD_SCHEDULE_COLOR,
-          endAt: args.endAt,
-          rowId: args.rowId,
-          startAt: args.startAt,
-          title: row?.itemName ?? "",
-        },
-      ],
-    });
-  });
+export function useBoardScheduleCreate() {
+  const mutateAsync = useConvexMutation(api.mutations.boardSchedule.create.create);
   return { mutateAsync };
 }
 
@@ -131,39 +89,12 @@ export function useBoardScheduleMove(anchorDateJst: DateJst, view: BoardSchedule
   return { mutateAsync };
 }
 
-export function useBoardExternalMove(anchorDateJst: DateJst, view: BoardScheduleView) {
-  const mutateAsync = useConvexMutation(
-    api.mutations.calendarSync.moveExternal.moveExternal,
-  ).withOptimisticUpdate((localStore, args) => {
-    patchExternalCalendarEvents(localStore, {
-      anchorDateJst,
-      view,
-      updater: (externals) =>
-        externals.map((external) =>
-          external._id === args.externalId
-            ? {
-                ...external,
-                endAt: args.endAt,
-                startAt: args.startAt,
-                title: args.title ?? external.title,
-                colorId: args.colorId === undefined ? external.colorId : args.colorId,
-              }
-            : external,
-        ),
-    });
-  });
+export function useBoardExternalMove() {
+  const mutateAsync = useConvexMutation(api.mutations.calendarSync.moveExternal.moveExternal);
   return { mutateAsync };
 }
 
-export function useBoardExternalRemove(anchorDateJst: DateJst, view: BoardScheduleView) {
-  const mutateAsync = useConvexMutation(
-    api.mutations.calendarSync.removeExternal.removeExternal,
-  ).withOptimisticUpdate((localStore, args) => {
-    patchExternalCalendarEvents(localStore, {
-      anchorDateJst,
-      view,
-      updater: (externals) => externals.filter((external) => external._id !== args.externalId),
-    });
-  });
+export function useBoardExternalRemove() {
+  const mutateAsync = useConvexMutation(api.mutations.calendarSync.removeExternal.removeExternal);
   return { mutateAsync };
 }

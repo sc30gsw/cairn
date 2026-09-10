@@ -2,6 +2,7 @@ import { Result } from "better-result";
 import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
+import { convexModules } from "../src/test-utils/convex-modules";
 import { api, internal } from "./_generated/api";
 import { listEvents } from "./lib/googleCalendar";
 import schema from "./schema";
@@ -17,17 +18,6 @@ vi.mock("./lib/googleCalendar", async (original) => ({
   ...(await original<typeof import("./lib/googleCalendar")>()),
   listEvents: vi.fn(),
 }));
-const modules = import.meta.glob([
-  "./**/*.ts",
-  "!./**/*.test.ts",
-  "!./auth.config.ts",
-  "!./auth.ts",
-  "!./betterAuth/**",
-  "!./convex.config.ts",
-  "!./crons.ts",
-  "!./http.ts",
-  "!./migrations.ts",
-]);
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-09-07T00:00:00Z"));
@@ -55,7 +45,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 async function setup() {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   const ids = await Promise.all(
     ["personal", "work", "third"].map((account) =>
       t.mutation(internal.mutations.calendarSync.upsertConnection.upsertConnection, {

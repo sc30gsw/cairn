@@ -16,12 +16,12 @@ const silent = { silent: true } as const satisfies NonNullable<Parameters<typeof
 
 export function useBoardScheduleActions(anchorDateJst: DateJst, view: BoardScheduleView) {
   const today = useTodayJst();
-  const createBlock = useBoardScheduleCreate(anchorDateJst, today, view);
+  const createBlock = useBoardScheduleCreate();
   const updateBlock = useBoardScheduleUpdate(anchorDateJst, today, view);
   const removeBlock = useBoardScheduleRemove(anchorDateJst, view);
   const moveBlock = useBoardScheduleMove(anchorDateJst, view);
-  const moveExternal = useBoardExternalMove(anchorDateJst, view);
-  const removeExternal = useBoardExternalRemove(anchorDateJst, view);
+  const moveExternal = useBoardExternalMove();
+  const removeExternal = useBoardExternalRemove();
 
   return {
     onCreateBlock: (input: Parameters<typeof createBlock.mutateAsync>[0]) =>
@@ -29,10 +29,12 @@ export function useBoardScheduleActions(anchorDateJst: DateJst, view: BoardSched
     onMoveBlock: (input: Parameters<typeof moveBlock.mutateAsync>[0]) =>
       runMutation(() => moveBlock.mutateAsync(input), silent),
     onMoveExternal: (input: Parameters<typeof moveExternal.mutateAsync>[0]) =>
-      runMutation(() => moveExternal.mutateAsync(input), silent),
+      runMutation(() => moveExternal.mutateAsync(input), {
+        successMessage: "Google カレンダーへの反映を送信しました",
+      }),
     onRemoveExternal: (input: Parameters<typeof removeExternal.mutateAsync>[0]) =>
       runMutation(() => removeExternal.mutateAsync(input), {
-        successMessage: "Google カレンダーから予定を消しました",
+        successMessage: "Google カレンダーからの削除を送信しました",
       }),
     onRemoveBlock: (input: Parameters<typeof removeBlock.mutateAsync>[0]) =>
       runMutation(() => removeBlock.mutateAsync(input), silent),

@@ -1,6 +1,7 @@
 import { convexTest } from "convex-test";
 import { beforeEach, expect, test, vi } from "vite-plus/test";
 
+import { convexModules } from "../src/test-utils/convex-modules";
 import { api, components } from "./_generated/api";
 import authSchema from "./betterAuth/schema";
 import { GOOGLE_CALENDAR_WRITE_SCOPES } from "./lib/calendarSync";
@@ -11,7 +12,6 @@ import { connect as connectCalendar } from "./services/calendarSync/connect";
 vi.mock("./services/calendarSync/connect", () => ({ connect: vi.fn() }));
 vi.mock("./services/calendarSync/changeOutput", () => ({ changeOutput: vi.fn() }));
 
-const modules = import.meta.glob(["./**/*.ts", "!./**/*.test.ts", "!./betterAuth/**"]);
 const authModules = import.meta.glob("./betterAuth/**/*.ts");
 const SCOPES = GOOGLE_CALENDAR_WRITE_SCOPES.join(" ");
 
@@ -20,7 +20,7 @@ async function setup({
   ownerId = "owner",
   purpose = "read",
 }: { calendarId?: string; ownerId?: string; purpose?: "read" | "write" } = {}) {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   t.registerComponent("betterAuth", authSchema, authModules);
   const fixture = await t.run(async (ctx) => {
     for (const subject of ["personal", "work"]) {

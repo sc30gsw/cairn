@@ -2,23 +2,12 @@ import { convexTest } from "convex-test";
 import type { FunctionArgs } from "convex/server";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
+import { convexModules } from "../src/test-utils/convex-modules";
 import { api } from "./_generated/api";
 import type { GoalInput } from "./lib/validators";
 import schema from "./schema";
 import { SINGLE_EXAM_GOAL_MESSAGE } from "./services/goals/create";
 import { NOT_EXAM_GOAL_MESSAGE } from "./services/goals/setExamResult";
-
-const modules = import.meta.glob([
-  "./**/*.ts",
-  "!./**/*.test.ts",
-  "!./auth.config.ts",
-  "!./auth.ts",
-  "!./betterAuth/**",
-  "!./convex.config.ts",
-  "!./crons.ts",
-  "!./http.ts",
-  "!./migrations.ts",
-]);
 
 const OWNER = { email: "owner@example.com", subject: "owner-subject" };
 const TODAY = "2026-10-20";
@@ -33,7 +22,7 @@ afterEach(() => {
 });
 
 function owner() {
-  return convexTest(schema, modules).withIdentity(OWNER);
+  return convexTest(schema, convexModules).withIdentity(OWNER);
 }
 
 const EXAM_GOAL = {
