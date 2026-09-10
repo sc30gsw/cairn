@@ -70,6 +70,7 @@ import type * as lib_setupStatus from "../lib/setupStatus.js";
 import type * as lib_share from "../lib/share.js";
 import type * as lib_toeicScore from "../lib/toeicScore.js";
 import type * as lib_trash from "../lib/trash.js";
+import type * as lib_trashSelection from "../lib/trashSelection.js";
 import type * as lib_validators from "../lib/validators.js";
 import type * as lib_validators_boardSchedule from "../lib/validators/boardSchedule.js";
 import type * as lib_validators_calendarSync from "../lib/validators/calendarSync.js";
@@ -79,6 +80,7 @@ import type * as lib_validators_history from "../lib/validators/history.js";
 import type * as lib_validators_methods from "../lib/validators/methods.js";
 import type * as lib_validators_notifications from "../lib/validators/notifications.js";
 import type * as lib_validators_review from "../lib/validators/review.js";
+import type * as lib_validators_rowMove from "../lib/validators/rowMove.js";
 import type * as lib_validators_trash from "../lib/validators/trash.js";
 import type * as lib_volume from "../lib/volume.js";
 import type * as lib_webPush from "../lib/webPush.js";
@@ -162,6 +164,7 @@ import type * as mutations_rows_applyOrder from "../mutations/rows/applyOrder.js
 import type * as mutations_rows_autoStopTimers from "../mutations/rows/autoStopTimers.js";
 import type * as mutations_rows_confirm from "../mutations/rows/confirm.js";
 import type * as mutations_rows_copyYesterdayConfirmed from "../mutations/rows/copyYesterdayConfirmed.js";
+import type * as mutations_rows_moveAndApplyOrder from "../mutations/rows/moveAndApplyOrder.js";
 import type * as mutations_rows_remove from "../mutations/rows/remove.js";
 import type * as mutations_rows_reopen from "../mutations/rows/reopen.js";
 import type * as mutations_rows_restore from "../mutations/rows/restore.js";
@@ -399,6 +402,7 @@ import type * as services_rows_copyYesterdayConfirmed from "../services/rows/cop
 import type * as services_rows_findRunningTimerRow from "../services/rows/findRunningTimerRow.js";
 import type * as services_rows_loadLiveRows from "../services/rows/loadLiveRows.js";
 import type * as services_rows_loadRunningTimer from "../services/rows/loadRunningTimer.js";
+import type * as services_rows_moveAndApplyOrder from "../services/rows/moveAndApplyOrder.js";
 import type * as services_rows_remove from "../services/rows/remove.js";
 import type * as services_rows_reopen from "../services/rows/reopen.js";
 import type * as services_rows_requireOwnedRow from "../services/rows/requireOwnedRow.js";
@@ -499,6 +503,7 @@ declare const fullApi: ApiFromModules<{
   "lib/share": typeof lib_share;
   "lib/toeicScore": typeof lib_toeicScore;
   "lib/trash": typeof lib_trash;
+  "lib/trashSelection": typeof lib_trashSelection;
   "lib/validators": typeof lib_validators;
   "lib/validators/boardSchedule": typeof lib_validators_boardSchedule;
   "lib/validators/calendarSync": typeof lib_validators_calendarSync;
@@ -508,6 +513,7 @@ declare const fullApi: ApiFromModules<{
   "lib/validators/methods": typeof lib_validators_methods;
   "lib/validators/notifications": typeof lib_validators_notifications;
   "lib/validators/review": typeof lib_validators_review;
+  "lib/validators/rowMove": typeof lib_validators_rowMove;
   "lib/validators/trash": typeof lib_validators_trash;
   "lib/volume": typeof lib_volume;
   "lib/webPush": typeof lib_webPush;
@@ -591,6 +597,7 @@ declare const fullApi: ApiFromModules<{
   "mutations/rows/autoStopTimers": typeof mutations_rows_autoStopTimers;
   "mutations/rows/confirm": typeof mutations_rows_confirm;
   "mutations/rows/copyYesterdayConfirmed": typeof mutations_rows_copyYesterdayConfirmed;
+  "mutations/rows/moveAndApplyOrder": typeof mutations_rows_moveAndApplyOrder;
   "mutations/rows/remove": typeof mutations_rows_remove;
   "mutations/rows/reopen": typeof mutations_rows_reopen;
   "mutations/rows/restore": typeof mutations_rows_restore;
@@ -828,6 +835,7 @@ declare const fullApi: ApiFromModules<{
   "services/rows/findRunningTimerRow": typeof services_rows_findRunningTimerRow;
   "services/rows/loadLiveRows": typeof services_rows_loadLiveRows;
   "services/rows/loadRunningTimer": typeof services_rows_loadRunningTimer;
+  "services/rows/moveAndApplyOrder": typeof services_rows_moveAndApplyOrder;
   "services/rows/remove": typeof services_rows_remove;
   "services/rows/reopen": typeof services_rows_reopen;
   "services/rows/requireOwnedRow": typeof services_rows_requireOwnedRow;

@@ -1,18 +1,48 @@
+import type { FunctionReturnType } from "convex/server";
 import { applyItemOrderToList, applyRenameToList } from "~domain/itemOrder";
 
 import { api } from "~/../convex/_generated/api";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
+
+type ItemList = FunctionReturnType<typeof api.queries.items.list.list>;
+type PresetList = FunctionReturnType<typeof api.queries.presets.list.list>;
 
 export function useCreateCategory() {
   return useConvexMutation(api.mutations.categories.create.create);
 }
 
 export function useRenameCategory() {
-  return useConvexMutation(api.mutations.categories.rename.rename);
+  const mutation = useConvexMutation(api.mutations.categories.rename.rename);
+
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.categories.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.categories.list.list,
+      {},
+      current.map((category) =>
+        category._id === args.categoryId ? { ...category, name: args.name.trim() } : category,
+      ),
+    );
+  });
 }
 
 export function useRemoveCategory() {
-  return useConvexMutation(api.mutations.categories.remove.remove);
+  const mutation = useConvexMutation(api.mutations.categories.remove.remove);
+
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.categories.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.categories.list.list,
+      {},
+      current.filter((category) => category._id !== args.categoryId),
+    );
+  });
 }
 
 export function useCreateItem() {
@@ -20,7 +50,19 @@ export function useCreateItem() {
 }
 
 export function useRemoveItem() {
-  return useConvexMutation(api.mutations.items.remove.remove);
+  const mutation = useConvexMutation(api.mutations.items.remove.remove);
+
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.items.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.items.list.list,
+      {},
+      current.filter((item: ItemList[number]) => item._id !== args.itemId),
+    );
+  });
 }
 
 export function useApplyItemOrder() {
@@ -56,13 +98,66 @@ export function useCreatePreset() {
 }
 
 export function useUpdatePreset() {
-  return useConvexMutation(api.mutations.presets.update.update);
+  const mutation = useConvexMutation(api.mutations.presets.update.update);
+
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.presets.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.presets.list.list,
+      {},
+      current.map((preset: PresetList[number]) => {
+        if (preset._id !== args.presetId) {
+          return preset;
+        }
+        const itemNames = new Map(
+          preset.lines.map((line: PresetList[number]["lines"][number]) => [
+            line.itemId,
+            line.itemName,
+          ]),
+        );
+        const weekdays = args.weekdays ?? (args.weekday === undefined ? [] : [args.weekday]);
+        return {
+          ...preset,
+          lines: args.lines.map((line) => ({
+            ...line,
+            itemName: itemNames.get(line.itemId) ?? "不明",
+          })),
+          name: args.name.trim(),
+          weekday: weekdays[0],
+          weekdays,
+        };
+      }),
+    );
+  });
 }
 
 export function useSavePresetSettings() {
-  return useConvexMutation(api.mutations.presets.saveSettings.saveSettings);
+  const mutation = useConvexMutation(api.mutations.presets.saveSettings.saveSettings);
+
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.presets.settings.settings, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(api.queries.presets.settings.settings, {}, args);
+  });
 }
 
 export function useRemovePreset() {
-  return useConvexMutation(api.mutations.presets.remove.remove);
+  const mutation = useConvexMutation(api.mutations.presets.remove.remove);
+
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.presets.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.presets.list.list,
+      {},
+      current.filter((preset: PresetList[number]) => preset._id !== args.presetId),
+    );
+  });
 }

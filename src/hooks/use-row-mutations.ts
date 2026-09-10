@@ -1,5 +1,5 @@
 import type { DateJst } from "~domain/jst";
-import { measuredMs } from "~domain/rowTimer";
+import { measuredMs, timerMinutes } from "~domain/rowTimer";
 
 import { api } from "~/../convex/_generated/api";
 import { getDayRow, patchDayRow, reorderDayRows, setDayRowStatus } from "~/lib/optimistic-day-rows";
@@ -42,6 +42,46 @@ export function useSetDayMemo() {
   return useConvexMutation(api.mutations.days.setMemo.setMemo);
 }
 
+export function useOptimisticSetDayCondition(dateJst: DateJst, todayJst: DateJst) {
+  const mutateAsync = useConvexMutation(
+    api.mutations.days.setCondition.setCondition,
+  ).withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.days.get.get, { dateJst, todayJst });
+    if (current?.day === null || current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.days.get.get,
+      { dateJst, todayJst },
+      {
+        ...current,
+        day: { ...current.day, condition: args.condition },
+      },
+    );
+  });
+  return { mutateAsync };
+}
+
+export function useOptimisticSetDayMemo(dateJst: DateJst, todayJst: DateJst) {
+  const mutateAsync = useConvexMutation(api.mutations.days.setMemo.setMemo).withOptimisticUpdate(
+    (localStore, args) => {
+      const current = localStore.getQuery(api.queries.days.get.get, { dateJst, todayJst });
+      if (current?.day === null || current === undefined) {
+        return;
+      }
+      localStore.setQuery(
+        api.queries.days.get.get,
+        { dateJst, todayJst },
+        {
+          ...current,
+          day: { ...current.day, memo: args.memo.trim() === "" ? null : args.memo },
+        },
+      );
+    },
+  );
+  return { mutateAsync };
+}
+
 export function useRemoveDay() {
   return useConvexMutation(api.mutations.trash.removeDay.removeDay);
 }
@@ -54,14 +94,60 @@ export function useUnflagReview() {
   return useConvexMutation(api.mutations.reviews.unflag.unflag);
 }
 
+export function useOptimisticFlagReview(dateJst: DateJst, todayJst: DateJst) {
+  const mutateAsync = useConvexMutation(api.mutations.reviews.flag.flag).withOptimisticUpdate(
+    (localStore, args) => {
+      if (args.dueJst === undefined) {
+        return;
+      }
+      const row = getDayRow(localStore, { dateJst, rowId: args.rowId, todayJst });
+      if (row === undefined) {
+        return;
+      }
+      patchDayRow(localStore, {
+        dateJst,
+        patch: { review: { dueJst: args.dueJst, kind: "source", stage: 0 } },
+        rowId: args.rowId,
+        todayJst,
+      });
+    },
+  );
+  return { mutateAsync };
+}
+
+export function useOptimisticUnflagReview(dateJst: DateJst, todayJst: DateJst) {
+  const mutateAsync = useConvexMutation(api.mutations.reviews.unflag.unflag).withOptimisticUpdate(
+    (localStore, args) => {
+      const row = getDayRow(localStore, { dateJst, rowId: args.rowId, todayJst });
+      if (row === undefined) {
+        return;
+      }
+      patchDayRow(localStore, {
+        dateJst,
+        patch: { review: null },
+        rowId: args.rowId,
+        todayJst,
+      });
+    },
+  );
+  return { mutateAsync };
+}
+
 export function useOptimisticSkipRow(dateJst: DateJst, todayJst: DateJst) {
   const mutateAsync = useConvexMutation(api.mutations.rows.skip.skip).withOptimisticUpdate(
     (localStore, args) => {
-      setDayRowStatus(localStore, {
+      const row = getDayRow(localStore, { dateJst, rowId: args.rowId, todayJst });
+      if (row === undefined) {
+        return;
+      }
+      patchDayRow(localStore, {
         dateJst,
+        patch: {
+          review: row.review?.kind === "review" ? null : row.review,
+          status: "スキップ",
+          timer: null,
+        },
         rowId: args.rowId,
-        status: "スキップ",
-        timer: null,
         todayJst,
       });
     },
@@ -162,12 +248,97 @@ export function useOptimisticApplyRowOrder(dateJst: DateJst, todayJst: DateJst) 
   return { mutateAsync };
 }
 
+export function useOptimisticMoveAndApplyRowOrder(dateJst: DateJst, todayJst: DateJst) {
+  const mutateAsync = useConvexMutation(
+    api.mutations.rows.moveAndApplyOrder.moveAndApplyOrder,
+  ).withOptimisticUpdate((localStore, args) => {
+    const row = getDayRow(localStore, { dateJst, rowId: args.rowId, todayJst });
+    if (row === undefined) {
+      return;
+    }
+
+    switch (args.move) {
+      case "confirm":
+        patchDayRow(localStore, {
+          dateJst,
+          patch: {
+            content: args.content ?? row.content,
+            minutes: args.minutes ?? timerMinutes(measuredMs(row.timer, serverNowMs())),
+            review: row.review?.kind === "review" ? null : row.review,
+            status: "確定",
+            timer: null,
+          },
+          rowId: args.rowId,
+          todayJst,
+        });
+        break;
+      case "reopen":
+        setDayRowStatus(localStore, {
+          dateJst,
+          rowId: args.rowId,
+          status: "進行中",
+          timer: {
+            accumulatedMs: row.minutes * 60_000,
+            autoStoppedAt: null,
+            startedAt: serverNowMs(),
+          },
+          todayJst,
+        });
+        break;
+      case "skip":
+        patchDayRow(localStore, {
+          dateJst,
+          patch: {
+            review: row.review?.kind === "review" ? null : row.review,
+            status: "スキップ",
+            timer: null,
+          },
+          rowId: args.rowId,
+          todayJst,
+        });
+        break;
+      case "start":
+        setDayRowStatus(localStore, {
+          dateJst,
+          rowId: args.rowId,
+          status: "進行中",
+          timer: { accumulatedMs: 0, autoStoppedAt: null, startedAt: serverNowMs() },
+          todayJst,
+        });
+        break;
+      case "unconfirm":
+      case "unskip":
+      case "unstart":
+        setDayRowStatus(localStore, {
+          dateJst,
+          rowId: args.rowId,
+          status: "未着手",
+          timer: null,
+          todayJst,
+        });
+        break;
+    }
+    reorderDayRows(localStore, { dateJst, orderedRowIds: args.orderedRowIds, todayJst });
+  });
+  return { mutateAsync };
+}
+
 export function useOptimisticConfirmRow(dateJst: DateJst, todayJst: DateJst) {
   const mutateAsync = useConvexMutation(api.mutations.rows.confirm.confirm).withOptimisticUpdate(
     (localStore, args) => {
+      const row = getDayRow(localStore, { dateJst, rowId: args.rowId, todayJst });
+      if (row === undefined) {
+        return;
+      }
       patchDayRow(localStore, {
         dateJst,
-        patch: { content: args.content, minutes: args.minutes, status: "確定", timer: null },
+        patch: {
+          content: args.content,
+          minutes: args.minutes,
+          review: row.review?.kind === "review" ? null : row.review,
+          status: "確定",
+          timer: null,
+        },
         rowId: args.rowId,
         todayJst,
       });

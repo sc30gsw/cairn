@@ -125,4 +125,80 @@ test("applyOrder は同じ記録IDの重複を拒否する", async () => {
   expect(after.rows.map((entry) => entry._id)).toEqual(day.rows.map((entry) => entry._id));
 });
 
+test("moveAndApplyOrder は状態変更と並び替えを同じ transaction で保存する", async () => {
+  const t = asOwner();
+  const row = await firstRow(t);
+  const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  const orderedRowIds = [...day.rows].reverse().map((entry) => entry._id);
+
+  await t.mutation(api.mutations.rows.moveAndApplyOrder.moveAndApplyOrder, {
+    dateJst: MONDAY,
+    move: "skip",
+    orderedRowIds,
+    rowId: row._id,
+  });
+
+  const after = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  expect(after.rows.map((entry) => entry._id)).toEqual(orderedRowIds);
+  expect(after.rows.find((entry) => entry._id === row._id)?.status).toBe("スキップ");
+});
+
+test("moveAndApplyOrder の confirm は計測停止と確定を同じ transaction で保存する", async () => {
+  const t = asOwner();
+  const row = await firstRow(t);
+  await t.mutation(api.mutations.rows.start.start, { rowId: row._id });
+  const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+
+  await t.mutation(api.mutations.rows.moveAndApplyOrder.moveAndApplyOrder, {
+    content: "Unit 1",
+    dateJst: MONDAY,
+    move: "confirm",
+    orderedRowIds: day.rows.map((entry) => entry._id),
+    rowId: row._id,
+  });
+
+  const after = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  const updated = after.rows.find((entry) => entry._id === row._id);
+  expect(updated?.status).toBe("確定");
+  expect(updated?.timer).toBeNull();
+});
+
+test("moveAndApplyOrder は記録と対象日の不一致を拒否する", async () => {
+  const t = asOwner();
+  const row = await firstRow(t);
+  const otherDate = "2026-08-18";
+  await t.mutation(api.mutations.days.open.open, {
+    dateJst: otherDate,
+    todayJst: otherDate,
+  });
+  const otherDay = await t.query(api.queries.days.get.get, {
+    dateJst: otherDate,
+    todayJst: otherDate,
+  });
+
+  await expect(
+    t.mutation(api.mutations.rows.moveAndApplyOrder.moveAndApplyOrder, {
+      dateJst: otherDate,
+      move: "skip",
+      orderedRowIds: otherDay.rows.map((entry) => entry._id),
+      rowId: row._id,
+    }),
+  ).rejects.toThrow();
+});
+
+test("moveAndApplyOrder は不正な日付形式を拒否する", async () => {
+  const t = asOwner();
+  const row = await firstRow(t);
+  const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+
+  await expect(
+    t.mutation(api.mutations.rows.moveAndApplyOrder.moveAndApplyOrder, {
+      dateJst: "not-a-date",
+      move: "skip",
+      orderedRowIds: day.rows.map((entry) => entry._id),
+      rowId: row._id,
+    }),
+  ).rejects.toThrow();
+});
+
 vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));

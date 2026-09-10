@@ -13,6 +13,11 @@ import { targetsWithProgressQuery } from "~/hooks/targets-queries";
 import { useOpenAndLoadDay } from "~/hooks/use-open-and-load-day";
 import { useTodayJst } from "~/hooks/use-today-jst";
 import { parallelConvexQuery } from "~/lib/parallel-convex-query";
+import {
+  useOptionalItemsLiveQuery,
+  useOptionalPresetsLiveQuery,
+  useOptionalTargetsWithProgressLiveQuery,
+} from "~/lib/tanstack-db/collections";
 
 type DayBoardTabProps = {
   dateJst: DateJst;
@@ -22,13 +27,22 @@ type DayBoardTabProps = {
 export function DayBoardTab({ dateJst, presetFromSearch }: DayBoardTabProps) {
   const today = useTodayJst();
   const { data: day } = useOpenAndLoadDay(dateJst, today);
-  const [{ data: items }, { data: presets }, { data: targets }] = useSuspenseQueries({
-    queries: [
-      parallelConvexQuery(itemsListQuery()),
-      parallelConvexQuery(presetsListQuery()),
-      parallelConvexQuery(targetsWithProgressQuery(mondayOfWeek(today))),
-    ],
-  });
+  const liveItems = useOptionalItemsLiveQuery();
+  const livePresets = useOptionalPresetsLiveQuery();
+  const liveTargets = useOptionalTargetsWithProgressLiveQuery(mondayOfWeek(today));
+  const [{ data: queriedItems }, { data: queriedPresets }, { data: queriedTargets }] =
+    useSuspenseQueries({
+      queries: [
+        parallelConvexQuery(itemsListQuery()),
+        parallelConvexQuery(presetsListQuery()),
+        parallelConvexQuery(targetsWithProgressQuery(mondayOfWeek(today))),
+      ],
+    });
+  const items = liveItems.isReady && liveItems.data !== undefined ? liveItems.data : queriedItems;
+  const presets =
+    livePresets.isReady && livePresets.data !== undefined ? livePresets.data : queriedPresets;
+  const targets =
+    liveTargets.isReady && liveTargets.data !== undefined ? liveTargets.data : queriedTargets;
   const [confirmedCategory, setConfirmedCategory] = useState<string | null>(null);
 
   const remainder =

@@ -8,11 +8,43 @@ export function useCreateLane() {
 }
 
 export function useRenameLane() {
-  return useConvexMutation(api.mutations.methods.renameLane.renameLane);
+  const mutation = useConvexMutation(api.mutations.methods.renameLane.renameLane);
+
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.methods.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.methods.list.list,
+      {},
+      {
+        lanes: current.lanes.map((lane) =>
+          lane._id === args.laneId ? { ...lane, name: args.name.trim() } : lane,
+        ),
+        methods: current.methods,
+      },
+    );
+  });
 }
 
 export function useRemoveLane() {
-  return useConvexMutation(api.mutations.methods.removeLane.removeLane);
+  const mutation = useConvexMutation(api.mutations.methods.removeLane.removeLane);
+
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.methods.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.methods.list.list,
+      {},
+      {
+        lanes: current.lanes.filter((lane) => lane._id !== args.laneId),
+        methods: current.methods.filter((method) => method.laneId !== args.laneId),
+      },
+    );
+  });
 }
 
 export function useCreateMethod() {
@@ -20,15 +52,73 @@ export function useCreateMethod() {
 }
 
 export function useUpdateMethod() {
-  return useConvexMutation(api.mutations.methods.updateMethod.updateMethod);
+  const mutation = useConvexMutation(api.mutations.methods.updateMethod.updateMethod);
+
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.methods.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.methods.list.list,
+      {},
+      {
+        lanes: current.lanes,
+        methods: current.methods.map((method) =>
+          method._id === args.methodId
+            ? {
+                ...method,
+                bodyText: args.bodyText,
+                completionHtml: args.completionHtml,
+                memoHtml: args.memoHtml,
+                name: args.name.trim(),
+              }
+            : method,
+        ),
+      },
+    );
+  });
 }
 
 export function useRemoveMethod() {
-  return useConvexMutation(api.mutations.methods.removeMethod.removeMethod);
+  const mutation = useConvexMutation(api.mutations.methods.removeMethod.removeMethod);
+
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.methods.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.methods.list.list,
+      {},
+      {
+        lanes: current.lanes,
+        methods: current.methods.filter((method) => method._id !== args.methodId),
+      },
+    );
+  });
 }
 
 export function useSetNowViewing() {
-  return useConvexMutation(api.mutations.methods.setNowViewing.setNowViewing);
+  const mutation = useConvexMutation(api.mutations.methods.setNowViewing.setNowViewing);
+
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.methods.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.methods.list.list,
+      {},
+      {
+        lanes: current.lanes,
+        methods: current.methods.map((method) => ({
+          ...method,
+          nowViewing: method._id === args.methodId ? args.nowViewing : false,
+        })),
+      },
+    );
+  });
 }
 
 export function useApplyLaneOrder() {

@@ -1,5 +1,7 @@
+import type { FunctionArgs } from "convex/server";
 import { STATUSES } from "~domain/domain";
 
+import { api } from "~/../convex/_generated/api";
 import type { Id } from "~/../convex/_generated/dataModel";
 import type { BoardRow } from "~/features/board/types/board";
 
@@ -12,15 +14,9 @@ export const KANBAN_COLUMNS = [
 
 export type KanbanColumn = (typeof KANBAN_COLUMNS)[number];
 
-export type KanbanStatusMove =
-  | "confirm"
-  | "noop"
-  | "unstart"
-  | "reopen"
-  | "skip"
-  | "start"
-  | "unconfirm"
-  | "unskip";
+type RowMove = FunctionArgs<typeof api.mutations.rows.moveAndApplyOrder.moveAndApplyOrder>["move"];
+
+export type KanbanStatusMove = RowMove | "noop";
 
 export function groupRowsByKanbanColumn(
   rows: readonly BoardRow[],

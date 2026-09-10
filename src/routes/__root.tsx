@@ -6,6 +6,7 @@ import { DatesProvider } from "@mantine/dates";
 import { ModalsProvider } from "@mantine/modals";
 import { Notifications } from "@mantine/notifications";
 import { ShimmerProvider } from "@shimmer-from-structure/react";
+import type { DbClient } from "@tanstack/db";
 import type { QueryClient } from "@tanstack/react-query";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import {
@@ -27,6 +28,7 @@ import { ServiceWorkerRegistrar } from "~/components/service-worker-registrar";
 import { authClient } from "~/lib/auth-client";
 import { getToken } from "~/lib/auth-server";
 import { PAPER_TOKENS } from "~/lib/paper-tokens";
+import { TanStackDbProvider } from "~/lib/tanstack-db/db-provider";
 import { cssVariablesResolver, theme } from "~/lib/theme";
 
 import appCss from "~/styles.css?url";
@@ -46,6 +48,7 @@ const TanStackRouterDevtools = import.meta.env.DEV
 
 export const Route = createRootRouteWithContext<{
   convexQueryClient: ConvexQueryClient;
+  dbClient: DbClient;
   queryClient: QueryClient;
 }>()({
   beforeLoad: async (ctx) => {
@@ -150,9 +153,11 @@ function RootComponent() {
       client={context.convexQueryClient.convexClient}
       initialToken={context.token}
     >
-      <RootDocument>
-        <Outlet />
-      </RootDocument>
+      <TanStackDbProvider client={context.dbClient}>
+        <RootDocument>
+          <Outlet />
+        </RootDocument>
+      </TanStackDbProvider>
     </ConvexBetterAuthProvider>
   );
 }

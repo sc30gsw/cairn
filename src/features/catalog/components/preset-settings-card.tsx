@@ -3,11 +3,15 @@ import { Card, Switch } from "@mantine/core";
 import { useSavePresetSettings } from "~/features/catalog/hooks/catalog-mutations";
 import { usePresetSettings } from "~/features/catalog/hooks/catalog-queries";
 import { runMutation } from "~/lib/run-mutation";
+import { useOptionalPresetSettingsLiveQuery } from "~/lib/tanstack-db/collections";
 
 export const HOLIDAY_AS_SUNDAY_LABEL = "祝日は日曜のプリセットを使う";
 
 export function PresetSettingsCard() {
-  const { data: settings } = usePresetSettings();
+  const { data: queriedSettings } = usePresetSettings();
+  const liveSettings = useOptionalPresetSettingsLiveQuery();
+  const settings =
+    liveSettings.isReady && liveSettings.data !== undefined ? liveSettings.data : queriedSettings;
   const saveSettings = useSavePresetSettings();
 
   return (

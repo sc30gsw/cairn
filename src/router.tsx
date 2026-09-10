@@ -4,6 +4,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 
+import { createTanStackDbClient } from "~/lib/tanstack-db/runtime";
 import { routeTree } from "~/routeTree.gen";
 
 export function getRouter() {
@@ -22,9 +23,10 @@ export function getRouter() {
     },
   });
   convexQueryClient.connect(queryClient);
+  const dbClient = createTanStackDbClient({ convexQueryClient, queryClient });
 
   const router = createRouter({
-    context: { convexQueryClient, queryClient },
+    context: { convexQueryClient, dbClient, queryClient },
     defaultPreload: "intent",
     routeTree,
     scrollRestoration: true,

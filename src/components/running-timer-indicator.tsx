@@ -14,13 +14,14 @@ import { useTodayJst } from "~/hooks/use-today-jst";
 import { boardKanbanLink } from "~/lib/board-day-links";
 import { runMutation } from "~/lib/run-mutation";
 import { recordServerInstant } from "~/lib/server-clock";
+import { useOptionalRunningTimerLiveQuery } from "~/lib/tanstack-db/collections";
 import { NUMERAL_FONT } from "~/lib/theme";
 import { formatTimerClock } from "~/lib/timer-clock";
 
 export function RunningTimerIndicator() {
-  const { data: running } = useSuspenseQuery(
-    convexQuery(api.queries.rows.runningTimer.runningTimer, {}),
-  );
+  const queryResult = useSuspenseQuery(convexQuery(api.queries.rows.runningTimer.runningTimer, {}));
+  const live = useOptionalRunningTimerLiveQuery();
+  const running = live.isReady ? (live.data ?? null) : queryResult.data;
   const stopTimer = useStopRunningTimer();
   const startedAt = running?.timer.startedAt ?? null;
   const nowMs = useTimerTick(startedAt !== null);

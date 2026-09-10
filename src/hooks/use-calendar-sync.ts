@@ -2,20 +2,17 @@ import { convexQuery } from "@convex-dev/react-query";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useAction } from "convex/react";
 import { useEffect, useRef } from "react";
-import type { BoardScheduleView } from "~domain/boardScheduleRange";
-import type { DateJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
+import { useOptionalCalendarSyncStatusLiveQuery } from "~/lib/tanstack-db/collections";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export function useCalendarSyncStatus() {
-  return useSuspenseQuery(convexQuery(api.queries.calendarSync.status.status, {}));
-}
-
-export function useExternalCalendarEvents(anchorDateJst: DateJst, view: BoardScheduleView) {
-  return useSuspenseQuery(
-    convexQuery(api.queries.calendarSync.listExternal.listExternal, { anchorDateJst, view }),
-  );
+  const queryResult = useSuspenseQuery(convexQuery(api.queries.calendarSync.status.status, {}));
+  const live = useOptionalCalendarSyncStatusLiveQuery();
+  return {
+    data: live.isReady && live.data !== undefined ? live.data : queryResult.data,
+  };
 }
 
 export function useConnectCalendarSync() {
