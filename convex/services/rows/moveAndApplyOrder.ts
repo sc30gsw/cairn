@@ -24,15 +24,12 @@ export async function moveAndApplyOrder(
     throwDomain(new ValidationFailedError({ message: "記録の日付が一致しません" }));
   }
   let confirmedMinutes: number | null = null;
-  switch (args.move) {
+  switch (args.move.kind) {
     case "confirm": {
-      if (args.content === undefined) {
-        throwDomain(new ValidationFailedError({ message: "確定内容が必要です" }));
-      }
       const minutes =
-        args.minutes ?? timerMinutes(await stopTimer(ctx, ownerId, { rowId: args.rowId }));
+        args.move.minutes ?? timerMinutes(await stopTimer(ctx, ownerId, { rowId: args.rowId }));
       confirmedMinutes = minutes;
-      await confirm(ctx, ownerId, { content: args.content, minutes, rowId: args.rowId });
+      await confirm(ctx, ownerId, { content: args.move.content, minutes, rowId: args.rowId });
       break;
     }
     case "reopen":

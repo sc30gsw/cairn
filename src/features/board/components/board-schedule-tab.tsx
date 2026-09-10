@@ -1,10 +1,5 @@
 import { convexQuery } from "@convex-dev/react-query";
-import {
-  queryOptions,
-  usePrefetchQuery,
-  useQueryClient,
-  useSuspenseQueries,
-} from "@tanstack/react-query";
+import { queryOptions, usePrefetchQuery, useSuspenseQueries } from "@tanstack/react-query";
 
 import { api } from "~/../convex/_generated/api";
 import { BoardSchedule } from "~/features/board/components/board-schedule";
@@ -28,13 +23,9 @@ export function BoardScheduleTab() {
     anchorDateJst: view.scheduleAnchor,
     view: view.scheduleView,
   });
-  const queryClient = useQueryClient();
-  if (typeof window !== "undefined") {
-    void queryClient.prefetchQuery(dayQuery);
-  }
+  usePrefetchQuery(dayQuery);
   usePrefetchQuery(blocksQuery);
   usePrefetchQuery(externalsQuery);
-  useEnsureDayOpen(view.selectedDateJst, view.today);
   const liveDay = useOptionalDayPageLiveQuery({
     dateJst: view.selectedDateJst,
     todayJst: view.today,
@@ -47,13 +38,14 @@ export function BoardScheduleTab() {
     anchorDateJst: view.scheduleAnchor,
     view: view.scheduleView,
   });
+  useEnsureDayOpen(view.selectedDateJst, view.today);
   const [{ data: queriedDay }, { data: queriedBlocks }, { data: queriedExternals }] =
     useSuspenseQueries({
       queries: [
         queryOptions(dayQuery),
         queryOptions(blocksQuery),
         queryOptions(externalsQuery),
-      ] as const,
+      ] as const satisfies readonly unknown[],
     });
   useSyncCalendarOnOpen();
 

@@ -26,10 +26,10 @@ type DayBoardTabProps = {
 
 export function DayBoardTab({ dateJst, presetFromSearch }: DayBoardTabProps) {
   const today = useTodayJst();
-  const { data: day } = useOpenAndLoadDay(dateJst, today);
   const liveItems = useOptionalItemsLiveQuery();
   const livePresets = useOptionalPresetsLiveQuery();
   const liveTargets = useOptionalTargetsWithProgressLiveQuery(mondayOfWeek(today));
+  const { data: day } = useOpenAndLoadDay(dateJst, today);
   const [{ data: queriedItems }, { data: queriedPresets }, { data: queriedTargets }] =
     useSuspenseQueries({
       queries: [

@@ -46,6 +46,7 @@ export function WebPushSection() {
   const unsubscribePush = useUnsubscribePush();
   const { standalone } = useInstallPrompt();
   const [current, setCurrent] = useState<SubscribePushInput | null>(null);
+  const [pendingSubscribe, setPendingSubscribe] = useState<string | null>(null);
   const [pendingUnsubscribe, setPendingUnsubscribe] = useState<string | null>(null);
   const [permission, setPermission] = useState(notificationPermission);
   const { busy, withBusy } = useBusy();
@@ -67,7 +68,9 @@ export function WebPushSection() {
 
   const supported = isWebPushSupported();
   const subscribedHere =
-    current !== null && subscriptions.some((entry) => entry.endpoint === current.endpoint);
+    current !== null &&
+    (pendingSubscribe === current.endpoint ||
+      subscriptions.some((entry) => entry.endpoint === current.endpoint));
 
   function enable() {
     return withBusy(
@@ -79,9 +82,15 @@ export function WebPushSection() {
           return;
         }
         setCurrent(result.value);
-        await runMutation(() => subscribePush.mutateAsync(result.value), {
+        setPendingSubscribe(result.value.endpoint);
+        const saved = await runMutation(() => subscribePush.mutateAsync(result.value), {
           successMessage: WEB_PUSH_SUBSCRIBED_MESSAGE,
         });
+        if (Result.isError(saved)) {
+          setPendingSubscribe(null);
+          return;
+        }
+        setPendingSubscribe(null);
       },
       (error) => notifyError(error, WEB_PUSH_ENABLE_FAILED_MESSAGE),
     );

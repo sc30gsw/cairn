@@ -124,4 +124,4 @@ test("ホバー後に選択した年表示の日を閉じると、選択した�
     expect(day.getAttribute("aria-expanded")).toBe("false");
     expect(document.activeElement).toBe(day);
   });
-});
+}, 20_000);

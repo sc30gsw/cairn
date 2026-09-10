@@ -18,6 +18,7 @@ import {
   type SetupStepId,
 } from "~/features/onboarding/lib/setup-steps";
 import type { SetupStatus } from "~/features/onboarding/types/setup-status";
+import { useOptionalSetupStatusLiveQuery } from "~/lib/tanstack-db/collections";
 
 export function useSetupStatus(): {
   dismissStep: (stepId: SetupStepId) => void;
@@ -26,7 +27,12 @@ export function useSetupStatus(): {
   showHomeStepper: boolean;
   status: SetupStatus;
 } {
-  const { data: status } = useSuspenseQuery(convexQuery(api.queries.setup.status.status, {}));
+  const liveStatus = useOptionalSetupStatusLiveQuery();
+  const { data: queriedStatus } = useSuspenseQuery(
+    convexQuery(api.queries.setup.status.status, {}),
+  );
+  const status =
+    liveStatus.isReady && liveStatus.data !== undefined ? liveStatus.data : queriedStatus;
   const dismissedKey = useSyncExternalStore(
     subscribeToDismissedSetup,
     getDismissedSetupSnapshot,

@@ -8,9 +8,10 @@ import { useOptionalCalendarSyncStatusLiveQuery } from "~/lib/tanstack-db/collec
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export function useCalendarSyncStatus() {
-  const queryResult = useSuspenseQuery(convexQuery(api.queries.calendarSync.status.status, {}));
   const live = useOptionalCalendarSyncStatusLiveQuery();
+  const queryResult = useSuspenseQuery(convexQuery(api.queries.calendarSync.status.status, {}));
   return {
+    ...queryResult,
     data: live.isReady && live.data !== undefined ? live.data : queryResult.data,
   };
 }

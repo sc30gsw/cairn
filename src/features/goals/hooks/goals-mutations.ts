@@ -1,12 +1,30 @@
 import type { FunctionReturnType } from "convex/server";
 
 import { api } from "~/../convex/_generated/api";
+import { optimisticId } from "~/lib/optimistic-id";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 type GoalList = FunctionReturnType<typeof api.queries.goals.list.list>;
 
 export function useCreateGoal() {
-  return useConvexMutation(api.mutations.goals.create.create);
+  const mutation = useConvexMutation(api.mutations.goals.create.create);
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.goals.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    const goal =
+      args.goal.type === "exam"
+        ? { ...args.goal, _id: optimisticId("goals"), createdAt: Date.now() }
+        : {
+            ...args.goal,
+            _id: optimisticId("goals"),
+            activeDays: 0,
+            confirmedMinutes: 0,
+            createdAt: Date.now(),
+          };
+    localStore.setQuery(api.queries.goals.list.list, {}, [...current, goal]);
+  });
 }
 
 export function useUpdateGoal() {
@@ -99,7 +117,21 @@ export function useSetExamResult() {
 }
 
 export function useCreateObstacle() {
-  return useConvexMutation(api.mutations.goals.createObstacle.createObstacle);
+  const mutation = useConvexMutation(api.mutations.goals.createObstacle.createObstacle);
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.goals.listObstacles.listObstacles, {});
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(api.queries.goals.listObstacles.listObstacles, {}, [
+      ...current,
+      {
+        _id: optimisticId("obstaclePlans"),
+        ifText: args.ifText.trim(),
+        thenText: args.thenText.trim(),
+      },
+    ]);
+  });
 }
 
 export function useUpdateObstacle() {

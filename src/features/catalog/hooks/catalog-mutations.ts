@@ -2,13 +2,31 @@ import type { FunctionReturnType } from "convex/server";
 import { applyItemOrderToList, applyRenameToList } from "~domain/itemOrder";
 
 import { api } from "~/../convex/_generated/api";
+import { optimisticId } from "~/lib/optimistic-id";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
+type CategoryList = FunctionReturnType<typeof api.queries.categories.list.list>;
 type ItemList = FunctionReturnType<typeof api.queries.items.list.list>;
 type PresetList = FunctionReturnType<typeof api.queries.presets.list.list>;
 
 export function useCreateCategory() {
-  return useConvexMutation(api.mutations.categories.create.create);
+  const mutation = useConvexMutation(api.mutations.categories.create.create);
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current: CategoryList | undefined = localStore.getQuery(
+      api.queries.categories.list.list,
+      {},
+    );
+    if (current === undefined) {
+      return;
+    }
+    const sortOrder = current.reduce((max, category) => Math.max(max, category.sortOrder), -1) + 1;
+    const category = {
+      _id: optimisticId("categories"),
+      name: args.name.trim(),
+      sortOrder,
+    } satisfies CategoryList[number];
+    localStore.setQuery(api.queries.categories.list.list, {}, [...current, category]);
+  });
 }
 
 export function useRenameCategory() {
@@ -46,7 +64,24 @@ export function useRemoveCategory() {
 }
 
 export function useCreateItem() {
-  return useConvexMutation(api.mutations.items.create.create);
+  const mutation = useConvexMutation(api.mutations.items.create.create);
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current: ItemList | undefined = localStore.getQuery(api.queries.items.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    const sortOrder =
+      current
+        .filter((item: ItemList[number]) => item.categoryId === args.categoryId)
+        .reduce((max: number, item: ItemList[number]) => Math.max(max, item.sortOrder), -1) + 1;
+    const item = {
+      _id: optimisticId("items"),
+      categoryId: args.categoryId,
+      name: args.name.trim(),
+      sortOrder,
+    } satisfies ItemList[number];
+    localStore.setQuery(api.queries.items.list.list, {}, [...current, item]);
+  });
 }
 
 export function useRemoveItem() {
@@ -94,7 +129,28 @@ export function useRenameItem() {
 }
 
 export function useCreatePreset() {
-  return useConvexMutation(api.mutations.presets.create.create);
+  const mutation = useConvexMutation(api.mutations.presets.create.create);
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.presets.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    const items: ItemList = localStore.getQuery(api.queries.items.list.list, {}) ?? [];
+    const itemNames = new Map(items.map((item: ItemList[number]) => [item._id, item.name]));
+    const weekdays = args.weekdays ?? (args.weekday === undefined ? [] : [args.weekday]);
+    const preset = {
+      _id: optimisticId("presets"),
+      lines: args.lines.map((line) => ({
+        ...line,
+        content: line.content.trim(),
+        itemName: itemNames.get(line.itemId) ?? "不明",
+      })),
+      name: args.name.trim(),
+      weekday: weekdays[0],
+      weekdays,
+    } satisfies PresetList[number];
+    localStore.setQuery(api.queries.presets.list.list, {}, [...current, preset]);
+  });
 }
 
 export function useUpdatePreset() {

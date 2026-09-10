@@ -2,18 +2,18 @@ import { Result } from "better-result";
 import { convexTest } from "convex-test";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 
+import { convexModules } from "../src/test-utils/convex-modules";
 import { api, components, internal } from "./_generated/api";
 import authSchema from "./betterAuth/schema";
 import { GOOGLE_CALENDAR_READ_SCOPES, GOOGLE_CALENDAR_SCOPE } from "./lib/calendarSync";
 import schema from "./schema";
 import { authorizeRequest, beginRequest, consumeRequest } from "./services/calendarAuth/requests";
 
-const modules = import.meta.glob(["./**/*.ts", "!./**/*.test.ts", "!./betterAuth/**"]);
 const authModules = import.meta.glob("./betterAuth/**/*.ts");
 const SCOPES = GOOGLE_CALENDAR_READ_SCOPES.join(" ");
 
 function setup() {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   t.registerComponent("betterAuth", authSchema, authModules);
   return t;
 }

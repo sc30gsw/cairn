@@ -2,6 +2,7 @@ import { Result } from "better-result";
 import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
+import { convexModules } from "../src/test-utils/convex-modules";
 import { api, internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import {
@@ -25,18 +26,6 @@ vi.mock("./lib/googleCalendar", async (importOriginal) => ({
   listEvents: vi.fn(),
   patchEvent: vi.fn(),
 }));
-
-const modules = import.meta.glob([
-  "./**/*.ts",
-  "!./**/*.test.ts",
-  "!./auth.config.ts",
-  "!./auth.ts",
-  "!./betterAuth/**",
-  "!./convex.config.ts",
-  "!./crons.ts",
-  "!./http.ts",
-  "!./migrations.ts",
-]);
 
 const OWNER = "calendar-owner";
 const CALENDAR = "owner@example.com";
@@ -88,7 +77,7 @@ afterEach(() => {
 });
 
 async function connected() {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   const owner = t.withIdentity({ subject: OWNER });
   const goalId = await owner.mutation(api.mutations.goals.create.create, { goal: GOAL });
   await t.run(async (ctx) => {
@@ -122,7 +111,7 @@ function signal() {
 }
 
 test("同じ所有者の操作を排他し、別の所有者と解放後の操作を許可する", async () => {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   const acquire = (ownerId: string) =>
     t.mutation(internal.mutations.calendarSync.acquireOperation.acquireOperation, { ownerId });
   const operationId = await acquire(OWNER);
@@ -137,7 +126,7 @@ test("同じ所有者の操作を排他し、別の所有者と解放後の操�
 });
 
 test("期限切れの操作を回復し、古い処理の解放で新しい操作を消さない", async () => {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   const acquire = () =>
     t.mutation(internal.mutations.calendarSync.acquireOperation.acquireOperation, {
       ownerId: OWNER,

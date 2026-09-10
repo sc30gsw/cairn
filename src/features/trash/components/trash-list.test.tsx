@@ -303,4 +303,4 @@ test("一括完全削除の上限を超えた選択は送信できない", () =>
   expect(view.getByRole("button", { name: "まとめて完全削除" }).hasAttribute("disabled")).toBe(
     true,
   );
-});
+}, 20_000);

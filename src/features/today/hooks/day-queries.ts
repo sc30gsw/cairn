@@ -2,6 +2,7 @@ import { convexQuery } from "@convex-dev/react-query";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { api } from "~/../convex/_generated/api";
+import { useOptionalPresetsLiveQuery } from "~/lib/tanstack-db/collections";
 
 export { itemsListQuery } from "~/hooks/use-items-list";
 
@@ -10,5 +11,10 @@ export function presetsListQuery() {
 }
 
 export function usePresetsList() {
-  return useSuspenseQuery(presetsListQuery());
+  const live = useOptionalPresetsLiveQuery();
+  const queryResult = useSuspenseQuery(presetsListQuery());
+  return {
+    ...queryResult,
+    data: live.isReady && live.data !== undefined ? live.data : queryResult.data,
+  };
 }

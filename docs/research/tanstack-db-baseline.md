@@ -14,13 +14,13 @@
 
 | コマンド | 結果 |
 | --- | --- |
-| `vp test` | 253 files / 1,531 tests passed。Vitest duration 50.29s（並列実行時の別測定は 41.29s）。 |
+| `vp test` | 256 files / 1,542 tests passed。 |
 | `vp test src/features/board/components/board-kanban.test.tsx` | 14 tests passed。Vitest duration 5.29s。 |
 | `vp test src/features/board/components/board-kanban-card-menu.test.tsx` | 6 tests passed。Vitest duration 3.91s。 |
 | `vp test src/features/today/components/row-editor.test.tsx` | 4 tests passed。Vitest duration 4.05s。 |
 | `vp test src/features/history/components/history-page.test.tsx src/features/history/components/history-calendar.test.tsx` | 18 tests passed。Vitest duration 4.92s。 |
-| `vp check` | 1,092 filesで警告・lintエラー・型エラーなし。20.4s。 |
-| `vp build` | 2,211 modules transformed、1.08sで完了。大規模 barrel module と rrule の undefined import 警告が出たが、今回の症状との因果は未確認。 |
+| `vp check` | 1,103 filesで警告・lintエラー・型エラーなし。 |
+| `vp build` | 成功。大規模 barrel module と rrule の undefined import 警告は既存のもの。 |
 
 認証前のローカル SSR 応答は、sandbox の listen 制限を避けて開発サーバーを起動し、`GET /` を測定した。port 3001 の初回は TTFB 2.526s / total 2.526s、同じ URL の再訪は TTFB 0.449s / total 0.449s だった。これは Vite の変換・SSR warm-up を含む認証前の応答であり、日データや Convex 購読の latency の基準には使わない。
 
@@ -52,7 +52,7 @@
 
 - `src/features/board/components/board-kanban.tsx:215` の列間 D&D は、状態変更を await してから pending order を適用する。`pendingOrderRef` は一件分だけで、`shiftRow` は fire-and-forget である。
 - `src/features/today/hooks/use-day-board-actions.ts:44` は通常の confirm / skip / unskip mutation を使う。ボード側だけが optimistic hook に差し替わっている（`src/features/board/hooks/board-mutations.ts:25`）。
-- `src/lib/optimistic-day-rows.ts:26` の optimistic patch は `day.rows` だけを変更し、`volumeMinutes`、`shareMarkdown`、`canCopyYesterday`、review 情報などの派生値を同時に変更しない。一方、`convex/services/days/getDayPage.ts:30` はサーバー側でこれらを再計算する。
+- `src/lib/optimistic-day-rows.ts` の patch は `day.rows` と `volumeMinutes`、`shareMarkdown`、running timer を同じ更新で変更する。Convex の mutation failure ではこの snapshot が自動 rollback される。
 - `src/features/today/components/row-editor.tsx:179` の focus-within blur と各入力の blur が同じ保存関数を呼ぶ。`saveIfConfirmedDirty`（同:160）には in-flight ガードがない。
 - 対象テストは mutation callback や順序計算を検証するが、実 Convex optimistic store → subscription 確定 → rollback の時系列、遅延中の二重操作、DOM の安定時間は検証しない。
 
@@ -75,24 +75,26 @@
 
 ## 設計判断への入力
 
-- TanStack DB の pilot は、まず eager collection と既存 Convex Query cache の接続を検証する。on-demand は、Convex の引数・index・削除通知・query key の設計を別途確定してから進める。
+- TanStack DB の read layer は全 Convex query に接続した。eager collection を表示単位に適用し、引数付き query は安定した collection ID で分離する。on-demand は backend の範囲・index・削除通知を確定できる query から同じ factory 契約で有効化する。
 - ちらつき対策の受け入れ条件は、状態と順序の一貫した楽観表示、保存確定までの表示維持、失敗時の整合した rollback、派生値の更新範囲、フォーム入力との分離である。
-- Google 連携の OCC warning はこの pilot の read/mutation baseline から分離する。Cairn 内の予定編集は即時反映し、Google 側の成功確認が必要な操作は別状態で扱う。
+- Google 連携の OCC warning は read/mutation baseline から分離する。Cairn 内の予定編集は即時反映し、Google 側の成功確認が必要な操作は別状態で扱う。
 
-本資料は性能改善を実装したものではなく、#95 の wayfinder task を解決するためのベースラインである。
+本資料は #95 の wayfinder task に対する実装後の契約と検証結果を記録する。遅延ネットワーク下の実ユーザー計測は別 fixture が必要である。
 
 ## 実装後のデータ層契約
 
-日・ボード・カタログ・目標・方法・通知・ゴミ箱・タイマーの読み取りは `src/lib/tanstack-db/collections.ts` の typed query collection を利用でき、`DbProvider` は router と同じ runtime scope の `DbClient` を共有する。Convex の subscription が canonical snapshot を更新し、`useLiveQuery` はその snapshot を画面の派生 query として購読する。履歴・認証・検索などの補助読み取りは既存の Convex Query を継続し、段階的に移行できる境界を保つ。
+Convex の query read は、日・ボード・カタログ・目標・方法・通知・ゴミ箱・タイマーに加えて、履歴・検索・レビュー・認証設定・セットアップ状態・Push 設定・アバター URL まで、`src/lib/tanstack-db/collections.ts` の `FunctionReturnType` / `FunctionArgs` 由来の typed collection と `useLiveQuery` を経由する。`DbProvider` は router と同じ runtime scope の `DbClient` を共有し、Convex subscription が canonical snapshot を更新する。Better Auth のセッション状態そのものは認証 provider の状態として維持する。
 
-通常の行・カンバン操作は Convex mutation の `withOptimisticUpdate` を使う。楽観値は rows・派生学習量・共有文・running timer を同時に更新し、Convex の mutation failure で自動 rollback する。D&D は状態変更と順序変更を `moveAndApplyOrder` の一つの Convex transaction にまとめる。
+TanStack DB はブラウザ側の live overlay に使い、SSR では同じ Convex query を TanStack Query で bootstrap する。したがって、画面のデータ経路は全て collection を中間に持つが、SSR の初回 HTML は Query fallback から描画される。この境界は SSR で DB client が利用できない場合にも hydration を壊さず、ブラウザ到達後は live snapshot を優先する。
 
-同じ rollback 境界をカタログ、プリセット、目標、週間ターゲット、方法カタログ、日メモ・コンディション、復習フラグにも適用する。サーバーで新しい ID が確定する作成操作と、Google 側の成功確認が必要な外部予定操作は、確定応答と subscription の更新を待つ。
+通常の行・カンバン操作、既存レコードの削除・復元、設定更新は Convex mutation の `withOptimisticUpdate` を使う。楽観値は rows・派生学習量・共有文・running timer を同時に更新し、Convex の mutation failure で自動 rollback する。D&D は状態変更と順序変更を `moveAndApplyOrder` の一つの Convex transaction にまとめる。
+
+同じ rollback 境界をカタログ、プリセット、目標、週間ターゲット、方法カタログ、日メモ・コンディション、復習フラグにも適用する。Convex がサーバー ID を発行する新規作成、複数行を再生成する昨日コピー・プリセット切替は、重複 ID を作らないため確定応答と subscription の更新を待つ。Google 側の成功確認が必要な外部予定操作も同じ待機境界に置く。
 
 Google 側の成功確認が必要な予定移動・削除は client-side optimistic patch を行わず、Convex の outbox と接続の同期状態・エラー表示で確認する。成功通知は Google への送信受付を表し、Google 側の同期完了とは区別する。
 
-`createDayRowsCollection` と予定 collection は `syncMode: "on-demand"` を受け取れる。Convex 側で範囲・index・削除通知を備えた query が用意できた画面では、同じ typed factory に `syncMode: "on-demand"` を渡し、`useLiveQuery` の predicate で必要な subset だけを同期する。現在の画面は日・週の範囲が UI の表示単位と一致するため eager を使う。
+全ての引数付き補助 query も同じ typed factory を持ち、安定した引数由来の collection ID で分離される。`createDayRowsCollection` と予定 collection には `syncMode: "on-demand"` を指定でき、履歴・レビュー・検索にも同じ契約を適用できる。現在の画面では日・週・分析タブの表示範囲が query の返却範囲と一致するため eager を使う。将来、表示範囲より広い backend query から subset だけを同期する場合は、既存 factory に on-demand と predicate を渡す。
 
 日ページの query はブラウザ側で `prefetchQuery` を先に開始し、SSR では `open` の完了を待ってから Suspense query を描画する。これにより `open → get` の初期 waterfall と空状態の hydration を避け、Convex subscription が作成後の canonical snapshot を反映する。
 
-オフライン時にブラウザへ書き込みを永続化する outbox は導入していない。今回の persistence は Convex server commit、subscription による再検証、失敗時の Convex optimistic rollback を指す。
+オフライン時にブラウザへ書き込みを永続化する outbox は導入しない。Convex server commit、subscription による再検証、失敗時の Convex optimistic rollback を永続化と整合性の境界にする。

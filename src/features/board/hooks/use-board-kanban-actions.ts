@@ -94,9 +94,8 @@ export function useBoardKanbanActions(dateJst: DateJst) {
               return await runMutation(
                 () =>
                   moveAndApplyOrder.mutateAsync({
-                    content: row.content,
                     dateJst,
-                    move: "confirm",
+                    move: { content: row.content, kind: "confirm" },
                     orderedRowIds,
                     rowId: row._id,
                   }),

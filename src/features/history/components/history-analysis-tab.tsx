@@ -14,6 +14,14 @@ import {
 } from "~/features/history/hooks/history-queries";
 import { useHistoryView } from "~/features/history/hooks/use-history-view";
 import { parallelConvexQuery } from "~/lib/parallel-convex-query";
+import {
+  useOptionalHistoryDayBreakdownLiveQuery,
+  useOptionalHistoryMonthBreakdownLiveQuery,
+  useOptionalHistoryPresetReviewLiveQuery,
+  useOptionalHistoryWeekBreakdownLiveQuery,
+  useOptionalHistoryWeekLiveQuery,
+  useOptionalHistoryYearHeatmapLiveQuery,
+} from "~/lib/tanstack-db/collections";
 
 export function HistoryAnalysisTab() {
   const {
@@ -26,6 +34,21 @@ export function HistoryAnalysisTab() {
     yearMonth,
   } = useHistoryView();
 
+  const liveMonthBreakdown = useOptionalHistoryMonthBreakdownLiveQuery({
+    todayJst: today,
+    yearMonth,
+  });
+  const liveYearHeatmap = useOptionalHistoryYearHeatmapLiveQuery({ todayJst: today });
+  const liveWeekPage = useOptionalHistoryWeekLiveQuery({ dateJst: weekAnchor, todayJst: today });
+  const liveWeekBreakdown = useOptionalHistoryWeekBreakdownLiveQuery({
+    dateJst: weekAnchor,
+    todayJst: today,
+  });
+  const liveDayBreakdown = useOptionalHistoryDayBreakdownLiveQuery({
+    dateJst: selectedDateJst,
+    todayJst: today,
+  });
+  const livePresetReview = useOptionalHistoryPresetReviewLiveQuery({ todayJst: today });
   const [
     { data: monthBreakdown },
     { data: yearHeatmap },
@@ -43,25 +66,47 @@ export function HistoryAnalysisTab() {
       parallelConvexQuery(historyPresetReviewQuery(today)),
     ],
   });
+  const selectedMonthBreakdown =
+    liveMonthBreakdown.isReady && liveMonthBreakdown.data !== undefined
+      ? liveMonthBreakdown.data
+      : monthBreakdown;
+  const selectedYearHeatmap =
+    liveYearHeatmap.isReady && liveYearHeatmap.data !== undefined
+      ? liveYearHeatmap.data
+      : yearHeatmap;
+  const selectedWeekPage =
+    liveWeekPage.isReady && liveWeekPage.data !== undefined ? liveWeekPage.data : weekPage;
+  const selectedWeekBreakdown =
+    liveWeekBreakdown.isReady && liveWeekBreakdown.data !== undefined
+      ? liveWeekBreakdown.data
+      : weekBreakdown;
+  const selectedDayBreakdown =
+    liveDayBreakdown.isReady && liveDayBreakdown.data !== undefined
+      ? liveDayBreakdown.data
+      : dayBreakdown;
+  const selectedPresetReview =
+    livePresetReview.isReady && livePresetReview.data !== undefined
+      ? livePresetReview.data
+      : presetReview;
 
   return (
     <>
       <Card mb="md" padding="md">
-        <PresetReviewPanel review={presetReview} />
+        <PresetReviewPanel review={selectedPresetReview} />
       </Card>
       <Card>
         <HistoryAnalysisPanel
-          day={dayBreakdown}
-          heatmapDays={yearHeatmap.days}
-          month={monthBreakdown}
+          day={selectedDayBreakdown}
+          heatmapDays={selectedYearHeatmap.days}
+          month={selectedMonthBreakdown}
           onDayClick={openDayAnalysis}
           onScopeChange={setScope}
           scope={analysisScope}
           selectedDateJst={selectedDateJst}
           todayJst={today}
-          week={weekBreakdown}
-          weekDays={weekPage.days}
-          weekEvents={weekPage.events}
+          week={selectedWeekBreakdown}
+          weekDays={selectedWeekPage.days}
+          weekEvents={selectedWeekPage.events}
           yearMonth={yearMonth}
         />
       </Card>

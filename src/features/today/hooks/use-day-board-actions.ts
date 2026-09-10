@@ -45,13 +45,13 @@ export function useDayBoardActions(
   const moveAndApplyOrder = useOptimisticMoveAndApplyRowOrder(dateJst, today);
   const skip = useOptimisticSkipRow(dateJst, today);
   const unskip = useOptimisticUnskipRow(dateJst, today);
-  const add = useAddRow();
-  const removeRow = useRemoveRow();
+  const add = useAddRow(dateJst, today);
+  const removeRow = useRemoveRow(dateJst, today);
   const setCondition = useOptimisticSetDayCondition(dateJst, today);
   const setMemo = useOptimisticSetDayMemo(dateJst, today);
-  const removeDay = useRemoveDay();
-  const copyYesterday = useCopyYesterdayConfirmed();
-  const switchPreset = useSwitchPreset();
+  const removeDay = useRemoveDay(dateJst, today);
+  const copyYesterday = useCopyYesterdayConfirmed(dateJst, today);
+  const switchPreset = useSwitchPreset(dateJst, today);
   const flagReview = useOptimisticFlagReview(dateJst, today);
   const unflagReview = useOptimisticUnflagReview(dateJst, today);
 
@@ -69,9 +69,8 @@ export function useDayBoardActions(
             await confirm.mutateAsync(input);
           } else {
             measuredMinutes = await moveAndApplyOrder.mutateAsync({
-              content: input.content,
               dateJst,
-              move: "confirm",
+              move: { content: input.content, kind: "confirm" },
               orderedRowIds: rows.map((entry) => entry._id),
               rowId: input.rowId,
             });

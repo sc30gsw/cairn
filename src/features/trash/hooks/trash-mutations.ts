@@ -40,7 +40,24 @@ export function useRestoreRow() {
 }
 
 export function useRestoreMany() {
-  return useConvexMutation(api.mutations.trash.restoreMany.restoreMany);
+  return useConvexMutation(api.mutations.trash.restoreMany.restoreMany).withOptimisticUpdate(
+    (localStore, args) => {
+      const current = localStore.getQuery(api.queries.trash.list.list, {});
+      if (current === undefined) {
+        return;
+      }
+      const dayIds = new Set(args.dayIds);
+      const rowIds = new Set(args.rowIds);
+      localStore.setQuery(
+        api.queries.trash.list.list,
+        {},
+        {
+          days: current.days.filter((day) => !dayIds.has(day._id)),
+          rows: current.rows.filter((row) => !dayIds.has(row.dayId) && !rowIds.has(row._id)),
+        },
+      );
+    },
+  );
 }
 
 export function usePurgeDay() {

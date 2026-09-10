@@ -1,10 +1,29 @@
 import { applyLaneOrderToList, applyMethodOrderToList } from "~domain/methodOrder";
 
 import { api } from "~/../convex/_generated/api";
+import { optimisticId } from "~/lib/optimistic-id";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export function useCreateLane() {
-  return useConvexMutation(api.mutations.methods.createLane.createLane);
+  const mutation = useConvexMutation(api.mutations.methods.createLane.createLane);
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.methods.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    const sortOrder = current.lanes.reduce((max, lane) => Math.max(max, lane.sortOrder), -1) + 1;
+    localStore.setQuery(
+      api.queries.methods.list.list,
+      {},
+      {
+        lanes: [
+          ...current.lanes,
+          { _id: optimisticId("methodLanes"), name: args.name.trim(), sortOrder },
+        ],
+        methods: current.methods,
+      },
+    );
+  });
 }
 
 export function useRenameLane() {
@@ -48,7 +67,37 @@ export function useRemoveLane() {
 }
 
 export function useCreateMethod() {
-  return useConvexMutation(api.mutations.methods.createMethod.createMethod);
+  const mutation = useConvexMutation(api.mutations.methods.createMethod.createMethod);
+  return mutation.withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(api.queries.methods.list.list, {});
+    if (current === undefined) {
+      return;
+    }
+    const sortOrder =
+      current.methods
+        .filter((method) => method.laneId === args.laneId)
+        .reduce((max, method) => Math.max(max, method.sortOrder), -1) + 1;
+    localStore.setQuery(
+      api.queries.methods.list.list,
+      {},
+      {
+        lanes: current.lanes,
+        methods: [
+          ...current.methods,
+          {
+            _id: optimisticId("methods"),
+            bodyText: "",
+            completionHtml: "",
+            laneId: args.laneId,
+            memoHtml: "",
+            name: args.name.trim(),
+            nowViewing: false,
+            sortOrder,
+          },
+        ],
+      },
+    );
+  });
 }
 
 export function useUpdateMethod() {

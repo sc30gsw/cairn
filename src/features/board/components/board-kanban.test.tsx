@@ -165,9 +165,8 @@ test("計測がある進行中の行を確定すると、1 回の mutation で�
 
   await vi.waitFor(() => {
     expect(onMoveAndApplyOrderMock).toHaveBeenCalledWith({
-      content: "Unit 1",
       dateJst: "2026-08-17",
-      move: "confirm",
+      move: { content: "Unit 1", kind: "confirm" },
       orderedRowIds: ["r1"],
       rowId: "r1",
     });
@@ -259,9 +258,8 @@ test("メニューから完了にすると、計測がある行は1回の mutati
 
   await vi.waitFor(() => {
     expect(onMoveAndApplyOrderMock).toHaveBeenCalledWith({
-      content: "Unit 1",
       dateJst: "2026-08-17",
-      move: "confirm",
+      move: { content: "Unit 1", kind: "confirm" },
       orderedRowIds: ["r1"],
       rowId: "r1",
     });

@@ -2,6 +2,7 @@ import { Result } from "better-result";
 import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
+import { convexModules } from "../src/test-utils/convex-modules";
 import { api, internal } from "./_generated/api";
 import { GOOGLE_CALENDAR_WRITE_SCOPES } from "./lib/calendarSync";
 import { GoogleAuthError } from "./lib/googleAccessToken";
@@ -23,18 +24,6 @@ vi.mock("./lib/googleAccessToken", () => ({
       : Result.ok("access-token"),
   listGoogleAccounts: async () => tokenState.accounts,
 }));
-
-const modules = import.meta.glob([
-  "./**/*.ts",
-  "!./**/*.test.ts",
-  "!./auth.config.ts",
-  "!./auth.ts",
-  "!./betterAuth/**",
-  "!./convex.config.ts",
-  "!./crons.ts",
-  "!./http.ts",
-  "!./migrations.ts",
-]);
 
 const OWNER = { email: "owner@example.com", subject: "owner-subject" };
 const OTHER = { email: "other@example.com", subject: "other-subject" };
@@ -254,7 +243,7 @@ const EXAM_GOAL = {
 } as const satisfies GoalInput;
 
 function raw() {
-  return convexTest(schema, modules);
+  return convexTest(schema, convexModules);
 }
 
 type Owner = ReturnType<ReturnType<typeof raw>["withIdentity"]>;

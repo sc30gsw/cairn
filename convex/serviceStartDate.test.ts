@@ -2,16 +2,16 @@ import { validate } from "convex-helpers/validators";
 import { convexTest } from "convex-test";
 import { expect, test } from "vite-plus/test";
 
+import { convexModules } from "../src/test-utils/convex-modules";
 import { api, components } from "./_generated/api";
 import authSchema from "./betterAuth/schema";
 import schema from "./schema";
 import { serviceStartDate } from "./services/days/serviceStartDate";
 
-const modules = import.meta.glob(["./**/*.ts", "!./**/*.test.ts", "!./betterAuth/**"]);
 const authModules = import.meta.glob("./betterAuth/**/*.ts");
 
 async function registeredOwner(createdAt: string) {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   t.registerComponent("betterAuth", authSchema, authModules);
   const user = await t.run(async (ctx) => {
     const result: unknown = await ctx.runMutation(components.betterAuth.adapter.create, {

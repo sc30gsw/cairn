@@ -1,5 +1,5 @@
 import { convexQuery } from "@convex-dev/react-query";
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { usePrefetchQuery, useSuspenseQuery } from "@tanstack/react-query";
 import type { DateJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
@@ -23,16 +23,14 @@ export function useEnsureDayOpen(dateJst: DateJst, today: DateJst) {
 }
 
 export function useOpenAndLoadDay(dateJst: DateJst, today: DateJst) {
-  const queryClient = useQueryClient();
-  if (typeof window !== "undefined") {
-    void queryClient.prefetchQuery(dayPageQueryOptions(dateJst, today));
-  }
+  usePrefetchQuery(dayPageQueryOptions(dateJst, today));
   useEnsureDayOpen(dateJst, today);
 
   const liveDay = useOptionalDayPageLiveQuery({ dateJst, todayJst: today });
   const queryResult = useSuspenseQuery(dayPageQueryOptions(dateJst, today));
 
   return {
+    ...queryResult,
     data: liveDay.isReady && liveDay.data !== undefined ? liveDay.data : queryResult.data,
   };
 }

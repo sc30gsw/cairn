@@ -1,12 +1,19 @@
 import type { DbClient } from "@tanstack/db";
 import { DbProvider } from "@tanstack/react-db";
-import type { ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 
-type TanStackDbProviderProps = {
-  children: ReactNode;
+export function TanStackDbProvider({
+  client,
+  children,
+}: {
   client: DbClient;
-};
-
-export function TanStackDbProvider({ children, client }: TanStackDbProviderProps) {
+  children: ReactNode;
+}) {
+  const mounted = useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false,
+  );
+  if (!mounted) return children;
   return <DbProvider client={client}>{children}</DbProvider>;
 }

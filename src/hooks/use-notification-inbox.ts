@@ -5,32 +5,48 @@ import { api } from "~/../convex/_generated/api";
 import {
   useOptionalNotificationPageLiveQuery,
   useOptionalNotificationSettingsLiveQuery,
+  useOptionalPushSubscriptionsLiveQuery,
+  useOptionalWebPushConfigLiveQuery,
 } from "~/lib/tanstack-db/collections";
 
 export function useNotificationInbox() {
-  const queryResult = useSuspenseQuery(convexQuery(api.queries.notifications.list.list, {}));
   const live = useOptionalNotificationPageLiveQuery();
+  const queryResult = useSuspenseQuery(convexQuery(api.queries.notifications.list.list, {}));
   return {
+    ...queryResult,
     data: live.isReady && live.data !== undefined ? live.data : queryResult.data,
   };
 }
 
 export function useNotificationSettings() {
+  const live = useOptionalNotificationSettingsLiveQuery();
   const queryResult = useSuspenseQuery(
     convexQuery(api.queries.notifications.settings.settings, {}),
   );
-  const live = useOptionalNotificationSettingsLiveQuery();
   return {
+    ...queryResult,
     data: live.isReady && live.data !== undefined ? live.data : queryResult.data,
   };
 }
 
 export function usePushSubscriptions() {
-  return useSuspenseQuery(
+  const live = useOptionalPushSubscriptionsLiveQuery();
+  const queryResult = useSuspenseQuery(
     convexQuery(api.queries.notifications.pushSubscriptions.pushSubscriptions, {}),
   );
+  return {
+    ...queryResult,
+    data: live.isReady && live.data !== undefined ? live.data : queryResult.data,
+  };
 }
 
 export function useWebPushConfig() {
-  return useSuspenseQuery(convexQuery(api.queries.notifications.webPushConfig.webPushConfig, {}));
+  const live = useOptionalWebPushConfigLiveQuery();
+  const queryResult = useSuspenseQuery(
+    convexQuery(api.queries.notifications.webPushConfig.webPushConfig, {}),
+  );
+  return {
+    ...queryResult,
+    data: live.isReady && live.data !== undefined ? live.data : queryResult.data,
+  };
 }

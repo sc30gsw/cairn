@@ -1,8 +1,6 @@
-import { DEFAULT_BOARD_SCHEDULE_COLOR } from "~domain/boardScheduleColors";
 import type { DateJst } from "~domain/jst";
 
 import { api } from "~/../convex/_generated/api";
-import type { Id } from "~/../convex/_generated/dataModel";
 import { patchBoardScheduleBlocks } from "~/features/board/lib/optimistic-board-schedule";
 import type { BoardScheduleView } from "~/features/board/schemas/board-search-schema";
 export {
@@ -20,39 +18,9 @@ export {
 } from "~/hooks/use-row-mutations";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
-export function useBoardScheduleCreate(
-  anchorDateJst: DateJst,
-  todayJst: DateJst,
-  view: BoardScheduleView,
-) {
-  const mutation = useConvexMutation(
-    api.mutations.boardSchedule.create.create,
-  ).withOptimisticUpdate((localStore, args) => {
-    const day = localStore.getQuery(api.queries.days.get.get, {
-      dateJst: todayJst,
-      todayJst,
-    });
-    const row = day?.rows.find((entry) => entry._id === args.rowId);
-    patchBoardScheduleBlocks(localStore, {
-      anchorDateJst,
-      view,
-      updater: (blocks) => [
-        ...blocks,
-        {
-          _id: `optimistic:${args.clientMutationId ?? `${args.rowId}:${args.startAt}:${args.endAt}`}` as Id<"boardScheduleEvents">,
-          color: args.color ?? DEFAULT_BOARD_SCHEDULE_COLOR,
-          endAt: args.endAt,
-          rowId: args.rowId,
-          startAt: args.startAt,
-          title: row?.itemName ?? "",
-        },
-      ],
-    });
-  });
-  return {
-    mutateAsync: (input: Omit<Parameters<typeof mutation.mutateAsync>[0], "clientMutationId">) =>
-      mutation.mutateAsync({ ...input, clientMutationId: globalThis.crypto.randomUUID() }),
-  };
+export function useBoardScheduleCreate() {
+  const mutateAsync = useConvexMutation(api.mutations.boardSchedule.create.create);
+  return { mutateAsync };
 }
 
 export function useBoardScheduleUpdate(

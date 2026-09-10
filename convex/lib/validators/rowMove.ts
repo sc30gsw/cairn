@@ -1,19 +1,21 @@
 import { type Infer, v } from "convex/values";
 
 export const rowMoveValidator = v.union(
-  v.literal("confirm"),
-  v.literal("reopen"),
-  v.literal("skip"),
-  v.literal("start"),
-  v.literal("unconfirm"),
-  v.literal("unskip"),
-  v.literal("unstart"),
+  v.object({
+    content: v.string(),
+    kind: v.literal("confirm"),
+    minutes: v.optional(v.number()),
+  }),
+  v.object({ kind: v.literal("reopen") }),
+  v.object({ kind: v.literal("skip") }),
+  v.object({ kind: v.literal("start") }),
+  v.object({ kind: v.literal("unconfirm") }),
+  v.object({ kind: v.literal("unskip") }),
+  v.object({ kind: v.literal("unstart") }),
 );
 
 export const moveAndApplyOrderArgsValidator = v.object({
-  content: v.optional(v.string()),
   dateJst: v.string(),
-  minutes: v.optional(v.number()),
   move: rowMoveValidator,
   orderedRowIds: v.array(v.id("rows")),
   rowId: v.id("rows"),

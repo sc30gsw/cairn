@@ -16,7 +16,7 @@ const silent = { silent: true } as const satisfies NonNullable<Parameters<typeof
 
 export function useBoardScheduleActions(anchorDateJst: DateJst, view: BoardScheduleView) {
   const today = useTodayJst();
-  const createBlock = useBoardScheduleCreate(anchorDateJst, today, view);
+  const createBlock = useBoardScheduleCreate();
   const updateBlock = useBoardScheduleUpdate(anchorDateJst, today, view);
   const removeBlock = useBoardScheduleRemove(anchorDateJst, view);
   const moveBlock = useBoardScheduleMove(anchorDateJst, view);

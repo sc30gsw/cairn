@@ -19,6 +19,7 @@ import {
   computeOrderedRowIds,
   groupRowsByKanbanColumn,
   hasRowOrderChanged,
+  isKanbanColumn,
   KANBAN_COLUMNS,
   shiftRowWithinColumn,
   type KanbanColumn,
@@ -248,8 +249,11 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
       return;
     }
 
-    const sourceStatus = source.droppableId as KanbanColumn;
-    const destinationStatus = destination.droppableId as KanbanColumn;
+    const sourceStatus = source.droppableId;
+    const destinationStatus = destination.droppableId;
+    if (!isKanbanColumn(sourceStatus) || !isKanbanColumn(destinationStatus)) {
+      return;
+    }
     const row = currentRows.find((entry) => entry._id === draggableId);
     if (row === undefined) {
       return;
@@ -294,10 +298,15 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
     await enqueueMutation(() =>
       onMoveAndApplyOrder(
         {
-          content: statusMove === "confirm" ? row.content : undefined,
           dateJst,
-          minutes: statusMove === "confirm" && !hasTimerState(row.timer) ? row.minutes : undefined,
-          move: statusMove,
+          move:
+            statusMove === "confirm"
+              ? {
+                  content: row.content,
+                  kind: "confirm",
+                  minutes: hasTimerState(row.timer) ? undefined : row.minutes,
+                }
+              : { kind: statusMove },
           orderedRowIds,
           rowId: row._id,
         },
@@ -319,10 +328,8 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
           return await enqueueMutation(() =>
             onMoveAndApplyOrder(
               {
-                content: input.content,
                 dateJst,
-                minutes: input.minutes,
-                move: "confirm",
+                move: { content: input.content, kind: "confirm", minutes: input.minutes },
                 orderedRowIds: confirmTarget.orderedRowIds,
                 rowId: input.rowId,
               },

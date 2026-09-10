@@ -19,8 +19,8 @@ import { NUMERAL_FONT } from "~/lib/theme";
 import { formatTimerClock } from "~/lib/timer-clock";
 
 export function RunningTimerIndicator() {
-  const queryResult = useSuspenseQuery(convexQuery(api.queries.rows.runningTimer.runningTimer, {}));
   const live = useOptionalRunningTimerLiveQuery();
+  const queryResult = useSuspenseQuery(convexQuery(api.queries.rows.runningTimer.runningTimer, {}));
   const running = live.isReady ? (live.data ?? null) : queryResult.data;
   const stopTimer = useStopRunningTimer();
   const startedAt = running?.timer.startedAt ?? null;

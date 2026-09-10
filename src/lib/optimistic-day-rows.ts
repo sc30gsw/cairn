@@ -152,6 +152,32 @@ export function patchDayRow(
   });
 }
 
+export function removeDayRow(
+  localStore: OptimisticLocalStore,
+  args: DayQueryArgs & { rowId: Id<"rows"> },
+): void {
+  const queryArgs = dayQueryArgs(args);
+  const day = localStore.getQuery(api.queries.days.get.get, queryArgs);
+  if (day === undefined) {
+    return;
+  }
+  const row = day.rows.find((entry) => entry._id === args.rowId);
+  if (row === undefined) {
+    return;
+  }
+  localStore.setQuery(
+    api.queries.days.get.get,
+    queryArgs,
+    withDerivedDayValues(
+      day,
+      day.rows.filter((entry) => entry._id !== args.rowId),
+    ),
+  );
+  if (localStore.getQuery(api.queries.rows.runningTimer.runningTimer, {})?._id === args.rowId) {
+    localStore.setQuery(api.queries.rows.runningTimer.runningTimer, {}, null);
+  }
+}
+
 export function reorderDayRows(
   localStore: OptimisticLocalStore,
   args: DayQueryArgs & { orderedRowIds: Id<"rows">[] },

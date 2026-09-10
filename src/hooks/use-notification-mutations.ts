@@ -1,4 +1,5 @@
 import { api } from "~/../convex/_generated/api";
+import { optimisticId } from "~/lib/optimistic-id";
 import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 export function useMarkNotificationsRead() {
@@ -54,9 +55,45 @@ export function useSaveNotificationSettings() {
 }
 
 export function useSubscribePush() {
-  return useConvexMutation(api.mutations.notifications.subscribePush.subscribePush);
+  return useConvexMutation(
+    api.mutations.notifications.subscribePush.subscribePush,
+  ).withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(
+      api.queries.notifications.pushSubscriptions.pushSubscriptions,
+      {},
+    );
+    if (
+      current === undefined ||
+      current.some((subscription) => subscription.endpoint === args.endpoint)
+    ) {
+      return;
+    }
+    localStore.setQuery(api.queries.notifications.pushSubscriptions.pushSubscriptions, {}, [
+      ...current,
+      {
+        _creationTime: Date.now(),
+        _id: optimisticId("pushSubscriptions"),
+        endpoint: args.endpoint,
+      },
+    ]);
+  });
 }
 
 export function useUnsubscribePush() {
-  return useConvexMutation(api.mutations.notifications.unsubscribePush.unsubscribePush);
+  return useConvexMutation(
+    api.mutations.notifications.unsubscribePush.unsubscribePush,
+  ).withOptimisticUpdate((localStore, args) => {
+    const current = localStore.getQuery(
+      api.queries.notifications.pushSubscriptions.pushSubscriptions,
+      {},
+    );
+    if (current === undefined) {
+      return;
+    }
+    localStore.setQuery(
+      api.queries.notifications.pushSubscriptions.pushSubscriptions,
+      {},
+      current.filter((subscription) => subscription.endpoint !== args.endpoint),
+    );
+  });
 }

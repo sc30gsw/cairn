@@ -1,20 +1,9 @@
 import { convexTest } from "convex-test";
 import { expect, test } from "vite-plus/test";
 
+import { convexModules } from "../../../src/test-utils/convex-modules";
 import schema from "../../schema";
 import { finishCalendarPull } from "./finishCalendarPull";
-
-const modules = import.meta.glob([
-  "../../**/*.ts",
-  "!../../**/*.test.ts",
-  "!../../auth.config.ts",
-  "!../../auth.ts",
-  "!../../betterAuth/**",
-  "!../../convex.config.ts",
-  "!../../crons.ts",
-  "!../../http.ts",
-  "!../../migrations.ts",
-]);
 
 const base = { calendarId: "primary", ownerId: "owner" };
 
@@ -23,7 +12,7 @@ async function cursorOf(t: ReturnType<typeof convexTest>) {
 }
 
 test("全件取り込みは fullSyncedOnJst を当日に置き、差分取り込みは元の日付を引き継ぐ", async () => {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   await t.run((ctx) =>
     ctx.db.insert("calendarConnections", {
       ownerId: "owner",
@@ -62,7 +51,7 @@ test("全件取り込みは fullSyncedOnJst を当日に置き、差分取り込
 });
 
 test("差分トークンが返らなければ保存済みのカーソルを捨て、次回は全件取り込みになる", async () => {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   await t.run((ctx) =>
     ctx.db.insert("calendarConnections", {
       ownerId: "owner",
@@ -90,7 +79,7 @@ test("差分トークンが返らなければ保存済みのカーソルを捨�
 });
 
 test("全件取り込みで Google に無くなった写しと、期間の外へ出た写しを消す", async () => {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   await t.run((ctx) =>
     ctx.db.insert("calendarConnections", {
       ownerId: "owner",

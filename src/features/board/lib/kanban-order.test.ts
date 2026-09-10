@@ -5,6 +5,7 @@ import {
   computeOrderedRowIds,
   groupRowsByKanbanColumn,
   hasRowOrderChanged,
+  isKanbanColumn,
   kanbanMoveMenuItems,
   resolveKanbanStatusMove,
   shiftRowWithinColumn,
@@ -26,6 +27,13 @@ function row(id: string, status: BoardRow["status"], sortOrder: number): BoardRo
     timer: null,
   };
 }
+
+test("isKanbanColumn は Valibot の列定義だけを受け入れる", () => {
+  expect(isKanbanColumn("未着手")).toBe(true);
+  expect(isKanbanColumn("確定")).toBe(true);
+  expect(isKanbanColumn("アーカイブ")).toBe(false);
+  expect(isKanbanColumn(null)).toBe(false);
+});
 
 test("groupRowsByKanbanColumn は列ごとに記録を分ける", () => {
   const grouped = groupRowsByKanbanColumn([

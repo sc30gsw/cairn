@@ -7,7 +7,6 @@ import { create as createBlock } from "../../services/boardSchedule/blocks";
 export const create = ownerMutation({
   args: {
     color: v.optional(boardScheduleColorValidator),
-    clientMutationId: v.optional(v.string()),
     endAt: v.string(),
     rowId: v.id("rows"),
     startAt: v.string(),

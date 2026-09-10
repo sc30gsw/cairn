@@ -2,28 +2,18 @@ import { validate } from "convex-helpers/validators";
 import { convexTest } from "convex-test";
 import { expect, test } from "vite-plus/test";
 
+import { convexModules } from "../src/test-utils/convex-modules";
 import { api, components } from "./_generated/api";
 import authSchema from "./betterAuth/schema";
 import schema from "./schema";
 
-const modules = import.meta.glob([
-  "./**/*.ts",
-  "!./**/*.test.ts",
-  "!./auth.config.ts",
-  "!./auth.ts",
-  "!./betterAuth/**",
-  "!./convex.config.ts",
-  "!./crons.ts",
-  "!./http.ts",
-  "!./migrations.ts",
-]);
 const authModules = import.meta.glob("./betterAuth/**/*.ts");
 
 const OWNER = { email: "trash-owner@example.com", subject: "trash-owner" };
 const MONDAY = "2026-08-17";
 
 async function owner() {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   t.registerComponent("betterAuth", authSchema, authModules);
   const user = await t.run((ctx) =>
     ctx.runMutation(components.betterAuth.adapter.create, {
@@ -79,7 +69,7 @@ test("記録を選ぶと親の日を先に復元し、指定した記録だけ�
 });
 
 test("未認証の一括復元は拒否する", async () => {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   await expect(
     t.mutation(api.mutations.trash.restoreMany.restoreMany, { dayIds: [], rowIds: [] }),
   ).rejects.toThrow();

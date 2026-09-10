@@ -1,24 +1,13 @@
 import { convexTest } from "convex-test";
 import { expect, test } from "vite-plus/test";
 
+import { convexModules } from "../../../src/test-utils/convex-modules";
 import schema from "../../schema";
 import { applyPull } from "./applyPull";
 import { finishCalendarPull } from "./finishCalendarPull";
 
-const modules = import.meta.glob([
-  "../../**/*.ts",
-  "!../../**/*.test.ts",
-  "!../../auth.config.ts",
-  "!../../auth.ts",
-  "!../../betterAuth/**",
-  "!../../convex.config.ts",
-  "!../../crons.ts",
-  "!../../http.ts",
-  "!../../migrations.ts",
-]);
-
 test("同期窓の前日に始まり窓内で終わる予定を取り込み、全件・差分整理でも保持する", async () => {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   await t.run((ctx) =>
     ctx.db.insert("calendarConnections", {
       ownerId: "owner",

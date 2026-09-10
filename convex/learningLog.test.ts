@@ -1,20 +1,9 @@
 import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
+import { convexModules } from "../src/test-utils/convex-modules";
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
-
-const modules = import.meta.glob([
-  "./**/*.ts",
-  "!./**/*.test.ts",
-  "!./auth.config.ts",
-  "!./auth.ts",
-  "!./betterAuth/**",
-  "!./convex.config.ts",
-  "!./crons.ts",
-  "!./http.ts",
-  "!./migrations.ts",
-]);
 
 const CONCRETE_ACTION = "Unit 1 を音読する";
 const CONCRETE_ACTION_2 = "Unit 2 を音読する";
@@ -35,11 +24,11 @@ afterEach(() => {
 });
 
 function owner() {
-  return convexTest(schema, modules).withIdentity(OWNER);
+  return convexTest(schema, convexModules).withIdentity(OWNER);
 }
 
 function raw() {
-  return convexTest(schema, modules);
+  return convexTest(schema, convexModules);
 }
 
 async function ownerWithCatalog() {

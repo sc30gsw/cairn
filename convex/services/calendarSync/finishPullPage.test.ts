@@ -1,22 +1,11 @@
 import { convexTest } from "convex-test";
 import { expect, test } from "vite-plus/test";
 
+import { convexModules } from "../../../src/test-utils/convex-modules";
 import type { PulledEvent } from "../../lib/validators";
 import schema from "../../schema";
 import { applyPull } from "./applyPull";
 import { finishPullPage } from "./finishCalendarPull";
-
-const modules = import.meta.glob([
-  "../../**/*.ts",
-  "!../../**/*.test.ts",
-  "!../../auth.config.ts",
-  "!../../auth.ts",
-  "!../../betterAuth/**",
-  "!../../convex.config.ts",
-  "!../../crons.ts",
-  "!../../http.ts",
-  "!../../migrations.ts",
-]);
 
 const event = {
   allDay: false,
@@ -30,7 +19,7 @@ const event = {
 } as const satisfies PulledEvent;
 
 test("古い結果で更新しなかった写しも、その取り込みで返された予定として全件整理で保持する", async () => {
-  const t = convexTest(schema, modules);
+  const t = convexTest(schema, convexModules);
   const connectionId = await t.run((ctx) =>
     ctx.db.insert("calendarConnections", {
       ownerId: "owner",

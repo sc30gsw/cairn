@@ -1,9 +1,11 @@
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense } from "react";
 
 import { PresetList } from "~/features/catalog/components/preset-list";
 import { PresetListPending } from "~/features/catalog/components/preset-list-pending";
 import { PresetSettingsCard } from "~/features/catalog/components/preset-settings-card";
-import { useItemsList, usePresetsList } from "~/features/catalog/hooks/catalog-queries";
+import { presetsListQuery } from "~/features/catalog/hooks/catalog-queries";
+import { itemsListQuery } from "~/hooks/use-items-list";
 import {
   useOptionalItemsLiveQuery,
   useOptionalPresetsLiveQuery,
@@ -18,10 +20,10 @@ export function PresetsPage() {
 }
 
 function PresetsReady() {
-  const { data: queriedItems } = useItemsList();
-  const { data: queriedPresets } = usePresetsList();
   const liveItems = useOptionalItemsLiveQuery();
   const livePresets = useOptionalPresetsLiveQuery();
+  const { data: queriedItems } = useSuspenseQuery(itemsListQuery());
+  const { data: queriedPresets } = useSuspenseQuery(presetsListQuery());
 
   return (
     <PresetList
