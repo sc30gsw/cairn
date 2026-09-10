@@ -10,7 +10,7 @@ export function useSaveTarget() {
     );
     for (const query of currentQueries) {
       const updated = query.value?.map((target) =>
-        target.categoryId === args.categoryId
+        target.categoryId === args.categoryId && target.metric === args.metric
           ? {
               ...target,
               achieved: target.current >= args.targetValue,

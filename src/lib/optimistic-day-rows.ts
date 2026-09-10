@@ -1,5 +1,5 @@
 import type { OptimisticLocalStore } from "convex/browser";
-import type { FunctionReturnType } from "convex/server";
+import type { FunctionArgs, FunctionReturnType } from "convex/server";
 import type { Status } from "~domain/domain";
 import type { DateJst } from "~domain/jst";
 import { measuredMs } from "~domain/rowTimer";
@@ -14,13 +14,13 @@ import { serverNowMs } from "~/lib/server-clock";
 type BoardDay = FunctionReturnType<typeof api.queries.days.get.get>;
 type BoardDayRow = BoardDay["rows"][number];
 
-type DayQueryArgs = { dateJst: DateJst; todayJst: DateJst };
+type DayQueryArgs = FunctionArgs<typeof api.queries.days.get.get>;
 
 function dayQueryArgs(args: DayQueryArgs): DayQueryArgs {
   return { dateJst: args.dateJst, todayJst: args.todayJst };
 }
 
-function withDerivedDayValues(day: BoardDay, rows: BoardDay["rows"]): BoardDay {
+export function withDerivedDayValues(day: BoardDay, rows: BoardDay["rows"]): BoardDay {
   return {
     ...day,
     rows,

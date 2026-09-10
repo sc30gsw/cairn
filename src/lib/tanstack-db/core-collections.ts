@@ -6,6 +6,8 @@ import {
   createConvexQueryCollection,
   createConvexValueCollection,
   type CollectionSyncMode,
+  type ValueCollectionItem,
+  orderedCollectionItems,
   unwrapValueLiveResult,
 } from "~/lib/tanstack-db/collection-factory";
 
@@ -51,10 +53,10 @@ export function createBoardScheduleBlocksCollection({
 }: ScheduleScope) {
   return createConvexQueryCollection({
     args: { anchorDateJst, view },
-    getKey: (block: BoardScheduleBlock) => block._id,
+    getKey: (entry: ValueCollectionItem<BoardScheduleBlock>) => entry.value._id,
     id: `board-schedule-blocks:${anchorDateJst}:${view}`,
     query: api.queries.boardSchedule.listForWeek.listForWeek,
-    select: (blocks) => blocks,
+    select: (blocks) => orderedCollectionItems(blocks),
     syncMode,
   });
 }
@@ -66,10 +68,10 @@ export function createExternalCalendarEventsCollection({
 }: ScheduleScope) {
   return createConvexQueryCollection({
     args: { anchorDateJst, view },
-    getKey: (event: ExternalCalendarEvent) => event._id,
+    getKey: (entry: ValueCollectionItem<ExternalCalendarEvent>) => entry.value._id,
     id: `external-calendar-events:${anchorDateJst}:${view}`,
     query: api.queries.calendarSync.listExternal.listExternal,
-    select: (events) => events,
+    select: (events) => orderedCollectionItems(events),
     syncMode,
   });
 }
@@ -127,30 +129,30 @@ function createNotificationSettingsCollection() {
 function createItemsCollection() {
   return createConvexQueryCollection({
     args: {},
-    getKey: (item: Item) => item._id,
+    getKey: (entry: ValueCollectionItem<Item>) => entry.value._id,
     id: "items",
     query: api.queries.items.list.list,
-    select: (items) => items,
+    select: (items) => orderedCollectionItems(items),
   });
 }
 
 function createCategoriesCollection() {
   return createConvexQueryCollection({
     args: {},
-    getKey: (category: Category) => category._id,
+    getKey: (entry: ValueCollectionItem<Category>) => entry.value._id,
     id: "categories",
     query: api.queries.categories.list.list,
-    select: (categories) => categories,
+    select: (categories) => orderedCollectionItems(categories),
   });
 }
 
 function createPresetsCollection() {
   return createConvexQueryCollection({
     args: {},
-    getKey: (preset: Preset) => preset._id,
+    getKey: (entry: ValueCollectionItem<Preset>) => entry.value._id,
     id: "presets",
     query: api.queries.presets.list.list,
-    select: (presets) => presets,
+    select: (presets) => orderedCollectionItems(presets),
   });
 }
 
@@ -167,30 +169,30 @@ function createPresetSettingsCollection() {
 function createGoalsCollection() {
   return createConvexQueryCollection({
     args: {},
-    getKey: (goal: Goal) => goal._id,
+    getKey: (entry: ValueCollectionItem<Goal>) => entry.value._id,
     id: "goals",
     query: api.queries.goals.list.list,
-    select: (goals) => goals,
+    select: (goals) => orderedCollectionItems(goals),
   });
 }
 
 function createTargetsWithProgressCollection(weekStartJst: TargetsScope["weekStartJst"]) {
   return createConvexQueryCollection({
     args: { weekStartJst },
-    getKey: (target: TargetProgress) => target._id,
+    getKey: (entry: ValueCollectionItem<TargetProgress>) => entry.value._id,
     id: `targets-with-progress:${weekStartJst}`,
     query: api.queries.targets.listWithProgress.listWithProgress,
-    select: (targets) => targets,
+    select: (targets) => orderedCollectionItems(targets),
   });
 }
 
 function createObstaclesCollection() {
   return createConvexQueryCollection({
     args: {},
-    getKey: (obstacle: Obstacle) => obstacle._id,
+    getKey: (entry: ValueCollectionItem<Obstacle>) => entry.value._id,
     id: "obstacles",
     query: api.queries.goals.listObstacles.listObstacles,
-    select: (obstacles) => obstacles,
+    select: (obstacles) => orderedCollectionItems(obstacles),
   });
 }
 
@@ -216,20 +218,28 @@ export function useOptionalBoardScheduleBlocksLiveQuery(scope: ScheduleScope) {
   const client = useOptionalDbClient();
   const descriptor = createBoardScheduleBlocksCollection(scope);
 
-  return useLiveQuery({
+  const live = useLiveQuery({
     client,
-    query: (query) => (client === undefined ? null : query.from({ blocks: descriptor })),
+    query: (query) =>
+      client === undefined
+        ? null
+        : query.from({ blocks: descriptor }).orderBy((row) => row.blocks.position),
   });
+  return { ...live, data: live.data?.map((entry) => entry.value) };
 }
 
 export function useOptionalExternalCalendarEventsLiveQuery(scope: ScheduleScope) {
   const client = useOptionalDbClient();
   const descriptor = createExternalCalendarEventsCollection(scope);
 
-  return useLiveQuery({
+  const live = useLiveQuery({
     client,
-    query: (query) => (client === undefined ? null : query.from({ events: descriptor })),
+    query: (query) =>
+      client === undefined
+        ? null
+        : query.from({ events: descriptor }).orderBy((row) => row.events.position),
   });
+  return { ...live, data: live.data?.map((entry) => entry.value) };
 }
 
 export function useOptionalCalendarSyncStatusLiveQuery() {
@@ -282,28 +292,40 @@ export function useOptionalNotificationSettingsLiveQuery() {
 export function useOptionalItemsLiveQuery() {
   const client = useOptionalDbClient();
   const descriptor = createItemsCollection();
-  return useLiveQuery({
+  const live = useLiveQuery({
     client,
-    query: (query) => (client === undefined ? null : query.from({ items: descriptor })),
+    query: (query) =>
+      client === undefined
+        ? null
+        : query.from({ items: descriptor }).orderBy((row) => row.items.position),
   });
+  return { ...live, data: live.data?.map((entry) => entry.value) };
 }
 
 export function useOptionalCategoriesLiveQuery() {
   const client = useOptionalDbClient();
   const descriptor = createCategoriesCollection();
-  return useLiveQuery({
+  const live = useLiveQuery({
     client,
-    query: (query) => (client === undefined ? null : query.from({ categories: descriptor })),
+    query: (query) =>
+      client === undefined
+        ? null
+        : query.from({ categories: descriptor }).orderBy((row) => row.categories.position),
   });
+  return { ...live, data: live.data?.map((entry) => entry.value) };
 }
 
 export function useOptionalPresetsLiveQuery() {
   const client = useOptionalDbClient();
   const descriptor = createPresetsCollection();
-  return useLiveQuery({
+  const live = useLiveQuery({
     client,
-    query: (query) => (client === undefined ? null : query.from({ presets: descriptor })),
+    query: (query) =>
+      client === undefined
+        ? null
+        : query.from({ presets: descriptor }).orderBy((row) => row.presets.position),
   });
+  return { ...live, data: live.data?.map((entry) => entry.value) };
 }
 
 export function useOptionalPresetSettingsLiveQuery() {
@@ -319,10 +341,14 @@ export function useOptionalPresetSettingsLiveQuery() {
 export function useOptionalGoalsLiveQuery() {
   const client = useOptionalDbClient();
   const descriptor = createGoalsCollection();
-  return useLiveQuery({
+  const live = useLiveQuery({
     client,
-    query: (query) => (client === undefined ? null : query.from({ goals: descriptor })),
+    query: (query) =>
+      client === undefined
+        ? null
+        : query.from({ goals: descriptor }).orderBy((row) => row.goals.position),
   });
+  return { ...live, data: live.data?.map((entry) => entry.value) };
 }
 
 export function useOptionalTargetsWithProgressLiveQuery(
@@ -330,19 +356,27 @@ export function useOptionalTargetsWithProgressLiveQuery(
 ) {
   const client = useOptionalDbClient();
   const descriptor = createTargetsWithProgressCollection(weekStartJst);
-  return useLiveQuery({
+  const live = useLiveQuery({
     client,
-    query: (query) => (client === undefined ? null : query.from({ targets: descriptor })),
+    query: (query) =>
+      client === undefined
+        ? null
+        : query.from({ targets: descriptor }).orderBy((row) => row.targets.position),
   });
+  return { ...live, data: live.data?.map((entry) => entry.value) };
 }
 
 export function useOptionalObstaclesLiveQuery() {
   const client = useOptionalDbClient();
   const descriptor = createObstaclesCollection();
-  return useLiveQuery({
+  const live = useLiveQuery({
     client,
-    query: (query) => (client === undefined ? null : query.from({ obstacles: descriptor })),
+    query: (query) =>
+      client === undefined
+        ? null
+        : query.from({ obstacles: descriptor }).orderBy((row) => row.obstacles.position),
   });
+  return { ...live, data: live.data?.map((entry) => entry.value) };
 }
 
 export function useOptionalMethodCatalogLiveQuery() {

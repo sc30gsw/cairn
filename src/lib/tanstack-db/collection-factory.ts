@@ -7,6 +7,10 @@ import type { FunctionArgs, FunctionReference, FunctionReturnType } from "convex
 export type ValueCollectionItem<Value> = { value: Value };
 export type CollectionSyncMode = SyncMode;
 
+export function orderedCollectionItems<Item>(items: Item[]) {
+  return items.map((value, position) => ({ position, value }));
+}
+
 function convexCollectionQueryFn<Query extends FunctionReference<"query">>(
   convexQueryClient: ConvexQueryClient,
 ) {

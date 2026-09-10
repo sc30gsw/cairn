@@ -1,5 +1,6 @@
 import type { FunctionReturnType } from "convex/server";
 import type { DateJst } from "~domain/jst";
+import { keptRowsAfterSwitch } from "~domain/preset";
 import { measuredMs, timerMinutes } from "~domain/rowTimer";
 
 import { api } from "~/../convex/_generated/api";
@@ -9,6 +10,7 @@ import {
   removeDayRow,
   reorderDayRows,
   setDayRowStatus,
+  withDerivedDayValues,
 } from "~/lib/optimistic-day-rows";
 import { optimisticId } from "~/lib/optimistic-id";
 import { serverNowMs } from "~/lib/server-clock";
@@ -61,11 +63,7 @@ export function useAddRow(dateJst: DateJst, todayJst: DateJst) {
     localStore.setQuery(
       api.queries.days.get.get,
       { dateJst, todayJst },
-      {
-        ...current,
-        rows: [...current.rows, row],
-        volumeMinutes: current.volumeMinutes + args.minutes,
-      },
+      withDerivedDayValues(current, [...current.rows, row]),
     );
   });
 }
@@ -127,6 +125,8 @@ export function useSwitchPreset(dateJst?: DateJst, todayJst?: DateJst) {
     ) {
       return;
     }
+    const kept = keptRowsAfterSwitch(current.rows);
+    const startOrder = kept.reduce((max, row) => Math.max(max, row.sortOrder), -1) + 1;
     const rows = preset.lines.flatMap(
       (line: PresetList[number]["lines"][number], index: number) => {
         const item = items.find((entry: ItemList[number]) => entry._id === line.itemId);
@@ -146,7 +146,7 @@ export function useSwitchPreset(dateJst?: DateJst, todayJst?: DateJst) {
             itemName: item.name,
             minutes: line.minutes,
             review: null,
-            sortOrder: index,
+            sortOrder: startOrder + index,
             status: "未着手",
             timer: null,
           } satisfies DayRow,
@@ -156,11 +156,7 @@ export function useSwitchPreset(dateJst?: DateJst, todayJst?: DateJst) {
     localStore.setQuery(
       api.queries.days.get.get,
       { dateJst, todayJst },
-      {
-        ...current,
-        rows,
-        volumeMinutes: rows.reduce((total: number, row: DayRow) => total + row.minutes, 0),
-      },
+      withDerivedDayValues(current, [...kept, ...rows]),
     );
   });
 }

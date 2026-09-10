@@ -1,4 +1,5 @@
-import type { FunctionReturnType } from "convex/server";
+import type { OptimisticUpdate } from "convex/browser";
+import type { FunctionArgs, FunctionReturnType } from "convex/server";
 
 import { api } from "~/../convex/_generated/api";
 import { optimisticId } from "~/lib/optimistic-id";
@@ -6,25 +7,30 @@ import { useConvexMutation } from "~/lib/use-convex-mutation";
 
 type GoalList = FunctionReturnType<typeof api.queries.goals.list.list>;
 
+const optimisticallyCreateGoal: OptimisticUpdate<
+  FunctionArgs<typeof api.mutations.goals.create.create>
+> = (localStore, args) => {
+  const current = localStore.getQuery(api.queries.goals.list.list, {});
+  if (current === undefined) {
+    return;
+  }
+  const goal =
+    args.goal.type === "exam"
+      ? { ...args.goal, _id: optimisticId("goals"), createdAt: Date.now() }
+      : {
+          ...args.goal,
+          _id: optimisticId("goals"),
+          activeDays: 0,
+          confirmedMinutes: 0,
+          createdAt: Date.now(),
+        };
+  localStore.setQuery(api.queries.goals.list.list, {}, [...current, goal]);
+};
+
 export function useCreateGoal() {
-  const mutation = useConvexMutation(api.mutations.goals.create.create);
-  return mutation.withOptimisticUpdate((localStore, args) => {
-    const current = localStore.getQuery(api.queries.goals.list.list, {});
-    if (current === undefined) {
-      return;
-    }
-    const goal =
-      args.goal.type === "exam"
-        ? { ...args.goal, _id: optimisticId("goals"), createdAt: Date.now() }
-        : {
-            ...args.goal,
-            _id: optimisticId("goals"),
-            activeDays: 0,
-            confirmedMinutes: 0,
-            createdAt: Date.now(),
-          };
-    localStore.setQuery(api.queries.goals.list.list, {}, [...current, goal]);
-  });
+  return useConvexMutation(api.mutations.goals.create.create).withOptimisticUpdate(
+    optimisticallyCreateGoal,
+  );
 }
 
 export function useUpdateGoal() {
