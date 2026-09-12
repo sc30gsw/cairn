@@ -57,7 +57,7 @@ Require `control-cairn: doctor OK` before driving and whenever something looks o
 
 ## Drive
 
-The `browser` helper opens a dedicated nonpersistent Playwright session at 1280×900 and records ownership for cleanup. Never attach to a human tab. The desktop nav is `画面ナビ（右小口）`; narrow viewports expose additional destinations through `その他`.
+The `browser` helper opens a dedicated nonpersistent Playwright session at 1280×900 and records ownership for cleanup. Never attach to a human tab. The desktop nav is `画面ナビ（右小口）`; narrow viewports expose additional destinations through the button labelled `その他の画面` (visible text `その他`).
 
 For a repeatable first proof on a fresh run:
 

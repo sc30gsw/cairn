@@ -37,8 +37,8 @@ Preconditions:
 
 - Username allows only ASCII letters, digits, and underscore, minimum 3 characters. Hyphens fail validation.
 - Password minimum is 8 characters. `Verify1!cairn` meets it.
-- Sign-up is rate-limited (`/sign-up/email` max 3 per 60s). A unique `CAIRN_VERIFY_RUN_ID` avoids collisions; retries in the same minute can fail with a Japanese error under the form.
-- `パスキーでログイン` and `Google でログイン` are not this feature. Do not click them for default proof.
+- Sign-up is rate-limited (`/sign-up/email` max 3 per 60s). Sign-in is rate-limited (`/sign-in/username` max 5 per 60s). A unique `CAIRN_VERIFY_RUN_ID` avoids collisions; retries in the same minute can fail with a Japanese error under the form.
+- `パスキーでログイン` and `Googleでログイン` (no space) are not this feature. Do not click them for default proof.
 - If `AUTH_DISABLE_SIGNUP` is set on the Convex deployment, the segmented control disappears and only `ログイン` remains. Report that precondition instead of inventing a signup path.
 - After signup the home stepper may appear. It is not a failed login.
-- Opening `http://127.0.0.1:3000` while `SITE_URL` is `http://localhost:3000` fails signup/signin with `リクエスト元が不正です` (Better Auth `INVALID_ORIGIN`). Use `localhost`. `control-cairn launch` trusts only the documented localhost origin on the disposable deployment.
+- Opening `http://127.0.0.1:3000` while `SITE_URL` is `http://localhost:3000` fails signup/signin with `リクエスト元が不正です。ページを更新して、もう一度お試しください。` (Better Auth `INVALID_ORIGIN`). Use `localhost`. `control-cairn launch` trusts only the documented localhost origin on the disposable deployment.

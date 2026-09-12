@@ -32,7 +32,7 @@ Preconditions:
 - **Open the schedule.** Choose the `スケジュール` tab. The view tabs have accessible names `日表示に切り替え`, `週表示に切り替え`, `月表示に切り替え`, and `年表示に切り替え`.
 - **Create a timed plan.** Select the day view (`日表示に切り替え`) and click an empty button such as `Time slot 10:00:00 - 10:15:00`. Week view is not this locator. In `予定を追加`, choose an item, set start and end times, and save. Reload the day schedule, wait for heading `ボード`, then verify a `検証項目` event button remains. Select it to inspect the saved interval in `予定を編集`. The create form may show wall times in the browser timezone while slot names stay on the calendar clock.
 - **Quarter-hour intervals.** Day view exposes four empty slot buttons per hour, named `Time slot HH:MM:SS - HH:MM:SS` (example `Time slot 10:00:00 - 10:15:00`). Week view still uses one-hour names that include the date, for example `Time slot 2026-09-12 10:00:00 - 11:00:00`. Prove 15-minute slots on day view. Do not claim week empty slots are 15 minutes from day-view names. Desktop pointer drag and resize on day view also snap to 15 minutes.
-- **Year entry.** Choose `年表示に切り替え`. Select an enabled day and verify the schedule navigates to that date. Future days may be disabled by the app's write rules.
+- **Year entry.** Choose `年表示に切り替え`. Click a day button (accessible names look like `9月 23, 2026`). That opens a popover dialog `{date}の予定`; it does not switch to day view or change the schedule date by itself. Year-grid days are not marked disabled for future dates; URL state still clamps writes to today.
 - **Proof.** Capture the board after the move. Run `rtk proxy playwright-cli -s="$SESSION" --raw snapshot > "$ART/board.aria.yml"` and `rtk proxy playwright-cli -s="$SESSION" screenshot --filename="$ART/board.png"`. Artifacts show heading `ボード` and the item under 確定.
 
 ## Gotchas
@@ -43,4 +43,5 @@ Preconditions:
 - A schedule item label can also appear as all-day records and as a timed plan. Open the intended occurrence from a fresh snapshot and verify its edit dialog interval.
 - Timer buttons `計測をはじめる`, `計測を止める`, `計測を続ける` live on the board only. They are not proven by `day-log.md`.
 - Narrow viewports hide `項目` / `プリセット` / `ゴミ箱` behind その他. `ボード` stays a primary tab.
-- Confirming a zero-minute row prompts for minutes. Have a number ready.
+- Confirming a zero-minute row prompts for minutes in modal `記録を確定`. Have a number ready.
+- Skip from the card menu is `見送りにする`, not a label that says スキップ. Timer chip `確定する` also appears on 進行中 cards.
