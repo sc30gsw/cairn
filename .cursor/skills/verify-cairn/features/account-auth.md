@@ -25,20 +25,20 @@ Preconditions:
 - Playwright session `cairn-verify-$CAIRN_VERIFY_RUN_ID` is open at `/` and at least 1280px wide.
 
 - **Open signup.** Choose the visible `新規登録` label (the native radio is `visibility: hidden`). Snapshot first, then `rtk proxy playwright-cli -s="$SESSION" click` the label ref, or run `rtk proxy playwright-cli -s="$SESSION" click "getByText('新規登録', { exact: true })"`. The fields `ユーザー名`, `表示名`, `メールアドレス`, and `パスワード` are visible, and the submit button reads `アカウントを作成`.
-- **Fill account.** Run `rtk proxy playwright-cli -s="$SESSION" fill "getByLabel('ユーザー名')" "vfy_${CAIRN_VERIFY_RUN_ID}"`, then the same for `表示名` (`Verify ${CAIRN_VERIFY_RUN_ID}`), `メールアドレス` (`vfy-${CAIRN_VERIFY_RUN_ID}@example.test`), and `パスワード` (`Verify1!cairn`). Each field shows the typed value.
+- **Fill account.** Run `rtk proxy playwright-cli -s="$SESSION" fill "getByLabel('ユーザー名')" "vfy_${CAIRN_VERIFY_RUN_ID}"`, then the same for `表示名` (`検証 ${CAIRN_VERIFY_RUN_ID}`), `メールアドレス` (`vfy-${CAIRN_VERIFY_RUN_ID}@example.test`), and `パスワード` (`Verify1!cairn`). Each field shows the typed value. `prove-catalog` uses the same `検証` display-name prefix.
 - **Create account.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('button', { name: 'アカウントを作成' })"`. Either the signed-in shell appears (right-rail nav `日`) or the dialog `パスキーを登録しますか？` opens.
 - **Skip passkey.** If the dialog is open, run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('button', { name: 'あとで', exact: true })"`. Do not use a prefix match — `あとで設定` on the home stepper also contains `あとで`, and the modal overlay blocks everything else. The dialog closes. The page shows nav links including `日` and `アカウントメニュー`.
 - **Dismiss setup if needed.** If an alert `はじめのセットアップ` covers the page, run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('button', { name: 'あとで設定' })"` before asserting the day page. Signup is still proven by the nav + account menu, not by dismissing setup.
 - **Sign out.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByLabel('アカウントメニュー', { exact: true })"` (the avatar is not a button and may be omitted from the ARIA snapshot). Then run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('menuitem', { name: 'ログアウト' })"`. The login card heading `学習ログ` and button `ログイン` return.
-- **Sign in.** Choose `ログイン` if needed. Fill `ユーザー名またはメールアドレス` with `vfy_${CAIRN_VERIFY_RUN_ID}` and `パスワード` with `Verify1!cairn`. Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('button', { name: 'ログイン' })"`. The signed-in shell returns with nav `日`.
+- **Sign in.** Choose `ログイン` if needed. Fill `ユーザー名またはメールアドレス` with `vfy_${CAIRN_VERIFY_RUN_ID}` and `パスワード` with `Verify1!cairn`. Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('button', { name: 'ログイン', exact: true })"`. Without `exact: true`, `パスキーでログイン` also matches. The signed-in shell returns with nav `日`.
 - **Proof.** Capture the signed-in shell. Run `rtk proxy playwright-cli -s="$SESSION" --raw snapshot > "$ART/signed-in.aria.yml"` and `rtk proxy playwright-cli -s="$SESSION" screenshot --filename="$ART/signed-in.png"`. Both identify `学習ログ` or `日` and `アカウントメニュー`. Write `proof.txt` with feature ID `auth-signin` and entry `ログイン`.
 
 ## Gotchas
 
 - Username allows only ASCII letters, digits, and underscore, minimum 3 characters. Hyphens fail validation.
 - Password minimum is 8 characters. `Verify1!cairn` meets it.
-- Sign-up is rate-limited (`/sign-up/email` max 3 per 60s). A unique `CAIRN_VERIFY_RUN_ID` avoids collisions; retries in the same minute can fail with a Japanese error under the form.
-- `パスキーでログイン` and `Google でログイン` are not this feature. Do not click them for default proof.
+- Sign-up is rate-limited (`/sign-up/email` max 3 per 60s). Sign-in is rate-limited (`/sign-in/username` max 5 per 60s). A unique `CAIRN_VERIFY_RUN_ID` avoids collisions; retries in the same minute can fail with a Japanese error under the form.
+- `パスキーでログイン` and `Googleでログイン` (no space) are not this feature. Do not click them for default proof.
 - If `AUTH_DISABLE_SIGNUP` is set on the Convex deployment, the segmented control disappears and only `ログイン` remains. Report that precondition instead of inventing a signup path.
 - After signup the home stepper may appear. It is not a failed login.
-- Opening `http://127.0.0.1:3000` while `SITE_URL` is `http://localhost:3000` fails signup/signin with `リクエスト元が不正です` (Better Auth `INVALID_ORIGIN`). Use `localhost`. `control-cairn launch` trusts only the documented localhost origin on the disposable deployment.
+- Opening `http://127.0.0.1:3000` while `SITE_URL` is `http://localhost:3000` fails signup/signin with `リクエスト元が不正です。ページを更新して、もう一度お試しください。` (Better Auth `INVALID_ORIGIN`). Use `localhost`. `control-cairn launch` trusts only the documented localhost origin on the disposable deployment.

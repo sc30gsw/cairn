@@ -57,7 +57,7 @@ Require `control-cairn: doctor OK` before driving and whenever something looks o
 
 ## Drive
 
-The `browser` helper opens a dedicated nonpersistent Playwright session at 1280×900 and records ownership for cleanup. Never attach to a human tab. The desktop nav is `画面ナビ（右小口）`; narrow viewports expose additional destinations through `その他`.
+The `browser` helper opens a dedicated nonpersistent Playwright session at 1280×900 and records ownership for cleanup. Never attach to a human tab. The desktop nav is `画面ナビ（右小口）`; narrow viewports expose additional destinations through the button labelled `その他の画面` (visible text `その他`).
 
 For a repeatable first proof on a fresh run:
 
@@ -80,7 +80,7 @@ Use each feature's literal roles/names. Snapshot → act → wait for the expect
 Mantine specifics:
 
 - Use `exact: true` on short labels (`日`, `項目`, `あとで`).
-- SegmentedControl inputs are hidden: click visible `新規登録` text. For Switch use its visible label/track from the current snapshot.
+- SegmentedControl inputs are hidden: click visible `新規登録` text. For Switch use its visible label/track from the current snapshot. After `reload`, wait for a real heading (`項目`, `プリセット`, `ボード`, or volume `N分`) before snapshotting.
 - An item-add textbox and button have the same accessible name: select by role.
 - Select inputs use role `combobox`; their hidden listbox can share the label, making `getByLabel` ambiguous.
 - `分数` is a textbox. `アカウントメニュー` is a labelled avatar, not a button.
