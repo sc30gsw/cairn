@@ -42,19 +42,27 @@
       "id": "better-auth",
       "type": "security",
       "label": "Better Auth",
-      "sublabel": "Convex HTTP + コンポーネント",
-      "pos": [48, 72],
-      "size": [188, 56],
+      "sublabel": "Convex HTTP",
+      "pos": [48, 48],
+      "size": [180, 52],
       "tag": "passkey",
       "sources": [{ "path": "convex/http.ts", "line": 7, "label": "registerRoutes" }]
+    },
+    {
+      "id": "google-oauth",
+      "type": "external",
+      "label": "Google Identity",
+      "sublabel": "OAuth ログイン",
+      "pos": [276, 48],
+      "size": [188, 52]
     },
     {
       "id": "browser",
       "type": "frontend",
       "label": "Browser / PWA",
-      "sublabel": "TanStack Start + Router",
-      "pos": [48, 340],
-      "size": [188, 64],
+      "sublabel": "TanStack Start",
+      "pos": [48, 220],
+      "size": [180, 56],
       "tag": "SSR",
       "sources": [{ "path": "src/router.tsx", "line": 10, "label": "getRouter" }]
     },
@@ -63,8 +71,8 @@
       "type": "database",
       "label": "TanStack DB",
       "sublabel": "query-db-collection",
-      "pos": [292, 340],
-      "size": [204, 64],
+      "pos": [276, 220],
+      "size": [188, 56],
       "sources": [
         {
           "path": "src/lib/tanstack-db/collection-factory.ts",
@@ -77,9 +85,9 @@
       "id": "convex-query",
       "type": "backend",
       "label": "Convex query",
-      "sublabel": "購読・SSR prefetch",
-      "pos": [560, 160],
-      "size": [188, 60],
+      "sublabel": "購読 / SSR",
+      "pos": [520, 108],
+      "size": [176, 52],
       "sources": [
         {
           "path": "src/lib/tanstack-db/core-collections.ts",
@@ -93,60 +101,52 @@
       "type": "backend",
       "label": "Convex mutation",
       "sublabel": "楽観更新つき書き込み",
-      "pos": [560, 430],
-      "size": [188, 64],
+      "pos": [520, 340],
+      "size": [176, 56],
       "sources": [{ "path": "src/lib/use-convex-mutation.ts", "line": 32, "label": "useConvexMutation" }]
     },
     {
       "id": "convex-action",
       "type": "backend",
       "label": "Convex action",
-      "sublabel": "use node / 外部 I/O",
-      "pos": [560, 620],
-      "size": [188, 60],
+      "sublabel": "use node",
+      "pos": [520, 480],
+      "size": [176, 52],
       "sources": [{ "path": "convex/actions/calendarSync/syncAll.ts", "line": 1, "label": "syncAll" }]
     },
     {
       "id": "convex-db",
       "type": "database",
       "label": "Convex DB",
-      "sublabel": "days / rows / goals / calendar*",
-      "pos": [820, 340],
-      "size": [200, 64],
+      "sublabel": "days / rows / goals",
+      "pos": [760, 220],
+      "size": [188, 56],
       "sources": [{ "path": "convex/schema.ts", "line": 25, "label": "defineTable" }]
     },
     {
-      "id": "google-oauth",
-      "type": "external",
-      "label": "Google Identity",
-      "sublabel": "OAuth ログイン",
-      "pos": [292, 72],
-      "size": [204, 56]
+      "id": "crons",
+      "type": "cloud",
+      "label": "Convex crons",
+      "sublabel": "purge / syncAll",
+      "pos": [760, 340],
+      "size": [188, 52],
+      "sources": [{ "path": "convex/crons.ts", "line": 6, "label": "cronJobs" }]
     },
     {
       "id": "google-calendar",
       "type": "external",
       "label": "Google Calendar",
       "sublabel": "Calendar API",
-      "pos": [820, 620],
-      "size": [200, 56]
-    },
-    {
-      "id": "crons",
-      "type": "cloud",
-      "label": "Convex crons",
-      "sublabel": "定時ジョブ",
-      "pos": [292, 620],
-      "size": [204, 56],
-      "sources": [{ "path": "convex/crons.ts", "line": 6, "label": "cronJobs" }]
+      "pos": [960, 480],
+      "size": [188, 52]
     },
     {
       "id": "web-push",
       "type": "external",
       "label": "Web Push",
-      "sublabel": "VAPID / 端末",
-      "pos": [820, 760],
-      "size": [200, 56],
+      "sublabel": "VAPID",
+      "pos": [1160, 480],
+      "size": [188, 52],
       "sources": [
         {
           "path": "convex/actions/notifications/deliverWebPush.ts",
@@ -178,7 +178,7 @@
       "variant": "emphasis",
       "fromSide": "right",
       "toSide": "left",
-      "labelDy": -26
+      "labelDy": -22
     },
     {
       "id": "db-to-query",
@@ -211,8 +211,7 @@
       "to": "convex-db",
       "label": "ctx.db 書き込み",
       "fromSide": "top",
-      "toSide": "bottom",
-      "labelDy": 18
+      "toSide": "bottom"
     },
     {
       "id": "browser-to-action",
@@ -220,9 +219,8 @@
       "to": "convex-action",
       "label": "useAction",
       "fromSide": "bottom",
-      "toSide": "bottom",
-      "via": [[142, 860], [654, 860]],
-      "labelDy": 28
+      "toSide": "left",
+      "via": [[138, 506]]
     },
     {
       "id": "action-to-mutation",
@@ -240,7 +238,7 @@
       "label": "Calendar API",
       "fromSide": "right",
       "toSide": "left",
-      "labelDy": -32
+      "labelDy": -28
     },
     {
       "id": "browser-to-auth",
@@ -250,7 +248,7 @@
       "variant": "security",
       "fromSide": "top",
       "toSide": "bottom",
-      "labelDx": -72
+      "labelDx": -64
     },
     {
       "id": "auth-to-google",
@@ -259,23 +257,16 @@
       "label": "OAuth",
       "variant": "security",
       "fromSide": "right",
-      "toSide": "top"
+      "toSide": "left"
     },
     {
       "id": "crons-to-mutation",
       "from": "crons",
       "to": "convex-mutation",
-      "label": "purge / timer / 通知",
-      "fromSide": "top",
-      "toSide": "left"
-    },
-    {
-      "id": "crons-to-action",
-      "from": "crons",
-      "to": "convex-action",
-      "label": "syncAll",
-      "fromSide": "right",
-      "toSide": "left"
+      "label": "内部 mutation",
+      "fromSide": "left",
+      "toSide": "right",
+      "labelDy": -28
     },
     {
       "id": "action-to-push",
@@ -283,33 +274,9 @@
       "to": "web-push",
       "label": "sendNotification",
       "fromSide": "bottom",
-      "toSide": "left"
-    }
-  ],
-  "cards": [
-    {
-      "dot": "cyan",
-      "title": "読み取り",
-      "items": [
-        "TanStack DB の collection は Convex query を queryCollectionOptions で包む",
-        "SSR は TanStack Query + ConvexQueryClient。VITE_CONVEX_URL が無いと router が throw する"
-      ]
-    },
-    {
-      "dot": "emerald",
-      "title": "書き込み",
-      "items": [
-        "画面の変更は useConvexMutation が Convex mutation へ送る。collection は書き込み口ではない",
-        "楽観更新は Query cache。確定後は query 購読が collection を追いつける"
-      ]
-    },
-    {
-      "dot": "rose",
-      "title": "境界",
-      "items": [
-        "Google Calendar と Web Push だけが Node action。通常の学習記録は mutation と ctx.db",
-        "Better Auth はコンポーネント表。本体の days / rows とは別サンドボックス"
-      ]
+      "toSide": "bottom",
+      "via": [[608, 556], [1254, 556]]
     }
   ]
 }
+
