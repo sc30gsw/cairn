@@ -48,9 +48,9 @@ Run `rtk proxy .cursor/skills/verify-cairn/bin/prove-catalog` after launch → d
 
 ## Coverage boundaries
 
-Not mapped yet (do not claim verified): 履歴 (`/history`, `/review`), 目標 (`/goals`), ゴミ箱 restore/purge, マイページ profile/passkey/notifications, Notion OAuth, PWA install, offline poster.
+Not mapped yet (do not claim verified): 履歴 (`/history`), レビュー (`/review`), 目標 (`/goals`), 方法 (`/methods`), ゴミ箱 restore/purge, マイページ profile/passkey/notifications, Notion OAuth, PWA install, offline poster.
 
 
 ## Source anchors
 
-Selectors and preconditions were checked against `src/features/auth/components/login-screen.tsx:11`, `src/features/auth/components/account-auth-form.tsx:19`, `src/features/catalog/components/item-list.tsx:134`, `src/features/catalog/components/preset-list.tsx:187`, `src/features/today/components/adhoc-row-form.tsx:17`, and `src/features/today/hooks/use-day-page-date-jst.ts:6`. Consult graft before changing recipes when these controls change.
+Selectors and preconditions were checked against `src/features/auth/components/login-screen.tsx:53` (title `学習ログ`), `src/features/auth/components/account-auth-form.tsx:20`, `src/features/catalog/components/item-list.tsx:134` (`AddCategoryForm`), `src/features/catalog/components/preset-list.tsx:276` (weekday `MultiSelect`), `src/features/today/components/adhoc-row-form.tsx:17`, `src/lib/app-nav.ts:38` (desktop nav including `方法`), and `src/features/today/hooks/use-day-page-date-jst.ts:6`. Consult graft before changing recipes when these controls change.

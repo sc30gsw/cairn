@@ -80,7 +80,7 @@ Use each feature's literal roles/names. Snapshot → act → wait for the expect
 Mantine specifics:
 
 - Use `exact: true` on short labels (`日`, `項目`, `あとで`).
-- SegmentedControl inputs are hidden: click visible `新規登録` text. For Switch use its visible label/track from the current snapshot.
+- SegmentedControl inputs are hidden: click visible `新規登録` text. For Switch use its visible label/track from the current snapshot. After `reload`, wait for a real heading (`項目`, `プリセット`, `ボード`, or volume `N分`) before snapshotting.
 - An item-add textbox and button have the same accessible name: select by role.
 - Select inputs use role `combobox`; their hidden listbox can share the label, making `getByLabel` ambiguous.
 - `分数` is a textbox. `アカウントメニュー` is a labelled avatar, not a button.
