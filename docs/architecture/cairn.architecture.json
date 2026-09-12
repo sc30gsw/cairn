@@ -1,0 +1,282 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Cairn データ経路",
+    "quality_profile": "showcase",
+    "output": "docs/architecture/cairn.architecture.html",
+    "repository": {
+      "url": "https://github.com/sc30gsw/cairn",
+      "provider": "github",
+      "revision": "e9cb036efc5b7d788550c9e5ca60e28993aaf7cb"
+    },
+    "views": [
+      {
+        "id": "read-path",
+        "label": "読み取り",
+        "focus": ["browser", "tanstack-db", "convex-query", "convex-db"],
+        "note": "画面は TanStack DB の live collection を読む。実体は Convex query の購読。"
+      },
+      {
+        "id": "write-path",
+        "label": "書き込み",
+        "focus": ["browser", "convex-mutation", "convex-db", "tanstack-db"],
+        "note": "変更は useConvexMutation が Convex mutation へ送る。DB の変化が query 経由で collection に戻る。"
+      },
+      {
+        "id": "identity",
+        "label": "認証",
+        "focus": ["browser", "better-auth", "google-oauth"],
+        "note": "Convex HTTP 上の Better Auth。email / username / パスキー / Google ログイン。"
+      },
+      {
+        "id": "calendar-and-push",
+        "label": "カレンダーと通知",
+        "focus": ["browser", "convex-action", "google-calendar", "crons", "web-push"],
+        "note": "Google Calendar は action。cron が同期と通知評価を回し、Web Push は Node action が送る。"
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "better-auth",
+      "type": "security",
+      "label": "Better Auth",
+      "sublabel": "Convex HTTP",
+      "pos": [48, 48],
+      "size": [180, 52],
+      "tag": "passkey",
+      "sources": [{ "path": "convex/http.ts", "line": 7, "label": "registerRoutes" }]
+    },
+    {
+      "id": "google-oauth",
+      "type": "external",
+      "label": "Google Identity",
+      "sublabel": "OAuth ログイン",
+      "pos": [276, 48],
+      "size": [188, 52]
+    },
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "Browser / PWA",
+      "sublabel": "TanStack Start",
+      "pos": [48, 220],
+      "size": [180, 56],
+      "tag": "SSR",
+      "sources": [{ "path": "src/router.tsx", "line": 10, "label": "getRouter" }]
+    },
+    {
+      "id": "tanstack-db",
+      "type": "database",
+      "label": "TanStack DB",
+      "sublabel": "query-db-collection",
+      "pos": [276, 220],
+      "size": [188, 56],
+      "sources": [
+        {
+          "path": "src/lib/tanstack-db/collection-factory.ts",
+          "line": 21,
+          "label": "createConvexQueryCollection"
+        }
+      ]
+    },
+    {
+      "id": "convex-query",
+      "type": "backend",
+      "label": "Convex query",
+      "sublabel": "購読 / SSR",
+      "pos": [520, 108],
+      "size": [176, 52],
+      "sources": [
+        {
+          "path": "src/lib/tanstack-db/core-collections.ts",
+          "line": 38,
+          "label": "createDayPageCollection"
+        }
+      ]
+    },
+    {
+      "id": "convex-mutation",
+      "type": "backend",
+      "label": "Convex mutation",
+      "sublabel": "楽観更新つき書き込み",
+      "pos": [520, 340],
+      "size": [176, 56],
+      "sources": [{ "path": "src/lib/use-convex-mutation.ts", "line": 32, "label": "useConvexMutation" }]
+    },
+    {
+      "id": "convex-action",
+      "type": "backend",
+      "label": "Convex action",
+      "sublabel": "use node",
+      "pos": [520, 480],
+      "size": [176, 52],
+      "sources": [{ "path": "convex/actions/calendarSync/syncAll.ts", "line": 1, "label": "syncAll" }]
+    },
+    {
+      "id": "convex-db",
+      "type": "database",
+      "label": "Convex DB",
+      "sublabel": "days / rows / goals",
+      "pos": [760, 220],
+      "size": [188, 56],
+      "sources": [{ "path": "convex/schema.ts", "line": 25, "label": "defineTable" }]
+    },
+    {
+      "id": "crons",
+      "type": "cloud",
+      "label": "Convex crons",
+      "sublabel": "purge / syncAll",
+      "pos": [760, 340],
+      "size": [188, 52],
+      "sources": [{ "path": "convex/crons.ts", "line": 6, "label": "cronJobs" }]
+    },
+    {
+      "id": "google-calendar",
+      "type": "external",
+      "label": "Google Calendar",
+      "sublabel": "Calendar API",
+      "pos": [960, 480],
+      "size": [188, 52]
+    },
+    {
+      "id": "web-push",
+      "type": "external",
+      "label": "Web Push",
+      "sublabel": "VAPID",
+      "pos": [1160, 480],
+      "size": [188, 52],
+      "sources": [
+        {
+          "path": "convex/actions/notifications/deliverWebPush.ts",
+          "line": 21,
+          "label": "deliverWebPush"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Convex deployment",
+      "wraps": [
+        "convex-query",
+        "convex-mutation",
+        "convex-action",
+        "convex-db",
+        "crons"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "browser-to-db",
+      "from": "browser",
+      "to": "tanstack-db",
+      "label": "useLiveQuery",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelDy": -22
+    },
+    {
+      "id": "db-to-query",
+      "from": "tanstack-db",
+      "to": "convex-query",
+      "label": "query 購読",
+      "fromSide": "top",
+      "toSide": "left"
+    },
+    {
+      "id": "query-to-store",
+      "from": "convex-query",
+      "to": "convex-db",
+      "label": "ctx.db 読み取り",
+      "fromSide": "right",
+      "toSide": "top"
+    },
+    {
+      "id": "browser-to-mutation",
+      "from": "browser",
+      "to": "convex-mutation",
+      "label": "useConvexMutation",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "mutation-to-store",
+      "from": "convex-mutation",
+      "to": "convex-db",
+      "label": "ctx.db 書き込み",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "browser-to-action",
+      "from": "browser",
+      "to": "convex-action",
+      "label": "useAction",
+      "fromSide": "bottom",
+      "toSide": "left",
+      "via": [[138, 506]]
+    },
+    {
+      "id": "action-to-mutation",
+      "from": "convex-action",
+      "to": "convex-mutation",
+      "label": "runMutation",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "action-to-google",
+      "from": "convex-action",
+      "to": "google-calendar",
+      "label": "Calendar API",
+      "fromSide": "right",
+      "toSide": "left",
+      "labelDy": -28
+    },
+    {
+      "id": "browser-to-auth",
+      "from": "browser",
+      "to": "better-auth",
+      "label": "session / passkey",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDx": -64
+    },
+    {
+      "id": "auth-to-google",
+      "from": "better-auth",
+      "to": "google-oauth",
+      "label": "OAuth",
+      "variant": "security",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "crons-to-mutation",
+      "from": "crons",
+      "to": "convex-mutation",
+      "label": "内部 mutation",
+      "fromSide": "left",
+      "toSide": "right",
+      "labelDy": -28
+    },
+    {
+      "id": "action-to-push",
+      "from": "convex-action",
+      "to": "web-push",
+      "label": "sendNotification",
+      "fromSide": "bottom",
+      "toSide": "bottom",
+      "via": [[608, 556], [1254, 556]]
+    }
+  ]
+}
+
