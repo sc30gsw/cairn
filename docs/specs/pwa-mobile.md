@@ -1,7 +1,7 @@
 # PWA・モバイル最適化設計（#58）
 
-- 状態: 決定済み（2026-08-24 改訂）。実装は別セッション。この文書に書いていない判断は実装セッションで発生しない。
-- 対象: ホーム画面追加（マニフェスト・アイコン・スプラッシュ）、Service Worker の生成経路とキャッシュ範囲、オフラインで何を出して何を出さないか、実行ボードのモバイル操作性（ドラッグ代替）、右小口インデックスタブのモバイル挙動の見直し。
+- 状態: 決定済み（2026-08-24 改訂。カンバンのタッチドラッグは 2026-09-16 にカード本体の長押しへ再改訂、§0-6 / §11.2）。実装は別セッション。この文書に書いていない判断は実装セッションで発生しない。
+- 対象: ホーム画面追加（マニフェスト・アイコン・スプラッシュ）、Service Worker の生成経路とキャッシュ範囲、オフラインで何を出して何を出さないか、実行ボードのモバイル操作性（カード本体の長押しと Menu 代替）、右小口インデックスタブのモバイル挙動の見直し。
 - 兄弟仕様: [goal-hierarchy-layout.md](goal-hierarchy-layout.md)（#48）/ [checkpoint-parent-backfill.md](checkpoint-parent-backfill.md)（#49）/ [study-timer.md](study-timer.md)（#51）/ [goal-record-linking.md](goal-record-linking.md)（#52）/ [monthly-review.md](monthly-review.md)（#54）/ [notifications.md](notifications.md)（#56）。
 - 前提となる調査: #57（PWA）。ブランチ `research/pwa-support` は本セッション時点でリモートに存在しない（`git ls-remote --heads origin` に無い）ため、**マップ #47 の "Decisions already locked" に転記済みの #57 結論**を一次情報として扱う（全文相当は §2.3）。原文が復活した場合に突き合わせるのは §2.3 の**事実記述**だけで、§3〜§12 の判断は原文の細部が増えても変わらない構造（Convex にオフライン同期が無い / `vite-plugin-pwa` が本番ビルド非互換 / iOS はホーム画面追加が ITP 除外と Web Push の前提）に依っている。
 - 守る規約: [convex-rules.md](../../.claude/rules/convex-rules.md)（CVX-01〜20。ただし本仕様はバックエンド変更を持たない — §13）、[design-live-board.md](../../.claude/rules/web/design-live-board.md)（Paper Redesign・ライト固定・ハードコード hex 禁止）、[mantine-tailwind.md](../../.claude/rules/web/mantine-tailwind.md)、[react-conventions.md](../../.claude/rules/typescript/react-conventions.md)、[testing.md](../../.claude/rules/common/testing.md)、[development-workflow.md](../../.claude/rules/common/development-workflow.md)（`vp` 以外のパッケージマネージャ禁止）。
@@ -16,7 +16,7 @@
 3. **書き込みは止めない。5秒未解決なら警告する。** Convex クライアントは短時間の切断中の mutation をキューして再接続時に送る。ここを潰すと「地下鉄で10秒切れる」常用ケースが悪化する。`runMutation` に「5秒経っても未解決なら『まだ保存されていません』の永続通知」を足すだけにする。`navigator.onLine` はバナー表示のみに使い、送信判断には使わない（嘘をつくため。§9.2、§19-9）。
 4. **SW の更新は自動で奪わない。** `skipWaiting: false` / `clientsClaim: false`。新版を検知したら Mantine の通知に「更新する」ボタンを出し、押されたら `SKIP_WAITING` を postMessage → `controllerchange` → `location.reload()`（§8.2）。
 5. **モバイルナビは上部の横スクロール列を捨て、画面下端の下小口タブにする。** standalone 起動ではブラウザ枠が無く、画面最上部はノッチ側で親指から最も遠い。**日 / ボード / 履歴 / 目標** の4本 + 「その他」Menu（項目 / プリセット / ゴミ箱）を下端固定にする。デスクトップの右小口レールは**無変更**（§10）。
-6. **実行ボードのモバイルはドラッグを捨て、カード上の Menu で動かす。** 「5列縦積み + 長押しドラッグ + ページスクロール」は三重に衝突していて成立していない。列は**横スナップスクロール**（1画面1列）にし、各カードの `⋮` Menu から「移動」（状態遷移）と「上へ / 下へ」（並べ替え）を出す。**確定はドラッグ経路と1本に統合し、#51 が決めた「計測があれば `stopTimer` → その値でそのまま確定」／「計測なし・分数0だけ確定エディタ」の順を必ず通す**（§11）。
+6. **実行ボードのスマホとタブレットはカード本体を長押しして動かす。** `{項目} の操作` Menu は代替。列は**横スナップスクロール**（1画面1列、`<48em`）。掴み手はカード本体（`touch-action: none`）。ライブラリのタッチ lift は 120ms で、それより前の `touchmove` は列スクロールに渡さない。**確定はドラッグ経路と1本に統合し、#51 が決めた「計測があれば `stopTimer` → その値でそのまま確定」／「計測なし・分数0だけ確定エディタ」の順を必ず通す**（§11）。2026-09-16 に「モバイルはドラッグを捨て Menu だけ」を上書きした。
 7. **スケジュールタブは「ドラッグを切るだけ」。作成用の新 UI は作らない。** コード確認の結果、`onTimeSlotClick` と `onDayClick`（月/年ビューは `onAdd`）で**タップからの作成経路が既に存在する**（`board-schedule.tsx` L117-141 / L196-202）。したがってモバイルでは `withEventsDragAndDrop` と `withDragSlotSelect` を落とすだけでよく、新しい純関数もボタンも要らない（§11.4。これは前版の設計から**削った**部分。§19-13）。
 8. **スプラッシュは所有者の実機1機種分だけ生成する。** iOS は Manifest 標準ではなく Apple 独自の `apple-touch-startup-image`。media query が一致しない機種は「画像なし」に落ちるだけで崩れないので、iPhone 1サイズ（縦・横）だけ用意する（§6.4、§19-11）。
 9. **Convex のスキーマ・関数は一切変えない。** PWA はクライアント側の話。`pushSubscriptions` 表も `deliverWebPush` も **#58 完了後の後続チケット**の所有物で、ここでも #56 でも作らない（§13、§22.1）。
@@ -854,16 +854,18 @@ function BottomIndexTabs({ pathname }: Record<"pathname", string>) {
 - 列見出しには件数の `Badge` を付ける（`未着手 3`）。スクローラに `role="group" aria-label="カンバンの列"`、各列に `aria-label="未着手 3件"`。
 - 境を `md`（48em）にするのは既存 `md:grid-cols-5` と同じ。ナビの境（`sm`）と揃えないのは意図的 — タブレット縦は5列だと窮屈だが、ナビは右小口で足りる。
 
-### 11.2 ドラッグ代替: カードの `⋮` Menu
+### 11.2 ドラッグ: カード本体を長押し（2026-09-16 改訂）
 
-`RecordCard` のアクション群を2つにする。
+旧稿は `visibleFrom="md"` で掴み手を隠し、`< md` は Menu だけにしていた。Kaito がこれを上書きした。スマホ（`<48em`）もタブレット（`48em` 以上の4列）も、**カード本体を長押しして動かす**。隠し `ActionIcon` に `dragHandleProps` を付けない。`{項目} の操作` は代替のまま。
+
+`RecordCard` のアクション群:
 
 | コントロール | 可視条件 | 役割 |
 | --- | --- | --- |
-| `IconGripVertical` の `ActionIcon` | CSS で `< md` は非表示（**DOM からは消さない**） | ドラッグ。`dragHandleProps` は常にここに付く |
-| `IconDotsVertical` の `ActionIcon` + `Menu` | 常に表示 | 移動と並べ替え |
+| カード本体（タイトル側。装飾の `IconGripVertical` を含む） | 常に表示 | ドラッグ。`dragHandleProps` はここ。`touch-action: none`。lift 前 120ms の `touchmove` は capture で止めて列スナップに渡さない |
+| `IconDotsVertical` の `ActionIcon` + `Menu` | 常に表示 | 移動と並べ替えの代替 |
 
-**掴み手を DOM から消さない**のが要点。`@hello-pangea/dnd` の `Draggable` は `dragHandleProps` が実 DOM に付いていることを前提にしており、条件分岐で外すと警告が出る。`visibleFrom="md"`（= CSS クラス）なら DOM は残り、SSR と実 DOM もずれない。
+`@hello-pangea/dnd` のタッチ sensor は `timeForLongPress = 120`。lift 前の `touchmove` は pending を cancel する。列トラックは `<48em` で `overflow-x: auto` + `scroll-snap-type: x mandatory` なので、カード側で scroll を止めてから lift する。Menu と計測ボタンは掴み手の外に置き、入れ子の `button` にしない。
 
 `src/features/board/components/board-kanban-card-menu.tsx`（新規）の項目:
 
@@ -1188,8 +1190,8 @@ PWA は**新しい clock 依存を作らない**。`dateJst` はこれまでど�
 | E8 | standalone でパスキー | WebAuthn の RP ID は同一オリジンなので問題なし。変更不要 |
 | E9 | ホーム画面追加せず iOS Safari で1週間放置 | ITP で `localStorage` が消え再ログインになる（現状のまま）。マイページの案内でホーム画面追加を促す（§8.3）以上のことはしない |
 | E10 | Android で横スワイプしたら「戻る」が発火する | `overscroll-behavior-x: contain`（§11.1）で封じる |
-| E11 | モバイルでカンバン列をスワイプ中に長押しドラッグが誤発火 | 掴み手が `< md` で非表示なので発火しない（§11.2） |
-| E12 | `< md` でも外付けキーボード/マウスの端末（iPad + Magic Keyboard 等） | `md` 以上ならドラッグが出る。それ未満では Menu だけ。Menu はキーボード操作可能なので詰まない |
+| E11 | モバイルでカンバン列をスワイプ中に長押しドラッグが誤発火 | カードは `touch-action: none`。lift 前 120ms の `touchmove` は capture で止める。列のスワイプはカード以外（列見出し・余白）から行う（§11.2） |
+| E12 | `< md` でも外付けキーボード/マウスの端末（iPad + Magic Keyboard 等） | カード本体が掴み手なのでポインタでも動く。Menu は代替でキーボード操作可能なので詰まない |
 | E13 | 下小口バーが Modal / Drawer に被る | バーは `z-index: 100`、Mantine の Modal / Drawer は既定 200。DOM 順に賭けずに必ず Modal が上に来る（§10.4） |
 | E14 | JST 日付が変わった後にアプリへ復帰 | §12.4 で `router.invalidate()` + クエリ無効化 |
 | E15 | 通知権限を拒否された状態でホーム画面追加 | 本仕様は権限を要求しない（#56 とその後続の範囲） |
@@ -1243,7 +1245,7 @@ PWA は**新しい clock 依存を作らない**。`dateJst` はこれまでど�
 ### 19-8. 「メニュー移動はドラッグより遅い。カンバンの本質はドラッグだ」
 
 **回答。** モバイルでは「5列縦積み + 長押しドラッグ + ページスクロール」が三重に衝突していて、そもそも成立していない（列をまたぐには数百 px スクロールしながらドラッグする必要がある）。速いドラッグが存在しないので、遅いメニューと比べる相手がいない。
-**譲る点。** 横スナップにした結果、**モバイルでは列間ドラッグを明確に捨てる**ことになる（掴み手を `< md` で隠す）。これは妥協ではなく決定として §11.2 に書き、CONTEXT 実行ボードの _Avoid_ にも「モバイルでドラッグを必須にすること」を足す（§20.1）。
+**譲る点（2026-09-16 改訂）。** 横スナップは `<48em` の列移動に残す。カード本体の長押しで列間ドラッグも行う。Menu は代替なのでドラッグ必須にはしない。CONTEXT 実行ボードの _Avoid_ は「隠し掴み手だけをタッチの移動手段にすること」（§20.1）。
 
 ### 19-9. 「`navigator.onLine` は嘘をつく。それを前提にした設計は壊れる」
 
@@ -1307,7 +1309,7 @@ _Avoid_: 前回のデータを載せること, 再ログインを要求するこ
 
 ```md
 **実行ボード**:
-_Avoid_: …（既存）…, モバイルでドラッグを必須にすること
+_Avoid_: …（既存）…, 隠し掴み手だけをタッチの移動手段にすること
 
 **記録**:
 _Avoid_: …（既存）…, オフラインで保存できたように見せること
@@ -1384,7 +1386,7 @@ SSR HTML をキャッシュして app-shell 型にする案、オフライン時
 - Chrome の「アプリをインストール」が出る（Lighthouse に PWA カテゴリが無い版では、これで代替する）。
 - 幅 375px で:
   - 下小口タブ4本 + 「その他」が親指の届く位置に出て、本文がバーに隠れない。「その他」側のページ（項目など）に居るとき「その他」が active に見える（E22）。
-  - カンバンが横スナップで1画面1列。スワイプで「戻る」が発火しない。掴み手が見えない。
+  - カンバンが横スナップで1画面1列。スワイプで「戻る」が発火しない。カード本体を長押しするとリフトする。`{項目} の操作` も残る。
   - カードの `⋮` から 進行中 / 完了 / 未着手 / 見送り / 上へ / 下へ が操作できる。「完了にする」で確定エディタが開く行（分数0・計測なし）と開かない行の両方を確認。**計測中の行では、エディタを開かず計測値（`stopTimer` の戻り値）でそのまま確定し、Toast「学習時間 n分を記録しました」が出ることを実機で確認する**（ドラッグ経路と同じ数字になること）。
   - **スケジュールのスロットをタップすると作成フォームが開く**（§11.4 の前提の実測）。予定をタップすると編集フォームが開く。ドラッグでは何も起きない。
   - 入力にフォーカスしても iOS がズームしない。

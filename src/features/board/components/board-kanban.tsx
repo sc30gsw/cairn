@@ -1,5 +1,5 @@
-import type { DropResult } from "@hello-pangea/dnd";
-import { ActionIcon, Badge, Box, Card, Group, Stack, Text, Tooltip } from "@mantine/core";
+import type { DraggableProvidedDragHandleProps, DropResult } from "@hello-pangea/dnd";
+import { Badge, Box, Card, Group, Stack, Text, Tooltip } from "@mantine/core";
 import { IconGripVertical } from "@tabler/icons-react";
 import { Result } from "better-result";
 import { useEffect, useRef, useState } from "react";
@@ -13,6 +13,7 @@ import {
   BoardKanbanConfirmModal,
   needsKanbanConfirmEditor,
 } from "~/features/board/components/board-kanban-confirm-modal";
+import { withKanbanTouchLift } from "~/features/board/components/board-kanban-touch-lift";
 import { RowTimerChip } from "~/features/board/components/row-timer-chip";
 import { useBoardKanbanActions } from "~/features/board/hooks/use-board-kanban-actions";
 import {
@@ -63,7 +64,7 @@ function RecordCard({
   todayJst,
 }: {
   disabled: boolean;
-  dragHandleProps: React.HTMLAttributes<HTMLElement> | undefined;
+  dragHandleProps: DraggableProvidedDragHandleProps | null | undefined;
   dragging: boolean;
   onConfirm: () => void;
   onFlagReview: (row: BoardRow, dueJst: DateJst) => void;
@@ -78,40 +79,37 @@ function RecordCard({
 }) {
   const badge = RECORD_STATUS_UI[row.status];
   const detail = row.content === "" ? row.category : `${row.category} · ${row.content}`;
+  const handleProps = withKanbanTouchLift(dragHandleProps);
 
   return (
     <Card className={classes.card} data-dragging={dragging || undefined} padding="sm" withBorder>
       <Group align="flex-start" gap="xs" wrap="nowrap">
-        <Box visibleFrom="md">
-          <Tooltip label="ドラッグして並べ替え・移動" withArrow>
-            <ActionIcon
-              aria-label={`${row.itemName} の順序を変更`}
-              color="gray"
-              disabled={disabled}
-              size="sm"
-              variant="subtle"
-              {...dragHandleProps}
-            >
-              <IconGripVertical aria-hidden size={16} stroke={1.5} />
-            </ActionIcon>
-          </Tooltip>
-        </Box>
-        <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
-          <TruncatedText fw={600} lineClamp={1} size="sm">
-            {row.itemName}
-          </TruncatedText>
-          <TruncatedText c="dimmed" lineClamp={1} size="xs">
-            {detail}
-          </TruncatedText>
-          <Group gap={4} wrap="wrap">
-            <Tooltip label={statusTooltip(row.status)} withArrow>
-              <Badge color={badge.color} size="sm" variant="light">
-                {badge.label}
-              </Badge>
-            </Tooltip>
-            <ReviewBadge review={row.review} />
-          </Group>
-        </Stack>
+        <div
+          {...handleProps}
+          aria-disabled={disabled || undefined}
+          aria-label={`${row.itemName} の順序を変更`}
+          className={classes.handle}
+        >
+          <span aria-hidden className={classes.grip}>
+            <IconGripVertical size={16} stroke={1.5} />
+          </span>
+          <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
+            <TruncatedText fw={600} lineClamp={1} size="sm">
+              {row.itemName}
+            </TruncatedText>
+            <TruncatedText c="dimmed" lineClamp={1} size="xs">
+              {detail}
+            </TruncatedText>
+            <Group gap={4} wrap="wrap">
+              <Tooltip label={statusTooltip(row.status)} withArrow>
+                <Badge color={badge.color} size="sm" variant="light">
+                  {badge.label}
+                </Badge>
+              </Tooltip>
+              <ReviewBadge review={row.review} />
+            </Group>
+          </Stack>
+        </div>
         <BoardKanbanCardMenu
           disabled={disabled}
           onFlagReview={onFlagReview}
@@ -394,7 +392,7 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
                             <div ref={dragProvided.innerRef} {...dragProvided.draggableProps}>
                               <RecordCard
                                 disabled={!interactive}
-                                dragHandleProps={dragProvided.dragHandleProps ?? undefined}
+                                dragHandleProps={dragProvided.dragHandleProps}
                                 dragging={dragSnapshot.isDragging}
                                 onConfirm={() => void requestConfirm(row)}
                                 onFlagReview={(flaggedRow, dueJst) => {
