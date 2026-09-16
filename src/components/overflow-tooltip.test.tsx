@@ -23,3 +23,21 @@ test("省略された操作要素はホバーで全文を表示する", async ()
 
   expect((await view.findByRole("tooltip")).textContent).toContain("省略された全文");
 });
+
+test("省略された操作要素はタップで全文を表示する", async () => {
+  const view = renderWithMantine(
+    <OverflowTooltip<HTMLButtonElement> content="省略された全文">
+      {(ref) => (
+        <button ref={ref} type="button">
+          省略表示
+        </button>
+      )}
+    </OverflowTooltip>,
+  );
+  const target = view.getByRole("button", { name: "省略表示" });
+
+  fireEvent.pointerDown(target, { pointerType: "touch" });
+  fireEvent.mouseEnter(target);
+
+  expect((await view.findByRole("tooltip")).textContent).toContain("省略された全文");
+});
