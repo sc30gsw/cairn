@@ -54,14 +54,16 @@ script = r"""async page => {
     note('Click カテゴリーを追加 with 検証カテゴリ');
     await page.getByRole('button', { name: 'カテゴリーを追加', exact: true }).click();
     await page.getByRole('textbox', { name: '検証カテゴリに学習内容を追加', exact: true }).waitFor();
-    if (await page.getByRole('textbox', { name: '新しいカテゴリー', exact: true }).inputValue() !== '') throw new Error('Category add field leftover');
+    const categoryAdd = page.getByRole('textbox', { name: '新しいカテゴリー', exact: true });
+    await page.waitForFunction((el) => el instanceof HTMLInputElement && el.value === '', await categoryAdd.elementHandle());
     await capture('category-added');
     await page.getByRole('textbox', { name: '検証カテゴリに学習内容を追加', exact: true }).fill('検証項目');
     note('Click 検証カテゴリに学習内容を追加 with 検証項目');
     await page.getByRole('button', { name: '検証カテゴリに学習内容を追加', exact: true }).click();
     await page.getByRole('textbox', { name: '検証項目の名前', exact: true }).waitFor();
     if (await page.getByRole('textbox', { name: '検証項目の名前', exact: true }).inputValue() !== '検証項目') throw new Error('Item value mismatch');
-    if (await page.getByRole('textbox', { name: '検証カテゴリに学習内容を追加', exact: true }).inputValue() !== '') throw new Error('Item add field leftover');
+    const itemAdd = page.getByRole('textbox', { name: '検証カテゴリに学習内容を追加', exact: true });
+    await page.waitForFunction((el) => el instanceof HTMLInputElement && el.value === '', await itemAdd.elementHandle());
     await capture('item-added');
     note('Reload /items to verify stored category and item');
     await page.reload();
