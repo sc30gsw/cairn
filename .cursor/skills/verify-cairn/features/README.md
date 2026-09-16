@@ -40,17 +40,18 @@ Each feature file starts with an H1 and one paragraph. It then uses exactly four
 - [Catalog items](./catalog-items.md) covers adding a category and a learning item so a day can record work.
 - [Day log](./day-log.md) covers opening today, adding an ad-hoc record, confirming it, and checking learning volume.
 - [Presets](./presets.md) covers creating a weekday preset after at least one item exists.
-- [Execution board](./board.md) covers opening the kanban for today and confirming a record from the board.
+- [Execution board](./board.md) covers opening the kanban for today, holding a card to drag at 390 and 768, and confirming a record from the board.
+- [Methods catalog](./methods.md) covers opening `/methods`, adding a lane and a method, and reading a truncated title.
 
 ## Automated baseline
 
-Run `rtk proxy .cursor/skills/verify-cairn/bin/prove-catalog` after launch → doctor → browser. It proves signup/passkey skip, desktop catalog navigation, category/item creation, persistence after reload, and availability in the day selector. Proof lives in `$CAIRN_VERIFY_DIR/artifacts/catalog-items/`; cleanup preserves it. Other mapped recipes remain manual; listing a recipe does not mean it was executed.
+Run `rtk proxy .cursor/skills/verify-cairn/bin/prove-catalog` after launch → doctor → browser. It proves signup/passkey skip, desktop catalog navigation, category/item creation, empty add fields after create, persistence after reload, and availability in the day selector. Proof lives in `$CAIRN_VERIFY_DIR/artifacts/catalog-items/`; cleanup preserves it. Other mapped recipes remain manual; listing a recipe does not mean it was executed.
 
 ## Coverage boundaries
 
-Not mapped yet (do not claim verified): 履歴 (`/history`), レビュー (`/review`), 目標 (`/goals`), 方法 (`/methods`), ゴミ箱 restore/purge, マイページ profile/passkey/notifications, Notion OAuth, PWA install, offline poster.
+Not mapped yet (do not claim verified): 履歴 (`/history`), レビュー (`/review`), 目標 (`/goals`), ゴミ箱 restore/purge, マイページ profile/passkey/notifications, Notion OAuth, PWA install, offline poster.
 
 
 ## Source anchors
 
-Selectors and preconditions were checked against `src/features/auth/components/login-screen.tsx:53` (title `学習ログ`), `src/features/auth/components/account-auth-form.tsx:20`, `src/features/catalog/components/item-list.tsx:134` (`AddCategoryForm`), `src/features/catalog/components/preset-list.tsx:276` (weekday `MultiSelect`), `src/features/today/components/adhoc-row-form.tsx:17`, `src/lib/app-nav.ts:38` (desktop nav including `方法`), and `src/features/today/hooks/use-day-page-date-jst.ts:6`. Consult graft before changing recipes when these controls change.
+Selectors and preconditions were checked against `src/features/auth/components/login-screen.tsx:53` (title `学習ログ`), `src/features/auth/components/account-auth-form.tsx:20`, `src/features/catalog/components/item-list.tsx:134` (`AddCategoryForm`), `src/features/catalog/components/preset-list.tsx:144` (`createFormKey` remount) and `:276` (weekday `MultiSelect`), `src/features/today/components/adhoc-row-form.tsx:17` (initial `minutes: 20`), `src/features/methods/components/method-catalog-board.tsx:37` (heading `方法カタログ`), `src/lib/app-nav.ts:38` (desktop nav including `方法`; `MOBILE_PRIMARY` omits it), `src/features/board/components/board-kanban.tsx` (card-body `aria-label` `{item} の順序を変更`), `src/components/overflow-tooltip.tsx` (`EVENTS.touch`), and `src/features/today/hooks/use-day-page-date-jst.ts:6`. Consult graft before changing recipes when these controls change.

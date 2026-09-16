@@ -54,12 +54,16 @@ script = r"""async page => {
     note('Click カテゴリーを追加 with 検証カテゴリ');
     await page.getByRole('button', { name: 'カテゴリーを追加', exact: true }).click();
     await page.getByRole('textbox', { name: '検証カテゴリに学習内容を追加', exact: true }).waitFor();
+    const categoryAdd = page.getByRole('textbox', { name: '新しいカテゴリー', exact: true });
+    await page.waitForFunction((el) => el instanceof HTMLInputElement && el.value === '', await categoryAdd.elementHandle());
     await capture('category-added');
     await page.getByRole('textbox', { name: '検証カテゴリに学習内容を追加', exact: true }).fill('検証項目');
     note('Click 検証カテゴリに学習内容を追加 with 検証項目');
     await page.getByRole('button', { name: '検証カテゴリに学習内容を追加', exact: true }).click();
     await page.getByRole('textbox', { name: '検証項目の名前', exact: true }).waitFor();
     if (await page.getByRole('textbox', { name: '検証項目の名前', exact: true }).inputValue() !== '検証項目') throw new Error('Item value mismatch');
+    const itemAdd = page.getByRole('textbox', { name: '検証カテゴリに学習内容を追加', exact: true });
+    await page.waitForFunction((el) => el instanceof HTMLInputElement && el.value === '', await itemAdd.elementHandle());
     await capture('item-added');
     note('Reload /items to verify stored category and item');
     await page.reload();
@@ -82,7 +86,7 @@ script = r"""async page => {
       features: ['auth-signup', 'auth-passkey-skip', 'items-open', 'items-add-category', 'items-add-item'],
       entryPoints: ['signed-out / → 新規登録', 'desktop 項目 nav → /items', 'desktop 日 nav → /'],
       category: '検証カテゴリ', item: '検証項目',
-      sideEffects: ['category and item survive /items reload', 'saved item selectable on 日'],
+      sideEffects: ['category and item survive /items reload', 'saved item selectable on 日', 'add fields empty after create'],
       notTested: ['mobile その他', 'onboarding shortcut', 'signout/signin', 'day record creation', 'presets', 'board']
     } };
   } catch (error) {

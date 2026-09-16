@@ -26,7 +26,7 @@ Preconditions:
 - **Open today.** Run `rtk proxy playwright-cli -s="$SESSION" goto http://localhost:3000/` or `rtk proxy playwright-cli -s="$SESSION" click "getByRole('link', { name: '日', exact: true })"`. The 記録 card is visible. Empty today shows `この日の記録はありません` (or preset rows if a weekday preset already applied). `あとで設定` dismisses one setup step only; repeat or ignore. Scroll `検証項目の記録` into view before a screenshot — the stepper can push the row below the fold.
 - **Choose item.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('combobox', { name: 'その日限りの項目', exact: true })"`, then `rtk proxy playwright-cli -s="$SESSION" click "getByRole('option', { name: '検証項目', exact: true })"`. The field value is `検証項目`.
 - **Enter note and minutes.** Run `rtk proxy playwright-cli -s="$SESSION" fill "getByRole('textbox', { name: 'その日限りのひとこと' })" "検証のひとこと"` and `rtk proxy playwright-cli -s="$SESSION" fill "getByRole('textbox', { name: '分数' })" "25"`. `分数` is a textbox.
-- **Add record.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('button', { name: '記録を足す' })"`. A form named `検証項目の記録` appears. Volume is still `0分` until confirm. Badge on the row reads `未着手`.
+- **Add record.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('button', { name: '記録を足す' })"`. A form named `検証項目の記録` appears. Volume is still `0分` until confirm. Badge on the row reads `未着手`. Scope the add form with `page.locator('form').filter({ has: page.getByRole('button', { name: '記録を足す', exact: true }) })`. Assert ひとこと (`その日限りのひとこと`) is `""` and `分数` is `20` (the initial default). The new row form keeps `検証のひとこと`; do not empty that editor.
 - **Confirm.** Snapshot the form `検証項目の記録`. Run `run-code` with `async page => { await page.getByRole('form', { name: '検証項目の記録', exact: true }).getByRole('switch', { name: '記録を確定', exact: true }).press('Space'); }`. This uses the switch's keyboard interaction without relying on Mantine's sibling elements. After Convex updates: the switch is checked, the badge reads `完了`, the volume heading is `25分`, and 共有文 contains `検証項目`.
 - **Second view.** Reload `/`. Wait for a volume heading such as `25分` (or the later total) before capturing. A snapshot that only shows `読み込み中` is not proof. The same `検証項目の記録` form remains, badge `完了`.
 - **Other dates.** From `履歴` choose a dated link from the current snapshot; alternatively use `前の日` or the `学習日` field from 日. Record the resulting `/days/YYYY-MM-DD` URL and repeat the row steps only for a writable date. Proving `/` alone does not cover these entries.
@@ -35,6 +35,7 @@ Preconditions:
 ## Gotchas
 
 - `記録を足す` is disabled when the catalog has no items. That is an unmet catalog precondition, not a day-log bug.
+- After a successful add, scoped add-form ひとこと is empty and `分数` is `20`. The row form `検証項目の記録` keeps the submitted note.
 - Confirming is a switch, not a button labelled 確定. The accessible name is `記録を確定`. Turning it off on a 確定 row opens `見送りにしますか？`.
 - When other records already exist, scope the add fields to `page.locator('form').filter({ has: page.getByRole('button', { name: '記録を足す', exact: true }) })`; `分数` also appears in existing record forms. Use a fresh item or scope the intended record when several rows share an item name.
 - ひとこと may be empty. Minutes `0` can still confirm. Use `25` so volume proof is obvious.
