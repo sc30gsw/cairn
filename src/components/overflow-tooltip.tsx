@@ -4,7 +4,7 @@ import { useRef, type ReactElement, type Ref } from "react";
 
 import { useIsTextTruncated } from "~/hooks/use-is-text-truncated";
 
-const EVENTS = { focus: true, hover: true, touch: false } satisfies TooltipProps["events"];
+const EVENTS = { focus: true, hover: true, touch: true } satisfies TooltipProps["events"];
 
 type OverflowTooltipProps<T extends HTMLElement> = {
   children: (ref: Ref<T>, truncated: boolean) => ReactElement;
