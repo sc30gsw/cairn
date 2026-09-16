@@ -1,4 +1,4 @@
-import { Field, Form, useForm } from "@formisch/react";
+import { Field, Form, reset, useForm } from "@formisch/react";
 import type { DropResult } from "@hello-pangea/dnd";
 import {
   ActionIcon,
@@ -16,6 +16,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import { IconGripVertical, IconTrash } from "@tabler/icons-react";
+import { Result } from "better-result";
 import { groupBy, mapValues, prop, sortBy } from "remeda";
 
 import { PageTitle } from "~/components/page-title";
@@ -141,8 +142,9 @@ function AddCategoryForm({ onCreate }: { onCreate: CatalogItemActions["onCreateC
     <Card>
       <Form
         of={form}
-        onSubmit={(output) => {
-          onCreate(output);
+        onSubmit={async (output) => {
+          const result = await onCreate(output);
+          if (Result.isOk(result)) reset(form);
         }}
       >
         <Grid align="flex-start" gap="sm">
@@ -187,8 +189,9 @@ function AddItemToColumnForm({
   return (
     <Form
       of={form}
-      onSubmit={(output) => {
-        onCreate({ categoryId: category._id, name: output.name });
+      onSubmit={async (output) => {
+        const result = await onCreate({ categoryId: category._id, name: output.name });
+        if (Result.isOk(result)) reset(form);
       }}
     >
       <Stack gap="xs">
