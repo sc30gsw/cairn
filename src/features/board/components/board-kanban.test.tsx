@@ -116,6 +116,17 @@ test("カンバンは未着手・進行中・確定・スキップを並べる",
   expect(getByLabelText("Distinction 2000 の順序を変更")).toBeDefined();
 });
 
+test("カード本体が順序変更の掴み手で、操作メニューは残る", () => {
+  const { getByLabelText, getByRole } = renderWithMantine(
+    <BoardKanban dateJst="2026-08-17" rows={[row("r1", pending, "Distinction 2000")]} />,
+  );
+
+  const handle = getByLabelText("Distinction 2000 の順序を変更");
+  expect(handle.textContent?.includes("Distinction 2000")).toBe(true);
+  expect(getComputedStyle(handle).touchAction).toBe("none");
+  expect(getByRole("button", { name: "Distinction 2000 の操作" })).toBeDefined();
+});
+
 test("列は名前付きの束で、各列に件数が付く", () => {
   const { getByLabelText, getByRole } = renderWithMantine(
     <BoardKanban
@@ -130,7 +141,7 @@ test("列は名前付きの束で、各列に件数が付く", () => {
 });
 
 test("操作できないボードではドラッグハンドルと移動メニューを無効にする", () => {
-  const { getByRole } = renderWithMantine(
+  const { getByLabelText, getByRole } = renderWithMantine(
     <BoardKanban
       dateJst="2026-08-17"
       interactive={false}
@@ -138,9 +149,9 @@ test("操作できないボードではドラッグハンドルと移動メニ�
     />,
   );
 
-  expect(
-    getByRole("button", { name: "Distinction 2000 の順序を変更" }).hasAttribute("disabled"),
-  ).toBe(true);
+  expect(getByLabelText("Distinction 2000 の順序を変更").getAttribute("aria-disabled")).toBe(
+    "true",
+  );
   expect(getByRole("button", { name: "Distinction 2000 の操作" }).hasAttribute("disabled")).toBe(
     true,
   );

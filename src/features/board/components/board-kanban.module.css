@@ -47,9 +47,34 @@
   place-items: center;
 }
 
+.grip {
+  flex-shrink: 0;
+  color: var(--cairn-muted-2);
+  padding-block-start: 0.15rem;
+}
+
+.handle {
+  display: flex;
+  flex: 1;
+  min-inline-size: 0;
+  align-items: flex-start;
+  gap: var(--mantine-spacing-xs);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.card {
+  touch-action: none;
+}
+
 .card[data-dragging] {
   border-color: var(--mantine-color-orange-filled);
   box-shadow: var(--mantine-shadow-md);
+}
+
+.card[data-dragging] .handle {
+  cursor: grabbing;
 }
 
 @media (min-width: 48em) {

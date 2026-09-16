@@ -26,7 +26,7 @@ Preconditions:
 
 - **Open board.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('link', { name: 'ボード', exact: true })"` or `goto http://localhost:3000/board`. Wait for heading `ボード`. A click that only changes the URL while the snapshot still shows 日 is not proof. The カンバン tab is selected. Lead copy mentions `今日の記録の状態` when viewing today.
 - **See the row.** The region `カンバンの列` contains a labelled group `未着手 1件` and the card for `検証項目` (or the item you added). Scope with `getByLabel('未着手 1件')`. `getByRole('generic', { name: /^未着手/ })` does not match this group.
-- **Confirm from the board.** On that card, open the button named `{item} の操作` (a space before `の操作`), then choose the menu item `完了にする`. The card leaves 未着手 (`未着手 0件`) and appears under `確定`. A sibling button `{item} の順序を変更` is reorder, not this sub-feature. The board applies this status change directly; it does not open the day-log confirmation form.
+- **Confirm from the board.** On that card, open the button named `{item} の操作` (a space before `の操作`), then choose the menu item `完了にする`. The card leaves 未着手 (`未着手 0件`) and appears under `確定`. A sibling control `{item} の順序を変更` is the card-body drag handle, not this sub-feature. The board applies this status change directly; it does not open the day-log confirmation form.
 - **Second view.** Open `日`. Volume includes the confirmed minutes and the row badge is `完了`.
 - **Day shortcut entry.** Return to 日 and click the link whose accessible name is the displayed date followed by ` の記録をカンバンで見る`. Use the fresh snapshot to keep the actual date literal. Verify that the board date matches before repeating the card steps.
 - **Open the schedule.** Choose the `スケジュール` tab. The view tabs have accessible names `日表示に切り替え`, `週表示に切り替え`, `月表示に切り替え`, and `年表示に切り替え`.
@@ -38,7 +38,7 @@ Preconditions:
 ## Gotchas
 
 - An empty day has no cards. Add a row on 日 first; do not treat an empty kanban as a board failure.
-- Drag-and-drop works on desktop. Prefer the card menu and timer buttons for status verification because they have stable accessible names. Pointer drag is only required when explicitly proving drag or resize.
+- Hold the card body (`{item} の順序を変更`) to drag on every width, including 390×844 and 768×1024. The library lifts after about 120ms. Any `touchmove` before lift is swallowed so column snap-scroll cannot cancel it. Keep `{item} の操作` as the fallback for status and 上へ / 下へ. Prefer the card menu and timer buttons for status verification because they have stable accessible names. Pointer drag is required when proving hold-to-drag on phone or tablet.
 - Several records can share the same item label. Scope the `{item} の操作` button to its card or choose the intended occurrence from a fresh snapshot.
 - A schedule item label can also appear as all-day records and as a timed plan. Open the intended occurrence from a fresh snapshot and verify its edit dialog interval.
 - Timer buttons `計測をはじめる`, `計測を止める`, `計測を続ける` live on the board only. They are not proven by `day-log.md`.
