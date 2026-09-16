@@ -1,6 +1,6 @@
 ---
 name: verify-cairn
-description: Drive Cairn (学習ログ) through its real browser UI to prove authentication, catalog items, day records, presets, and board changes. Use for live feature verification or reproducing user-visible bugs with retained evidence.
+description: Drive Cairn (学習ログ) through its real browser UI to prove authentication, catalog items, day records, presets, methods, and board changes (including hold-drag at 390 and 768). Use for live feature verification or reproducing user-visible bugs with retained evidence.
 ---
 
 # Verify Cairn (学習ログ)
@@ -65,7 +65,7 @@ For a repeatable first proof on a fresh run:
 rtk proxy .cursor/skills/verify-cairn/bin/prove-catalog
 ```
 
-This executable drives signup → skip optional passkey → `項目` nav → add category → add item → reload → confirm the item is selectable from `日`. It stores steps, snapshots, screenshots, and an explicit success file. It fails if browser assertions fail, even if playwright-cli itself exits zero. See [catalog-items](features/catalog-items.md) for its mapped scope. It does not clean up automatically so failures can be diagnosed; always run cleanup after diagnosis.
+This executable drives signup → skip optional passkey → `項目` nav → add category → add item → assert those add fields are empty → reload → confirm the item is selectable from `日`. It stores steps, snapshots, screenshots, and an explicit success file. It fails if browser assertions fail, even if playwright-cli itself exits zero. See [catalog-items](features/catalog-items.md) for its mapped scope. It does not clean up automatically so failures can be diagnosed; always run cleanup after diagnosis.
 
 For other mapped paths:
 
