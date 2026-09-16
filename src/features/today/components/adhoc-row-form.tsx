@@ -1,17 +1,19 @@
-import { Field, Form, useField, useForm } from "@formisch/react";
+import { Field, Form, reset, useField, useForm } from "@formisch/react";
 import { Button, Grid, NumberInput, Select } from "@mantine/core";
+import { Result } from "better-result";
 
 import { ConcreteActionField } from "~/components/concrete-action-field";
 import { LabelAlignedCell } from "~/components/label-aligned-cell";
 import { AdhocRowSchema } from "~/features/today/schemas/adhoc-row-schema";
 import type { AddRowInput } from "~/features/today/types/mutations";
+import type { MutationResult } from "~/lib/run-mutation";
 import { onRequiredSelect } from "~/lib/select";
 import type { ItemDto } from "~/types/item";
 import { parseItemId, unwrapItemId } from "~/types/item";
 
 type AdhocRowFormProps = {
   items: ItemDto[];
-  onAdd: (input: AddRowInput) => void;
+  onAdd: (input: AddRowInput) => Promise<MutationResult>;
 };
 
 export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
@@ -30,12 +32,13 @@ export function AdhocRowForm({ items, onAdd }: AdhocRowFormProps) {
   return (
     <Form
       of={form}
-      onSubmit={(output) => {
-        onAdd({
+      onSubmit={async (output) => {
+        const result = await onAdd({
           content: output.content,
           itemId: unwrapItemId(parseItemId(output.itemId)),
           minutes: output.minutes,
         });
+        if (Result.isOk(result)) reset(form);
       }}
     >
       <Grid align="flex-start" gap="sm">
