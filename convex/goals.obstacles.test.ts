@@ -112,3 +112,32 @@ test("存在しない障害プランの更新・削除は拒否される", async
     t.mutation(api.mutations.goals.removeObstacle.removeObstacle, { planId }),
   ).rejects.toThrow();
 });
+
+test("障害プランの CRUD は記録の状態を変えない", async () => {
+  const t = owner();
+  await t.mutation(api.mutations.catalog.ensure.ensure, {});
+  await t.mutation(api.mutations.days.open.open, { dateJst: "2026-08-17", todayJst: "2026-08-17" });
+  const before = await t.query(api.queries.days.get.get, {
+    dateJst: "2026-08-17",
+    todayJst: "2026-08-17",
+  });
+  const statuses = () => before.rows.map((row) => row.status);
+  expect(statuses().length).toBeGreaterThan(0);
+
+  const planId = await t.mutation(api.mutations.goals.createObstacle.createObstacle, {
+    ifText: "眠い",
+    thenText: THEN_ACTION,
+  });
+  await t.mutation(api.mutations.goals.updateObstacle.updateObstacle, {
+    ifText: "とても眠い",
+    planId,
+    thenText: THEN_ACTION,
+  });
+  await t.mutation(api.mutations.goals.removeObstacle.removeObstacle, { planId });
+
+  const after = await t.query(api.queries.days.get.get, {
+    dateJst: "2026-08-17",
+    todayJst: "2026-08-17",
+  });
+  expect(after.rows.map((row) => row.status)).toEqual(before.rows.map((row) => row.status));
+});
