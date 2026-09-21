@@ -39,6 +39,7 @@ Preconditions:
 - Confirming is a switch, not a button labelled 確定. The accessible name is `記録を確定`. Turning it off on a 確定 row opens `見送りにしますか？`.
 - When other records already exist, scope the add fields to `page.locator('form').filter({ has: page.getByRole('button', { name: '記録を足す', exact: true }) })`; `分数` also appears in existing record forms. Use a fresh item or scope the intended record when several rows share an item name.
 - ひとこと may be empty. Minutes `0` can still confirm. Use `25` so volume proof is obvious.
+- Empty today shows `この日の記録はありません` (or preset rows). An empty past day shows `休養`, not that today copy.
 - JST "today" follows the server/client JST date. Do not invent a future `/days/20xx-…` URL to write records.
 - Day page does not start or stop the timer. Timer controls live on ボード.
 - `昨日の確定をコピー` needs yesterday confirmed rows. Skip it unless that precondition is seeded.
