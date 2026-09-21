@@ -102,20 +102,20 @@ function documentPositionFollows(earlier: Node, later: Node) {
   return (earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
 }
 
-test("プランタブは日付カレンダー・Clock・予定入力を出し、祝日を出す", () => {
+test("プランタブは日と同じ学習日ナビと Clock・予定入力を出す", () => {
   const view = renderWithMantine(<PlanListTab />);
 
-  expect(view.getByLabelText("日付を選択")).toBeDefined();
-  expect(view.queryByRole("textbox", { name: "日付を選択" })).toBeNull();
-  expect([...view.getByLabelText("23 9月 2026").classList]).toContain(
-    calendarDayStyleClasses.holidayDay,
-  );
-  expect(view.getByLabelText("23 9月 2026").getAttribute("title")).toBe("秋分の日");
+  expect(view.getByLabelText("学習日")).toBeDefined();
+  expect(view.queryByLabelText("日付を選択")).toBeNull();
+  expect(view.queryByRole("button", { name: "2026年9月" })).toBeNull();
+  expect(view.queryByLabelText("23 9月 2026")).toBeNull();
+  expect(view.getByRole("button", { name: "前の日" })).toBeDefined();
+  expect((view.getByRole("button", { name: "次の日" }) as HTMLButtonElement).disabled).toBe(true);
+  expect(view.queryByRole("button", { name: "今日へ戻る" })).toBeNull();
+  expect(view.queryByRole("button", { name: "今日" })).toBeNull();
   expect(view.getByRole("heading", { name: PLAN_CLOCK_HEADING })).toBeDefined();
   expect(view.getByLabelText(PLAN_CLOCK_HEADING)).toBeDefined();
   expect(view.queryByRole("complementary")).toBeNull();
-  expect(view.getByRole("button", { name: "前" })).toBeDefined();
-  expect(view.getByRole("button", { name: "次" })).toBeDefined();
   expect(view.getByText("予定に載らない確定 12分")).toBeDefined();
   expect(view.getByText("朝の多読")).toBeDefined();
   expect(view.getByText("09:00–10:00")).toBeDefined();
@@ -127,7 +127,7 @@ test("プランタブは日付カレンダー・Clock・予定入力を出し、
 
 test("Clock は計画プリセット・目標・障害プランのあと、同じカード列の末尾にある", () => {
   const view = renderWithMantine(<PlanListTab />);
-  const datePicker = view.getByLabelText("日付を選択");
+  const dateNav = view.getByLabelText("学習日");
   const clockHeading = view.getByRole("heading", { name: PLAN_CLOCK_HEADING });
   const templatesHeading = view.getByRole("heading", { name: "計画プリセット" });
   const goalsHeading = view.getByRole("heading", { name: "目標" });
@@ -135,12 +135,12 @@ test("Clock は計画プリセット・目標・障害プランのあと、同�
 
   expect(view.queryByRole("complementary")).toBeNull();
   expect(view.getByLabelText(PLAN_CLOCK_HEADING)).toBeDefined();
-  expect(documentPositionFollows(datePicker, templatesHeading)).toBe(true);
+  expect(documentPositionFollows(dateNav, templatesHeading)).toBe(true);
   expect(documentPositionFollows(templatesHeading, goalsHeading)).toBe(true);
   expect(documentPositionFollows(goalsHeading, obstaclesHeading)).toBe(true);
   expect(documentPositionFollows(obstaclesHeading, clockHeading)).toBe(true);
   expect(clockHeading.closest(".mantine-Card-root")?.querySelector("svg")).not.toBeNull();
-  expect(datePicker.closest(".mantine-Card-root")).toBeNull();
+  expect(dateNav.closest(".mantine-Card-root")).toBeNull();
 });
 
 test("予定カードをクリックすると予定を編集と削除が出る", () => {
@@ -151,28 +151,27 @@ test("予定カードをクリックすると予定を編集と削除が出る",
   expect(view.getByRole("button", { hidden: true, name: "削除" })).toBeDefined();
 });
 
-test("カレンダーの日付を選ぶと選択日が変わる", () => {
+test("前の日で選択日が変わる", () => {
   const view = renderWithMantine(<PlanListTab />);
-  fireEvent.click(view.getByLabelText("25 9月 2026"));
-  expect(setDate).toHaveBeenCalledWith("2026-09-25");
+  fireEvent.click(view.getByRole("button", { name: "前の日" }));
+  expect(setDate).toHaveBeenCalledWith("2026-09-20");
 });
 
-test("選択日が別月ならカレンダーの表示月もその月になる", () => {
+test("別日なら学習日はコンパクト表示で今日へ戻るが出る", () => {
   planView.selectedDateJst = "2026-10-15";
   const view = renderWithMantine(<PlanListTab />);
-  expect(view.getByRole("button", { name: "2026年10月" })).toBeDefined();
+
+  expect(view.getByLabelText("学習日").textContent).toBe("2026/10/15");
+  expect(view.queryByRole("button", { name: "2026年10月" })).toBeNull();
   expect(view.queryByRole("button", { name: "2026年9月" })).toBeNull();
+  fireEvent.click(view.getByRole("button", { name: "今日へ戻る" }));
+  expect(setDate).toHaveBeenCalledWith("2026-09-21");
 });
 
-test("今日は表示月を今日に戻す", () => {
+test("学習日ピッカーを開くと祝日が出る", async () => {
   const view = renderWithMantine(<PlanListTab />);
-  const nextMonth = view.getByLabelText("日付を選択").querySelector('[data-direction="next"]');
-  if (!(nextMonth instanceof HTMLElement)) {
-    throw new Error("翌月ボタンがない");
-  }
-  fireEvent.click(nextMonth);
-  expect(view.getByRole("button", { name: "2026年10月" })).toBeDefined();
-  fireEvent.click(view.getByRole("button", { name: "今日" }));
-  expect(view.getByRole("button", { name: "2026年9月" })).toBeDefined();
-  expect(setDate).toHaveBeenCalledWith("2026-09-21");
+  fireEvent.click(view.getByLabelText("学習日"));
+  const holiday = await view.findByLabelText("23 9月 2026");
+  expect([...holiday.classList]).toContain(calendarDayStyleClasses.holidayDay);
+  expect(holiday.getAttribute("title")).toBe("秋分の日");
 });
