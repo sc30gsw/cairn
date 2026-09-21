@@ -5,6 +5,14 @@ import { PlanClock } from "~/features/plan/components/plan-clock";
 import type { PlanEventDto } from "~/features/plan/types/plan";
 import { renderWithMantine } from "~/test-utils/render";
 
+function clockFace(view: ReturnType<typeof renderWithMantine>): SVGSVGElement {
+  const face = view.container.querySelector("svg");
+  if (!(face instanceof SVGSVGElement)) {
+    throw new Error("Clock face missing");
+  }
+  return face;
+}
+
 const confirmed: PlanEventDto = {
   _id: "arc-1" as Id<"planEvents">,
   dateJst: "2026-09-21",
@@ -37,10 +45,10 @@ test("Clock は確定した項目つき予定の弧と、予定外の確定分�
     />,
   );
 
-  expect(view.getByLabelText("一日の時計").querySelectorAll("path")).toHaveLength(1);
+  expect(clockFace(view).querySelectorAll("path")).toHaveLength(1);
   expect(view.getByText("予定に載らない確定 40分")).toBeDefined();
   expect(view.getByText("高（Banana）")).toBeDefined();
-  expect(view.getByLabelText("一日の時計").querySelectorAll("line")).toHaveLength(5);
+  expect(clockFace(view).querySelectorAll("line")).toHaveLength(5);
 });
 
 test("Clock は今日以外の針を出さない", () => {
@@ -54,5 +62,5 @@ test("Clock は今日以外の針を出さない", () => {
     />,
   );
 
-  expect(view.getByLabelText("一日の時計").querySelectorAll("line")).toHaveLength(4);
+  expect(clockFace(view).querySelectorAll("line")).toHaveLength(4);
 });

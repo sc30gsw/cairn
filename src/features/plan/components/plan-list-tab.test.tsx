@@ -120,7 +120,10 @@ test("Clock は complementary セクションにありカレンダーとは別",
   const view = renderWithMantine(<PlanListTab />);
   const clockSection = view.getByRole("complementary", { name: "一日の時計" });
 
-  expect(within(clockSection).getByLabelText("一日の時計")).toBeDefined();
+  expect(view.getAllByLabelText("一日の時計")).toHaveLength(1);
+  expect(view.getByLabelText("一日の時計")).toBe(clockSection);
+  expect(within(clockSection).getByRole("heading", { name: "一日の時計" })).toBeDefined();
+  expect(clockSection.querySelector("svg")).not.toBeNull();
   expect(within(clockSection).queryByLabelText("日付を選択")).toBeNull();
   expect(view.getByLabelText("日付を選択")).toBeDefined();
 });

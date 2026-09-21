@@ -69,7 +69,7 @@ export function PlanClock({
 
   return (
     <Stack className={classes.clock} gap="sm">
-      <svg aria-label="一日の時計" className={classes.face} viewBox="0 0 240 240">
+      <svg aria-hidden="true" className={classes.face} viewBox="0 0 240 240">
         <circle
           cx={CLOCK_CX}
           cy={CLOCK_CY}
