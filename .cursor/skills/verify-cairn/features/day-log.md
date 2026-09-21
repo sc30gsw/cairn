@@ -8,7 +8,8 @@ The day log is today's (or a past day's) paper: ad-hoc records, confirm/skip, le
 - `day-add-adhoc` adds a one-off record from `記録を足す`.
 - `day-confirm` marks that record 確定 via `記録を確定` and increases 学習量.
 - `day-volume` shows the confirmed minutes on the volume title.
-- `day-obstacles` shows heading `障害プラン` under the 記録 card (same fields as 計画).
+- `day-obstacles` shows heading `障害プラン` under the 記録 card (same fields as 計画). Existing-row save is exact `更新`.
+- `day-from-preset` shows item-bearing 予定 as 記録 after `この日に適用` on `/plan`. Item-less 予定 do not appear. `適用を解除` removes those linked 記録 and leaves independent 記録.
 
 ## How to get to it (user POV)
 
@@ -29,7 +30,8 @@ Preconditions:
 - **Enter note and minutes.** Run `rtk proxy playwright-cli -s="$SESSION" fill "getByRole('textbox', { name: 'その日限りのひとこと' })" "検証のひとこと"` and `rtk proxy playwright-cli -s="$SESSION" fill "getByRole('textbox', { name: '分数' })" "25"`. `分数` is a textbox.
 - **Add record.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('button', { name: '記録を足す' })"`. A form named `検証項目の記録` appears. Volume is still `0分` until confirm. Badge on the row reads `未着手`. Scope the add form with `page.locator('form').filter({ has: page.getByRole('button', { name: '記録を足す', exact: true }) })`. Assert ひとこと (`その日限りのひとこと`) is `""` and `分数` is `20` (the initial default). The new row form keeps `検証のひとこと`; do not empty that editor.
 - **Confirm.** Snapshot the form `検証項目の記録`. Run `run-code` with `async page => { await page.getByRole('form', { name: '検証項目の記録', exact: true }).getByRole('switch', { name: '記録を確定', exact: true }).press('Space'); }`. This uses the switch's keyboard interaction without relying on Mantine's sibling elements. After Convex updates: the switch is checked, the badge reads `完了`, the volume heading is `25分`, and 共有文 contains `検証項目`.
-- **Obstacles.** Fill `もし` with `検証もし` and the `なら` textbox (accessible name includes `なら`) with a concrete step such as `机に向かって金のフレーズを1 Unit だけ開く`. Click `障害プランを追加`. After reload, `検証もしのもし` still holds `検証もし`. The same plan also appears on `/plan`.
+- **Obstacles.** Fill `もし` with `検証もし` and the `なら` textbox (accessible name includes `なら`) with a concrete step such as `机に向かって金のフレーズを1 Unit だけ開く`. Click `障害プランを追加`. After reload, `検証もしのもし` still holds `検証もし`. The same plan also appears on `/plan`. The existing-row submit is exact `更新` (not a long if-then label). Change `検証もし` to `検証もし改` and click `更新`; wait for `検証もし改のもし`.
+- **Preset apply.** After [presets.md](./presets.md) `この日に適用` with one item 予定 and one item-less 予定, 日 shows a new `検証項目の記録` (typically `未着手`) and does **not** show the item-less title. Do not wait for `days.open`. After `適用を解除`, that linked row is gone; a record you added with `記録を足す` remains.
 - **Second view.** Reload `/`. Wait for a volume heading such as `25分` (or the later total) before capturing. A snapshot that only shows `読み込み中` is not proof. The same `検証項目の記録` form remains, badge `完了`.
 - **Other dates.** From `履歴` choose a dated link from the current snapshot; alternatively use `前の日` or the `学習日` field from 日. Record the resulting `/days/YYYY-MM-DD` URL and repeat the row steps only for a writable date. Proving `/` alone does not cover these entries.
 - **Proof.** Capture the confirmed day. Run `rtk proxy playwright-cli -s="$SESSION" --raw snapshot > "$ART/day-confirmed.aria.yml"` and `rtk proxy playwright-cli -s="$SESSION" screenshot --filename="$ART/day-confirmed.png"`. Artifacts show 学習量 `25分` and `検証項目`. Write `proof.txt` with feature ID `day-confirm` and entry `/`.
@@ -44,6 +46,7 @@ Preconditions:
 - Empty today shows `この日の記録はありません` (or preset rows). An empty past day shows `休養`, not that today copy.
 - JST "today" follows the server/client JST date. Do not invent a future `/days/20xx-…` URL to write records.
 - Day page does not start or stop the timer. Timer controls live on ボード. A running timer may show `計測中（実行ボードで操作）` here.
-- Weekday catalog templates no longer apply to 日. A 計画プリセット only fills the 日 記録欄 after `この日に適用` (or forgotten-template `days.open`) **and** only for 予定 that have an 項目. Item-less 予定 stay on `/plan` and must not appear as 記録. `記録はありません` on a fresh today is expected until that apply.
+- Weekday catalog templates no longer apply to 日. A 計画プリセット only fills the 日 記録欄 after `この日に適用` (or forgotten-template `days.open`) **and** only for 予定 that have an 項目. Item-less 予定 stay on `/plan` and must not appear as 記録. `この日の記録はありません` on a fresh today is expected until that apply. `適用を解除` deletes the applied 予定 and those linked 記録 only.
+- 障害プラン existing-row save is exact `更新` on 日, 計画, and 目標 (shared `ObstacleSection`). Do not look for a button whose name still contains the もし text.
 - `昨日の確定をコピー` needs yesterday confirmed rows. Skip it unless that precondition is seeded.
 - `この日をゴミ箱へ` deletes the day document. Do not use it unless you are proving trash.
