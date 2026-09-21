@@ -183,6 +183,25 @@ test("保存した雛形の名前を変えて保存すると更新が送られ�
   expect(queryByRole("textbox", { name: "平日の型の名前" })).toBeNull();
 });
 
+test("計画プリセットの行は名前だけで予定の詳細を出さない", () => {
+  const { getByRole, queryByRole, queryByText } = renderWithMantine(
+    <PlanTemplatesCard
+      dateJst="2026-08-17"
+      events={[]}
+      externals={[]}
+      hasEvents={false}
+      items={[item]}
+      templates={[morning]}
+    />,
+  );
+
+  expect(getByRole("button", { name: "平日の型を編集" })).toBeDefined();
+  expect(getByRole("button", { name: "平日の型を削除" })).toBeDefined();
+  expect(queryByRole("button", { name: "編集", exact: true })).toBeNull();
+  expect(queryByText("07:00–07:50 多読、20:00–21:00 X を見る")).toBeNull();
+  expect(queryByText("予定なし")).toBeNull();
+});
+
 test("削除は確認してから消し、キャンセルでは残す", async () => {
   removeMutate.mockClear();
   const { getByRole } = renderWithMantine(

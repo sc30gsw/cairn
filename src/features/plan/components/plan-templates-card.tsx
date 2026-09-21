@@ -12,6 +12,7 @@ import {
 } from "@formisch/react";
 import {
   ActionIcon,
+  Box,
   Button,
   Card,
   ColorSwatch,
@@ -47,7 +48,6 @@ import {
 } from "~/features/plan/hooks/plan-mutations";
 import { openPlanTemplateRemoveConfirm } from "~/features/plan/lib/open-plan-template-remove-confirm";
 import { planDayScheduleEntries } from "~/features/plan/lib/plan-day-schedule-entries";
-import { planEventDisplayName } from "~/features/plan/lib/plan-event-display-name";
 import { PLAN_PRIORITY_OPTIONS } from "~/features/plan/lib/plan-priority-style";
 import {
   EMPTY_TEMPLATE_EVENT,
@@ -136,18 +136,6 @@ function renderPriorityOption(priority: (typeof PLAN_PRIORITY_OPTIONS)[number]) 
       <span>{priority.label}</span>
     </Group>
   );
-}
-
-function templateSummary(template: PlanTemplateDto, items: readonly PlanCatalogItem[]) {
-  if (template.events.length === 0) {
-    return "予定なし";
-  }
-  return template.events
-    .map(
-      (event) =>
-        `${event.startTime}–${event.endTime} ${planEventDisplayName(event.title, event.itemId, items)}`,
-    )
-    .join("、");
 }
 
 export function PlanTemplatesCard({
@@ -239,17 +227,16 @@ export function PlanTemplatesCard({
             {templates.map((template) => (
               <Card key={template._id} padding="sm" withBorder>
                 <Group justify="space-between" wrap="nowrap">
-                  <UnstyledButton
-                    aria-label={`${template.name}を編集`}
-                    onClick={() => setEditing({ kind: "saved", template })}
-                  >
-                    <Stack gap={2}>
-                      <Text fw={600}>{template.name}</Text>
-                      <Text c="dimmed" size="sm">
-                        {templateSummary(template, items)}
+                  <Box flex={1} miw={0}>
+                    <UnstyledButton
+                      aria-label={`${template.name}を編集`}
+                      onClick={() => setEditing({ kind: "saved", template })}
+                    >
+                      <Text fw={600} lineClamp={1}>
+                        {template.name}
                       </Text>
-                    </Stack>
-                  </UnstyledButton>
+                    </UnstyledButton>
+                  </Box>
                   <Group gap="xs" wrap="nowrap">
                     <Button
                       aria-label={`${template.name}を削除`}
