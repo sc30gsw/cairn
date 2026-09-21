@@ -15,7 +15,9 @@ import type {
   PlanTemplateEventDraft,
   PlanTemplateEventDto,
 } from "../../lib/validators/plan";
+import { remove as removeRow } from "../rows/remove";
 import { eventsOnDate, saveDay } from "./events";
+import { materializePlanEventsForDate } from "./openDate";
 
 type TemplateRecord = { kind: "none" } | { itemId: Id<"items">; kind: "item" };
 
@@ -251,6 +253,7 @@ export async function applyToEmptyDate(
   if (templateEvents.length === 0) {
     return { applied: false };
   }
+  const serverToday = serverTodayJst();
   await saveDay(ctx, ownerId, {
     dateJst,
     events: templateEvents.map((event) => ({
@@ -260,7 +263,42 @@ export async function applyToEmptyDate(
       startTime: formatMinuteOfDay(event.startMinute),
       title: event.title,
     })),
+    todayJst: serverToday,
+  });
+  if (dateJst === serverToday) {
+    await materializePlanEventsForDate(ctx, ownerId, dateJst);
+  }
+  return { applied: true };
+}
+
+export async function unapplyDate(
+  ctx: MutationCtx,
+  ownerId: string,
+  args: { dateJst: string; todayJst: string },
+): Promise<{ cleared: boolean }> {
+  const dateJst = requireDateJst(args.dateJst);
+  const existing = await eventsOnDate(ctx, ownerId, dateJst);
+  if (existing.length === 0) {
+    return { cleared: false };
+  }
+  const rowIds = existing.flatMap((event) =>
+    event.record.kind === "item" && event.record.materializedRowId !== undefined
+      ? [event.record.materializedRowId]
+      : [],
+  );
+  await Promise.all(
+    rowIds.map(async (rowId) => {
+      const row = await ctx.db.get("rows", rowId);
+      if (row === null || row.ownerId !== ownerId || row.deletedAt !== undefined) {
+        return;
+      }
+      await removeRow(ctx, ownerId, { rowId });
+    }),
+  );
+  await saveDay(ctx, ownerId, {
+    dateJst,
+    events: [],
     todayJst: serverTodayJst(),
   });
-  return { applied: true };
+  return { cleared: true };
 }

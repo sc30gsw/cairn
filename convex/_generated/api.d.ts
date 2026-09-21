@@ -159,6 +159,7 @@ import type * as mutations_planTemplates_applyToEmptyDate from "../mutations/pla
 import type * as mutations_planTemplates_remove from "../mutations/planTemplates/remove.js";
 import type * as mutations_planTemplates_save from "../mutations/planTemplates/save.js";
 import type * as mutations_planTemplates_setForgottenTemplate from "../mutations/planTemplates/setForgottenTemplate.js";
+import type * as mutations_planTemplates_unapplyDate from "../mutations/planTemplates/unapplyDate.js";
 import type * as mutations_presets_create from "../mutations/presets/create.js";
 import type * as mutations_presets_remove from "../mutations/presets/remove.js";
 import type * as mutations_presets_saveSettings from "../mutations/presets/saveSettings.js";
@@ -607,6 +608,7 @@ declare const fullApi: ApiFromModules<{
   "mutations/planTemplates/remove": typeof mutations_planTemplates_remove;
   "mutations/planTemplates/save": typeof mutations_planTemplates_save;
   "mutations/planTemplates/setForgottenTemplate": typeof mutations_planTemplates_setForgottenTemplate;
+  "mutations/planTemplates/unapplyDate": typeof mutations_planTemplates_unapplyDate;
   "mutations/presets/create": typeof mutations_presets_create;
   "mutations/presets/remove": typeof mutations_presets_remove;
   "mutations/presets/saveSettings": typeof mutations_presets_saveSettings;

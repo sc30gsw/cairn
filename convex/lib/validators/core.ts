@@ -136,6 +136,12 @@ export const presetApplyResultValidator = v.object({
 
 export type PresetApplyResult = Infer<typeof presetApplyResultValidator>;
 
+export const presetUnapplyResultValidator = v.object({
+  cleared: v.boolean(),
+});
+
+export type PresetUnapplyResult = Infer<typeof presetUnapplyResultValidator>;
+
 export const dayViewKindValidator = v.union(...DAY_VIEW_KINDS.map((kind) => v.literal(kind)));
 
 export const dayPageValidator = v.object({
