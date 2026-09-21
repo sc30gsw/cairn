@@ -14,7 +14,6 @@ const MONDAY = "2026-08-17";
 const THURSDAY = "2026-08-20";
 const SATURDAY = "2026-08-22";
 const SUNDAY = "2026-08-23";
-const THURSDAY_WEEKDAY = 4;
 
 function raw() {
   return convexTest(schema, convexModules);
@@ -117,17 +116,18 @@ async function seedDay(
 
 async function seedPreset(t: Harness, lineCount: number, ownerId = OWNER.subject): Promise<void> {
   const itemId = await seedItem(t, ownerId);
-  await t.run(async (ctx) => {
-    await ctx.db.insert("presets", {
-      lines: Array.from({ length: lineCount }, (_, index) => ({
-        content: `Unit ${String(index)}`,
-        itemId,
-        minutes: 20,
-      })),
-      name: "木曜",
-      ownerId,
-      weekday: THURSDAY_WEEKDAY,
-    });
+  const templateId = await t.mutation(api.mutations.planTemplates.save.save, {
+    events: Array.from({ length: lineCount }, (_, index) => ({
+      endTime: "08:00",
+      itemId,
+      priority: "medium" as const,
+      startTime: "07:00",
+      title: `Unit ${String(index)}`,
+    })),
+    name: "忘れたとき",
+  });
+  await t.mutation(api.mutations.planTemplates.setForgottenTemplate.setForgottenTemplate, {
+    templateId,
   });
 }
 
@@ -350,7 +350,7 @@ test("21時 JST・今日の未着手2件で source: day / pendingCount: 2", asyn
   });
 });
 
-test("21時 JST・日なし・その曜日のプリセット3行で source: preset / pendingCount: 3", async () => {
+test("21時 JST・日なし・忘れたときの雛形3行で source: preset / pendingCount: 3", async () => {
   const t = asOwner();
   await seedSettings(t);
   await seedPreset(t, 3);

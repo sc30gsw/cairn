@@ -38,7 +38,7 @@ export function SetupStepper({ activeStep, dismissed, onDismiss, status }: Setup
     <Alert color="orange" title="はじめのセットアップ" variant="light">
       <Stack gap="md">
         <Text size="sm">
-          記録を始める前に、項目・プリセット・目標を順に整えましょう。一度に全部やる必要はありません。
+          記録を始める前に、項目・計画プリセット・目標を順に整えましょう。一度に全部やる必要はありません。
         </Text>
         <Stepper
           active={-1}
@@ -95,9 +95,18 @@ export function SetupStepper({ activeStep, dismissed, onDismiss, status }: Setup
             <Text size="sm">{activeStep.sampleHint}</Text>
           </Group>
           <Group gap="sm">
-            <Button component={Link} size="xs" to={activeStep.href}>
-              {activeStep.label}
-            </Button>
+            {activeStep.href === "/plan" ? (
+              <Button
+                renderRoot={(props) => <Link {...props} search={{ tab: "plan" }} to="/plan" />}
+                size="xs"
+              >
+                {activeStep.label}
+              </Button>
+            ) : (
+              <Button component={Link} size="xs" to={activeStep.href}>
+                {activeStep.label}
+              </Button>
+            )}
             <Button onClick={onDismiss} size="xs" type="button" variant="subtle">
               あとで設定
             </Button>

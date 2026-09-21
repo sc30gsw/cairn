@@ -18,7 +18,6 @@ import { renderWithMantine } from "~/test-utils/render";
 const [confirmed] = STATUSES;
 
 const {
-  appliedPresetRef,
   navigate,
   onAddRow,
   onConfirm,
@@ -29,7 +28,6 @@ const {
   onSaveCondition,
   onSaveMemo,
   onSkip,
-  onSwitchPreset,
   onUnflagReview,
   onUnskip,
   useDayPageDateJstMock,
@@ -45,15 +43,12 @@ const {
   onFlagReview: vi.fn(async () => undefined),
   onSkip: vi.fn(async () => undefined),
   onUnflagReview: vi.fn(async () => undefined),
-  onSwitchPreset: vi.fn<() => Promise<MutationResult>>(),
   onUnskip: vi.fn(async () => undefined),
-  appliedPresetRef: { current: null },
   useDayPageDateJstMock: vi.fn(() => "2026-08-17"),
 }));
 
 beforeEach(() => {
   onConfirm.mockResolvedValue(Result.ok(null));
-  onSwitchPreset.mockResolvedValue(Result.ok(null));
 });
 
 vi.mock("~/features/today/hooks/use-day-page-date-jst", () => ({
@@ -86,18 +81,8 @@ vi.mock("~/features/today/hooks/use-day-board-actions", () => ({
     onSaveCondition,
     onSaveMemo,
     onSkip,
-    onSwitchPreset,
     onUnflagReview,
     onUnskip,
-  }),
-}));
-
-vi.mock("~/features/today/hooks/use-apply-preset-from-search", () => ({
-  useApplyPresetFromSearch: () => ({
-    appliedPresetRef,
-    defaultPresetId: null,
-    selectedPresetId: null,
-    switchPreset: vi.fn(),
   }),
 }));
 
@@ -308,49 +293,19 @@ test("共有文のコピー操作が見える", () => {
   expect(getByRole("button", { name: "共有文をコピー" })).toBeDefined();
 });
 
-test("セクションはプリセット、記録、コンディションの順。コンディションは未選択のまま普通にしない", () => {
+test("セクションは記録、コンディションの順。コンディションは未選択のまま普通にしない", () => {
   onSaveCondition.mockClear();
   const { getAllByRole, getByRole } = renderWithMantine(
-    <DayBoard
-      dateJst="2026-08-17"
-      day={day}
-      todayJst="2026-08-17"
-      items={items}
-      presets={[{ _id: "p1" as never, lines: [], name: "月曜日", weekdays: [1] }]}
-    />,
+    <DayBoard dateJst="2026-08-17" day={day} todayJst="2026-08-17" items={items} presets={[]} />,
   );
   const sectionTitles = getAllByRole("heading")
     .map((heading) => heading.textContent)
     .filter((text) => text === "プリセット" || text === "記録" || text === "コンディション");
-  expect(sectionTitles).toEqual(["プリセット", "記録", "コンディション"]);
-  expect((getByRole("combobox", { name: "プリセット切替" }) as HTMLInputElement).value).toBe(
-    "月曜日",
-  );
+  expect(sectionTitles).toEqual(["記録", "コンディション"]);
   expect((getByRole("radio", { name: "好調" }) as HTMLInputElement).checked).toBe(false);
   expect((getByRole("radio", { name: "普通" }) as HTMLInputElement).checked).toBe(false);
   expect((getByRole("radio", { name: "崩れた" }) as HTMLInputElement).checked).toBe(false);
   expect(onSaveCondition).not.toHaveBeenCalled();
-});
-
-test("プリセットを選ぶと表示名が変わる", async () => {
-  onSwitchPreset.mockClear();
-  const { getByRole } = renderWithMantine(
-    <DayBoard
-      dateJst="2026-08-17"
-      day={day}
-      todayJst="2026-08-17"
-      items={items}
-      presets={[
-        { _id: "p1" as never, lines: [], name: "月曜日", weekdays: [1] },
-        { _id: "p2" as never, lines: [], name: "火の雛形", weekdays: [2] },
-      ]}
-    />,
-  );
-  getByRole("combobox", { name: "プリセット切替" }).click();
-  getByRole("option", { hidden: true, name: "火の雛形" }).click();
-  await waitFor(() => {
-    expect(onSwitchPreset).toHaveBeenCalledWith("p2", appliedPresetRef);
-  });
 });
 
 test("未来の日は記録を足せない", () => {
@@ -407,7 +362,7 @@ test("今日で日が無いとこの日の記録はありません", () => {
   expect(getByText("この日の記録はありません")).toBeDefined();
 });
 
-test("過去の空日は休養で、プリセット切替とコピーがある", () => {
+test("過去の空日は休養で、コピーがある", () => {
   const restDay = {
     ...day,
     dateJst: "2026-08-15",
@@ -415,17 +370,17 @@ test("過去の空日は休養で、プリセット切替とコピーがある",
     kind: "rest",
     rows: [],
   } satisfies DayPage;
-  const { getByRole, getByText } = renderWithMantine(
+  const { getByRole, getByText, queryByRole } = renderWithMantine(
     <DayBoard
       dateJst="2026-08-15"
       day={restDay}
       items={items}
-      presets={[{ _id: "p1" as never, lines: [], name: "土曜日", weekdays: [6] }]}
+      presets={[]}
       todayJst="2026-08-17"
     />,
   );
   expect(getByText("休養")).toBeDefined();
-  expect(getByRole("combobox", { name: "プリセット切替" })).toBeDefined();
+  expect(queryByRole("combobox", { name: "プリセット切替" })).toBeNull();
   expect((getByRole("button", { name: "昨日の確定をコピー" }) as HTMLButtonElement).disabled).toBe(
     true,
   );
@@ -485,67 +440,4 @@ test("昨日の確定をコピーできるときは押せる", () => {
   );
   getByRole("button", { name: "昨日の確定をコピー" }).click();
   expect(onCopyYesterday).toHaveBeenCalledTimes(1);
-});
-
-const SATURDAY_PRESET = { _id: "pSat" as never, lines: [], name: "土曜日", weekdays: [6] };
-const MONDAY_PRESET = { _id: "pMon" as never, lines: [], name: "月曜日", weekdays: [1] };
-
-test("過去の休養でその曜日の雛形を選ぶと切り替わる", async () => {
-  onSwitchPreset.mockClear();
-  const restDay = {
-    ...day,
-    dateJst: "2026-08-15",
-    day: null,
-    kind: "rest",
-    rows: [],
-  } satisfies DayPage;
-  const { getByRole } = renderWithMantine(
-    <DayBoard
-      dateJst="2026-08-15"
-      day={restDay}
-      items={items}
-      presets={[SATURDAY_PRESET, MONDAY_PRESET]}
-      todayJst="2026-08-17"
-    />,
-  );
-  getByRole("combobox", { name: "プリセット切替" }).click();
-  getByRole("option", { hidden: true, name: "土曜日" }).click();
-  await waitFor(() => {
-    expect(onSwitchPreset).toHaveBeenCalledWith("pSat", appliedPresetRef);
-  });
-});
-
-test("過去日で別の雛形に切り替えても表示は戻らない", async () => {
-  onSwitchPreset.mockClear();
-  const pastLive = {
-    ...day,
-    dateJst: "2026-08-15",
-    day: {
-      _id: "day-past" as NonNullable<DayPage["day"]>["_id"],
-      condition: null,
-      dateJst: "2026-08-15",
-      memo: null,
-    },
-    kind: "live",
-  } satisfies DayPage;
-  const { getByRole } = renderWithMantine(
-    <DayBoard
-      dateJst="2026-08-15"
-      day={pastLive}
-      items={items}
-      presets={[SATURDAY_PRESET, MONDAY_PRESET]}
-      todayJst="2026-08-17"
-    />,
-  );
-  expect((getByRole("combobox", { name: "プリセット切替" }) as HTMLInputElement).value).toBe(
-    "土曜日",
-  );
-  getByRole("combobox", { name: "プリセット切替" }).click();
-  getByRole("option", { hidden: true, name: "月曜日" }).click();
-  await waitFor(() => {
-    expect(onSwitchPreset).toHaveBeenCalledWith("pMon", appliedPresetRef);
-  });
-  expect((getByRole("combobox", { name: "プリセット切替" }) as HTMLInputElement).value).toBe(
-    "月曜日",
-  );
 });
