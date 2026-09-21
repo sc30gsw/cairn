@@ -102,7 +102,7 @@ function documentPositionFollows(earlier: Node, later: Node) {
   return (earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
 }
 
-test("プランタブは日と同じ学習日ナビと Clock・予定入力を出す", () => {
+test("プランタブは日と同じ学習日ナビと Clock・予定カードを出す", () => {
   const view = renderWithMantine(<PlanListTab />);
 
   expect(view.getByLabelText("学習日")).toBeDefined();
@@ -119,7 +119,7 @@ test("プランタブは日と同じ学習日ナビと Clock・予定入力を�
   expect(view.getByText("予定に載らない確定 12分")).toBeDefined();
   expect(view.getByText("朝の多読")).toBeDefined();
   expect(view.getByText("09:00–10:00")).toBeDefined();
-  expect(view.getByRole("button", { name: "予定を追加" })).toBeDefined();
+  expect(view.queryByRole("button", { name: "予定を追加" })).toBeNull();
   expect(view.getByRole("heading", { name: "計画プリセット" })).toBeDefined();
   expect(view.getByRole("heading", { name: "目標" })).toBeDefined();
   expect(view.getByText("障害プラン")).toBeDefined();

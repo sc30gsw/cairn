@@ -1,14 +1,5 @@
 import { convexQuery } from "@convex-dev/react-query";
-import {
-  Button,
-  Card,
-  ColorSwatch,
-  Group,
-  Stack,
-  Text,
-  Title,
-  UnstyledButton,
-} from "@mantine/core";
+import { Card, ColorSwatch, Group, Stack, Text, Title, UnstyledButton } from "@mantine/core";
 import { useSuspenseQueries } from "@tanstack/react-query";
 import { Result } from "better-result";
 import { useState } from "react";
@@ -21,17 +12,12 @@ import { PlanGoalsReadCard } from "~/components/plan-goals-read-card";
 import {
   BoardScheduleEventForm,
   eventFormValues,
-  slotFormValues,
 } from "~/features/plan/components/board-schedule-event-form";
 import { PLAN_CLOCK_HEADING, PlanClock } from "~/features/plan/components/plan-clock";
 import { PlanTemplatesCard } from "~/features/plan/components/plan-templates-card";
 import { useBoardScheduleActions } from "~/features/plan/hooks/use-board-schedule-actions";
 import { usePlanView } from "~/features/plan/hooks/use-plan-view";
 import { usePlanWindow } from "~/features/plan/hooks/use-plan-window";
-import {
-  DEFAULT_DAY_BLOCK_END,
-  DEFAULT_DAY_BLOCK_START,
-} from "~/features/plan/lib/board-schedule-layout";
 import type { PlanScheduleEventInput } from "~/features/plan/schemas/board-schedule-event-schema";
 import { goalsListQuery } from "~/hooks/goals-queries";
 import { useItemsList } from "~/hooks/use-items-list";
@@ -68,19 +54,6 @@ export function PlanListTab() {
         onGoToToday={() => view.setDate(view.today)}
         todayJst={view.today}
       />
-      <Button
-        onClick={() => {
-          setFormValues(
-            slotFormValues(
-              `${view.selectedDateJst} ${DEFAULT_DAY_BLOCK_START}`,
-              `${view.selectedDateJst} ${DEFAULT_DAY_BLOCK_END}`,
-            ),
-          );
-          setFormOpened(true);
-        }}
-      >
-        予定を追加
-      </Button>
       {events.length === 0 ? (
         <Text c="dimmed" size="sm">
           この日の予定はまだありません。
