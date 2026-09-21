@@ -23,7 +23,7 @@ export const planSearchDefaults = {
   calendarSync: undefined,
   date: undefined,
   month: undefined,
-  tab: "schedule",
+  tab: "plan",
   view: undefined,
   week: undefined,
 } as const satisfies PlanSearch;

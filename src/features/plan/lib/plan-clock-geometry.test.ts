@@ -23,15 +23,21 @@ test("短い弧は large-arc 0", () => {
 
 test("確定した項目つき予定だけ弧を塗る", () => {
   const confirmed = {
+    itemId: "item-1",
+    recordState: { kind: "materialized", status: "確定" },
+  } as PlanEventDto;
+  const confirmedWithoutItem = {
     recordState: { kind: "materialized", status: "確定" },
   } as PlanEventDto;
   const waiting = {
+    itemId: "item-1",
     recordState: { kind: "awaiting-open" },
   } as PlanEventDto;
   const none = {
     recordState: { kind: "not-applicable" },
   } as PlanEventDto;
   expect(paintsClockArc(confirmed)).toBe(true);
+  expect(paintsClockArc(confirmedWithoutItem)).toBe(false);
   expect(paintsClockArc(waiting)).toBe(false);
   expect(paintsClockArc(none)).toBe(false);
 });

@@ -18,7 +18,11 @@ vi.mock("~/features/plan/hooks/use-plan-view", () => ({
 
 vi.mock("~/features/plan/hooks/use-plan-window", () => ({
   planWindowQuery: () => ({ queryKey: ["plan-window"] }),
-  usePlanWindow: () => ({ events: [], isDone: true, unplannedConfirmedMinutes: 0 }),
+  usePlanWindow: () => ({
+    events: [],
+    isDone: true,
+    unplannedConfirmedMinutes: 40,
+  }),
 }));
 
 vi.mock("~/hooks/use-items-list", () => ({
@@ -48,8 +52,9 @@ vi.mock("@tanstack/react-query", async (importOriginal) => {
   };
 });
 
-test("スケジュールタブは Clock を出さない", () => {
+test("スケジュールタブの日表示は Clock を出さない", () => {
   const view = renderWithMantine(<BoardScheduleTab />);
   expect(view.getByText("予定カレンダー")).toBeDefined();
   expect(view.queryByLabelText("一日の時計")).toBeNull();
+  expect(view.queryByText("予定に載らない確定 40分")).toBeNull();
 });

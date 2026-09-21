@@ -2,9 +2,9 @@ import { expect, test } from "vite-plus/test";
 
 import { derivePlanView, scheduleAnchorDateJst } from "~/features/plan/hooks/use-plan-view";
 
-test("derivePlanView は未指定時に今日の日表示とスケジュールタブにする", () => {
+test("derivePlanView は未指定時に今日の日表示とプランタブにする", () => {
   const view = derivePlanView({}, "2026-08-17");
-  expect(view.tab).toBe("schedule");
+  expect(view.tab).toBe("plan");
   expect(view.scheduleView).toBe("day");
   expect(view.selectedDateJst).toBe("2026-08-17");
   expect(view.yearMonth).toBe("2026-08");
