@@ -9,14 +9,13 @@ import {
   Title,
   UnstyledButton,
 } from "@mantine/core";
-import { DatePicker } from "@mantine/dates";
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useSuspenseQueries } from "@tanstack/react-query";
 import { Result } from "better-result";
 import { useState } from "react";
 import { PLAN_PRIORITY_STYLE } from "~domain/planEvent";
 
 import { api } from "~/../convex/_generated/api";
+import { LearningDateNavigation } from "~/components/learning-date-navigation";
 import { ObstacleSection } from "~/components/obstacle-section";
 import { PlanGoalsReadCard } from "~/components/plan-goals-read-card";
 import {
@@ -37,16 +36,9 @@ import type { PlanScheduleEventInput } from "~/features/plan/schemas/board-sched
 import { goalsListQuery } from "~/hooks/goals-queries";
 import { useItemsList } from "~/hooks/use-items-list";
 import { useObstaclePlans } from "~/hooks/use-obstacle-plans";
-import { calendarDayStyleClasses } from "~/lib/calendar-day-style";
 import { parallelConvexQuery } from "~/lib/parallel-convex-query";
 import { toPlanGoalRead } from "~/lib/plan-goal-read";
-import { parseDateJst } from "~/lib/schemas/calendar-date-schema";
 import { useOptionalGoalsLiveQuery } from "~/lib/tanstack-db/collections";
-
-import classes from "~/features/plan/components/plan-list-tab.module.css";
-
-const MONTH_PREV_ICON = <IconChevronLeft aria-hidden size={18} stroke={1.75} />;
-const MONTH_NEXT_ICON = <IconChevronRight aria-hidden size={18} stroke={1.75} />;
 
 export function PlanListTab() {
   const view = usePlanView();
@@ -64,57 +56,18 @@ export function PlanListTab() {
   const actions = useBoardScheduleActions();
   const [formOpened, setFormOpened] = useState(false);
   const [formValues, setFormValues] = useState<PlanScheduleEventInput | null>(null);
-  const [calendar, setCalendar] = useState({
-    forSelected: view.selectedDateJst,
-    month: view.selectedDateJst,
-  });
-  const month =
-    calendar.forSelected === view.selectedDateJst ? calendar.month : view.selectedDateJst;
   const editingId = formValues?.eventId;
   const editing =
     editingId === undefined ? undefined : events.find((event) => event._id === editingId);
 
   return (
     <Stack gap="md">
-      <Stack className={classes.calendar} gap="xs">
-        <DatePicker
-          allowDeselect={false}
-          aria-label="日付を選択"
-          classNames={{
-            calendarHeaderControl: classes.monthNav,
-            month: calendarDayStyleClasses.japaneseCalendar,
-          }}
-          date={month}
-          nextIcon={MONTH_NEXT_ICON}
-          nextLabel="次"
-          onChange={(value) => {
-            const next = parseDateJst(value);
-            if (next !== undefined) {
-              view.setDate(next);
-            }
-          }}
-          onDateChange={(value) => {
-            const next = parseDateJst(value);
-            if (next !== undefined) {
-              setCalendar({ forSelected: view.selectedDateJst, month: next });
-            }
-          }}
-          previousIcon={MONTH_PREV_ICON}
-          previousLabel="前"
-          size="sm"
-          value={view.selectedDateJst}
-        />
-        <Button
-          onClick={() => {
-            view.setDate(view.today);
-            setCalendar({ forSelected: view.today, month: view.today });
-          }}
-          size="compact-sm"
-          variant="light"
-        >
-          今日
-        </Button>
-      </Stack>
+      <LearningDateNavigation
+        dateJst={view.selectedDateJst}
+        onDateChange={view.setDate}
+        onGoToToday={() => view.setDate(view.today)}
+        todayJst={view.today}
+      />
       <Button
         onClick={() => {
           setFormValues(
