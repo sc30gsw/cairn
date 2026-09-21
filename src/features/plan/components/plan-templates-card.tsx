@@ -140,7 +140,7 @@ function editorInitialInput(template: PlanTemplateDto | null): PlanTemplateFormI
   return {
     events: template.events.map((event) => ({
       endTime: event.endTime,
-      itemId: event.itemId ?? NONE_ITEM_VALUE,
+      itemId: event.title.trim() === "" ? (event.itemId ?? NONE_ITEM_VALUE) : NONE_ITEM_VALUE,
       priority: event.priority,
       startTime: event.startTime,
       templateEventId: event._id,

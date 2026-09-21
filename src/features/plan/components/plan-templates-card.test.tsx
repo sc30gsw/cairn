@@ -373,7 +373,7 @@ test("保存は項目なしを none から外して送る", async () => {
       events: [
         {
           endTime: "07:50",
-          itemId: item._id,
+          itemId: undefined,
           priority: "high",
           startTime: "07:00",
           templateEventId: "tev-1",
