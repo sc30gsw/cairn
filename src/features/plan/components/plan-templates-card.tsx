@@ -5,7 +5,6 @@ import {
   insert,
   remove,
   reset,
-  setInput,
   useForm,
   type FormStore,
 } from "@formisch/react";
@@ -29,6 +28,7 @@ import {
   UnstyledButton,
 } from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
+import { useMediaQuery } from "@mantine/hooks";
 import {
   IconCalendarCheck,
   IconCalendarOff,
@@ -351,28 +351,13 @@ export function PlanTemplatesCard({
                         </Tooltip>
                       </Group>
                       <Group gap="xs" wrap="nowrap">
-                        <Tooltip label={applyTooltip}>
-                          <ActionIcon
-                            aria-label={applyTooltip}
-                            onClick={() => requestApply(template)}
-                            type="button"
-                            variant="light"
-                          >
-                            <IconCalendarCheck aria-hidden size={16} stroke={1.5} />
-                          </ActionIcon>
-                        </Tooltip>
-                        {isAppliedSource ? (
-                          <Tooltip label={unapplyTooltip}>
-                            <ActionIcon
-                              aria-label={unapplyTooltip}
-                              onClick={() => requestUnapply(template)}
-                              type="button"
-                              variant="light"
-                            >
-                              <IconCalendarOff aria-hidden size={16} stroke={1.5} />
-                            </ActionIcon>
-                          </Tooltip>
-                        ) : null}
+                        <PlanTemplateActions
+                          applyTooltip={applyTooltip}
+                          isAppliedSource={isAppliedSource}
+                          onApply={() => requestApply(template)}
+                          onUnapply={() => requestUnapply(template)}
+                          unapplyTooltip={unapplyTooltip}
+                        />
                         <PlanTemplateCardMenu
                           applyTooltip={applyTooltip}
                           isAppliedSource={isAppliedSource}
@@ -436,6 +421,43 @@ export function PlanTemplatesCard({
   );
 }
 
+function PlanTemplateActions({
+  applyTooltip,
+  isAppliedSource,
+  onApply,
+  onUnapply,
+  unapplyTooltip,
+}: {
+  applyTooltip: string;
+  isAppliedSource: boolean;
+  onApply: () => void;
+  onUnapply: () => void;
+  unapplyTooltip: string;
+}) {
+  const isCompact = useMediaQuery("(max-width: 47.9375em)", false, {
+    getInitialValueInEffect: true,
+  });
+  if (isCompact) {
+    return null;
+  }
+  if (isAppliedSource) {
+    return (
+      <Tooltip label={unapplyTooltip}>
+        <ActionIcon aria-label={unapplyTooltip} onClick={onUnapply} type="button" variant="light">
+          <IconCalendarOff aria-hidden size={16} stroke={1.5} />
+        </ActionIcon>
+      </Tooltip>
+    );
+  }
+  return (
+    <Tooltip label={applyTooltip}>
+      <ActionIcon aria-label={applyTooltip} onClick={onApply} type="button" variant="light">
+        <IconCalendarCheck aria-hidden size={16} stroke={1.5} />
+      </ActionIcon>
+    </Tooltip>
+  );
+}
+
 function PlanTemplateCardMenu({
   applyTooltip,
   isAppliedSource,
@@ -461,14 +483,16 @@ function PlanTemplateCardMenu({
         </Tooltip>
       </Menu.Target>
       <Menu.Dropdown>
-        <Tooltip label={applyTooltip}>
-          <Menu.Item
-            leftSection={<IconCalendarCheck aria-hidden size={16} stroke={1.5} />}
-            onClick={onApply}
-          >
-            適用
-          </Menu.Item>
-        </Tooltip>
+        {isAppliedSource ? null : (
+          <Tooltip label={applyTooltip}>
+            <Menu.Item
+              leftSection={<IconCalendarCheck aria-hidden size={16} stroke={1.5} />}
+              onClick={onApply}
+            >
+              適用
+            </Menu.Item>
+          </Tooltip>
+        )}
         {isAppliedSource ? (
           <Tooltip label={unapplyTooltip}>
             <Menu.Item
@@ -570,36 +594,60 @@ function PlanTemplateEditor({
                   <Grid.Col span={{ base: 12, sm: 3 }}>
                     <Field of={form} path={["events", index, "itemId"]}>
                       {(itemField) => (
-                        <>
-                          <Select
-                            {...itemField.props}
-                            aria-label={`${name}の予定${index + 1}の項目`}
-                            data={itemOptions}
-                            error={itemField.errors?.[0]}
-                            label={index === 0 ? "項目" : undefined}
-                            onChange={onRequiredSelect((value) => {
-                              itemField.onChange(value);
-                              if (value !== NONE_ITEM_VALUE) {
-                                setInput(form, { input: "", path: ["events", index, "title"] });
-                              }
-                            })}
-                            value={itemField.input}
-                          />
-                          {itemField.input === NONE_ITEM_VALUE ? (
-                            <Field of={form} path={["events", index, "title"]}>
-                              {(field) => (
-                                <TextInput
-                                  {...field.props}
-                                  aria-label={`${name}の予定${index + 1}のタイトル`}
-                                  error={field.errors?.[0]}
-                                  label={index === 0 ? "タイトル" : undefined}
-                                  mt="sm"
-                                  value={field.input}
-                                />
-                              )}
-                            </Field>
-                          ) : null}
-                        </>
+                        <Field of={form} path={["events", index, "title"]}>
+                          {(titleField) => {
+                            const titleFilled = (titleField.input ?? "").trim() !== "";
+                            const itemChosen = itemField.input !== NONE_ITEM_VALUE;
+                            const showItem = !titleFilled;
+                            const showTitle = !itemChosen || titleFilled;
+                            return (
+                              <>
+                                {showItem ? (
+                                  <Select
+                                    {...itemField.props}
+                                    allowDeselect={false}
+                                    aria-label={`${name}の予定${index + 1}の項目`}
+                                    clearButtonProps={{ "aria-label": "項目をクリア" }}
+                                    clearable
+                                    data={itemOptions}
+                                    error={itemField.errors?.[0]}
+                                    label={index === 0 ? "項目" : undefined}
+                                    nothingFoundMessage="項目が見つかりません"
+                                    onChange={(value) => {
+                                      const next =
+                                        value === null || value === "" ? NONE_ITEM_VALUE : value;
+                                      itemField.onChange(next);
+                                      if (next !== NONE_ITEM_VALUE) {
+                                        titleField.onChange("");
+                                      }
+                                    }}
+                                    searchable
+                                    value={
+                                      itemField.input === NONE_ITEM_VALUE ? null : itemField.input
+                                    }
+                                  />
+                                ) : null}
+                                {showTitle ? (
+                                  <TextInput
+                                    {...titleField.props}
+                                    aria-label={`${name}の予定${index + 1}のタイトル`}
+                                    error={titleField.errors?.[0]}
+                                    label={index === 0 ? "タイトル" : undefined}
+                                    mt={showItem ? "sm" : undefined}
+                                    onChange={(event) => {
+                                      const value = event.currentTarget.value;
+                                      titleField.onChange(value);
+                                      if (value.trim() !== "") {
+                                        itemField.onChange(NONE_ITEM_VALUE);
+                                      }
+                                    }}
+                                    value={titleField.input}
+                                  />
+                                ) : null}
+                              </>
+                            );
+                          }}
+                        </Field>
                       )}
                     </Field>
                   </Grid.Col>

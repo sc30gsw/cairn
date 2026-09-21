@@ -227,7 +227,7 @@ test("appliedTemplateId が一致するカードだけ解除でき、確認後�
   });
 });
 
-test("・・・には適用と削除があり、適用元だけ解除が出る", () => {
+test("・・・には削除があり、適用元は解除だけ、それ以外は適用が出る", () => {
   const { getAllByRole, getByRole } = renderWithMantine(
     <PlanTemplatesCard
       appliedTemplateId={morning._id}
@@ -244,7 +244,7 @@ test("・・・には適用と削除があり、適用元だけ解除が出る",
   expect(morningMenuButton).toBeDefined();
   fireEvent.click(morningMenuButton as HTMLElement);
   const appliedMenu = getByRole("menu");
-  expect(within(appliedMenu).getByRole("menuitem", { name: "適用" })).toBeDefined();
+  expect(within(appliedMenu).queryByRole("menuitem", { name: "適用" })).toBeNull();
   expect(within(appliedMenu).getByRole("menuitem", { name: "解除" })).toBeDefined();
   expect(within(appliedMenu).getByRole("menuitem", { name: "削除" })).toBeDefined();
 

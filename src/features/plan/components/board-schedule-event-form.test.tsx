@@ -81,6 +81,31 @@ test("項目を選ぶとタイトル欄は隠れる", () => {
   expect(getByRole("combobox", { name: "項目" })).toBeDefined();
 });
 
+test("タイトルがあると項目欄は隠れる", () => {
+  const start = new Date("2026-08-17T00:00:00.000Z");
+  const end = new Date("2026-08-17T01:00:00.000Z");
+  const { getByLabelText, queryByRole } = renderWithMantine(
+    <BoardScheduleEventForm
+      dateJst="2026-08-17"
+      initialValues={{
+        end,
+        eventId: undefined,
+        itemId: "i1" as Id<"items">,
+        priority: "medium",
+        start,
+        title: "図書館",
+      }}
+      items={[sampleItem("i1", "Distinction")]}
+      onClose={() => undefined}
+      onSubmit={onSubmit}
+      opened
+    />,
+  );
+
+  expect(queryByRole("combobox", { name: "項目" })).toBeNull();
+  expect(getByLabelText("タイトル")).toBeDefined();
+});
+
 test("記録を生やした予定は項目を変えられない", () => {
   const start = new Date("2026-08-17T00:00:00.000Z");
   const end = new Date("2026-08-17T01:00:00.000Z");
