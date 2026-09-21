@@ -36,7 +36,7 @@ Preconditions:
 
 ## Gotchas
 
-- 方法 is behind その他 on narrow viewports (`MOBILE_PRIMARY` excludes `/methods`). Desktop proof does not cover that entry.
+- 方法 is behind その他 on narrow viewports (`MOBILE_PRIMARY` is `日` / `ボード` / `計画` / `目標`). Desktop proof does not cover that entry. TanStack Router Devtools at the bottom of a 390 viewport can intercept the `その他の画面` click; force-click or close the overlay if the menu does not open.
 - Page heading is `方法カタログ`, not `方法`.
 - Lane names are editable `TextInput`s (`{lane}の名前`), not OverflowTooltip / TruncatedText.
 - Add-method textbox and button share `aria-label="{lane}に方法を追加"` — scope by role.
