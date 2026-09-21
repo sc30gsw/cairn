@@ -239,7 +239,8 @@ export async function save(
   const record = await recordForSave(ctx, ownerId, args.itemId, existing);
   let sourceTemplateId = args.sourceTemplateId ?? existing?.sourceTemplateId;
   if (sourceTemplateId === undefined) {
-    sourceTemplateId = appliedTemplateOnDate(await eventsOnDate(ctx, ownerId, dateJst)) ?? undefined;
+    sourceTemplateId =
+      appliedTemplateOnDate(await eventsOnDate(ctx, ownerId, dateJst)) ?? undefined;
   }
   const sourceFields = sourceTemplateId === undefined ? {} : { sourceTemplateId };
   const fields =

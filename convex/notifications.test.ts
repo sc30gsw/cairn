@@ -684,9 +684,12 @@ test("通知オンで明日の予定が無いと missingTomorrowPlan を1件作�
   await seedSettings(t);
   const tomorrow = "2026-08-18";
 
-  await t.mutation(internal.mutations.notifications.notifyMissingTomorrowPlan.notifyMissingTomorrowPlan, {
-    now: jstAt(MONDAY, 18),
-  });
+  await t.mutation(
+    internal.mutations.notifications.notifyMissingTomorrowPlan.notifyMissingTomorrowPlan,
+    {
+      now: jstAt(MONDAY, 18),
+    },
+  );
 
   const [notification, ...rest] = await notificationsOf(t);
   expect(rest).toEqual([]);
@@ -701,12 +704,18 @@ test("同じ now で missingTomorrowPlan を2回評価しても1件のまま", a
   const t = asOwner();
   await seedSettings(t);
 
-  await t.mutation(internal.mutations.notifications.notifyMissingTomorrowPlan.notifyMissingTomorrowPlan, {
-    now: jstAt(MONDAY, 18),
-  });
-  await t.mutation(internal.mutations.notifications.notifyMissingTomorrowPlan.notifyMissingTomorrowPlan, {
-    now: jstAt(MONDAY, 18),
-  });
+  await t.mutation(
+    internal.mutations.notifications.notifyMissingTomorrowPlan.notifyMissingTomorrowPlan,
+    {
+      now: jstAt(MONDAY, 18),
+    },
+  );
+  await t.mutation(
+    internal.mutations.notifications.notifyMissingTomorrowPlan.notifyMissingTomorrowPlan,
+    {
+      now: jstAt(MONDAY, 18),
+    },
+  );
 
   expect(await notificationsOf(t)).toHaveLength(1);
 });
@@ -723,9 +732,12 @@ test("明日に予定があるときは missingTomorrowPlan を作らない", as
     todayJst: MONDAY,
   });
 
-  await t.mutation(internal.mutations.notifications.notifyMissingTomorrowPlan.notifyMissingTomorrowPlan, {
-    now: jstAt(MONDAY, 18),
-  });
+  await t.mutation(
+    internal.mutations.notifications.notifyMissingTomorrowPlan.notifyMissingTomorrowPlan,
+    {
+      now: jstAt(MONDAY, 18),
+    },
+  );
 
   expect(await notificationsOf(t)).toEqual([]);
 });
@@ -734,9 +746,12 @@ test("enabled: false では missingTomorrowPlan を作らない", async () => {
   const t = asOwner();
   await seedSettings(t, OWNER.subject, { enabled: false });
 
-  await t.mutation(internal.mutations.notifications.notifyMissingTomorrowPlan.notifyMissingTomorrowPlan, {
-    now: jstAt(MONDAY, 18),
-  });
+  await t.mutation(
+    internal.mutations.notifications.notifyMissingTomorrowPlan.notifyMissingTomorrowPlan,
+    {
+      now: jstAt(MONDAY, 18),
+    },
+  );
 
   expect(await notificationsOf(t)).toEqual([]);
 });

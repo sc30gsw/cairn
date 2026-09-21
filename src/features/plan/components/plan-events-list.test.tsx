@@ -47,7 +47,7 @@ const skipped: PlanEventDto = {
   _id: "event-skip" as Id<"planEvents">,
   dateJst: "2026-09-21",
   endTime: "12:00",
-  itemId: "item-1" as Id<"items">,
+  itemId: "item-2" as Id<"items">,
   priority: "low",
   recordState: { kind: "materialized", status: "スキップ" },
   startTime: "11:00",
@@ -61,13 +61,24 @@ const items: PlanCatalogItem[] = [
     name: "多読",
     sortOrder: 0,
   },
+  {
+    _id: "item-2" as Id<"items">,
+    categoryId: "c1" as PlanCatalogItem["categoryId"],
+    name: "単語",
+    sortOrder: 1,
+  },
 ];
 
 test("予定一覧は予定0件でも出し、開くと空コピーが出る", async () => {
   liveQuery.isReady = false;
   liveQuery.data = undefined;
   const view = renderWithMantine(
-    <PlanEventsList dateJst="2026-09-21" eventsFallback={[]} items={items} onSelectEvent={() => {}} />,
+    <PlanEventsList
+      dateJst="2026-09-21"
+      eventsFallback={[]}
+      items={items}
+      onSelectEvent={() => {}}
+    />,
   );
 
   const toggle = view.getByRole("button", { name: PLAN_EVENTS_LIST_OPEN_TOOLTIP });
@@ -100,6 +111,7 @@ test("折りたたみを開くと Badge と取り消し線が出る", async () =
   });
   expect(view.getByText("完了")).toBeDefined();
   expect(view.getByText("見送り")).toBeDefined();
+  expect(view.getByText("単語")).toBeDefined();
   expect(view.getByText("完了").closest(".mantine-Badge-root")?.getAttribute("data-variant")).toBe(
     "light",
   );

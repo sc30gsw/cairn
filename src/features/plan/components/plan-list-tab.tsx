@@ -66,13 +66,14 @@ export function PlanListTab() {
         parallelConvexQuery(queryOptions(externalsQuery)),
       ],
     });
-  const liveWindowReady = liveWindow.isReady && liveWindow.data !== undefined;
-  const events = liveWindowReady ? liveWindow.data.page : queriedWindow.events;
+  const liveWindowData = liveWindow.data;
+  const liveWindowReady = liveWindow.isReady && liveWindowData !== undefined;
+  const events = liveWindowReady ? liveWindowData.page : queriedWindow.events;
   const appliedTemplateId = liveWindowReady
-    ? liveWindow.data.appliedTemplateId
+    ? liveWindowData.appliedTemplateId
     : queriedWindow.appliedTemplateId;
   const unplannedConfirmedMinutes = liveWindowReady
-    ? liveWindow.data.unplannedConfirmedMinutes
+    ? liveWindowData.unplannedConfirmedMinutes
     : queriedWindow.unplannedConfirmedMinutes;
   const externals =
     liveExternals.isReady && liveExternals.data !== undefined

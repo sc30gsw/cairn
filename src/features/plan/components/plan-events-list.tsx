@@ -66,9 +66,7 @@ export function PlanEventsList({
     view: "day",
   });
   const events = live.isReady && live.data !== undefined ? live.data : eventsFallback;
-  const toggleTooltip = opened
-    ? PLAN_EVENTS_LIST_CLOSE_TOOLTIP
-    : PLAN_EVENTS_LIST_OPEN_TOOLTIP;
+  const toggleTooltip = opened ? PLAN_EVENTS_LIST_CLOSE_TOOLTIP : PLAN_EVENTS_LIST_OPEN_TOOLTIP;
 
   return (
     <Stack gap="xs">
@@ -80,7 +78,7 @@ export function PlanEventsList({
         />
         {headerEnd}
       </Group>
-      <Collapse expanded={opened} keepMounted={false}>
+      <Collapse expanded={opened} keepMounted={false} transitionDuration={0}>
         <Stack gap="xs">
           <PlanEventsListToolbar
             onPriorityChange={setPriority}

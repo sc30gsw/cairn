@@ -435,9 +435,7 @@ export function useOptionalPlanEventsLiveQuery({
       }
       const source = query.from({ event: descriptor });
       const filtered =
-        priority === undefined
-          ? source
-          : source.where(({ event }) => eq(event.priority, priority));
+        priority === undefined ? source : source.where(({ event }) => eq(event.priority, priority));
       if (sort === "priority") {
         return filtered
           .orderBy(({ event }) =>
@@ -456,8 +454,7 @@ export function useOptionalPlanWindowLiveQuery(scope: PlanWindowScope) {
   const descriptor = createPlanWindowCollection(scope);
   const live = useLiveQuery({
     client,
-    query: (query) =>
-      client === undefined ? null : query.from({ window: descriptor }).findOne(),
+    query: (query) => (client === undefined ? null : query.from({ window: descriptor }).findOne()),
   });
   return unwrapValueLiveResult<
     FunctionReturnType<typeof api.queries.planEvents.listWindow.listWindow>
