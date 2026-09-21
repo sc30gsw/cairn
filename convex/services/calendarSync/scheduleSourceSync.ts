@@ -54,12 +54,10 @@ export async function scheduleGoalSync(
   }
 }
 
-export async function scheduleBlockSync(
+export async function schedulePlanSync(
   ctx: MutationCtx,
   ownerId: string,
-  blockIds: readonly Id<"boardScheduleEvents">[],
+  eventIds: readonly Id<"planEvents">[],
 ): Promise<void> {
-  for (const blockId of blockIds) {
-    await scheduleSourceSync(ctx, ownerId, "block", blockId);
-  }
+  await Promise.all(eventIds.map((eventId) => scheduleSourceSync(ctx, ownerId, "plan", eventId)));
 }

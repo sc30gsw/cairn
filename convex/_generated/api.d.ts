@@ -382,6 +382,7 @@ import type * as services_notifications_unsubscribePush from "../services/notifi
 import type * as services_notifications_webPushConfig from "../services/notifications/webPushConfig.js";
 import type * as services_notifications_webPushDelivery from "../services/notifications/webPushDelivery.js";
 import type * as services_plan_events from "../services/plan/events.js";
+import type * as services_plan_migrateBoardSchedule from "../services/plan/migrateBoardSchedule.js";
 import type * as services_plan_openDate from "../services/plan/openDate.js";
 import type * as services_presets_create from "../services/presets/create.js";
 import type * as services_presets_getSettings from "../services/presets/getSettings.js";
@@ -823,6 +824,7 @@ declare const fullApi: ApiFromModules<{
   "services/notifications/webPushConfig": typeof services_notifications_webPushConfig;
   "services/notifications/webPushDelivery": typeof services_notifications_webPushDelivery;
   "services/plan/events": typeof services_plan_events;
+  "services/plan/migrateBoardSchedule": typeof services_plan_migrateBoardSchedule;
   "services/plan/openDate": typeof services_plan_openDate;
   "services/presets/create": typeof services_presets_create;
   "services/presets/getSettings": typeof services_presets_getSettings;

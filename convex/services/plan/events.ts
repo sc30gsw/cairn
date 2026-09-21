@@ -13,6 +13,7 @@ import {
   type PlanView,
 } from "../../lib/planEvent";
 import type { PlanEventDto, PlanEventDraft, PlanRecordStateDto } from "../../lib/validators/plan";
+import { schedulePlanSync } from "../calendarSync/scheduleSourceSync";
 
 type PlanRecord =
   | { kind: "none" }
@@ -235,9 +236,12 @@ export async function save(
           title,
         };
   if (existing === null) {
-    return await ctx.db.insert("planEvents", fields);
+    const eventId = await ctx.db.insert("planEvents", fields);
+    await schedulePlanSync(ctx, ownerId, [eventId]);
+    return eventId;
   }
   await ctx.db.patch("planEvents", existing._id, fields);
+  await schedulePlanSync(ctx, ownerId, [existing._id]);
   return existing._id;
 }
 
@@ -248,6 +252,7 @@ export async function remove(
 ): Promise<null> {
   await requireOwnedEvent(ctx, ownerId, args.eventId);
   await ctx.db.delete("planEvents", args.eventId);
+  await schedulePlanSync(ctx, ownerId, [args.eventId]);
   return null;
 }
 

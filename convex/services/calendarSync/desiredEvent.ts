@@ -2,15 +2,7 @@ import type { Doc } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
 import type { CalendarSyncSourceKind } from "../../lib/calendarSync";
 import type { GoogleEventPayload } from "../../lib/validators";
-import { blockEventPayload, goalEventPayload } from "./eventPayload";
-
-function dayUrl(dateJst: string): string | null {
-  const siteUrl = process.env.SITE_URL;
-  if (siteUrl === undefined || siteUrl === "") {
-    return null;
-  }
-  return `${siteUrl.replace(/\/$/, "")}/days/${dateJst}`;
-}
+import { goalEventPayload, planEventPayload } from "./eventPayload";
 
 export async function desiredEvent(
   ctx: MutationCtx | QueryCtx,
@@ -27,16 +19,33 @@ export async function desiredEvent(
     const parent = await parentOf(ctx, goal);
     return goalEventPayload(goal, parent);
   }
-  const blockId = ctx.db.normalizeId("boardScheduleEvents", sourceId);
-  const block = blockId === null ? null : await ctx.db.get("boardScheduleEvents", blockId);
-  if (block === null || block.ownerId !== ownerId) {
+  const eventId = ctx.db.normalizeId("planEvents", sourceId);
+  const event = eventId === null ? null : await ctx.db.get("planEvents", eventId);
+  if (event === null || event.ownerId !== ownerId) {
     return null;
   }
-  const row = await ctx.db.get("rows", block.rowId);
-  if (row === null || row.deletedAt !== undefined) {
-    return null;
+  return planEventPayload(event, await planPayloadContext(ctx, event));
+}
+
+async function planPayloadContext(
+  ctx: MutationCtx | QueryCtx,
+  event: Doc<"planEvents">,
+): Promise<{ itemName: string; note: string }> {
+  if (event.record.kind === "none") {
+    return { itemName: "", note: "" };
   }
-  return blockEventPayload(block, { content: row.content, dayUrl: dayUrl(row.dateJst) });
+  const rowId = event.record.materializedRowId;
+  const [item, row] = await Promise.all([
+    ctx.db.get("items", event.record.itemId),
+    rowId === undefined ? Promise.resolve(null) : ctx.db.get("rows", rowId),
+  ]);
+  return {
+    itemName: item === null || item.ownerId !== event.ownerId ? "" : item.name,
+    note:
+      row === null || row.deletedAt !== undefined || row.ownerId !== event.ownerId
+        ? ""
+        : row.content,
+  };
 }
 
 async function parentOf(

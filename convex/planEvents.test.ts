@@ -5,6 +5,7 @@ import { convexModules } from "../src/test-utils/convex-modules";
 import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import schema from "./schema";
+import { migrateBoardScheduleEvent } from "./services/plan/migrateBoardSchedule";
 
 const OWNER = { email: "owner@example.com", subject: "owner-subject" };
 const MONDAY = "2026-08-17";
@@ -375,4 +376,31 @@ test("終了 24:00 は同じ日の末尾として保存できる", async () => {
   expect((await listDay(t, MONDAY)).page[0]).toEqual(
     expect.objectContaining({ endTime: "24:00", startTime: "23:00" }),
   );
+});
+
+test("日跨ぎの legacy 予定は対象 ID を出して失敗する", async () => {
+  const t = owner();
+  await t.mutation(api.mutations.catalog.ensure.ensure, {});
+  await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
+  const row = (await liveRows(t))[0];
+  if (row === undefined) {
+    throw new Error("expected a row");
+  }
+  await expect(
+    t.run(async (ctx) => {
+      const blockId = await ctx.db.insert("boardScheduleEvents", {
+        color: "green",
+        endAt: "2026-08-18 01:00:00",
+        ownerId: row.ownerId,
+        rowId: row._id,
+        startAt: "2026-08-17 23:00:00",
+        title: "夜更かし",
+      });
+      const block = await ctx.db.get("boardScheduleEvents", blockId);
+      if (block === null) {
+        throw new Error("expected a block");
+      }
+      await migrateBoardScheduleEvent(ctx, block);
+    }),
+  ).rejects.toThrow(/日跨ぎの予定は移せません/);
 });

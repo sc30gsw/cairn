@@ -45,27 +45,26 @@ export const sourcePage = internalQuery({
         ),
       };
     }
-    if (args.phase === "blocks") {
+    if (args.phase === "plans") {
       const window = syncWindow(args.todayJst);
+      const startDate = window.startAtMin.slice(0, 10);
+      const endExclusive = window.startAtMaxExclusive.slice(0, 10);
       const page = await ctx.db
-        .query("boardScheduleEvents")
-        .withIndex("by_owner_and_startAt", (q) =>
-          q
-            .eq("ownerId", args.ownerId)
-            .gte("startAt", window.startAtMin)
-            .lt("startAt", window.startAtMaxExclusive),
+        .query("planEvents")
+        .withIndex("by_owner_and_dateJst_and_startMinute", (q) =>
+          q.eq("ownerId", args.ownerId).gte("dateJst", startDate).lt("dateJst", endExclusive),
         )
         .paginate(args.paginationOpts);
       return {
         ...page,
         page: await Promise.all(
-          page.page.map(async (block) =>
+          page.page.map(async (event) =>
             syncSource(
               ctx,
               args.ownerId,
-              "block",
-              block._id,
-              await findLink(ctx, args.ownerId, "block", block._id),
+              "plan",
+              event._id,
+              await findLink(ctx, args.ownerId, "plan", event._id),
             ),
           ),
         ),

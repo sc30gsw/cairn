@@ -9,6 +9,7 @@ import schema from "./schema";
 import { getConnection } from "./services/calendarSync/getConnection";
 import { migrateConnections } from "./services/calendarSync/migrateConnections";
 import { backfillCheckpointParents as backfillForOwner } from "./services/goals/backfillCheckpointParents";
+import { migrateBoardScheduleEvent } from "./services/plan/migrateBoardSchedule";
 
 const migrationsComponent: ComponentApi = componentsGeneric().migrations as unknown as ComponentApi;
 
@@ -87,4 +88,11 @@ export const backfillCalendarChanges = migrations.define({
 export const backfillCalendarOperations = migrations.define({
   table: "calendarSyncOperations",
   migrateOne: backfillConnectionId,
+});
+
+export const migrateBoardScheduleToPlanEvents = migrations.define({
+  table: "boardScheduleEvents",
+  migrateOne: async (ctx, block) => {
+    await migrateBoardScheduleEvent(ctx, block);
+  },
 });

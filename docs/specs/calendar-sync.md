@@ -18,13 +18,13 @@
 | 表示カレンダー | 複数 Google アカウントを同時に維持し、各接続で表示対象を選ぶ。既定は Google 側で表示中かつ内容を取得できるカレンダー。同じ ownerId + calendarId + eventId の写しを1件に統合する。別カレンダーの招待や同名同時刻の予定は統合しない |
 | 写しの期間 | 過去 30 日〜未来 90 日（`CALENDAR_SYNC_WINDOW`）。範囲外は写しから消す。本番日・期限は期間に関わらず Google へ出す |
 | 変更検知 | 接続・カレンダーごとに `events.list` の syncToken を管理し、7日ごとに全件を再取得する。表示対象と、アプリ発予定の変更を戻すための保存先を取得する。予定タブ表示時・「今すぐ同期」・毎日 JST 02:00 / 14:00 に実行する。Convex cron は UTC `0 5,17 * * *`。ブラウザーの定期ポーリングは追加しない |
-| アプリ → Google の即時送信 | 目標・予定を変えるサービス（goals の create / update / remove / setAchieved / setExamResult、boardSchedule の create / update / move / remove / removeForRow）の末尾で `scheduleSourceSync` を呼び、同じトランザクションで `internal.actions.calendarSync.pushSource` を `runAfter(0)` に積む。接続が無ければ何もしない |
-| 対応表 | `calendarSyncLinks { sourceKind: goal / block, sourceId, calendarId, googleEventId, googleUpdated, payloadKey, appChangedAt }`。Google のクライアント指定 ID は base32hex 限定で Convex の `_id` を使えない |
+| アプリ → Google の即時送信 | 目標・予定を変えるサービス（goals の create / update / remove / setAchieved / setExamResult、planEvents の save / remove）の末尾で `scheduleSourceSync` を呼び、同じトランザクションで `internal.actions.calendarSync.pushSource` を `runAfter(0)` に積む。接続が無ければ何もしない |
+| 対応表 | `calendarSyncLinks { sourceKind: goal / plan, sourceId, calendarId, googleEventId, googleUpdated, payloadKey, appChangedAt }`。Google のクライアント指定 ID は base32hex 限定で Convex の `_id` を使えない |
 | 競合 | **後の更新が勝つ**。送信の記録（`recordPush`）は計画時の対応表の姿（`expected`）と今の姿を比べる楽観ロックで、別の送信が先に走っていたら書かず、自分が新しく作った予定は消す（cron と即時送信の並走で二重作成・古い値の上書きを起こさない）。対応表より先に取り込みが走って自分の予定が外部予定として写っていたら、記録時に写しを消す。`appChangedAt`（アプリ側の未送信の変更時刻）と Google の `updated` を比べ、Google が新しければ戻し、そうでなければ次の送信でアプリの値が Google を上書きする。自分の送信の反射（`updated === googleUpdated`）は無視する |
 | 解除 | 接続単位で処理する。出力先を持たない接続はその写しとカーソルを消す。出力先の接続は Cairn が作った Google 予定を削除してから解除し、保存先を未設定にする。認可失効で Google 側を削除できない場合は残る可能性を通知する。別接続・Cairn の元データ・既存ログイン権限を維持する |
 | 失効 | 認証エラーはその接続だけを needsReauth にする。他の接続は取得を続け、古い写しは最終同期時刻とともに残す。cron は needsReauth・解除中の接続を触らない。ボードの連携ボタンに未同期件数、設定に再接続を表示する。一時的な送信失敗は従来の 30秒・2分・10分の再試行を維持する |
 | 通知 | 同期エラーは通知欄に出さない（`CONTEXT.md`「通知」の3トリガーを崩さない） |
-| Google に出す予定の形（Q17） | 予定: 題名 = 予定の題名、説明 = 「項目名 ／ ひとこと」+ アプリの日ページへのリンク（`SITE_URL` があるとき）、色はアプリの色を Google の色に近似、予定あり。本番日: 「本番: 〈内容〉」終日・空き、説明に目標スコア。期限: 「期限: 〈内容〉」終日・空き、説明に親目標 |
+| Google に出す予定の形（Q17） | 予定: 題名 = 予定の title、説明 = 項目名とひとこと（あれば）、色は priority の Banana / Sage / Graphite（5 / 2 / 8）、予定あり。項目なしも送る。本番日: 「本番: 〈内容〉」終日・空き、説明に目標スコア。期限: 「期限: 〈内容〉」終日・空き、説明に親目標 |
 | Google ログインの `prompt` | `select_account`（アカウントを毎回選べる。`consent` にしないのはログインのたびに同意画面を出さないため。リフレッシュトークンはカレンダー権限を付ける同意で得る） |
 | ランタイム | Google を叩く action は `convex/actions/calendarSync/` に `"use node"` 付きで置く（Convex は `actions/` 配下の全ファイルに `"use node"` を要求する。読み書きは `internal.*` の query / mutation 経由） |
 
@@ -48,7 +48,7 @@
 | `lib/googleAccessToken.ts` | Better Auth | `getGoogleAccessToken`（`auth.api.getAccessToken({ body: { providerId, accountId, userId } })`、headers 無し）、`listGoogleAccounts` |
 | `services/calendarSync/eventPayload.ts` | 純関数 | 目標 / 予定 → Google のイベント（色の近似対応 `GOOGLE_EVENT_COLOR_IDS`、`payloadKey`） |
 | `services/calendarSync/pulledEvent.ts` / `instant.ts` / `window.ts` | 純関数 | Google のイベント → アプリの形、RFC 3339 ↔ schedule instant、写しの期間 |
-| `services/calendarSync/scheduleSourceSync.ts` | mutation 側 | `scheduleGoalSync` / `scheduleBlockSync`（対応表に `appChangedAt` を刻み、送信アクションを積む） |
+| `services/calendarSync/scheduleSourceSync.ts` | mutation 側 | `scheduleGoalSync` / `schedulePlanSync`（対応表に `appChangedAt` を刻み、送信アクションを積む） |
 | `services/calendarSync/applyPull.ts` / `finishCalendarPull.ts` | mutation 側 | 差分の反映（戻す / 写す）、差分トークンの保存と写しの掃除 |
 | `services/calendarSync/pushOne.ts` / `pullCalendar.ts` / `runOwnerSync.ts` | action 側 | 1件の送信、1カレンダーの取り込み、所有者1人の全件突き合わせ（取り込み → 送信） |
 | `queries/calendarSync/status` / `listExternal` | `ownerQuery` | 接続の状態、予定タブの範囲の外部予定 |

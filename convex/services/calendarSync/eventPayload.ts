@@ -1,12 +1,13 @@
 import type { Doc } from "../../_generated/dataModel";
-import {
-  boardScheduleGoogleColor,
-  DEFAULT_BOARD_SCHEDULE_COLOR,
-} from "../../lib/boardScheduleColors";
 import { CHECKPOINT_EVENT_PREFIX, EXAM_EVENT_PREFIX } from "../../lib/calendarSync";
 import { isActiveExamGoal } from "../../lib/examGoal";
 import type { GoogleEventPatch, GoogleEventTimePatch } from "../../lib/googleCalendar";
 import { addDaysJst } from "../../lib/jst";
+import {
+  PLAN_PRIORITY_STYLE,
+  planMinuteToScheduleInstant,
+  type PlanPriority,
+} from "../../lib/planEvent";
 import type { ExternalChange, GoogleEventPayload, GoogleEventTime } from "../../lib/validators";
 import { scheduleInstantToRfc3339 } from "./instant";
 
@@ -45,26 +46,45 @@ export function goalEventPayload(
   return null;
 }
 
-type BlockPayloadContext = {
-  content: string;
-  dayUrl: string | null;
+type PlanPayloadContext = {
+  itemName: string;
+  note: string;
 };
 
-export function blockEventPayload(
-  block: Doc<"boardScheduleEvents">,
-  context: BlockPayloadContext,
-): GoogleEventPayload {
-  const lines = [context.content === "" ? block.title : `${block.title} / ${context.content}`];
-  if (context.dayUrl !== null) {
-    lines.push(context.dayUrl);
+function planDescription(context: PlanPayloadContext): string {
+  if (context.itemName === "") {
+    return context.note;
   }
-  const color = block.color ?? DEFAULT_BOARD_SCHEDULE_COLOR;
+  if (context.note === "") {
+    return context.itemName;
+  }
+  return `${context.itemName} / ${context.note}`;
+}
+
+export function planEventPayload(
+  event: {
+    dateJst: string;
+    endMinute: number;
+    priority: PlanPriority;
+    startMinute: number;
+    title: string;
+  },
+  context: PlanPayloadContext,
+): GoogleEventPayload {
   return {
-    colorId: boardScheduleGoogleColor(color).id,
-    description: lines.join("\n"),
-    end: { dateTime: scheduleInstantToRfc3339(block.endAt) },
-    start: { dateTime: scheduleInstantToRfc3339(block.startAt) },
-    summary: block.title,
+    colorId: PLAN_PRIORITY_STYLE[event.priority].googleColorId,
+    description: planDescription(context),
+    end: {
+      dateTime: scheduleInstantToRfc3339(
+        planMinuteToScheduleInstant(event.dateJst, event.endMinute),
+      ),
+    },
+    start: {
+      dateTime: scheduleInstantToRfc3339(
+        planMinuteToScheduleInstant(event.dateJst, event.startMinute),
+      ),
+    },
+    summary: event.title,
     transparency: "opaque",
   };
 }

@@ -1,55 +1,61 @@
 import { expect, test } from "vite-plus/test";
 
 import type { Doc } from "../../_generated/dataModel";
-import { GOOGLE_CALENDAR_EVENT_COLORS } from "../../lib/googleCalendarColors";
 import {
-  blockEventPayload,
   externalChangePayload,
   goalEventPayload,
   patchPayload,
   payloadKey,
+  planEventPayload,
 } from "./eventPayload";
 
-const block = {
-  _creationTime: 0,
-  _id: "block1" as Doc<"boardScheduleEvents">["_id"],
-  color: "green",
-  endAt: "2026-08-17 10:30:00",
-  ownerId: "owner",
-  rowId: "row1" as Doc<"boardScheduleEvents">["rowId"],
-  startAt: "2026-08-17 09:00:00",
-  title: "Distinction 2000",
-} satisfies Doc<"boardScheduleEvents">;
+const event = {
+  dateJst: "2026-08-17",
+  endMinute: 630,
+  priority: "high" as const,
+  startMinute: 540,
+  title: "公式問題集 Part 7",
+};
 
-test.each(GOOGLE_CALENDAR_EVENT_COLORS)(
-  "アプリの$labelを対応するGoogle色IDで同期する",
-  ({ appColor, id }) => {
-    expect(
-      blockEventPayload({ ...block, color: appColor }, { content: "", dayUrl: null }).colorId,
-    ).toBe(id);
-  },
-);
+test.each([
+  { colorId: "5", priority: "high" as const },
+  { colorId: "2", priority: "medium" as const },
+  { colorId: "8", priority: "low" as const },
+])("priority $priority は Google 色 $colorId だけを使う", ({ colorId, priority }) => {
+  expect(planEventPayload({ ...event, priority }, { itemName: "", note: "" }).colorId).toBe(
+    colorId,
+  );
+});
 
-test("予定は時刻つきの「予定あり」になり、項目名とひとことと日ページのリンクを説明に持つ", () => {
-  expect(
-    blockEventPayload(block, {
-      content: "Chapter 3",
-      dayUrl: "https://cairn.example/days/2026-08-17",
-    }),
-  ).toEqual({
-    colorId: "10",
-    description: "Distinction 2000 / Chapter 3\nhttps://cairn.example/days/2026-08-17",
+test("予定の題名が summary で、説明は項目名とひとことだけを持つ", () => {
+  expect(planEventPayload(event, { itemName: "多読", note: "Chapter 3" })).toEqual({
+    colorId: "5",
+    description: "多読 / Chapter 3",
     end: { dateTime: "2026-08-17T10:30:00+09:00" },
     start: { dateTime: "2026-08-17T09:00:00+09:00" },
-    summary: "Distinction 2000",
+    summary: "公式問題集 Part 7",
     transparency: "opaque",
   });
 });
 
+test("項目なし予定は説明が空でも Google に出る", () => {
+  expect(planEventPayload(event, { itemName: "", note: "" })).toMatchObject({
+    description: "",
+    summary: "公式問題集 Part 7",
+  });
+});
+
+test("24:00 終了は翌日 00:00 の RFC3339 になる", () => {
+  expect(
+    planEventPayload({ ...event, endMinute: 1440, startMinute: 1380 }, { itemName: "", note: "" })
+      .end,
+  ).toEqual({ dateTime: "2026-08-18T00:00:00+09:00" });
+});
+
 test("時刻だけが変わっても payloadKey は変わる（送信の要否を start / end で判定できる）", () => {
-  const before = payloadKey(blockEventPayload(block, { content: "", dayUrl: null }));
+  const before = payloadKey(planEventPayload(event, { itemName: "", note: "" }));
   const after = payloadKey(
-    blockEventPayload({ ...block, startAt: "2026-08-17 09:30:00" }, { content: "", dayUrl: null }),
+    planEventPayload({ ...event, startMinute: 570 }, { itemName: "", note: "" }),
   );
   expect(after).not.toBe(before);
   expect(before).toContain("2026-08-17T09:00:00+09:00");
@@ -64,7 +70,7 @@ test("本番日・未達成の期限は終日の「空き」、それ以外は�
     maxScore: 900,
     minScore: 800,
     ownerId: "owner",
-    type: "exam",
+    type: "exam" as const,
   } satisfies Doc<"goals">;
   expect(goalEventPayload(exam, null)).toEqual({
     description: "目標 800〜900",
@@ -87,7 +93,7 @@ test("本番日・未達成の期限は終日の「空き」、それ以外は�
     deadline: "2026-09-30",
     ownerId: "owner",
     parentGoalId: exam._id,
-    type: "mastery",
+    type: "mastery" as const,
   } satisfies Doc<"goals">;
   expect(goalEventPayload(checkpoint, exam)?.description).toBe(
     "本番で900点を取る / 止まらずに読める",
@@ -124,7 +130,7 @@ test("外部予定の移動は、終日なら date（終端は翌日）、時刻
 });
 
 test("payloadKey はキーの並び順に依らず同じ内容なら同じ値になる", () => {
-  const payload = blockEventPayload(block, { content: "", dayUrl: null });
+  const payload = planEventPayload(event, { itemName: "", note: "" });
   const reordered = {
     transparency: payload.transparency,
     summary: payload.summary,
@@ -140,7 +146,7 @@ test("payloadKey はキーの並び順に依らず同じ内容なら同じ値に
 });
 
 test("patch は date / dateTime の使わない方を null で送り、終日⇄時刻の切替を Google に伝える", () => {
-  const timed = patchPayload(blockEventPayload(block, { content: "", dayUrl: null }));
+  const timed = patchPayload(planEventPayload(event, { itemName: "", note: "" }));
   expect(timed.start).toEqual({ date: null, dateTime: "2026-08-17T09:00:00+09:00" });
   expect(timed.end).toEqual({ date: null, dateTime: "2026-08-17T10:30:00+09:00" });
   expect(JSON.stringify(timed)).toContain(

@@ -42,7 +42,7 @@ export const CALENDAR_REQUEST_ID_KEY = "calendarRequestId";
 
 export const CALENDAR_SYNC_SOURCE_PHASES = [
   "goals",
-  "blocks",
+  "plans",
   "links",
 ] as const satisfies readonly string[];
 
@@ -65,7 +65,7 @@ export const CALENDAR_SYNC_STATUSES = [
 
 export type CalendarSyncStatus = (typeof CALENDAR_SYNC_STATUSES)[number];
 
-export const CALENDAR_SYNC_SOURCE_KINDS = ["goal", "block"] as const satisfies readonly string[];
+export const CALENDAR_SYNC_SOURCE_KINDS = ["goal", "plan"] as const satisfies readonly string[];
 
 export type CalendarSyncSourceKind = (typeof CALENDAR_SYNC_SOURCE_KINDS)[number];
 
