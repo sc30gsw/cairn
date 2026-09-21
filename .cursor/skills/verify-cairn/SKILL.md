@@ -1,6 +1,6 @@
 ---
 name: verify-cairn
-description: Drive Cairn (学習ログ) through its real browser UI to prove authentication, catalog items, day records, 計画プリセット, /plan (default プラン with DatePicker plus Clock; choose スケジュール for the timeline with no Clock), methods, and board kanban (including hold-drag at 390 and 768). Use for live feature verification or reproducing user-visible bugs with retained evidence.
+description: Drive Cairn (学習ログ) through its real browser UI to prove authentication, catalog items, day records, 計画プリセット, /plan (default プラン with DatePicker and Clock as a peer card of 計画プリセット / 目標 / 障害プラン; choose スケジュール for the timeline with no Clock), methods, and board kanban (including hold-drag at 390 and 768). Use for live feature verification or reproducing user-visible bugs with retained evidence.
 ---
 
 # Verify Cairn (学習ログ)
