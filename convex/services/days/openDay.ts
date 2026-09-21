@@ -1,8 +1,6 @@
 import type { MutationCtx } from "../../_generated/server";
-import { presetWeekdayFor } from "../../lib/holidayPreset";
 import { materializePlanEvents, pendingPlanMaterializations } from "../plan/openDate";
-import { getSettings as getPresetSettings } from "../presets/getSettings";
-import { findUniquePresetForWeekday } from "../presets/helpers";
+import { applyToEmptyDate } from "../plan/templates";
 import { loadOwnerReviewFlags } from "../reviews/loadOwnerReviewFlags";
 import { dueUnplacedFlags, placeDueReviews } from "../reviews/placeDueReviews";
 import { collapseExtraLiveDays } from "./collapseExtraLiveDays";
@@ -21,47 +19,24 @@ export async function openDay(
   if (existing !== null && existing.deletedAt !== undefined) {
     return { applied: false };
   }
-  const weekday = presetWeekdayFor(args.dateJst, await getPresetSettings(ctx, ownerId));
-  const [presets, flags, pendingEvents] = await Promise.all([
-    ctx.db
-      .query("presets")
-      .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
-      .collect(),
+  const applied = (await applyToEmptyDate(ctx, ownerId, { dateJst: args.dateJst })).applied;
+  const [flags, pendingEvents] = await Promise.all([
     loadOwnerReviewFlags(ctx, ownerId),
     pendingPlanMaterializations(ctx, ownerId, args.dateJst),
   ]);
-  const preset = findUniquePresetForWeekday(presets, weekday);
-  const presetLines = preset?.lines ?? [];
   const dueFlags = dueUnplacedFlags(flags, args.dateJst);
-  if (presetLines.length === 0 && dueFlags.length === 0 && pendingEvents.length === 0) {
-    return { applied: false };
+  if (pendingEvents.length === 0 && dueFlags.length === 0) {
+    return { applied };
   }
   let day = existing;
   if (day === null) {
     await ctx.db.insert("days", { dateJst: args.dateJst, ownerId });
     day = await collapseExtraLiveDays(ctx, ownerId, args.dateJst);
     if (day === null) {
-      return { applied: false };
+      return { applied };
     }
   }
   const liveRows = await liveRowsForDay(ctx, day._id);
-  const applied = presetLines.length > 0 && liveRows.length === 0;
-  if (applied) {
-    await Promise.all(
-      presetLines.map((line, index) =>
-        ctx.db.insert("rows", {
-          content: line.content,
-          dateJst: args.dateJst,
-          dayId: day._id,
-          itemId: line.itemId,
-          minutes: line.minutes,
-          ownerId,
-          sortOrder: index,
-          status: "未着手",
-        }),
-      ),
-    );
-  }
   await materializePlanEvents(ctx, ownerId, { dateJst: args.dateJst, day });
   await placeDueReviews(ctx, ownerId, { dateJst: args.dateJst, day, flags: dueFlags, liveRows });
   return { applied };

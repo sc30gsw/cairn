@@ -7,7 +7,6 @@ import {
   IconLayoutKanban,
   IconNotebook,
   IconTarget,
-  IconTemplate,
   IconTrash,
 } from "@tabler/icons-react";
 
@@ -22,7 +21,6 @@ const NAV_ROUTES = [
   "/history",
   "/review",
   "/items",
-  "/presets",
   "/goals",
   "/methods",
   "/trash",
@@ -73,12 +71,6 @@ export const NAV: NavEntry[] = [
     label: "項目",
     match: (path) => path.startsWith("/items"),
     to: "/items",
-  },
-  {
-    Icon: IconTemplate,
-    label: "プリセット",
-    match: (path) => path.startsWith("/presets"),
-    to: "/presets",
   },
   {
     Icon: IconTarget,

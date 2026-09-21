@@ -2,6 +2,7 @@ import { convexTest } from "convex-test";
 import { expect, test, vi } from "vite-plus/test";
 
 import { convexModules } from "../src/test-utils/convex-modules";
+import { seedWeekdayDay } from "../src/test-utils/seed-weekday-day";
 import { api } from "./_generated/api";
 import schema from "./schema";
 
@@ -17,7 +18,7 @@ function asOwner() {
 async function ownerWithOpenDay() {
   const t = asOwner();
   await t.mutation(api.mutations.catalog.ensure.ensure, {});
-  await t.mutation(api.mutations.days.open.open, { dateJst: DATE_JST, todayJst: DATE_JST });
+  await seedWeekdayDay(t, DATE_JST, DATE_JST);
   return t;
 }
 
@@ -76,7 +77,7 @@ test("day and board snapshots are owner-isolated, and a rejected order leaves th
   const backend = convexTest(schema, convexModules);
   const owner = backend.withIdentity(OWNER);
   await owner.mutation(api.mutations.catalog.ensure.ensure, {});
-  await owner.mutation(api.mutations.days.open.open, { dateJst: DATE_JST, todayJst: DATE_JST });
+  await seedWeekdayDay(owner, DATE_JST, DATE_JST);
   const before = await owner.query(api.queries.days.get.get, {
     dateJst: DATE_JST,
     todayJst: DATE_JST,

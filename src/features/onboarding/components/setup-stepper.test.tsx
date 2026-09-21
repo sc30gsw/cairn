@@ -26,13 +26,13 @@ test("あとで設定にした項目は、次の案内に進んでも完了に�
   );
 
   const deferred = screen.getByRole("button", { name: "項目を登録する: あとで設定" });
-  const current = screen.getByRole("button", { name: "プリセットを登録する: 次の設定" });
+  const current = screen.getByRole("button", { name: "計画プリセットを登録する: 次の設定" });
   expect(deferred.hasAttribute("data-completed")).toBe(false);
   expect(deferred.hasAttribute("data-progress")).toBe(false);
   expect(current.getAttribute("aria-current")).toBe("step");
   expect(current.hasAttribute("data-progress")).toBe(true);
-  expect(screen.getByRole("link", { name: "プリセットを登録する" }).getAttribute("href")).toBe(
-    "/presets",
+  expect(screen.getByRole("link", { name: "計画プリセットを登録する" }).getAttribute("href")).toBe(
+    "/plan?tab=plan",
   );
 
   fireEvent.click(screen.getByRole("button", { name: "あとで設定" }));
@@ -54,7 +54,7 @@ test("順番より先に設定した本番目標も実際の完了状態で表�
   ).toBe(true);
   expect(
     screen
-      .getByRole("button", { name: "プリセットを登録する: 未設定" })
+      .getByRole("button", { name: "計画プリセットを登録する: 未設定" })
       .hasAttribute("data-completed"),
   ).toBe(false);
   expect(

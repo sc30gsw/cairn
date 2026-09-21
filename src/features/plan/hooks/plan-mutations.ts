@@ -25,3 +25,27 @@ export function usePlanExternalRemove() {
   const mutateAsync = useConvexMutation(api.mutations.calendarSync.removeExternal.removeExternal);
   return { mutateAsync };
 }
+
+export function usePlanTemplateSave() {
+  const mutateAsync = useConvexMutation(api.mutations.planTemplates.save.save);
+  return { mutateAsync };
+}
+
+export function usePlanTemplateRemove() {
+  const mutateAsync = useConvexMutation(api.mutations.planTemplates.remove.remove);
+  return { mutateAsync };
+}
+
+export function usePlanTemplateSetForgotten() {
+  const mutateAsync = useConvexMutation(
+    api.mutations.planTemplates.setForgottenTemplate.setForgottenTemplate,
+  );
+  return { mutateAsync };
+}
+
+export function usePlanTemplateApply() {
+  const mutateAsync = useConvexMutation(
+    api.mutations.planTemplates.applyToEmptyDate.applyToEmptyDate,
+  );
+  return { mutateAsync };
+}
