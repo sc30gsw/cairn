@@ -197,7 +197,7 @@ test("計画プリセットの行は名前だけで予定の詳細を出さな�
 
   expect(getByRole("button", { name: "平日の型を編集" })).toBeDefined();
   expect(getByRole("button", { name: "平日の型を削除" })).toBeDefined();
-  expect(queryByRole("button", { name: "編集", exact: true })).toBeNull();
+  expect(queryByRole("button", { name: /^編集$/ })).toBeNull();
   expect(queryByText("07:00–07:50 多読、20:00–21:00 X を見る")).toBeNull();
   expect(queryByText("予定なし")).toBeNull();
 });

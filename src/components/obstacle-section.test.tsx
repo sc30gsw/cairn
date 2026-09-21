@@ -69,7 +69,7 @@ test("既存プランは保存と削除ができる", async () => {
       {...sectionProps({ obstacles: [plan], onRemoveObstacle, onUpdateObstacle })}
     />,
   );
-  expect(getByRole("button", { name: "更新", exact: true })).toBeDefined();
+  expect(getByRole("button", { name: "更新" })).toBeDefined();
   expect(queryByRole("button", { name: "眠いを保存" })).toBeNull();
   getByRole("button", { name: "更新" }).click();
   await waitFor(() => {
