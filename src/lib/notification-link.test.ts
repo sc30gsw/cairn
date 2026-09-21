@@ -6,4 +6,5 @@ test("通知の種類ごとのリンク先", () => {
   expect(notificationLink("checkpointDeadline")).toBe("/goals");
   expect(notificationLink("weeklyTargetMiss")).toBe("/review");
   expect(notificationLink("eveningUntouched")).toBe("/");
+  expect(notificationLink("missingTomorrowPlan")).toBe("/plan");
 });

@@ -58,6 +58,18 @@ test("週間ターゲット未達の本文は残り量と単位を出す", () =>
   );
 });
 
+test("明日の計画なしはタイトルと本文が同じ文言になる", () => {
+  expect(
+    notificationMessage({
+      dateJst: "2026-08-18",
+      kind: "missingTomorrowPlan",
+    }),
+  ).toEqual({
+    body: "明日の計画がありません",
+    title: "明日の計画がありません",
+  });
+});
+
 test("夜の催促は日ありとプリセットで文言が変わる", () => {
   expect(
     notificationMessage({

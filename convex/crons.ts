@@ -46,4 +46,18 @@ crons.cron(
   {},
 );
 
+crons.cron(
+  "apply forgotten plan to empty new days",
+  "0 15 * * *",
+  internal.mutations.planTemplates.applyForgottenToNewDays.applyForgottenToNewDays,
+  {},
+);
+
+crons.cron(
+  "notify missing tomorrow plan",
+  "30 9 * * *",
+  internal.mutations.notifications.notifyMissingTomorrowPlan.notifyMissingTomorrowPlan,
+  {},
+);
+
 export default crons;

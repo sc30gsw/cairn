@@ -1,5 +1,7 @@
+import { caseWhen, eq } from "@tanstack/db";
 import { useLiveQuery, useOptionalDbClient } from "@tanstack/react-db";
 import type { FunctionArgs, FunctionReturnType } from "convex/server";
+import type { PlanPriority } from "~domain/planEvent";
 
 import { api } from "~/../convex/_generated/api";
 import {
@@ -31,6 +33,33 @@ type ScheduleScope = FunctionArgs<typeof api.queries.calendarSync.listExternal.l
   syncMode?: CollectionSyncMode;
 };
 type TargetsScope = FunctionArgs<typeof api.queries.targets.listWithProgress.listWithProgress>;
+type PlanEvent = FunctionReturnType<
+  typeof api.queries.planEvents.listWindow.listWindow
+>["page"][number];
+type PlanTemplate = FunctionReturnType<typeof api.queries.planTemplates.list.list>[number];
+type PlanWindowView = FunctionArgs<typeof api.queries.planEvents.listWindow.listWindow>["view"];
+type PlanWindowScope = {
+  anchorDateJst: string;
+  syncMode?: CollectionSyncMode;
+  view: PlanWindowView;
+};
+type PlanEventsLiveQueryScope = PlanWindowScope & {
+  priority?: PlanPriority;
+  sort?: "priority" | "time";
+};
+
+const PLAN_EVENTS_WINDOW_PAGINATION = {
+  cursor: null,
+  numItems: 256,
+} as const;
+
+function planWindowQueryArgs(scope: PlanWindowScope) {
+  return {
+    anchorDateJst: scope.anchorDateJst,
+    paginationOpts: PLAN_EVENTS_WINDOW_PAGINATION,
+    view: scope.view,
+  };
+}
 
 export function createDayPageCollection({ dateJst, syncMode, todayJst }: DayRowsScope) {
   return createConvexQueryCollection({
@@ -355,4 +384,92 @@ export function useOptionalMethodCatalogLiveQuery() {
     query: (query) => (client === undefined ? null : query.from({ catalog: descriptor }).findOne()),
   });
   return unwrapValueLiveResult<MethodCatalog>(live);
+}
+
+export function createPlanEventsCollection({ anchorDateJst, syncMode, view }: PlanWindowScope) {
+  return createConvexQueryCollection({
+    args: planWindowQueryArgs({ anchorDateJst, view }),
+    getKey: (event: PlanEvent) => event._id,
+    id: `plan-events:${anchorDateJst}:${view}`,
+    query: api.queries.planEvents.listWindow.listWindow,
+    select: (window) => window.page,
+    syncMode,
+  });
+}
+
+export function createPlanWindowCollection({ anchorDateJst, syncMode, view }: PlanWindowScope) {
+  return createConvexValueCollection({
+    args: planWindowQueryArgs({ anchorDateJst, view }),
+    id: `plan-window:${anchorDateJst}:${view}`,
+    query: api.queries.planEvents.listWindow.listWindow,
+    syncMode,
+  });
+}
+
+export function createPlanTemplatesCollection(syncMode?: CollectionSyncMode) {
+  return createConvexQueryCollection({
+    args: {},
+    getKey: (entry: ValueCollectionItem<PlanTemplate>) => entry.value._id,
+    id: "plan-templates",
+    query: api.queries.planTemplates.list.list,
+    select: (templates) => orderedCollectionItems(templates),
+    syncMode,
+  });
+}
+
+export function useOptionalPlanEventsLiveQuery({
+  anchorDateJst,
+  priority,
+  sort = "time",
+  syncMode,
+  view,
+}: PlanEventsLiveQueryScope) {
+  const client = useOptionalDbClient();
+  const descriptor = createPlanEventsCollection({ anchorDateJst, syncMode, view });
+
+  const live = useLiveQuery({
+    client,
+    query: (query) => {
+      if (client === undefined) {
+        return null;
+      }
+      const source = query.from({ event: descriptor });
+      const filtered =
+        priority === undefined ? source : source.where(({ event }) => eq(event.priority, priority));
+      if (sort === "priority") {
+        return filtered
+          .orderBy(({ event }) =>
+            caseWhen(eq(event.priority, "high"), 0, eq(event.priority, "medium"), 1, 2),
+          )
+          .orderBy(({ event }) => event.startTime);
+      }
+      return filtered.orderBy(({ event }) => event.startTime);
+    },
+  });
+  return live;
+}
+
+export function useOptionalPlanWindowLiveQuery(scope: PlanWindowScope) {
+  const client = useOptionalDbClient();
+  const descriptor = createPlanWindowCollection(scope);
+  const live = useLiveQuery({
+    client,
+    query: (query) => (client === undefined ? null : query.from({ window: descriptor }).findOne()),
+  });
+  return unwrapValueLiveResult<
+    FunctionReturnType<typeof api.queries.planEvents.listWindow.listWindow>
+  >(live);
+}
+
+export function useOptionalPlanTemplatesLiveQuery() {
+  const client = useOptionalDbClient();
+  const descriptor = createPlanTemplatesCollection();
+  const live = useLiveQuery({
+    client,
+    query: (query) =>
+      client === undefined
+        ? null
+        : query.from({ templates: descriptor }).orderBy((row) => row.templates.position),
+  });
+  return { ...live, data: live.data?.map((entry) => entry.value) };
 }

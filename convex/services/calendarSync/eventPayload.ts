@@ -84,7 +84,7 @@ export function planEventPayload(
         planMinuteToScheduleInstant(event.dateJst, event.startMinute),
       ),
     },
-    summary: event.title,
+    summary: event.title.trim() === "" ? context.itemName : event.title,
     transparency: "opaque",
   };
 }

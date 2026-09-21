@@ -147,6 +147,7 @@ import type * as mutations_methods_updateMethod from "../mutations/methods/updat
 import type * as mutations_notifications_evaluate from "../mutations/notifications/evaluate.js";
 import type * as mutations_notifications_markAllRead from "../mutations/notifications/markAllRead.js";
 import type * as mutations_notifications_markRead from "../mutations/notifications/markRead.js";
+import type * as mutations_notifications_notifyMissingTomorrowPlan from "../mutations/notifications/notifyMissingTomorrowPlan.js";
 import type * as mutations_notifications_pruneWebPushSubscriptions from "../mutations/notifications/pruneWebPushSubscriptions.js";
 import type * as mutations_notifications_purgeExpired from "../mutations/notifications/purgeExpired.js";
 import type * as mutations_notifications_saveSettings from "../mutations/notifications/saveSettings.js";
@@ -155,6 +156,8 @@ import type * as mutations_notifications_unsubscribePush from "../mutations/noti
 import type * as mutations_planEvents_remove from "../mutations/planEvents/remove.js";
 import type * as mutations_planEvents_save from "../mutations/planEvents/save.js";
 import type * as mutations_planEvents_saveDay from "../mutations/planEvents/saveDay.js";
+import type * as mutations_planTemplates_applyForgottenToNewDays from "../mutations/planTemplates/applyForgottenToNewDays.js";
+import type * as mutations_planTemplates_applyToDate from "../mutations/planTemplates/applyToDate.js";
 import type * as mutations_planTemplates_applyToEmptyDate from "../mutations/planTemplates/applyToEmptyDate.js";
 import type * as mutations_planTemplates_remove from "../mutations/planTemplates/remove.js";
 import type * as mutations_planTemplates_save from "../mutations/planTemplates/save.js";
@@ -370,6 +373,7 @@ import type * as services_notifications_emitNotification from "../services/notif
 import type * as services_notifications_evaluate from "../services/notifications/evaluate.js";
 import type * as services_notifications_evaluateCheckpointDeadline from "../services/notifications/evaluateCheckpointDeadline.js";
 import type * as services_notifications_evaluateEveningUntouched from "../services/notifications/evaluateEveningUntouched.js";
+import type * as services_notifications_evaluateMissingTomorrowPlan from "../services/notifications/evaluateMissingTomorrowPlan.js";
 import type * as services_notifications_evaluateWeeklyTargetMiss from "../services/notifications/evaluateWeeklyTargetMiss.js";
 import type * as services_notifications_getOwnerSettings from "../services/notifications/getOwnerSettings.js";
 import type * as services_notifications_list from "../services/notifications/list.js";
@@ -377,6 +381,7 @@ import type * as services_notifications_listPushSubscriptions from "../services/
 import type * as services_notifications_loadDueSettings from "../services/notifications/loadDueSettings.js";
 import type * as services_notifications_markAllRead from "../services/notifications/markAllRead.js";
 import type * as services_notifications_markRead from "../services/notifications/markRead.js";
+import type * as services_notifications_notifyMissingTomorrowPlan from "../services/notifications/notifyMissingTomorrowPlan.js";
 import type * as services_notifications_pruneWebPushSubscriptions from "../services/notifications/pruneWebPushSubscriptions.js";
 import type * as services_notifications_purgeExpired from "../services/notifications/purgeExpired.js";
 import type * as services_notifications_requireOwnedNotification from "../services/notifications/requireOwnedNotification.js";
@@ -596,6 +601,7 @@ declare const fullApi: ApiFromModules<{
   "mutations/notifications/evaluate": typeof mutations_notifications_evaluate;
   "mutations/notifications/markAllRead": typeof mutations_notifications_markAllRead;
   "mutations/notifications/markRead": typeof mutations_notifications_markRead;
+  "mutations/notifications/notifyMissingTomorrowPlan": typeof mutations_notifications_notifyMissingTomorrowPlan;
   "mutations/notifications/pruneWebPushSubscriptions": typeof mutations_notifications_pruneWebPushSubscriptions;
   "mutations/notifications/purgeExpired": typeof mutations_notifications_purgeExpired;
   "mutations/notifications/saveSettings": typeof mutations_notifications_saveSettings;
@@ -604,6 +610,8 @@ declare const fullApi: ApiFromModules<{
   "mutations/planEvents/remove": typeof mutations_planEvents_remove;
   "mutations/planEvents/save": typeof mutations_planEvents_save;
   "mutations/planEvents/saveDay": typeof mutations_planEvents_saveDay;
+  "mutations/planTemplates/applyForgottenToNewDays": typeof mutations_planTemplates_applyForgottenToNewDays;
+  "mutations/planTemplates/applyToDate": typeof mutations_planTemplates_applyToDate;
   "mutations/planTemplates/applyToEmptyDate": typeof mutations_planTemplates_applyToEmptyDate;
   "mutations/planTemplates/remove": typeof mutations_planTemplates_remove;
   "mutations/planTemplates/save": typeof mutations_planTemplates_save;
@@ -819,6 +827,7 @@ declare const fullApi: ApiFromModules<{
   "services/notifications/evaluate": typeof services_notifications_evaluate;
   "services/notifications/evaluateCheckpointDeadline": typeof services_notifications_evaluateCheckpointDeadline;
   "services/notifications/evaluateEveningUntouched": typeof services_notifications_evaluateEveningUntouched;
+  "services/notifications/evaluateMissingTomorrowPlan": typeof services_notifications_evaluateMissingTomorrowPlan;
   "services/notifications/evaluateWeeklyTargetMiss": typeof services_notifications_evaluateWeeklyTargetMiss;
   "services/notifications/getOwnerSettings": typeof services_notifications_getOwnerSettings;
   "services/notifications/list": typeof services_notifications_list;
@@ -826,6 +835,7 @@ declare const fullApi: ApiFromModules<{
   "services/notifications/loadDueSettings": typeof services_notifications_loadDueSettings;
   "services/notifications/markAllRead": typeof services_notifications_markAllRead;
   "services/notifications/markRead": typeof services_notifications_markRead;
+  "services/notifications/notifyMissingTomorrowPlan": typeof services_notifications_notifyMissingTomorrowPlan;
   "services/notifications/pruneWebPushSubscriptions": typeof services_notifications_pruneWebPushSubscriptions;
   "services/notifications/purgeExpired": typeof services_notifications_purgeExpired;
   "services/notifications/requireOwnedNotification": typeof services_notifications_requireOwnedNotification;

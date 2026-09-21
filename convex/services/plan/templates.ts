@@ -10,12 +10,14 @@ import {
   PLAN_TEMPLATE_NAME_MESSAGE,
   PLAN_TITLE_MESSAGE,
 } from "../../lib/planEvent";
+import { deleteRowsByIds } from "../../lib/trash";
 import type {
   PlanTemplateDto,
   PlanTemplateEventDraft,
   PlanTemplateEventDto,
 } from "../../lib/validators/plan";
-import { remove as removeRow } from "../rows/remove";
+import { withMasteryProgressDelta } from "../goals/withMasteryProgressDelta";
+import { endReviewForRow } from "../reviews/settleReviewRow";
 import { eventsOnDate, saveDay } from "./events";
 import { materializePlanEventsForDate } from "./openDate";
 
@@ -243,32 +245,24 @@ export async function applyToEmptyDate(
   if (existingEvents.length > 0) {
     return { applied: false };
   }
-  const settings = await settingsRow(ctx, ownerId);
-  const templateId = args.templateId ?? settings?.forgottenTemplateId;
-  if (templateId === undefined) {
-    return { applied: false };
-  }
-  await requireOwnedTemplate(ctx, ownerId, templateId);
-  const templateEvents = await eventsForTemplate(ctx, templateId);
-  if (templateEvents.length === 0) {
-    return { applied: false };
-  }
-  const serverToday = serverTodayJst();
-  await saveDay(ctx, ownerId, {
+  return await writeTemplate(ctx, ownerId, {
     dateJst,
-    events: templateEvents.map((event) => ({
-      endTime: formatMinuteOfDay(event.endMinute),
-      itemId: event.record.kind === "item" ? event.record.itemId : undefined,
-      priority: event.priority,
-      startTime: formatMinuteOfDay(event.startMinute),
-      title: event.title,
-    })),
-    todayJst: serverToday,
+    replace: false,
+    templateId: args.templateId,
   });
-  if (dateJst === serverToday) {
-    await materializePlanEventsForDate(ctx, ownerId, dateJst);
-  }
-  return { applied: true };
+}
+
+export async function applyToDate(
+  ctx: MutationCtx,
+  ownerId: string,
+  args: { dateJst: string; templateId: Id<"planTemplates">; todayJst: string },
+): Promise<{ applied: boolean }> {
+  const dateJst = requireDateJst(args.dateJst);
+  return await writeTemplate(ctx, ownerId, {
+    dateJst,
+    replace: true,
+    templateId: args.templateId,
+  });
 }
 
 export async function unapplyDate(
@@ -281,24 +275,129 @@ export async function unapplyDate(
   if (existing.length === 0) {
     return { cleared: false };
   }
-  const rowIds = existing.flatMap((event) =>
-    event.record.kind === "item" && event.record.materializedRowId !== undefined
-      ? [event.record.materializedRowId]
-      : [],
-  );
-  await Promise.all(
-    rowIds.map(async (rowId) => {
-      const row = await ctx.db.get("rows", rowId);
-      if (row === null || row.ownerId !== ownerId || row.deletedAt !== undefined) {
-        return;
-      }
-      await removeRow(ctx, ownerId, { rowId });
-    }),
-  );
+  await hardDeleteDerivedRows(ctx, ownerId, existing);
   await saveDay(ctx, ownerId, {
     dateJst,
     events: [],
     todayJst: serverTodayJst(),
   });
   return { cleared: true };
+}
+
+export async function applyForgottenToNewDays(ctx: MutationCtx): Promise<null> {
+  const todayJst = serverTodayJst();
+  const settings = await ctx.db.query("planSettings").collect();
+  await Promise.all(
+    settings.map(async (row) => {
+      if (row.forgottenTemplateId === undefined) {
+        return;
+      }
+      await applyToEmptyDate(ctx, row.ownerId, { dateJst: todayJst, todayJst });
+    }),
+  );
+  return null;
+}
+
+async function writeTemplate(
+  ctx: MutationCtx,
+  ownerId: string,
+  args: {
+    dateJst: string;
+    replace: boolean;
+    templateId?: Id<"planTemplates">;
+  },
+): Promise<{ applied: boolean }> {
+  const settings = await settingsRow(ctx, ownerId);
+  const templateId = args.templateId ?? settings?.forgottenTemplateId;
+  if (templateId === undefined) {
+    return { applied: false };
+  }
+  await requireOwnedTemplate(ctx, ownerId, templateId);
+  const templateEvents = await eventsForTemplate(ctx, templateId);
+  if (templateEvents.length === 0) {
+    return { applied: false };
+  }
+  const existing = await eventsOnDate(ctx, ownerId, args.dateJst);
+  if (existing.length > 0 && !args.replace) {
+    return { applied: false };
+  }
+  if (args.replace) {
+    await hardDeleteDerivedRows(ctx, ownerId, existing);
+  }
+  const serverToday = serverTodayJst();
+  await saveDay(ctx, ownerId, {
+    dateJst: args.dateJst,
+    events: templateEvents.map((event) => ({
+      endTime: formatMinuteOfDay(event.endMinute),
+      itemId: event.record.kind === "item" ? event.record.itemId : undefined,
+      priority: event.priority,
+      sourceTemplateId: templateId,
+      startTime: formatMinuteOfDay(event.startMinute),
+      title: event.title,
+    })),
+    todayJst: serverToday,
+  });
+  if (args.dateJst === serverToday) {
+    await materializePlanEventsForDate(ctx, ownerId, args.dateJst);
+  }
+  return { applied: true };
+}
+
+async function hardDeleteDerivedRows(
+  ctx: MutationCtx,
+  ownerId: string,
+  events: readonly Doc<"planEvents">[],
+): Promise<void> {
+  const rowIds = [
+    ...new Set(
+      events.flatMap((event) =>
+        event.record.kind === "item" && event.record.materializedRowId !== undefined
+          ? [event.record.materializedRowId]
+          : [],
+      ),
+    ),
+  ];
+  const rows = (
+    await Promise.all(
+      rowIds.map(async (rowId) => {
+        const row = await ctx.db.get("rows", rowId);
+        if (row === null || row.ownerId !== ownerId) {
+          return null;
+        }
+        return row;
+      }),
+    )
+  ).flatMap((row) => (row === null ? [] : [row]));
+  if (rows.length === 0) {
+    return;
+  }
+  const sourceFlags = (
+    await Promise.all(
+      rows.map((row) =>
+        ctx.db
+          .query("reviewFlags")
+          .withIndex("by_sourceRow", (q) => q.eq("sourceRowId", row._id))
+          .collect(),
+      ),
+    )
+  ).flat();
+  const dateJst = rows[0]?.dateJst;
+  if (dateJst === undefined) {
+    return;
+  }
+  await withMasteryProgressDelta(ctx, ownerId, { dateJst }, async () => {
+    await deleteRowsByIds(
+      ctx,
+      rows.map((row) => row._id),
+    );
+  });
+  await Promise.all(rows.map((row) => endReviewForRow(ctx, row)));
+  await Promise.all(
+    sourceFlags.map(async (flag) => {
+      const current = await ctx.db.get("reviewFlags", flag._id);
+      if (current !== null) {
+        await ctx.db.delete("reviewFlags", flag._id);
+      }
+    }),
+  );
 }

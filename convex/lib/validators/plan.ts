@@ -18,6 +18,7 @@ const planEventBaseValidator = v.object({
   endMinute: v.number(),
   ownerId: v.string(),
   priority: planPriorityValidator,
+  sourceTemplateId: v.optional(v.id("planTemplates")),
   startMinute: v.number(),
   title: v.string(),
 });
@@ -62,6 +63,7 @@ export const planEventDraftValidator = v.object({
   eventId: v.optional(v.id("planEvents")),
   itemId: v.optional(v.id("items")),
   priority: planPriorityValidator,
+  sourceTemplateId: v.optional(v.id("planTemplates")),
   startTime: v.string(),
   title: v.string(),
 });
@@ -69,6 +71,7 @@ export const planEventDraftValidator = v.object({
 export type PlanEventDraft = Infer<typeof planEventDraftValidator>;
 
 export const planWindowResultValidator = v.object({
+  appliedTemplateId: v.union(v.id("planTemplates"), v.null()),
   continueCursor: v.string(),
   isDone: v.boolean(),
   page: v.array(planEventDtoValidator),

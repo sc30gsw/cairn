@@ -3,11 +3,17 @@ import { v } from "convex/values";
 import { NOTIFICATION_KINDS, NOTIFICATION_PENDING_SOURCES } from "../notifications";
 import { targetMetricValidator } from "./goals";
 
-const [checkpointDeadlineKind, eveningUntouchedKind, weeklyTargetMissKind] = NOTIFICATION_KINDS;
+const [
+  checkpointDeadlineKind,
+  eveningUntouchedKind,
+  missingTomorrowPlanKind,
+  weeklyTargetMissKind,
+] = NOTIFICATION_KINDS;
 
 export const notificationKindValidator = v.union(
   v.literal(checkpointDeadlineKind),
   v.literal(eveningUntouchedKind),
+  v.literal(missingTomorrowPlanKind),
   v.literal(weeklyTargetMissKind),
 );
 
@@ -36,6 +42,10 @@ export const notificationPayloadValidator = v.union(
     kind: v.literal(eveningUntouchedKind),
     pendingCount: v.number(),
     source: v.union(...NOTIFICATION_PENDING_SOURCES.map((source) => v.literal(source))),
+  }),
+  v.object({
+    dateJst: v.string(),
+    kind: v.literal(missingTomorrowPlanKind),
   }),
   v.object({
     kind: v.literal(weeklyTargetMissKind),

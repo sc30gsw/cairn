@@ -19,7 +19,7 @@ function sampleItem(id: string, name: string): PlanCatalogItem {
   };
 }
 
-test("予定は Banana / Sage / Blueberry から選んで、項目なしでも保存できる", async () => {
+test("予定は高・中・低から選んで、項目なしでも保存できる", async () => {
   const start = new Date("2026-08-17T00:00:00.000Z");
   const end = new Date("2026-08-17T01:00:00.000Z");
   const { getByRole, getByLabelText, findByRole } = renderWithMantine(
@@ -44,11 +44,11 @@ test("予定は Banana / Sage / Blueberry から選んで、項目なしでも�
   expect(getByRole("button", { name: "保存" })).toBeDefined();
   expect(getByLabelText("タイトル")).toBeDefined();
   fireEvent.click(getByRole("combobox", { name: "優先度" }));
-  expect(await findByRole("option", { name: /Blueberry/ })).toBeDefined();
-  fireEvent.click(await findByRole("option", { name: /Blueberry/ }));
+  expect(await findByRole("option", { name: "低" })).toBeDefined();
+  fireEvent.click(await findByRole("option", { name: "低" }));
   fireEvent.click(getByRole("combobox", { name: "優先度" }));
   expect((await findByRole("listbox")).querySelectorAll("[role=option]").length).toBe(3);
-  fireEvent.click(getByRole("option", { name: /Blueberry/ }));
+  fireEvent.click(getByRole("option", { name: "低" }));
   fireEvent.click(getByRole("button", { name: "保存" }));
   await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
   expect(onSubmit).toHaveBeenCalledWith(

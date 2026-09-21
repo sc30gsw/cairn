@@ -62,9 +62,12 @@ test("Clock は確定した項目つき予定の扇と、予定外の確定分�
   expect(sector?.getAttribute("fill")).not.toBe("none");
   expect(sector?.getAttribute("d")?.startsWith("M 120 120 L")).toBe(true);
   expect(view.getByText("予定に載らない確定 40分")).toBeDefined();
-  expect(view.getByText("高（Banana）")).toBeDefined();
-  expect(view.getByText("中（Sage）")).toBeDefined();
-  expect(view.getByText("低（Blueberry）")).toBeDefined();
+  expect(view.getByText("高")).toBeDefined();
+  expect(view.getByText("中")).toBeDefined();
+  expect(view.getByText("低")).toBeDefined();
+  expect(view.queryByText("高（Banana）")).toBeNull();
+  expect(view.queryByText("中（Sage）")).toBeNull();
+  expect(view.queryByText("低（Blueberry）")).toBeNull();
   expect(face.querySelectorAll("line")).toHaveLength(25);
   expect([...face.querySelectorAll("text")].map((node) => node.textContent)).toEqual([
     "0",

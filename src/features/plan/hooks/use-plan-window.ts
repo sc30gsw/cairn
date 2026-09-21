@@ -22,6 +22,7 @@ export function planWindowQuery(anchorDateJst: DateJst, view: PlanScheduleView) 
 export function usePlanWindow(anchorDateJst: DateJst, view: PlanScheduleView) {
   const { data } = useSuspenseQuery(parallelConvexQuery(planWindowQuery(anchorDateJst, view)));
   return {
+    appliedTemplateId: data.appliedTemplateId,
     events: data.page,
     isDone: data.isDone,
     unplannedConfirmedMinutes: data.unplannedConfirmedMinutes,

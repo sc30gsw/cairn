@@ -1,30 +1,37 @@
 import { Button, Collapse, ColorSwatch, DataList, Group, Text, Tooltip } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
 import { IconCalendarEvent, IconCalendarPlus, IconTemplate } from "@tabler/icons-react";
+import type { DateJst } from "~domain/jst";
 import { PLAN_PRIORITY_STYLE } from "~domain/planEvent";
 
+import { formatPlanDateTooltip } from "~/features/plan/lib/plan-date-tooltip";
 import type { PlanDayScheduleEntry } from "~/features/plan/lib/plan-event-display-name";
 
 import classes from "~/features/plan/components/plan-day-schedule-list.module.css";
 
 type PlanDayScheduleHeaderButtonProps = {
+  dateJst: DateJst;
   onToggle: () => void;
   opened: boolean;
 };
 
 export function PlanDayScheduleHeaderButton({
+  dateJst,
   onToggle,
   opened,
 }: PlanDayScheduleHeaderButtonProps) {
   const isCompact = useMediaQuery("(max-width: 47.9375em)", false, {
     getInitialValueInEffect: true,
   });
+  const tooltip = opened
+    ? "予定の確認を閉じます"
+    : `${formatPlanDateTooltip(dateJst)} の予定を確認します`;
 
   return (
-    <Tooltip label="この日の予定">
+    <Tooltip label={tooltip}>
       <Button
         aria-expanded={opened}
-        aria-label="この日の予定"
+        aria-label={tooltip}
         onClick={onToggle}
         variant={opened ? "filled" : "light"}
       >
@@ -35,14 +42,16 @@ export function PlanDayScheduleHeaderButton({
   );
 }
 
+export const PLAN_EVENT_ADD_TOOLTIP = "この日に予定を 1 件足します";
+
 export function PlanEventAddButton({ onClick }: { onClick: () => void }) {
   const isCompact = useMediaQuery("(max-width: 47.9375em)", false, {
     getInitialValueInEffect: true,
   });
 
   return (
-    <Tooltip label="予定を追加">
-      <Button onClick={onClick} variant="light">
+    <Tooltip label={PLAN_EVENT_ADD_TOOLTIP}>
+      <Button aria-label={PLAN_EVENT_ADD_TOOLTIP} onClick={onClick} variant="light">
         <IconCalendarPlus aria-hidden size={16} stroke={1.5} />
         {isCompact ? null : <span>予定を追加</span>}
       </Button>
@@ -56,8 +65,8 @@ export function PlanTemplateAddButton({ onClick }: { onClick: () => void }) {
   });
 
   return (
-    <Tooltip label="計画プリセットを追加">
-      <Button onClick={onClick} variant="light">
+    <Tooltip label="新しい計画を作ります">
+      <Button aria-label="新しい計画を作ります" onClick={onClick} variant="light">
         <IconTemplate aria-hidden size={16} stroke={1.5} />
         {isCompact ? null : <span>計画プリセットを追加</span>}
       </Button>

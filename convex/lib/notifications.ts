@@ -5,6 +5,7 @@ import type { NotificationPayload, NotificationSettingsDto } from "./validators"
 export const NOTIFICATION_KINDS = [
   "checkpointDeadline",
   "eveningUntouched",
+  "missingTomorrowPlan",
   "weeklyTargetMiss",
 ] as const satisfies readonly string[];
 

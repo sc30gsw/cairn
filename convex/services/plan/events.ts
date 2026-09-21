@@ -27,6 +27,7 @@ type SaveArgs = {
   eventId?: Id<"planEvents">;
   itemId?: Id<"items">;
   priority: PlanPriority;
+  sourceTemplateId?: Id<"planTemplates">;
   startTime: string;
   title: string;
   todayJst: string;
@@ -115,6 +116,21 @@ function toDto(event: Doc<"planEvents">, state: PlanRecordStateDto): PlanEventDt
   };
 }
 
+export function appliedTemplateOnDate(
+  events: readonly { sourceTemplateId?: Id<"planTemplates"> }[],
+): Id<"planTemplates"> | null {
+  const ids = new Set(
+    events.flatMap((event) =>
+      event.sourceTemplateId === undefined ? [] : [event.sourceTemplateId],
+    ),
+  );
+  if (ids.size !== 1) {
+    return null;
+  }
+  const [templateId] = ids;
+  return templateId ?? null;
+}
+
 export async function eventsOnDate(
   ctx: MutationCtx | QueryCtx,
   ownerId: string,
@@ -172,6 +188,7 @@ export async function listWindow(
     view: PlanView;
   },
 ): Promise<{
+  appliedTemplateId: Id<"planTemplates"> | null;
   continueCursor: string;
   isDone: boolean;
   page: PlanEventDto[];
@@ -185,10 +202,12 @@ export async function listWindow(
       q.eq("ownerId", ownerId).gte("dateJst", start).lt("dateJst", endExclusive),
     )
     .paginate(args.paginationOpts);
-  const dtoPage = await Promise.all(
-    page.page.map(async (event) => toDto(event, await recordState(ctx, event))),
-  );
+  const [dtoPage, anchored] = await Promise.all([
+    Promise.all(page.page.map(async (event) => toDto(event, await recordState(ctx, event)))),
+    eventsOnDate(ctx, ownerId, anchorDateJst),
+  ]);
   return {
+    appliedTemplateId: appliedTemplateOnDate(anchored),
     continueCursor: page.continueCursor,
     isDone: page.isDone,
     page: dtoPage,
@@ -218,6 +237,12 @@ export async function save(
     }
   }
   const record = await recordForSave(ctx, ownerId, args.itemId, existing);
+  let sourceTemplateId = args.sourceTemplateId ?? existing?.sourceTemplateId;
+  if (sourceTemplateId === undefined) {
+    sourceTemplateId =
+      appliedTemplateOnDate(await eventsOnDate(ctx, ownerId, dateJst)) ?? undefined;
+  }
+  const sourceFields = sourceTemplateId === undefined ? {} : { sourceTemplateId };
   const fields =
     record.kind === "none"
       ? {
@@ -228,6 +253,7 @@ export async function save(
           record: { kind: "none" as const },
           startMinute,
           title,
+          ...sourceFields,
         }
       : {
           dateJst,
@@ -237,6 +263,7 @@ export async function save(
           record,
           startMinute,
           title,
+          ...sourceFields,
         };
   if (existing === null) {
     const eventId = await ctx.db.insert("planEvents", fields);
@@ -267,6 +294,7 @@ export async function saveDay(
   const serverToday = serverTodayJst();
   const dateJst = requirePlanEventDateJst(args.dateJst, serverToday);
   const existing = await eventsOnDate(ctx, ownerId, dateJst);
+  const inheritId = appliedTemplateOnDate(existing);
   const keep = new Set(
     args.events.flatMap((draft) => (draft.eventId === undefined ? [] : [draft.eventId])),
   );
@@ -283,6 +311,7 @@ export async function saveDay(
         eventId: draft.eventId,
         itemId: draft.itemId,
         priority: draft.priority,
+        sourceTemplateId: draft.sourceTemplateId ?? inheritId ?? undefined,
         startTime: draft.startTime,
         title: draft.title,
         todayJst: serverToday,
