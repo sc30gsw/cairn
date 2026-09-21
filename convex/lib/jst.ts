@@ -50,6 +50,16 @@ export function isFutureDateJst(dateJst: string, today: string): boolean {
   return compareDateJst(dateJst, today) > 0;
 }
 
+export const PLAN_WEEK_AHEAD_DAYS = 7;
+
+export function planWeekAheadMaxDateJst(todayJst: string): string {
+  return addDaysJst(todayJst, PLAN_WEEK_AHEAD_DAYS);
+}
+
+export function isAfterPlanWeekAhead(dateJst: string, todayJst: string): boolean {
+  return compareDateJst(dateJst, planWeekAheadMaxDateJst(todayJst)) > 0;
+}
+
 export function mondayOfWeek(dateJst: string): string {
   const weekday = weekdayFromDateJst(dateJst);
   const daysFromMonday = weekday === 0 ? 6 : weekday - 1;

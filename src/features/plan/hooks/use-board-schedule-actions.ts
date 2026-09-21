@@ -10,6 +10,7 @@ import { instantsToPlanTimes } from "~/features/plan/lib/plan-event-instants";
 import { dateToScheduleInstant } from "~/features/plan/lib/schedule-instant";
 import type { PlanScheduleEventOutput } from "~/features/plan/schemas/board-schedule-event-schema";
 import type { PlanScheduleBlock } from "~/features/plan/types/plan";
+import { useTodayJst } from "~/hooks/use-today-jst";
 import { runMutation } from "~/lib/run-mutation";
 
 const silent = { silent: true } as const satisfies NonNullable<Parameters<typeof runMutation>[1]>;
@@ -22,6 +23,7 @@ function timesFromOutput(values: PlanScheduleEventOutput) {
 }
 
 export function useBoardScheduleActions() {
+  const todayJst = useTodayJst();
   const saveEvent = usePlanEventSave();
   const removeEvent = usePlanEventRemove();
   const moveExternal = usePlanExternalMove();
@@ -42,6 +44,7 @@ export function useBoardScheduleActions() {
             priority: values.priority,
             startTime: times.startTime,
             title: values.title,
+            todayJst,
           }),
         silent,
       );
@@ -61,6 +64,7 @@ export function useBoardScheduleActions() {
             priority: input.event.priority,
             startTime: times.startTime,
             title: input.event.title,
+            todayJst,
           }),
         silent,
       );
@@ -90,6 +94,7 @@ export function useBoardScheduleActions() {
             priority: values.priority,
             startTime: times.startTime,
             title: values.title,
+            todayJst,
           }),
         silent,
       );

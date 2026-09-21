@@ -13,6 +13,7 @@ export const save = ownerMutation({
     priority: planPriorityValidator,
     startTime: v.string(),
     title: v.string(),
+    todayJst: v.string(),
   },
   handler: async (ctx, args) => saveEvent(ctx, ctx.ownerId, args),
   returns: v.id("planEvents"),

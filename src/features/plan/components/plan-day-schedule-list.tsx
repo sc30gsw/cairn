@@ -1,6 +1,6 @@
 import { Button, Collapse, ColorSwatch, DataList, Group, Text, Tooltip } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
-import { IconCalendarEvent, IconTemplate } from "@tabler/icons-react";
+import { IconCalendarEvent, IconCalendarPlus, IconTemplate } from "@tabler/icons-react";
 import { PLAN_PRIORITY_STYLE } from "~domain/planEvent";
 
 import type { PlanDayScheduleEntry } from "~/features/plan/lib/plan-event-display-name";
@@ -30,6 +30,21 @@ export function PlanDayScheduleHeaderButton({
       >
         <IconCalendarEvent aria-hidden size={16} stroke={1.5} />
         {isCompact ? null : <span>この日の予定</span>}
+      </Button>
+    </Tooltip>
+  );
+}
+
+export function PlanEventAddButton({ onClick }: { onClick: () => void }) {
+  const isCompact = useMediaQuery("(max-width: 47.9375em)", false, {
+    getInitialValueInEffect: true,
+  });
+
+  return (
+    <Tooltip label="予定を追加">
+      <Button onClick={onClick} variant="light">
+        <IconCalendarPlus aria-hidden size={16} stroke={1.5} />
+        {isCompact ? null : <span>予定を追加</span>}
       </Button>
     </Tooltip>
   );

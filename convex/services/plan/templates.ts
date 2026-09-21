@@ -233,7 +233,7 @@ export async function setForgottenTemplate(
 export async function applyToEmptyDate(
   ctx: MutationCtx,
   ownerId: string,
-  args: { dateJst: string; templateId?: Id<"planTemplates"> },
+  args: { dateJst: string; templateId?: Id<"planTemplates">; todayJst: string },
 ): Promise<{ applied: boolean }> {
   const dateJst = requireDateJst(args.dateJst);
   const existingEvents = await eventsOnDate(ctx, ownerId, dateJst);
@@ -259,6 +259,7 @@ export async function applyToEmptyDate(
       startTime: formatMinuteOfDay(event.startMinute),
       title: event.title,
     })),
+    todayJst: args.todayJst,
   });
   return { applied: true };
 }

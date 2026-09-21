@@ -63,6 +63,7 @@ import type {
   PlanExternalEvent,
   PlanTemplateDto,
 } from "~/features/plan/types/plan";
+import { useTodayJst } from "~/hooks/use-today-jst";
 import { runMutation } from "~/lib/run-mutation";
 import { onRequiredSelect } from "~/lib/select";
 import { parseItemId, unwrapItemId } from "~/types/item";
@@ -157,6 +158,7 @@ export function PlanTemplatesCard({
   items,
   templates,
 }: PlanTemplatesCardProps) {
+  const todayJst = useTodayJst();
   const saveTemplate = usePlanTemplateSave();
   const removeTemplate = usePlanTemplateRemove();
   const setForgotten = usePlanTemplateSetForgotten();
@@ -283,7 +285,9 @@ export function PlanTemplatesCard({
             if (applyId === undefined) {
               return;
             }
-            void runMutation(() => applyTemplate.mutateAsync({ dateJst, templateId: applyId }));
+            void runMutation(() =>
+              applyTemplate.mutateAsync({ dateJst, templateId: applyId, todayJst }),
+            );
           }}
         >
           この日に適用

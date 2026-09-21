@@ -28,6 +28,10 @@ vi.mock("~/features/plan/hooks/plan-mutations", () => ({
   usePlanTemplateSetForgotten: () => ({ mutateAsync: forgottenMutate }),
 }));
 
+vi.mock("~/hooks/use-today-jst", () => ({
+  useTodayJst: () => "2026-08-17",
+}));
+
 vi.mock("~/lib/run-mutation", async () => {
   const { Result } = await import("better-result");
   return {
@@ -104,6 +108,7 @@ test("空の日なら選んだ雛形を適用する", () => {
   expect(applyMutate).toHaveBeenCalledWith({
     dateJst: "2026-08-17",
     templateId: morning._id,
+    todayJst: "2026-08-17",
   });
 });
 

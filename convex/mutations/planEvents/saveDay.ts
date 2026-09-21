@@ -8,6 +8,7 @@ export const saveDay = ownerMutation({
   args: {
     dateJst: v.string(),
     events: v.array(planEventDraftValidator),
+    todayJst: v.string(),
   },
   handler: async (ctx, args) => saveDayEvents(ctx, ctx.ownerId, args),
   returns: v.array(v.id("planEvents")),

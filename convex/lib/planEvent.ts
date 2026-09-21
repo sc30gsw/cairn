@@ -1,5 +1,6 @@
+import { requireDateJst } from "./dateArgs";
 import { ValidationFailedError } from "./errors";
-import { addDaysJst, mondayOfWeek } from "./jst";
+import { addDaysJst, isAfterPlanWeekAhead, mondayOfWeek } from "./jst";
 import { throwDomain } from "./ownerFunctions";
 
 export const PLAN_PRIORITIES = ["high", "medium", "low"] as const satisfies readonly string[];
@@ -31,6 +32,16 @@ export const PLAN_WINDOW_MESSAGE = "同じ日の中で、終了は開始より�
 export const PLAN_TITLE_MESSAGE = "タイトルは必須です";
 export const PLAN_FROZEN_MESSAGE = "日付と項目は記録を生やしたあとは変えられません";
 export const PLAN_TEMPLATE_NAME_MESSAGE = "名前は必須です";
+export const PLAN_DATE_RANGE_MESSAGE = "予定は今日から7日後までに置けます";
+
+export function requirePlanEventDateJst(dateJst: string, todayJst: string): string {
+  const validDateJst = requireDateJst(dateJst);
+  const validTodayJst = requireDateJst(todayJst);
+  if (isAfterPlanWeekAhead(validDateJst, validTodayJst)) {
+    throwDomain(new ValidationFailedError({ message: PLAN_DATE_RANGE_MESSAGE }));
+  }
+  return validDateJst;
+}
 
 export function parseMinuteOfDay(value: string, role: "end" | "start"): MinuteOfDay {
   const match = LOCAL_TIME_PATTERN.exec(value);

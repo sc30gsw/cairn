@@ -2,7 +2,7 @@ import { ActionIcon, Box, Group, Input, Tooltip } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { IconChevronLeft, IconChevronRight, IconRefresh } from "@tabler/icons-react";
 import type { ReactNode } from "react";
-import { addDaysJst, isFutureDateJst, type DateJst } from "~domain/jst";
+import { addDaysJst, compareDateJst, type DateJst } from "~domain/jst";
 
 import { calendarDayStyleClasses } from "~/lib/calendar-day-style";
 import { learningDatePickerProps } from "~/lib/learning-date-picker-props";
@@ -14,6 +14,7 @@ type LearningDateNavigationProps = {
   centered?: boolean;
   dateJst: DateJst;
   linkSlot?: ReactNode;
+  maxDateJst?: DateJst;
   onDateChange: (dateJst: DateJst) => void;
   onGoToToday: () => void;
   todayJst: DateJst;
@@ -23,14 +24,16 @@ export function LearningDateNavigation({
   centered = false,
   dateJst,
   linkSlot,
+  maxDateJst,
   onDateChange,
   onGoToToday,
   todayJst,
 }: LearningDateNavigationProps) {
   const isToday = dateJst === todayJst;
+  const lastSelectableDateJst = maxDateJst ?? todayJst;
 
   const pickDate = (next: string) => {
-    if (!isFutureDateJst(next, todayJst)) {
+    if (compareDateJst(next, lastSelectableDateJst) <= 0) {
       onDateChange(next);
     }
   };
@@ -54,7 +57,7 @@ export function LearningDateNavigation({
               }}
               value={dateJst}
               w="fit-content"
-              {...learningDatePickerProps(todayJst)}
+              {...learningDatePickerProps(todayJst, lastSelectableDateJst)}
             />
             <Group align="center" gap={4} wrap="nowrap">
               <Tooltip label="前の日" withArrow>
@@ -71,7 +74,7 @@ export function LearningDateNavigation({
                 <Box component="span" display="inline-flex">
                   <ActionIcon
                     aria-label="次の日"
-                    disabled={dateJst >= todayJst}
+                    disabled={compareDateJst(dateJst, lastSelectableDateJst) >= 0}
                     onClick={() => onDateChange(addDaysJst(dateJst, 1))}
                     size="input-sm"
                     variant="subtle"
