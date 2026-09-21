@@ -156,6 +156,48 @@ test("今日+8日以降の予定は拒否される", async () => {
   ).rejects.toThrow(/7日後まで/);
 });
 
+test("save は todayJst を偽装してもサーバー今日+7を超える予定は拒否する", async () => {
+  const t = owner();
+  await expect(
+    t.mutation(api.mutations.planEvents.save.save, {
+      dateJst: BEYOND_WEEK_AHEAD,
+      endTime: "10:00",
+      priority: "medium",
+      startTime: "09:00",
+      title: "偽装上限",
+      todayJst: "2099-01-01",
+    }),
+  ).rejects.toThrow(/7日後まで/);
+  await expect(
+    t.mutation(api.mutations.planEvents.save.save, {
+      dateJst: "2099-01-05",
+      endTime: "10:00",
+      priority: "medium",
+      startTime: "09:00",
+      title: "偽装先の遠い日",
+      todayJst: "2099-01-01",
+    }),
+  ).rejects.toThrow(/7日後まで/);
+});
+
+test("saveDay は todayJst を偽装してもサーバー今日+7を超える予定は拒否する", async () => {
+  const t = owner();
+  await expect(
+    t.mutation(api.mutations.planEvents.saveDay.saveDay, {
+      dateJst: BEYOND_WEEK_AHEAD,
+      events: [
+        {
+          endTime: "10:00",
+          priority: "medium",
+          startTime: "09:00",
+          title: "偽装上限",
+        },
+      ],
+      todayJst: "2099-01-01",
+    }),
+  ).rejects.toThrow(/7日後まで/);
+});
+
 test("未来の日は days.open できない", async () => {
   const t = owner();
   await t.mutation(api.mutations.planEvents.save.save, {

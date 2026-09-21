@@ -2,6 +2,7 @@ import type { Doc, Id } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
 import { requireDateJst } from "../../lib/dateArgs";
 import { NotFoundError, ValidationFailedError } from "../../lib/errors";
+import { serverTodayJst } from "../../lib/jst";
 import { throwDomain } from "../../lib/ownerFunctions";
 import {
   formatMinuteOfDay,
@@ -259,7 +260,7 @@ export async function applyToEmptyDate(
       startTime: formatMinuteOfDay(event.startMinute),
       title: event.title,
     })),
-    todayJst: args.todayJst,
+    todayJst: serverTodayJst(),
   });
   return { applied: true };
 }

@@ -2,6 +2,7 @@ import type { Doc, Id } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
 import { requireDateJst } from "../../lib/dateArgs";
 import { NotFoundError, ValidationFailedError } from "../../lib/errors";
+import { serverTodayJst } from "../../lib/jst";
 import { throwDomain } from "../../lib/ownerFunctions";
 import {
   formatMinuteOfDay,
@@ -200,7 +201,7 @@ export async function save(
   ownerId: string,
   args: SaveArgs,
 ): Promise<Id<"planEvents">> {
-  const dateJst = requirePlanEventDateJst(args.dateJst, args.todayJst);
+  const dateJst = requirePlanEventDateJst(args.dateJst, serverTodayJst());
   const title = args.title.trim();
   if (title === "" && args.itemId === undefined) {
     throwDomain(new ValidationFailedError({ message: PLAN_TITLE_MESSAGE }));
@@ -263,7 +264,8 @@ export async function saveDay(
   ownerId: string,
   args: { dateJst: string; events: PlanEventDraft[]; todayJst: string },
 ): Promise<Id<"planEvents">[]> {
-  const dateJst = requirePlanEventDateJst(args.dateJst, args.todayJst);
+  const serverToday = serverTodayJst();
+  const dateJst = requirePlanEventDateJst(args.dateJst, serverToday);
   const existing = await eventsOnDate(ctx, ownerId, dateJst);
   const keep = new Set(
     args.events.flatMap((draft) => (draft.eventId === undefined ? [] : [draft.eventId])),
@@ -283,7 +285,7 @@ export async function saveDay(
         priority: draft.priority,
         startTime: draft.startTime,
         title: draft.title,
-        todayJst: args.todayJst,
+        todayJst: serverToday,
       }),
     ),
   );
