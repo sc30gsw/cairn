@@ -40,7 +40,11 @@ export function clockArcPath(
 }
 
 export function paintsClockArc(event: PlanEventDto): boolean {
-  return event.recordState.kind === "materialized" && event.recordState.status === "確定";
+  return (
+    event.itemId !== undefined &&
+    event.recordState.kind === "materialized" &&
+    event.recordState.status === "確定"
+  );
 }
 
 export function eventArcMinutes(event: PlanEventDto): { endMinute: number; startMinute: number } {

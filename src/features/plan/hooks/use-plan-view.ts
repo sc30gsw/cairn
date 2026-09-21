@@ -36,7 +36,7 @@ export function scheduleAnchorDateJst(
 }
 
 export function derivePlanView(search: PlanSearch, today: DateJst) {
-  const tab: PlanTab = search.tab ?? "schedule";
+  const tab: PlanTab = search.tab ?? "plan";
   const scheduleView: PlanScheduleView = search.view ?? "day";
   const selectedDateJst: DateJst = search.date ?? today;
   const yearMonth = search.month ?? yearMonthFromDateJst(selectedDateJst);
@@ -114,7 +114,7 @@ export function usePlanView(): PlanViewState {
       void navigate({
         search: (current) => ({
           ...current,
-          tab: tab === "schedule" ? undefined : tab,
+          tab: tab === "plan" ? undefined : tab,
         }),
       });
     },
