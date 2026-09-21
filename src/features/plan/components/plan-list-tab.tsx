@@ -32,8 +32,6 @@ import { toPlanGoalRead } from "~/lib/plan-goal-read";
 import { parseDateJst } from "~/lib/schemas/calendar-date-schema";
 import { useOptionalGoalsLiveQuery } from "~/lib/tanstack-db/collections";
 
-const PLAN_CLOCK_HEADING_ID = "plan-clock-heading";
-
 export function PlanListTab() {
   const view = usePlanView();
   const { events, unplannedConfirmedMinutes } = usePlanWindow(view.selectedDateJst, "day");
@@ -61,127 +59,125 @@ export function PlanListTab() {
     editingId === undefined ? undefined : events.find((event) => event._id === editingId);
 
   return (
-    <Stack gap="xl">
-      <aside aria-labelledby={PLAN_CLOCK_HEADING_ID} className="flex w-full flex-col items-center">
-        <Title id={PLAN_CLOCK_HEADING_ID} order={2}>
-          一日の時計
-        </Title>
-        <PlanClock
-          events={events}
-          selectedDateJst={view.selectedDateJst}
-          todayJst={view.today}
-          unplannedConfirmedMinutes={unplannedConfirmedMinutes}
-        />
-      </aside>
-      <Stack gap="md">
-        <DatePicker
-          allowDeselect={false}
-          aria-label="日付を選択"
-          date={month}
-          onChange={(value) => {
-            const next = parseDateJst(value);
-            if (next !== undefined) {
-              view.setDate(next);
-            }
-          }}
-          onDateChange={(value) => {
-            const next = parseDateJst(value);
-            if (next !== undefined) {
-              setCalendar({ forSelected: view.selectedDateJst, month: next });
-            }
-          }}
-          value={view.selectedDateJst}
-        />
-        <Button
-          onClick={() => {
-            view.setDate(view.today);
-            setCalendar({ forSelected: view.today, month: view.today });
-          }}
-          variant="light"
-        >
-          今日
-        </Button>
-        <Button
-          onClick={() => {
-            setFormValues(
-              slotFormValues(
-                `${view.selectedDateJst} ${DEFAULT_DAY_BLOCK_START}`,
-                `${view.selectedDateJst} ${DEFAULT_DAY_BLOCK_END}`,
-              ),
-            );
-            setFormOpened(true);
-          }}
-        >
-          予定を追加
-        </Button>
-        {events.length === 0 ? (
-          <Text c="dimmed" size="sm">
-            この日の予定はまだありません。
-          </Text>
-        ) : (
-          <Stack gap="xs">
-            {events.map((event) => (
-              <UnstyledButton
-                key={event._id}
-                onClick={() => {
-                  setFormValues(eventFormValues(event));
-                  setFormOpened(true);
-                }}
-              >
-                <Card padding="sm" withBorder>
-                  <Group justify="space-between">
-                    <Stack gap={2}>
-                      <Text fw={600}>{event.title}</Text>
-                      <Text c="dimmed" size="sm">
-                        {event.startTime}–{event.endTime}
-                      </Text>
-                    </Stack>
-                    <Text size="sm">{PLAN_PRIORITY_STYLE[event.priority].label}</Text>
-                  </Group>
-                </Card>
-              </UnstyledButton>
-            ))}
-          </Stack>
-        )}
-        <BoardScheduleEventForm
-          frozen={editing?.recordState.kind === "materialized"}
-          initialValues={formValues}
-          items={items}
-          onClose={() => setFormOpened(false)}
-          onDelete={
-            editingId === undefined
-              ? undefined
-              : async () => {
-                  const result = await actions.onRemoveBlock({ eventId: editingId });
-                  if (Result.isOk(result)) setFormOpened(false);
-                  return result;
-                }
+    <Stack gap="md">
+      <DatePicker
+        allowDeselect={false}
+        aria-label="日付を選択"
+        date={month}
+        onChange={(value) => {
+          const next = parseDateJst(value);
+          if (next !== undefined) {
+            view.setDate(next);
           }
-          onSubmit={async (values) => {
-            const eventId = values.eventId ?? formValues?.eventId;
-            if (eventId === undefined) {
-              return await actions.onCreateBlock(values);
-            }
-            return await actions.onUpdateBlock({ ...values, eventId });
-          }}
-          opened={formOpened}
-        />
-        <PlanTemplatesCard
-          dateJst={view.selectedDateJst}
-          hasEvents={events.length > 0}
-          items={items}
-          templates={templates}
-        />
-        <PlanGoalsReadCard goals={goals.map(toPlanGoalRead)} />
-        <Card>
-          <ObstacleSection
-            obstacles={obstaclePlans.obstacles}
-            onCreateObstacle={obstaclePlans.onCreateObstacle}
-            onRemoveObstacle={obstaclePlans.onRemoveObstacle}
-            onUpdateObstacle={obstaclePlans.onUpdateObstacle}
+        }}
+        onDateChange={(value) => {
+          const next = parseDateJst(value);
+          if (next !== undefined) {
+            setCalendar({ forSelected: view.selectedDateJst, month: next });
+          }
+        }}
+        value={view.selectedDateJst}
+      />
+      <Button
+        onClick={() => {
+          view.setDate(view.today);
+          setCalendar({ forSelected: view.today, month: view.today });
+        }}
+        variant="light"
+      >
+        今日
+      </Button>
+      <Button
+        onClick={() => {
+          setFormValues(
+            slotFormValues(
+              `${view.selectedDateJst} ${DEFAULT_DAY_BLOCK_START}`,
+              `${view.selectedDateJst} ${DEFAULT_DAY_BLOCK_END}`,
+            ),
+          );
+          setFormOpened(true);
+        }}
+      >
+        予定を追加
+      </Button>
+      {events.length === 0 ? (
+        <Text c="dimmed" size="sm">
+          この日の予定はまだありません。
+        </Text>
+      ) : (
+        <Stack gap="xs">
+          {events.map((event) => (
+            <UnstyledButton
+              key={event._id}
+              onClick={() => {
+                setFormValues(eventFormValues(event));
+                setFormOpened(true);
+              }}
+            >
+              <Card padding="sm" withBorder>
+                <Group justify="space-between">
+                  <Stack gap={2}>
+                    <Text fw={600}>{event.title}</Text>
+                    <Text c="dimmed" size="sm">
+                      {event.startTime}–{event.endTime}
+                    </Text>
+                  </Stack>
+                  <Text size="sm">{PLAN_PRIORITY_STYLE[event.priority].label}</Text>
+                </Group>
+              </Card>
+            </UnstyledButton>
+          ))}
+        </Stack>
+      )}
+      <BoardScheduleEventForm
+        frozen={editing?.recordState.kind === "materialized"}
+        initialValues={formValues}
+        items={items}
+        onClose={() => setFormOpened(false)}
+        onDelete={
+          editingId === undefined
+            ? undefined
+            : async () => {
+                const result = await actions.onRemoveBlock({ eventId: editingId });
+                if (Result.isOk(result)) setFormOpened(false);
+                return result;
+              }
+        }
+        onSubmit={async (values) => {
+          const eventId = values.eventId ?? formValues?.eventId;
+          if (eventId === undefined) {
+            return await actions.onCreateBlock(values);
+          }
+          return await actions.onUpdateBlock({ ...values, eventId });
+        }}
+        opened={formOpened}
+      />
+      <Card padding="md" withBorder>
+        <Stack gap="md">
+          <Title order={2}>一日の時計</Title>
+          <PlanClock
+            events={events}
+            selectedDateJst={view.selectedDateJst}
+            todayJst={view.today}
+            unplannedConfirmedMinutes={unplannedConfirmedMinutes}
           />
-        </Card>
-      </Stack>
+        </Stack>
+      </Card>
+      <PlanTemplatesCard
+        dateJst={view.selectedDateJst}
+        hasEvents={events.length > 0}
+        items={items}
+        templates={templates}
+      />
+      <PlanGoalsReadCard goals={goals.map(toPlanGoalRead)} />
+      <Card>
+        <ObstacleSection
+          obstacles={obstaclePlans.obstacles}
+          onCreateObstacle={obstaclePlans.onCreateObstacle}
+          onRemoveObstacle={obstaclePlans.onRemoveObstacle}
+          onUpdateObstacle={obstaclePlans.onUpdateObstacle}
+        />
+      </Card>
     </Stack>
   );
 }
