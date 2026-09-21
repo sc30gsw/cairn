@@ -12,29 +12,26 @@ export type DayRowGroup = {
 
 export function groupDayRowsByItem(rows: readonly DayRow[]): DayRowGroup[] {
   const groups: DayRowGroup[] = [];
-  const indexByItem = new Map<DayRow["itemId"], number>();
+  const groupByItem = new Map<DayRow["itemId"], DayRowGroup>();
 
   for (const row of rows) {
-    const existing = indexByItem.get(row.itemId);
+    const existing = groupByItem.get(row.itemId);
     if (existing === undefined) {
-      indexByItem.set(row.itemId, groups.length);
-      groups.push({
+      const group: DayRowGroup = {
         itemId: row.itemId,
         itemName: row.itemName,
         rows: [row],
         statuses: [row.status],
         totalMinutes: row.minutes,
-      });
+      };
+      groupByItem.set(row.itemId, group);
+      groups.push(group);
       continue;
     }
-    const group = groups[existing];
-    if (group === undefined) {
-      continue;
-    }
-    group.rows.push(row);
-    group.totalMinutes += row.minutes;
-    if (!group.statuses.includes(row.status)) {
-      group.statuses.push(row.status);
+    existing.rows.push(row);
+    existing.totalMinutes += row.minutes;
+    if (!existing.statuses.includes(row.status)) {
+      existing.statuses.push(row.status);
     }
   }
 
