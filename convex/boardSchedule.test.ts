@@ -3,6 +3,7 @@ import { vi } from "vite-plus/test";
 import { expect, test } from "vite-plus/test";
 
 import { convexModules } from "../src/test-utils/convex-modules";
+import { seedWeekdayDay } from "../src/test-utils/seed-weekday-day";
 import { api } from "./_generated/api";
 import schema from "./schema";
 
@@ -16,7 +17,7 @@ function owner() {
 async function ownerWithDay() {
   const t = owner();
   await t.mutation(api.mutations.catalog.ensure.ensure, {});
-  await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
+  await seedWeekdayDay(t, MONDAY, MONDAY);
   return t;
 }
 

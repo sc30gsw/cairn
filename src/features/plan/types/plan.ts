@@ -14,6 +14,12 @@ export type PlanExternalEvent = FunctionReturnType<
 
 export type PlanCatalogItem = FunctionReturnType<typeof api.queries.items.list.list>[number];
 
+export type PlanTemplateDto = FunctionReturnType<
+  typeof api.queries.planTemplates.list.list
+>[number];
+
+export type PlanTemplateEventDto = PlanTemplateDto["events"][number];
+
 export type PlanScheduleColor = "gray" | "lime" | "yellow";
 
 export type PlanScheduleBlock = {

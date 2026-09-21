@@ -26,9 +26,20 @@ export function SetupChecklist() {
                   <Text size="sm">{step.label}</Text>
                 </Group>
                 {!complete ? (
-                  <Anchor component={Link} size="sm" to={step.href}>
-                    設定する
-                  </Anchor>
+                  step.href === "/plan" ? (
+                    <Anchor
+                      renderRoot={(props) => (
+                        <Link {...props} search={{ tab: "plan" }} to="/plan" />
+                      )}
+                      size="sm"
+                    >
+                      設定する
+                    </Anchor>
+                  ) : (
+                    <Anchor component={Link} size="sm" to={step.href}>
+                      設定する
+                    </Anchor>
+                  )
                 ) : null}
               </Group>
             );

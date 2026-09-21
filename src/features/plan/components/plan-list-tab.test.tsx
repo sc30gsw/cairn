@@ -71,6 +71,25 @@ vi.mock("~/features/plan/hooks/use-board-schedule-actions", () => ({
   }),
 }));
 
+vi.mock("@convex-dev/react-query", () => ({
+  convexQuery: () => ({ queryKey: ["plan-templates"] }),
+}));
+
+vi.mock("@tanstack/react-query", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@tanstack/react-query")>();
+  return {
+    ...actual,
+    useSuspenseQuery: () => ({ data: [] }),
+  };
+});
+
+vi.mock("~/features/plan/hooks/plan-mutations", () => ({
+  usePlanTemplateApply: () => ({ mutateAsync: vi.fn() }),
+  usePlanTemplateRemove: () => ({ mutateAsync: vi.fn() }),
+  usePlanTemplateSave: () => ({ mutateAsync: vi.fn() }),
+  usePlanTemplateSetForgotten: () => ({ mutateAsync: vi.fn() }),
+}));
+
 usePlanWindow.mockReturnValue({
   events: [confirmed, idle],
   isDone: true,
@@ -83,6 +102,7 @@ test("プランタブは祝日つきカレンダーの下に Clock、右に予�
   const holiday = view.getByLabelText("23 9月 2026");
   const clock = view.getByLabelText("一日の時計");
   const add = view.getByRole("button", { name: "予定を追加" });
+  const templates = view.getByRole("heading", { name: "計画プリセット" });
 
   expect([...holiday.classList]).toContain(calendarDayStyleClasses.holidayDay);
   expect(holiday.getAttribute("title")).toBe("秋分の日");
@@ -93,6 +113,7 @@ test("プランタブは祝日つきカレンダーの下に Clock、右に予�
   expect(view.queryByRole("button", { name: "日付を選択" })).toBeNull();
   expect(holiday.compareDocumentPosition(clock) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
   expect(clock.compareDocumentPosition(add) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
+  expect(add.compareDocumentPosition(templates) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
   expect(usePlanWindow).toHaveBeenCalledWith("2026-09-21", "day");
 });
 

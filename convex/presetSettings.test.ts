@@ -73,31 +73,35 @@ test("設定は所有者ごとに保存され、他の所有者に漏れない",
   });
 });
 
-test("設定が有効なら、祝日の月曜に今日を開くと日曜のプリセットが並ぶ", async () => {
+test("祝日設定があっても、今日を開いただけでは曜日プリセットの行は生えない", async () => {
   const t = await ownerWithWeekdayAndSundayPresets();
   await t.mutation(api.mutations.presets.saveSettings.saveSettings, { holidayAsSunday: true });
-  await t.mutation(api.mutations.days.open.open, {
-    dateJst: HOLIDAY_MONDAY,
-    todayJst: HOLIDAY_MONDAY,
-  });
+  expect(
+    await t.mutation(api.mutations.days.open.open, {
+      dateJst: HOLIDAY_MONDAY,
+      todayJst: HOLIDAY_MONDAY,
+    }),
+  ).toEqual({ applied: false });
   const day = await t.query(api.queries.days.get.get, {
     dateJst: HOLIDAY_MONDAY,
     todayJst: HOLIDAY_MONDAY,
   });
-  expect(day.rows.map((row) => row.itemName)).toEqual(["日曜の多読"]);
+  expect(day.rows).toEqual([]);
 });
 
-test("設定が無効なら、祝日の月曜でも月曜のプリセットが並ぶ", async () => {
+test("祝日設定が無効でも、今日を開いただけでは曜日プリセットの行は生えない", async () => {
   const t = await ownerWithWeekdayAndSundayPresets();
-  await t.mutation(api.mutations.days.open.open, {
-    dateJst: HOLIDAY_MONDAY,
-    todayJst: HOLIDAY_MONDAY,
-  });
+  expect(
+    await t.mutation(api.mutations.days.open.open, {
+      dateJst: HOLIDAY_MONDAY,
+      todayJst: HOLIDAY_MONDAY,
+    }),
+  ).toEqual({ applied: false });
   const day = await t.query(api.queries.days.get.get, {
     dateJst: HOLIDAY_MONDAY,
     todayJst: HOLIDAY_MONDAY,
   });
-  expect(day.rows.map((row) => row.itemName)).toEqual(["平日の単語"]);
+  expect(day.rows).toEqual([]);
 });
 
 vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));

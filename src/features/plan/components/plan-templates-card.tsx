@@ -1,0 +1,401 @@
+import { Field, FieldArray, Form, insert, remove, useForm } from "@formisch/react";
+import {
+  ActionIcon,
+  Button,
+  Card,
+  ColorSwatch,
+  EmptyState,
+  Grid,
+  Group,
+  Select,
+  Stack,
+  Switch,
+  Text,
+  TextInput,
+  Title,
+  UnstyledButton,
+} from "@mantine/core";
+import { IconTemplate, IconTrash } from "@tabler/icons-react";
+import { Result } from "better-result";
+import { useState } from "react";
+import type { DateJst } from "~domain/jst";
+import type { PlanPriority } from "~domain/planEvent";
+
+import type { Id } from "~/../convex/_generated/dataModel";
+import {
+  usePlanTemplateApply,
+  usePlanTemplateRemove,
+  usePlanTemplateSave,
+  usePlanTemplateSetForgotten,
+} from "~/features/plan/hooks/plan-mutations";
+import { PLAN_PRIORITY_OPTIONS } from "~/features/plan/lib/plan-priority-style";
+import {
+  EMPTY_TEMPLATE_EVENT,
+  NONE_ITEM_VALUE,
+  PlanTemplateFormSchema,
+  type PlanTemplateFormInput,
+  type PlanTemplateFormOutput,
+} from "~/features/plan/schemas/plan-template-schema";
+import type { PlanCatalogItem, PlanTemplateDto } from "~/features/plan/types/plan";
+import { runMutation } from "~/lib/run-mutation";
+import { onRequiredSelect } from "~/lib/select";
+import { parseItemId, unwrapItemId } from "~/types/item";
+
+export const FORGOTTEN_TEMPLATE_LABEL = "計画し忘れたときに使う";
+
+type PlanTemplatesCardProps = {
+  dateJst: DateJst;
+  hasEvents: boolean;
+  items: readonly PlanCatalogItem[];
+  templates: readonly PlanTemplateDto[];
+};
+
+type Editing = { kind: "new" } | { kind: "saved"; template: PlanTemplateDto };
+
+function parseOptionalItemId(value: string): Id<"items"> | undefined {
+  if (value === NONE_ITEM_VALUE) {
+    return undefined;
+  }
+  return unwrapItemId(parseItemId(value));
+}
+
+function draftsFromOutput(output: PlanTemplateFormOutput) {
+  return output.events.map((event) => ({
+    endTime: event.endTime,
+    itemId: parseOptionalItemId(event.itemId),
+    priority: event.priority,
+    startTime: event.startTime,
+    templateEventId:
+      event.templateEventId === undefined || event.templateEventId === ""
+        ? undefined
+        : (event.templateEventId as Id<"planTemplateEvents">),
+    title: event.title,
+  }));
+}
+
+function editorInitialInput(template: PlanTemplateDto | null): PlanTemplateFormInput {
+  if (template === null) {
+    return { events: [], name: "" };
+  }
+  return {
+    events: template.events.map((event) => ({
+      endTime: event.endTime,
+      itemId: event.itemId ?? NONE_ITEM_VALUE,
+      priority: event.priority,
+      startTime: event.startTime,
+      templateEventId: event._id,
+      title: event.title,
+    })),
+    name: template.name,
+  };
+}
+
+function itemSelectData(items: readonly PlanCatalogItem[]) {
+  return [
+    { label: "なし（記録は作らない）", value: NONE_ITEM_VALUE },
+    ...items.map((item) => ({ label: item.name, value: item._id })),
+  ];
+}
+
+function renderPriorityOption(priority: (typeof PLAN_PRIORITY_OPTIONS)[number]) {
+  return (
+    <Group gap="xs" wrap="nowrap">
+      <ColorSwatch color={priority.hex} size={16} />
+      <span>{priority.label}</span>
+    </Group>
+  );
+}
+
+function templateSummary(template: PlanTemplateDto) {
+  if (template.events.length === 0) {
+    return "予定なし";
+  }
+  return template.events
+    .map((event) => `${event.startTime}–${event.endTime} ${event.title}`)
+    .join("、");
+}
+
+export function PlanTemplatesCard({
+  dateJst,
+  hasEvents,
+  items,
+  templates,
+}: PlanTemplatesCardProps) {
+  const saveTemplate = usePlanTemplateSave();
+  const removeTemplate = usePlanTemplateRemove();
+  const setForgotten = usePlanTemplateSetForgotten();
+  const applyTemplate = usePlanTemplateApply();
+  const [editing, setEditing] = useState<Editing | null>(null);
+  const applyId = editing?.kind === "saved" ? editing.template._id : undefined;
+
+  return (
+    <Card padding="md" withBorder>
+      <Stack gap="md">
+        <Group justify="space-between">
+          <Title order={2}>計画プリセット</Title>
+          <Button onClick={() => setEditing({ kind: "new" })} variant="light">
+            計画プリセットを追加
+          </Button>
+        </Group>
+        <Text c="dimmed" size="sm">
+          予定の雛形です。忘れたときに使う1つを決めると、予定のない今日に展開されます。
+        </Text>
+        {templates.length === 0 ? (
+          <EmptyState
+            description="7:00 の多読でも、項目なしの予定でも、同じ雛形に載せられます。"
+            icon={<IconTemplate aria-hidden />}
+            title="計画プリセットはまだありません"
+          />
+        ) : (
+          <Stack gap="xs">
+            {templates.map((template) => (
+              <Card key={template._id} padding="sm" withBorder>
+                <Group justify="space-between" wrap="nowrap">
+                  <UnstyledButton
+                    aria-label={`${template.name}を編集`}
+                    onClick={() => setEditing({ kind: "saved", template })}
+                  >
+                    <Stack gap={2}>
+                      <Text fw={600}>{template.name}</Text>
+                      <Text c="dimmed" size="sm">
+                        {templateSummary(template)}
+                      </Text>
+                    </Stack>
+                  </UnstyledButton>
+                  <Switch
+                    checked={template.forgotten}
+                    label={FORGOTTEN_TEMPLATE_LABEL}
+                    onChange={() => {
+                      void runMutation(() =>
+                        setForgotten.mutateAsync({
+                          templateId: template.forgotten ? null : template._id,
+                        }),
+                      );
+                    }}
+                  />
+                </Group>
+              </Card>
+            ))}
+          </Stack>
+        )}
+        <Button
+          disabled={hasEvents || applyId === undefined}
+          onClick={() => {
+            if (applyId === undefined) {
+              return;
+            }
+            void runMutation(() => applyTemplate.mutateAsync({ dateJst, templateId: applyId }));
+          }}
+        >
+          この日に適用
+        </Button>
+        {hasEvents ? (
+          <Text c="dimmed" size="sm">
+            この日にはすでに予定があるので、雛形は適用しません。
+          </Text>
+        ) : null}
+        {editing === null ? null : (
+          <PlanTemplateEditor
+            items={items}
+            key={editing.kind === "new" ? "new" : editing.template._id}
+            onRemove={
+              editing.kind === "new"
+                ? undefined
+                : async () => {
+                    const result = await runMutation(() =>
+                      removeTemplate.mutateAsync({ templateId: editing.template._id }),
+                    );
+                    if (Result.isOk(result)) {
+                      setEditing(null);
+                    }
+                  }
+            }
+            onSubmit={async (values) => {
+              const result = await runMutation(() =>
+                saveTemplate.mutateAsync({
+                  events: draftsFromOutput(values),
+                  name: values.name,
+                  templateId: editing.kind === "saved" ? editing.template._id : undefined,
+                }),
+              );
+              if (Result.isOk(result) && editing.kind === "new") {
+                setEditing(null);
+              }
+              return result;
+            }}
+            template={editing.kind === "saved" ? editing.template : null}
+          />
+        )}
+      </Stack>
+    </Card>
+  );
+}
+
+function PlanTemplateEditor({
+  items,
+  onRemove,
+  onSubmit,
+  template,
+}: {
+  items: readonly PlanCatalogItem[];
+  onRemove?: () => Promise<void>;
+  onSubmit: (values: PlanTemplateFormOutput) => Promise<unknown>;
+  template: PlanTemplateDto | null;
+}) {
+  const form = useForm({
+    initialInput: editorInitialInput(template),
+    schema: PlanTemplateFormSchema,
+  });
+  const itemOptions = itemSelectData(items);
+  const name = template?.name ?? "新しい計画プリセット";
+
+  return (
+    <Card padding="md" withBorder>
+      <Form
+        of={form}
+        onSubmit={(output) => {
+          void onSubmit(output);
+        }}
+      >
+        <Stack gap="sm">
+          <Field of={form} path={["name"]}>
+            {(field) => (
+              <TextInput
+                {...field.props}
+                aria-label={`${name}の名前`}
+                error={field.errors?.[0]}
+                label="名前"
+                value={field.input}
+              />
+            )}
+          </Field>
+          <FieldArray of={form} path={["events"]}>
+            {(fieldArray) => (
+              <Stack gap="sm">
+                {fieldArray.items.map((itemKey, index) => (
+                  <Grid key={itemKey} align="flex-start" gap="sm">
+                    <Grid.Col span={{ base: 6, sm: 2 }}>
+                      <Field of={form} path={["events", index, "startTime"]}>
+                        {(field) => (
+                          <TextInput
+                            {...field.props}
+                            aria-label={`${name}の予定${index + 1}の開始`}
+                            error={field.errors?.[0]}
+                            label={index === 0 ? "開始" : undefined}
+                            value={field.input}
+                          />
+                        )}
+                      </Field>
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 6, sm: 2 }}>
+                      <Field of={form} path={["events", index, "endTime"]}>
+                        {(field) => (
+                          <TextInput
+                            {...field.props}
+                            aria-label={`${name}の予定${index + 1}の終了`}
+                            error={field.errors?.[0]}
+                            label={index === 0 ? "終了" : undefined}
+                            value={field.input}
+                          />
+                        )}
+                      </Field>
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 12, sm: 3 }}>
+                      <Field of={form} path={["events", index, "title"]}>
+                        {(field) => (
+                          <TextInput
+                            {...field.props}
+                            aria-label={`${name}の予定${index + 1}のタイトル`}
+                            error={field.errors?.[0]}
+                            label={index === 0 ? "タイトル" : undefined}
+                            value={field.input}
+                          />
+                        )}
+                      </Field>
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 12, sm: 2 }}>
+                      <Field of={form} path={["events", index, "priority"]}>
+                        {(field) => (
+                          <Select
+                            {...field.props}
+                            aria-label={`${name}の予定${index + 1}の優先度`}
+                            data={PLAN_PRIORITY_OPTIONS.map((priority) => ({
+                              label: priority.label,
+                              value: priority.value,
+                            }))}
+                            error={field.errors?.[0]}
+                            label={index === 0 ? "優先度" : undefined}
+                            onChange={onRequiredSelect((value) => {
+                              field.onChange(value as PlanPriority);
+                            })}
+                            renderOption={({ option }) => {
+                              const priority = PLAN_PRIORITY_OPTIONS.find(
+                                (entry) => entry.value === option.value,
+                              );
+                              return priority === undefined
+                                ? option.label
+                                : renderPriorityOption(priority);
+                            }}
+                            value={field.input}
+                          />
+                        )}
+                      </Field>
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 10, sm: 2 }}>
+                      <Field of={form} path={["events", index, "itemId"]}>
+                        {(field) => (
+                          <Select
+                            {...field.props}
+                            aria-label={`${name}の予定${index + 1}の項目`}
+                            data={itemOptions}
+                            error={field.errors?.[0]}
+                            label={index === 0 ? "項目" : undefined}
+                            onChange={onRequiredSelect((value) => {
+                              field.onChange(value);
+                            })}
+                            value={field.input}
+                          />
+                        )}
+                      </Field>
+                    </Grid.Col>
+                    <Grid.Col span={{ base: 2, sm: 1 }}>
+                      <ActionIcon
+                        aria-label={`${name}の予定${index + 1}を外す`}
+                        color="red"
+                        mt={index === 0 ? 24 : 0}
+                        onClick={() => {
+                          remove(form, { at: index, path: ["events"] });
+                        }}
+                        type="button"
+                        variant="white"
+                      >
+                        <IconTrash aria-hidden size={16} stroke={1.5} />
+                      </ActionIcon>
+                    </Grid.Col>
+                  </Grid>
+                ))}
+              </Stack>
+            )}
+          </FieldArray>
+          <Group>
+            <Button
+              onClick={() => {
+                insert(form, { initialInput: EMPTY_TEMPLATE_EVENT, path: ["events"] });
+              }}
+              type="button"
+              variant="light"
+            >
+              予定を足す
+            </Button>
+            <Button type="submit">保存</Button>
+            {onRemove === undefined ? null : (
+              <Button color="red" onClick={() => void onRemove()} type="button" variant="light">
+                削除
+              </Button>
+            )}
+          </Group>
+        </Stack>
+      </Form>
+    </Card>
+  );
+}

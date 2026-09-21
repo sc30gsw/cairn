@@ -1,15 +1,19 @@
+import { convexQuery } from "@convex-dev/react-query";
 import { Button, Card, Grid, Group, Stack, Text, UnstyledButton } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Result } from "better-result";
 import { useState } from "react";
 import { PLAN_PRIORITY_STYLE } from "~domain/planEvent";
 
+import { api } from "~/../convex/_generated/api";
 import {
   BoardScheduleEventForm,
   blockFormValues,
   slotFormValues,
 } from "~/features/plan/components/board-schedule-event-form";
 import { PlanClock } from "~/features/plan/components/plan-clock";
+import { PlanTemplatesCard } from "~/features/plan/components/plan-templates-card";
 import { useBoardScheduleActions } from "~/features/plan/hooks/use-board-schedule-actions";
 import { usePlanView } from "~/features/plan/hooks/use-plan-view";
 import { usePlanWindow } from "~/features/plan/hooks/use-plan-window";
@@ -26,6 +30,9 @@ export function PlanListTab() {
   const view = usePlanView();
   const { events, unplannedConfirmedMinutes } = usePlanWindow(view.selectedDateJst, "day");
   const { data: items } = useItemsList();
+  const { data: templates } = useSuspenseQuery(
+    convexQuery(api.queries.planTemplates.list.list, {}),
+  );
   const actions = useBoardScheduleActions();
   const blocks = toPlanScheduleBlocks(events);
   const [formOpened, setFormOpened] = useState(false);
@@ -131,6 +138,12 @@ export function PlanListTab() {
               });
             }}
             opened={formOpened}
+          />
+          <PlanTemplatesCard
+            dateJst={view.selectedDateJst}
+            hasEvents={blocks.length > 0}
+            items={items}
+            templates={templates}
           />
         </Stack>
       </Grid.Col>
