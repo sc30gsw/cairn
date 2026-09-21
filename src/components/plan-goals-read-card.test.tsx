@@ -1,8 +1,19 @@
-import { expect, test } from "vite-plus/test";
+import { expect, test, vi } from "vite-plus/test";
 
 import type { Id } from "~/../convex/_generated/dataModel";
 import { PlanGoalsReadCard } from "~/components/plan-goals-read-card";
+import {
+  PLAN_GOALS_EDIT_LABEL,
+  PLAN_GOALS_EMPTY_MESSAGE,
+  toPlanGoalRead,
+} from "~/lib/plan-goal-read";
 import { renderWithMantine } from "~/test-utils/render";
+
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({ children, to }: { children?: React.ReactNode; to: string }) => (
+    <a href={to}>{children}</a>
+  ),
+}));
 
 const EXAM = {
   _id: "goal-exam" as Id<"goals">,
@@ -25,12 +36,12 @@ const LONG_TERM = {
 };
 
 test("本番日・期限・内容だけを読み、CUD は出さない", () => {
-  const { getByRole, getByText, queryByRole } = renderWithMantine(
+  const { getAllByText, getByRole, getByText, queryByRole } = renderWithMantine(
     <PlanGoalsReadCard goals={[EXAM, CHECKPOINT, LONG_TERM]} />,
   );
 
   expect(getByRole("heading", { name: "目標" })).toBeDefined();
-  expect(getByText("内容")).toBeDefined();
+  expect(getAllByText("内容")).toHaveLength(3);
   expect(getByText(EXAM.content)).toBeDefined();
   expect(getByText("本番日")).toBeDefined();
   expect(getByText(EXAM.examDate)).toBeDefined();
@@ -38,7 +49,9 @@ test("本番日・期限・内容だけを読み、CUD は出さない", () => {
   expect(getByText(CHECKPOINT.deadline)).toBeDefined();
   expect(getByText(LONG_TERM.content)).toBeDefined();
 
-  expect(getByRole("link", { name: "目標ページで編集" })).toHaveProperty("href", expect.stringMatching(/\/goals$/));
+  expect(
+    (getByRole("link", { name: PLAN_GOALS_EDIT_LABEL }) as HTMLAnchorElement).getAttribute("href"),
+  ).toBe("/goals");
 
   expect(queryByRole("button", { name: /追加/ })).toBeNull();
   expect(queryByRole("button", { name: /保存/ })).toBeNull();
@@ -49,6 +62,43 @@ test("本番日・期限・内容だけを読み、CUD は出さない", () => {
 
 test("目標が無いときは読み取り専用の空を出す", () => {
   const { getByText, queryByRole } = renderWithMantine(<PlanGoalsReadCard goals={[]} />);
-  expect(getByText("目標はまだありません。")).toBeDefined();
+  expect(getByText(PLAN_GOALS_EMPTY_MESSAGE)).toBeDefined();
   expect(queryByRole("button", { name: /追加/ })).toBeNull();
+});
+
+test("計画の目標読み取りは本番日・期限・内容だけを残す", () => {
+  expect(
+    toPlanGoalRead({
+      _id: EXAM._id,
+      content: EXAM.content,
+      createdAt: 1,
+      examDate: EXAM.examDate,
+      maxScore: 850,
+      minScore: 730,
+      type: "exam",
+    }),
+  ).toEqual({
+    _id: EXAM._id,
+    content: EXAM.content,
+    examDate: EXAM.examDate,
+    type: "exam",
+  });
+  expect(
+    toPlanGoalRead({
+      _id: CHECKPOINT._id,
+      achievedAt: undefined,
+      activeDays: 0,
+      confirmedMinutes: 0,
+      content: CHECKPOINT.content,
+      createdAt: 1,
+      criterion: "止まらずに音読できる",
+      deadline: CHECKPOINT.deadline,
+      type: "mastery",
+    }),
+  ).toEqual({
+    _id: CHECKPOINT._id,
+    content: CHECKPOINT.content,
+    deadline: CHECKPOINT.deadline,
+    type: "mastery",
+  });
 });
