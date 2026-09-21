@@ -65,6 +65,7 @@ vi.mock("~/hooks/use-obstacle-plans", () => ({
 }));
 
 vi.mock("~/lib/tanstack-db/collections", () => ({
+  useOptionalExternalCalendarEventsLiveQuery: () => ({ data: undefined, isReady: false }),
   useOptionalGoalsLiveQuery: () => ({ data: undefined, isReady: false }),
 }));
 
@@ -89,7 +90,7 @@ vi.mock("@tanstack/react-query", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-query")>();
   return {
     ...actual,
-    useSuspenseQueries: () => [{ data: [] }, { data: [] }],
+    useSuspenseQueries: () => [{ data: [] }, { data: [] }, { data: [] }],
   };
 });
 

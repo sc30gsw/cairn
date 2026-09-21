@@ -1,14 +1,20 @@
-import { Field, Form, reset, useForm } from "@formisch/react";
+import { Field, Form, reset, setInput, useForm } from "@formisch/react";
 import type { SubmitHandler } from "@formisch/react";
 import { ColorSwatch, Group, Select, Stack, Text, TextInput } from "@mantine/core";
-import { DateTimePicker } from "@mantine/dates";
+import { TimeInput } from "@mantine/dates";
 import { Result } from "better-result";
 import { useEffect, useId } from "react";
+import type { DateJst } from "~domain/jst";
 import { PLAN_FROZEN_MESSAGE } from "~domain/planEvent";
 
 import { BoardScheduleEditModal } from "~/features/plan/components/board-schedule-edit-modal";
 import { boardScheduleColorCss } from "~/features/plan/lib/board-schedule-color-ui";
 import { planTimesToInstants } from "~/features/plan/lib/plan-event-instants";
+import {
+  planEventDateWithTime,
+  planEventEndTimeLabel,
+  planEventTimeLabel,
+} from "~/features/plan/lib/plan-event-time";
 import {
   PLAN_PRIORITY_APP_COLOR,
   PLAN_PRIORITY_OPTIONS,
@@ -23,6 +29,7 @@ import type { PlanCatalogItem, PlanEventDto, PlanScheduleBlock } from "~/feature
 import type { MutationResult } from "~/lib/run-mutation";
 
 type BoardScheduleEventFormProps = {
+  dateJst: DateJst;
   frozen?: boolean;
   initialValues: PlanScheduleEventInput | null;
   items: readonly PlanCatalogItem[];
@@ -42,6 +49,7 @@ function renderPriorityOption(priority: (typeof PLAN_PRIORITY_OPTIONS)[number]) 
 }
 
 export function BoardScheduleEventForm({
+  dateJst,
   frozen = false,
   initialValues,
   items,
@@ -93,64 +101,80 @@ export function BoardScheduleEventForm({
           <Field of={form} path={["eventId"]}>
             {(field) => <input type="hidden" value={field.input ?? ""} readOnly />}
           </Field>
-          <Field of={form} path={["title"]}>
-            {(field) => (
-              <TextInput
-                {...field.props}
-                error={field.errors?.[0]}
-                label="タイトル"
-                value={field.input}
-              />
-            )}
-          </Field>
           <Field of={form} path={["itemId"]}>
-            {(field) => (
-              <Select
-                {...field.props}
-                clearable
-                data={itemOptions}
-                disabled={frozen}
-                error={field.errors?.[0]}
-                label="項目"
-                onChange={(value) => {
-                  field.onChange(value === null || value === "" ? undefined : value);
-                }}
-                placeholder="なし（記録は作らない）"
-                value={field.input ?? null}
-              />
+            {(itemField) => (
+              <>
+                <Select
+                  {...itemField.props}
+                  clearable
+                  data={itemOptions}
+                  disabled={frozen}
+                  error={itemField.errors?.[0]}
+                  label="項目"
+                  onChange={(value) => {
+                    const itemId = value === null || value === "" ? undefined : value;
+                    itemField.onChange(itemId);
+                    if (itemId !== undefined) {
+                      setInput(form, { input: "", path: ["title"] });
+                    }
+                  }}
+                  placeholder="なし（記録は作らない）"
+                  value={itemField.input ?? null}
+                />
+                {frozen ? (
+                  <Text c="dimmed" size="sm">
+                    {PLAN_FROZEN_MESSAGE}
+                  </Text>
+                ) : null}
+                {itemField.input === undefined ? (
+                  <Field of={form} path={["title"]}>
+                    {(field) => (
+                      <TextInput
+                        {...field.props}
+                        error={field.errors?.[0]}
+                        label="タイトル"
+                        value={field.input}
+                      />
+                    )}
+                  </Field>
+                ) : null}
+              </>
             )}
           </Field>
-          {frozen ? (
-            <Text c="dimmed" size="sm">
-              {PLAN_FROZEN_MESSAGE}
-            </Text>
-          ) : null}
           <Field of={form} path={["start"]}>
-            {(field) => (
-              <DateTimePicker
-                error={field.errors?.[0]}
-                label="開始"
-                onChange={(value) => {
-                  if (value !== null) {
-                    field.onChange(new Date(value));
-                  }
-                }}
-                value={field.input}
-              />
-            )}
-          </Field>
-          <Field of={form} path={["end"]}>
-            {(field) => (
-              <DateTimePicker
-                error={field.errors?.[0]}
-                label="終了"
-                onChange={(value) => {
-                  if (value !== null) {
-                    field.onChange(new Date(value));
-                  }
-                }}
-                value={field.input}
-              />
+            {(startField) => (
+              <Field of={form} path={["end"]}>
+                {(endField) => (
+                  <Group align="flex-end" grow>
+                    <TimeInput
+                      error={startField.errors?.[0]}
+                      label="開始"
+                      onChange={(event) => {
+                        const time = event.currentTarget.value;
+                        if (time !== "") {
+                          startField.onChange(planEventDateWithTime(dateJst, time));
+                        }
+                      }}
+                      value={planEventTimeLabel(startField.input as Date)}
+                    />
+                    <TimeInput
+                      error={endField.errors?.[0]}
+                      label="終了"
+                      onChange={(event) => {
+                        const time = event.currentTarget.value;
+                        if (time !== "") {
+                          endField.onChange(planEventDateWithTime(dateJst, time));
+                        }
+                      }}
+                      value={planEventEndTimeLabel(
+                        dateJst,
+                        startField.input as Date,
+                        endField.input as Date,
+                      )}
+                    />
+                  </Group>
+                )}
+              </Field>
             )}
           </Field>
           <Field of={form} path={["priority"]}>

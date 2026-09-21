@@ -28,7 +28,7 @@ export const PlanTemplateEventFormSchema = v.pipe(
     priority: v.picklist(PLAN_PRIORITIES),
     startTime: StartTimeSchema,
     templateEventId: v.optional(v.string()),
-    title: v.pipe(v.string(), v.trim(), v.nonEmpty(PLAN_TITLE_MESSAGE)),
+    title: v.pipe(v.string(), v.trim()),
   }),
   v.forward(
     v.partialCheck(
@@ -37,6 +37,14 @@ export const PlanTemplateEventFormSchema = v.pipe(
       PLAN_WINDOW_MESSAGE,
     ),
     ["endTime"],
+  ),
+  v.forward(
+    v.partialCheck(
+      [["itemId"], ["title"]],
+      (input) => input.itemId !== NONE_ITEM_VALUE || input.title.length > 0,
+      PLAN_TITLE_MESSAGE,
+    ),
+    ["title"],
   ),
 );
 

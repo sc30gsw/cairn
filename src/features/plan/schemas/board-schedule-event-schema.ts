@@ -1,5 +1,5 @@
 import * as v from "valibot";
-import { PLAN_PRIORITIES, type PlanPriority } from "~domain/planEvent";
+import { PLAN_PRIORITIES, PLAN_TITLE_MESSAGE, type PlanPriority } from "~domain/planEvent";
 
 import type { PlanCatalogItem, PlanScheduleBlock } from "~/features/plan/types/plan";
 
@@ -20,7 +20,7 @@ export const PlanScheduleEventSchema = v.pipe(
     itemId: v.optional(ItemIdSchema),
     priority: v.picklist(PLAN_PRIORITIES),
     start: v.date(),
-    title: v.pipe(v.string(), v.trim(), v.nonEmpty("タイトルは必須です")),
+    title: v.pipe(v.string(), v.trim()),
   }),
   v.forward(
     v.partialCheck(
@@ -29,6 +29,14 @@ export const PlanScheduleEventSchema = v.pipe(
       "終了は開始より後にしてください",
     ),
     ["end"],
+  ),
+  v.forward(
+    v.partialCheck(
+      [["itemId"], ["title"]],
+      (input) => input.itemId !== undefined || input.title.length > 0,
+      PLAN_TITLE_MESSAGE,
+    ),
+    ["title"],
   ),
 );
 

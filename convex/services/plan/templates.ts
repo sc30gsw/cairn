@@ -93,7 +93,7 @@ async function persistEvent(
   draft: PlanTemplateEventDraft,
 ): Promise<Id<"planTemplateEvents">> {
   const title = draft.title.trim();
-  if (title === "") {
+  if (title === "" && draft.itemId === undefined) {
     throwDomain(new ValidationFailedError({ message: PLAN_TITLE_MESSAGE }));
   }
   const { endMinute, startMinute } = parsePlanWindow({

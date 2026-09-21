@@ -88,6 +88,23 @@ test("未来の予定を保存しても days と rows は増えない", async ()
   expect(listed.page[1]?.recordState).toEqual({ kind: "not-applicable" });
 });
 
+test("項目ありならタイトル空でも保存できる", async () => {
+  const t = owner();
+  const itemId = await readingItem(t);
+  await t.mutation(api.mutations.planEvents.save.save, {
+    dateJst: FUTURE,
+    endTime: "08:15",
+    itemId,
+    priority: "high",
+    startTime: "07:30",
+    title: "",
+  });
+  const listed = await listDay(t, FUTURE);
+  expect(listed.page[0]).toEqual(
+    expect.objectContaining({ itemId, title: "", startTime: "07:30", endTime: "08:15" }),
+  );
+});
+
 test("項目なし予定だけを今日開いても days と rows は増えない", async () => {
   const t = owner();
   await t.mutation(api.mutations.planEvents.save.save, {
