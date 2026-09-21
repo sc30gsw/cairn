@@ -60,6 +60,7 @@ import type * as lib_notificationLink from "../lib/notificationLink.js";
 import type * as lib_notifications from "../lib/notifications.js";
 import type * as lib_owner from "../lib/owner.js";
 import type * as lib_ownerFunctions from "../lib/ownerFunctions.js";
+import type * as lib_planEvent from "../lib/planEvent.js";
 import type * as lib_preset from "../lib/preset.js";
 import type * as lib_presetDigest from "../lib/presetDigest.js";
 import type * as lib_review from "../lib/review.js";
@@ -79,6 +80,7 @@ import type * as lib_validators_goals from "../lib/validators/goals.js";
 import type * as lib_validators_history from "../lib/validators/history.js";
 import type * as lib_validators_methods from "../lib/validators/methods.js";
 import type * as lib_validators_notifications from "../lib/validators/notifications.js";
+import type * as lib_validators_plan from "../lib/validators/plan.js";
 import type * as lib_validators_review from "../lib/validators/review.js";
 import type * as lib_validators_rowMove from "../lib/validators/rowMove.js";
 import type * as lib_validators_trash from "../lib/validators/trash.js";
@@ -150,6 +152,9 @@ import type * as mutations_notifications_purgeExpired from "../mutations/notific
 import type * as mutations_notifications_saveSettings from "../mutations/notifications/saveSettings.js";
 import type * as mutations_notifications_subscribePush from "../mutations/notifications/subscribePush.js";
 import type * as mutations_notifications_unsubscribePush from "../mutations/notifications/unsubscribePush.js";
+import type * as mutations_planEvents_remove from "../mutations/planEvents/remove.js";
+import type * as mutations_planEvents_save from "../mutations/planEvents/save.js";
+import type * as mutations_planEvents_saveDay from "../mutations/planEvents/saveDay.js";
 import type * as mutations_presets_create from "../mutations/presets/create.js";
 import type * as mutations_presets_remove from "../mutations/presets/remove.js";
 import type * as mutations_presets_saveSettings from "../mutations/presets/saveSettings.js";
@@ -222,6 +227,7 @@ import type * as queries_notifications_pushSubscriptions from "../queries/notifi
 import type * as queries_notifications_settings from "../queries/notifications/settings.js";
 import type * as queries_notifications_webPushConfig from "../queries/notifications/webPushConfig.js";
 import type * as queries_notifications_webPushDelivery from "../queries/notifications/webPushDelivery.js";
+import type * as queries_planEvents_listWindow from "../queries/planEvents/listWindow.js";
 import type * as queries_presets_list from "../queries/presets/list.js";
 import type * as queries_presets_settings from "../queries/presets/settings.js";
 import type * as queries_profile_getAvatarUrl from "../queries/profile/getAvatarUrl.js";
@@ -375,6 +381,8 @@ import type * as services_notifications_toNotificationDto from "../services/noti
 import type * as services_notifications_unsubscribePush from "../services/notifications/unsubscribePush.js";
 import type * as services_notifications_webPushConfig from "../services/notifications/webPushConfig.js";
 import type * as services_notifications_webPushDelivery from "../services/notifications/webPushDelivery.js";
+import type * as services_plan_events from "../services/plan/events.js";
+import type * as services_plan_openDate from "../services/plan/openDate.js";
 import type * as services_presets_create from "../services/presets/create.js";
 import type * as services_presets_getSettings from "../services/presets/getSettings.js";
 import type * as services_presets_helpers from "../services/presets/helpers.js";
@@ -493,6 +501,7 @@ declare const fullApi: ApiFromModules<{
   "lib/notifications": typeof lib_notifications;
   "lib/owner": typeof lib_owner;
   "lib/ownerFunctions": typeof lib_ownerFunctions;
+  "lib/planEvent": typeof lib_planEvent;
   "lib/preset": typeof lib_preset;
   "lib/presetDigest": typeof lib_presetDigest;
   "lib/review": typeof lib_review;
@@ -512,6 +521,7 @@ declare const fullApi: ApiFromModules<{
   "lib/validators/history": typeof lib_validators_history;
   "lib/validators/methods": typeof lib_validators_methods;
   "lib/validators/notifications": typeof lib_validators_notifications;
+  "lib/validators/plan": typeof lib_validators_plan;
   "lib/validators/review": typeof lib_validators_review;
   "lib/validators/rowMove": typeof lib_validators_rowMove;
   "lib/validators/trash": typeof lib_validators_trash;
@@ -583,6 +593,9 @@ declare const fullApi: ApiFromModules<{
   "mutations/notifications/saveSettings": typeof mutations_notifications_saveSettings;
   "mutations/notifications/subscribePush": typeof mutations_notifications_subscribePush;
   "mutations/notifications/unsubscribePush": typeof mutations_notifications_unsubscribePush;
+  "mutations/planEvents/remove": typeof mutations_planEvents_remove;
+  "mutations/planEvents/save": typeof mutations_planEvents_save;
+  "mutations/planEvents/saveDay": typeof mutations_planEvents_saveDay;
   "mutations/presets/create": typeof mutations_presets_create;
   "mutations/presets/remove": typeof mutations_presets_remove;
   "mutations/presets/saveSettings": typeof mutations_presets_saveSettings;
@@ -655,6 +668,7 @@ declare const fullApi: ApiFromModules<{
   "queries/notifications/settings": typeof queries_notifications_settings;
   "queries/notifications/webPushConfig": typeof queries_notifications_webPushConfig;
   "queries/notifications/webPushDelivery": typeof queries_notifications_webPushDelivery;
+  "queries/planEvents/listWindow": typeof queries_planEvents_listWindow;
   "queries/presets/list": typeof queries_presets_list;
   "queries/presets/settings": typeof queries_presets_settings;
   "queries/profile/getAvatarUrl": typeof queries_profile_getAvatarUrl;
@@ -808,6 +822,8 @@ declare const fullApi: ApiFromModules<{
   "services/notifications/unsubscribePush": typeof services_notifications_unsubscribePush;
   "services/notifications/webPushConfig": typeof services_notifications_webPushConfig;
   "services/notifications/webPushDelivery": typeof services_notifications_webPushDelivery;
+  "services/plan/events": typeof services_plan_events;
+  "services/plan/openDate": typeof services_plan_openDate;
   "services/presets/create": typeof services_presets_create;
   "services/presets/getSettings": typeof services_presets_getSettings;
   "services/presets/helpers": typeof services_presets_helpers;

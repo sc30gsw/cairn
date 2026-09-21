@@ -7,3 +7,4 @@ export * from "./validators/boardSchedule";
 export * from "./validators/review";
 export * from "./validators/notifications";
 export * from "./validators/calendarSync";
+export * from "./validators/plan";

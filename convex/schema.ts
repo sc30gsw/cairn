@@ -14,6 +14,7 @@ import {
   googleCalendarSummaryValidator,
   notificationPayloadValidator,
   notificationTriggerPrefsValidator,
+  planEventDocumentValidator,
   presetLineValidator,
   presetWeekdaysValidator,
   pushSubscriptionKeysValidator,
@@ -320,4 +321,9 @@ export default defineSchema({
   })
     .index("by_owner_and_startAt", ["ownerId", "startAt"])
     .index("by_row", ["rowId"]),
+
+  planEvents: defineTable(planEventDocumentValidator)
+    .index("by_owner_and_dateJst_and_startMinute", ["ownerId", "dateJst", "startMinute"])
+    .index("by_record_itemId", ["record.itemId"])
+    .index("by_record_materializedRowId", ["record.materializedRowId"]),
 });
