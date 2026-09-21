@@ -1,17 +1,16 @@
 import type { QueryCtx } from "../../_generated/server";
-import { normalizePresetWeekdays } from "../../lib/catalog";
 import { computeSetupStatus, type SetupStatus } from "../../lib/setupStatus";
 
 export async function status(ctx: QueryCtx, ownerId: string): Promise<SetupStatus> {
-  const [firstItem, presets, firstExamGoal, firstTarget] = await Promise.all([
+  const [firstItem, firstTemplate, firstExamGoal, firstTarget] = await Promise.all([
     ctx.db
       .query("items")
       .withIndex("by_owner_and_name", (q) => q.eq("ownerId", ownerId))
       .first(),
     ctx.db
-      .query("presets")
+      .query("planTemplates")
       .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
-      .collect(),
+      .first(),
     ctx.db
       .query("goals")
       .withIndex("by_owner_and_type", (q) => q.eq("ownerId", ownerId).eq("type", "exam"))
@@ -25,7 +24,7 @@ export async function status(ctx: QueryCtx, ownerId: string): Promise<SetupStatu
   return computeSetupStatus({
     hasExamGoal: firstExamGoal !== null,
     hasItems: firstItem !== null,
-    hasPresets: presets.some((preset) => normalizePresetWeekdays(preset).length > 0),
+    hasPresets: firstTemplate !== null,
     hasWeeklyTargets: firstTarget !== null,
   });
 }

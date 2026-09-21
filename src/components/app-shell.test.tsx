@@ -92,8 +92,8 @@ test("右小口レールは履歴の直後にレビューを置く", () => {
   expect(hrefs.indexOf("/review")).toBe(hrefs.indexOf("/history") + 1);
 });
 
-test("「その他」を押すと 履歴 / レビュー / 項目 / プリセット / 方法 / ゴミ箱 が出る", async () => {
-  const { getByRole } = renderShell("/");
+test("「その他」を押すと 履歴 / レビュー / 項目 / 方法 / ゴミ箱 が出て、プリセットは出ない", async () => {
+  const { getByRole, queryByRole } = renderShell("/");
 
   fireEvent.click(getByRole("button", { name: "その他の画面" }));
 
@@ -102,7 +102,7 @@ test("「その他」を押すと 履歴 / レビュー / 項目 / プリセッ�
   });
   expect(getByRole("menuitem", { hidden: true, name: "履歴" })).toBeDefined();
   expect(getByRole("menuitem", { hidden: true, name: "レビュー" })).toBeDefined();
-  expect(getByRole("menuitem", { hidden: true, name: "プリセット" })).toBeDefined();
+  expect(queryByRole("menuitem", { hidden: true, name: "プリセット" })).toBeNull();
   expect(getByRole("menuitem", { hidden: true, name: "方法" })).toBeDefined();
   expect(getByRole("menuitem", { hidden: true, name: "ゴミ箱" })).toBeDefined();
 });

@@ -8,7 +8,7 @@ export function CatalogSamplesPreview() {
       <Stack gap="md">
         <Title order={3}>カタログ例</Title>
         <Text c="dimmed" size="sm">
-          参考用のサンプルです。自動登録はされません。自分の項目・プリセットとして登録してください。
+          参考用のサンプルです。自動登録はされません。自分の項目・計画プリセットとして登録してください。
         </Text>
         <Stack gap="sm">
           {ONBOARDING_CATALOG_SAMPLES.map((sample) => (

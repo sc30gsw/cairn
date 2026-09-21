@@ -2,6 +2,7 @@ import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { convexModules } from "../src/test-utils/convex-modules";
+import { seedWeekdayDay } from "../src/test-utils/seed-weekday-day";
 import { api } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import schema from "./schema";
@@ -381,7 +382,7 @@ test("終了 24:00 は同じ日の末尾として保存できる", async () => {
 test("日跨ぎの legacy 予定は対象 ID を出して失敗する", async () => {
   const t = owner();
   await t.mutation(api.mutations.catalog.ensure.ensure, {});
-  await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
+  await seedWeekdayDay(t, MONDAY, MONDAY);
   const row = (await liveRows(t))[0];
   if (row === undefined) {
     throw new Error("expected a row");

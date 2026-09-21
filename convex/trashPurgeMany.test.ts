@@ -3,6 +3,7 @@ import { convexTest } from "convex-test";
 import { expect, test } from "vite-plus/test";
 
 import { convexModules } from "../src/test-utils/convex-modules";
+import { seedWeekdayDay } from "../src/test-utils/seed-weekday-day";
 import { api, components } from "./_generated/api";
 import authSchema from "./betterAuth/schema";
 import {
@@ -43,13 +44,13 @@ async function owner() {
 async function ownerWithCatalog() {
   const t = await owner();
   await t.mutation(api.mutations.catalog.ensure.ensure, {});
+  await seedWeekdayDay(t, MONDAY, MONDAY);
   return t;
 }
 
 test("重複した日と子記録を一括削除し、予定と日配下の全記録も削除する", async () => {
   const t = await ownerWithCatalog();
-  await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
-  await t.mutation(api.mutations.days.open.open, { dateJst: TUESDAY, todayJst: TUESDAY });
+  await seedWeekdayDay(t, TUESDAY, TUESDAY);
   const monday = await t.query(api.queries.days.get.get, {
     dateJst: MONDAY,
     todayJst: TUESDAY,

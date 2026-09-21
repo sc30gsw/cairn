@@ -3,6 +3,7 @@ import { convexTest } from "convex-test";
 import { expect, test } from "vite-plus/test";
 
 import { convexModules } from "../src/test-utils/convex-modules";
+import { seedWeekdayDay } from "../src/test-utils/seed-weekday-day";
 import { api, components } from "./_generated/api";
 import authSchema from "./betterAuth/schema";
 import schema from "./schema";
@@ -38,7 +39,7 @@ async function owner() {
 test("記録を選ぶと親の日を先に復元し、指定した記録だけ復元する", async () => {
   const t = await owner();
   await t.mutation(api.mutations.catalog.ensure.ensure, {});
-  await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
+  await seedWeekdayDay(t, MONDAY, MONDAY);
   const page = await t.query(api.queries.days.get.get, {
     dateJst: MONDAY,
     todayJst: MONDAY,
@@ -78,7 +79,7 @@ test("未認証の一括復元は拒否する", async () => {
 test("すでに復元された対象は失敗として残り、再試行結果を返す", async () => {
   const t = await owner();
   await t.mutation(api.mutations.catalog.ensure.ensure, {});
-  await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
+  await seedWeekdayDay(t, MONDAY, MONDAY);
   const page = await t.query(api.queries.days.get.get, {
     dateJst: MONDAY,
     todayJst: MONDAY,
@@ -112,7 +113,7 @@ test("すでに復元された対象は失敗として残り、再試行結果�
 test("一部の復元に失敗しても成功した対象は復元済みになる", async () => {
   const t = await owner();
   await t.mutation(api.mutations.catalog.ensure.ensure, {});
-  await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
+  await seedWeekdayDay(t, MONDAY, MONDAY);
   const page = await t.query(api.queries.days.get.get, {
     dateJst: MONDAY,
     todayJst: MONDAY,
