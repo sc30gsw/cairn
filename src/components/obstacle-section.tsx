@@ -176,7 +176,7 @@ function ObstacleEditor({ onRemove, onUpdate, plan }: ObstacleEditorProps) {
             <Grid.Col span={{ base: 6, sm: 2 }}>
               <LabelAlignedCell>
                 <Button fullWidth type="submit">
-                  {plan.ifText}を保存
+                  更新
                 </Button>
               </LabelAlignedCell>
             </Grid.Col>
