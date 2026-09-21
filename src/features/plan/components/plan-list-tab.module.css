@@ -1,0 +1,7 @@
+.calendar {
+  width: fit-content;
+}
+
+.monthNav {
+  border-radius: var(--mantine-radius-sm);
+}

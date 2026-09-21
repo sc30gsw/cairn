@@ -1,6 +1,7 @@
 import { expect, test, vi } from "vite-plus/test";
 
 import { BoardScheduleTab } from "~/features/plan/components/board-schedule-tab";
+import { PLAN_CLOCK_HEADING } from "~/features/plan/components/plan-clock";
 import { renderWithMantine } from "~/test-utils/render";
 
 vi.mock("~/features/plan/components/board-schedule", () => ({
@@ -55,6 +56,7 @@ vi.mock("@tanstack/react-query", async (importOriginal) => {
 test("スケジュールタブの日表示は Clock を出さない", () => {
   const view = renderWithMantine(<BoardScheduleTab />);
   expect(view.getByText("予定カレンダー")).toBeDefined();
-  expect(view.queryByLabelText("一日の時計")).toBeNull();
+  expect(view.queryByLabelText(PLAN_CLOCK_HEADING)).toBeNull();
+  expect(view.queryByRole("heading", { name: PLAN_CLOCK_HEADING })).toBeNull();
   expect(view.queryByText("予定に載らない確定 40分")).toBeNull();
 });

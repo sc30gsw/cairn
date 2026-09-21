@@ -1,7 +1,7 @@
 import { expect, test } from "vite-plus/test";
 
 import {
-  clockArcPath,
+  clockPiePath,
   jstMinuteOfDay,
   minuteToAngle,
   paintsClockArc,
@@ -17,8 +17,15 @@ test("JST の 5:00 は 300 分", () => {
   expect(jstMinuteOfDay(new Date("2026-09-21T20:00:00.000Z"))).toBe(300);
 });
 
-test("短い弧は large-arc 0", () => {
-  expect(clockArcPath(0, 0, 10, 0, 60)).toContain("A 10 10 0 0 1");
+test("短い扇は中心からのパイで large-arc 0", () => {
+  const path = clockPiePath(0, 0, 10, 0, 60);
+  expect(path.startsWith("M 0 0 L")).toBe(true);
+  expect(path).toContain("A 10 10 0 0 1");
+  expect(path.endsWith("Z")).toBe(true);
+});
+
+test("半日を超える扇は large-arc 1", () => {
+  expect(clockPiePath(0, 0, 10, 0, 780)).toContain("A 10 10 0 1 1");
 });
 
 test("確定した項目つき予定だけ弧を塗る", () => {

@@ -9,7 +9,7 @@ import type { PlanScheduleBlock } from "~/features/plan/types/plan";
 test("月表示では基準週以外の複数日予定も継続日ごとに表示する", () => {
   const block: PlanScheduleBlock = {
     _id: "trip" as PlanScheduleBlock["_id"],
-    color: "gray",
+    color: "blue",
     endAt: "2026-09-18 23:59:59",
     frozen: false,
     priority: "low",

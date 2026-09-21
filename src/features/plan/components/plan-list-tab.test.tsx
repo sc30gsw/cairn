@@ -3,6 +3,7 @@ import { Result } from "better-result";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 
 import type { Id } from "~/../convex/_generated/dataModel";
+import { PLAN_CLOCK_HEADING } from "~/features/plan/components/plan-clock";
 import { PlanListTab } from "~/features/plan/components/plan-list-tab";
 import { calendarDayStyleClasses } from "~/lib/calendar-day-style";
 import { renderWithMantine } from "~/test-utils/render";
@@ -97,7 +98,11 @@ afterEach(() => {
   setDate.mockClear();
 });
 
-test("プランタブは日付カレンダー・Clock・予定入力を並べ、祝日を出す", () => {
+function documentPositionFollows(earlier: Node, later: Node) {
+  return (earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+}
+
+test("プランタブは日付カレンダー・Clock・予定入力を出し、祝日を出す", () => {
   const view = renderWithMantine(<PlanListTab />);
 
   expect(view.getByLabelText("日付を選択")).toBeDefined();
@@ -106,7 +111,11 @@ test("プランタブは日付カレンダー・Clock・予定入力を並べ、
     calendarDayStyleClasses.holidayDay,
   );
   expect(view.getByLabelText("23 9月 2026").getAttribute("title")).toBe("秋分の日");
-  expect(view.getByLabelText("一日の時計")).toBeDefined();
+  expect(view.getByRole("heading", { name: PLAN_CLOCK_HEADING })).toBeDefined();
+  expect(view.getByLabelText(PLAN_CLOCK_HEADING)).toBeDefined();
+  expect(view.queryByRole("complementary")).toBeNull();
+  expect(view.getByRole("button", { name: "前" })).toBeDefined();
+  expect(view.getByRole("button", { name: "次" })).toBeDefined();
   expect(view.getByText("予定に載らない確定 12分")).toBeDefined();
   expect(view.getByText("朝の多読")).toBeDefined();
   expect(view.getByText("09:00–10:00")).toBeDefined();
@@ -114,6 +123,32 @@ test("プランタブは日付カレンダー・Clock・予定入力を並べ、
   expect(view.getByRole("heading", { name: "計画プリセット" })).toBeDefined();
   expect(view.getByRole("heading", { name: "目標" })).toBeDefined();
   expect(view.getByText("障害プラン")).toBeDefined();
+});
+
+test("Clock は計画プリセット・目標・障害プランのあと、同じカード列の末尾にある", () => {
+  const view = renderWithMantine(<PlanListTab />);
+  const datePicker = view.getByLabelText("日付を選択");
+  const clockHeading = view.getByRole("heading", { name: PLAN_CLOCK_HEADING });
+  const templatesHeading = view.getByRole("heading", { name: "計画プリセット" });
+  const goalsHeading = view.getByRole("heading", { name: "目標" });
+  const obstaclesHeading = view.getByRole("heading", { name: "障害プラン" });
+
+  expect(view.queryByRole("complementary")).toBeNull();
+  expect(view.getByLabelText(PLAN_CLOCK_HEADING)).toBeDefined();
+  expect(documentPositionFollows(datePicker, templatesHeading)).toBe(true);
+  expect(documentPositionFollows(templatesHeading, goalsHeading)).toBe(true);
+  expect(documentPositionFollows(goalsHeading, obstaclesHeading)).toBe(true);
+  expect(documentPositionFollows(obstaclesHeading, clockHeading)).toBe(true);
+  expect(clockHeading.closest(".mantine-Card-root")?.querySelector("svg")).not.toBeNull();
+  expect(datePicker.closest(".mantine-Card-root")).toBeNull();
+});
+
+test("予定カードをクリックすると予定を編集と削除が出る", () => {
+  const view = renderWithMantine(<PlanListTab />);
+  fireEvent.click(view.getByText("朝の多読"));
+
+  expect(view.getByRole("dialog", { hidden: true }).textContent).toContain("予定を編集");
+  expect(view.getByRole("button", { hidden: true, name: "削除" })).toBeDefined();
 });
 
 test("カレンダーの日付を選ぶと選択日が変わる", () => {
