@@ -16,6 +16,7 @@ export function toPlanScheduleBlocks(
       frozen: event.recordState.kind === "materialized",
       itemId: event.itemId,
       priority: event.priority,
+      sourceTitle: event.title,
       startAt: instants.startAt,
       title: planEventDisplayName(event.title, event.itemId, items),
     };

@@ -29,6 +29,7 @@ export type PlanScheduleBlock = {
   frozen: boolean;
   itemId?: Id<"items">;
   priority: PlanPriority;
+  sourceTitle: string;
   startAt: string;
   title: string;
 };

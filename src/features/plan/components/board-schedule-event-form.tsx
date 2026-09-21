@@ -247,7 +247,7 @@ function blockFormValues(block: PlanScheduleBlock): PlanScheduleEventInput {
     itemId: block.itemId,
     priority: block.priority,
     start: scheduleInstantToDate(block.startAt),
-    title: block.title,
+    title: block.sourceTitle,
   };
 }
 

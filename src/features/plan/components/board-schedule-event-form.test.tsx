@@ -4,8 +4,12 @@ import { expect, test, vi } from "vite-plus/test";
 import { PLAN_FROZEN_MESSAGE } from "~domain/planEvent";
 
 import type { Id } from "~/../convex/_generated/dataModel";
-import { BoardScheduleEventForm } from "~/features/plan/components/board-schedule-event-form";
-import type { PlanCatalogItem } from "~/features/plan/types/plan";
+import {
+  BoardScheduleEventForm,
+  blockFormValues,
+} from "~/features/plan/components/board-schedule-event-form";
+import { toPlanScheduleBlocks } from "~/features/plan/lib/plan-event-blocks";
+import type { PlanCatalogItem, PlanEventDto } from "~/features/plan/types/plan";
 import { renderWithMantine } from "~/test-utils/render";
 
 const onSubmit = vi.fn(async () => Result.ok(null));
@@ -79,6 +83,41 @@ test("項目を選ぶとタイトル欄は隠れる", () => {
 
   expect(queryByLabelText("タイトル")).toBeNull();
   expect(getByRole("combobox", { name: "項目" })).toBeDefined();
+});
+
+test("スケジュールの項目名は保存タイトルにならず、時刻だけ変えても項目が残る", async () => {
+  const items = [sampleItem("i1", "多読")];
+  const event = {
+    _id: "e-read" as Id<"planEvents">,
+    dateJst: "2026-08-17",
+    endTime: "10:00",
+    itemId: "i1" as Id<"items">,
+    priority: "medium",
+    recordState: { kind: "awaiting-open" },
+    startTime: "09:00",
+    title: "",
+  } satisfies PlanEventDto;
+  const block = toPlanScheduleBlocks([event], items)[0];
+  if (block === undefined) throw new Error("missing block");
+  expect(block).toMatchObject({ sourceTitle: "", title: "多読" });
+
+  onSubmit.mockClear();
+  const { getByRole, queryByLabelText } = renderWithMantine(
+    <BoardScheduleEventForm
+      dateJst="2026-08-17"
+      initialValues={blockFormValues(block)}
+      items={items}
+      onClose={() => undefined}
+      onSubmit={onSubmit}
+      opened
+    />,
+  );
+
+  expect(queryByLabelText("タイトル")).toBeNull();
+  expect(getByRole("combobox", { name: "項目" })).toBeDefined();
+  fireEvent.click(getByRole("button", { name: "保存" }));
+  await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+  expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ itemId: "i1", title: "" }));
 });
 
 test("タイトルがあると項目欄は隠れる", () => {
