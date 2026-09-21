@@ -14,7 +14,7 @@ The board shows today's (or a selected day's) records as kanban columns 未着�
 
 - Choose the `ボード` nav link.
 - From a day, follow `YYYY-MM-DD の記録をカンバンで見る`.
-- There are no page tabs `カンバン` / `スケジュール`. A leftover `/board?tab=schedule` URL redirects to `/plan` (prove that on [plan.md](./plan.md)).
+- There are no page tabs `カンバン` / `スケジュール`. A leftover `/board?tab=schedule` URL redirects to `/plan` with no `tab` (プラン landing; prove that on [plan.md](./plan.md)).
 
 ## Driving it with playwright-cli
 
@@ -44,4 +44,4 @@ Preconditions:
 - Narrow viewports hide `項目` / `方法` / `ゴミ箱` behind その他. `ボード` and `計画` stay primary tabs. There is no `プリセット` overflow item.
 - Confirming a zero-minute row prompts for minutes in modal `記録を確定`. Have a number ready.
 - Skip from the card menu is `見送りにする`, not a label that says スキップ. Timer chip `確定する` also appears on 進行中 cards.
-- Do not look for schedule slots, `一日の時計`, or `予定を追加` on `/board`. Timed plans are `plan.md`. A leftover `/board?tab=schedule` URL is not a board failure; it should land on `/plan`.
+- Do not look for schedule slots, `一日の時計`, or `予定を追加` on `/board`. Timed plans are `plan.md`. A leftover `/board?tab=schedule` URL is not a board failure; it should land on `/plan` プラン.

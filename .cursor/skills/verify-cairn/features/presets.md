@@ -4,7 +4,7 @@ A 計画プリセット is a timed-plan template. One template can be marked `�
 
 ## Sub-features
 
-- `preset-open` opens 計画プリセット on `/plan?tab=plan` (nav `計画`, stepper, or `/presets` redirect).
+- `preset-open` opens 計画プリセット on the `/plan` プラン landing (nav `計画`, stepper, or `/presets` redirect).
 - `preset-create` adds a named template with at least one timed event.
 - `preset-empty-state` shows `計画プリセットはまだありません` when the account has none (only on a fresh account).
 - `preset-forgotten` saves the `計画し忘れたときに使う` switch and preserves it after reload.
@@ -13,7 +13,7 @@ A 計画プリセット is a timed-plan template. One template can be marked `�
 
 ## How to get to it (user POV)
 
-- Choose the `計画` nav link, then tab `プラン`.
+- Choose the `計画` nav link (lands on プラン; no tab click).
 - The home stepper `計画プリセットを登録する` goes to `/plan?tab=plan`.
 - Open `/presets` while signed in; the URL becomes `/plan?tab=plan`.
 - There is no `プリセット` nav item. Day page has no `プリセット切替` / `この日の雛形`.
@@ -25,7 +25,7 @@ Preconditions:
 - Signed in. Creating events that skip a catalog item is allowed (`なし（記録は作らない）` is the default).
 - `control-cairn doctor` is OK.
 
-- **Open via nav.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('link', { name: '計画', exact: true })"`. Choose tab `プラン` if `スケジュール` is selected. Heading `計画` and section `計画プリセット` are visible. A new account also shows `計画プリセットはまだありません`. Do not wait for heading `プリセット`.
+- **Open via nav.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('link', { name: '計画', exact: true })"`. Tab `プラン` is selected and `一日の時計` is visible. Heading `計画` and section `計画プリセット` are visible. A new account also shows `計画プリセットはまだありません`. Do not wait for heading `プリセット`. Do not click `プラン` to recover from a missing `?tab=`.
 - **Open via leftover URL.** `goto http://localhost:3000/presets`. The location is `/plan?tab=plan` with the same `計画プリセット` section. A heading `プリセット` is a failure (orphaned UI), not success.
 - **Name and event.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('button', { name: '計画プリセットを追加' })"`. Fill textbox `新しい計画プリセットの名前` with `検証計画プリセット`. Click `予定を足す`. Default start/end are `09:00` / `10:00`. Fill `新しい計画プリセットの予定1のタイトル` with `検証予定`. Click `保存`. Button `検証計画プリセットを編集` appears with summary `09:00–10:00 検証予定`. Empty-state title is gone.
 - **Forgotten switch.** Press `Space` on `getByRole('switch', { name: '計画し忘れたときに使う' })` until it is checked. Reload `/plan?tab=plan`. Wait for heading `計画`. The named template remains and the switch stays checked.
