@@ -109,3 +109,53 @@ test("switching presets preserves started rows and confirmed summaries", async (
   cache.clear();
   await client.close();
 });
+
+test("switching a preset onto an empty today writes the pending rows", async () => {
+  const { cache, client, dayQuery, scope, Wrapper } = setupMutation();
+  const t = convexTest(schema, convexModules);
+  const presetId = await t.run((ctx) =>
+    ctx.db.insert("presets", { ownerId: "owner", name: "切替", lines: [] }),
+  );
+  cache.setQueryData(dayQuery.queryKey, {
+    canCopyYesterday: false,
+    dateJst: scope.dateJst,
+    day: null,
+    kind: "todayEmpty",
+    rows: [],
+    shareMarkdown: "",
+    volumeMinutes: 0,
+  } satisfies FunctionReturnType<typeof api.queries.days.get.get>);
+  cache.setQueryData(convexQuery(api.queries.presets.list.list, {}).queryKey, [
+    {
+      _id: presetId,
+      name: "切替",
+      weekdays: [],
+      weekday: undefined,
+      lines: [
+        {
+          itemId: dayBoardTestRow.itemId,
+          itemName: dayBoardTestRow.itemName,
+          content: "次の課題",
+          minutes: 60,
+        },
+      ],
+    },
+  ] satisfies FunctionReturnType<typeof api.queries.presets.list.list>);
+  const { result, unmount } = renderHook(() => useSwitchPreset(scope.dateJst, scope.todayJst), {
+    wrapper: Wrapper,
+  });
+  await result.current({ ...scope, presetId });
+  const day = cache.getQueryData<FunctionReturnType<typeof api.queries.days.get.get>>(
+    dayQuery.queryKey,
+  );
+  expect(day?.rows).toHaveLength(1);
+  expect(day?.rows[0]).toMatchObject({
+    content: "次の課題",
+    itemName: "Distinction 2000",
+    minutes: 60,
+    status: "未着手",
+  });
+  unmount();
+  cache.clear();
+  await client.close();
+});

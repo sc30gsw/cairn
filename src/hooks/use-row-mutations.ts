@@ -118,7 +118,6 @@ export function useSwitchPreset(dateJst?: DateJst, todayJst?: DateJst) {
     );
     if (
       current === undefined ||
-      current.day === null ||
       preset === undefined ||
       items === undefined ||
       categories === undefined
