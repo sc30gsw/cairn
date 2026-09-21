@@ -1,6 +1,16 @@
 import { convexQuery } from "@convex-dev/react-query";
-import { Button, Card, Group, Stack, Text, Title, UnstyledButton } from "@mantine/core";
+import {
+  Button,
+  Card,
+  ColorSwatch,
+  Group,
+  Stack,
+  Text,
+  Title,
+  UnstyledButton,
+} from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
+import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { useSuspenseQueries } from "@tanstack/react-query";
 import { Result } from "better-result";
 import { useState } from "react";
@@ -14,7 +24,7 @@ import {
   eventFormValues,
   slotFormValues,
 } from "~/features/plan/components/board-schedule-event-form";
-import { PlanClock } from "~/features/plan/components/plan-clock";
+import { PLAN_CLOCK_HEADING, PlanClock } from "~/features/plan/components/plan-clock";
 import { PlanTemplatesCard } from "~/features/plan/components/plan-templates-card";
 import { useBoardScheduleActions } from "~/features/plan/hooks/use-board-schedule-actions";
 import { usePlanView } from "~/features/plan/hooks/use-plan-view";
@@ -27,10 +37,16 @@ import type { PlanScheduleEventInput } from "~/features/plan/schemas/board-sched
 import { goalsListQuery } from "~/hooks/goals-queries";
 import { useItemsList } from "~/hooks/use-items-list";
 import { useObstaclePlans } from "~/hooks/use-obstacle-plans";
+import { calendarDayStyleClasses } from "~/lib/calendar-day-style";
 import { parallelConvexQuery } from "~/lib/parallel-convex-query";
 import { toPlanGoalRead } from "~/lib/plan-goal-read";
 import { parseDateJst } from "~/lib/schemas/calendar-date-schema";
 import { useOptionalGoalsLiveQuery } from "~/lib/tanstack-db/collections";
+
+import classes from "~/features/plan/components/plan-list-tab.module.css";
+
+const MONTH_PREV_ICON = <IconChevronLeft aria-hidden size={18} stroke={1.75} />;
+const MONTH_NEXT_ICON = <IconChevronRight aria-hidden size={18} stroke={1.75} />;
 
 export function PlanListTab() {
   const view = usePlanView();
@@ -60,33 +76,45 @@ export function PlanListTab() {
 
   return (
     <Stack gap="md">
-      <DatePicker
-        allowDeselect={false}
-        aria-label="日付を選択"
-        date={month}
-        onChange={(value) => {
-          const next = parseDateJst(value);
-          if (next !== undefined) {
-            view.setDate(next);
-          }
-        }}
-        onDateChange={(value) => {
-          const next = parseDateJst(value);
-          if (next !== undefined) {
-            setCalendar({ forSelected: view.selectedDateJst, month: next });
-          }
-        }}
-        value={view.selectedDateJst}
-      />
-      <Button
-        onClick={() => {
-          view.setDate(view.today);
-          setCalendar({ forSelected: view.today, month: view.today });
-        }}
-        variant="light"
-      >
-        今日
-      </Button>
+      <Stack className={classes.calendar} gap="xs">
+        <DatePicker
+          allowDeselect={false}
+          aria-label="日付を選択"
+          classNames={{
+            calendarHeaderControl: classes.monthNav,
+            month: calendarDayStyleClasses.japaneseCalendar,
+          }}
+          date={month}
+          nextIcon={MONTH_NEXT_ICON}
+          nextLabel="次"
+          onChange={(value) => {
+            const next = parseDateJst(value);
+            if (next !== undefined) {
+              view.setDate(next);
+            }
+          }}
+          onDateChange={(value) => {
+            const next = parseDateJst(value);
+            if (next !== undefined) {
+              setCalendar({ forSelected: view.selectedDateJst, month: next });
+            }
+          }}
+          previousIcon={MONTH_PREV_ICON}
+          previousLabel="前"
+          size="sm"
+          value={view.selectedDateJst}
+        />
+        <Button
+          onClick={() => {
+            view.setDate(view.today);
+            setCalendar({ forSelected: view.today, month: view.today });
+          }}
+          size="compact-sm"
+          variant="light"
+        >
+          今日
+        </Button>
+      </Stack>
       <Button
         onClick={() => {
           setFormValues(
@@ -122,7 +150,10 @@ export function PlanListTab() {
                       {event.startTime}–{event.endTime}
                     </Text>
                   </Stack>
-                  <Text size="sm">{PLAN_PRIORITY_STYLE[event.priority].label}</Text>
+                  <Group gap="xs" wrap="nowrap">
+                    <ColorSwatch color={PLAN_PRIORITY_STYLE[event.priority].hex} size={14} />
+                    <Text size="sm">{PLAN_PRIORITY_STYLE[event.priority].label}</Text>
+                  </Group>
                 </Group>
               </Card>
             </UnstyledButton>
@@ -152,17 +183,6 @@ export function PlanListTab() {
         }}
         opened={formOpened}
       />
-      <Card padding="md" withBorder>
-        <Stack gap="md">
-          <Title order={2}>一日の時計</Title>
-          <PlanClock
-            events={events}
-            selectedDateJst={view.selectedDateJst}
-            todayJst={view.today}
-            unplannedConfirmedMinutes={unplannedConfirmedMinutes}
-          />
-        </Stack>
-      </Card>
       <PlanTemplatesCard
         dateJst={view.selectedDateJst}
         hasEvents={events.length > 0}
@@ -177,6 +197,17 @@ export function PlanListTab() {
           onRemoveObstacle={obstaclePlans.onRemoveObstacle}
           onUpdateObstacle={obstaclePlans.onUpdateObstacle}
         />
+      </Card>
+      <Card aria-label={PLAN_CLOCK_HEADING} padding="md" withBorder>
+        <Stack gap="md">
+          <Title order={2}>{PLAN_CLOCK_HEADING}</Title>
+          <PlanClock
+            events={events}
+            selectedDateJst={view.selectedDateJst}
+            todayJst={view.today}
+            unplannedConfirmedMinutes={unplannedConfirmedMinutes}
+          />
+        </Stack>
       </Card>
     </Stack>
   );
