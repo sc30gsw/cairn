@@ -95,6 +95,22 @@ test("語を入れるとナビが絞られ、選ぶとその画面へ移動す�
   expect(navigate).toHaveBeenCalledWith({ to: "/goals" });
 });
 
+test("項目の検索結果は項目画面へ移動する", async () => {
+  searchState.hits = [{ kind: "item", text: "多聴", title: "Distinction 2000" }];
+  const view = openPalette();
+  await waitFor(() => {
+    expect(view.getByPlaceholderText(SPOTLIGHT_PLACEHOLDER)).toBeDefined();
+  });
+
+  typeQuery(view, "Distinction");
+  await waitFor(() => {
+    expect(view.getByText("Distinction 2000")).toBeDefined();
+  });
+  fireEvent.click(view.getByText("Distinction 2000"));
+
+  expect(navigate).toHaveBeenCalledWith({ to: "/items" });
+});
+
 test("2文字以上なら全期間で記録を検索し、選ぶとその日のページへ移動する", async () => {
   searchState.hits = [HIT];
   const view = openPalette();

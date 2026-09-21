@@ -192,6 +192,71 @@ test("メモだけの日も探せる", async () => {
   expect(result.hits[0]?.rowId).toBeUndefined();
 });
 
+test("未認証の検索は拒否し、他人の項目は出さない", async () => {
+  const t = harness();
+  await t.run(async (ctx) => {
+    await ctx.db.insert("items", { name: "他人の音読帳", ownerId: OTHER.subject, sortOrder: 0 });
+    await ctx.db.insert("items", { name: "自分の音読帳", ownerId: OWNER.subject, sortOrder: 0 });
+  });
+
+  await expect(t.query(api.queries.history.search.search, { query: "音読帳" })).rejects.toThrow();
+  const result = await search(t, "音読帳");
+  expect(result.hits.map((hit) => hit.title)).toEqual(["自分の音読帳"]);
+  expect(result.hits[0]?.kind).toBe("item");
+  expect(result.hits[0]?.dateJst).toBeUndefined();
+});
+
+test("期間を絞っても項目は残り、それより前の予定は落ちる", async () => {
+  const t = harness();
+  await t.run(async (ctx) => {
+    await ctx.db.insert("items", { name: "音読帳", ownerId: OWNER.subject, sortOrder: 0 });
+    await ctx.db.insert("planEvents", {
+      dateJst: "2026-08-15",
+      endMinute: 600,
+      ownerId: OWNER.subject,
+      priority: "medium",
+      record: { kind: "none" },
+      startMinute: 540,
+      title: "朝の音読",
+    });
+    await ctx.db.insert("planTemplates", { name: "音読の計画", ownerId: OWNER.subject });
+    await ctx.db.insert("goals", {
+      activeDays: 0,
+      confirmedMinutes: 0,
+      content: "音読を続ける",
+      criterion: "7日",
+      ownerId: OWNER.subject,
+      type: "mastery",
+    });
+    const laneId = await ctx.db.insert("methodLanes", {
+      name: "朝",
+      ownerId: OWNER.subject,
+      sortOrder: 0,
+    });
+    await ctx.db.insert("methods", {
+      bodyText: "",
+      completionHtml: "",
+      laneId,
+      memoHtml: "",
+      name: "音読法",
+      nowViewing: false,
+      ownerId: OWNER.subject,
+      sortOrder: 0,
+    });
+    await ctx.db.insert("obstaclePlans", {
+      ifText: "眠くて音読できない",
+      ownerId: OWNER.subject,
+      thenText: "1ページだけ読む",
+    });
+  });
+
+  const result = await search(t, "音読", "2026-08-16");
+  expect(result.hits.map((hit) => hit.kind).sort()).toEqual(
+    ["goal", "item", "method", "obstacle", "plan"].sort(),
+  );
+  expect(result.hits.some((hit) => hit.kind === "event")).toBe(false);
+});
+
 test("rowId は実在する記録を指す", async () => {
   const t = harness();
   await seed(t, OWNER.subject, [{ dateJst: "2026-08-15", rows: [{ content: "音読" }] }]);

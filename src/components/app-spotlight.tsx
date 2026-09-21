@@ -4,8 +4,10 @@ import { Spotlight, spotlight } from "@mantine/spotlight";
 import { IconSearch } from "@tabler/icons-react";
 import { useNavigate } from "@tanstack/react-router";
 import { Suspense, useState } from "react";
+import { isDateJst } from "~domain/jst";
 import { isSearchableQuery, normalizeSearchQuery, normalizeSearchText } from "~domain/searchText";
 
+import type { HistorySearchHitDto } from "~/../convex/lib/validators/history";
 import { OverflowTooltip } from "~/components/overflow-tooltip";
 import { useHistorySearch } from "~/hooks/history-search-queries";
 import { NAV, type NavEntry } from "~/lib/app-nav";
@@ -20,6 +22,7 @@ import {
   SPOTLIGHT_PLACEHOLDER,
   SPOTLIGHT_RECORD_LIMIT,
   SPOTLIGHT_RECORDS_GROUP,
+  spotlightKindColor,
 } from "~/lib/spotlight-copy";
 import { NUMERAL_FONT } from "~/lib/theme";
 
@@ -37,6 +40,38 @@ type SpotlightRecordActionsProps = {
   navCount: number;
   query: string;
 };
+
+function openSearchHit(navigate: ReturnType<typeof useNavigate>, hit: HistorySearchHitDto): void {
+  if ((hit.kind === "hitokoto" || hit.kind === "memo") && hit.dateJst !== undefined) {
+    void navigate({ params: { dateJst: hit.dateJst }, to: "/days/$dateJst" });
+    return;
+  }
+  if (hit.kind === "event") {
+    void navigate({
+      search: {
+        date: hit.dateJst !== undefined && isDateJst(hit.dateJst) ? hit.dateJst : undefined,
+        tab: "plan",
+      },
+      to: "/plan",
+    });
+    return;
+  }
+  if (hit.kind === "plan" || hit.kind === "obstacle") {
+    void navigate({ search: { tab: "plan" }, to: "/plan" });
+    return;
+  }
+  if (hit.kind === "item") {
+    void navigate({ to: "/items" });
+    return;
+  }
+  if (hit.kind === "goal") {
+    void navigate({ to: "/goals" });
+    return;
+  }
+  if (hit.kind === "method") {
+    void navigate({ to: "/methods" });
+  }
+}
 
 function SpotlightRecordActions({ navCount, query }: SpotlightRecordActionsProps) {
   const navigate = useNavigate();
@@ -56,20 +91,22 @@ function SpotlightRecordActions({ navCount, query }: SpotlightRecordActionsProps
         return (
           <OverflowTooltip<HTMLButtonElement>
             content={`${hit.title}\n${excerptText}`}
-            key={hit.rowId ?? `memo-${hit.dateJst}`}
+            key={`${hit.kind}-${hit.rowId ?? ""}-${hit.dateJst ?? ""}-${hit.title}`}
           >
             {(ref) => (
               <Spotlight.Action
                 ref={ref}
                 onClick={() => {
-                  void navigate({ params: { dateJst: hit.dateJst }, to: "/days/$dateJst" });
+                  openSearchHit(navigate, hit);
                 }}
               >
                 <Group gap="sm" w="100%" wrap="nowrap">
-                  <Text c="dimmed" ff={NUMERAL_FONT} size="sm">
-                    {hit.dateJst}
-                  </Text>
-                  <Badge color={hit.kind === "memo" ? "orange" : "green"} size="sm" variant="light">
+                  {hit.dateJst === undefined ? null : (
+                    <Text c="dimmed" ff={NUMERAL_FONT} size="sm">
+                      {hit.dateJst}
+                    </Text>
+                  )}
+                  <Badge color={spotlightKindColor(hit.kind)} size="sm" variant="light">
                     {SPOTLIGHT_KIND_LABELS[hit.kind]}
                   </Badge>
                   <div style={{ flex: 1, minWidth: 0 }}>
