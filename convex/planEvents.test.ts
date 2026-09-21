@@ -10,7 +10,9 @@ import { migrateBoardScheduleEvent } from "./services/plan/migrateBoardSchedule"
 
 const OWNER = { email: "owner@example.com", subject: "owner-subject" };
 const MONDAY = "2026-08-17";
-const FUTURE = "2026-09-25";
+const FUTURE = "2026-08-20";
+const WEEK_AHEAD_MAX = "2026-08-24";
+const BEYOND_WEEK_AHEAD = "2026-08-25";
 const WINDOW = { cursor: null, numItems: 50 };
 
 beforeEach(() => {
@@ -72,6 +74,7 @@ test("未来の予定を保存しても days と rows は増えない", async ()
     priority: "high",
     startTime: "07:30",
     title: "公式問題集 Part 7",
+    todayJst: MONDAY,
   });
   await t.mutation(api.mutations.planEvents.save.save, {
     dateJst: FUTURE,
@@ -79,6 +82,7 @@ test("未来の予定を保存しても days と rows は増えない", async ()
     priority: "low",
     startTime: "20:00",
     title: "X を見る",
+    todayJst: MONDAY,
   });
   expect(await countLive(t)).toEqual({ days: 0, rows: 0 });
   const listed = await listDay(t, FUTURE);
@@ -98,6 +102,7 @@ test("項目ありならタイトル空でも保存できる", async () => {
     priority: "high",
     startTime: "07:30",
     title: "",
+    todayJst: MONDAY,
   });
   const listed = await listDay(t, FUTURE);
   expect(listed.page[0]).toEqual(
@@ -113,9 +118,56 @@ test("項目なし予定だけを今日開いても days と rows は増えな�
     priority: "low",
     startTime: "20:00",
     title: "X を見る",
+    todayJst: MONDAY,
   });
   expect(
     await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY }),
+  ).toEqual({ applied: false });
+  expect(await countLive(t)).toEqual({ days: 0, rows: 0 });
+});
+
+test("今日+7日までの未来予定は保存でき、日は作らない", async () => {
+  const t = owner();
+  await t.mutation(api.mutations.planEvents.save.save, {
+    dateJst: WEEK_AHEAD_MAX,
+    endTime: "10:00",
+    priority: "medium",
+    startTime: "09:00",
+    title: "来週の予定",
+    todayJst: MONDAY,
+  });
+  expect(await countLive(t)).toEqual({ days: 0, rows: 0 });
+  expect((await listDay(t, WEEK_AHEAD_MAX)).page).toEqual([
+    expect.objectContaining({ title: "来週の予定" }),
+  ]);
+});
+
+test("今日+8日以降の予定は拒否される", async () => {
+  const t = owner();
+  await expect(
+    t.mutation(api.mutations.planEvents.save.save, {
+      dateJst: BEYOND_WEEK_AHEAD,
+      endTime: "10:00",
+      priority: "medium",
+      startTime: "09:00",
+      title: "遠すぎる予定",
+      todayJst: MONDAY,
+    }),
+  ).rejects.toThrow(/7日後まで/);
+});
+
+test("未来の日は days.open できない", async () => {
+  const t = owner();
+  await t.mutation(api.mutations.planEvents.save.save, {
+    dateJst: FUTURE,
+    endTime: "10:00",
+    priority: "medium",
+    startTime: "09:00",
+    title: "未来の予定",
+    todayJst: MONDAY,
+  });
+  expect(
+    await t.mutation(api.mutations.days.open.open, { dateJst: FUTURE, todayJst: MONDAY }),
   ).toEqual({ applied: false });
   expect(await countLive(t)).toEqual({ days: 0, rows: 0 });
 });
@@ -130,6 +182,7 @@ test("項目つき予定は days.open で1件だけ未着手になり、再 open
     priority: "high",
     startTime: "07:30",
     title: "Part 7",
+    todayJst: MONDAY,
   });
   expect(
     await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY }),
@@ -165,6 +218,7 @@ test("同じ項目の2予定は2記録になり、ひとことは空、分数は
     priority: "high",
     startTime: "07:00",
     title: "朝の多読",
+    todayJst: MONDAY,
   });
   await t.mutation(api.mutations.planEvents.save.save, {
     dateJst: MONDAY,
@@ -173,6 +227,7 @@ test("同じ項目の2予定は2記録になり、ひとことは空、分数は
     priority: "medium",
     startTime: "20:00",
     title: "夜の多読",
+    todayJst: MONDAY,
   });
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const rows = await liveRows(t);
@@ -193,6 +248,7 @@ test("記録を消して再 open しても復活しない", async () => {
     priority: "high",
     startTime: "07:30",
     title: "Part 7",
+    todayJst: MONDAY,
   });
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const opened = await liveRows(t);
@@ -216,6 +272,7 @@ test("予定を消しても記録は残る", async () => {
     priority: "high",
     startTime: "07:30",
     title: "Part 7",
+    todayJst: MONDAY,
   });
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const opened = await liveRows(t);
@@ -245,6 +302,7 @@ test("materialize 済み予定の日付・項目変更は拒否される", async
     priority: "high",
     startTime: "07:30",
     title: "Part 7",
+    todayJst: MONDAY,
   });
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   await expect(
@@ -256,6 +314,7 @@ test("materialize 済み予定の日付・項目変更は拒否される", async
       priority: "high",
       startTime: "07:30",
       title: "Part 7",
+      todayJst: MONDAY,
     }),
   ).rejects.toThrow(/日付と項目/);
   await expect(
@@ -267,6 +326,7 @@ test("materialize 済み予定の日付・項目変更は拒否される", async
       priority: "high",
       startTime: "07:30",
       title: "Part 7",
+      todayJst: MONDAY,
     }),
   ).rejects.toThrow(/日付と項目/);
   await t.mutation(api.mutations.planEvents.save.save, {
@@ -277,6 +337,7 @@ test("materialize 済み予定の日付・項目変更は拒否される", async
     priority: "medium",
     startTime: "07:45",
     title: "Part 7 続き",
+    todayJst: MONDAY,
   });
   const listed = await listDay(t, MONDAY);
   expect(listed.page).toEqual([
@@ -301,6 +362,7 @@ test("日跨ぎの時刻は拒否する", async () => {
       priority: "low",
       startTime: "22:00",
       title: "夜更かし",
+      todayJst: MONDAY,
     }),
   ).rejects.toThrow(/同じ日/);
 });
@@ -313,6 +375,7 @@ test("saveDay はその日の予定を置き換え、載っていない予定は
     priority: "high",
     startTime: "07:00",
     title: "朝",
+    todayJst: MONDAY,
   });
   await t.mutation(api.mutations.planEvents.save.save, {
     dateJst: MONDAY,
@@ -320,9 +383,11 @@ test("saveDay はその日の予定を置き換え、載っていない予定は
     priority: "low",
     startTime: "20:00",
     title: "夜",
+    todayJst: MONDAY,
   });
   const kept = await t.mutation(api.mutations.planEvents.saveDay.saveDay, {
     dateJst: MONDAY,
+    todayJst: MONDAY,
     events: [
       {
         endTime: "08:00",
@@ -355,6 +420,7 @@ test("確定分数のうち予定に塗れない分が unplannedConfirmedMinutes
     priority: "high",
     startTime: "07:00",
     title: "朝の多読",
+    todayJst: MONDAY,
   });
   await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
   const plannedRow = (await liveRows(t))[0];
@@ -390,6 +456,7 @@ test("終了 24:00 は同じ日の末尾として保存できる", async () => {
     priority: "low",
     startTime: "23:00",
     title: "終わり",
+    todayJst: MONDAY,
   });
   expect((await listDay(t, MONDAY)).page[0]).toEqual(
     expect.objectContaining({ endTime: "24:00", startTime: "23:00" }),

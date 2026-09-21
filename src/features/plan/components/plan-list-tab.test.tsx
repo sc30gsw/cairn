@@ -111,7 +111,7 @@ test("プランタブは日と同じ学習日ナビと Clock・予定カード�
   expect(view.queryByRole("button", { name: "2026年9月" })).toBeNull();
   expect(view.queryByLabelText("23 9月 2026")).toBeNull();
   expect(view.getByRole("button", { name: "前の日" })).toBeDefined();
-  expect((view.getByRole("button", { name: "次の日" }) as HTMLButtonElement).disabled).toBe(true);
+  expect((view.getByRole("button", { name: "次の日" }) as HTMLButtonElement).disabled).toBe(false);
   expect(view.queryByRole("button", { name: "今日へ戻る" })).toBeNull();
   expect(view.queryByRole("button", { name: "今日" })).toBeNull();
   expect(view.getByRole("heading", { name: PLAN_CLOCK_HEADING })).toBeDefined();
@@ -120,7 +120,7 @@ test("プランタブは日と同じ学習日ナビと Clock・予定カード�
   expect(view.getByText("予定に載らない確定 12分")).toBeDefined();
   expect(view.getByText("朝の多読")).toBeDefined();
   expect(view.getByText("09:00–10:00")).toBeDefined();
-  expect(view.queryByRole("button", { name: "予定を追加" })).toBeNull();
+  expect(view.getByRole("button", { name: "予定を追加" })).toBeDefined();
   expect(view.getByRole("heading", { name: "計画プリセット" })).toBeDefined();
   expect(view.getByRole("heading", { name: "目標" })).toBeDefined();
   expect(view.getByText("障害プラン")).toBeDefined();
@@ -142,6 +142,12 @@ test("Clock は計画プリセット・目標・障害プランのあと、同�
   expect(documentPositionFollows(obstaclesHeading, clockHeading)).toBe(true);
   expect(clockHeading.closest(".mantine-Card-root")?.querySelector("svg")).not.toBeNull();
   expect(dateNav.closest(".mantine-Card-root")).toBeNull();
+});
+
+test("予定を追加で作成モーダルが開く", () => {
+  const view = renderWithMantine(<PlanListTab />);
+  fireEvent.click(view.getByRole("button", { name: "予定を追加" }));
+  expect(view.getByRole("dialog", { hidden: true }).textContent).toContain("予定を追加");
 });
 
 test("予定カードをクリックすると予定を編集と削除が出る", () => {

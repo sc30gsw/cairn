@@ -19,7 +19,12 @@ export async function openDay(
   if (existing !== null && existing.deletedAt !== undefined) {
     return { applied: false };
   }
-  const applied = (await applyToEmptyDate(ctx, ownerId, { dateJst: args.dateJst })).applied;
+  const applied = (
+    await applyToEmptyDate(ctx, ownerId, {
+      dateJst: args.dateJst,
+      todayJst: args.todayJst,
+    })
+  ).applied;
   const [flags, pendingEvents] = await Promise.all([
     loadOwnerReviewFlags(ctx, ownerId),
     pendingPlanMaterializations(ctx, ownerId, args.dateJst),

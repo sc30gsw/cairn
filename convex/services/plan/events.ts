@@ -9,6 +9,7 @@ import {
   PLAN_FROZEN_MESSAGE,
   PLAN_TITLE_MESSAGE,
   planListDateRange,
+  requirePlanEventDateJst,
   type PlanPriority,
   type PlanView,
 } from "../../lib/planEvent";
@@ -27,6 +28,7 @@ type SaveArgs = {
   priority: PlanPriority;
   startTime: string;
   title: string;
+  todayJst: string;
 };
 
 function isFrozen(event: Doc<"planEvents">): boolean {
@@ -198,7 +200,7 @@ export async function save(
   ownerId: string,
   args: SaveArgs,
 ): Promise<Id<"planEvents">> {
-  const dateJst = requireDateJst(args.dateJst);
+  const dateJst = requirePlanEventDateJst(args.dateJst, args.todayJst);
   const title = args.title.trim();
   if (title === "" && args.itemId === undefined) {
     throwDomain(new ValidationFailedError({ message: PLAN_TITLE_MESSAGE }));
@@ -259,9 +261,9 @@ export async function remove(
 export async function saveDay(
   ctx: MutationCtx,
   ownerId: string,
-  args: { dateJst: string; events: PlanEventDraft[] },
+  args: { dateJst: string; events: PlanEventDraft[]; todayJst: string },
 ): Promise<Id<"planEvents">[]> {
-  const dateJst = requireDateJst(args.dateJst);
+  const dateJst = requirePlanEventDateJst(args.dateJst, args.todayJst);
   const existing = await eventsOnDate(ctx, ownerId, dateJst);
   const keep = new Set(
     args.events.flatMap((draft) => (draft.eventId === undefined ? [] : [draft.eventId])),
@@ -281,6 +283,7 @@ export async function saveDay(
         priority: draft.priority,
         startTime: draft.startTime,
         title: draft.title,
+        todayJst: args.todayJst,
       }),
     ),
   );

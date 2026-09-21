@@ -1,5 +1,5 @@
 import type { ScheduleViewLevel } from "@mantine/schedule";
-import { mondayOfWeek, type DateJst } from "~domain/jst";
+import { compareDateJst, mondayOfWeek, planWeekAheadMaxDateJst, type DateJst } from "~domain/jst";
 
 import { planRoute } from "~/features/plan/lib/plan-route-api";
 import type {
@@ -38,7 +38,10 @@ export function scheduleAnchorDateJst(
 export function derivePlanView(search: PlanSearch, today: DateJst) {
   const tab: PlanTab = search.tab ?? "plan";
   const scheduleView: PlanScheduleView = search.view ?? "day";
-  const selectedDateJst: DateJst = search.date ?? today;
+  const requestedDate = search.date ?? today;
+  const maxPlanDateJst = planWeekAheadMaxDateJst(today);
+  const selectedDateJst: DateJst =
+    compareDateJst(requestedDate, maxPlanDateJst) > 0 ? maxPlanDateJst : requestedDate;
   const yearMonth = search.month ?? yearMonthFromDateJst(selectedDateJst);
   const weekAnchor: DateJst = search.week ?? mondayOfWeek(selectedDateJst);
   const scheduleAnchor = scheduleAnchorDateJst(

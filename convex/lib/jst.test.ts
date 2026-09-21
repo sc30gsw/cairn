@@ -4,9 +4,11 @@ import {
   addDaysJst,
   addMonthsJst,
   daysUntil,
+  isAfterPlanWeekAhead,
   isDateJst,
   isFutureDateJst,
   mondayOfWeek,
+  planWeekAheadMaxDateJst,
   weekdayFromDateJst,
 } from "./jst";
 
@@ -32,6 +34,12 @@ test("今日より後の暦日は未来", () => {
   expect(isFutureDateJst("2026-08-16", "2026-08-15")).toBe(true);
   expect(isFutureDateJst("2026-08-15", "2026-08-15")).toBe(false);
   expect(isFutureDateJst("2026-08-14", "2026-08-15")).toBe(false);
+});
+
+test("プラン先読みの上限は今日から7日後", () => {
+  expect(planWeekAheadMaxDateJst("2026-08-17")).toBe("2026-08-24");
+  expect(isAfterPlanWeekAhead("2026-08-24", "2026-08-17")).toBe(false);
+  expect(isAfterPlanWeekAhead("2026-08-25", "2026-08-17")).toBe(true);
 });
 
 test("月曜始まりの週は土曜 2026-08-15 なら 2026-08-10", () => {

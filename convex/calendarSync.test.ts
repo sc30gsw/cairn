@@ -287,6 +287,7 @@ async function savePlan(owner: Owner) {
     priority: "high",
     startTime: "09:00",
     title: "公式問題集 Part 7",
+    todayJst: TODAY,
   });
 }
 
@@ -357,6 +358,7 @@ test("予定の作成・移動・削除が Google に送られる", async () => 
     priority: "high",
     startTime: "13:00",
     title: "公式問題集 Part 7",
+    todayJst: TODAY,
   });
   await flush(t);
   [event] = google.active(PRIMARY);
@@ -780,6 +782,7 @@ test("アプリ側の未送信の変更が新しければ Google の古い変更
     priority: "high",
     startTime: "12:00",
     title: "公式問題集 Part 7",
+    todayJst: TODAY,
   });
 
   await syncNow(owner);

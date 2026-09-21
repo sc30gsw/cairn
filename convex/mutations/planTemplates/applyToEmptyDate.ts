@@ -8,6 +8,7 @@ export const applyToEmptyDate = ownerMutation({
   args: {
     dateJst: v.string(),
     templateId: v.optional(v.id("planTemplates")),
+    todayJst: v.string(),
   },
   handler: async (ctx, args) => applyTemplate(ctx, ctx.ownerId, args),
   returns: presetApplyResultValidator,

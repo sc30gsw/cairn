@@ -3,6 +3,8 @@ import { Card, ColorSwatch, Group, Stack, Text, Title, UnstyledButton } from "@m
 import { queryOptions, useSuspenseQueries } from "@tanstack/react-query";
 import { Result } from "better-result";
 import { useState } from "react";
+import type { DateJst } from "~domain/jst";
+import { planWeekAheadMaxDateJst } from "~domain/jst";
 import { PLAN_PRIORITY_STYLE } from "~domain/planEvent";
 
 import { api } from "~/../convex/_generated/api";
@@ -14,11 +16,13 @@ import {
   eventFormValues,
 } from "~/features/plan/components/board-schedule-event-form";
 import { PLAN_CLOCK_HEADING, PlanClock } from "~/features/plan/components/plan-clock";
+import { PlanEventAddButton } from "~/features/plan/components/plan-day-schedule-list";
 import { PlanTemplatesCard } from "~/features/plan/components/plan-templates-card";
 import { useBoardScheduleActions } from "~/features/plan/hooks/use-board-schedule-actions";
 import { usePlanView } from "~/features/plan/hooks/use-plan-view";
 import { usePlanWindow } from "~/features/plan/hooks/use-plan-window";
 import { planEventDisplayName } from "~/features/plan/lib/plan-event-display-name";
+import { planEventDateWithTime } from "~/features/plan/lib/plan-event-time";
 import type { PlanScheduleEventInput } from "~/features/plan/schemas/board-schedule-event-schema";
 import { goalsListQuery } from "~/hooks/goals-queries";
 import { useItemsList } from "~/hooks/use-items-list";
@@ -61,15 +65,25 @@ export function PlanListTab() {
   const editingId = formValues?.eventId;
   const editing =
     editingId === undefined ? undefined : events.find((event) => event._id === editingId);
+  const maxDateJst = planWeekAheadMaxDateJst(view.today);
 
   return (
     <Stack gap="md">
       <LearningDateNavigation
         dateJst={view.selectedDateJst}
+        maxDateJst={maxDateJst}
         onDateChange={view.setDate}
         onGoToToday={() => view.setDate(view.today)}
         todayJst={view.today}
       />
+      <Group justify="flex-end">
+        <PlanEventAddButton
+          onClick={() => {
+            setFormValues(createPlanEventFormValues(view.selectedDateJst));
+            setFormOpened(true);
+          }}
+        />
+      </Group>
       {events.length === 0 ? (
         <Text c="dimmed" size="sm">
           この日の予定はまだありません。
@@ -156,4 +170,15 @@ export function PlanListTab() {
       </Card>
     </Stack>
   );
+}
+
+function createPlanEventFormValues(dateJst: DateJst): PlanScheduleEventInput {
+  return {
+    end: planEventDateWithTime(dateJst, "10:00"),
+    eventId: undefined,
+    itemId: undefined,
+    priority: "medium",
+    start: planEventDateWithTime(dateJst, "09:00"),
+    title: "",
+  };
 }

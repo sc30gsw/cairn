@@ -7,7 +7,7 @@ import schema from "./schema";
 
 const OWNER = { email: "owner@example.com", subject: "owner-subject" };
 const MONDAY = "2026-08-17";
-const FUTURE = "2026-09-25";
+const FUTURE = "2026-08-20";
 const WINDOW = { cursor: null, numItems: 50 };
 
 beforeEach(() => {
@@ -181,11 +181,13 @@ test("すでに予定がある日へは雛形を適用しない", async () => {
     priority: "medium",
     startTime: "08:00",
     title: "先に書いた",
+    todayJst: MONDAY,
   });
   expect(
     await t.mutation(api.mutations.planTemplates.applyToEmptyDate.applyToEmptyDate, {
       dateJst: MONDAY,
       templateId,
+      todayJst: MONDAY,
     }),
   ).toEqual({ applied: false });
   expect((await listDay(t, MONDAY)).page.map((event) => event.title)).toEqual(["先に書いた"]);
@@ -210,6 +212,7 @@ test("未来の空の日に雛形を適用しても days と rows は増えな�
     await t.mutation(api.mutations.planTemplates.applyToEmptyDate.applyToEmptyDate, {
       dateJst: FUTURE,
       templateId,
+      todayJst: MONDAY,
     }),
   ).toEqual({ applied: true });
   expect((await listDay(t, FUTURE)).page.map((event) => event.title)).toEqual(["朝の多読"]);

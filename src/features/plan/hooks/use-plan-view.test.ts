@@ -12,16 +12,22 @@ test("derivePlanView は未指定時に今日の日表示とプランタブに�
   expect(view.scheduleAnchor).toBe("2026-08-17");
 });
 
-test("derivePlanView は未来の日付を today に戻さない", () => {
+test("derivePlanView は今日+7日以内の未来日をそのまま選べる", () => {
+  const view = derivePlanView({ date: "2026-08-20", month: "2026-08" }, "2026-08-17");
+  expect(view.selectedDateJst).toBe("2026-08-20");
+  expect(view.yearMonth).toBe("2026-08");
+});
+
+test("derivePlanView は今日+8日以降の日付を上限に丸める", () => {
   const view = derivePlanView({ date: "2026-09-25", month: "2026-09" }, "2026-08-17");
-  expect(view.selectedDateJst).toBe("2026-09-25");
+  expect(view.selectedDateJst).toBe("2026-08-24");
   expect(view.yearMonth).toBe("2026-09");
 });
 
 test("derivePlanView は search を優先する", () => {
   const view = derivePlanView(
     {
-      date: "2026-09-01",
+      date: "2026-08-20",
       month: "2026-07",
       tab: "plan",
       view: "month",
@@ -31,7 +37,7 @@ test("derivePlanView は search を優先する", () => {
   );
   expect(view.tab).toBe("plan");
   expect(view.scheduleView).toBe("month");
-  expect(view.selectedDateJst).toBe("2026-09-01");
+  expect(view.selectedDateJst).toBe("2026-08-20");
   expect(view.yearMonth).toBe("2026-07");
   expect(view.weekAnchor).toBe("2026-07-28");
   expect(view.scheduleAnchor).toBe("2026-07-01");
