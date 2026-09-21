@@ -9,14 +9,14 @@ import { ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
 import { ConcreteThenFieldLabel } from "~/components/concrete-then-field-label";
 import { LabelAlignedCell } from "~/components/label-aligned-cell";
-import { ObstacleSchema } from "~/features/goals/schemas/obstacle-schema";
-import type { Obstacle } from "~/features/goals/types/goal";
+import type { MutationResult } from "~/lib/run-mutation";
+import { ObstacleSchema } from "~/lib/validation/obstacle-schema";
 import type {
   CreateObstacleInput,
+  Obstacle,
   RemoveObstacleInput,
   UpdateObstacleInput,
-} from "~/features/goals/types/mutations";
-import type { MutationResult } from "~/lib/run-mutation";
+} from "~/types/obstacle";
 
 type ObstacleSectionProps = {
   obstacles: Obstacle[];
