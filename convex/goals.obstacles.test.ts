@@ -1,5 +1,5 @@
 import { convexTest } from "convex-test";
-import { expect, test } from "vite-plus/test";
+import { expect, test, vi } from "vite-plus/test";
 
 import { convexModules } from "../src/test-utils/convex-modules";
 import { api } from "./_generated/api";
@@ -151,3 +151,5 @@ test("障害プランの CRUD は記録の状態を変えない", async () => {
   });
   expect(after.rows.map((row) => row.status)).toEqual(before.rows.map((row) => row.status));
 });
+
+vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));
