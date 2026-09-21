@@ -504,6 +504,73 @@ test("解除した今日を開き直しても忘れたとき計画は戻らな�
   expect((await listDay(t, MONDAY)).appliedTemplateId).toBeNull();
 });
 
+test("解除は確定した予定由来の記録2件を消し、習得の確定分数を負にしない", async () => {
+  const t = owner();
+  const itemId = await readingItem(t);
+  await t.mutation(api.mutations.goals.create.create, {
+    goal: {
+      content: "音読を止まらずにできる",
+      criterion: "1分間で120語",
+      type: "mastery",
+    },
+  });
+  const templateId = await t.mutation(api.mutations.planTemplates.save.save, {
+    events: [
+      {
+        endTime: "08:00",
+        itemId,
+        priority: "high",
+        startTime: "07:00",
+        title: "朝の多読",
+      },
+      {
+        endTime: "21:00",
+        itemId,
+        priority: "medium",
+        startTime: "20:00",
+        title: "夜の多読",
+      },
+    ],
+    name: "朝と夜",
+  });
+  expect(
+    await t.mutation(api.mutations.planTemplates.applyToDate.applyToDate, {
+      dateJst: MONDAY,
+      templateId,
+      todayJst: MONDAY,
+    }),
+  ).toEqual({ applied: true });
+  const derived = await liveRows(t);
+  expect(derived).toHaveLength(2);
+  const [morning, evening] = derived;
+  if (morning === undefined || evening === undefined) {
+    throw new Error("expected two derived rows");
+  }
+  await t.mutation(api.mutations.rows.confirm.confirm, {
+    content: "朝の多読",
+    minutes: 50,
+    rowId: morning._id,
+  });
+  await t.mutation(api.mutations.rows.confirm.confirm, {
+    content: "夜の多読",
+    minutes: 30,
+    rowId: evening._id,
+  });
+  const [before] = await t.query(api.queries.goals.list.list, {});
+  expect(before?.type === "mastery" && before.confirmedMinutes).toBe(80);
+  expect(before?.type === "mastery" && before.activeDays).toBe(1);
+  expect(
+    await t.mutation(api.mutations.planTemplates.unapplyDate.unapplyDate, {
+      dateJst: MONDAY,
+      todayJst: MONDAY,
+    }),
+  ).toEqual({ cleared: true });
+  const [after] = await t.query(api.queries.goals.list.list, {});
+  expect(after?.type === "mastery" && after.confirmedMinutes).toBe(0);
+  expect(after?.type === "mastery" && after.activeDays).toBe(0);
+  expect(await liveRows(t)).toEqual([]);
+});
+
 test("曜日プリセットがあっても今日の予定0件では行を生やさない", async () => {
   const t = owner();
   await t.mutation(api.mutations.catalog.ensure.ensure, {});

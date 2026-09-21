@@ -357,28 +357,47 @@ async function hardDeleteDerivedRows(
       ),
     ),
   ];
+  const rows = (
+    await Promise.all(
+      rowIds.map(async (rowId) => {
+        const row = await ctx.db.get("rows", rowId);
+        if (row === null || row.ownerId !== ownerId) {
+          return null;
+        }
+        return row;
+      }),
+    )
+  ).flatMap((row) => (row === null ? [] : [row]));
+  if (rows.length === 0) {
+    return;
+  }
+  const sourceFlags = (
+    await Promise.all(
+      rows.map((row) =>
+        ctx.db
+          .query("reviewFlags")
+          .withIndex("by_sourceRow", (q) => q.eq("sourceRowId", row._id))
+          .collect(),
+      ),
+    )
+  ).flat();
+  const dateJst = rows[0]?.dateJst;
+  if (dateJst === undefined) {
+    return;
+  }
+  await withMasteryProgressDelta(ctx, ownerId, { dateJst }, async () => {
+    await deleteRowsByIds(
+      ctx,
+      rows.map((row) => row._id),
+    );
+  });
+  await Promise.all(rows.map((row) => endReviewForRow(ctx, row)));
   await Promise.all(
-    rowIds.map(async (rowId) => {
-      const row = await ctx.db.get("rows", rowId);
-      if (row === null || row.ownerId !== ownerId) {
-        return;
+    sourceFlags.map(async (flag) => {
+      const current = await ctx.db.get("reviewFlags", flag._id);
+      if (current !== null) {
+        await ctx.db.delete("reviewFlags", flag._id);
       }
-      const sourceFlags = await ctx.db
-        .query("reviewFlags")
-        .withIndex("by_sourceRow", (q) => q.eq("sourceRowId", rowId))
-        .collect();
-      await withMasteryProgressDelta(ctx, ownerId, row, async () => {
-        await deleteRowsByIds(ctx, [rowId]);
-      });
-      await endReviewForRow(ctx, row);
-      await Promise.all(
-        sourceFlags.map(async (flag) => {
-          const current = await ctx.db.get("reviewFlags", flag._id);
-          if (current !== null) {
-            await ctx.db.delete("reviewFlags", flag._id);
-          }
-        }),
-      );
     }),
   );
 }
