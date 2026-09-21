@@ -8,6 +8,7 @@ import { PLAN_FROZEN_MESSAGE } from "~domain/planEvent";
 
 import { BoardScheduleEditModal } from "~/features/plan/components/board-schedule-edit-modal";
 import { boardScheduleColorCss } from "~/features/plan/lib/board-schedule-color-ui";
+import { planTimesToInstants } from "~/features/plan/lib/plan-event-instants";
 import {
   PLAN_PRIORITY_APP_COLOR,
   PLAN_PRIORITY_OPTIONS,
@@ -18,7 +19,7 @@ import {
   type PlanScheduleEventInput,
   type PlanScheduleEventOutput,
 } from "~/features/plan/schemas/board-schedule-event-schema";
-import type { PlanCatalogItem, PlanScheduleBlock } from "~/features/plan/types/plan";
+import type { PlanCatalogItem, PlanEventDto, PlanScheduleBlock } from "~/features/plan/types/plan";
 import type { MutationResult } from "~/lib/run-mutation";
 
 type BoardScheduleEventFormProps = {
@@ -202,6 +203,18 @@ function blockFormValues(block: PlanScheduleBlock): PlanScheduleEventInput {
   };
 }
 
+function eventFormValues(event: PlanEventDto): PlanScheduleEventInput {
+  const instants = planTimesToInstants(event.dateJst, event.startTime, event.endTime);
+  return {
+    end: scheduleInstantToDate(instants.endAt),
+    eventId: event._id,
+    itemId: event.itemId,
+    priority: event.priority,
+    start: scheduleInstantToDate(instants.startAt),
+    title: event.title,
+  };
+}
+
 function slotFormValues(start: string, end: string): PlanScheduleEventInput {
   return {
     end: scheduleInstantToDate(end),
@@ -213,4 +226,4 @@ function slotFormValues(start: string, end: string): PlanScheduleEventInput {
   };
 }
 
-export { blockFormValues, slotFormValues };
+export { blockFormValues, eventFormValues, slotFormValues };

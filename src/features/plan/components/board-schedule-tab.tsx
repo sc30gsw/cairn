@@ -1,10 +1,8 @@
 import { convexQuery } from "@convex-dev/react-query";
-import { Stack } from "@mantine/core";
 import { queryOptions, usePrefetchQuery, useSuspenseQueries } from "@tanstack/react-query";
 
 import { api } from "~/../convex/_generated/api";
 import { BoardSchedule } from "~/features/plan/components/board-schedule";
-import { PlanClock } from "~/features/plan/components/plan-clock";
 import { usePlanView } from "~/features/plan/hooks/use-plan-view";
 import { planWindowQuery, usePlanWindow } from "~/features/plan/hooks/use-plan-window";
 import { toPlanScheduleBlocks } from "~/features/plan/lib/plan-event-blocks";
@@ -26,10 +24,7 @@ export function BoardScheduleTab() {
     anchorDateJst: view.scheduleAnchor,
     view: view.scheduleView,
   });
-  const { events, unplannedConfirmedMinutes } = usePlanWindow(
-    view.scheduleAnchor,
-    view.scheduleView,
-  );
+  const { events } = usePlanWindow(view.scheduleAnchor, view.scheduleView);
   const { data: items } = useItemsList();
   const [{ data: queriedExternals }] = useSuspenseQueries({
     queries: [queryOptions(externalsQuery)] as const satisfies readonly unknown[],
@@ -37,25 +32,15 @@ export function BoardScheduleTab() {
   useSyncCalendarOnOpen();
 
   return (
-    <Stack gap="md">
-      {view.scheduleView === "day" ? (
-        <PlanClock
-          events={events}
-          selectedDateJst={view.selectedDateJst}
-          todayJst={view.today}
-          unplannedConfirmedMinutes={unplannedConfirmedMinutes}
-        />
-      ) : null}
-      <BoardSchedule
-        blocks={toPlanScheduleBlocks(events)}
-        externals={
-          liveExternals.isReady && liveExternals.data !== undefined
-            ? liveExternals.data
-            : queriedExternals
-        }
-        items={items}
-        view={view}
-      />
-    </Stack>
+    <BoardSchedule
+      blocks={toPlanScheduleBlocks(events)}
+      externals={
+        liveExternals.isReady && liveExternals.data !== undefined
+          ? liveExternals.data
+          : queriedExternals
+      }
+      items={items}
+      view={view}
+    />
   );
 }

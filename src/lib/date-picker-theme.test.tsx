@@ -1,4 +1,4 @@
-import { DateInput, DatePickerInput, DateTimePicker } from "@mantine/dates";
+import { DateInput, DatePicker, DatePickerInput, DateTimePicker } from "@mantine/dates";
 import { fireEvent } from "@testing-library/react";
 import { expect, test } from "vite-plus/test";
 
@@ -32,3 +32,19 @@ test.each([DatePickerInput, DateTimePicker, DateInput])(
     expect(getByLabelText("23 9月 2026").getAttribute("title")).toBe("秋分の日");
   },
 );
+
+test("DatePicker は共通の祝日・週末色を使い、選択状態を保持する", () => {
+  const { getByLabelText, getByRole } = renderWithMantine(
+    <DatePicker aria-label="日付" value="2026-09-06" />,
+  );
+  expect(getByRole("button", { name: "2026年9月" })).toBeDefined();
+  expect([...getByLabelText("5 9月 2026").classList]).toContain(
+    calendarDayStyleClasses.saturdayDay,
+  );
+  expect([...getByLabelText("6 9月 2026").classList]).toContain(calendarDayStyleClasses.sundayDay);
+  expect(getByLabelText("6 9月 2026").hasAttribute("data-selected")).toBe(true);
+  expect([...getByLabelText("23 9月 2026").classList]).toContain(
+    calendarDayStyleClasses.holidayDay,
+  );
+  expect(getByLabelText("23 9月 2026").getAttribute("title")).toBe("秋分の日");
+});
