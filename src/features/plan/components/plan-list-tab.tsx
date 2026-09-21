@@ -1,6 +1,6 @@
 import { convexQuery } from "@convex-dev/react-query";
 import { Card, ColorSwatch, Group, Stack, Text, Title, UnstyledButton } from "@mantine/core";
-import { useSuspenseQueries } from "@tanstack/react-query";
+import { queryOptions, useSuspenseQueries } from "@tanstack/react-query";
 import { Result } from "better-result";
 import { useState } from "react";
 import { PLAN_PRIORITY_STYLE } from "~domain/planEvent";
@@ -18,12 +18,14 @@ import { PlanTemplatesCard } from "~/features/plan/components/plan-templates-car
 import { useBoardScheduleActions } from "~/features/plan/hooks/use-board-schedule-actions";
 import { usePlanView } from "~/features/plan/hooks/use-plan-view";
 import { usePlanWindow } from "~/features/plan/hooks/use-plan-window";
+import { planEventDisplayName } from "~/features/plan/lib/plan-event-display-name";
 import type { PlanScheduleEventInput } from "~/features/plan/schemas/board-schedule-event-schema";
 import { goalsListQuery } from "~/hooks/goals-queries";
 import { useItemsList } from "~/hooks/use-items-list";
 import { useObstaclePlans } from "~/hooks/use-obstacle-plans";
 import { parallelConvexQuery } from "~/lib/parallel-convex-query";
 import { toPlanGoalRead } from "~/lib/plan-goal-read";
+import { useOptionalExternalCalendarEventsLiveQuery } from "~/lib/tanstack-db/collections";
 import { useOptionalGoalsLiveQuery } from "~/lib/tanstack-db/collections";
 
 export function PlanListTab() {
@@ -32,12 +34,26 @@ export function PlanListTab() {
   const { data: items } = useItemsList();
   const liveGoals = useOptionalGoalsLiveQuery();
   const obstaclePlans = useObstaclePlans();
-  const [{ data: queriedGoals }, { data: templates }] = useSuspenseQueries({
-    queries: [
-      parallelConvexQuery(goalsListQuery()),
-      parallelConvexQuery(convexQuery(api.queries.planTemplates.list.list, {})),
-    ],
+  const externalsQuery = convexQuery(api.queries.calendarSync.listExternal.listExternal, {
+    anchorDateJst: view.selectedDateJst,
+    view: "day",
   });
+  const liveExternals = useOptionalExternalCalendarEventsLiveQuery({
+    anchorDateJst: view.selectedDateJst,
+    view: "day",
+  });
+  const [{ data: queriedGoals }, { data: templates }, { data: queriedExternals }] =
+    useSuspenseQueries({
+      queries: [
+        parallelConvexQuery(goalsListQuery()),
+        parallelConvexQuery(convexQuery(api.queries.planTemplates.list.list, {})),
+        parallelConvexQuery(queryOptions(externalsQuery)),
+      ],
+    });
+  const externals =
+    liveExternals.isReady && liveExternals.data !== undefined
+      ? liveExternals.data
+      : queriedExternals;
   const goals = liveGoals.isReady && liveGoals.data !== undefined ? liveGoals.data : queriedGoals;
   const actions = useBoardScheduleActions();
   const [formOpened, setFormOpened] = useState(false);
@@ -71,7 +87,7 @@ export function PlanListTab() {
               <Card padding="sm" withBorder>
                 <Group justify="space-between">
                   <Stack gap={2}>
-                    <Text fw={600}>{event.title}</Text>
+                    <Text fw={600}>{planEventDisplayName(event.title, event.itemId, items)}</Text>
                     <Text c="dimmed" size="sm">
                       {event.startTime}–{event.endTime}
                     </Text>
@@ -87,6 +103,7 @@ export function PlanListTab() {
         </Stack>
       )}
       <BoardScheduleEventForm
+        dateJst={view.selectedDateJst}
         frozen={editing?.recordState.kind === "materialized"}
         initialValues={formValues}
         items={items}
@@ -111,6 +128,8 @@ export function PlanListTab() {
       />
       <PlanTemplatesCard
         dateJst={view.selectedDateJst}
+        events={events}
+        externals={externals}
         hasEvents={events.length > 0}
         items={items}
         templates={templates}

@@ -200,7 +200,7 @@ export async function save(
 ): Promise<Id<"planEvents">> {
   const dateJst = requireDateJst(args.dateJst);
   const title = args.title.trim();
-  if (title === "") {
+  if (title === "" && args.itemId === undefined) {
     throwDomain(new ValidationFailedError({ message: PLAN_TITLE_MESSAGE }));
   }
   const { endMinute, startMinute } = parsePlanWindow({

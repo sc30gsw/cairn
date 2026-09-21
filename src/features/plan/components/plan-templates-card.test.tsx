@@ -67,7 +67,14 @@ test("計画し忘れたときに使うスイッチは1つで、予定がある�
   forgottenMutate.mockClear();
   applyMutate.mockClear();
   const { getByRole } = renderWithMantine(
-    <PlanTemplatesCard dateJst="2026-08-17" hasEvents items={[item]} templates={[morning]} />,
+    <PlanTemplatesCard
+      dateJst="2026-08-17"
+      events={[]}
+      externals={[]}
+      hasEvents
+      items={[item]}
+      templates={[morning]}
+    />,
   );
 
   const toggle = getByRole("switch", { name: FORGOTTEN_TEMPLATE_LABEL });
@@ -84,6 +91,8 @@ test("空の日なら選んだ雛形を適用する", () => {
   const { getByRole } = renderWithMantine(
     <PlanTemplatesCard
       dateJst="2026-08-17"
+      events={[]}
+      externals={[]}
       hasEvents={false}
       items={[item]}
       templates={[morning]}
@@ -103,6 +112,8 @@ test("保存は項目なしを none から外して送る", async () => {
   const { getByRole, queryByRole } = renderWithMantine(
     <PlanTemplatesCard
       dateJst="2026-08-17"
+      events={[]}
+      externals={[]}
       hasEvents={false}
       items={[item]}
       templates={[morning]}
@@ -143,6 +154,8 @@ test("保存した雛形の名前を変えて保存すると更新が送られ�
   const { getByRole, queryByRole } = renderWithMantine(
     <PlanTemplatesCard
       dateJst="2026-08-17"
+      events={[]}
+      externals={[]}
       hasEvents={false}
       items={[item]}
       templates={[morning]}
@@ -170,6 +183,8 @@ test("削除は確認してから消し、キャンセルでは残す", async ()
   const { getByRole } = renderWithMantine(
     <PlanTemplatesCard
       dateJst="2026-08-17"
+      events={[]}
+      externals={[]}
       hasEvents={false}
       items={[item]}
       templates={[morning]}

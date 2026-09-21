@@ -79,12 +79,20 @@ type BoardScheduleUi = ReturnType<typeof useBoardScheduleUi>;
 type BoardScheduleDialogsProps = {
   actions: BoardScheduleActions;
   blocks: readonly PlanScheduleBlock[];
+  dateJst: string;
   items: readonly PlanCatalogItem[];
   pending: boolean;
   ui: BoardScheduleUi;
 };
 
-function BoardScheduleDialogs({ actions, blocks, items, pending, ui }: BoardScheduleDialogsProps) {
+function BoardScheduleDialogs({
+  actions,
+  blocks,
+  dateJst,
+  items,
+  pending,
+  ui,
+}: BoardScheduleDialogsProps) {
   const editingId = ui.formValues?.eventId;
   const editing =
     editingId === undefined ? undefined : blocks.find((block) => block._id === editingId);
@@ -107,6 +115,11 @@ function BoardScheduleDialogs({ actions, blocks, items, pending, ui }: BoardSche
       />
       {pending ? null : (
         <BoardScheduleEventForm
+          dateJst={
+            ui.formValues === null
+              ? dateJst
+              : (dateToScheduleInstant(ui.formValues.start).slice(0, 10) as typeof dateJst)
+          }
           frozen={editing?.frozen === true}
           initialValues={ui.formValues}
           items={items}
@@ -326,6 +339,7 @@ export function BoardSchedule({
           onUpdateBlock,
         }}
         blocks={blocks}
+        dateJst={anchorDateJst}
         items={items}
         pending={pending}
         ui={ui}

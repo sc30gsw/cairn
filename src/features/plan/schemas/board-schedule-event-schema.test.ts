@@ -44,6 +44,19 @@ test("空のタイトルはエラーになる", () => {
   expect(result.issues?.[0]?.message).toBe("タイトルは必須です");
 });
 
+test("項目ありならタイトル空でも通る", () => {
+  const start = new Date("2026-08-17T09:00:00");
+  const end = new Date("2026-08-17T10:00:00");
+  const result = v.safeParse(PlanScheduleEventSchema, {
+    end,
+    itemId: "item-1" as PlanScheduleEventOutput["itemId"],
+    priority: "high",
+    start,
+    title: "",
+  });
+  expect(result.success).toBe(true);
+});
+
 test("項目は省略できる", () => {
   const start = new Date("2026-08-17T09:00:00");
   const end = new Date("2026-08-17T10:00:00");

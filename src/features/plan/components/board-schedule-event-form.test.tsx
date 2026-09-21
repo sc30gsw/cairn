@@ -24,6 +24,7 @@ test("予定は Banana / Sage / Blueberry から選んで、項目なしでも�
   const end = new Date("2026-08-17T01:00:00.000Z");
   const { getByRole, getByLabelText, findByRole } = renderWithMantine(
     <BoardScheduleEventForm
+      dateJst="2026-08-17"
       initialValues={{
         end,
         eventId: undefined,
@@ -55,11 +56,37 @@ test("予定は Banana / Sage / Blueberry から選んで、項目なしでも�
   );
 });
 
+test("項目を選ぶとタイトル欄は隠れる", () => {
+  const start = new Date("2026-08-17T00:00:00.000Z");
+  const end = new Date("2026-08-17T01:00:00.000Z");
+  const { getByRole, queryByLabelText } = renderWithMantine(
+    <BoardScheduleEventForm
+      dateJst="2026-08-17"
+      initialValues={{
+        end,
+        eventId: undefined,
+        itemId: "i1" as Id<"items">,
+        priority: "medium",
+        start,
+        title: "",
+      }}
+      items={[sampleItem("i1", "Distinction")]}
+      onClose={() => undefined}
+      onSubmit={onSubmit}
+      opened
+    />,
+  );
+
+  expect(queryByLabelText("タイトル")).toBeNull();
+  expect(getByRole("combobox", { name: "項目" })).toBeDefined();
+});
+
 test("記録を生やした予定は項目を変えられない", () => {
   const start = new Date("2026-08-17T00:00:00.000Z");
   const end = new Date("2026-08-17T01:00:00.000Z");
   const { getByRole, getByText } = renderWithMantine(
     <BoardScheduleEventForm
+      dateJst="2026-08-17"
       frozen
       initialValues={{
         end,
