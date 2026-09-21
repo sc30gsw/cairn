@@ -27,9 +27,10 @@ test("日跨ぎは移せない", () => {
   expect(planWindowFromScheduleInstants("2026-08-17 23:00:00", "2026-08-18 01:00:00")).toBeNull();
 });
 
-test("Google 色 5 / 2 / 8 だけを優先度に写す", () => {
+test("Google 色 5 / 2 / 9 を優先度に写す", () => {
   expect(planPriorityFromGoogleColorId("5")).toBe("high");
   expect(planPriorityFromGoogleColorId("2")).toBe("medium");
+  expect(planPriorityFromGoogleColorId("9")).toBe("low");
   expect(planPriorityFromGoogleColorId("8")).toBe("low");
   expect(planPriorityFromGoogleColorId("10")).toBe("medium");
 });

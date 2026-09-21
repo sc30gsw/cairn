@@ -9,6 +9,18 @@
   height: auto;
 }
 
+.sector {
+  fill-opacity: 0.5;
+}
+
+.needle {
+  stroke: var(--mantine-color-dark-8);
+}
+
+.hub {
+  fill: var(--mantine-color-dark-8);
+}
+
 .unplanned {
   text-align: center;
 }

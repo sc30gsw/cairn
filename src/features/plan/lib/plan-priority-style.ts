@@ -4,7 +4,7 @@ import type { PlanScheduleColor } from "~/features/plan/types/plan";
 
 export const PLAN_PRIORITY_APP_COLOR = {
   high: "yellow",
-  low: "gray",
+  low: "blue",
   medium: "lime",
 } as const satisfies Record<PlanPriority, PlanScheduleColor>;
 

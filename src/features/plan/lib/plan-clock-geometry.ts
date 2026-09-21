@@ -22,21 +22,34 @@ export function minuteToAngle(minute: number): number {
   return (minute / CLOCK_MINUTES_PER_DAY) * 360 - 90;
 }
 
-export function clockArcPath(
+export function clockPoint(
+  cx: number,
+  cy: number,
+  radius: number,
+  minute: number,
+): { x: number; y: number } {
+  const angle = (minuteToAngle(minute) * Math.PI) / 180;
+  return {
+    x: cx + radius * Math.cos(angle),
+    y: cy + radius * Math.sin(angle),
+  };
+}
+
+export function clockPiePath(
   cx: number,
   cy: number,
   radius: number,
   startMinute: number,
   endMinute: number,
 ): string {
-  const startAngle = (minuteToAngle(startMinute) * Math.PI) / 180;
-  const endAngle = (minuteToAngle(endMinute) * Math.PI) / 180;
-  const largeArc = endMinute - startMinute > CLOCK_MINUTES_PER_DAY / 2 ? 1 : 0;
-  const startX = cx + radius * Math.cos(startAngle);
-  const startY = cy + radius * Math.sin(startAngle);
-  const endX = cx + radius * Math.cos(endAngle);
-  const endY = cy + radius * Math.sin(endAngle);
-  return `M ${startX} ${startY} A ${radius} ${radius} 0 ${largeArc} 1 ${endX} ${endY}`;
+  const span = endMinute - startMinute;
+  if (span >= CLOCK_MINUTES_PER_DAY) {
+    return `M ${cx} ${cy - radius} A ${radius} ${radius} 0 1 1 ${cx} ${cy + radius} A ${radius} ${radius} 0 1 1 ${cx} ${cy - radius} Z`;
+  }
+  const largeArc = span > CLOCK_MINUTES_PER_DAY / 2 ? 1 : 0;
+  const start = clockPoint(cx, cy, radius, startMinute);
+  const end = clockPoint(cx, cy, radius, endMinute);
+  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y} Z`;
 }
 
 export function paintsClockArc(event: PlanEventDto): boolean {

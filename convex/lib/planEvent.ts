@@ -10,12 +10,15 @@ export type PlanView = (typeof PLAN_VIEWS)[number];
 
 export const PLAN_PRIORITY_STYLE = {
   high: { googleColorId: "5", googleLabel: "Banana", hex: "#fbd75b", label: "高" },
-  low: { googleColorId: "8", googleLabel: "Graphite", hex: "#e1e1e1", label: "低" },
+  low: { googleColorId: "9", googleLabel: "Blueberry", hex: "#5484ed", label: "低" },
   medium: { googleColorId: "2", googleLabel: "Sage", hex: "#7ae7bf", label: "中" },
 } as const satisfies Record<
   PlanPriority,
   { googleColorId: string; googleLabel: string; hex: string; label: string }
 >;
+
+//? Graphite は低の旧 Google 色。既存の予定を medium に落とさない
+const LEGACY_LOW_GOOGLE_COLOR_ID = "8";
 
 export type MinuteOfDay = number & { readonly __brand: "MinuteOfDay" };
 
@@ -145,10 +148,10 @@ export function planWindowFromScheduleInstants(
 }
 
 export function planPriorityFromGoogleColorId(colorId: string): PlanPriority {
-  if (colorId === "5") {
+  if (colorId === PLAN_PRIORITY_STYLE.high.googleColorId) {
     return "high";
   }
-  if (colorId === "8") {
+  if (colorId === PLAN_PRIORITY_STYLE.low.googleColorId || colorId === LEGACY_LOW_GOOGLE_COLOR_ID) {
     return "low";
   }
   return "medium";

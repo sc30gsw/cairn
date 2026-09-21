@@ -20,7 +20,7 @@ const event = {
 test.each([
   { colorId: "5", priority: "high" as const },
   { colorId: "2", priority: "medium" as const },
-  { colorId: "8", priority: "low" as const },
+  { colorId: "9", priority: "low" as const },
 ])("priority $priority は Google 色 $colorId だけを使う", ({ colorId, priority }) => {
   expect(planEventPayload({ ...event, priority }, { itemName: "", note: "" }).colorId).toBe(
     colorId,

@@ -1,7 +1,11 @@
 import type { Doc, Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { boardScheduleGoogleColor, type BoardScheduleColor } from "../../lib/boardScheduleColors";
-import { planWindowFromScheduleInstants, type PlanPriority } from "../../lib/planEvent";
+import {
+  PLAN_PRIORITY_STYLE,
+  planWindowFromScheduleInstants,
+  type PlanPriority,
+} from "../../lib/planEvent";
 
 export const BOARD_SCHEDULE_OVERNIGHT_MESSAGE = "日跨ぎの予定は移せません";
 
@@ -12,10 +16,11 @@ export function planPriorityFromBoardColor(color: BoardScheduleColor | undefined
     return "medium";
   }
   const id = boardScheduleGoogleColor(color).id;
-  if (id === "5") {
+  if (id === PLAN_PRIORITY_STYLE.high.googleColorId) {
     return "high";
   }
-  if (id === "8") {
+  //? Graphite（8）は低の旧色。既存のボード予定を medium に落とさない
+  if (id === PLAN_PRIORITY_STYLE.low.googleColorId || id === "8") {
     return "low";
   }
   return "medium";

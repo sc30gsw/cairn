@@ -20,7 +20,7 @@ export type PlanTemplateDto = FunctionReturnType<
 
 export type PlanTemplateEventDto = PlanTemplateDto["events"][number];
 
-export type PlanScheduleColor = "gray" | "lime" | "yellow";
+export type PlanScheduleColor = "blue" | "lime" | "yellow";
 
 export type PlanScheduleBlock = {
   _id: Id<"planEvents">;

@@ -18,7 +18,7 @@ test("項目なし予定は弧用の記録を持たず、優先度から色を�
   expect(toPlanScheduleBlocks([event])).toEqual([
     {
       _id: "e1",
-      color: "gray",
+      color: "blue",
       endAt: "2026-09-25 21:00:00",
       frozen: false,
       itemId: undefined,
