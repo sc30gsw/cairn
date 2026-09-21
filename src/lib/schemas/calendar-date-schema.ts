@@ -1,5 +1,6 @@
 import * as v from "valibot";
 import { DATE_JST_PATTERN, YEAR_MONTH_MESSAGE, YEAR_MONTH_PATTERN } from "~domain/domain";
+import type { DateJst } from "~domain/jst";
 
 function isCalendarDate(value: string): boolean {
   if (!DATE_JST_PATTERN.test(value)) {
@@ -19,5 +20,10 @@ export const DateJstSchema = v.pipe(
   v.string(),
   v.check(isCalendarDate, "日付は YYYY-MM-DD 形式で指定してください"),
 );
+
+export function parseDateJst(value: unknown): DateJst | undefined {
+  const parsed = v.safeParse(DateJstSchema, value);
+  return parsed.success ? parsed.output : undefined;
+}
 
 export const YearMonthSchema = v.pipe(v.string(), v.regex(YEAR_MONTH_PATTERN, YEAR_MONTH_MESSAGE));
