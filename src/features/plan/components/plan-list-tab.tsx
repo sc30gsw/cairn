@@ -28,6 +28,12 @@ export function PlanListTab() {
   const actions = useBoardScheduleActions();
   const [formOpened, setFormOpened] = useState(false);
   const [formValues, setFormValues] = useState<PlanScheduleEventInput | null>(null);
+  const [calendar, setCalendar] = useState({
+    forSelected: view.selectedDateJst,
+    month: view.selectedDateJst,
+  });
+  const month =
+    calendar.forSelected === view.selectedDateJst ? calendar.month : view.selectedDateJst;
   const editingId = formValues?.eventId;
   const editing =
     editingId === undefined ? undefined : events.find((event) => event._id === editingId);
@@ -38,15 +44,28 @@ export function PlanListTab() {
         <DatePicker
           allowDeselect={false}
           aria-label="日付を選択"
+          date={month}
           onChange={(value) => {
             const next = parseDateJst(value);
             if (next !== undefined) {
               view.setDate(next);
             }
           }}
+          onDateChange={(value) => {
+            const next = parseDateJst(value);
+            if (next !== undefined) {
+              setCalendar({ forSelected: view.selectedDateJst, month: next });
+            }
+          }}
           value={view.selectedDateJst}
         />
-        <Button onClick={() => view.setDate(view.today)} variant="light">
+        <Button
+          onClick={() => {
+            view.setDate(view.today);
+            setCalendar({ forSelected: view.today, month: view.today });
+          }}
+          variant="light"
+        >
           今日
         </Button>
         <PlanClock
