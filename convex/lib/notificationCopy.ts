@@ -25,6 +25,19 @@ export function notificationMessage(payload: NotificationPayload): {
         ),
         title: "チェックポイントの期限が近づいています",
       };
+    case "eveningUntouched":
+      return {
+        body:
+          payload.source === "day"
+            ? `未着手が${String(payload.pendingCount)}件残っています。`
+            : `今日はまだ開いていません。今日のプリセットに${String(payload.pendingCount)}件あります。`,
+        title: "今日の残りがあります",
+      };
+    case "missingTomorrowPlan":
+      return {
+        body: "明日の計画がありません",
+        title: "明日の計画がありません",
+      };
     case "weeklyTargetMiss":
       return {
         body: joinLines(
@@ -34,14 +47,6 @@ export function notificationMessage(payload: NotificationPayload): {
           ),
         ),
         title: "今週の週間ターゲットが未達です",
-      };
-    default:
-      return {
-        body:
-          payload.source === "day"
-            ? `未着手が${String(payload.pendingCount)}件残っています。`
-            : `今日はまだ開いていません。今日のプリセットに${String(payload.pendingCount)}件あります。`,
-        title: "今日の残りがあります",
       };
   }
 }

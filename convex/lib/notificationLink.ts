@@ -3,6 +3,7 @@ import type { NotificationKind } from "./notifications";
 const NOTIFICATION_LINKS = {
   checkpointDeadline: "/goals",
   eveningUntouched: "/",
+  missingTomorrowPlan: "/plan",
   weeklyTargetMiss: "/review",
 } as const satisfies Record<NotificationKind, string>;
 

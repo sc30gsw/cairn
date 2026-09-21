@@ -45,6 +45,20 @@ test("項目なし予定は説明が空でも Google に出る", () => {
   });
 });
 
+test("タイトルが空なら summary は項目名", () => {
+  expect(
+    planEventPayload({ ...event, title: "" }, { itemName: "多読", note: "Chapter 3" }),
+  ).toMatchObject({
+    description: "多読 / Chapter 3",
+    summary: "多読",
+  });
+  expect(
+    planEventPayload({ ...event, title: "   " }, { itemName: "多読", note: "" }),
+  ).toMatchObject({
+    summary: "多読",
+  });
+});
+
 test("24:00 終了は翌日 00:00 の RFC3339 になる", () => {
   expect(
     planEventPayload({ ...event, endMinute: 1440, startMinute: 1380 }, { itemName: "", note: "" })

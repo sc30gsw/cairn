@@ -77,13 +77,9 @@ test("dedupeKey は日次トリガーが暦日、週次トリガーが週開始�
       source: "day",
     }),
   ).toBe("eveningUntouched:2026-08-20");
-  expect(
-    notificationDedupeKey({
-      kind: "weeklyTargetMiss",
-      shortfalls: [],
-      weekStartJst: "2026-08-17",
-    }),
-  ).toBe("weeklyTargetMiss:2026-08-17");
+  expect(notificationDedupeKey({ dateJst: "2026-08-21", kind: "missingTomorrowPlan" })).toBe(
+    "missingTomorrowPlan:2026-08-21",
+  );
 });
 
 test("静穏時間: from > to は日付をまたぎ、from === to は静穏なし", () => {
