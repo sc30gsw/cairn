@@ -38,9 +38,10 @@ Each feature file starts with an H1 and one paragraph. It then uses exactly four
 
 - [Account sign-up and sign-in](./account-auth.md) covers creating an account, skipping the passkey prompt, signing out, and signing back in.
 - [Catalog items](./catalog-items.md) covers adding a category and a learning item so a day can record work.
-- [Day log](./day-log.md) covers opening today, adding an ad-hoc record, confirming it, and checking learning volume.
-- [Presets](./presets.md) covers creating a weekday preset after at least one item exists.
-- [Execution board](./board.md) covers opening the kanban for today, holding a card to drag at 390 and 768, and confirming a record from the board.
+- [Day log](./day-log.md) covers opening today, adding an ad-hoc record, confirming it, checking learning volume, and seeing 障害プラン.
+- [Presets](./presets.md) covers 計画プリセット on `/plan?tab=plan`, the `/presets` redirect, and the forgotten-template switch.
+- [Plan](./plan.md) covers `/plan` Clock, schedule day slots, leftover `/board?tab=schedule`, and the read-only 目標 card.
+- [Execution board](./board.md) covers opening the kanban-only board, holding a card to drag at 390 and 768, and confirming a record from the board.
 - [Methods catalog](./methods.md) covers opening `/methods`, adding a lane and a method, and reading a truncated title.
 
 ## Automated baseline
@@ -49,9 +50,9 @@ Run `rtk proxy .cursor/skills/verify-cairn/bin/prove-catalog` after launch → d
 
 ## Coverage boundaries
 
-Not mapped yet (do not claim verified): 履歴 (`/history`), レビュー (`/review`), 目標 (`/goals`), ゴミ箱 restore/purge, マイページ profile/passkey/notifications, Notion OAuth, PWA install, offline poster.
+Not mapped yet (do not claim verified): 履歴 (`/history`), レビュー (`/review`), 目標 editor (`/goals` write path), ゴミ箱 restore/purge, マイページ profile/passkey/notifications, Notion OAuth, PWA install, offline poster, Google Calendar OAuth. Weekday catalog presets are unmounted; do not claim them verified via `/presets`.
 
 
 ## Source anchors
 
-Selectors and preconditions were checked against `src/features/auth/components/login-screen.tsx:53` (title `学習ログ`), `src/features/auth/components/account-auth-form.tsx:20`, `src/features/catalog/components/item-list.tsx:134` (`AddCategoryForm`), `src/features/catalog/components/preset-list.tsx:144` (`createFormKey` remount) and `:276` (weekday `MultiSelect`), `src/features/today/components/adhoc-row-form.tsx:17` (initial `minutes: 20`), `src/features/methods/components/method-catalog-board.tsx:37` (heading `方法カタログ`), `src/lib/app-nav.ts:38` (desktop nav including `方法`; `MOBILE_PRIMARY` omits it), `src/features/board/components/board-kanban.tsx` (card-body `aria-label` `{item} の順序を変更`), `src/components/overflow-tooltip.tsx` (`EVENTS.touch`), and `src/features/today/hooks/use-day-page-date-jst.ts:6`. Consult graft before changing recipes when these controls change.
+Selectors and preconditions were checked against `src/features/auth/components/login-screen.tsx` (title `学習ログ`), `src/features/auth/components/account-auth-form.tsx`, `src/lib/app-nav.ts` (`計画` → `/plan`; `MOBILE_PRIMARY` `日` / `ボード` / `計画` / `目標`), `src/routes/presets.tsx` (redirect to `/plan?tab=plan`), `src/routes/board.tsx` (`tab=schedule` → `/plan`), `src/features/board/components/board-page.tsx` (kanban only), `src/features/plan/components/plan-page.tsx` / `plan-tabs.tsx` / `plan-clock.tsx` (`一日の時計`), `src/features/plan/components/plan-templates-card.tsx`, `src/components/plan-goals-read-card.tsx`, `src/components/obstacle-section.tsx` (日 and 計画), `src/features/today/components/day-board-tab.tsx` (`presets: []`), `src/features/onboarding/lib/setup-steps.ts` (`計画プリセットを登録する`), `src/features/catalog/components/item-list.tsx` (`AddCategoryForm`), `src/features/today/components/adhoc-row-form.tsx` (initial `minutes: 20`), `src/features/methods/components/method-catalog-board.tsx` (heading `方法カタログ`), `src/features/board/components/board-kanban.tsx` (card-body `aria-label` `{item} の順序を変更`), `src/components/overflow-tooltip.tsx` (`EVENTS.touch`), and `src/features/today/hooks/use-day-page-date-jst.ts`. Consult graft before changing recipes when these controls change.

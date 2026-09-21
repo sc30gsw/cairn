@@ -1,6 +1,6 @@
 ---
 name: verify-cairn
-description: Drive Cairn (学習ログ) through its real browser UI to prove authentication, catalog items, day records, presets, methods, and board changes (including hold-drag at 390 and 768). Use for live feature verification or reproducing user-visible bugs with retained evidence.
+description: Drive Cairn (学習ログ) through its real browser UI to prove authentication, catalog items, day records, 計画プリセット, /plan Clock, methods, and board kanban changes (including hold-drag at 390 and 768). Use for live feature verification or reproducing user-visible bugs with retained evidence.
 ---
 
 # Verify Cairn (学習ログ)
@@ -57,7 +57,7 @@ Require `control-cairn: doctor OK` before driving and whenever something looks o
 
 ## Drive
 
-The `browser` helper opens a dedicated nonpersistent Playwright session at 1280×900 and records ownership for cleanup. Never attach to a human tab. The desktop nav is `画面ナビ（右小口）`; narrow viewports expose additional destinations through the button labelled `その他の画面` (visible text `その他`).
+The `browser` helper opens a dedicated nonpersistent Playwright session at 1280×900 and records ownership for cleanup. Never attach to a human tab. The desktop nav is `画面ナビ（右小口）` and includes `計画`. Narrow viewports keep `日` / `ボード` / `計画` / `目標` as primary tabs; additional destinations go through the button labelled `その他の画面` (visible text `その他`). There is no `プリセット` nav item.
 
 For a repeatable first proof on a fresh run:
 
@@ -80,7 +80,7 @@ Use each feature's literal roles/names. Snapshot → act → wait for the expect
 Mantine specifics:
 
 - Use `exact: true` on short labels (`日`, `項目`, `あとで`).
-- SegmentedControl inputs are hidden: click visible `新規登録` text. For Switch use its visible label/track from the current snapshot. After `reload`, wait for a real heading (`項目`, `プリセット`, `ボード`, or volume `N分`) before snapshotting.
+- SegmentedControl inputs are hidden: click visible `新規登録` text. For Switch use its visible label/track from the current snapshot. After `reload`, wait for a real heading (`項目`, `計画`, `ボード`, `方法カタログ`, or volume `N分`) before snapshotting. Do not wait for heading `プリセット`.
 - An item-add textbox and button have the same accessible name: select by role.
 - Select inputs use role `combobox`; their hidden listbox can share the label, making `getByLabel` ambiguous.
 - `分数` is a textbox. `アカウントメニュー` is a labelled avatar, not a button.
