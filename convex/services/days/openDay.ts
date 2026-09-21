@@ -1,5 +1,6 @@
 import type { MutationCtx } from "../../_generated/server";
 import { presetWeekdayFor } from "../../lib/holidayPreset";
+import { materializePlanEvents, pendingPlanMaterializations } from "../plan/openDate";
 import { getSettings as getPresetSettings } from "../presets/getSettings";
 import { findUniquePresetForWeekday } from "../presets/helpers";
 import { loadOwnerReviewFlags } from "../reviews/loadOwnerReviewFlags";
@@ -21,17 +22,18 @@ export async function openDay(
     return { applied: false };
   }
   const weekday = presetWeekdayFor(args.dateJst, await getPresetSettings(ctx, ownerId));
-  const [presets, flags] = await Promise.all([
+  const [presets, flags, pendingEvents] = await Promise.all([
     ctx.db
       .query("presets")
       .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
       .collect(),
     loadOwnerReviewFlags(ctx, ownerId),
+    pendingPlanMaterializations(ctx, ownerId, args.dateJst),
   ]);
   const preset = findUniquePresetForWeekday(presets, weekday);
   const presetLines = preset?.lines ?? [];
   const dueFlags = dueUnplacedFlags(flags, args.dateJst);
-  if (presetLines.length === 0 && dueFlags.length === 0) {
+  if (presetLines.length === 0 && dueFlags.length === 0 && pendingEvents.length === 0) {
     return { applied: false };
   }
   let day = existing;
@@ -60,6 +62,7 @@ export async function openDay(
       ),
     );
   }
+  await materializePlanEvents(ctx, ownerId, { dateJst: args.dateJst, day });
   await placeDueReviews(ctx, ownerId, { dateJst: args.dateJst, day, flags: dueFlags, liveRows });
   return { applied };
 }

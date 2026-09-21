@@ -9,7 +9,6 @@ import { requireDateJst } from "../../lib/dateArgs";
 import { NotFoundError } from "../../lib/errors";
 import { throwDomain } from "../../lib/ownerFunctions";
 import { assertScheduleRange, requireScheduleInstant } from "../../lib/scheduleInstant";
-import { scheduleBlockSync } from "../calendarSync/scheduleSourceSync";
 import { requireOwnedRow } from "../rows/requireOwnedRow";
 import { rowDayLiveness } from "../rows/rowDayLiveness";
 
@@ -108,7 +107,6 @@ export async function create(
     startAt,
     title: itemName,
   });
-  await scheduleBlockSync(ctx, ownerId, [blockId]);
   return blockId;
 }
 
@@ -146,7 +144,6 @@ export async function update(
     await requireLiveRowForSchedule(ctx, ownerId, block.rowId);
   }
   await ctx.db.patch("boardScheduleEvents", args.blockId, patch);
-  await scheduleBlockSync(ctx, ownerId, [args.blockId]);
   return null;
 }
 
@@ -157,7 +154,6 @@ export async function remove(
 ): Promise<null> {
   await requireOwnedBlock(ctx, ownerId, args.blockId);
   await ctx.db.delete("boardScheduleEvents", args.blockId);
-  await scheduleBlockSync(ctx, ownerId, [args.blockId]);
   return null;
 }
 
@@ -170,7 +166,6 @@ export async function move(
   await requireLiveRowForSchedule(ctx, ownerId, block.rowId);
   const { endAt, startAt } = normalizeRange(args.startAt, args.endAt);
   await ctx.db.patch("boardScheduleEvents", args.blockId, { endAt, startAt });
-  await scheduleBlockSync(ctx, ownerId, [args.blockId]);
   return null;
 }
 
@@ -183,15 +178,9 @@ export async function removeForRow(
     .query("boardScheduleEvents")
     .withIndex("by_row", (q) => q.eq("rowId", rowId))
     .collect();
-  const deletions: Array<Promise<void>> = [];
-  const removedIds: Id<"boardScheduleEvents">[] = [];
-  for (const block of blocks) {
-    if (block.ownerId !== ownerId) {
-      continue;
-    }
-    deletions.push(ctx.db.delete("boardScheduleEvents", block._id));
-    removedIds.push(block._id);
-  }
-  await Promise.all(deletions);
-  await scheduleBlockSync(ctx, ownerId, removedIds);
+  await Promise.all(
+    blocks.flatMap((block) =>
+      block.ownerId === ownerId ? [ctx.db.delete("boardScheduleEvents", block._id)] : [],
+    ),
+  );
 }

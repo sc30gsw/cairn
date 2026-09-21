@@ -1,6 +1,7 @@
 import type { Doc, Id } from "../../_generated/dataModel";
 import type { MutationCtx } from "../../_generated/server";
 import { isDateJst } from "../../lib/jst";
+import { planWindowFromScheduleInstants } from "../../lib/planEvent";
 import type { PulledEvent } from "../../lib/validators";
 import { desiredEvent } from "./desiredEvent";
 import { payloadKey } from "./eventPayload";
@@ -156,10 +157,10 @@ async function applyToSource(
   event: PulledEvent,
 ): Promise<void> {
   if (event.kind === "delete") {
-    if (link.sourceKind === "block") {
-      const block = await ownedBlock(ctx, link);
-      if (block !== null) {
-        await ctx.db.delete("boardScheduleEvents", block._id);
+    if (link.sourceKind === "plan") {
+      const plan = await ownedPlan(ctx, link);
+      if (plan !== null) {
+        await ctx.db.delete("planEvents", plan._id);
       }
     }
     await ctx.db.delete("calendarSyncLinks", link._id);
@@ -169,8 +170,8 @@ async function applyToSource(
     return;
   }
   const applied =
-    link.sourceKind === "block"
-      ? await moveBlockFromGoogle(ctx, link, event)
+    link.sourceKind === "plan"
+      ? await movePlanFromGoogle(ctx, link, event)
       : await moveGoalFromGoogle(ctx, link, event);
   if (applied === "ignored") {
     return;
@@ -190,31 +191,38 @@ async function applyToSource(
   });
 }
 
-async function ownedBlock(
+async function ownedPlan(
   ctx: MutationCtx,
   link: Doc<"calendarSyncLinks">,
-): Promise<Doc<"boardScheduleEvents"> | null> {
-  const blockId = ctx.db.normalizeId("boardScheduleEvents", link.sourceId);
-  const block = blockId === null ? null : await ctx.db.get("boardScheduleEvents", blockId);
-  return block === null || block.ownerId !== link.ownerId ? null : block;
+): Promise<Doc<"planEvents"> | null> {
+  const eventId = ctx.db.normalizeId("planEvents", link.sourceId);
+  const event = eventId === null ? null : await ctx.db.get("planEvents", eventId);
+  return event === null || event.ownerId !== link.ownerId ? null : event;
 }
 
-async function moveBlockFromGoogle(
+async function movePlanFromGoogle(
   ctx: MutationCtx,
   link: Doc<"calendarSyncLinks">,
   event: Extract<PulledEvent, { kind: "upsert" }>,
 ): Promise<ApplyResult> {
-  const block = await ownedBlock(ctx, link);
-  if (block === null) {
+  const plan = await ownedPlan(ctx, link);
+  if (plan === null) {
     return "ignored";
   }
-  if (event.allDay || event.endAt <= event.startAt) {
+  if (event.allDay) {
     return "reassert";
   }
-  if (block.startAt !== event.startAt || block.endAt !== event.endAt) {
-    await ctx.db.patch("boardScheduleEvents", block._id, {
-      endAt: event.endAt,
-      startAt: event.startAt,
+  const window = planWindowFromScheduleInstants(event.startAt, event.endAt);
+  if (window === null) {
+    return "reassert";
+  }
+  if (window.dateJst !== plan.dateJst) {
+    return "reassert";
+  }
+  if (plan.startMinute !== window.startMinute || plan.endMinute !== window.endMinute) {
+    await ctx.db.patch("planEvents", plan._id, {
+      endMinute: window.endMinute,
+      startMinute: window.startMinute,
     });
   }
   return "applied";

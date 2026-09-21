@@ -280,13 +280,22 @@ async function connectedOwner() {
   return { owner, t };
 }
 
-async function firstRowId(owner: Owner) {
-  const day = await owner.query(api.queries.days.get.get, { dateJst: TODAY, todayJst: TODAY });
-  const row = day.rows[0];
-  if (row === undefined) {
-    throw new Error("expected a row");
-  }
-  return row._id;
+async function savePlan(owner: Owner) {
+  return owner.mutation(api.mutations.planEvents.save.save, {
+    dateJst: TODAY,
+    endTime: "10:30",
+    priority: "high",
+    startTime: "09:00",
+    title: "公式問題集 Part 7",
+  });
+}
+
+async function listPlan(owner: Owner) {
+  return owner.query(api.queries.planEvents.listWindow.listWindow, {
+    anchorDateJst: TODAY,
+    paginationOpts: { cursor: null, numItems: 50 },
+    view: "day",
+  });
 }
 
 async function syncNow(owner: Owner) {
@@ -329,33 +338,31 @@ test("カレンダー権限の無い Google アカウントしか無ければ連
 
 test("予定の作成・移動・削除が Google に送られる", async () => {
   const { owner, t } = await connectedOwner();
-  const rowId = await firstRowId(owner);
 
-  const blockId = await owner.mutation(api.mutations.boardSchedule.create.create, {
-    color: "green",
-    endAt: `${TODAY} 10:30:00`,
-    rowId,
-    startAt: `${TODAY} 09:00:00`,
-  });
+  const eventId = await savePlan(owner);
   await flush(t);
   let [event] = google.active(PRIMARY);
   expect(event).toMatchObject({
-    colorId: "10",
+    colorId: "5",
     end: { dateTime: "2026-08-17T10:30:00+09:00" },
     start: { dateTime: "2026-08-17T09:00:00+09:00" },
+    summary: "公式問題集 Part 7",
     transparency: "opaque",
   });
 
-  await owner.mutation(api.mutations.boardSchedule.move.move, {
-    blockId,
-    endAt: `${TODAY} 14:00:00`,
-    startAt: `${TODAY} 13:00:00`,
+  await owner.mutation(api.mutations.planEvents.save.save, {
+    dateJst: TODAY,
+    endTime: "14:00",
+    eventId,
+    priority: "high",
+    startTime: "13:00",
+    title: "公式問題集 Part 7",
   });
   await flush(t);
   [event] = google.active(PRIMARY);
   expect(event?.start).toEqual({ dateTime: "2026-08-17T13:00:00+09:00" });
 
-  await owner.mutation(api.mutations.boardSchedule.remove.remove, { blockId });
+  await owner.mutation(api.mutations.planEvents.remove.remove, { eventId });
   await flush(t);
   expect(google.active(PRIMARY)).toHaveLength(0);
 });
@@ -483,16 +490,11 @@ test("Google 側の外部予定は写しとして予定タブの範囲で読め�
 
 test("Google で動かした予定はアプリに戻り、消した予定はアプリでも消える", async () => {
   const { owner, t } = await connectedOwner();
-  const rowId = await firstRowId(owner);
-  const blockId = await owner.mutation(api.mutations.boardSchedule.create.create, {
-    endAt: `${TODAY} 10:30:00`,
-    rowId,
-    startAt: `${TODAY} 09:00:00`,
-  });
+  const eventId = await savePlan(owner);
   await flush(t);
   const [event] = google.active(PRIMARY);
   if (event === undefined) {
-    throw new Error("expected the block in Google");
+    throw new Error("expected the plan in Google");
   }
 
   google.upsertExternal(PRIMARY, {
@@ -501,14 +503,11 @@ test("Google で動かした予定はアプリに戻り、消した予定はア�
     start: { dateTime: "2026-08-17T15:00:00+09:00" },
   });
   await syncNow(owner);
-  const [moved] = await owner.query(api.queries.boardSchedule.listForWeek.listForWeek, {
-    anchorDateJst: TODAY,
-    view: "week",
-  });
+  const [moved] = (await listPlan(owner)).page;
   expect(moved).toMatchObject({
-    _id: blockId,
-    endAt: `${TODAY} 16:00:00`,
-    startAt: `${TODAY} 15:00:00`,
+    _id: eventId,
+    endTime: "16:00",
+    startTime: "15:00",
   });
   const updatedAfterPull = google.active(PRIMARY)[0]?.updated;
   await syncNow(owner);
@@ -516,12 +515,7 @@ test("Google で動かした予定はアプリに戻り、消した予定はア�
 
   google.cancel(PRIMARY, event.id);
   await syncNow(owner);
-  expect(
-    await owner.query(api.queries.boardSchedule.listForWeek.listForWeek, {
-      anchorDateJst: TODAY,
-      view: "week",
-    }),
-  ).toEqual([]);
+  expect((await listPlan(owner)).page).toEqual([]);
 });
 
 test("Google で本番日を動かすと本番日が変わり、消しても目標は残って予定が戻る", async () => {
@@ -767,16 +761,11 @@ test("全件を取った日から 7 日たつと差分ではなく全件を取�
 
 test("アプリ側の未送信の変更が新しければ Google の古い変更は捨てられ、アプリの時刻が Google に届く", async () => {
   const { owner, t } = await connectedOwner();
-  const rowId = await firstRowId(owner);
-  const blockId = await owner.mutation(api.mutations.boardSchedule.create.create, {
-    endAt: `${TODAY} 10:30:00`,
-    rowId,
-    startAt: `${TODAY} 09:00:00`,
-  });
+  const eventId = await savePlan(owner);
   await flush(t);
   const [event] = google.active(PRIMARY);
   if (event === undefined) {
-    throw new Error("expected the block in Google");
+    throw new Error("expected the plan in Google");
   }
   google.upsertExternal(PRIMARY, {
     ...event,
@@ -784,34 +773,29 @@ test("アプリ側の未送信の変更が新しければ Google の古い変更
     start: { dateTime: "2026-08-17T15:00:00+09:00" },
   });
   vi.setSystemTime(new Date("2026-08-17T20:00:00+09:00"));
-  await owner.mutation(api.mutations.boardSchedule.move.move, {
-    blockId,
-    endAt: `${TODAY} 13:00:00`,
-    startAt: `${TODAY} 12:00:00`,
+  await owner.mutation(api.mutations.planEvents.save.save, {
+    dateJst: TODAY,
+    endTime: "13:00",
+    eventId,
+    priority: "high",
+    startTime: "12:00",
+    title: "公式問題集 Part 7",
   });
 
   await syncNow(owner);
 
-  const [block] = await owner.query(api.queries.boardSchedule.listForWeek.listForWeek, {
-    anchorDateJst: TODAY,
-    view: "week",
-  });
-  expect(block?.startAt).toBe(`${TODAY} 12:00:00`);
+  const [plan] = (await listPlan(owner)).page;
+  expect(plan?.startTime).toBe("12:00");
   expect(google.active(PRIMARY)[0]?.start).toEqual({ dateTime: "2026-08-17T12:00:00+09:00" });
 });
 
 test("Google で予定を終日にされたら戻さず、次の送信でアプリの時刻に書き戻す", async () => {
   const { owner, t } = await connectedOwner();
-  const rowId = await firstRowId(owner);
-  await owner.mutation(api.mutations.boardSchedule.create.create, {
-    endAt: `${TODAY} 10:30:00`,
-    rowId,
-    startAt: `${TODAY} 09:00:00`,
-  });
+  await savePlan(owner);
   await flush(t);
   const [event] = google.active(PRIMARY);
   if (event === undefined) {
-    throw new Error("expected the block in Google");
+    throw new Error("expected the plan in Google");
   }
   google.upsertExternal(PRIMARY, {
     ...event,
@@ -821,11 +805,8 @@ test("Google で予定を終日にされたら戻さず、次の送信でアプ�
 
   await syncNow(owner);
 
-  const [block] = await owner.query(api.queries.boardSchedule.listForWeek.listForWeek, {
-    anchorDateJst: TODAY,
-    view: "week",
-  });
-  expect(block?.startAt).toBe(`${TODAY} 09:00:00`);
+  const [plan] = (await listPlan(owner)).page;
+  expect(plan?.startTime).toBe("09:00");
   expect(google.active(PRIMARY)[0]?.start).toEqual({ dateTime: "2026-08-17T09:00:00+09:00" });
 });
 

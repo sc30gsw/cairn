@@ -1,0 +1,78 @@
+import { type Infer, v } from "convex/values";
+
+import { PLAN_PRIORITIES, PLAN_VIEWS } from "../planEvent";
+import { statusValidator } from "./core";
+
+export const planPriorityValidator = v.union(
+  ...PLAN_PRIORITIES.map((priority) => v.literal(priority)),
+);
+
+export type PlanPriorityDto = Infer<typeof planPriorityValidator>;
+
+export const planViewValidator = v.union(...PLAN_VIEWS.map((view) => v.literal(view)));
+
+export type PlanViewDto = Infer<typeof planViewValidator>;
+
+const planEventBaseValidator = v.object({
+  dateJst: v.string(),
+  endMinute: v.number(),
+  ownerId: v.string(),
+  priority: planPriorityValidator,
+  startMinute: v.number(),
+  title: v.string(),
+});
+
+export const planEventDocumentValidator = v.union(
+  planEventBaseValidator.extend({
+    record: v.object({ kind: v.literal("none") }),
+  }),
+  planEventBaseValidator.extend({
+    record: v.object({
+      itemId: v.id("items"),
+      kind: v.literal("item"),
+      materializedRowId: v.optional(v.id("rows")),
+    }),
+  }),
+);
+
+export const planRecordStateValidator = v.union(
+  v.object({ kind: v.literal("not-applicable") }),
+  v.object({ kind: v.literal("awaiting-open") }),
+  v.object({ kind: v.literal("materialized"), status: statusValidator }),
+  v.object({ kind: v.literal("removed") }),
+);
+
+export type PlanRecordStateDto = Infer<typeof planRecordStateValidator>;
+
+export const planEventDtoValidator = v.object({
+  _id: v.id("planEvents"),
+  dateJst: v.string(),
+  endTime: v.string(),
+  itemId: v.optional(v.id("items")),
+  priority: planPriorityValidator,
+  recordState: planRecordStateValidator,
+  startTime: v.string(),
+  title: v.string(),
+});
+
+export type PlanEventDto = Infer<typeof planEventDtoValidator>;
+
+export const planEventDraftValidator = v.object({
+  endTime: v.string(),
+  eventId: v.optional(v.id("planEvents")),
+  itemId: v.optional(v.id("items")),
+  priority: planPriorityValidator,
+  startTime: v.string(),
+  title: v.string(),
+});
+
+export type PlanEventDraft = Infer<typeof planEventDraftValidator>;
+
+export const planWindowResultValidator = v.object({
+  continueCursor: v.string(),
+  isDone: v.boolean(),
+  page: v.array(planEventDtoValidator),
+  unplannedConfirmedMinutes: v.number(),
+});
+
+export type PlanWindowResult = Infer<typeof planWindowResultValidator>;
