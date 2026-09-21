@@ -1,42 +1,42 @@
-# Presets
+# Presets (計画プリセット)
 
-A preset is a weekday template applied when today opens with no existing live records. Past days do not receive templates automatically. The optional holiday setting uses Sunday's template on Japanese holidays. Each weekday belongs to at most one preset. One preset can cover several unused weekdays at create time. Lines can be empty at creation; items are attached afterwards.
+A 計画プリセット is a timed-plan template. One template can be marked `計画し忘れたときに使う`; opening today with no plan events can expand that template. Weekday catalog templates and a dedicated `/presets` page are not on a live route. `/presets` replace-redirects to `/plan?tab=plan`.
 
 ## Sub-features
 
-- `preset-open` opens `/presets` from the nav.
-- `preset-create` adds a named preset for one or more unused weekdays.
-- `preset-empty-state` shows `プリセットはまだありません` when the account has none (only on a fresh account).
-- `preset-holiday-setting` saves the holiday-as-Sunday preference and preserves it after reload.
-- `preset-setup-completion` changes the home setup step to `プリセットを登録する: 完了` after creation.
+- `preset-open` opens 計画プリセット on `/plan?tab=plan` (nav `計画`, stepper, or `/presets` redirect).
+- `preset-create` adds a named template with at least one timed event.
+- `preset-empty-state` shows `計画プリセットはまだありません` when the account has none (only on a fresh account).
+- `preset-forgotten` saves the `計画し忘れたときに使う` switch and preserves it after reload.
+- `preset-setup-completion` changes the home setup step to `計画プリセットを登録する: 完了` after creation.
+- `preset-legacy-url` follows `/presets` to `/plan?tab=plan`.
 
 ## How to get to it (user POV)
 
-- Choose the `プリセット` nav link.
-- The home stepper `プリセットを登録する` goes to `/presets`.
-- A day page `この日の雛形` field is combobox `プリセット切替`. It switches among existing presets; it does not create them.
+- Choose the `計画` nav link, then tab `プラン`.
+- The home stepper `計画プリセットを登録する` goes to `/plan?tab=plan`.
+- Open `/presets` while signed in; the URL becomes `/plan?tab=plan`.
+- There is no `プリセット` nav item. Day page has no `プリセット切替` / `この日の雛形`.
 
 ## Driving it with playwright-cli
 
 Preconditions:
 
-- Signed in. At least one item exists if you will add lines; create-only does not require an item.
-- At least one weekday has no preset yet.
+- Signed in. Creating events that skip a catalog item is allowed (`なし（記録は作らない）` is the default).
 - `control-cairn doctor` is OK.
 
-- **Open presets.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('link', { name: 'プリセット', exact: true })"`. Without `exact: true`, the home stepper link `プリセットを登録する` also matches. Heading `プリセット` is visible. A new account also shows `プリセットはまだありません`.
-- **Name and weekdays.** Run `rtk proxy playwright-cli -s="$SESSION" fill "getByLabel('プリセット名', { exact: true })" "検証プリセット"`, then `rtk proxy playwright-cli -s="$SESSION" click "getByRole('combobox', { name: '曜日', exact: true })"`. The field is a MultiSelect. From the new snapshot, click one or more free weekday options. Taken weekdays remain listed as disabled options such as `月曜日（使用中）`; they are not omitted. Press Escape if the list stays open.
-- **Create.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('button', { name: 'プリセットを追加' })"`. An accordion control appears whose visible title is `検証プリセット` and whose summary lists the chosen weekdays, for example `月曜日・水曜日 · 記録なし`. After create the control may have no accessible name; after reload it is a region named `検証プリセット 月曜日・水曜日 · 記録なし`. Prefer `getByText('検証プリセット')` plus that summary. The empty-state title is gone. If textbox `プリセット名` is still on the page, assert it is empty (the create form remounts when occupied weekdays change; that is remount, not a claimed `reset(form)`). Accordion editors such as `{preset}の新しい名前` keep their values. If every weekday is taken, the create form is replaced by `すべての曜日にプリセットがあります。` — that is not a leftover-name failure.
-- **Confirm persistence.** Reload `/presets`. Wait for heading `プリセット` before reading. A snapshot taken during `読み込み中` is not proof. `検証プリセット` is still listed.
-- **Holiday setting.** Read the checked state of `getByRole('switch', { name: /^祝日は日曜のプリセットを使う/ })`. Its accessible name includes the description, so do not use an exact short-name match. Press `Space` on that locator, wait for `祝日は日曜のプリセットを使います` or `祝日も曜日のプリセットを使います`, and reload. Verify the checked state persisted, then restore the initial state with `Space`. This proves preference storage, not actual holiday template application.
-- **Setup completion.** Return through the `日` link while setup is still visible. The progress button reads `プリセットを登録する: 完了`; capture the updated stepper. The progress button is a status indicator; the separate link is the navigation entry.
-- **Onboarding entry.** Return to a fresh account’s home setup and click its `プリセットを登録する` link from the snapshot; require `/presets`, then use the same create/persistence steps. Mark this entry skipped if setup was already dismissed.
-- **Proof.** Run `rtk proxy playwright-cli -s="$SESSION" --raw snapshot > "$ART/presets.aria.yml"` and `rtk proxy playwright-cli -s="$SESSION" screenshot --filename="$ART/presets.png"`. Both show heading `プリセット` and `検証プリセット`.
+- **Open via nav.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('link', { name: '計画', exact: true })"`. Choose tab `プラン` if `スケジュール` is selected. Heading `計画` and section `計画プリセット` are visible. A new account also shows `計画プリセットはまだありません`. Do not wait for heading `プリセット`.
+- **Open via leftover URL.** `goto http://localhost:3000/presets`. The location is `/plan?tab=plan` with the same `計画プリセット` section. A heading `プリセット` is a failure (orphaned UI), not success.
+- **Name and event.** Run `rtk proxy playwright-cli -s="$SESSION" click "getByRole('button', { name: '計画プリセットを追加' })"`. Fill textbox `新しい計画プリセットの名前` with `検証計画プリセット`. Click `予定を足す`. Default start/end are `09:00` / `10:00`. Fill `新しい計画プリセットの予定1のタイトル` with `検証予定`. Click `保存`. Button `検証計画プリセットを編集` appears with summary `09:00–10:00 検証予定`. Empty-state title is gone.
+- **Forgotten switch.** Press `Space` on `getByRole('switch', { name: '計画し忘れたときに使う' })` until it is checked. Reload `/plan?tab=plan`. Wait for heading `計画`. The named template remains and the switch stays checked.
+- **Setup completion.** Return through the `日` link while setup is still visible. Progress reads `計画プリセットを登録する: 完了`. The progress button is a status indicator; the separate stepper link is the navigation entry.
+- **Onboarding entry.** On a fresh account click stepper link `計画プリセットを登録する` from the snapshot; require `/plan?tab=plan`, then use the same create/persistence steps. Mark this entry skipped if setup was already dismissed.
+- **Proof.** Run `rtk proxy playwright-cli -s="$SESSION" --raw snapshot > "$ART/presets.aria.yml"` and `rtk proxy playwright-cli -s="$SESSION" screenshot --filename="$ART/presets.png"`. Both show heading `計画`, `計画プリセット`, and `検証計画プリセット`.
 
 ## Gotchas
 
-- When every weekday already has a preset, the create form is replaced by `すべての曜日にプリセットがあります。` Report that instead of failing the click.
-- Automatic application requires opening today with no existing live records. Creating a preset does not replace existing records or automatically populate past days. Explicit `プリセット切替` is a separate day operation.
-- Actual holiday application needs today to be a Japanese holiday, the preference enabled, a Sunday preset with lines, and no existing live records. Record that prerequisite separately from the always-reachable setting save/reload proof.
-- A broad `/検証プリセット/` locator also matches save (`検証プリセットを保存`) and delete (`検証プリセットを削除`). Do not treat those as the accordion title.
-- Accordion editors expose `{preset}の新しい名前`, weekday, and per-line item/ひとこと/分数. Those edits are out of this first map unless you name them in `proof.txt`.
+- There is no weekday MultiSelect, holiday-as-Sunday switch, or accordion titled only `プリセット` on this route. Those belong to unmounted weekday preset UI; do not open them for default proof.
+- `この日に適用` stays disabled until a saved template is selected for edit (`検証計画プリセットを編集`). Empty-day auto-apply of the forgotten template is a later `days.open` path; creating a template does not by itself fill today's schedule.
+- After `保存`, a dirty editor can raise a `beforeunload` dialog on reload. Dismiss it and wait for heading `計画` before treating the snapshot as proof.
+- Automatic application needs today with no existing plan events and a forgotten template. Record that prerequisite separately from the always-reachable create/reload proof.
+- Clock, 15-minute slots, and `/board?tab=schedule` are [plan.md](./plan.md), not this file.
