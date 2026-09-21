@@ -151,7 +151,10 @@ export function PlanTemplatesCard({
             {templates.map((template) => (
               <Card key={template._id} padding="sm" withBorder>
                 <Group justify="space-between" wrap="nowrap">
-                  <UnstyledButton onClick={() => setEditing({ kind: "saved", template })}>
+                  <UnstyledButton
+                    aria-label={`${template.name}を編集`}
+                    onClick={() => setEditing({ kind: "saved", template })}
+                  >
                     <Stack gap={2}>
                       <Text fw={600}>{template.name}</Text>
                       <Text c="dimmed" size="sm">
