@@ -60,6 +60,7 @@ test("プランタブは日付カレンダー・Clock・予定入力を並べ、
   expect(view.getByLabelText("一日の時計")).toBeDefined();
   expect(view.getByText("予定に載らない確定 12分")).toBeDefined();
   expect(view.getByText("朝の多読")).toBeDefined();
+  expect(view.getByText("09:00–10:00")).toBeDefined();
   expect(view.getByRole("button", { name: "予定を追加" })).toBeDefined();
 });
 
