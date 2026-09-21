@@ -75,7 +75,7 @@ test("計画し忘れたときに使うスイッチは1つで、予定がある�
 
 test("空の日なら選んだ雛形を適用する", () => {
   applyMutate.mockClear();
-  const { getByRole, getByText } = renderWithMantine(
+  const { getByRole } = renderWithMantine(
     <PlanTemplatesCard
       dateJst="2026-08-17"
       hasEvents={false}
@@ -84,8 +84,8 @@ test("空の日なら選んだ雛形を適用する", () => {
     />,
   );
 
-  getByText("平日の型").click();
-  getByRole("button", { name: "この日に適用" }).click();
+  fireEvent.click(getByRole("button", { name: "平日の型を編集" }));
+  fireEvent.click(getByRole("button", { name: "この日に適用" }));
   expect(applyMutate).toHaveBeenCalledWith({
     dateJst: "2026-08-17",
     templateId: morning._id,
@@ -94,7 +94,7 @@ test("空の日なら選んだ雛形を適用する", () => {
 
 test("保存は項目なしを none から外して送る", async () => {
   saveMutate.mockClear();
-  const { getByRole, getByText } = renderWithMantine(
+  const { getByRole } = renderWithMantine(
     <PlanTemplatesCard
       dateJst="2026-08-17"
       hasEvents={false}
@@ -103,8 +103,8 @@ test("保存は項目なしを none から外して送る", async () => {
     />,
   );
 
-  getByText("平日の型").click();
-  getByRole("button", { name: "保存" }).click();
+  fireEvent.click(getByRole("button", { name: "平日の型を編集" }));
+  fireEvent.click(getByRole("button", { name: "保存" }));
   await waitFor(() => {
     expect(saveMutate).toHaveBeenCalledWith({
       events: [
