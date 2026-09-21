@@ -1,4 +1,4 @@
-import { fireEvent, within } from "@testing-library/react";
+import { fireEvent } from "@testing-library/react";
 import { Result } from "better-result";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 
@@ -97,6 +97,10 @@ afterEach(() => {
   setDate.mockClear();
 });
 
+function documentPositionFollows(earlier: Node, later: Node) {
+  return (earlier.compareDocumentPosition(later) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+}
+
 test("プランタブは日付カレンダー・Clock・予定入力を出し、祝日を出す", () => {
   const view = renderWithMantine(<PlanListTab />);
 
@@ -106,7 +110,8 @@ test("プランタブは日付カレンダー・Clock・予定入力を出し、
     calendarDayStyleClasses.holidayDay,
   );
   expect(view.getByLabelText("23 9月 2026").getAttribute("title")).toBe("秋分の日");
-  expect(view.getByRole("complementary", { name: "一日の時計" })).toBeDefined();
+  expect(view.getByRole("heading", { name: "一日の時計" })).toBeDefined();
+  expect(view.queryByRole("complementary")).toBeNull();
   expect(view.getByText("予定に載らない確定 12分")).toBeDefined();
   expect(view.getByText("朝の多読")).toBeDefined();
   expect(view.getByText("09:00–10:00")).toBeDefined();
@@ -116,16 +121,22 @@ test("プランタブは日付カレンダー・Clock・予定入力を出し、
   expect(view.getByText("障害プラン")).toBeDefined();
 });
 
-test("Clock は complementary セクションにありカレンダーとは別", () => {
+test("Clock は計画プリセット・目標・障害プランと同じカード列にあり、日付の上には出ない", () => {
   const view = renderWithMantine(<PlanListTab />);
-  const clockSection = view.getByRole("complementary", { name: "一日の時計" });
+  const datePicker = view.getByLabelText("日付を選択");
+  const clockHeading = view.getByRole("heading", { name: "一日の時計" });
+  const templatesHeading = view.getByRole("heading", { name: "計画プリセット" });
+  const goalsHeading = view.getByRole("heading", { name: "目標" });
+  const obstaclesHeading = view.getByRole("heading", { name: "障害プラン" });
 
-  expect(view.getAllByLabelText("一日の時計")).toHaveLength(1);
-  expect(view.getByLabelText("一日の時計")).toBe(clockSection);
-  expect(within(clockSection).getByRole("heading", { name: "一日の時計" })).toBeDefined();
-  expect(clockSection.querySelector("svg")).not.toBeNull();
-  expect(within(clockSection).queryByLabelText("日付を選択")).toBeNull();
-  expect(view.getByLabelText("日付を選択")).toBeDefined();
+  expect(view.queryByRole("complementary")).toBeNull();
+  expect(view.queryByLabelText("一日の時計")).toBeNull();
+  expect(documentPositionFollows(datePicker, clockHeading)).toBe(true);
+  expect(documentPositionFollows(clockHeading, templatesHeading)).toBe(true);
+  expect(documentPositionFollows(templatesHeading, goalsHeading)).toBe(true);
+  expect(documentPositionFollows(goalsHeading, obstaclesHeading)).toBe(true);
+  expect(clockHeading.closest(".mantine-Card-root")?.querySelector("svg")).not.toBeNull();
+  expect(datePicker.closest(".mantine-Card-root")).toBeNull();
 });
 
 test("予定カードをクリックすると予定を編集と削除が出る", () => {
