@@ -218,7 +218,7 @@ export default defineConfig({
         "**/*.test.tsx",
         "src/features/goals/components/goals-page.tsx",
         "src/features/goals/components/goals-pending.tsx",
-        "src/features/goals/components/obstacle-section.tsx",
+        "src/components/obstacle-section.tsx",
         "src/features/goals/components/goal-form-fields.tsx",
         "src/features/goals/components/target-form.tsx",
         "src/features/goals/components/target-list.tsx",

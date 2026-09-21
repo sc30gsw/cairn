@@ -155,6 +155,10 @@ import type * as mutations_notifications_unsubscribePush from "../mutations/noti
 import type * as mutations_planEvents_remove from "../mutations/planEvents/remove.js";
 import type * as mutations_planEvents_save from "../mutations/planEvents/save.js";
 import type * as mutations_planEvents_saveDay from "../mutations/planEvents/saveDay.js";
+import type * as mutations_planTemplates_applyToEmptyDate from "../mutations/planTemplates/applyToEmptyDate.js";
+import type * as mutations_planTemplates_remove from "../mutations/planTemplates/remove.js";
+import type * as mutations_planTemplates_save from "../mutations/planTemplates/save.js";
+import type * as mutations_planTemplates_setForgottenTemplate from "../mutations/planTemplates/setForgottenTemplate.js";
 import type * as mutations_presets_create from "../mutations/presets/create.js";
 import type * as mutations_presets_remove from "../mutations/presets/remove.js";
 import type * as mutations_presets_saveSettings from "../mutations/presets/saveSettings.js";
@@ -228,6 +232,7 @@ import type * as queries_notifications_settings from "../queries/notifications/s
 import type * as queries_notifications_webPushConfig from "../queries/notifications/webPushConfig.js";
 import type * as queries_notifications_webPushDelivery from "../queries/notifications/webPushDelivery.js";
 import type * as queries_planEvents_listWindow from "../queries/planEvents/listWindow.js";
+import type * as queries_planTemplates_list from "../queries/planTemplates/list.js";
 import type * as queries_presets_list from "../queries/presets/list.js";
 import type * as queries_presets_settings from "../queries/presets/settings.js";
 import type * as queries_profile_getAvatarUrl from "../queries/profile/getAvatarUrl.js";
@@ -384,6 +389,7 @@ import type * as services_notifications_webPushDelivery from "../services/notifi
 import type * as services_plan_events from "../services/plan/events.js";
 import type * as services_plan_migrateBoardSchedule from "../services/plan/migrateBoardSchedule.js";
 import type * as services_plan_openDate from "../services/plan/openDate.js";
+import type * as services_plan_templates from "../services/plan/templates.js";
 import type * as services_presets_create from "../services/presets/create.js";
 import type * as services_presets_getSettings from "../services/presets/getSettings.js";
 import type * as services_presets_helpers from "../services/presets/helpers.js";
@@ -597,6 +603,10 @@ declare const fullApi: ApiFromModules<{
   "mutations/planEvents/remove": typeof mutations_planEvents_remove;
   "mutations/planEvents/save": typeof mutations_planEvents_save;
   "mutations/planEvents/saveDay": typeof mutations_planEvents_saveDay;
+  "mutations/planTemplates/applyToEmptyDate": typeof mutations_planTemplates_applyToEmptyDate;
+  "mutations/planTemplates/remove": typeof mutations_planTemplates_remove;
+  "mutations/planTemplates/save": typeof mutations_planTemplates_save;
+  "mutations/planTemplates/setForgottenTemplate": typeof mutations_planTemplates_setForgottenTemplate;
   "mutations/presets/create": typeof mutations_presets_create;
   "mutations/presets/remove": typeof mutations_presets_remove;
   "mutations/presets/saveSettings": typeof mutations_presets_saveSettings;
@@ -670,6 +680,7 @@ declare const fullApi: ApiFromModules<{
   "queries/notifications/webPushConfig": typeof queries_notifications_webPushConfig;
   "queries/notifications/webPushDelivery": typeof queries_notifications_webPushDelivery;
   "queries/planEvents/listWindow": typeof queries_planEvents_listWindow;
+  "queries/planTemplates/list": typeof queries_planTemplates_list;
   "queries/presets/list": typeof queries_presets_list;
   "queries/presets/settings": typeof queries_presets_settings;
   "queries/profile/getAvatarUrl": typeof queries_profile_getAvatarUrl;
@@ -826,6 +837,7 @@ declare const fullApi: ApiFromModules<{
   "services/plan/events": typeof services_plan_events;
   "services/plan/migrateBoardSchedule": typeof services_plan_migrateBoardSchedule;
   "services/plan/openDate": typeof services_plan_openDate;
+  "services/plan/templates": typeof services_plan_templates;
   "services/presets/create": typeof services_presets_create;
   "services/presets/getSettings": typeof services_presets_getSettings;
   "services/presets/helpers": typeof services_presets_helpers;

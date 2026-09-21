@@ -1,15 +1,21 @@
+import { convexQuery } from "@convex-dev/react-query";
 import { Button, Card, Group, Stack, Text, UnstyledButton } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
+import { useSuspenseQueries } from "@tanstack/react-query";
 import { Result } from "better-result";
 import { useState } from "react";
 import { PLAN_PRIORITY_STYLE } from "~domain/planEvent";
 
+import { api } from "~/../convex/_generated/api";
+import { ObstacleSection } from "~/components/obstacle-section";
+import { PlanGoalsReadCard } from "~/components/plan-goals-read-card";
 import {
   BoardScheduleEventForm,
   eventFormValues,
   slotFormValues,
 } from "~/features/plan/components/board-schedule-event-form";
 import { PlanClock } from "~/features/plan/components/plan-clock";
+import { PlanTemplatesCard } from "~/features/plan/components/plan-templates-card";
 import { useBoardScheduleActions } from "~/features/plan/hooks/use-board-schedule-actions";
 import { usePlanView } from "~/features/plan/hooks/use-plan-view";
 import { usePlanWindow } from "~/features/plan/hooks/use-plan-window";
@@ -18,13 +24,27 @@ import {
   DEFAULT_DAY_BLOCK_START,
 } from "~/features/plan/lib/board-schedule-layout";
 import type { PlanScheduleEventInput } from "~/features/plan/schemas/board-schedule-event-schema";
+import { goalsListQuery } from "~/hooks/goals-queries";
 import { useItemsList } from "~/hooks/use-items-list";
+import { useObstaclePlans } from "~/hooks/use-obstacle-plans";
+import { parallelConvexQuery } from "~/lib/parallel-convex-query";
+import { toPlanGoalRead } from "~/lib/plan-goal-read";
 import { parseDateJst } from "~/lib/schemas/calendar-date-schema";
+import { useOptionalGoalsLiveQuery } from "~/lib/tanstack-db/collections";
 
 export function PlanListTab() {
   const view = usePlanView();
   const { events, unplannedConfirmedMinutes } = usePlanWindow(view.selectedDateJst, "day");
   const { data: items } = useItemsList();
+  const liveGoals = useOptionalGoalsLiveQuery();
+  const obstaclePlans = useObstaclePlans();
+  const [{ data: queriedGoals }, { data: templates }] = useSuspenseQueries({
+    queries: [
+      parallelConvexQuery(goalsListQuery()),
+      parallelConvexQuery(convexQuery(api.queries.planTemplates.list.list, {})),
+    ],
+  });
+  const goals = liveGoals.isReady && liveGoals.data !== undefined ? liveGoals.data : queriedGoals;
   const actions = useBoardScheduleActions();
   const [formOpened, setFormOpened] = useState(false);
   const [formValues, setFormValues] = useState<PlanScheduleEventInput | null>(null);
@@ -141,6 +161,21 @@ export function PlanListTab() {
           }}
           opened={formOpened}
         />
+        <PlanTemplatesCard
+          dateJst={view.selectedDateJst}
+          hasEvents={events.length > 0}
+          items={items}
+          templates={templates}
+        />
+        <PlanGoalsReadCard goals={goals.map(toPlanGoalRead)} />
+        <Card>
+          <ObstacleSection
+            obstacles={obstaclePlans.obstacles}
+            onCreateObstacle={obstaclePlans.onCreateObstacle}
+            onRemoveObstacle={obstaclePlans.onRemoveObstacle}
+            onUpdateObstacle={obstaclePlans.onUpdateObstacle}
+          />
+        </Card>
       </Stack>
     </div>
   );

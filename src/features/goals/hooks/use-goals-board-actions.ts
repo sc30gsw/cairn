@@ -1,28 +1,23 @@
 import {
   useCreateGoal,
-  useCreateObstacle,
   useRemoveGoal,
-  useRemoveObstacle,
   useSetExamResult,
   useSetGoalAchieved,
   useUpdateGoal,
-  useUpdateObstacle,
 } from "~/features/goals/hooks/goals-mutations";
 import { useRemoveTarget, useSaveTarget } from "~/features/goals/hooks/targets-mutations";
 import { EXAM_RESULT_RECORDED_MESSAGE } from "~/features/goals/lib/exam-result-copy";
 import { GOAL_UPDATED_MESSAGE } from "~/features/goals/lib/goal-tier-transition";
 import type { GoalId } from "~/features/goals/types/goal";
 import type {
-  CreateObstacleInput,
   GoalInputPayload,
-  RemoveObstacleInput,
   SaveTargetInput,
   SetAchievedInput,
   SetExamResultInput,
   UpdateGoalInput,
-  UpdateObstacleInput,
 } from "~/features/goals/types/mutations";
 import type { TargetId } from "~/features/goals/types/target";
+import { useObstacleActions } from "~/hooks/use-obstacle-actions";
 import { runMutation } from "~/lib/run-mutation";
 
 export function useGoalsBoardActions() {
@@ -31,18 +26,13 @@ export function useGoalsBoardActions() {
   const removeGoal = useRemoveGoal();
   const setAchieved = useSetGoalAchieved();
   const setExamResult = useSetExamResult();
-  const createObstacle = useCreateObstacle();
-  const updateObstacle = useUpdateObstacle();
-  const removeObstacle = useRemoveObstacle();
+  const obstacleActions = useObstacleActions();
 
   return {
+    ...obstacleActions,
     onCreateGoal: (goal: GoalInputPayload) =>
       runMutation(() => createGoal.mutateAsync({ goal }), {
         successMessage: "目標を追加しました",
-      }),
-    onCreateObstacle: (input: CreateObstacleInput) =>
-      runMutation(() => createObstacle.mutateAsync(input), {
-        successMessage: "障害プランを追加しました",
       }),
     onRemoveGoal: (goalId: GoalId) =>
       runMutation(() => removeGoal.mutateAsync({ goalId }), {
@@ -50,10 +40,6 @@ export function useGoalsBoardActions() {
           removedChildren === 0
             ? "目標を削除しました"
             : `目標とチェックポイント${String(removedChildren)}件を削除しました`,
-      }),
-    onRemoveObstacle: (planId: RemoveObstacleInput["planId"]) =>
-      runMutation(() => removeObstacle.mutateAsync({ planId }), {
-        successMessage: "障害プランを削除しました",
       }),
     onSetAchieved: (input: SetAchievedInput) =>
       runMutation(() => setAchieved.mutateAsync(input), {
@@ -65,10 +51,6 @@ export function useGoalsBoardActions() {
     ) => runMutation(() => setExamResult.mutateAsync(input), { successMessage }),
     onUpdateGoal: (input: UpdateGoalInput, successMessage: string = GOAL_UPDATED_MESSAGE) =>
       runMutation(() => updateGoal.mutateAsync(input), { successMessage }),
-    onUpdateObstacle: (input: UpdateObstacleInput) =>
-      runMutation(() => updateObstacle.mutateAsync(input), {
-        successMessage: "障害プランを更新しました",
-      }),
   };
 }
 

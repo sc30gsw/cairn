@@ -27,6 +27,7 @@ export const PLAN_TIME_MESSAGE = "時刻は HH:mm で入力してください";
 export const PLAN_WINDOW_MESSAGE = "同じ日の中で、終了は開始より後にしてください";
 export const PLAN_TITLE_MESSAGE = "タイトルは必須です";
 export const PLAN_FROZEN_MESSAGE = "日付と項目は記録を生やしたあとは変えられません";
+export const PLAN_TEMPLATE_NAME_MESSAGE = "名前は必須です";
 
 export function parseMinuteOfDay(value: string, role: "end" | "start"): MinuteOfDay {
   const match = LOCAL_TIME_PATTERN.exec(value);

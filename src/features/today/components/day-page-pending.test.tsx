@@ -21,16 +21,6 @@ vi.mock("~/features/today/hooks/use-day-board-actions", () => ({
     onSaveCondition: vi.fn(),
     onSaveMemo: vi.fn(),
     onSkip: vi.fn(),
-    onSwitchPreset: vi.fn(),
-  }),
-}));
-
-vi.mock("~/features/today/hooks/use-apply-preset-from-search", () => ({
-  useApplyPresetFromSearch: () => ({
-    appliedPresetRef: { current: null },
-    defaultPresetId: null,
-    selectedPresetId: null,
-    switchPreset: vi.fn(),
   }),
 }));
 

@@ -54,6 +54,44 @@ vi.mock("~/features/plan/hooks/use-board-schedule-actions", () => ({
   }),
 }));
 
+vi.mock("~/hooks/use-obstacle-plans", () => ({
+  useObstaclePlans: () => ({
+    obstacles: [],
+    onCreateObstacle: vi.fn(async () => Result.ok(null)),
+    onRemoveObstacle: vi.fn(async () => Result.ok(null)),
+    onUpdateObstacle: vi.fn(async () => Result.ok(null)),
+  }),
+}));
+
+vi.mock("~/lib/tanstack-db/collections", () => ({
+  useOptionalGoalsLiveQuery: () => ({ data: undefined, isReady: false }),
+}));
+
+vi.mock("~/features/plan/hooks/plan-mutations", () => ({
+  usePlanTemplateApply: () => ({ mutateAsync: vi.fn(async () => ({ applied: true })) }),
+  usePlanTemplateRemove: () => ({ mutateAsync: vi.fn(async () => null) }),
+  usePlanTemplateSave: () => ({ mutateAsync: vi.fn(async () => "tmpl-1") }),
+  usePlanTemplateSetForgotten: () => ({ mutateAsync: vi.fn(async () => null) }),
+}));
+
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({ children, to }: { children?: React.ReactNode; to: string }) => (
+    <a href={to}>{children}</a>
+  ),
+}));
+
+vi.mock("@convex-dev/react-query", () => ({
+  convexQuery: () => ({ queryKey: ["plan-templates"] }),
+}));
+
+vi.mock("@tanstack/react-query", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@tanstack/react-query")>();
+  return {
+    ...actual,
+    useSuspenseQueries: () => [{ data: [] }, { data: [] }],
+  };
+});
+
 afterEach(() => {
   planView.selectedDateJst = "2026-09-21";
   setDate.mockClear();
@@ -73,6 +111,9 @@ test("プランタブは日付カレンダー・Clock・予定入力を並べ、
   expect(view.getByText("朝の多読")).toBeDefined();
   expect(view.getByText("09:00–10:00")).toBeDefined();
   expect(view.getByRole("button", { name: "予定を追加" })).toBeDefined();
+  expect(view.getByRole("heading", { name: "計画プリセット" })).toBeDefined();
+  expect(view.getByRole("heading", { name: "目標" })).toBeDefined();
+  expect(view.getByText("障害プラン")).toBeDefined();
 });
 
 test("カレンダーの日付を選ぶと選択日が変わる", () => {

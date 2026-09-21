@@ -1,5 +1,5 @@
 import { convexTest } from "convex-test";
-import { expect, test } from "vite-plus/test";
+import { expect, test, vi } from "vite-plus/test";
 
 import { convexModules } from "../src/test-utils/convex-modules";
 import { api } from "./_generated/api";
@@ -112,3 +112,44 @@ test("存在しない障害プランの更新・削除は拒否される", async
     t.mutation(api.mutations.goals.removeObstacle.removeObstacle, { planId }),
   ).rejects.toThrow();
 });
+
+test("障害プランの CRUD は記録の状態を変えない", async () => {
+  const t = owner();
+  await t.mutation(api.mutations.catalog.ensure.ensure, {});
+  const items = await t.query(api.queries.items.list.list, {});
+  const itemId = items[0]?._id;
+  if (itemId === undefined) {
+    throw new Error("catalog seed missing items");
+  }
+  await t.mutation(api.mutations.rows.add.add, {
+    content: "",
+    dateJst: "2026-08-17",
+    itemId,
+    minutes: 0,
+    todayJst: "2026-08-17",
+  });
+  const before = await t.query(api.queries.days.get.get, {
+    dateJst: "2026-08-17",
+    todayJst: "2026-08-17",
+  });
+  expect(before.rows.map((row) => row.status).length).toBeGreaterThan(0);
+
+  const planId = await t.mutation(api.mutations.goals.createObstacle.createObstacle, {
+    ifText: "眠い",
+    thenText: THEN_ACTION,
+  });
+  await t.mutation(api.mutations.goals.updateObstacle.updateObstacle, {
+    ifText: "とても眠い",
+    planId,
+    thenText: THEN_ACTION,
+  });
+  await t.mutation(api.mutations.goals.removeObstacle.removeObstacle, { planId });
+
+  const after = await t.query(api.queries.days.get.get, {
+    dateJst: "2026-08-17",
+    todayJst: "2026-08-17",
+  });
+  expect(after.rows.map((row) => row.status)).toEqual(before.rows.map((row) => row.status));
+});
+
+vi.mock("./services/days/serviceStartDate", () => ({ serviceStartDate: async () => "2026-01-01" }));

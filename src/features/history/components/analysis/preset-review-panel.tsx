@@ -9,7 +9,6 @@ import {
   weekdayLabel,
 } from "~/features/history/lib/preset-review-copy";
 import type { PresetReview } from "~/features/history/types/history";
-import { presetWeekdayHash } from "~/lib/preset-weekday-hash";
 
 export function PresetReviewPanel({ review }: { review: PresetReview }) {
   const hasPlannedRows = review.weekdays.some((row) => row.planned > 0);
@@ -99,14 +98,7 @@ export function PresetReviewPanel({ review }: { review: PresetReview }) {
               <Text size="sm">{suggestionCopy(suggestion, weekday)}</Text>
               <Button
                 color="yellow"
-                renderRoot={(props) => (
-                  <Link
-                    {...props}
-                    hash={presetWeekdayHash(suggestion.weekday)}
-                    search={{ weekday: suggestion.weekday }}
-                    to="/presets"
-                  />
-                )}
+                renderRoot={(props) => <Link {...props} search={{ tab: "plan" }} to="/plan" />}
                 size="xs"
                 variant="light"
               >
