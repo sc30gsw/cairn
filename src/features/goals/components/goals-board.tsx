@@ -4,6 +4,7 @@ import { useRef, useState, type ReactNode } from "react";
 import type { DateJst } from "~domain/jst";
 
 import { ConcreteActionTour } from "~/components/concrete-action-tour";
+import { ObstacleSection } from "~/components/obstacle-section";
 import { PageTitle } from "~/components/page-title";
 import { AchievedHistorySection } from "~/features/goals/components/achieved-history-section";
 import { AchievementReflectionModal } from "~/features/goals/components/achievement-reflection-modal";
@@ -11,7 +12,6 @@ import { ExamEmptyCard } from "~/features/goals/components/exam-empty-card";
 import { ExamResultModal } from "~/features/goals/components/exam-result-modal";
 import { GoalForm } from "~/features/goals/components/goal-form";
 import { LongTermSection } from "~/features/goals/components/long-term-section";
-import { ObstacleSection } from "~/features/goals/components/obstacle-section";
 import { OrphanCheckpointsAlert } from "~/features/goals/components/orphan-checkpoints-alert";
 import { ParentGoalGroup } from "~/features/goals/components/parent-goal-group";
 import { WeeklyTargetsSection } from "~/features/goals/components/weekly-targets-section";

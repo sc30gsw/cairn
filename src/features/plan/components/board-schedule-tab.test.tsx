@@ -9,20 +9,10 @@ vi.mock("~/features/plan/components/board-schedule", () => ({
 
 vi.mock("~/features/plan/hooks/use-plan-view", () => ({
   usePlanView: () => ({
-    monthDate: new Date("2026-09-01T12:00:00+09:00"),
-    resetMonthViewToToday: vi.fn(),
     scheduleAnchor: "2026-09-21",
     scheduleView: "day",
     selectedDateJst: "2026-09-21",
-    setDate: vi.fn(),
-    setMonth: vi.fn(),
-    setScheduleView: vi.fn(),
-    setTab: vi.fn(),
-    setWeek: vi.fn(),
-    tab: "schedule",
     today: "2026-09-21",
-    weekAnchor: "2026-09-21",
-    yearMonth: "2026-09",
   }),
 }));
 
@@ -56,7 +46,7 @@ vi.mock("@tanstack/react-query", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-query")>();
   return {
     ...actual,
-    queryOptions: <T,>(options: T) => options,
+    queryOptions: (options: unknown) => options,
     usePrefetchQuery: () => undefined,
     useSuspenseQueries: () => [{ data: [] }],
   };
