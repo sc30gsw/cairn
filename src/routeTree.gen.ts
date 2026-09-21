@@ -14,6 +14,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PresetsRouteImport } from './routes/presets'
+import { Route as PlanRouteImport } from './routes/plan'
 import { Route as MyPageRouteImport } from './routes/my-page'
 import { Route as MethodsRouteImport } from './routes/methods'
 import { Route as ItemsRouteImport } from './routes/items'
@@ -50,6 +51,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const PresetsRoute = PresetsRouteImport.update({
   id: '/presets',
   path: '/presets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanRoute = PlanRouteImport.update({
+  id: '/plan',
+  path: '/plan',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MyPageRoute = MyPageRouteImport.update({
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/items': typeof ItemsRoute
   '/methods': typeof MethodsRoute
   '/my-page': typeof MyPageRouteWithChildren
+  '/plan': typeof PlanRoute
   '/presets': typeof PresetsRoute
   '/privacy': typeof PrivacyRoute
   '/review': typeof ReviewRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/history': typeof HistoryRoute
   '/items': typeof ItemsRoute
   '/methods': typeof MethodsRoute
+  '/plan': typeof PlanRoute
   '/presets': typeof PresetsRoute
   '/privacy': typeof PrivacyRoute
   '/review': typeof ReviewRoute
@@ -159,6 +167,7 @@ export interface FileRoutesById {
   '/items': typeof ItemsRoute
   '/methods': typeof MethodsRoute
   '/my-page': typeof MyPageRouteWithChildren
+  '/plan': typeof PlanRoute
   '/presets': typeof PresetsRoute
   '/privacy': typeof PrivacyRoute
   '/review': typeof ReviewRoute
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/items'
     | '/methods'
     | '/my-page'
+    | '/plan'
     | '/presets'
     | '/privacy'
     | '/review'
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/items'
     | '/methods'
+    | '/plan'
     | '/presets'
     | '/privacy'
     | '/review'
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/items'
     | '/methods'
     | '/my-page'
+    | '/plan'
     | '/presets'
     | '/privacy'
     | '/review'
@@ -237,6 +249,7 @@ export interface RootRouteChildren {
   ItemsRoute: typeof ItemsRoute
   MethodsRoute: typeof MethodsRoute
   MyPageRoute: typeof MyPageRouteWithChildren
+  PlanRoute: typeof PlanRoute
   PresetsRoute: typeof PresetsRoute
   PrivacyRoute: typeof PrivacyRoute
   ReviewRoute: typeof ReviewRoute
@@ -281,6 +294,13 @@ declare module '@tanstack/react-router' {
       path: '/presets'
       fullPath: '/presets'
       preLoaderRoute: typeof PresetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plan': {
+      id: '/plan'
+      path: '/plan'
+      fullPath: '/plan'
+      preLoaderRoute: typeof PlanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/my-page': {
@@ -393,6 +413,7 @@ const rootRouteChildren: RootRouteChildren = {
   ItemsRoute: ItemsRoute,
   MethodsRoute: MethodsRoute,
   MyPageRoute: MyPageRouteWithChildren,
+  PlanRoute: PlanRoute,
   PresetsRoute: PresetsRoute,
   PrivacyRoute: PrivacyRoute,
   ReviewRoute: ReviewRoute,

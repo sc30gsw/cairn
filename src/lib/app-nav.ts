@@ -2,6 +2,7 @@ import {
   IconBulb,
   IconCalendarEvent,
   IconChartBar,
+  IconClock,
   IconColumns3,
   IconLayoutKanban,
   IconNotebook,
@@ -17,6 +18,7 @@ type NavIcon = typeof IconCalendarEvent;
 const NAV_ROUTES = [
   "/",
   "/board",
+  "/plan",
   "/history",
   "/review",
   "/items",
@@ -47,6 +49,12 @@ export const NAV: NavEntry[] = [
     label: "ボード",
     match: (path) => path.startsWith("/board"),
     to: "/board",
+  },
+  {
+    Icon: IconClock,
+    label: "計画",
+    match: (path) => path.startsWith("/plan"),
+    to: "/plan",
   },
   {
     Icon: IconChartBar,
@@ -92,7 +100,7 @@ export const NAV: NavEntry[] = [
   },
 ];
 
-const MOBILE_PRIMARY = ["/", "/board", "/history", "/goals"] as const satisfies readonly [
+const MOBILE_PRIMARY = ["/", "/board", "/plan", "/goals"] as const satisfies readonly [
   NavRoute,
   NavRoute,
   NavRoute,

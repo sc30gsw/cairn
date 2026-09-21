@@ -12,9 +12,6 @@ import {
 } from "~/lib/tanstack-db/collection-factory";
 
 type DayPage = FunctionReturnType<typeof api.queries.days.get.get>;
-type BoardScheduleBlock = FunctionReturnType<
-  typeof api.queries.boardSchedule.listForWeek.listForWeek
->[number];
 type ExternalCalendarEvent = FunctionReturnType<
   typeof api.queries.calendarSync.listExternal.listExternal
 >[number];
@@ -30,7 +27,7 @@ type MethodCatalog = FunctionReturnType<typeof api.queries.methods.list.list>;
 type DayRowsScope = FunctionArgs<typeof api.queries.days.get.get> & {
   syncMode?: CollectionSyncMode;
 };
-type ScheduleScope = FunctionArgs<typeof api.queries.boardSchedule.listForWeek.listForWeek> & {
+type ScheduleScope = FunctionArgs<typeof api.queries.calendarSync.listExternal.listExternal> & {
   syncMode?: CollectionSyncMode;
 };
 type TargetsScope = FunctionArgs<typeof api.queries.targets.listWithProgress.listWithProgress>;
@@ -42,21 +39,6 @@ export function createDayPageCollection({ dateJst, syncMode, todayJst }: DayRows
     id: `day-page:${dateJst}:${todayJst}`,
     query: api.queries.days.get.get,
     select: (dayPage) => [dayPage],
-    syncMode,
-  });
-}
-
-export function createBoardScheduleBlocksCollection({
-  anchorDateJst,
-  syncMode,
-  view,
-}: ScheduleScope) {
-  return createConvexQueryCollection({
-    args: { anchorDateJst, view },
-    getKey: (entry: ValueCollectionItem<BoardScheduleBlock>) => entry.value._id,
-    id: `board-schedule-blocks:${anchorDateJst}:${view}`,
-    query: api.queries.boardSchedule.listForWeek.listForWeek,
-    select: (blocks) => orderedCollectionItems(blocks),
     syncMode,
   });
 }
@@ -212,20 +194,6 @@ export function useOptionalDayPageLiveQuery(scope: DayRowsScope) {
     client,
     query: (query) => (client === undefined ? null : query.from({ dayPage: descriptor }).findOne()),
   });
-}
-
-export function useOptionalBoardScheduleBlocksLiveQuery(scope: ScheduleScope) {
-  const client = useOptionalDbClient();
-  const descriptor = createBoardScheduleBlocksCollection(scope);
-
-  const live = useLiveQuery({
-    client,
-    query: (query) =>
-      client === undefined
-        ? null
-        : query.from({ blocks: descriptor }).orderBy((row) => row.blocks.position),
-  });
-  return { ...live, data: live.data?.map((entry) => entry.value) };
 }
 
 export function useOptionalExternalCalendarEventsLiveQuery(scope: ScheduleScope) {

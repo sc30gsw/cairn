@@ -1,0 +1,50 @@
+import { screen } from "@testing-library/react";
+import { expect, test, vi } from "vite-plus/test";
+
+import { BoardScheduleNavigation } from "~/features/plan/components/board-schedule-navigation";
+import { renderWithMantine } from "~/test-utils/render";
+
+const baseProps = {
+  monthDate: new Date("2026-08-01T00:00:00+09:00"),
+  onDateChange: () => undefined,
+  onMonthChange: () => undefined,
+  onMonthViewToday: () => undefined,
+  onViewChange: () => undefined,
+  onWeekChange: () => undefined,
+  selectedDateJst: "2026-08-22",
+  todayJst: "2026-08-22",
+  weekAnchor: "2026-08-18",
+};
+
+test("day view renders a single header control for the date picker", () => {
+  renderWithMantine(<BoardScheduleNavigation {...baseProps} scheduleView="day" />);
+
+  expect(screen.getByRole("button", { name: "日付を選択" }).textContent).toBe("2026/08/22");
+});
+
+test("今日の日表示でも次へは押せる", () => {
+  renderWithMantine(<BoardScheduleNavigation {...baseProps} scheduleView="day" />);
+
+  expect(screen.getByRole("button", { name: "次" }).hasAttribute("disabled")).toBe(false);
+});
+
+test("week view renders one date control between previous and next", () => {
+  renderWithMantine(<BoardScheduleNavigation {...baseProps} scheduleView="week" />);
+
+  expect(screen.getByText("2026/08/17 〜 2026/08/23")).toBeDefined();
+  expect(screen.getByLabelText("週を選択")).toBeDefined();
+});
+
+test("month view today button resets month navigation", () => {
+  const onMonthViewToday = vi.fn();
+  renderWithMantine(
+    <BoardScheduleNavigation
+      {...baseProps}
+      onMonthViewToday={onMonthViewToday}
+      scheduleView="month"
+    />,
+  );
+
+  screen.getByRole("button", { name: "今日" }).click();
+  expect(onMonthViewToday).toHaveBeenCalledOnce();
+});

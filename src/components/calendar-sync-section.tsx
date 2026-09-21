@@ -103,13 +103,13 @@ export function CalendarSyncSection() {
     <Stack gap="lg">
       <Stack gap="xs">
         <Text size="sm">
-          個人用・仕事用の Google カレンダーを重ねて、ボードで空き時間を確認できます。
+          個人用・仕事用の Google カレンダーを重ねて、計画で空き時間を確認できます。
         </Text>
         <Text c="dimmed" size="xs">
           追加する Google アカウントは、カレンダーの連携にだけ使います。
         </Text>
         <Text c="dimmed" size="xs">
-          スケジュールタブを開いたときと、毎日
+          計画を開いたときと、毎日
           2:00・14:00（日本時間）に予定を取得します。すぐに反映したいときは「今すぐ同期」を使えます。
         </Text>
       </Stack>
