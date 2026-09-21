@@ -37,7 +37,7 @@ Preconditions:
 
 - Username allows only ASCII letters, digits, and underscore, minimum 3 characters. Hyphens fail validation.
 - Password minimum is 8 characters. `Verify1!cairn` meets it.
-- Sign-up is rate-limited (`/sign-up/email` max 3 per 60s). Sign-in is rate-limited (`/sign-in/username` max 5 per 60s). A unique `CAIRN_VERIFY_RUN_ID` avoids collisions; retries in the same minute can fail with a Japanese error under the form.
+- Sign-up is rate-limited (`/sign-up/email` max 3 per 60s). The custom sign-in rule in `convex/auth.ts` is `/sign-in/email` max 5 per 60s. A unique `CAIRN_VERIFY_RUN_ID` avoids collisions; retries in the same minute can fail with a Japanese error under the form.
 - `パスキーでログイン` and `Googleでログイン` (no space) are not this feature. Do not click them for default proof.
 - If `AUTH_DISABLE_SIGNUP` is set on the Convex deployment, the segmented control disappears and only `ログイン` remains. Report that precondition instead of inventing a signup path.
 - After signup the home stepper may appear. It is not a failed login.

@@ -1,6 +1,6 @@
 ---
 name: verify-cairn
-description: Drive Cairn (学習ログ) through its real browser UI to prove authentication, catalog items, day records, presets, methods, and board changes (including hold-drag at 390 and 768). Use for live feature verification or reproducing user-visible bugs with retained evidence.
+description: Drive Cairn (学習ログ) through its real browser UI to prove authentication, catalog items, day records, presets, methods, board kanban (including hold-drag at 390 and 768), and /plan (DatePicker plus Clock on プラン, schedule without Clock). Use for live feature verification or reproducing user-visible bugs with retained evidence.
 ---
 
 # Verify Cairn (学習ログ)
@@ -79,8 +79,8 @@ Use each feature's literal roles/names. Snapshot → act → wait for the expect
 
 Mantine specifics:
 
-- Use `exact: true` on short labels (`日`, `項目`, `あとで`).
-- SegmentedControl inputs are hidden: click visible `新規登録` text. For Switch use its visible label/track from the current snapshot. After `reload`, wait for a real heading (`項目`, `プリセット`, `ボード`, or volume `N分`) before snapshotting.
+- Use `exact: true` on short labels (`日`, `項目`, `計画`, `プラン`, `あとで`).
+- SegmentedControl inputs are hidden: click visible `新規登録` text. For Switch use its visible label/track from the current snapshot. After `reload`, wait for a real heading (`項目`, `プリセット`, `ボード`, `計画`, or volume `N分`) before snapshotting.
 - An item-add textbox and button have the same accessible name: select by role.
 - Select inputs use role `combobox`; their hidden listbox can share the label, making `getByLabel` ambiguous.
 - `分数` is a textbox. `アカウントメニュー` is a labelled avatar, not a button.
