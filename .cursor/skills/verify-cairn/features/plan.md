@@ -20,10 +20,10 @@
 ## How to get to it (user POV)
 
 - Choose the `計画` nav link (`IconClock`). Mobile primary tabs are `日` / `ボード` / `計画` / `目標`.
-- Open `/plan` directly, or `/plan?tab=plan&date=YYYY-MM-DD` for a specific day.
+- Open `/plan` directly with no `?tab=`, or `/plan?date=YYYY-MM-DD` for a specific day.
 - Home stepper `計画プリセットを登録する` goes to `/plan?tab=plan`.
 - `/presets` replace-redirects to `/plan?tab=plan` (see [presets.md](./presets.md)).
-- `/board?tab=schedule` replace-redirects here (kanban stays on `/board`).
+- `/board?tab=schedule` replace-redirects here without `tab` (kanban stays on `/board`).
 - Header button `Google カレンダー連携` is on this page, not ボード.
 
 ## Driving it with playwright-cli
@@ -43,7 +43,7 @@ Preconditions:
 - **Schedule has no Clock.** Choose `スケジュール`. Assert `日表示に切り替え` and `queryByLabel('一日の時計')` is empty. `queryByRole('complementary', { name: '一日の時計' })` is empty. A `検証プラン` event may appear on the day timeline when the selected date matches.
 - **Create from a slot.** On day view, click an empty button such as `Time slot 10:00:00 - 10:15:00`. Week view is not this locator. In `予定を追加`, fill textbox `タイトル` (example `スロット検証`). Default start/end follow that slot. Click `保存`. Reload, wait for heading `計画` (not `ボード`), choose `スケジュール` if the default `プラン` tab returned, and confirm the event remains. Select it to inspect `予定を編集`.
 - **Quarter-hour intervals.** Day view exposes four empty slot buttons per hour, named `Time slot HH:MM:SS - HH:MM:SS` (example `Time slot 10:00:00 - 10:15:00`). Week view still uses one-hour names that include the date. Prove 15-minute slots on day view.
-- **Board leftover URL.** `goto http://localhost:3000/board?tab=schedule` must land on `/plan` with heading `計画`. A click that only changes the board URL is not this sub-feature.
+- **Board leftover URL.** `goto http://localhost:3000/board?tab=schedule` must land on `/plan` with heading `計画` and selected `プラン` (`一日の時計` visible). A click that only changes the board URL is not this sub-feature. Choose `スケジュール` only when proving the timeline.
 - **Year entry.** On スケジュール, choose `年表示に切り替え`. Click a day button (names look like `9月 23, 2026`). That opens a popover `{date}の予定`; it does not switch to day view by itself.
 - **Proof.** Capture プラン with the complementary Clock section and the saved card, and スケジュール without Clock. For `plan-month`, also capture the October URL (`2026年10月`) and `今日` after paging (`2026年9月`). Example: `$ART/plan-tab.aria.yml` / `.png` and `$ART/schedule-tab.aria.yml` / `.png`. Write `proof.txt` with feature IDs `plan-tab`, `plan-month`, and `schedule-no-clock`. Artifacts show heading `計画` and complementary `一日の時計` on プラン only.
 

@@ -4,7 +4,7 @@ A 計画プリセット is a timed-plan template. One template can be marked `�
 
 ## Sub-features
 
-- `preset-open` opens 計画プリセット on `/plan?tab=plan` (nav `計画`, stepper, or `/presets` redirect).
+- `preset-open` opens 計画プリセット on the `/plan` プラン landing (nav `計画`, stepper, or `/presets` redirect).
 - `preset-create` adds a named template with at least one timed event.
 - `preset-empty-state` shows `計画プリセットはまだありません` when the account has none (only on a fresh account).
 - `preset-forgotten` saves the `計画し忘れたときに使う` switch and preserves it after reload.
@@ -13,7 +13,7 @@ A 計画プリセット is a timed-plan template. One template can be marked `�
 
 ## How to get to it (user POV)
 
-- Choose the `計画` nav link, then tab `プラン`.
+- Choose the `計画` nav link (lands on プラン; no tab click).
 - The home stepper `計画プリセットを登録する` goes to `/plan?tab=plan`.
 - Open `/presets` while signed in; the URL becomes `/plan?tab=plan`.
 - There is no `プリセット` nav item. Day page has no `プリセット切替` / `この日の雛形`.
