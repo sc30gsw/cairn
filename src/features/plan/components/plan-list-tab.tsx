@@ -62,10 +62,7 @@ export function PlanListTab() {
 
   return (
     <Stack gap="xl">
-      <aside
-        aria-labelledby={PLAN_CLOCK_HEADING_ID}
-        className="flex w-full flex-col items-center"
-      >
+      <aside aria-labelledby={PLAN_CLOCK_HEADING_ID} className="flex w-full flex-col items-center">
         <Title id={PLAN_CLOCK_HEADING_ID} order={2}>
           一日の時計
         </Title>
