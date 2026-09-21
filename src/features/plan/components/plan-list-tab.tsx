@@ -1,5 +1,15 @@
 import { convexQuery } from "@convex-dev/react-query";
-import { Card, ColorSwatch, Group, Stack, Text, Title, UnstyledButton } from "@mantine/core";
+import {
+  Button,
+  Card,
+  Collapse,
+  ColorSwatch,
+  Group,
+  Stack,
+  Text,
+  Title,
+  UnstyledButton,
+} from "@mantine/core";
 import { queryOptions, useSuspenseQueries } from "@tanstack/react-query";
 import { Result } from "better-result";
 import { useState } from "react";
@@ -32,6 +42,8 @@ import { toPlanGoalRead } from "~/lib/plan-goal-read";
 import { useOptionalExternalCalendarEventsLiveQuery } from "~/lib/tanstack-db/collections";
 import { useOptionalGoalsLiveQuery } from "~/lib/tanstack-db/collections";
 
+export const PLAN_APPLIED_EVENTS_LABEL = "予定一覧";
+
 export function PlanListTab() {
   const view = usePlanView();
   const { events, unplannedConfirmedMinutes } = usePlanWindow(view.selectedDateJst, "day");
@@ -62,6 +74,7 @@ export function PlanListTab() {
   const actions = useBoardScheduleActions();
   const [formOpened, setFormOpened] = useState(false);
   const [formValues, setFormValues] = useState<PlanScheduleEventInput | null>(null);
+  const [appliedOpened, setAppliedOpened] = useState(false);
   const editingId = formValues?.eventId;
   const editing =
     editingId === undefined ? undefined : events.find((event) => event._id === editingId);
@@ -77,6 +90,17 @@ export function PlanListTab() {
         todayJst={view.today}
       />
       <Group justify="flex-end">
+        {events.length === 0 ? null : (
+          <Button
+            aria-expanded={appliedOpened}
+            aria-label={PLAN_APPLIED_EVENTS_LABEL}
+            onClick={() => setAppliedOpened((current) => !current)}
+            variant={appliedOpened ? "filled" : "light"}
+            type="button"
+          >
+            {PLAN_APPLIED_EVENTS_LABEL}
+          </Button>
+        )}
         <PlanEventAddButton
           onClick={() => {
             setFormValues(createPlanEventFormValues(view.selectedDateJst));
@@ -89,32 +113,34 @@ export function PlanListTab() {
           この日の予定はまだありません。
         </Text>
       ) : (
-        <Stack gap="xs">
-          {events.map((event) => (
-            <UnstyledButton
-              key={event._id}
-              onClick={() => {
-                setFormValues(eventFormValues(event));
-                setFormOpened(true);
-              }}
-            >
-              <Card padding="sm" withBorder>
-                <Group justify="space-between">
-                  <Stack gap={2}>
-                    <Text fw={600}>{planEventDisplayName(event.title, event.itemId, items)}</Text>
-                    <Text c="dimmed" size="sm">
-                      {event.startTime}–{event.endTime}
-                    </Text>
-                  </Stack>
-                  <Group gap="xs" wrap="nowrap">
-                    <ColorSwatch color={PLAN_PRIORITY_STYLE[event.priority].hex} size={14} />
-                    <Text size="sm">{PLAN_PRIORITY_STYLE[event.priority].label}</Text>
+        <Collapse expanded={appliedOpened} keepMounted={false} transitionDuration={0}>
+          <Stack gap="xs">
+            {events.map((event) => (
+              <UnstyledButton
+                key={event._id}
+                onClick={() => {
+                  setFormValues(eventFormValues(event));
+                  setFormOpened(true);
+                }}
+              >
+                <Card padding="sm" withBorder>
+                  <Group justify="space-between">
+                    <Stack gap={2}>
+                      <Text fw={600}>{planEventDisplayName(event.title, event.itemId, items)}</Text>
+                      <Text c="dimmed" size="sm">
+                        {event.startTime}–{event.endTime}
+                      </Text>
+                    </Stack>
+                    <Group gap="xs" wrap="nowrap">
+                      <ColorSwatch color={PLAN_PRIORITY_STYLE[event.priority].hex} size={14} />
+                      <Text size="sm">{PLAN_PRIORITY_STYLE[event.priority].label}</Text>
+                    </Group>
                   </Group>
-                </Group>
-              </Card>
-            </UnstyledButton>
-          ))}
-        </Stack>
+                </Card>
+              </UnstyledButton>
+            ))}
+          </Stack>
+        </Collapse>
       )}
       <BoardScheduleEventForm
         dateJst={view.selectedDateJst}

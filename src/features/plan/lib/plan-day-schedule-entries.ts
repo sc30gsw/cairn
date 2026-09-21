@@ -70,7 +70,7 @@ export function planDayScheduleEntries(args: {
     });
   }
 
-  const blocks = toPlanScheduleBlocks(args.events);
+  const blocks = toPlanScheduleBlocks(args.events, args.items);
   const scheduleEvents = [
     ...toPlanScheduleEvents(blocks),
     ...toExternalScheduleEvents(args.externals),

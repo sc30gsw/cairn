@@ -44,7 +44,7 @@ Preconditions:
 
 - `この日の予定` and `計画プリセットを追加` are header buttons with icons. Below `(max-width: 47.9375em)` the visible label may hide; rely on `aria-label` and Tooltip text, not icon-only ambiguity.
 - The occupancy list is read-only. It does not paint 空き gaps; only real 予定 and 外部予定 rows appear. Editing a preset while its editor is open can highlight draft rows in the list; that is optional proof, not required for create/delete.
-- Preset event end `24:00` may fall back to a plain textbox plus `24:00に設定` when native `TimeInput` cannot hold `24:00`. Default proof can stay on `10:00`.
+- Preset event end `24:00` may display in a plain textbox when native `TimeInput` cannot hold `24:00`. There is no `24:00に設定` setter. Default proof can stay on `10:00`.
 - There is no weekday MultiSelect, holiday-as-Sunday switch, or accordion titled only `プリセット` on this route. Those belong to unmounted weekday preset UI; do not open them for default proof.
 - `この日に適用` stays disabled until a saved template is selected by clicking the name row (`検証計画プリセットを編集`). Empty-day auto-apply of the forgotten template is a later `days.open` path; creating a template does not by itself fill today's schedule.
 - After `保存`, the editor closes. A leftover dirty-form warning is not expected on reload. Wait for heading `計画` (and `何に時間を使ったか` on プラン) before treating the snapshot as proof.

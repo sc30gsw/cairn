@@ -28,7 +28,7 @@ import {
   UnstyledButton,
 } from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
-import { IconTemplate, IconTrash } from "@tabler/icons-react";
+import { IconChevronDown, IconChevronUp, IconTemplate, IconTrash } from "@tabler/icons-react";
 import { Result } from "better-result";
 import { useEffect, useState } from "react";
 import type { DateJst } from "~domain/jst";
@@ -45,9 +45,11 @@ import {
   usePlanTemplateRemove,
   usePlanTemplateSave,
   usePlanTemplateSetForgotten,
+  usePlanTemplateUnapply,
 } from "~/features/plan/hooks/plan-mutations";
 import { openPlanTemplateRemoveConfirm } from "~/features/plan/lib/open-plan-template-remove-confirm";
 import { planDayScheduleEntries } from "~/features/plan/lib/plan-day-schedule-entries";
+import { planEventDisplayName } from "~/features/plan/lib/plan-event-display-name";
 import { PLAN_PRIORITY_OPTIONS } from "~/features/plan/lib/plan-priority-style";
 import {
   EMPTY_TEMPLATE_EVENT,
@@ -72,6 +74,7 @@ export const FORGOTTEN_TEMPLATE_LABEL = "計画し忘れたときに使う";
 export const PLAN_TEMPLATE_ADDED_MESSAGE = "計画プリセットを追加しました";
 export const PLAN_TEMPLATE_UPDATED_MESSAGE = "計画プリセットを更新しました";
 export const PLAN_TEMPLATE_REMOVED_MESSAGE = "計画プリセットを削除しました";
+export const PLAN_TEMPLATE_UNAPPLY_LABEL = "適用を解除";
 
 type PlanTemplatesCardProps = {
   dateJst: DateJst;
@@ -138,6 +141,18 @@ function renderPriorityOption(priority: (typeof PLAN_PRIORITY_OPTIONS)[number]) 
   );
 }
 
+function templateSummary(template: PlanTemplateDto, items: readonly PlanCatalogItem[]) {
+  if (template.events.length === 0) {
+    return "予定なし";
+  }
+  return template.events
+    .map(
+      (event) =>
+        `${event.startTime}–${event.endTime} ${planEventDisplayName(event.title, event.itemId, items)}`,
+    )
+    .join("、");
+}
+
 export function PlanTemplatesCard({
   dateJst,
   events,
@@ -151,6 +166,7 @@ export function PlanTemplatesCard({
   const removeTemplate = usePlanTemplateRemove();
   const setForgotten = usePlanTemplateSetForgotten();
   const applyTemplate = usePlanTemplateApply();
+  const unapplyTemplate = usePlanTemplateUnapply();
   const [editing, setEditing] = useState<Editing | null>(null);
   const [scheduleOpened, setScheduleOpened] = useState(false);
   const form = useForm({
@@ -199,6 +215,14 @@ export function PlanTemplatesCard({
     });
   }
 
+  function toggleEditing(template: PlanTemplateDto) {
+    setEditing((current) =>
+      current?.kind === "saved" && current.template._id === template._id
+        ? null
+        : { kind: "saved", template },
+    );
+  }
+
   return (
     <Card padding="md" withBorder>
       <Stack gap="md">
@@ -224,61 +248,103 @@ export function PlanTemplatesCard({
           />
         ) : (
           <Stack gap="xs">
-            {templates.map((template) => (
-              <Card key={template._id} padding="sm" withBorder>
-                <Group justify="space-between" wrap="nowrap">
-                  <Box flex={1} miw={0}>
-                    <UnstyledButton
-                      aria-label={`${template.name}を編集`}
-                      onClick={() => setEditing({ kind: "saved", template })}
-                    >
-                      <Text fw={600} lineClamp={1}>
-                        {template.name}
-                      </Text>
-                    </UnstyledButton>
-                  </Box>
-                  <Group gap="xs" wrap="nowrap">
-                    <Button
-                      aria-label={`${template.name}を削除`}
-                      color="red"
-                      onClick={() => {
-                        requestRemove(template);
-                      }}
-                      type="button"
-                      variant="subtle"
-                    >
-                      削除
-                    </Button>
-                    <Switch
-                      checked={template.forgotten}
-                      label={FORGOTTEN_TEMPLATE_LABEL}
-                      onChange={() => {
-                        void runMutation(() =>
-                          setForgotten.mutateAsync({
-                            templateId: template.forgotten ? null : template._id,
-                          }),
-                        );
-                      }}
-                    />
+            {templates.map((template) => {
+              const detailsOpen =
+                editing?.kind === "saved" && editing.template._id === template._id;
+              return (
+                <Card key={template._id} padding="sm" withBorder>
+                  <Group justify="space-between" wrap="nowrap">
+                    <Group flex={1} gap={4} miw={0} wrap="nowrap">
+                      <Box flex={1} miw={0}>
+                        <UnstyledButton
+                          aria-expanded={detailsOpen}
+                          aria-label={`${template.name}を編集`}
+                          onClick={() => toggleEditing(template)}
+                        >
+                          <Stack gap={2}>
+                            <Text fw={600} lineClamp={1}>
+                              {template.name}
+                            </Text>
+                            <Text c="dimmed" lineClamp={2} size="sm">
+                              {templateSummary(template, items)}
+                            </Text>
+                          </Stack>
+                        </UnstyledButton>
+                      </Box>
+                      <ActionIcon
+                        aria-expanded={detailsOpen}
+                        aria-label={
+                          detailsOpen
+                            ? `${template.name}の詳細を閉じる`
+                            : `${template.name}の詳細を開く`
+                        }
+                        onClick={() => toggleEditing(template)}
+                        type="button"
+                        variant="subtle"
+                      >
+                        {detailsOpen ? (
+                          <IconChevronUp aria-hidden size={16} stroke={1.5} />
+                        ) : (
+                          <IconChevronDown aria-hidden size={16} stroke={1.5} />
+                        )}
+                      </ActionIcon>
+                    </Group>
+                    <Group gap="xs" wrap="nowrap">
+                      <Button
+                        aria-label={`${template.name}を削除`}
+                        color="red"
+                        onClick={() => {
+                          requestRemove(template);
+                        }}
+                        type="button"
+                        variant="subtle"
+                      >
+                        削除
+                      </Button>
+                      <Switch
+                        checked={template.forgotten}
+                        label={FORGOTTEN_TEMPLATE_LABEL}
+                        onChange={() => {
+                          void runMutation(() =>
+                            setForgotten.mutateAsync({
+                              templateId: template.forgotten ? null : template._id,
+                            }),
+                          );
+                        }}
+                      />
+                    </Group>
                   </Group>
-                </Group>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </Stack>
         )}
-        <Button
-          disabled={hasEvents || applyId === undefined}
-          onClick={() => {
-            if (applyId === undefined) {
-              return;
-            }
-            void runMutation(() =>
-              applyTemplate.mutateAsync({ dateJst, templateId: applyId, todayJst }),
-            );
-          }}
-        >
-          この日に適用
-        </Button>
+        <Group gap="xs" wrap="wrap">
+          <Button
+            disabled={hasEvents || applyId === undefined}
+            onClick={() => {
+              if (applyId === undefined) {
+                return;
+              }
+              void runMutation(() =>
+                applyTemplate.mutateAsync({ dateJst, templateId: applyId, todayJst }),
+              );
+            }}
+          >
+            この日に適用
+          </Button>
+          {hasEvents ? (
+            <Button
+              onClick={() => {
+                void runMutation(() => unapplyTemplate.mutateAsync({ dateJst, todayJst }));
+              }}
+              type="button"
+              variant="light"
+            >
+              {PLAN_TEMPLATE_UNAPPLY_LABEL}
+            </Button>
+          ) : null}
+        </Group>
         {hasEvents ? (
           <Text c="dimmed" size="sm">
             この日にはすでに予定があるので、雛形は適用しません。
@@ -431,28 +497,16 @@ function PlanTemplateEditor({
                               value={field.input}
                             />
                           ) : (
-                            <Stack gap={4}>
-                              <TimeInput
-                                {...field.props}
-                                aria-label={`${name}の予定${index + 1}の終了`}
-                                error={field.errors?.[0]}
-                                label={index === 0 ? "終了" : undefined}
-                                onChange={(event) => {
-                                  field.onChange(event.currentTarget.value);
-                                }}
-                                value={field.input}
-                              />
-                              <Button
-                                onClick={() => {
-                                  field.onChange("24:00");
-                                }}
-                                size="compact-xs"
-                                type="button"
-                                variant="subtle"
-                              >
-                                24:00に設定
-                              </Button>
-                            </Stack>
+                            <TimeInput
+                              {...field.props}
+                              aria-label={`${name}の予定${index + 1}の終了`}
+                              error={field.errors?.[0]}
+                              label={index === 0 ? "終了" : undefined}
+                              onChange={(event) => {
+                                field.onChange(event.currentTarget.value);
+                              }}
+                              value={field.input}
+                            />
                           )
                         }
                       </Field>

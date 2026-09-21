@@ -1,10 +1,10 @@
-import { fireEvent } from "@testing-library/react";
+import { fireEvent, waitFor } from "@testing-library/react";
 import { Result } from "better-result";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 
 import type { Id } from "~/../convex/_generated/dataModel";
 import { PLAN_CLOCK_HEADING } from "~/features/plan/components/plan-clock";
-import { PlanListTab } from "~/features/plan/components/plan-list-tab";
+import { PLAN_APPLIED_EVENTS_LABEL, PlanListTab } from "~/features/plan/components/plan-list-tab";
 import { calendarDayStyleClasses } from "~/lib/calendar-day-style";
 import { renderWithMantine } from "~/test-utils/render";
 
@@ -74,6 +74,7 @@ vi.mock("~/features/plan/hooks/plan-mutations", () => ({
   usePlanTemplateRemove: () => ({ mutateAsync: vi.fn(async () => null) }),
   usePlanTemplateSave: () => ({ mutateAsync: vi.fn(async () => "tmpl-1") }),
   usePlanTemplateSetForgotten: () => ({ mutateAsync: vi.fn(async () => null) }),
+  usePlanTemplateUnapply: () => ({ mutateAsync: vi.fn(async () => ({ cleared: true })) }),
 }));
 
 vi.mock("@tanstack/react-router", () => ({
@@ -118,9 +119,15 @@ test("プランタブは日と同じ学習日ナビと Clock・予定カード�
   expect(view.getByLabelText(PLAN_CLOCK_HEADING)).toBeDefined();
   expect(view.queryByRole("complementary")).toBeNull();
   expect(view.getByText("予定に載らない確定 12分")).toBeDefined();
-  expect(view.getByText("朝の多読")).toBeDefined();
-  expect(view.getByText("09:00–10:00")).toBeDefined();
   expect(view.getByRole("button", { name: "予定を追加" })).toBeDefined();
+  expect(view.getByRole("button", { name: PLAN_APPLIED_EVENTS_LABEL })).toBeDefined();
+  expect(
+    (
+      view.getByRole("button", { name: PLAN_APPLIED_EVENTS_LABEL }) as HTMLButtonElement
+    ).getAttribute("aria-expanded"),
+  ).toBe("false");
+  expect(view.queryByText("朝の多読")).toBeNull();
+  expect(view.queryByText("09:00–10:00")).toBeNull();
   expect(view.getByRole("heading", { name: "計画プリセット" })).toBeDefined();
   expect(view.getByRole("heading", { name: "目標" })).toBeDefined();
   expect(view.getByText("障害プラン")).toBeDefined();
@@ -150,12 +157,36 @@ test("予定を追加で作成モーダルが開く", () => {
   expect(view.getByRole("dialog", { hidden: true }).textContent).toContain("予定を追加");
 });
 
-test("予定カードをクリックすると予定を編集と削除が出る", () => {
+test("予定カードをクリックすると予定を編集と削除が出る", async () => {
   const view = renderWithMantine(<PlanListTab />);
+  fireEvent.click(view.getByRole("button", { name: PLAN_APPLIED_EVENTS_LABEL }));
+  await waitFor(() => {
+    expect(view.getByText("朝の多読")).toBeDefined();
+  });
   fireEvent.click(view.getByText("朝の多読"));
 
   expect(view.getByRole("dialog", { hidden: true }).textContent).toContain("予定を編集");
   expect(view.getByRole("button", { hidden: true, name: "削除" })).toBeDefined();
+});
+
+test("予定一覧は折りたたみと展開ができる", async () => {
+  const view = renderWithMantine(<PlanListTab />);
+  const toggle = view.getByRole("button", { name: PLAN_APPLIED_EVENTS_LABEL });
+  expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  expect(view.queryByText("朝の多読")).toBeNull();
+
+  fireEvent.click(toggle);
+  expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  await waitFor(() => {
+    expect(view.getByText("朝の多読")).toBeDefined();
+  });
+  expect(view.getByText("09:00–10:00")).toBeDefined();
+
+  fireEvent.click(toggle);
+  expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  await waitFor(() => {
+    expect(view.queryByText("朝の多読")).toBeNull();
+  });
 });
 
 test("前の日で選択日が変わる", () => {
