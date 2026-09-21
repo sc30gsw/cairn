@@ -1,6 +1,6 @@
 # Execution board
 
-The board shows today's (or a selected day's) records as kanban columns 未着手 / 進行中 / 確定 / スキップ. Status changes here apply immediately. Writing still belongs on 日; the board is for state and the timer. Schedule / Clock live on [plan.md](./plan.md), not here.
+The board shows today's (or a selected day's) records as kanban columns 未着手 / 進行中 / 確定 / スキップ. Status changes here apply immediately. Writing still belongs on 日; the board is for state and the timer. Timed 予定 and Clock live on [plan.md](./plan.md), not here.
 
 ## Sub-features
 
@@ -44,4 +44,4 @@ Preconditions:
 - Narrow viewports hide `項目` / `方法` / `ゴミ箱` behind その他. `ボード` and `計画` stay primary tabs. There is no `プリセット` overflow item.
 - Confirming a zero-minute row prompts for minutes in modal `記録を確定`. Have a number ready.
 - Skip from the card menu is `見送りにする`, not a label that says スキップ. Timer chip `確定する` also appears on 進行中 cards.
-- Do not look for schedule slots, `一日の時計`, or `予定を追加` on `/board`.
+- Do not look for schedule slots, `一日の時計`, or `予定を追加` on `/board`. Timed plans are `plan.md`. A leftover `/board?tab=schedule` URL is not a board failure; it should land on `/plan`.
