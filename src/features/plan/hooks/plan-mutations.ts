@@ -49,3 +49,8 @@ export function usePlanTemplateApply() {
   );
   return { mutateAsync };
 }
+
+export function usePlanTemplateUnapply() {
+  const mutateAsync = useConvexMutation(api.mutations.planTemplates.unapplyDate.unapplyDate);
+  return { mutateAsync };
+}

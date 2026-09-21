@@ -4,6 +4,7 @@ import { expect, test, vi } from "vite-plus/test";
 import type { Id } from "~/../convex/_generated/dataModel";
 import {
   FORGOTTEN_TEMPLATE_LABEL,
+  PLAN_TEMPLATE_UNAPPLY_LABEL,
   PlanTemplatesCard,
 } from "~/features/plan/components/plan-templates-card";
 import {
@@ -14,18 +15,22 @@ import {
 import type { PlanCatalogItem, PlanTemplateDto } from "~/features/plan/types/plan";
 import { renderWithMantine } from "~/test-utils/render";
 
-const { applyMutate, forgottenMutate, removeMutate, saveMutate } = vi.hoisted(() => ({
-  applyMutate: vi.fn(async () => ({ applied: true })),
-  forgottenMutate: vi.fn(async () => null),
-  removeMutate: vi.fn(async () => null),
-  saveMutate: vi.fn(async () => "tmpl-1"),
-}));
+const { applyMutate, forgottenMutate, removeMutate, saveMutate, unapplyMutate } = vi.hoisted(
+  () => ({
+    applyMutate: vi.fn(async () => ({ applied: true })),
+    forgottenMutate: vi.fn(async () => null),
+    removeMutate: vi.fn(async () => null),
+    saveMutate: vi.fn(async () => "tmpl-1"),
+    unapplyMutate: vi.fn(async () => ({ cleared: true })),
+  }),
+);
 
 vi.mock("~/features/plan/hooks/plan-mutations", () => ({
   usePlanTemplateApply: () => ({ mutateAsync: applyMutate }),
   usePlanTemplateRemove: () => ({ mutateAsync: removeMutate }),
   usePlanTemplateSave: () => ({ mutateAsync: saveMutate }),
   usePlanTemplateSetForgotten: () => ({ mutateAsync: forgottenMutate }),
+  usePlanTemplateUnapply: () => ({ mutateAsync: unapplyMutate }),
 }));
 
 vi.mock("~/hooks/use-today-jst", () => ({
@@ -181,6 +186,60 @@ test("保存した雛形の名前を変えて保存すると更新が送られ�
     );
   });
   expect(queryByRole("textbox", { name: "平日の型の名前" })).toBeNull();
+});
+
+test("保存した雛形は予定の要約を出し、タイトルとトグルで詳細を開閉する", () => {
+  const { getByRole, getByText, queryByRole } = renderWithMantine(
+    <PlanTemplatesCard
+      dateJst="2026-08-17"
+      events={[]}
+      externals={[]}
+      hasEvents={false}
+      items={[item]}
+      templates={[morning]}
+    />,
+  );
+
+  expect(getByRole("button", { name: "平日の型を編集" })).toBeDefined();
+  expect(getByRole("button", { name: "平日の型を削除" })).toBeDefined();
+  expect(getByRole("button", { name: "平日の型の詳細を開く" })).toBeDefined();
+  expect(getByText("07:00–07:50 多読、20:00–21:00 X を見る")).toBeDefined();
+  expect(queryByRole("button", { name: /^編集$/ })).toBeNull();
+  expect(queryByRole("textbox", { name: "平日の型の名前" })).toBeNull();
+  expect(queryByRole("button", { name: "24:00に設定" })).toBeNull();
+
+  fireEvent.click(getByRole("button", { name: "平日の型を編集" }));
+  expect(getByRole("textbox", { name: "平日の型の名前" })).toBeDefined();
+  expect(getByRole("button", { name: "平日の型の詳細を閉じる" })).toBeDefined();
+
+  fireEvent.click(getByRole("button", { name: "平日の型を編集" }));
+  expect(queryByRole("textbox", { name: "平日の型の名前" })).toBeNull();
+  expect(getByRole("button", { name: "平日の型の詳細を開く" })).toBeDefined();
+
+  fireEvent.click(getByRole("button", { name: "平日の型の詳細を開く" }));
+  expect(getByRole("textbox", { name: "平日の型の名前" })).toBeDefined();
+  fireEvent.click(getByRole("button", { name: "平日の型の詳細を閉じる" }));
+  expect(queryByRole("textbox", { name: "平日の型の名前" })).toBeNull();
+});
+
+test("予定がある日は適用を解除できる", () => {
+  unapplyMutate.mockClear();
+  const { getByRole } = renderWithMantine(
+    <PlanTemplatesCard
+      dateJst="2026-08-17"
+      events={[]}
+      externals={[]}
+      hasEvents
+      items={[item]}
+      templates={[morning]}
+    />,
+  );
+
+  fireEvent.click(getByRole("button", { name: PLAN_TEMPLATE_UNAPPLY_LABEL }));
+  expect(unapplyMutate).toHaveBeenCalledWith({
+    dateJst: "2026-08-17",
+    todayJst: "2026-08-17",
+  });
 });
 
 test("削除は確認してから消し、キャンセルでは残す", async () => {

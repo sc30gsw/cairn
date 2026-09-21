@@ -1,5 +1,7 @@
 import type { Doc } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
+import { collapseExtraLiveDays } from "../days/collapseExtraLiveDays";
+import { getDayByDate } from "../days/getDayByDate";
 import { liveRowsForDay } from "../days/liveRowsForDay";
 import { eventsOnDate } from "./events";
 
@@ -62,4 +64,28 @@ export async function materializePlanEvents(
       });
     }),
   );
+}
+
+export async function materializePlanEventsForDate(
+  ctx: MutationCtx,
+  ownerId: string,
+  dateJst: string,
+): Promise<void> {
+  const pending = await pendingPlanMaterializations(ctx, ownerId, dateJst);
+  if (pending.length === 0) {
+    return;
+  }
+  const existing = await getDayByDate(ctx, ownerId, dateJst);
+  if (existing !== null && existing.deletedAt !== undefined) {
+    return;
+  }
+  let day = existing;
+  if (day === null) {
+    await ctx.db.insert("days", { dateJst, ownerId });
+    day = await collapseExtraLiveDays(ctx, ownerId, dateJst);
+    if (day === null) {
+      return;
+    }
+  }
+  await materializePlanEvents(ctx, ownerId, { dateJst, day });
 }

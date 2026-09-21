@@ -64,12 +64,14 @@ test("既存プランは保存と削除ができる", async () => {
   const onUpdateObstacle = vi.fn();
   const onRemoveObstacle = vi.fn();
   const plan = { _id: "o1" as Obstacle["_id"], ifText: "眠い", thenText: THEN_ACTION };
-  const { getByRole } = renderWithMantine(
+  const { getByRole, queryByRole } = renderWithMantine(
     <ObstacleSection
       {...sectionProps({ obstacles: [plan], onRemoveObstacle, onUpdateObstacle })}
     />,
   );
-  getByRole("button", { name: "眠いを保存" }).click();
+  expect(getByRole("button", { name: "更新" })).toBeDefined();
+  expect(queryByRole("button", { name: "眠いを保存" })).toBeNull();
+  getByRole("button", { name: "更新" }).click();
   await waitFor(() => {
     expect(onUpdateObstacle).toHaveBeenCalledWith({
       ifText: "眠い",
@@ -89,7 +91,7 @@ test("既存プランのもしが空なら保存できない", async () => {
     <ObstacleSection {...sectionProps({ obstacles: [plan], onUpdateObstacle })} />,
   );
   fireEvent.change(getByRole("textbox", { name: "眠いのもし" }), { target: { value: "  " } });
-  getByRole("button", { name: "眠いを保存" }).click();
+  getByRole("button", { name: "更新" }).click();
   await waitFor(() => {
     expect(onUpdateObstacle).not.toHaveBeenCalled();
   });
@@ -102,7 +104,7 @@ test("既存プランのならが空なら保存できない", async () => {
     <ObstacleSection {...sectionProps({ obstacles: [plan], onUpdateObstacle })} />,
   );
   fireEvent.change(getByRole("textbox", { name: "眠いのなら" }), { target: { value: "  " } });
-  getByRole("button", { name: "眠いを保存" }).click();
+  getByRole("button", { name: "更新" }).click();
   await waitFor(() => {
     expect(onUpdateObstacle).not.toHaveBeenCalled();
   });
@@ -132,7 +134,7 @@ test("既存プランの内容を更新できる", async () => {
   fireEvent.change(getByRole("textbox", { name: "眠いのなら" }), {
     target: { value: "5分だけ休憩して戻る" },
   });
-  getByRole("button", { name: "眠いを保存" }).click();
+  getByRole("button", { name: "更新" }).click();
   await waitFor(() => {
     expect(onUpdateObstacle).toHaveBeenCalledWith({
       ifText: "集中が切れた",

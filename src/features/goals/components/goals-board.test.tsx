@@ -628,7 +628,7 @@ test("障害プランの追加・更新・削除ができる", async () => {
     });
   });
 
-  getByRole("button", { name: "眠いを保存" }).click();
+  getByRole("button", { name: "更新" }).click();
   await waitFor(() => {
     expect(onUpdateObstacle).toHaveBeenCalledWith({
       ifText: "眠い",

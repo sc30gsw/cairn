@@ -44,6 +44,6 @@ Preconditions:
 - Empty today shows `この日の記録はありません` (or preset rows). An empty past day shows `休養`, not that today copy.
 - JST "today" follows the server/client JST date. Do not invent a future `/days/20xx-…` URL to write records.
 - Day page does not start or stop the timer. Timer controls live on ボード. A running timer may show `計測中（実行ボードで操作）` here.
-- Weekday templates no longer apply to 日. `記録はありません` on a fresh today is expected even after a 計画プリセット exists; presets fill `/plan`, not this paper.
+- Weekday catalog templates no longer apply to 日. A 計画プリセット only fills the 日 記録欄 after `この日に適用` (or forgotten-template `days.open`) **and** only for 予定 that have an 項目. Item-less 予定 stay on `/plan` and must not appear as 記録. `記録はありません` on a fresh today is expected until that apply.
 - `昨日の確定をコピー` needs yesterday confirmed rows. Skip it unless that precondition is seeded.
 - `この日をゴミ箱へ` deletes the day document. Do not use it unless you are proving trash.

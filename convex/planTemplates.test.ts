@@ -50,6 +50,15 @@ async function listDay(t: ReturnType<typeof owner>, dateJst: string) {
   });
 }
 
+async function liveRows(t: ReturnType<typeof owner>) {
+  return await t.run(async (ctx) => {
+    const rows = await ctx.db.query("rows").collect();
+    return rows
+      .filter((row) => row.deletedAt === undefined)
+      .toSorted((left, right) => left.sortOrder - right.sortOrder);
+  });
+}
+
 test("計画プリセットは項目なし行も保存し、忘れたとき指定は1つだけ", async () => {
   const t = owner();
   const itemId = await readingItem(t);
@@ -217,6 +226,109 @@ test("未来の空の日に雛形を適用しても days と rows は増えな�
   ).toEqual({ applied: true });
   expect((await listDay(t, FUTURE)).page.map((event) => event.title)).toEqual(["朝の多読"]);
   expect(await countLive(t)).toEqual({ days: 0, rows: 0 });
+});
+
+test("今日に適用すると days.open なしで項目つきだけ記録になる", async () => {
+  const t = owner();
+  const itemId = await readingItem(t);
+  const templateId = await t.mutation(api.mutations.planTemplates.save.save, {
+    events: [
+      {
+        endTime: "07:50",
+        itemId,
+        priority: "high",
+        startTime: "07:00",
+        title: "",
+      },
+      {
+        endTime: "21:00",
+        priority: "low",
+        startTime: "20:00",
+        title: "X を見る",
+      },
+    ],
+    name: "平日の型",
+  });
+  expect(
+    await t.mutation(api.mutations.planTemplates.applyToEmptyDate.applyToEmptyDate, {
+      dateJst: MONDAY,
+      templateId,
+      todayJst: MONDAY,
+    }),
+  ).toEqual({ applied: true });
+  const listed = await listDay(t, MONDAY);
+  expect(listed.page.map((event) => event.title)).toEqual(["", "X を見る"]);
+  expect(listed.page[0]?.recordState).toEqual({ kind: "materialized", status: "未着手" });
+  expect(listed.page[1]?.recordState).toEqual({ kind: "not-applicable" });
+  expect(await countLive(t)).toEqual({ days: 1, rows: 1 });
+  expect((await liveRows(t)).map((row) => row.itemId)).toEqual([itemId]);
+});
+
+test("項目なしだけの今日適用は記録を作らない", async () => {
+  const t = owner();
+  const templateId = await t.mutation(api.mutations.planTemplates.save.save, {
+    events: [
+      {
+        endTime: "21:00",
+        priority: "low",
+        startTime: "20:00",
+        title: "X を見る",
+      },
+    ],
+    name: "予定だけ",
+  });
+  expect(
+    await t.mutation(api.mutations.planTemplates.applyToEmptyDate.applyToEmptyDate, {
+      dateJst: MONDAY,
+      templateId,
+      todayJst: MONDAY,
+    }),
+  ).toEqual({ applied: true });
+  const listed = await listDay(t, MONDAY);
+  expect(listed.page.map((event) => event.title)).toEqual(["X を見る"]);
+  expect(listed.page[0]?.recordState).toEqual({ kind: "not-applicable" });
+  expect(await countLive(t)).toEqual({ days: 0, rows: 0 });
+});
+
+test("適用を解除すると予定と記録が消え、独立した記録は残る", async () => {
+  const t = owner();
+  const itemId = await readingItem(t);
+  const templateId = await t.mutation(api.mutations.planTemplates.save.save, {
+    events: [
+      {
+        endTime: "08:00",
+        itemId,
+        priority: "high",
+        startTime: "07:00",
+        title: "朝の多読",
+      },
+    ],
+    name: "平日の型",
+  });
+  expect(
+    await t.mutation(api.mutations.planTemplates.applyToEmptyDate.applyToEmptyDate, {
+      dateJst: MONDAY,
+      templateId,
+      todayJst: MONDAY,
+    }),
+  ).toEqual({ applied: true });
+  const adhocId = await t.mutation(api.mutations.rows.add.add, {
+    content: "独立した記録",
+    dateJst: MONDAY,
+    itemId,
+    minutes: 10,
+    todayJst: MONDAY,
+  });
+  expect(await countLive(t)).toEqual({ days: 1, rows: 2 });
+  expect(
+    await t.mutation(api.mutations.planTemplates.unapplyDate.unapplyDate, {
+      dateJst: MONDAY,
+      todayJst: MONDAY,
+    }),
+  ).toEqual({ cleared: true });
+  expect((await listDay(t, MONDAY)).page).toEqual([]);
+  expect((await liveRows(t)).map((row) => row._id)).toEqual([adhocId]);
+  expect(await countLive(t)).toEqual({ days: 1, rows: 1 });
 });
 
 test("曜日プリセットがあっても今日の予定0件では行を生やさない", async () => {

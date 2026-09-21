@@ -2,7 +2,7 @@ import { expect, test } from "vite-plus/test";
 
 import type { Id } from "~/../convex/_generated/dataModel";
 import { toPlanScheduleBlocks } from "~/features/plan/lib/plan-event-blocks";
-import type { PlanEventDto } from "~/features/plan/types/plan";
+import type { PlanCatalogItem, PlanEventDto } from "~/features/plan/types/plan";
 
 test("項目なし予定は弧用の記録を持たず、優先度から色を決める", () => {
   const event = {
@@ -43,4 +43,32 @@ test("記録を生やした予定は日付と項目を凍結する", () => {
 
   expect(toPlanScheduleBlocks([event])[0]?.frozen).toBe(true);
   expect(toPlanScheduleBlocks([event])[0]?.color).toBe("yellow");
+});
+
+test("タイトル空の項目つき予定は中・高とも項目名をスケジュールに出す", () => {
+  const items = [{ _id: "item-1" as Id<"items">, name: "多読" }] as PlanCatalogItem[];
+  const medium = {
+    _id: "e-medium" as Id<"planEvents">,
+    dateJst: "2026-09-21",
+    endTime: "06:00",
+    itemId: "item-1" as Id<"items">,
+    priority: "medium",
+    recordState: { kind: "awaiting-open" },
+    startTime: "05:00",
+    title: "",
+  } satisfies PlanEventDto;
+  const high = {
+    _id: "e-high" as Id<"planEvents">,
+    dateJst: "2026-09-21",
+    endTime: "07:00",
+    itemId: "item-1" as Id<"items">,
+    priority: "high",
+    recordState: { kind: "awaiting-open" },
+    startTime: "06:00",
+    title: "",
+  } satisfies PlanEventDto;
+
+  const blocks = toPlanScheduleBlocks([medium, high], items);
+  expect(blocks[0]).toMatchObject({ color: "lime", title: "多読" });
+  expect(blocks[1]).toMatchObject({ color: "yellow", title: "多読" });
 });

@@ -33,7 +33,7 @@ export function BoardScheduleTab() {
 
   return (
     <BoardSchedule
-      blocks={toPlanScheduleBlocks(events)}
+      blocks={toPlanScheduleBlocks(events, items)}
       externals={
         liveExternals.isReady && liveExternals.data !== undefined
           ? liveExternals.data
