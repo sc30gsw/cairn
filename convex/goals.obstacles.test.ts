@@ -116,13 +116,23 @@ test("存在しない障害プランの更新・削除は拒否される", async
 test("障害プランの CRUD は記録の状態を変えない", async () => {
   const t = owner();
   await t.mutation(api.mutations.catalog.ensure.ensure, {});
-  await t.mutation(api.mutations.days.open.open, { dateJst: "2026-08-17", todayJst: "2026-08-17" });
+  const items = await t.query(api.queries.items.list.list, {});
+  const itemId = items[0]?._id;
+  if (itemId === undefined) {
+    throw new Error("catalog seed missing items");
+  }
+  await t.mutation(api.mutations.rows.add.add, {
+    content: "",
+    dateJst: "2026-08-17",
+    itemId,
+    minutes: 0,
+    todayJst: "2026-08-17",
+  });
   const before = await t.query(api.queries.days.get.get, {
     dateJst: "2026-08-17",
     todayJst: "2026-08-17",
   });
-  const statuses = () => before.rows.map((row) => row.status);
-  expect(statuses().length).toBeGreaterThan(0);
+  expect(before.rows.map((row) => row.status).length).toBeGreaterThan(0);
 
   const planId = await t.mutation(api.mutations.goals.createObstacle.createObstacle, {
     ifText: "眠い",
