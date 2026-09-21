@@ -1,4 +1,4 @@
-import { fireEvent, waitFor } from "@testing-library/react";
+import { fireEvent, waitFor, within } from "@testing-library/react";
 import { expect, test, vi } from "vite-plus/test";
 
 import type { Id } from "~/../convex/_generated/dataModel";
@@ -6,18 +6,24 @@ import {
   FORGOTTEN_TEMPLATE_LABEL,
   PlanTemplatesCard,
 } from "~/features/plan/components/plan-templates-card";
+import {
+  PLAN_TEMPLATE_REMOVE_BODY,
+  PLAN_TEMPLATE_REMOVE_CONFIRM,
+  planTemplateRemoveTitle,
+} from "~/features/plan/lib/open-plan-template-remove-confirm";
 import type { PlanCatalogItem, PlanTemplateDto } from "~/features/plan/types/plan";
 import { renderWithMantine } from "~/test-utils/render";
 
-const { applyMutate, forgottenMutate, saveMutate } = vi.hoisted(() => ({
+const { applyMutate, forgottenMutate, removeMutate, saveMutate } = vi.hoisted(() => ({
   applyMutate: vi.fn(async () => ({ applied: true })),
   forgottenMutate: vi.fn(async () => null),
+  removeMutate: vi.fn(async () => null),
   saveMutate: vi.fn(async () => "tmpl-1"),
 }));
 
 vi.mock("~/features/plan/hooks/plan-mutations", () => ({
   usePlanTemplateApply: () => ({ mutateAsync: applyMutate }),
-  usePlanTemplateRemove: () => ({ mutateAsync: vi.fn(async () => null) }),
+  usePlanTemplateRemove: () => ({ mutateAsync: removeMutate }),
   usePlanTemplateSave: () => ({ mutateAsync: saveMutate }),
   usePlanTemplateSetForgotten: () => ({ mutateAsync: forgottenMutate }),
 }));
@@ -94,7 +100,7 @@ test("空の日なら選んだ雛形を適用する", () => {
 
 test("保存は項目なしを none から外して送る", async () => {
   saveMutate.mockClear();
-  const { getByRole } = renderWithMantine(
+  const { getByRole, queryByRole } = renderWithMantine(
     <PlanTemplatesCard
       dateJst="2026-08-17"
       hasEvents={false}
@@ -128,5 +134,64 @@ test("保存は項目なしを none から外して送る", async () => {
       name: "平日の型",
       templateId: morning._id,
     });
+  });
+  expect(queryByRole("textbox", { name: "平日の型の名前" })).toBeNull();
+});
+
+test("保存した雛形の名前を変えて保存すると更新が送られ、編集欄が閉じる", async () => {
+  saveMutate.mockClear();
+  const { getByRole, queryByRole } = renderWithMantine(
+    <PlanTemplatesCard
+      dateJst="2026-08-17"
+      hasEvents={false}
+      items={[item]}
+      templates={[morning]}
+    />,
+  );
+
+  fireEvent.click(getByRole("button", { name: "平日の型を編集" }));
+  fireEvent.change(getByRole("textbox", { name: "平日の型の名前" }), {
+    target: { value: "夜の型" },
+  });
+  fireEvent.click(getByRole("button", { name: "保存" }));
+  await waitFor(() => {
+    expect(saveMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "夜の型",
+        templateId: morning._id,
+      }),
+    );
+  });
+  expect(queryByRole("textbox", { name: "平日の型の名前" })).toBeNull();
+});
+
+test("削除は確認してから消し、キャンセルでは残す", async () => {
+  removeMutate.mockClear();
+  const { getByRole } = renderWithMantine(
+    <PlanTemplatesCard
+      dateJst="2026-08-17"
+      hasEvents={false}
+      items={[item]}
+      templates={[morning]}
+    />,
+  );
+
+  fireEvent.click(getByRole("button", { name: "平日の型を削除" }));
+  const canceled = await vi.waitFor(() =>
+    getByRole("dialog", { hidden: true, name: planTemplateRemoveTitle(morning.name) }),
+  );
+  expect(within(canceled).getByText(PLAN_TEMPLATE_REMOVE_BODY)).toBeDefined();
+  fireEvent.click(within(canceled).getByRole("button", { hidden: true, name: "キャンセル" }));
+  expect(removeMutate).not.toHaveBeenCalled();
+
+  fireEvent.click(getByRole("button", { name: "平日の型を削除" }));
+  const confirmed = await vi.waitFor(() =>
+    getByRole("dialog", { hidden: true, name: planTemplateRemoveTitle(morning.name) }),
+  );
+  fireEvent.click(
+    within(confirmed).getByRole("button", { hidden: true, name: PLAN_TEMPLATE_REMOVE_CONFIRM }),
+  );
+  await waitFor(() => {
+    expect(removeMutate).toHaveBeenCalledWith({ templateId: morning._id });
   });
 });
