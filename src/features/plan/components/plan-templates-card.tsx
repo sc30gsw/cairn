@@ -28,6 +28,7 @@ import {
   usePlanTemplateSave,
   usePlanTemplateSetForgotten,
 } from "~/features/plan/hooks/plan-mutations";
+import { openPlanTemplateRemoveConfirm } from "~/features/plan/lib/open-plan-template-remove-confirm";
 import { PLAN_PRIORITY_OPTIONS } from "~/features/plan/lib/plan-priority-style";
 import {
   EMPTY_TEMPLATE_EVENT,
@@ -42,6 +43,9 @@ import { onRequiredSelect } from "~/lib/select";
 import { parseItemId, unwrapItemId } from "~/types/item";
 
 export const FORGOTTEN_TEMPLATE_LABEL = "計画し忘れたときに使う";
+export const PLAN_TEMPLATE_ADDED_MESSAGE = "計画プリセットを追加しました";
+export const PLAN_TEMPLATE_UPDATED_MESSAGE = "計画プリセットを更新しました";
+export const PLAN_TEMPLATE_REMOVED_MESSAGE = "計画プリセットを削除しました";
 
 type PlanTemplatesCardProps = {
   dateJst: DateJst;
@@ -128,6 +132,27 @@ export function PlanTemplatesCard({
   const [editing, setEditing] = useState<Editing | null>(null);
   const applyId = editing?.kind === "saved" ? editing.template._id : undefined;
 
+  async function persistRemove(templateId: Id<"planTemplates">) {
+    const result = await runMutation(() => removeTemplate.mutateAsync({ templateId }), {
+      successMessage: PLAN_TEMPLATE_REMOVED_MESSAGE,
+    });
+    if (Result.isOk(result)) {
+      setEditing((current) =>
+        current?.kind === "saved" && current.template._id === templateId ? null : current,
+      );
+    }
+    return result;
+  }
+
+  function requestRemove(template: PlanTemplateDto) {
+    openPlanTemplateRemoveConfirm({
+      name: template.name,
+      onConfirm: () => {
+        void persistRemove(template._id);
+      },
+    });
+  }
+
   return (
     <Card padding="md" withBorder>
       <Stack gap="md">
@@ -162,17 +187,30 @@ export function PlanTemplatesCard({
                       </Text>
                     </Stack>
                   </UnstyledButton>
-                  <Switch
-                    checked={template.forgotten}
-                    label={FORGOTTEN_TEMPLATE_LABEL}
-                    onChange={() => {
-                      void runMutation(() =>
-                        setForgotten.mutateAsync({
-                          templateId: template.forgotten ? null : template._id,
-                        }),
-                      );
-                    }}
-                  />
+                  <Group gap="xs" wrap="nowrap">
+                    <Button
+                      aria-label={`${template.name}を削除`}
+                      color="red"
+                      onClick={() => {
+                        requestRemove(template);
+                      }}
+                      type="button"
+                      variant="subtle"
+                    >
+                      削除
+                    </Button>
+                    <Switch
+                      checked={template.forgotten}
+                      label={FORGOTTEN_TEMPLATE_LABEL}
+                      onChange={() => {
+                        void runMutation(() =>
+                          setForgotten.mutateAsync({
+                            templateId: template.forgotten ? null : template._id,
+                          }),
+                        );
+                      }}
+                    />
+                  </Group>
                 </Group>
               </Card>
             ))}
@@ -201,24 +239,26 @@ export function PlanTemplatesCard({
             onRemove={
               editing.kind === "new"
                 ? undefined
-                : async () => {
-                    const result = await runMutation(() =>
-                      removeTemplate.mutateAsync({ templateId: editing.template._id }),
-                    );
-                    if (Result.isOk(result)) {
-                      setEditing(null);
-                    }
+                : () => {
+                    requestRemove(editing.template);
                   }
             }
             onSubmit={async (values) => {
-              const result = await runMutation(() =>
-                saveTemplate.mutateAsync({
-                  events: draftsFromOutput(values),
-                  name: values.name,
-                  templateId: editing.kind === "saved" ? editing.template._id : undefined,
-                }),
+              const result = await runMutation(
+                () =>
+                  saveTemplate.mutateAsync({
+                    events: draftsFromOutput(values),
+                    name: values.name,
+                    templateId: editing.kind === "saved" ? editing.template._id : undefined,
+                  }),
+                {
+                  successMessage:
+                    editing.kind === "new"
+                      ? PLAN_TEMPLATE_ADDED_MESSAGE
+                      : PLAN_TEMPLATE_UPDATED_MESSAGE,
+                },
               );
-              if (Result.isOk(result) && editing.kind === "new") {
+              if (Result.isOk(result)) {
                 setEditing(null);
               }
               return result;
@@ -238,7 +278,7 @@ function PlanTemplateEditor({
   template,
 }: {
   items: readonly PlanCatalogItem[];
-  onRemove?: () => Promise<void>;
+  onRemove?: () => void;
   onSubmit: (values: PlanTemplateFormOutput) => Promise<unknown>;
   template: PlanTemplateDto | null;
 }) {
@@ -389,7 +429,7 @@ function PlanTemplateEditor({
             </Button>
             <Button type="submit">保存</Button>
             {onRemove === undefined ? null : (
-              <Button color="red" onClick={() => void onRemove()} type="button" variant="light">
+              <Button color="red" onClick={onRemove} type="button" variant="light">
                 削除
               </Button>
             )}
