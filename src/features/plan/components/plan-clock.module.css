@@ -1,0 +1,14 @@
+.clock {
+  margin-inline: auto;
+  max-width: 20rem;
+}
+
+.face {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.unplanned {
+  text-align: center;
+}

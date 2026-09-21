@@ -21,6 +21,7 @@ const FEATURE_NAMES = [
   "methods",
   "my-page",
   "onboarding",
+  "plan",
   "review",
   "today",
   "trash",

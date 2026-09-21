@@ -25,11 +25,7 @@ beforeEach(() => {
   vi.restoreAllMocks();
   vi.clearAllMocks();
   sessionStorage.clear();
-  window.history.replaceState(
-    null,
-    "",
-    "/board?tab=schedule&view=month&date=2026-09-07&calendarSync=true",
-  );
+  window.history.replaceState(null, "", "/plan?view=month&date=2026-09-07&calendarSync=true");
   vi.mocked(authClient.linkSocial).mockResolvedValue({ data: null, error: null });
 });
 
