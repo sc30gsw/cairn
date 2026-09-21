@@ -1,5 +1,5 @@
 import { convexQuery } from "@convex-dev/react-query";
-import { Button, Card, Group, Stack, Text, UnstyledButton } from "@mantine/core";
+import { Button, Card, Group, Stack, Text, Title, UnstyledButton } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import { useSuspenseQueries } from "@tanstack/react-query";
 import { Result } from "better-result";
@@ -32,6 +32,8 @@ import { toPlanGoalRead } from "~/lib/plan-goal-read";
 import { parseDateJst } from "~/lib/schemas/calendar-date-schema";
 import { useOptionalGoalsLiveQuery } from "~/lib/tanstack-db/collections";
 
+const PLAN_CLOCK_HEADING_ID = "plan-clock-heading";
+
 export function PlanListTab() {
   const view = usePlanView();
   const { events, unplannedConfirmedMinutes } = usePlanWindow(view.selectedDateJst, "day");
@@ -59,8 +61,22 @@ export function PlanListTab() {
     editingId === undefined ? undefined : events.find((event) => event._id === editingId);
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-      <Stack className="w-full shrink-0 lg:max-w-80" gap="md">
+    <Stack gap="xl">
+      <aside
+        aria-labelledby={PLAN_CLOCK_HEADING_ID}
+        className="flex w-full flex-col items-center"
+      >
+        <Title id={PLAN_CLOCK_HEADING_ID} order={2}>
+          一日の時計
+        </Title>
+        <PlanClock
+          events={events}
+          selectedDateJst={view.selectedDateJst}
+          todayJst={view.today}
+          unplannedConfirmedMinutes={unplannedConfirmedMinutes}
+        />
+      </aside>
+      <Stack gap="md">
         <DatePicker
           allowDeselect={false}
           aria-label="日付を選択"
@@ -88,14 +104,6 @@ export function PlanListTab() {
         >
           今日
         </Button>
-        <PlanClock
-          events={events}
-          selectedDateJst={view.selectedDateJst}
-          todayJst={view.today}
-          unplannedConfirmedMinutes={unplannedConfirmedMinutes}
-        />
-      </Stack>
-      <Stack className="min-w-0 flex-1" gap="md">
         <Button
           onClick={() => {
             setFormValues(
@@ -177,6 +185,6 @@ export function PlanListTab() {
           />
         </Card>
       </Stack>
-    </div>
+    </Stack>
   );
 }

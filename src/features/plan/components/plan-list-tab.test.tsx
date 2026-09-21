@@ -1,4 +1,4 @@
-import { fireEvent } from "@testing-library/react";
+import { fireEvent, within } from "@testing-library/react";
 import { Result } from "better-result";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 
@@ -97,7 +97,7 @@ afterEach(() => {
   setDate.mockClear();
 });
 
-test("プランタブは日付カレンダー・Clock・予定入力を並べ、祝日を出す", () => {
+test("プランタブは日付カレンダー・Clock・予定入力を出し、祝日を出す", () => {
   const view = renderWithMantine(<PlanListTab />);
 
   expect(view.getByLabelText("日付を選択")).toBeDefined();
@@ -106,7 +106,7 @@ test("プランタブは日付カレンダー・Clock・予定入力を並べ、
     calendarDayStyleClasses.holidayDay,
   );
   expect(view.getByLabelText("23 9月 2026").getAttribute("title")).toBe("秋分の日");
-  expect(view.getByLabelText("一日の時計")).toBeDefined();
+  expect(view.getByRole("complementary", { name: "一日の時計" })).toBeDefined();
   expect(view.getByText("予定に載らない確定 12分")).toBeDefined();
   expect(view.getByText("朝の多読")).toBeDefined();
   expect(view.getByText("09:00–10:00")).toBeDefined();
@@ -114,6 +114,23 @@ test("プランタブは日付カレンダー・Clock・予定入力を並べ、
   expect(view.getByRole("heading", { name: "計画プリセット" })).toBeDefined();
   expect(view.getByRole("heading", { name: "目標" })).toBeDefined();
   expect(view.getByText("障害プラン")).toBeDefined();
+});
+
+test("Clock は complementary セクションにありカレンダーとは別", () => {
+  const view = renderWithMantine(<PlanListTab />);
+  const clockSection = view.getByRole("complementary", { name: "一日の時計" });
+
+  expect(within(clockSection).getByLabelText("一日の時計")).toBeDefined();
+  expect(within(clockSection).queryByLabelText("日付を選択")).toBeNull();
+  expect(view.getByLabelText("日付を選択")).toBeDefined();
+});
+
+test("予定カードをクリックすると予定を編集と削除が出る", () => {
+  const view = renderWithMantine(<PlanListTab />);
+  fireEvent.click(view.getByText("朝の多読"));
+
+  expect(view.getByRole("dialog", { hidden: true }).textContent).toContain("予定を編集");
+  expect(view.getByRole("button", { hidden: true, name: "削除" })).toBeDefined();
 });
 
 test("カレンダーの日付を選ぶと選択日が変わる", () => {
