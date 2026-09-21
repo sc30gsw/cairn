@@ -7,6 +7,4 @@ export type GoalOfType<TType extends Goal["type"]> = Extract<Goal, Record<"type"
 export type ExamGoal = GoalOfType<"exam">;
 export type MasteryGoal = GoalOfType<"mastery">;
 export type GoalId = Goal["_id"];
-export type Obstacle = FunctionReturnType<
-  typeof api.queries.goals.listObstacles.listObstacles
->[number];
+export type { Obstacle } from "~/types/obstacle";
