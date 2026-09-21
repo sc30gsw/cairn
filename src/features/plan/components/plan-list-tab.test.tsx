@@ -4,7 +4,8 @@ import { afterEach, expect, test, vi } from "vite-plus/test";
 
 import type { Id } from "~/../convex/_generated/dataModel";
 import { PLAN_CLOCK_HEADING } from "~/features/plan/components/plan-clock";
-import { PLAN_APPLIED_EVENTS_LABEL, PlanListTab } from "~/features/plan/components/plan-list-tab";
+import { PLAN_EVENTS_LIST_OPEN_TOOLTIP } from "~/features/plan/components/plan-events-list";
+import { PLAN_DATE_PREV_TOOLTIP, PlanListTab } from "~/features/plan/components/plan-list-tab";
 import { calendarDayStyleClasses } from "~/lib/calendar-day-style";
 import { renderWithMantine } from "~/test-utils/render";
 
@@ -40,6 +41,7 @@ vi.mock("~/features/plan/hooks/use-plan-window", () => ({
     ],
     isDone: true,
     unplannedConfirmedMinutes: 12,
+    appliedTemplateId: null,
   }),
 }));
 
@@ -67,6 +69,9 @@ vi.mock("~/hooks/use-obstacle-plans", () => ({
 vi.mock("~/lib/tanstack-db/collections", () => ({
   useOptionalExternalCalendarEventsLiveQuery: () => ({ data: undefined, isReady: false }),
   useOptionalGoalsLiveQuery: () => ({ data: undefined, isReady: false }),
+  useOptionalPlanEventsLiveQuery: () => ({ data: undefined, isReady: false }),
+  useOptionalPlanTemplatesLiveQuery: () => ({ data: undefined, isReady: false }),
+  useOptionalPlanWindowLiveQuery: () => ({ data: undefined, isReady: false }),
 }));
 
 vi.mock("~/features/plan/hooks/plan-mutations", () => ({
@@ -111,19 +116,21 @@ test("プランタブは日と同じ学習日ナビと Clock・予定カード�
   expect(view.queryByLabelText("日付を選択")).toBeNull();
   expect(view.queryByRole("button", { name: "2026年9月" })).toBeNull();
   expect(view.queryByLabelText("23 9月 2026")).toBeNull();
-  expect(view.getByRole("button", { name: "前の日" })).toBeDefined();
-  expect((view.getByRole("button", { name: "次の日" }) as HTMLButtonElement).disabled).toBe(false);
+  expect(view.getByRole("button", { name: PLAN_DATE_PREV_TOOLTIP })).toBeDefined();
+  expect((view.getByRole("button", { name: "次の日の計画へ" }) as HTMLButtonElement).disabled).toBe(
+    false,
+  );
   expect(view.queryByRole("button", { name: "今日へ戻る" })).toBeNull();
   expect(view.queryByRole("button", { name: "今日" })).toBeNull();
   expect(view.getByRole("heading", { name: PLAN_CLOCK_HEADING })).toBeDefined();
   expect(view.getByLabelText(PLAN_CLOCK_HEADING)).toBeDefined();
   expect(view.queryByRole("complementary")).toBeNull();
   expect(view.getByText("予定に載らない確定 12分")).toBeDefined();
-  expect(view.getByRole("button", { name: "予定を追加" })).toBeDefined();
-  expect(view.getByRole("button", { name: PLAN_APPLIED_EVENTS_LABEL })).toBeDefined();
+  expect(view.getByRole("button", { name: "この日に予定を 1 件足します" })).toBeDefined();
+  expect(view.getByRole("button", { name: PLAN_EVENTS_LIST_OPEN_TOOLTIP })).toBeDefined();
   expect(
     (
-      view.getByRole("button", { name: PLAN_APPLIED_EVENTS_LABEL }) as HTMLButtonElement
+      view.getByRole("button", { name: PLAN_EVENTS_LIST_OPEN_TOOLTIP }) as HTMLButtonElement
     ).getAttribute("aria-expanded"),
   ).toBe("false");
   expect(view.queryByText("朝の多読")).toBeNull();
@@ -153,13 +160,13 @@ test("Clock は計画プリセット・目標・障害プランのあと、同�
 
 test("予定を追加で作成モーダルが開く", () => {
   const view = renderWithMantine(<PlanListTab />);
-  fireEvent.click(view.getByRole("button", { name: "予定を追加" }));
+  fireEvent.click(view.getByRole("button", { name: "この日に予定を 1 件足します" }));
   expect(view.getByRole("dialog", { hidden: true }).textContent).toContain("予定を追加");
 });
 
 test("予定カードをクリックすると予定を編集と削除が出る", async () => {
   const view = renderWithMantine(<PlanListTab />);
-  fireEvent.click(view.getByRole("button", { name: PLAN_APPLIED_EVENTS_LABEL }));
+  fireEvent.click(view.getByRole("button", { name: PLAN_EVENTS_LIST_OPEN_TOOLTIP }));
   await waitFor(() => {
     expect(view.getByText("朝の多読")).toBeDefined();
   });
@@ -171,7 +178,7 @@ test("予定カードをクリックすると予定を編集と削除が出る",
 
 test("予定一覧は折りたたみと展開ができる", async () => {
   const view = renderWithMantine(<PlanListTab />);
-  const toggle = view.getByRole("button", { name: PLAN_APPLIED_EVENTS_LABEL });
+  const toggle = view.getByRole("button", { name: PLAN_EVENTS_LIST_OPEN_TOOLTIP });
   expect(toggle.getAttribute("aria-expanded")).toBe("false");
   expect(view.queryByText("朝の多読")).toBeNull();
 
@@ -191,7 +198,7 @@ test("予定一覧は折りたたみと展開ができる", async () => {
 
 test("前の日で選択日が変わる", () => {
   const view = renderWithMantine(<PlanListTab />);
-  fireEvent.click(view.getByRole("button", { name: "前の日" }));
+  fireEvent.click(view.getByRole("button", { name: PLAN_DATE_PREV_TOOLTIP }));
   expect(setDate).toHaveBeenCalledWith("2026-09-20");
 });
 
@@ -202,7 +209,7 @@ test("別日なら学習日はコンパクト表示で今日へ戻るが出る",
   expect(view.getByLabelText("学習日").textContent).toBe("2026/10/15");
   expect(view.queryByRole("button", { name: "2026年10月" })).toBeNull();
   expect(view.queryByRole("button", { name: "2026年9月" })).toBeNull();
-  fireEvent.click(view.getByRole("button", { name: "今日へ戻る" }));
+  fireEvent.click(view.getByRole("button", { name: "今日の計画へ" }));
   expect(setDate).toHaveBeenCalledWith("2026-09-21");
 });
 

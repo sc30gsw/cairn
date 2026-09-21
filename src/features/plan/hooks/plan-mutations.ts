@@ -44,9 +44,7 @@ export function usePlanTemplateSetForgotten() {
 }
 
 export function usePlanTemplateApply() {
-  const mutateAsync = useConvexMutation(
-    api.mutations.planTemplates.applyToEmptyDate.applyToEmptyDate,
-  );
+  const mutateAsync = useConvexMutation(api.mutations.planTemplates.applyToDate.applyToDate);
   return { mutateAsync };
 }
 

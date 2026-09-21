@@ -12,6 +12,6 @@ export const PLAN_PRIORITY_OPTIONS = (
   ["high", "medium", "low"] as const satisfies readonly PlanPriority[]
 ).map((priority) => ({
   hex: PLAN_PRIORITY_STYLE[priority].hex,
-  label: `${PLAN_PRIORITY_STYLE[priority].label}（${PLAN_PRIORITY_STYLE[priority].googleLabel}）`,
+  label: PLAN_PRIORITY_STYLE[priority].label,
   value: priority,
 }));

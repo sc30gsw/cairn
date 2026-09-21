@@ -34,6 +34,7 @@ test("ヘッダーボタンで開閉を切り替える", () => {
   const toggles: boolean[] = [];
   const { getByRole } = renderWithMantine(
     <PlanDayScheduleHeaderButton
+      dateJst="2026-09-21"
       onToggle={() => {
         toggles.push(true);
       }}
@@ -41,6 +42,14 @@ test("ヘッダーボタンで開閉を切り替える", () => {
     />,
   );
 
-  fireEvent.click(getByRole("button", { name: "この日の予定" }));
+  fireEvent.click(getByRole("button", { name: "2026/09/21 の予定を確認します" }));
   expect(toggles).toHaveLength(1);
+});
+
+test("開いているときのヘッダー Tooltip は閉じる", () => {
+  const { getByRole } = renderWithMantine(
+    <PlanDayScheduleHeaderButton dateJst="2026-09-21" onToggle={() => {}} opened />,
+  );
+
+  expect(getByRole("button", { name: "予定の確認を閉じます" })).toBeDefined();
 });

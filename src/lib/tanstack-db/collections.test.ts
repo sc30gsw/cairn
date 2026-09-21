@@ -5,6 +5,9 @@ import {
   createDayPageCollection,
   createExternalCalendarEventsCollection,
   createHistorySearchCollection,
+  createPlanEventsCollection,
+  createPlanTemplatesCollection,
+  createPlanWindowCollection,
   createSetupStatusCollection,
 } from "~/lib/tanstack-db/collections";
 
@@ -16,6 +19,13 @@ describe("TanStack DB collection descriptors", () => {
     expect(
       createExternalCalendarEventsCollection({ anchorDateJst: "2026-09-07", view: "week" }).id,
     ).toBe("external-calendar-events:2026-09-07:week");
+    expect(createPlanEventsCollection({ anchorDateJst: "2026-09-21", view: "day" }).id).toBe(
+      "plan-events:2026-09-21:day",
+    );
+    expect(createPlanWindowCollection({ anchorDateJst: "2026-09-21", view: "day" }).id).toBe(
+      "plan-window:2026-09-21:day",
+    );
+    expect(createPlanTemplatesCollection().id).toBe("plan-templates");
   });
 
   test("keeps dynamic auxiliary query arguments in stable identities", () => {

@@ -1,21 +1,10 @@
 import { convexQuery } from "@convex-dev/react-query";
-import {
-  Button,
-  Card,
-  Collapse,
-  ColorSwatch,
-  Group,
-  Stack,
-  Text,
-  Title,
-  UnstyledButton,
-} from "@mantine/core";
+import { Card, Stack, Title } from "@mantine/core";
 import { queryOptions, useSuspenseQueries } from "@tanstack/react-query";
 import { Result } from "better-result";
 import { useState } from "react";
 import type { DateJst } from "~domain/jst";
 import { planWeekAheadMaxDateJst } from "~domain/jst";
-import { PLAN_PRIORITY_STYLE } from "~domain/planEvent";
 
 import { api } from "~/../convex/_generated/api";
 import { LearningDateNavigation } from "~/components/learning-date-navigation";
@@ -27,11 +16,11 @@ import {
 } from "~/features/plan/components/board-schedule-event-form";
 import { PLAN_CLOCK_HEADING, PlanClock } from "~/features/plan/components/plan-clock";
 import { PlanEventAddButton } from "~/features/plan/components/plan-day-schedule-list";
+import { PlanEventsList } from "~/features/plan/components/plan-events-list";
 import { PlanTemplatesCard } from "~/features/plan/components/plan-templates-card";
 import { useBoardScheduleActions } from "~/features/plan/hooks/use-board-schedule-actions";
 import { usePlanView } from "~/features/plan/hooks/use-plan-view";
 import { usePlanWindow } from "~/features/plan/hooks/use-plan-window";
-import { planEventDisplayName } from "~/features/plan/lib/plan-event-display-name";
 import { planEventDateWithTime } from "~/features/plan/lib/plan-event-time";
 import type { PlanScheduleEventInput } from "~/features/plan/schemas/board-schedule-event-schema";
 import { goalsListQuery } from "~/hooks/goals-queries";
@@ -39,16 +28,27 @@ import { useItemsList } from "~/hooks/use-items-list";
 import { useObstaclePlans } from "~/hooks/use-obstacle-plans";
 import { parallelConvexQuery } from "~/lib/parallel-convex-query";
 import { toPlanGoalRead } from "~/lib/plan-goal-read";
-import { useOptionalExternalCalendarEventsLiveQuery } from "~/lib/tanstack-db/collections";
-import { useOptionalGoalsLiveQuery } from "~/lib/tanstack-db/collections";
+import {
+  useOptionalExternalCalendarEventsLiveQuery,
+  useOptionalGoalsLiveQuery,
+  useOptionalPlanTemplatesLiveQuery,
+  useOptionalPlanWindowLiveQuery,
+} from "~/lib/tanstack-db/collections";
 
-export const PLAN_APPLIED_EVENTS_LABEL = "予定一覧";
+export const PLAN_DATE_PREV_TOOLTIP = "前の日の計画へ";
+export const PLAN_DATE_NEXT_TOOLTIP = "次の日の計画へ";
+export const PLAN_DATE_TODAY_TOOLTIP = "今日の計画へ";
 
 export function PlanListTab() {
   const view = usePlanView();
-  const { events, unplannedConfirmedMinutes } = usePlanWindow(view.selectedDateJst, "day");
+  const queriedWindow = usePlanWindow(view.selectedDateJst, "day");
+  const liveWindow = useOptionalPlanWindowLiveQuery({
+    anchorDateJst: view.selectedDateJst,
+    view: "day",
+  });
   const { data: items } = useItemsList();
   const liveGoals = useOptionalGoalsLiveQuery();
+  const liveTemplates = useOptionalPlanTemplatesLiveQuery();
   const obstaclePlans = useObstaclePlans();
   const externalsQuery = convexQuery(api.queries.calendarSync.listExternal.listExternal, {
     anchorDateJst: view.selectedDateJst,
@@ -58,7 +58,7 @@ export function PlanListTab() {
     anchorDateJst: view.selectedDateJst,
     view: "day",
   });
-  const [{ data: queriedGoals }, { data: templates }, { data: queriedExternals }] =
+  const [{ data: queriedGoals }, { data: queriedTemplates }, { data: queriedExternals }] =
     useSuspenseQueries({
       queries: [
         parallelConvexQuery(goalsListQuery()),
@@ -66,15 +66,26 @@ export function PlanListTab() {
         parallelConvexQuery(queryOptions(externalsQuery)),
       ],
     });
+  const liveWindowReady = liveWindow.isReady && liveWindow.data !== undefined;
+  const events = liveWindowReady ? liveWindow.data.page : queriedWindow.events;
+  const appliedTemplateId = liveWindowReady
+    ? liveWindow.data.appliedTemplateId
+    : queriedWindow.appliedTemplateId;
+  const unplannedConfirmedMinutes = liveWindowReady
+    ? liveWindow.data.unplannedConfirmedMinutes
+    : queriedWindow.unplannedConfirmedMinutes;
   const externals =
     liveExternals.isReady && liveExternals.data !== undefined
       ? liveExternals.data
       : queriedExternals;
   const goals = liveGoals.isReady && liveGoals.data !== undefined ? liveGoals.data : queriedGoals;
+  const templates =
+    liveTemplates.isReady && liveTemplates.data !== undefined
+      ? liveTemplates.data
+      : queriedTemplates;
   const actions = useBoardScheduleActions();
   const [formOpened, setFormOpened] = useState(false);
   const [formValues, setFormValues] = useState<PlanScheduleEventInput | null>(null);
-  const [appliedOpened, setAppliedOpened] = useState(false);
   const editingId = formValues?.eventId;
   const editing =
     editingId === undefined ? undefined : events.find((event) => event._id === editingId);
@@ -88,60 +99,29 @@ export function PlanListTab() {
         onDateChange={view.setDate}
         onGoToToday={() => view.setDate(view.today)}
         todayJst={view.today}
+        tooltipLabels={{
+          next: PLAN_DATE_NEXT_TOOLTIP,
+          prev: PLAN_DATE_PREV_TOOLTIP,
+          today: PLAN_DATE_TODAY_TOOLTIP,
+        }}
       />
-      <Group justify="flex-end">
-        {events.length === 0 ? null : (
-          <Button
-            aria-expanded={appliedOpened}
-            aria-label={PLAN_APPLIED_EVENTS_LABEL}
-            onClick={() => setAppliedOpened((current) => !current)}
-            variant={appliedOpened ? "filled" : "light"}
-            type="button"
-          >
-            {PLAN_APPLIED_EVENTS_LABEL}
-          </Button>
-        )}
-        <PlanEventAddButton
-          onClick={() => {
-            setFormValues(createPlanEventFormValues(view.selectedDateJst));
-            setFormOpened(true);
-          }}
-        />
-      </Group>
-      {events.length === 0 ? (
-        <Text c="dimmed" size="sm">
-          この日の予定はまだありません。
-        </Text>
-      ) : (
-        <Collapse expanded={appliedOpened} keepMounted={false} transitionDuration={0}>
-          <Stack gap="xs">
-            {events.map((event) => (
-              <UnstyledButton
-                key={event._id}
-                onClick={() => {
-                  setFormValues(eventFormValues(event));
-                  setFormOpened(true);
-                }}
-              >
-                <Card padding="sm" withBorder>
-                  <Group justify="space-between">
-                    <Stack gap={2}>
-                      <Text fw={600}>{planEventDisplayName(event.title, event.itemId, items)}</Text>
-                      <Text c="dimmed" size="sm">
-                        {event.startTime}–{event.endTime}
-                      </Text>
-                    </Stack>
-                    <Group gap="xs" wrap="nowrap">
-                      <ColorSwatch color={PLAN_PRIORITY_STYLE[event.priority].hex} size={14} />
-                      <Text size="sm">{PLAN_PRIORITY_STYLE[event.priority].label}</Text>
-                    </Group>
-                  </Group>
-                </Card>
-              </UnstyledButton>
-            ))}
-          </Stack>
-        </Collapse>
-      )}
+      <PlanEventsList
+        dateJst={view.selectedDateJst}
+        eventsFallback={events}
+        headerEnd={
+          <PlanEventAddButton
+            onClick={() => {
+              setFormValues(createPlanEventFormValues(view.selectedDateJst));
+              setFormOpened(true);
+            }}
+          />
+        }
+        items={items}
+        onSelectEvent={(event) => {
+          setFormValues(eventFormValues(event));
+          setFormOpened(true);
+        }}
+      />
       <BoardScheduleEventForm
         dateJst={view.selectedDateJst}
         frozen={editing?.recordState.kind === "materialized"}
@@ -167,6 +147,7 @@ export function PlanListTab() {
         opened={formOpened}
       />
       <PlanTemplatesCard
+        appliedTemplateId={appliedTemplateId}
         dateJst={view.selectedDateJst}
         events={events}
         externals={externals}

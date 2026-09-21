@@ -10,6 +10,12 @@ import { cn } from "~/lib/utils";
 
 import classes from "~/lib/learning-date-input.module.css";
 
+type LearningDateNavigationTooltipLabels = {
+  next?: string;
+  prev?: string;
+  today?: string;
+};
+
 type LearningDateNavigationProps = {
   centered?: boolean;
   dateJst: DateJst;
@@ -18,6 +24,7 @@ type LearningDateNavigationProps = {
   onDateChange: (dateJst: DateJst) => void;
   onGoToToday: () => void;
   todayJst: DateJst;
+  tooltipLabels?: LearningDateNavigationTooltipLabels;
 };
 
 export function LearningDateNavigation({
@@ -28,9 +35,13 @@ export function LearningDateNavigation({
   onDateChange,
   onGoToToday,
   todayJst,
+  tooltipLabels,
 }: LearningDateNavigationProps) {
   const isToday = dateJst === todayJst;
   const lastSelectableDateJst = maxDateJst ?? todayJst;
+  const prevTooltip = tooltipLabels?.prev ?? "前の日";
+  const nextTooltip = tooltipLabels?.next ?? "次の日";
+  const todayTooltip = tooltipLabels?.today ?? "今日へ戻る";
 
   const pickDate = (next: string) => {
     if (compareDateJst(next, lastSelectableDateJst) <= 0) {
@@ -60,9 +71,9 @@ export function LearningDateNavigation({
               {...learningDatePickerProps(todayJst, lastSelectableDateJst)}
             />
             <Group align="center" gap={4} wrap="nowrap">
-              <Tooltip label="前の日" withArrow>
+              <Tooltip label={prevTooltip} withArrow>
                 <ActionIcon
-                  aria-label="前の日"
+                  aria-label={prevTooltip}
                   onClick={() => onDateChange(addDaysJst(dateJst, -1))}
                   size="input-sm"
                   variant="subtle"
@@ -70,10 +81,10 @@ export function LearningDateNavigation({
                   <IconChevronLeft aria-hidden size={18} stroke={1.75} />
                 </ActionIcon>
               </Tooltip>
-              <Tooltip label="次の日" withArrow>
+              <Tooltip label={nextTooltip} withArrow>
                 <Box component="span" display="inline-flex">
                   <ActionIcon
-                    aria-label="次の日"
+                    aria-label={nextTooltip}
                     disabled={compareDateJst(dateJst, lastSelectableDateJst) >= 0}
                     onClick={() => onDateChange(addDaysJst(dateJst, 1))}
                     size="input-sm"
@@ -84,9 +95,9 @@ export function LearningDateNavigation({
                 </Box>
               </Tooltip>
               {isToday ? null : (
-                <Tooltip label="今日へ戻る" withArrow>
+                <Tooltip label={todayTooltip} withArrow>
                   <ActionIcon
-                    aria-label="今日へ戻る"
+                    aria-label={todayTooltip}
                     onClick={onGoToToday}
                     size="input-sm"
                     variant="subtle"

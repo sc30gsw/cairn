@@ -21,6 +21,17 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 const EVENING_ID = "notification-evening" as Id<"notifications">;
+const MISSING_ID = "notification-missing" as Id<"notifications">;
+
+const MISSING_TOMORROW = {
+  _creationTime: Date.UTC(2026, 7, 17, 9, 30, 0),
+  _id: MISSING_ID,
+  payload: {
+    dateJst: "2026-08-18",
+    kind: "missingTomorrowPlan",
+  },
+  read: false,
+} satisfies NotificationDto;
 
 const EVENING = {
   _creationTime: Date.UTC(2026, 7, 20, 12, 0, 0),
@@ -108,4 +119,15 @@ test("未読0件のときは「すべて既読にする」を出さない", asyn
   });
 
   expect(queryByRole("button", { hidden: true, name: "すべて既読にする" })).toBeNull();
+});
+
+test("明日の計画なしは /plan へリンクする", async () => {
+  const props = trayProps([MISSING_TOMORROW], 1);
+  const { getByRole } = renderWithMantine(<NotificationTray {...props} />);
+
+  fireEvent.click(getByRole("button", { name: /通知/ }));
+  const row = await waitFor(() =>
+    getByRole("link", { hidden: true, name: /明日の計画がありません/ }),
+  );
+  expect(row.getAttribute("href")).toBe("/plan");
 });
