@@ -1,9 +1,11 @@
 import { expect, test } from "vite-plus/test";
 
 import {
+  PLAN_DATE_RANGE_MESSAGE,
+  planMinuteToScheduleInstant,
   planPriorityFromGoogleColorId,
   planWindowFromScheduleInstants,
-  planMinuteToScheduleInstant,
+  requirePlanEventDateJst,
 } from "./planEvent";
 
 test("同じ日の開始と終了を分に直す", () => {
@@ -25,6 +27,13 @@ test("翌日 00:00 は同じ日の 24:00 として扱う", () => {
 
 test("日跨ぎは移せない", () => {
   expect(planWindowFromScheduleInstants("2026-08-17 23:00:00", "2026-08-18 01:00:00")).toBeNull();
+});
+
+test("requirePlanEventDateJst は今日+7まで通し、+8以降は拒否する", () => {
+  expect(requirePlanEventDateJst("2026-08-24", "2026-08-17")).toBe("2026-08-24");
+  expect(() => requirePlanEventDateJst("2026-08-25", "2026-08-17")).toThrow(
+    PLAN_DATE_RANGE_MESSAGE,
+  );
 });
 
 test("Google 色 5 / 2 / 9 を優先度に写す", () => {

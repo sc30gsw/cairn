@@ -12,6 +12,11 @@ export function todayJst(now = new Date()): string {
   return JST_CALENDAR_DATE.format(now);
 }
 
+/** JST 暦日のサーバー基準「今日」。mutation / action の上限判定だけで使う。 */
+export function serverTodayJst(): string {
+  return todayJst();
+}
+
 export type DateJst = ReturnType<typeof todayJst>;
 
 export function isDateJst(value: string): boolean {

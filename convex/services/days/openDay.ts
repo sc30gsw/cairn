@@ -1,4 +1,5 @@
 import type { MutationCtx } from "../../_generated/server";
+import { serverTodayJst } from "../../lib/jst";
 import { materializePlanEvents, pendingPlanMaterializations } from "../plan/openDate";
 import { applyToEmptyDate } from "../plan/templates";
 import { loadOwnerReviewFlags } from "../reviews/loadOwnerReviewFlags";
@@ -12,7 +13,8 @@ export async function openDay(
   ownerId: string,
   args: { dateJst: string; todayJst: string },
 ): Promise<{ applied: boolean }> {
-  if (args.dateJst !== args.todayJst) {
+  const serverToday = serverTodayJst();
+  if (args.dateJst !== serverToday) {
     return { applied: false };
   }
   const existing = await getDayByDate(ctx, ownerId, args.dateJst);
@@ -22,7 +24,7 @@ export async function openDay(
   const applied = (
     await applyToEmptyDate(ctx, ownerId, {
       dateJst: args.dateJst,
-      todayJst: args.todayJst,
+      todayJst: serverToday,
     })
   ).applied;
   const [flags, pendingEvents] = await Promise.all([
