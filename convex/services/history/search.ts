@@ -106,6 +106,7 @@ export async function search(
     if (matchesSearchText(day.memo, normalizedQuery)) {
       hits.push({
         dateJst: day.dateJst,
+        documentId: day._id,
         kind: "memo",
         sortOrder: 0,
         text: day.memo,
@@ -122,6 +123,7 @@ export async function search(
     hits.push({
       category,
       dateJst: row.dateJst,
+      documentId: row._id,
       kind: "hitokoto",
       minutes: row.minutes,
       rowId: row._id,
@@ -139,6 +141,7 @@ export async function search(
     }
     hits.push({
       dateJst: event.dateJst,
+      documentId: event._id,
       kind: "event",
       sortOrder: event.startMinute,
       text: `${formatMinuteOfDay(event.startMinute)}–${formatMinuteOfDay(event.endMinute)} ${title}`,
@@ -152,6 +155,7 @@ export async function search(
     }
     hits.push({
       category,
+      documentId: item._id,
       kind: "item",
       sortOrder: item.sortOrder ?? 0,
       text: category,
@@ -163,6 +167,7 @@ export async function search(
       continue;
     }
     hits.push({
+      documentId: template._id,
       kind: "plan",
       sortOrder: index,
       text: template.name,
@@ -175,6 +180,7 @@ export async function search(
       continue;
     }
     hits.push({
+      documentId: goal._id,
       kind: "goal",
       sortOrder: index,
       text,
@@ -186,6 +192,7 @@ export async function search(
       continue;
     }
     hits.push({
+      documentId: method._id,
       kind: "method",
       sortOrder: method.sortOrder,
       text: method.name,
@@ -198,6 +205,7 @@ export async function search(
       continue;
     }
     hits.push({
+      documentId: obstacle._id,
       kind: "obstacle",
       sortOrder: index,
       text,

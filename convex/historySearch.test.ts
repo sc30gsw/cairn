@@ -93,10 +93,12 @@ test("ひとことと日のメモを部分一致で探し、日付降順（同�
   });
   expect(result.hits[1]).toEqual({
     dateJst: "2026-08-15",
+    documentId: result.hits[1]?.documentId,
     kind: "memo",
     text: "朝の音読が続いている",
     title: "メモ",
   });
+  expect(result.hits[1]?.documentId).toEqual(expect.any(String));
 });
 
 test("他の所有者の記録は出ない", async () => {

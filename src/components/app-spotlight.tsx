@@ -91,7 +91,7 @@ function SpotlightRecordActions({ navCount, query }: SpotlightRecordActionsProps
         return (
           <OverflowTooltip<HTMLButtonElement>
             content={`${hit.title}\n${excerptText}`}
-            key={`${hit.kind}-${hit.rowId ?? ""}-${hit.dateJst ?? ""}-${hit.title}`}
+            key={`${hit.kind}-${hit.documentId}`}
           >
             {(ref) => (
               <Spotlight.Action

@@ -35,6 +35,7 @@ vi.mock("~/hooks/history-search-queries", () => ({
 const HIT = {
   category: "インプット",
   dateJst: "2026-08-16",
+  documentId: "row-1",
   kind: "hitokoto",
   minutes: 30,
   rowId: "row-1",

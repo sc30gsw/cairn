@@ -151,6 +151,16 @@ export type HistorySearchKind = Infer<typeof historySearchKindValidator>;
 export const historySearchHitValidator = v.object({
   category: v.optional(v.string()),
   dateJst: v.optional(v.string()),
+  documentId: v.union(
+    v.id("days"),
+    v.id("goals"),
+    v.id("items"),
+    v.id("methods"),
+    v.id("obstaclePlans"),
+    v.id("planEvents"),
+    v.id("planTemplates"),
+    v.id("rows"),
+  ),
   kind: historySearchKindValidator,
   minutes: v.optional(v.number()),
   rowId: v.optional(v.id("rows")),
