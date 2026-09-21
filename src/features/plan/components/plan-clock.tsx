@@ -1,5 +1,6 @@
 import { ColorSwatch, Group, Stack, Text } from "@mantine/core";
 import { useEffect, useState } from "react";
+import type { DateJst } from "~domain/jst";
 import { PLAN_PRIORITY_STYLE } from "~domain/planEvent";
 
 import {
@@ -23,8 +24,8 @@ const TICK_MINUTES = [0, 360, 720, 1080] as const satisfies readonly number[];
 type PlanClockProps = {
   events: readonly PlanEventDto[];
   now?: Date;
-  selectedDateJst: string;
-  todayJst: string;
+  selectedDateJst: DateJst;
+  todayJst: DateJst;
   unplannedConfirmedMinutes: number;
 };
 
