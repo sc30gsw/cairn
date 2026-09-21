@@ -2,10 +2,10 @@ import { fireEvent, waitFor } from "@testing-library/react";
 import { Result } from "better-result";
 import { expect, test, vi } from "vite-plus/test";
 
-import { ObstacleSection } from "~/features/goals/components/obstacle-section";
-import type { Obstacle } from "~/features/goals/types/goal";
+import { ObstacleSection } from "~/components/obstacle-section";
 import { MutationFailedError } from "~/lib/errors";
 import { renderWithMantine } from "~/test-utils/render";
+import type { Obstacle } from "~/types/obstacle";
 
 const THEN_ACTION = "Unit 3 の例文を声に出して5文読む";
 

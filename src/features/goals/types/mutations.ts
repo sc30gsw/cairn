@@ -10,13 +10,8 @@ export type SetExamResultInput = FunctionArgs<
   typeof api.mutations.goals.setExamResult.setExamResult
 >;
 export type SaveTargetInput = FunctionArgs<typeof api.mutations.targets.save.save>;
-export type CreateObstacleInput = FunctionArgs<
-  typeof api.mutations.goals.createObstacle.createObstacle
->;
-export type UpdateObstacleInput = FunctionArgs<
-  typeof api.mutations.goals.updateObstacle.updateObstacle
->;
-export type RemoveObstacleInput = Pick<
-  FunctionArgs<typeof api.mutations.goals.removeObstacle.removeObstacle>,
-  "planId"
->;
+export type {
+  CreateObstacleInput,
+  RemoveObstacleInput,
+  UpdateObstacleInput,
+} from "~/types/obstacle";
