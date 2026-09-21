@@ -11,7 +11,7 @@ export type SetupStepId = (typeof SETUP_STEP_IDS)[number];
 
 export type SetupStep = {
   description: string;
-  href: "/goals" | "/items" | "/presets";
+  href: "/goals" | "/items" | "/plan";
   id: SetupStepId;
   label: string;
   sampleHint: string;
@@ -29,12 +29,13 @@ export const SETUP_STEPS = [
       "項目は今日の行の種類です。カテゴリー付きで登録すると、週間ターゲットともつながります。",
   },
   {
-    description: "曜日ごとの並び順を決めます。",
-    href: "/presets",
+    description: "予定の雛形を1つ置きます。",
+    href: "/plan",
     id: "presets",
-    label: "プリセットを登録する",
-    sampleHint: "例: 月曜は多聴→英会話→…",
-    tooltip: "プリセットは曜日テンプレートです。日を開くと、この並びが今日の行になります。",
+    label: "計画プリセットを登録する",
+    sampleHint: "例: 7:00 多読、20:00 X",
+    tooltip:
+      "計画プリセットは予定の雛形です。忘れたときに使う1つを決めると、予定のない今日に展開されます。",
   },
   {
     description: "本番日と目標スコアを置きます。",

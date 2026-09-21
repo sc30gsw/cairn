@@ -2,6 +2,7 @@ import { convexTest } from "convex-test";
 import { afterEach, expect, test, vi } from "vite-plus/test";
 
 import { convexModules } from "../src/test-utils/convex-modules";
+import { seedWeekdayDay } from "../src/test-utils/seed-weekday-day";
 import { api, internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
 import { TIMER_MAX_SEGMENT_MS } from "./lib/rowTimer";
@@ -23,7 +24,7 @@ function asOwner(identity: typeof OWNER = OWNER) {
 
 async function seedRows(t: ReturnType<typeof asOwner>) {
   await t.mutation(api.mutations.catalog.ensure.ensure, {});
-  await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY });
+  await seedWeekdayDay(t, MONDAY, MONDAY);
   const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   const [first, second] = day.rows;
   if (first === undefined || second === undefined) {

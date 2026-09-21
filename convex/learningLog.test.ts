@@ -2,6 +2,7 @@ import { convexTest } from "convex-test";
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 
 import { convexModules } from "../src/test-utils/convex-modules";
+import { seedWeekdayDay } from "../src/test-utils/seed-weekday-day";
 import { api, internal } from "./_generated/api";
 import schema from "./schema";
 
@@ -34,6 +35,7 @@ function raw() {
 async function ownerWithCatalog() {
   const t = owner();
   await t.mutation(api.mutations.catalog.ensure.ensure, {});
+  await seedWeekdayDay(t, MONDAY, MONDAY);
   return t;
 }
 
@@ -57,12 +59,16 @@ test("空のカタログでは今日を開いても行は作られない", async
 
 test("今日を二度 open しても二重に行は作られない", async () => {
   const t = await ownerWithCatalog();
-  expect(
-    await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY }),
-  ).toEqual({ applied: true });
+  const before = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  expect(before.rows.length).toBeGreaterThan(0);
   expect(
     await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY }),
   ).toEqual({ applied: false });
+  expect(
+    await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY }),
+  ).toEqual({ applied: false });
+  const after = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
+  expect(after.rows).toHaveLength(before.rows.length);
 });
 
 test("シード済みカタログなら今日を開いて未着手行が読める", async () => {
@@ -71,7 +77,7 @@ test("シード済みカタログなら今日を開いて未着手行が読め�
     dateJst: MONDAY,
     todayJst: MONDAY,
   });
-  expect(opened).toEqual({ applied: true });
+  expect(opened).toEqual({ applied: false });
   const day = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
   expect(day.rows.map((row) => row.itemName)).toEqual([
     "Distinction 2000",
@@ -529,8 +535,9 @@ test("ゴミ箱の日には行を足さず、open も日を増やさない", asy
   expect((await t.query(api.queries.trash.list.list, {})).days).toHaveLength(1);
 });
 
-test("コンディションだけの日を開くとプリセット行が載る", async () => {
-  const t = await ownerWithCatalog();
+test("コンディションだけの日を開いても曜日プリセットは載らない", async () => {
+  const t = owner();
+  await t.mutation(api.mutations.catalog.ensure.ensure, {});
   await t.mutation(api.mutations.days.setCondition.setCondition, {
     condition: "普通",
     dateJst: MONDAY,
@@ -542,10 +549,10 @@ test("コンディションだけの日を開くとプリセット行が載る",
   expect(
     await t.mutation(api.mutations.days.open.open, { dateJst: MONDAY, todayJst: MONDAY }),
   ).toEqual({
-    applied: true,
+    applied: false,
   });
   const after = await t.query(api.queries.days.get.get, { dateJst: MONDAY, todayJst: MONDAY });
-  expect(after.rows.map((row) => row.itemName)[0]).toBe("Distinction 2000");
+  expect(after.rows).toEqual([]);
   expect(after.day?.condition).toBe("普通");
 });
 
@@ -748,13 +755,13 @@ test("プリセットは複数曜日を持ち、曜日重複は失敗", async ()
       dateJst: SATURDAY,
       todayJst: SATURDAY,
     }),
-  ).toEqual({ applied: true });
+  ).toEqual({ applied: false });
   expect(
     await t.mutation(api.mutations.days.open.open, {
       dateJst: "2026-08-16",
       todayJst: "2026-08-16",
     }),
-  ).toEqual({ applied: true });
+  ).toEqual({ applied: false });
   await t.mutation(api.mutations.presets.update.update, {
     lines: [{ content: "日曜日のTrackを2周聞く", itemId: distinction._id, minutes: 25 }],
     name: "日曜改",

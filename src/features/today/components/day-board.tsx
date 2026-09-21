@@ -6,17 +6,14 @@ import {
   EmptyState,
   Grid,
   Group,
-  Select,
   Stack,
   Text,
   Title,
-  type ComboboxItem,
 } from "@mantine/core";
 import { IconNotes } from "@tabler/icons-react";
 import { useNavigate } from "@tanstack/react-router";
 import { Result } from "better-result";
-import { useState } from "react";
-import { isDateJst, type DateJst } from "~domain/jst";
+import { isDateJst } from "~domain/jst";
 
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
@@ -30,15 +27,9 @@ import {
 import { DayBoardKanbanLink } from "~/features/today/components/day-board-kanban-link";
 import { DayMetaPanel } from "~/features/today/components/day-meta-panel";
 import { RowEditor } from "~/features/today/components/row-editor";
-import { useApplyPresetFromSearch } from "~/features/today/hooks/use-apply-preset-from-search";
 import { useDayBoardActions } from "~/features/today/hooks/use-day-board-actions";
 import { emptyDayCopy } from "~/features/today/lib/empty-day-copy";
-import { weekdayPresetId } from "~/features/today/lib/weekday-preset";
-import type { MutationResult } from "~/lib/run-mutation";
-import { onRequiredSelect } from "~/lib/select";
 import { BODY_FONT, NUMERAL_FONT } from "~/lib/theme";
-import type { PresetDto, PresetId } from "~/types/item";
-import { parsePresetId, unwrapPresetId } from "~/types/item";
 
 type DayBoardProps = {
   interactive?: boolean;
@@ -56,72 +47,16 @@ function requireDayBoardField<K extends keyof DayBoardContextValue>(
   return value;
 }
 
-function presetSelectData(presets: PresetDto[]): ComboboxItem[] {
-  return presets.map((preset) => ({ label: preset.name, value: preset._id }));
-}
-
-function DayPresetSelect({
-  dateJst,
-  isRest,
-  isToday,
-  onSwitchPreset,
-  presets,
-  selectedPresetId,
-}: {
-  dateJst: DateJst;
-  isRest: boolean;
-  isToday: boolean;
-  onSwitchPreset: (presetId: PresetDto["_id"]) => Promise<MutationResult>;
-  presets: PresetDto[];
-  selectedPresetId: null | PresetId;
-}) {
-  const navigate = useNavigate();
-  const defaultPresetId = weekdayPresetId(dateJst, presets);
-  const [appliedPresetId, setAppliedPresetId] = useState<null | PresetId>(null);
-  const value = isToday
-    ? (selectedPresetId ?? defaultPresetId)
-    : (appliedPresetId ?? (isRest ? null : defaultPresetId));
-
-  return (
-    <Select
-      aria-label="プリセット切替"
-      data={presetSelectData(presets)}
-      label="この日の雛形"
-      onChange={onRequiredSelect(async (raw) => {
-        const presetId = unwrapPresetId(parsePresetId(raw));
-        const result = await onSwitchPreset(presetId);
-        if (Result.isError(result)) return;
-        if (isToday) {
-          void navigate({
-            to: ".",
-            search: (current) => ({
-              ...current,
-              preset: presetId === defaultPresetId ? undefined : presetId,
-            }),
-          });
-        } else {
-          setAppliedPresetId(presetId);
-        }
-      })}
-      placeholder="切り替える"
-      value={value}
-    />
-  );
-}
-
 export function DayBoard(props: DayBoardProps) {
   const context = useOptionalDayBoardContext();
   const interactive = props.interactive ?? true;
   const dateJst = requireDayBoardField(context, props, "dateJst");
   const day = requireDayBoardField(context, props, "day");
   const items = requireDayBoardField(context, props, "items");
-  const presets = requireDayBoardField(context, props, "presets");
   const todayJst = requireDayBoardField(context, props, "todayJst");
-  const presetFromSearch = props.presetFromSearch ?? context?.presetFromSearch;
   const remainderMessage = props.remainderMessage ?? context?.remainderMessage ?? null;
   const onConfirmedCategory = props.onConfirmedCategory ?? context?.onConfirmedCategory;
   const navigate = useNavigate();
-  const isToday = dateJst === todayJst;
   const {
     onAddRow,
     onConfirm,
@@ -132,15 +67,9 @@ export function DayBoard(props: DayBoardProps) {
     onSaveCondition,
     onSaveMemo,
     onSkip,
-    onSwitchPreset,
     onUnflagReview,
     onUnskip,
   } = useDayBoardActions(dateJst, day.rows, { onConfirmedCategory });
-  const { appliedPresetRef, selectedPresetId } = useApplyPresetFromSearch(
-    dateJst,
-    presetFromSearch,
-    isToday,
-  );
   const canEdit = day.kind !== "unrecorded";
   const emptyCopy = emptyDayCopy(day.kind);
 
@@ -186,27 +115,6 @@ export function DayBoard(props: DayBoardProps) {
             </Grid.Col>
           </Grid>
         </Card>
-        {canEdit ? (
-          <Card>
-            <Stack gap="sm">
-              <Title order={3}>プリセット</Title>
-              <DayPresetSelect
-                key={dateJst}
-                dateJst={dateJst}
-                isRest={day.kind === "rest" || day.kind === "beforeRegistration"}
-                isToday={isToday}
-                onSwitchPreset={async (presetId) => {
-                  if (!interactive) {
-                    return Result.ok(null);
-                  }
-                  return onSwitchPreset(presetId, appliedPresetRef);
-                }}
-                presets={presets}
-                selectedPresetId={selectedPresetId}
-              />
-            </Stack>
-          </Card>
-        ) : null}
         <Card>
           <Stack gap="md">
             <Group gap="xs" wrap="nowrap">

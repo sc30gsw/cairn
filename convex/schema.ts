@@ -15,6 +15,7 @@ import {
   notificationPayloadValidator,
   notificationTriggerPrefsValidator,
   planEventDocumentValidator,
+  planTemplateEventDocumentValidator,
   presetLineValidator,
   presetWeekdaysValidator,
   pushSubscriptionKeysValidator,
@@ -326,4 +327,18 @@ export default defineSchema({
     .index("by_owner_and_dateJst_and_startMinute", ["ownerId", "dateJst", "startMinute"])
     .index("by_record_itemId", ["record.itemId"])
     .index("by_record_materializedRowId", ["record.materializedRowId"]),
+
+  planSettings: defineTable({
+    forgottenTemplateId: v.optional(v.id("planTemplates")),
+    ownerId: v.string(),
+  }).index("by_owner", ["ownerId"]),
+
+  planTemplates: defineTable({
+    name: v.string(),
+    ownerId: v.string(),
+  }).index("by_owner", ["ownerId"]),
+
+  planTemplateEvents: defineTable(planTemplateEventDocumentValidator)
+    .index("by_owner", ["ownerId"])
+    .index("by_templateId_and_startMinute", ["templateId", "startMinute"]),
 });

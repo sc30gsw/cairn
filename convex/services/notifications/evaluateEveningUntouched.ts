@@ -1,10 +1,8 @@
 import type { MutationCtx } from "../../_generated/server";
 import { STATUSES } from "../../lib/domain";
-import { weekdayFromDateJst } from "../../lib/jst";
 import type { NotificationPayload } from "../../lib/validators";
 import { getLiveDay } from "../days/getLiveDay";
 import { liveRowsForDay } from "../days/liveRowsForDay";
-import { findUniquePresetForWeekday } from "../presets/helpers";
 
 const [, pendingStatus] = STATUSES;
 
@@ -22,13 +20,21 @@ export async function evaluateEveningUntouched(
     }
     return { dateJst, kind: "eveningUntouched", pendingCount, source: "day" };
   }
-  const presets = await ctx.db
-    .query("presets")
+  const settings = await ctx.db
+    .query("planSettings")
     .withIndex("by_owner", (q) => q.eq("ownerId", ownerId))
-    .collect();
-  const preset = findUniquePresetForWeekday(presets, weekdayFromDateJst(dateJst));
-  if (preset === undefined || preset.lines.length === 0) {
+    .unique();
+  const forgottenTemplateId = settings?.forgottenTemplateId;
+  if (forgottenTemplateId === undefined) {
     return null;
   }
-  return { dateJst, kind: "eveningUntouched", pendingCount: preset.lines.length, source: "preset" };
+  const events = await ctx.db
+    .query("planTemplateEvents")
+    .withIndex("by_templateId_and_startMinute", (q) => q.eq("templateId", forgottenTemplateId))
+    .collect();
+  const pendingCount = events.filter((event) => event.record.kind === "item").length;
+  if (pendingCount === 0) {
+    return null;
+  }
+  return { dateJst, kind: "eveningUntouched", pendingCount, source: "preset" };
 }
