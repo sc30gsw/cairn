@@ -47,19 +47,20 @@ export function PlanClock({
   todayJst,
   unplannedConfirmedMinutes,
 }: PlanClockProps) {
-  const [liveNow, setLiveNow] = useState(() => now ?? new Date());
+  const [tickingNow, setTickingNow] = useState(() => new Date());
   const isToday = selectedDateJst === todayJst;
 
   useEffect(() => {
     if (now !== undefined) {
-      setLiveNow(now);
       return;
     }
     const timer = window.setInterval(() => {
-      setLiveNow(new Date());
+      setTickingNow(new Date());
     }, 30_000);
     return () => window.clearInterval(timer);
   }, [now]);
+
+  const liveNow = now ?? tickingNow;
 
   const painted = events.filter(paintsClockArc);
   const needleMinute = jstMinuteOfDay(liveNow);
