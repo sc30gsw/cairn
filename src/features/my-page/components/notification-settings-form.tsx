@@ -27,7 +27,12 @@ export function NotificationSettingsForm({
       eveningHourJst: settings.eveningHourJst,
       quietFromHourJst: settings.quietFromHourJst,
       quietToHourJst: settings.quietToHourJst,
-      triggers: { ...settings.triggers },
+      triggers: {
+        checkpointDeadline: settings.triggers.checkpointDeadline,
+        eveningUntouched: settings.triggers.eveningUntouched,
+        missingTomorrowPlan: settings.triggers.missingTomorrowPlan ?? true,
+        weeklyTargetMiss: settings.triggers.weeklyTargetMiss,
+      },
     },
     schema: NotificationSettingsSchema,
   });
@@ -35,6 +40,7 @@ export function NotificationSettingsForm({
   const checkpointField = useField(form, { path: ["triggers", "checkpointDeadline"] });
   const weeklyField = useField(form, { path: ["triggers", "weeklyTargetMiss"] });
   const eveningField = useField(form, { path: ["triggers", "eveningUntouched"] });
+  const planField = useField(form, { path: ["triggers", "missingTomorrowPlan"] });
   const eveningHourField = useField(form, { path: ["eveningHourJst"] });
   const quietFromField = useField(form, { path: ["quietFromHourJst"] });
   const quietToField = useField(form, { path: ["quietToHourJst"] });
@@ -80,6 +86,11 @@ export function NotificationSettingsForm({
                 {...eveningField.props}
                 checked={eveningField.input ?? settings.triggers.eveningUntouched}
                 label="夜に未着手が残っているとき"
+              />
+              <Switch
+                {...planField.props}
+                checked={planField.input ?? settings.triggers.missingTomorrowPlan ?? true}
+                label="明日の計画が無いとき"
               />
             </Stack>
           </Fieldset>

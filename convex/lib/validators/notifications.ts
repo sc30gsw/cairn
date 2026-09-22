@@ -57,6 +57,7 @@ export const notificationPayloadValidator = v.union(
 export const notificationTriggerPrefsValidator = v.object({
   checkpointDeadline: v.boolean(),
   eveningUntouched: v.boolean(),
+  missingTomorrowPlan: v.optional(v.boolean()),
   weeklyTargetMiss: v.boolean(),
 });
 

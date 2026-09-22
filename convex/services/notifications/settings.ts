@@ -13,6 +13,12 @@ export async function settings(ctx: QueryCtx, ownerId: string): Promise<Notifica
     eveningHourJst: row.eveningHourJst,
     quietFromHourJst: row.quietFromHourJst ?? NOTIFICATION_DEFAULTS.quietFromHourJst,
     quietToHourJst: row.quietToHourJst ?? NOTIFICATION_DEFAULTS.quietToHourJst,
-    triggers: row.triggers,
+    triggers: {
+      checkpointDeadline: row.triggers.checkpointDeadline,
+      eveningUntouched: row.triggers.eveningUntouched,
+      missingTomorrowPlan:
+        row.triggers.missingTomorrowPlan ?? NOTIFICATION_DEFAULTS.triggers.missingTomorrowPlan,
+      weeklyTargetMiss: row.triggers.weeklyTargetMiss,
+    },
   };
 }

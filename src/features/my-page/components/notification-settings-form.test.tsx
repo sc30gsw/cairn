@@ -10,7 +10,12 @@ const BASE = {
   eveningHourJst: 21,
   quietFromHourJst: 22,
   quietToHourJst: 7,
-  triggers: { checkpointDeadline: true, eveningUntouched: true, weeklyTargetMiss: true },
+  triggers: {
+    checkpointDeadline: true,
+    eveningUntouched: true,
+    missingTomorrowPlan: true,
+    weeklyTargetMiss: true,
+  },
 } satisfies NotificationSettingsDto;
 
 function formProps(settings: NotificationSettingsDto) {
@@ -42,11 +47,16 @@ test("保存するとサーバ由来の設定をそのまま送る", async () =>
     eveningHourJst: 21,
     quietFromHourJst: 22,
     quietToHourJst: 7,
-    triggers: { checkpointDeadline: true, eveningUntouched: true, weeklyTargetMiss: true },
+    triggers: {
+      checkpointDeadline: true,
+      eveningUntouched: true,
+      missingTomorrowPlan: true,
+      weeklyTargetMiss: true,
+    },
   });
 });
 
-test("入力はトリガー3種・夜の時刻・静穏時間で、押し出し先の URL 入力は無い", () => {
+test("入力はトリガー4種・夜の時刻・静穏時間で、押し出し先の URL 入力は無い", () => {
   const props = formProps(BASE);
   const { getByRole, queryByLabelText } = renderWithMantine(
     <NotificationSettingsForm {...props} />,
@@ -56,6 +66,7 @@ test("入力はトリガー3種・夜の時刻・静穏時間で、押し出し�
   expect(getByRole("switch", { name: /チェックポイントの期限が近いとき/ })).toBeDefined();
   expect(getByRole("switch", { name: /週間ターゲットが未達のとき/ })).toBeDefined();
   expect(getByRole("switch", { name: "夜に未着手が残っているとき" })).toBeDefined();
+  expect(getByRole("switch", { name: "明日の計画が無いとき" })).toBeDefined();
   expect(getByRole("combobox", { name: "夜の催促の時刻" })).toBeDefined();
   expect(getByRole("combobox", { name: "静穏時間の開始" })).toBeDefined();
   expect(getByRole("combobox", { name: "静穏時間の終了" })).toBeDefined();
