@@ -1,7 +1,11 @@
 import { expect, test } from "vite-plus/test";
 import { STATUSES } from "~domain/domain";
 
-import { groupDayRowsByItem } from "~/features/today/lib/group-day-rows";
+import {
+  dayGroupCounts,
+  duplicatePlanBadgeLabel,
+  groupDayRowsByItem,
+} from "~/features/today/lib/group-day-rows";
 import type { DayRow } from "~/features/today/types/day";
 
 const [confirmed, pending] = STATUSES;
@@ -35,4 +39,8 @@ test("同じ項目の記録は出現順を保って1グループにまとめ、�
   expect(groups[0]?.totalMinutes).toBe(30);
   expect(groups[0]?.statuses).toEqual([pending, confirmed]);
   expect(groups[1]?.totalMinutes).toBe(5);
+  expect(dayGroupCounts(groups[0]?.rows ?? [])).toEqual({ completeCount: 1, incompleteCount: 1 });
+  expect(duplicatePlanBadgeLabel({ completeCount: 1, incompleteCount: 1 })).toBe(
+    "未完了予定が1件、完了1件",
+  );
 });

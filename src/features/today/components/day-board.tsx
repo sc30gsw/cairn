@@ -10,7 +10,6 @@ import {
   Stack,
   Text,
   Title,
-  Tooltip,
 } from "@mantine/core";
 import { IconNotes } from "@tabler/icons-react";
 import { useNavigate } from "@tanstack/react-router";
@@ -31,7 +30,12 @@ import { DayMetaPanel } from "~/features/today/components/day-meta-panel";
 import { RowEditor } from "~/features/today/components/row-editor";
 import { useDayBoardActions } from "~/features/today/hooks/use-day-board-actions";
 import { emptyDayCopy } from "~/features/today/lib/empty-day-copy";
-import { groupDayRowsByItem, type DayRowGroup } from "~/features/today/lib/group-day-rows";
+import {
+  dayGroupCounts,
+  duplicatePlanBadgeLabel,
+  groupDayRowsByItem,
+  type DayRowGroup,
+} from "~/features/today/lib/group-day-rows";
 import type { DayRow } from "~/features/today/types/day";
 import type {
   ConfirmRowInput,
@@ -39,7 +43,6 @@ import type {
   RemoveRowInput,
   SkipRowInput,
 } from "~/features/today/types/mutations";
-import { RECORD_STATUS_UI, statusTooltip } from "~/lib/record-status-ui";
 import type { MutationResult } from "~/lib/run-mutation";
 import { BODY_FONT, NUMERAL_FONT } from "~/lib/theme";
 
@@ -219,34 +222,14 @@ function DayRecordGroup({
   onUnskip: (rowId: SkipRowInput["rowId"]) => void;
   todayJst: DateJst;
 }) {
-  const single = group.rows.length === 1;
+  const duplicate = group.rows.length > 1;
+  const counts = dayGroupCounts(group.rows);
 
   return (
     <Stack gap="sm">
-      {single ? null : (
-        <Group justify="space-between" wrap="nowrap">
-          <Stack gap={4}>
-            <Text fw={600}>{group.itemName}</Text>
-            <Group gap={4}>
-              {group.statuses.map((status) => (
-                <Tooltip key={status} label={statusTooltip(status)}>
-                  <Badge color={RECORD_STATUS_UI[status].color} size="sm" variant="light">
-                    {RECORD_STATUS_UI[status].label}
-                  </Badge>
-                </Tooltip>
-              ))}
-            </Group>
-          </Stack>
-          <Text ff={NUMERAL_FONT} fw={600}>
-            合計 {group.totalMinutes}分
-          </Text>
-        </Group>
-      )}
       {group.rows.map((row, index) => (
         <RowEditor
           disabled={disabled}
-          fieldAriaLabel={single ? undefined : `${group.itemName} ${String(index + 1)}件目`}
-          fieldLabel={single ? undefined : "ひとこと"}
           key={row._id}
           onConfirm={onConfirm}
           onFlagReview={onFlagReview}
@@ -255,6 +238,22 @@ function DayRecordGroup({
           onUnflagReview={onUnflagReview}
           onUnskip={onUnskip}
           row={row}
+          titleEnd={
+            duplicate && index === 0 ? (
+              <Group component="span" gap={6} wrap="wrap">
+                <Badge
+                  color={counts.incompleteCount > 0 ? "gray" : "green"}
+                  size="sm"
+                  variant="light"
+                >
+                  {duplicatePlanBadgeLabel(counts)}
+                </Badge>
+                <Text component="span" ff={NUMERAL_FONT} fw={600} size="sm">
+                  合計 {group.totalMinutes}分
+                </Text>
+              </Group>
+            ) : null
+          }
           todayJst={todayJst}
         />
       ))}

@@ -39,6 +39,40 @@ test("カテゴリが1つでも見出しは省略しない。未着手とスキ�
   expect(formatShareMarkdown(rows)).toBe(["- TOEIC対策", "  - 金のフレーズ: 1-50 20分"].join("\n"));
 });
 
+test("同じ項目の確定は1行に畳み、分数は足す。未完了が残っていても確定分は出す", () => {
+  const rows = [
+    {
+      category: "多聴",
+      categorySortOrder: 1,
+      content: "Unit 1",
+      itemName: "Distinction 2000",
+      minutes: 10,
+      sortOrder: 0,
+      status: confirmed,
+    },
+    {
+      category: "多聴",
+      categorySortOrder: 1,
+      content: "Unit 2",
+      itemName: "Distinction 2000",
+      minutes: 20,
+      sortOrder: 1,
+      status: pending,
+    },
+    {
+      category: "多聴",
+      categorySortOrder: 1,
+      content: "Unit 3",
+      itemName: "Distinction 2000",
+      minutes: 15,
+      sortOrder: 2,
+      status: confirmed,
+    },
+  ] as const satisfies readonly ShareRow[];
+
+  expect(formatShareMarkdown(rows)).toBe("- 多聴\n  - Distinction 2000: Unit 1、Unit 3 25分");
+});
+
 test("項目名がカテゴリ名と一致しひとこと空、かつ1件だけなら1行に畳む(カテゴリが1つでも)", () => {
   const rows = [
     {

@@ -10,6 +10,25 @@ export type DayRowGroup = {
   totalMinutes: number;
 };
 
+export type DayGroupCounts = {
+  completeCount: number;
+  incompleteCount: number;
+};
+
+export function dayGroupCounts(rows: readonly { status: Status }[]): DayGroupCounts {
+  let completeCount = 0;
+  for (const row of rows) {
+    if (row.status === "確定") {
+      completeCount += 1;
+    }
+  }
+  return { completeCount, incompleteCount: rows.length - completeCount };
+}
+
+export function duplicatePlanBadgeLabel(counts: DayGroupCounts): string {
+  return `未完了予定が${String(counts.incompleteCount)}件、完了${String(counts.completeCount)}件`;
+}
+
 export function groupDayRowsByItem(rows: readonly DayRow[]): DayRowGroup[] {
   const groups: DayRowGroup[] = [];
   const groupByItem = new Map<DayRow["itemId"], DayRowGroup>();
