@@ -24,6 +24,7 @@ function block(overrides: Partial<PlanScheduleBlock> = {}): PlanScheduleBlock {
     frozen: false,
     itemId: undefined,
     priority: "high",
+    sourceTitle: "Morning Standup",
     startAt: "2026-08-17 09:00:00",
     title: "Morning Standup",
     ...overrides,

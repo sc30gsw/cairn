@@ -116,6 +116,19 @@ test("カンバンは未着手・進行中・確定・スキップを並べる",
   expect(getByLabelText("Distinction 2000 の順序を変更")).toBeDefined();
 });
 
+test("同じ項目のカードは予定の時刻か件数で区別する", () => {
+  const { getByText } = renderWithMantine(
+    <BoardKanban
+      dateJst="2026-08-17"
+      rows={[row("a", pending, "Distinction 2000"), row("b", confirmed, "Distinction 2000")]}
+      windowsByRowId={new Map([["a", "予定 09:00–10:00"]])}
+    />,
+  );
+
+  expect(getByText("予定 09:00–10:00")).toBeDefined();
+  expect(getByText("2件目")).toBeDefined();
+});
+
 test("カード本体が順序変更の掴み手で、操作メニューは残る", () => {
   const { getByLabelText, getByRole } = renderWithMantine(
     <BoardKanban dateJst="2026-08-17" rows={[row("r1", pending, "Distinction 2000")]} />,

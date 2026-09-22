@@ -135,13 +135,32 @@ export const historyWeekValidator = v.object({
 
 export type HistoryWeekDto = Infer<typeof historyWeekValidator>;
 
-export const historySearchKindValidator = v.union(v.literal("hitokoto"), v.literal("memo"));
+export const historySearchKindValidator = v.union(
+  v.literal("event"),
+  v.literal("goal"),
+  v.literal("hitokoto"),
+  v.literal("item"),
+  v.literal("memo"),
+  v.literal("method"),
+  v.literal("obstacle"),
+  v.literal("plan"),
+);
 
 export type HistorySearchKind = Infer<typeof historySearchKindValidator>;
 
 export const historySearchHitValidator = v.object({
   category: v.optional(v.string()),
-  dateJst: v.string(),
+  dateJst: v.optional(v.string()),
+  documentId: v.union(
+    v.id("days"),
+    v.id("goals"),
+    v.id("items"),
+    v.id("methods"),
+    v.id("obstaclePlans"),
+    v.id("planEvents"),
+    v.id("planTemplates"),
+    v.id("rows"),
+  ),
   kind: historySearchKindValidator,
   minutes: v.optional(v.number()),
   rowId: v.optional(v.id("rows")),

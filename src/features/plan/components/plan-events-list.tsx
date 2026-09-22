@@ -2,9 +2,9 @@ import {
   Badge,
   Button,
   Card,
-  Collapse,
   ColorSwatch,
   Group,
+  Modal,
   Stack,
   Text,
   Tooltip,
@@ -78,7 +78,12 @@ export function PlanEventsList({
         />
         {headerEnd}
       </Group>
-      <Collapse expanded={opened} keepMounted={false} transitionDuration={0}>
+      <Modal
+        onClose={() => setOpened(false)}
+        opened={opened}
+        title={PLAN_EVENTS_LIST_LABEL}
+        transitionProps={{ duration: 0 }}
+      >
         <Stack gap="xs">
           <PlanEventsListToolbar
             onPriorityChange={setPriority}
@@ -96,12 +101,15 @@ export function PlanEventsList({
                 event={event}
                 items={items}
                 key={event._id}
-                onSelect={() => onSelectEvent(event)}
+                onSelect={() => {
+                  setOpened(false);
+                  onSelectEvent(event);
+                }}
               />
             ))
           )}
         </Stack>
-      </Collapse>
+      </Modal>
     </Stack>
   );
 }

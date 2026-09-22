@@ -38,6 +38,8 @@ import { RowEditorSchema } from "~/lib/validation/row-editor-schema";
 
 type RowEditorProps = {
   disabled?: boolean;
+  fieldAriaLabel?: string;
+  fieldLabel?: string;
   onConfirm: (input: ConfirmRowInput) => Promise<MutationResult>;
   onFlagReview: (input: FlagReviewInput) => void;
   onRemove: (rowId: RemoveRowInput["rowId"]) => void;
@@ -138,6 +140,8 @@ function requestUnskip(
 
 export function RowEditor({
   disabled = false,
+  fieldAriaLabel,
+  fieldLabel,
   onConfirm,
   onFlagReview,
   onRemove,
@@ -155,6 +159,8 @@ export function RowEditor({
   const canSkipDirectly = row.status === "未着手" || row.status === "進行中";
   const canUnskip = row.status === "スキップ";
   const badge = RECORD_STATUS_UI[row.status];
+  const visibleLabel = fieldLabel ?? row.itemName;
+  const detailAriaLabel = fieldAriaLabel ?? `${row.itemName}のひとこと`;
   const canReview = isDone && row.review?.kind !== "review";
 
   async function saveIfConfirmedDirty() {
@@ -208,12 +214,12 @@ export function RowEditor({
               {(field) => (
                 <ConcreteActionFieldWithSuggestions
                   {...field.props}
-                  aria-label={`${row.itemName}のひとこと`}
+                  aria-label={detailAriaLabel}
                   disabled={disabled}
                   error={field.errors?.[0]}
                   itemId={row.itemId}
                   itemName={row.itemName}
-                  label={row.itemName}
+                  label={visibleLabel}
                   onBlur={(event) => {
                     field.props.onBlur?.(event);
                     void saveIfConfirmedDirty();
