@@ -104,6 +104,30 @@ test("確定直後の残量を記録カードに出す", () => {
   expect(getByText("多聴 今週の週間ターゲット あと30分")).toBeDefined();
 });
 
+test("同じ項目の記録は見出しに状態と合計を出し、ひとことは件数で分ける", () => {
+  const second = {
+    ...dayBoardTestRow,
+    _id: "row2" as (typeof dayBoardTestRow)["_id"],
+    minutes: 15,
+    sortOrder: 1,
+    status: confirmed,
+  };
+  const { getAllByRole, getAllByText, getByText, queryByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={{ ...day, rows: [dayBoardTestRow, second] }}
+      items={items}
+      presets={[]}
+      todayJst="2026-08-17"
+    />,
+  );
+
+  expect(getByText("合計 45分")).toBeDefined();
+  expect(getAllByText("完了").length).toBeGreaterThan(0);
+  expect(queryByRole("combobox", { name: "Distinction 2000のひとこと" })).toBeNull();
+  expect(getAllByRole("combobox", { name: /Distinction 2000 \d件目/ })).toHaveLength(2);
+});
+
 test("ログイン済みなら今日の未着手の記録が見える", () => {
   const { getByRole, getByText, queryByText } = renderWithMantine(
     <DayBoard dateJst="2026-08-17" day={day} todayJst="2026-08-17" items={items} presets={[]} />,

@@ -23,6 +23,7 @@ test("項目なし予定は弧用の記録を持たず、優先度から色を�
       frozen: false,
       itemId: undefined,
       priority: "low",
+      sourceTitle: "X を見る",
       startAt: "2026-09-25 20:00:00",
       title: "X を見る",
     },
@@ -69,6 +70,6 @@ test("タイトル空の項目つき予定は中・高とも項目名をスケ�
   } satisfies PlanEventDto;
 
   const blocks = toPlanScheduleBlocks([medium, high], items);
-  expect(blocks[0]).toMatchObject({ color: "lime", title: "多読" });
-  expect(blocks[1]).toMatchObject({ color: "yellow", title: "多読" });
+  expect(blocks[0]).toMatchObject({ color: "lime", sourceTitle: "", title: "多読" });
+  expect(blocks[1]).toMatchObject({ color: "yellow", sourceTitle: "", title: "多読" });
 });

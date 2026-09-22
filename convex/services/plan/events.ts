@@ -104,11 +104,14 @@ async function recordState(ctx: QueryCtx, event: Doc<"planEvents">): Promise<Pla
 }
 
 function toDto(event: Doc<"planEvents">, state: PlanRecordStateDto): PlanEventDto {
+  const materializedRowId =
+    event.record.kind === "item" ? event.record.materializedRowId : undefined;
   return {
     _id: event._id,
     dateJst: event.dateJst,
     endTime: formatMinuteOfDay(event.endMinute),
     itemId: event.record.kind === "item" ? event.record.itemId : undefined,
+    ...(materializedRowId === undefined ? {} : { materializedRowId }),
     priority: event.priority,
     recordState: state,
     startTime: formatMinuteOfDay(event.startMinute),

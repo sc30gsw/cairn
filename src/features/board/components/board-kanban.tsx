@@ -27,6 +27,7 @@ import {
   type KanbanStatusMove,
   resolveKanbanStatusMove,
 } from "~/features/board/lib/kanban-order";
+import { boardRowDistinction } from "~/features/board/lib/plan-window-by-row";
 import type { BoardRow } from "~/features/board/types/board";
 import { useDnd } from "~/hooks/use-dnd";
 import { useTimerTick } from "~/hooks/use-timer-tick";
@@ -36,10 +37,13 @@ import { formatTimerClock } from "~/lib/timer-clock";
 
 import classes from "~/features/board/components/board-kanban.module.css";
 
+const EMPTY_WINDOWS = new Map<string, string>();
+
 type BoardKanbanProps = {
   dateJst: DateJst;
   interactive?: boolean;
   rows: readonly BoardRow[];
+  windowsByRowId?: ReadonlyMap<string, string>;
 };
 
 type ConfirmTarget = {
@@ -62,6 +66,7 @@ function RecordCard({
   row,
   rows,
   todayJst,
+  windowsByRowId,
 }: {
   disabled: boolean;
   dragHandleProps: DraggableProvidedDragHandleProps | null | undefined;
@@ -76,9 +81,11 @@ function RecordCard({
   row: BoardRow;
   rows: readonly BoardRow[];
   todayJst: DateJst;
+  windowsByRowId: ReadonlyMap<string, string>;
 }) {
   const badge = RECORD_STATUS_UI[row.status];
   const detail = row.content === "" ? row.category : `${row.category} · ${row.content}`;
+  const distinction = boardRowDistinction(row, rows, windowsByRowId);
   const handleProps = withKanbanTouchLift(dragHandleProps);
 
   return (
@@ -100,6 +107,11 @@ function RecordCard({
             <TruncatedText c="dimmed" lineClamp={1} size="xs">
               {detail}
             </TruncatedText>
+            {distinction === null ? null : (
+              <Text c="dimmed" size="xs">
+                {distinction}
+              </Text>
+            )}
             <Group gap={4} wrap="wrap">
               <Tooltip label={statusTooltip(row.status)} withArrow>
                 <Badge color={badge.color} size="sm" variant="light">
@@ -149,7 +161,12 @@ function columnTimerLabel(
   return `計測 ${formatTimerClock(measuredMs(measuring.timer, nowMs))}`;
 }
 
-export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanProps) {
+export function BoardKanban({
+  dateJst,
+  interactive = true,
+  rows,
+  windowsByRowId = EMPTY_WINDOWS,
+}: BoardKanbanProps) {
   const {
     onApplyOrder,
     onFlagReview,
@@ -410,6 +427,7 @@ export function BoardKanban({ dateJst, interactive = true, rows }: BoardKanbanPr
                                 row={row}
                                 rows={rows}
                                 todayJst={today}
+                                windowsByRowId={windowsByRowId}
                               />
                             </div>
                           )}

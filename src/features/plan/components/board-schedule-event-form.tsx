@@ -1,4 +1,4 @@
-import { Field, Form, reset, setInput, useForm } from "@formisch/react";
+import { Field, Form, reset, useForm } from "@formisch/react";
 import type { SubmitHandler } from "@formisch/react";
 import { ColorSwatch, Group, Select, Stack, Text, TextInput } from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
@@ -76,8 +76,13 @@ export function BoardScheduleEventForm({
     if (initialValues === null) {
       return;
     }
-    reset(form, { initialInput: initialValues, keepInput: false });
-  }, [form, initialValues]);
+    const titleFilled = initialValues.title.trim() !== "";
+    reset(form, {
+      initialInput:
+        frozen || !titleFilled ? initialValues : { ...initialValues, itemId: undefined },
+      keepInput: false,
+    });
+  }, [form, frozen, initialValues]);
 
   const handleSubmit: SubmitHandler<typeof PlanScheduleEventSchema> = async (values) => {
     const result = await onSubmit(values);
@@ -103,42 +108,61 @@ export function BoardScheduleEventForm({
           </Field>
           <Field of={form} path={["itemId"]}>
             {(itemField) => (
-              <>
-                <Select
-                  {...itemField.props}
-                  clearable
-                  data={itemOptions}
-                  disabled={frozen}
-                  error={itemField.errors?.[0]}
-                  label="項目"
-                  onChange={(value) => {
-                    const itemId = value === null || value === "" ? undefined : value;
-                    itemField.onChange(itemId);
-                    if (itemId !== undefined) {
-                      setInput(form, { input: "", path: ["title"] });
-                    }
-                  }}
-                  placeholder="なし（記録は作らない）"
-                  value={itemField.input ?? null}
-                />
-                {frozen ? (
-                  <Text c="dimmed" size="sm">
-                    {PLAN_FROZEN_MESSAGE}
-                  </Text>
-                ) : null}
-                {itemField.input === undefined ? (
-                  <Field of={form} path={["title"]}>
-                    {(field) => (
-                      <TextInput
-                        {...field.props}
-                        error={field.errors?.[0]}
-                        label="タイトル"
-                        value={field.input}
-                      />
-                    )}
-                  </Field>
-                ) : null}
-              </>
+              <Field of={form} path={["title"]}>
+                {(titleField) => {
+                  const titleFilled = (titleField.input ?? "").trim() !== "";
+                  const itemChosen = itemField.input !== undefined;
+                  const showItem = frozen || !titleFilled;
+                  const showTitle = frozen ? titleFilled : !itemChosen || titleFilled;
+                  return (
+                    <>
+                      {showItem ? (
+                        <Select
+                          {...itemField.props}
+                          allowDeselect={false}
+                          clearButtonProps={{ "aria-label": "項目をクリア" }}
+                          clearable
+                          data={itemOptions}
+                          disabled={frozen}
+                          error={itemField.errors?.[0]}
+                          label="項目"
+                          nothingFoundMessage="項目が見つかりません"
+                          onChange={(value) => {
+                            const itemId = value === null || value === "" ? undefined : value;
+                            itemField.onChange(itemId);
+                            if (itemId !== undefined) {
+                              titleField.onChange("");
+                            }
+                          }}
+                          placeholder="なし（記録は作らない）"
+                          searchable
+                          value={itemField.input ?? null}
+                        />
+                      ) : null}
+                      {frozen ? (
+                        <Text c="dimmed" size="sm">
+                          {PLAN_FROZEN_MESSAGE}
+                        </Text>
+                      ) : null}
+                      {showTitle ? (
+                        <TextInput
+                          {...titleField.props}
+                          error={titleField.errors?.[0]}
+                          label="タイトル"
+                          onChange={(event) => {
+                            const value = event.currentTarget.value;
+                            titleField.onChange(value);
+                            if (!frozen && value.trim() !== "") {
+                              itemField.onChange(undefined);
+                            }
+                          }}
+                          value={titleField.input}
+                        />
+                      ) : null}
+                    </>
+                  );
+                }}
+              </Field>
             )}
           </Field>
           <Field of={form} path={["start"]}>
@@ -223,7 +247,7 @@ function blockFormValues(block: PlanScheduleBlock): PlanScheduleEventInput {
     itemId: block.itemId,
     priority: block.priority,
     start: scheduleInstantToDate(block.startAt),
-    title: block.title,
+    title: block.sourceTitle,
   };
 }
 
