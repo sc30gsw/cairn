@@ -9,7 +9,7 @@ The day log is today's (or a past day's) paper: ad-hoc records, confirm/skip, le
 - `day-confirm` marks that record 確定 via `記録を確定` and increases 学習量.
 - `day-volume` shows the confirmed minutes on the volume title.
 - `day-obstacles` shows heading `障害プラン` under the 記録 card (same fields as 計画).
-- `day-group-same-item` keeps each record as its own document and the same row UI as a single record (form `{項目}の記録`, combobox `{項目}のひとこと`). Two or more rows put a badge `未完了予定がx件、完了y件` and `合計 N分` beside the first row's title. The badge is gray when any row is not 確定, green when every row is 確定. Each row keeps its own status and 分数. The day page does not show 予定 times. If any row is 確定, 共有文 includes that item once, with confirmed minutes summed.
+- `day-group-same-item` keeps each record as its own Convex document. A lone row stays `RowEditor` (form `{項目}の記録`, combobox `{項目}のひとこと`). Two or more rows of the same item render as one item: one form, badge `{n}件 · 未完了{i} · 完了{c}` (no word `予定`), and `合計 N分`. Minutes is the sum of the rows and is read-only; confirm sends each row's own minutes. Group status is 見送り if any row is スキップ, else 未完了 if any row is 未着手 or 進行中, else 完了. 見送り skips every row in the group; 確定 confirms every row. ひとこと shows only when every row shares the same string; differing ひとこと stays on ボード. The day page does not show 予定 times. If any row is 確定, 共有文 includes that item once, with confirmed minutes summed.
 
 ## How to get to it (user POV)
 
@@ -41,7 +41,7 @@ Preconditions:
 - After a successful add, scoped add-form ひとこと is empty and `分数` is `20`. The row form `検証項目の記録` keeps the submitted note.
 - Confirming is a switch, not a button labelled 確定. The accessible name is `記録を確定`. Turning it off on a 確定 row opens `見送りにしますか？`.
 - When other records already exist, scope the add fields to `page.locator('form').filter({ has: page.getByRole('button', { name: '記録を足す', exact: true }) })`; `分数` also appears in existing record forms. Use a fresh item or scope the intended record when several rows share an item name.
-- Two rows of the same item do not merge into one document. Both comboboxes are `{項目}のひとこと`. The first title shows badge `未完了予定がx件、完了y件` and `合計 N分`. There is no combobox `{項目} N件目` and no visible label `ひとこと` on those rows. Confirming one row leaves the other form in place. A lone row has no count badge. Row ひとこと is a combobox (Mantine Autocomplete), not a textbox. The add field `その日限りのひとこと` stays a textbox.
+- Two rows of the same item do not merge into one document, but the day page shows one form `{項目}の記録`. Shared ひとこと is one combobox `{項目}のひとこと`. Differing ひとこと hides that field. Badge is `{n}件 · 未完了{i} · 完了{c}` plus `合計 N分`. There is no combobox `{項目} N件目` and no visible label `ひとこと`. Confirming or skipping the group acts on every row. A lone row has no count badge and keeps its own 分数. Row ひとこと is a combobox (Mantine Autocomplete), not a textbox. The add field `その日限りのひとこと` stays a textbox. The group 分数 field is disabled.
 - ひとこと may be empty. Minutes `0` can still confirm. Use `25` so volume proof is obvious.
 - Empty today shows `この日の記録はありません` (or preset rows). An empty past day shows `休養`, not that today copy.
 - JST "today" follows the server/client JST date. Do not invent a future `/days/20xx-…` URL to write records.
