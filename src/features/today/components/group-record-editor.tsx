@@ -19,6 +19,9 @@ import { concreteActionPlaceholder } from "~domain/concreteActionCore";
 
 import { ConcreteActionFieldWithSuggestions } from "~/components/concrete-action-field-with-suggestions";
 import {
+  DAY_GROUP_CONFIRMED_STATUS,
+  DAY_GROUP_INCOMPLETE_STATUS,
+  DAY_GROUP_SKIPPED_STATUS,
   DAY_GROUP_STATUS_UI,
   dayGroupCounts,
   dayGroupStatus,
@@ -132,9 +135,9 @@ export function GroupRecordEditor({
   const status = dayGroupStatus(group.rows);
   const counts = dayGroupCounts(group.rows);
   const badge = DAY_GROUP_STATUS_UI[status];
-  const isDone = status === "完了";
-  const canSkipDirectly = status === "未完了";
-  const canUnskip = status === "見送り";
+  const isDone = status === DAY_GROUP_CONFIRMED_STATUS;
+  const canSkipDirectly = status === DAY_GROUP_INCOMPLETE_STATUS;
+  const canUnskip = status === DAY_GROUP_SKIPPED_STATUS;
   const form = useForm({
     initialInput: { content: sharedContent ?? "" },
     schema: GroupRecordContentSchema,
@@ -157,7 +160,7 @@ export function GroupRecordEditor({
   }
 
   async function saveIfConfirmedDirty() {
-    if (status !== "完了" || sharedContent === null) {
+    if (status !== DAY_GROUP_CONFIRMED_STATUS || sharedContent === null) {
       return;
     }
     const content = await readSharedContent();
@@ -187,7 +190,7 @@ export function GroupRecordEditor({
     <Group component="span" gap={6} wrap="wrap">
       <span>{group.itemName}</span>
       <Badge
-        color={counts.incompleteCount > 0 || status === "見送り" ? "gray" : "green"}
+        color={counts.incompleteCount > 0 || status === DAY_GROUP_SKIPPED_STATUS ? "gray" : "green"}
         size="sm"
         variant="light"
       >
@@ -219,7 +222,7 @@ export function GroupRecordEditor({
               event.currentTarget.closest("form")?.requestSubmit();
               return;
             }
-            if (status === "完了") {
+            if (status === DAY_GROUP_CONFIRMED_STATUS) {
               requestSkipGroup(() => onSkipMany(rowIds));
             }
           }}

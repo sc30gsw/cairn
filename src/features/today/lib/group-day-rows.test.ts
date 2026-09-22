@@ -2,6 +2,9 @@ import { expect, test } from "vite-plus/test";
 import { STATUSES } from "~domain/domain";
 
 import {
+  DAY_GROUP_CONFIRMED_STATUS,
+  DAY_GROUP_INCOMPLETE_STATUS,
+  DAY_GROUP_SKIPPED_STATUS,
   dayGroupCounts,
   dayGroupStatus,
   duplicateRecordBadgeLabel,
@@ -47,15 +50,23 @@ test("同じ項目の記録は出現順を保って1グループにまとめ、�
     totalCount: 2,
   });
   expect(duplicateRecordBadgeLabel({ completeCount: 1, incompleteCount: 1, totalCount: 2 })).toBe(
-    "2件 · 未完了1 · 完了1",
+    `2件 · ${DAY_GROUP_INCOMPLETE_STATUS}1 · ${DAY_GROUP_CONFIRMED_STATUS}1`,
   );
 });
 
 test("グループの状態はスキップ優先、次に未着手か進行中、全部確定なら完了", () => {
-  expect(dayGroupStatus([{ status: skipped }, { status: confirmed }])).toBe("見送り");
-  expect(dayGroupStatus([{ status: pending }, { status: confirmed }])).toBe("未完了");
-  expect(dayGroupStatus([{ status: inProgress }, { status: confirmed }])).toBe("未完了");
-  expect(dayGroupStatus([{ status: confirmed }, { status: confirmed }])).toBe("完了");
+  expect(dayGroupStatus([{ status: skipped }, { status: confirmed }])).toBe(
+    DAY_GROUP_SKIPPED_STATUS,
+  );
+  expect(dayGroupStatus([{ status: pending }, { status: confirmed }])).toBe(
+    DAY_GROUP_INCOMPLETE_STATUS,
+  );
+  expect(dayGroupStatus([{ status: inProgress }, { status: confirmed }])).toBe(
+    DAY_GROUP_INCOMPLETE_STATUS,
+  );
+  expect(dayGroupStatus([{ status: confirmed }, { status: confirmed }])).toBe(
+    DAY_GROUP_CONFIRMED_STATUS,
+  );
 });
 
 test("スキップは件数に入り、未完了件数には入らない", () => {

@@ -1,6 +1,13 @@
-import type { Status } from "~domain/domain";
+import { STATUSES, type Status } from "~domain/domain";
 
 import type { DayRow } from "~/features/today/types/day";
+import { RECORD_STATUS_UI } from "~/lib/record-status-ui";
+
+const [confirmedStatus, pendingStatus, inProgressStatus, skippedStatus] = STATUSES;
+
+export const DAY_GROUP_SKIPPED_STATUS = RECORD_STATUS_UI[skippedStatus].label;
+export const DAY_GROUP_CONFIRMED_STATUS = RECORD_STATUS_UI[confirmedStatus].label;
+export const DAY_GROUP_INCOMPLETE_STATUS = "未完了" as const;
 
 export type DayRowGroup = {
   itemId: DayRow["itemId"];
@@ -16,23 +23,32 @@ export type DayGroupCounts = {
   totalCount: number;
 };
 
-export type DayGroupStatus = "見送り" | "未完了" | "完了";
-
 export const DAY_GROUP_STATUS_UI = {
-  見送り: { color: "yellow", label: "見送り" },
-  未完了: { color: "gray", label: "未完了" },
-  完了: { color: "green", label: "完了" },
-} as const satisfies Record<DayGroupStatus, { color: string; label: string }>;
+  [DAY_GROUP_SKIPPED_STATUS]: {
+    color: RECORD_STATUS_UI[skippedStatus].color,
+    label: DAY_GROUP_SKIPPED_STATUS,
+  },
+  [DAY_GROUP_INCOMPLETE_STATUS]: {
+    color: RECORD_STATUS_UI[pendingStatus].color,
+    label: DAY_GROUP_INCOMPLETE_STATUS,
+  },
+  [DAY_GROUP_CONFIRMED_STATUS]: {
+    color: RECORD_STATUS_UI[confirmedStatus].color,
+    label: DAY_GROUP_CONFIRMED_STATUS,
+  },
+} as const;
+
+export type DayGroupStatus = keyof typeof DAY_GROUP_STATUS_UI;
 
 export function dayGroupCounts(rows: readonly { status: Status }[]): DayGroupCounts {
   let completeCount = 0;
   let incompleteCount = 0;
   for (const row of rows) {
-    if (row.status === "確定") {
+    if (row.status === confirmedStatus) {
       completeCount += 1;
       continue;
     }
-    if (row.status === "未着手" || row.status === "進行中") {
+    if (row.status === pendingStatus || row.status === inProgressStatus) {
       incompleteCount += 1;
     }
   }
@@ -43,25 +59,25 @@ export function dayGroupStatus(rows: readonly { status: Status }[]): DayGroupSta
   let hasSkip = false;
   let hasIncomplete = false;
   for (const row of rows) {
-    if (row.status === "スキップ") {
+    if (row.status === skippedStatus) {
       hasSkip = true;
       continue;
     }
-    if (row.status !== "確定") {
+    if (row.status !== confirmedStatus) {
       hasIncomplete = true;
     }
   }
   if (hasSkip) {
-    return "見送り";
+    return DAY_GROUP_SKIPPED_STATUS;
   }
   if (hasIncomplete) {
-    return "未完了";
+    return DAY_GROUP_INCOMPLETE_STATUS;
   }
-  return "完了";
+  return DAY_GROUP_CONFIRMED_STATUS;
 }
 
 export function duplicateRecordBadgeLabel(counts: DayGroupCounts): string {
-  return `${String(counts.totalCount)}件 · 未完了${String(counts.incompleteCount)} · 完了${String(counts.completeCount)}`;
+  return `${String(counts.totalCount)}件 · ${DAY_GROUP_INCOMPLETE_STATUS}${String(counts.incompleteCount)} · ${DAY_GROUP_CONFIRMED_STATUS}${String(counts.completeCount)}`;
 }
 
 export function sharedRowContent(rows: readonly { content: string }[]): string | null {
