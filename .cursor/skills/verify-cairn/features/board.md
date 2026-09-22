@@ -9,7 +9,7 @@ The board shows today's (or a selected day's) records as kanban columns 未着�
 - `board-hold-drag` long-presses the card body (`{item} の順序を変更`) at 390×844 and 768×1024 and drops it on another column.
 - `board-confirm` confirms a row from its card menu and moves it to the 確定 column.
 - `board-truncated-title` taps a clamped item name so the tooltip shows the full string.
-- `board-distinction` shows a dimmed caption under a card when the same item appears more than once, or when a 予定 is tied to that record. The caption is `予定 HH:MM–HH:MM` from the first linked plan window, otherwise `N件目`. A single untied card has no caption. The record itself does not store start or end.
+- `board-distinction` shows an orange caption (`data-plan-caption`) under a card when the same item appears more than once, or when a 予定 is tied to that record. The caption is `予定 HH:MM–HH:MM` from the first linked plan window, otherwise `N件目`. It is heavier than the dimmed category line. A single untied card has no caption. The record itself does not store start or end.
 
 ## How to get to it (user POV)
 
@@ -40,7 +40,7 @@ Preconditions:
 
 - An empty day has no cards. Add a row on 日 first; do not treat an empty kanban as a board failure.
 - Hold the card body (`{item} の順序を変更`) to drag on every width, including 390×844 and 768×1024. The library lifts after about 120ms. Any `touchmove` before lift is swallowed so column snap-scroll cannot cancel it. Keep `{item} の操作` as the fallback for status and 上へ / 下へ. Prefer the card menu and timer buttons for status verification because they have stable accessible names. Pointer drag is required when proving hold-to-drag on phone or tablet. Do not treat a decorative `IconGripVertical` as the handle; it is `aria-hidden`.
-- Several records can share the same item label. Scope the `{item} の操作` button to its card or choose the intended occurrence from a fresh snapshot. Duplicate cards also show `1件目` / `2件目`, or `予定 HH:MM–HH:MM` when that record is tied to a plan window. A lone card of an item has neither caption.
+- Several records can share the same item label. Scope the `{item} の操作` button to its card or choose the intended occurrence from a fresh snapshot. Duplicate cards also show `1件目` / `2件目`, or `予定 HH:MM–HH:MM` when that record is tied to a plan window. Those captions carry `data-plan-caption` and are orange, not the dimmed category line. A lone card of an item has neither caption.
 - Timer buttons `計測をはじめる`, `計測を止める`, `計測を続ける` live on the board only. They are not proven by `day-log.md`.
 - Narrow viewports hide `項目` / `方法` / `ゴミ箱` behind その他. `ボード` and `計画` stay primary tabs. There is no `プリセット` overflow item.
 - Confirming a zero-minute row prompts for minutes in modal `記録を確定`. Have a number ready.
