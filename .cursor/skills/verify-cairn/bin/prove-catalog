@@ -43,10 +43,20 @@ script = r"""async page => {
     note('Fill disposable local credentials; click アカウントを作成 (password omitted)');
     await page.getByRole('button', { name: 'アカウントを作成', exact: true }).click();
     const prompt = page.getByRole('dialog', { name: 'パスキーを登録しますか？' });
-    await prompt.waitFor();
-    await prompt.getByRole('button', { name: 'あとで', exact: true }).click();
-    note('Skip optional passkey and reach authenticated navigation');
-    await page.getByRole('link', { name: '項目', exact: true }).waitFor();
+    const itemsNav = page.getByRole('link', { name: '項目', exact: true });
+    await Promise.race([
+      prompt.waitFor({ state: 'visible' }).catch(() => undefined),
+      itemsNav.waitFor({ state: 'visible' }),
+    ]);
+    let skippedPasskey = false;
+    if (await prompt.isVisible().catch(() => false)) {
+      await prompt.getByRole('button', { name: 'あとで', exact: true }).click();
+      skippedPasskey = true;
+      note('Skip optional passkey and reach authenticated navigation');
+    } else {
+      note('No passkey dialog; signed-in shell appeared after signup');
+    }
+    await itemsNav.waitFor();
     await page.getByRole('link', { name: '項目', exact: true }).click();
     await page.getByRole('heading', { name: '項目', exact: true }).waitFor();
     note('Open catalog through desktop 項目 navigation');
@@ -81,11 +91,13 @@ script = r"""async page => {
     await page.getByRole('option', { name: '検証項目', exact: true }).click();
     if (await select.inputValue() !== '検証項目') throw new Error('Selected value did not persist');
     note('PASS: /items reload and independent day selector both show 検証項目');
+    const features = ['auth-signup', 'items-open', 'items-add-category', 'items-add-item'];
+    if (skippedPasskey) features.splice(1, 0, 'auth-passkey-skip');
     return { actions, snapshots, proof: {
-      result: 'passed', runId,
-      features: ['auth-signup', 'auth-passkey-skip', 'items-open', 'items-add-category', 'items-add-item'],
+      result: 'passed', runId, features,
       entryPoints: ['signed-out / → 新規登録', 'desktop 項目 nav → /items', 'desktop 日 nav → /'],
       category: '検証カテゴリ', item: '検証項目',
+      passkeyPrompt: skippedPasskey,
       sideEffects: ['category and item survive /items reload', 'saved item selectable on 日', 'add fields empty after create'],
       notTested: ['mobile その他', 'onboarding shortcut', 'signout/signin', 'day record creation', 'presets', 'board']
     } };

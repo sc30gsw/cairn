@@ -65,7 +65,7 @@ For a repeatable first proof on a fresh run:
 rtk proxy .cursor/skills/verify-cairn/bin/prove-catalog
 ```
 
-This executable drives signup → skip optional passkey → `項目` nav → add category → add item → assert those add fields are empty → reload → confirm the item is selectable from `日`. It stores steps, snapshots, screenshots, and an explicit success file. It fails if browser assertions fail, even if playwright-cli itself exits zero. See [catalog-items](features/catalog-items.md) for its mapped scope. It does not clean up automatically so failures can be diagnosed; always run cleanup after diagnosis.
+This executable drives signup → skip the passkey dialog when it appears (it may never open; the harness races the dialog against nav `項目` and records `passkeyPrompt` in `proof.json`) → `項目` nav → add category → add item → assert those add fields are empty → reload → confirm the item is selectable from `日`. It stores steps, snapshots, screenshots, and an explicit success file. It fails if browser assertions fail, even if playwright-cli itself exits zero. See [catalog-items](features/catalog-items.md) for its mapped scope. It does not clean up automatically so failures can be diagnosed; always run cleanup after diagnosis.
 
 For other mapped paths:
 
@@ -84,7 +84,7 @@ Mantine specifics:
 - An item-add textbox and button have the same accessible name: select by role.
 - Select inputs use role `combobox`; their hidden listbox can share the label, making `getByLabel` ambiguous.
 - `分数` is a textbox. `アカウントメニュー` is a labelled avatar, not a button.
-- Dismiss the `パスキーを登録しますか？` dialog with exact button `あとで`. Optional onboarding can place controls below the fold.
+- Dismiss the `パスキーを登録しますか？` dialog with exact button `あとで` when it appears. After signup the signed-in shell can land with no dialog; wait for nav `項目` rather than requiring the prompt. Optional onboarding can place controls below the fold.
 - Default fixture username is `vfy_` plus the run ID; example.test email and a throwaway password are used only on the disposable backend. No catalog seed mutation is needed.
 
 ## Evidence

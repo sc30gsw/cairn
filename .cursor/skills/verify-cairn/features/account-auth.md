@@ -41,4 +41,5 @@ Preconditions:
 - `パスキーでログイン` and `Googleでログイン` (no space) are not this feature. Do not click them for default proof.
 - If `AUTH_DISABLE_SIGNUP` is set on the Convex deployment, the segmented control disappears and only `ログイン` remains. Report that precondition instead of inventing a signup path.
 - After signup the home stepper may appear. It is not a failed login.
+- After signup the passkey dialog may never appear. That still proves `auth-signup`. Treat `auth-passkey-skip` as skipped, not as a failed signup. `prove-catalog` races the dialog against nav `項目` and records `passkeyPrompt` in `proof.json`.
 - Opening `http://127.0.0.1:3000` while `SITE_URL` is `http://localhost:3000` fails signup/signin with `リクエスト元が不正です。ページを更新して、もう一度お試しください。` (Better Auth `INVALID_ORIGIN`). Use `localhost`. `control-cairn launch` trusts only the documented localhost origin on the disposable deployment.
