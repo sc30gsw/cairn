@@ -9,26 +9,33 @@ type BoardIdentity = {
   itemId: string;
 };
 
+export type BoardCardPlace = {
+  countLabel: string;
+  ordinalLabel: string;
+};
+
+export type BoardCardMark = {
+  place: BoardCardPlace | null;
+  timeLabel: string | null;
+};
+
 export function planWindowLabelByRowId(events: readonly PlanWindowSource[]): Map<string, string> {
   const labels = new Map<string, string>();
   for (const event of events) {
     if (event.materializedRowId === undefined || labels.has(event.materializedRowId)) {
       continue;
     }
-    labels.set(event.materializedRowId, `予定 ${event.startTime}–${event.endTime}`);
+    labels.set(event.materializedRowId, `${event.startTime}〜${event.endTime}`);
   }
   return labels;
 }
 
-export function boardRowDistinction(
+export function boardCardMark(
   row: BoardIdentity,
   rows: readonly BoardIdentity[],
   windowsByRowId: ReadonlyMap<string, string>,
-): string | null {
-  const windowLabel = windowsByRowId.get(row._id);
-  if (windowLabel !== undefined) {
-    return windowLabel;
-  }
+): BoardCardMark {
+  const timeLabel = windowsByRowId.get(row._id) ?? null;
   let count = 0;
   let index = 0;
   for (const candidate of rows) {
@@ -41,7 +48,13 @@ export function boardRowDistinction(
     count += 1;
   }
   if (count < 2) {
-    return null;
+    return { place: null, timeLabel };
   }
-  return `${String(index + 1)}件目`;
+  return {
+    place: {
+      countLabel: `${String(count)}件`,
+      ordinalLabel: `${String(index + 1)}件目`,
+    },
+    timeLabel,
+  };
 }

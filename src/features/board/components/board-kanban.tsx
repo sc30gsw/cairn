@@ -27,7 +27,7 @@ import {
   type KanbanStatusMove,
   resolveKanbanStatusMove,
 } from "~/features/board/lib/kanban-order";
-import { boardRowDistinction } from "~/features/board/lib/plan-window-by-row";
+import { boardCardMark } from "~/features/board/lib/plan-window-by-row";
 import type { BoardRow } from "~/features/board/types/board";
 import { useDnd } from "~/hooks/use-dnd";
 import { useTimerTick } from "~/hooks/use-timer-tick";
@@ -85,7 +85,7 @@ function RecordCard({
 }) {
   const badge = RECORD_STATUS_UI[row.status];
   const detail = row.content === "" ? row.category : `${row.category} · ${row.content}`;
-  const distinction = boardRowDistinction(row, rows, windowsByRowId);
+  const mark = boardCardMark(row, rows, windowsByRowId);
   const handleProps = withKanbanTouchLift(dragHandleProps);
 
   return (
@@ -101,15 +101,27 @@ function RecordCard({
             <IconGripVertical size={16} stroke={1.5} />
           </span>
           <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
-            <TruncatedText fw={600} lineClamp={1} size="sm">
-              {row.itemName}
-            </TruncatedText>
+            <Group align="center" gap={6} wrap="nowrap">
+              {mark.place === null ? null : (
+                <Group gap={4} wrap="nowrap">
+                  <Badge color="orange" size="sm" variant="light">
+                    {mark.place.ordinalLabel}
+                  </Badge>
+                  <Badge size="sm" variant="light">
+                    {mark.place.countLabel}
+                  </Badge>
+                </Group>
+              )}
+              <TruncatedText fw={600} lineClamp={1} size="sm" style={{ flex: 1, minWidth: 0 }}>
+                {row.itemName}
+              </TruncatedText>
+            </Group>
             <TruncatedText c="dimmed" lineClamp={1} size="xs">
               {detail}
             </TruncatedText>
-            {distinction === null ? null : (
+            {mark.timeLabel === null ? null : (
               <Text className={classes.planCaption} data-plan-caption="" size="xs">
-                {distinction}
+                {mark.timeLabel}
               </Text>
             )}
             <Group gap={4} wrap="wrap">

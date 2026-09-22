@@ -116,19 +116,28 @@ test("カンバンは未着手・進行中・確定・スキップを並べる",
   expect(getByLabelText("Distinction 2000 の順序を変更")).toBeDefined();
 });
 
-test("同じ項目のカードは予定の時刻か件数で区別する", () => {
-  const { getByText } = renderWithMantine(
+test("同じ項目のカードは時刻を出し、何件目と件数はタイトルの左に出す", () => {
+  const { getAllByText, getByText } = renderWithMantine(
     <BoardKanban
       dateJst="2026-08-17"
       rows={[row("a", pending, "Distinction 2000"), row("b", confirmed, "Distinction 2000")]}
-      windowsByRowId={new Map([["a", "予定 09:00–10:00"]])}
+      windowsByRowId={new Map([["a", "09:00〜10:00"]])}
     />,
   );
 
-  const caption = getByText("予定 09:00–10:00");
+  const caption = getByText("09:00〜10:00");
   expect(caption.getAttribute("data-plan-caption")).toBe("");
   expect(caption.className).toMatch(/planCaption/);
-  expect(getByText("2件目").className).toMatch(/planCaption/);
+  const first = getByText("1件目");
+  const second = getByText("2件目");
+  expect(first.getAttribute("data-plan-caption")).toBeNull();
+  expect(second.getAttribute("data-plan-caption")).toBeNull();
+  expect(getAllByText("2件")).toHaveLength(2);
+  const title = getAllByText("Distinction 2000")[0];
+  if (title === undefined) {
+    throw new Error("title missing");
+  }
+  expect(title.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_PRECEDING).not.toBe(0);
 });
 
 test("カード本体が順序変更の掴み手で、操作メニューは残る", () => {
