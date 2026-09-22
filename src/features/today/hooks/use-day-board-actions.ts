@@ -55,37 +55,69 @@ export function useDayBoardActions(
   const flagReview = useOptimisticFlagReview(dateJst, today);
   const unflagReview = useOptimisticUnflagReview(dateJst, today);
 
+  async function confirmOne(
+    input: ConfirmRowInput,
+    confirmOptions: { notifyCategory?: boolean } = {},
+  ): Promise<number | null> {
+    const row = rows.find((entry) => entry._id === input.rowId);
+    let measuredMinutes: number | null = null;
+    if (row === undefined || !hasTimerState(row.timer)) {
+      await confirm.mutateAsync(input);
+    } else {
+      measuredMinutes = await moveAndApplyOrder.mutateAsync({
+        dateJst,
+        move: { content: input.content, kind: "confirm" },
+        orderedRowIds: rows.map((entry) => entry._id),
+        rowId: input.rowId,
+      });
+    }
+    if (confirmOptions.notifyCategory !== false && row !== undefined) {
+      options.onConfirmedCategory?.(row.category);
+    }
+    return measuredMinutes;
+  }
+
   return {
     onAddRow: (input: AddRowInput) =>
       runMutation(() => add.mutateAsync({ ...input, dateJst, todayJst: today }), {
         successMessage: "記録を追加しました",
       }),
     onConfirm: (input: ConfirmRowInput) =>
+      runMutation(() => confirmOne(input), {
+        successMessage: (measuredMinutes) =>
+          measuredMinutes === null
+            ? "記録を確定しました"
+            : `計測した${String(measuredMinutes)}分で確定しました`,
+      }),
+    onConfirmMany: (inputs: ConfirmRowInput[]) =>
       runMutation(
         async () => {
-          const row = rows.find((entry) => entry._id === input.rowId);
+          const rowById = new Map(rows.map((entry) => [entry._id, entry]));
+          const measured = await Promise.all(
+            inputs.map((input) => confirmOne(input, { notifyCategory: false })),
+          );
+          const seenCategories = new Set<string>();
           let measuredMinutes: number | null = null;
-          if (row === undefined || !hasTimerState(row.timer)) {
-            await confirm.mutateAsync(input);
-          } else {
-            measuredMinutes = await moveAndApplyOrder.mutateAsync({
-              dateJst,
-              move: { content: input.content, kind: "confirm" },
-              orderedRowIds: rows.map((entry) => entry._id),
-              rowId: input.rowId,
-            });
+          for (let index = 0; index < inputs.length; index += 1) {
+            const input = inputs[index];
+            const value = measured[index];
+            if (value !== undefined && value !== null) {
+              measuredMinutes = value;
+            }
+            if (input === undefined) {
+              continue;
+            }
+            const row = rowById.get(input.rowId);
+            if (row !== undefined) {
+              seenCategories.add(row.category);
+            }
           }
-          if (row !== undefined) {
-            options.onConfirmedCategory?.(row.category);
+          for (const category of seenCategories) {
+            options.onConfirmedCategory?.(category);
           }
           return measuredMinutes;
         },
-        {
-          successMessage: (measuredMinutes) =>
-            measuredMinutes === null
-              ? "記録を確定しました"
-              : `計測した${String(measuredMinutes)}分で確定しました`,
-        },
+        { successMessage: "記録を確定しました" },
       ),
     onFlagReview: (input: FlagReviewInput) =>
       runMutation(() => flagReview.mutateAsync({ ...input, todayJst: today }), {
@@ -120,10 +152,26 @@ export function useDayBoardActions(
       runMutation(() => skip.mutateAsync({ rowId }), {
         successMessage: "記録を見送りにしました",
       }),
+    onSkipMany: (rowIds: SkipRowInput["rowId"][]) =>
+      runMutation(
+        async () => {
+          await Promise.all(rowIds.map((rowId) => skip.mutateAsync({ rowId })));
+          return null;
+        },
+        { successMessage: "記録を見送りにしました" },
+      ),
     onUnskip: (rowId: SkipRowInput["rowId"]) =>
       runMutation(() => unskip.mutateAsync({ rowId }), {
         successMessage: "見送りを取り消しました",
       }),
+    onUnskipMany: (rowIds: SkipRowInput["rowId"][]) =>
+      runMutation(
+        async () => {
+          await Promise.all(rowIds.map((rowId) => unskip.mutateAsync({ rowId })));
+          return null;
+        },
+        { successMessage: "見送りを取り消しました" },
+      ),
     onSwitchPreset: async (presetId: PresetId, appliedPresetRef?: { current: PresetId | null }) => {
       const result = await runMutation(
         () => switchPreset.mutateAsync({ dateJst, presetId, todayJst: today }),
