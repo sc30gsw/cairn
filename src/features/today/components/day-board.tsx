@@ -1,6 +1,5 @@
 import {
   Alert,
-  Badge,
   Box,
   Button,
   Card,
@@ -14,7 +13,7 @@ import {
 import { IconNotes } from "@tabler/icons-react";
 import { useNavigate } from "@tanstack/react-router";
 import { Result } from "better-result";
-import { isDateJst, type DateJst } from "~domain/jst";
+import { isDateJst } from "~domain/jst";
 
 import { ConcreteActionTour, ConcreteActionTourTrigger } from "~/components/concrete-action-tour";
 import { CONCRETE_ACTION_TOUR_TARGETS } from "~/components/concrete-action-tour-targets";
@@ -27,23 +26,10 @@ import {
 } from "~/features/today/components/day-board-context";
 import { DayBoardKanbanLink } from "~/features/today/components/day-board-kanban-link";
 import { DayMetaPanel } from "~/features/today/components/day-meta-panel";
-import { RowEditor } from "~/features/today/components/row-editor";
+import { DayRecordGroup } from "~/features/today/components/day-record-group";
 import { useDayBoardActions } from "~/features/today/hooks/use-day-board-actions";
 import { emptyDayCopy } from "~/features/today/lib/empty-day-copy";
-import {
-  dayGroupCounts,
-  duplicatePlanBadgeLabel,
-  groupDayRowsByItem,
-  type DayRowGroup,
-} from "~/features/today/lib/group-day-rows";
-import type { DayRow } from "~/features/today/types/day";
-import type {
-  ConfirmRowInput,
-  FlagReviewInput,
-  RemoveRowInput,
-  SkipRowInput,
-} from "~/features/today/types/mutations";
-import type { MutationResult } from "~/lib/run-mutation";
+import { groupDayRowsByItem } from "~/features/today/lib/group-day-rows";
 import { BODY_FONT, NUMERAL_FONT } from "~/lib/theme";
 
 type DayBoardProps = {
@@ -82,8 +68,11 @@ export function DayBoard(props: DayBoardProps) {
     onSaveCondition,
     onSaveMemo,
     onSkip,
+    onSkipMany,
     onUnflagReview,
     onUnskip,
+    onUnskipMany,
+    onConfirmMany,
   } = useDayBoardActions(dateJst, day.rows, { onConfirmedCategory });
   const canEdit = day.kind !== "unrecorded";
   const emptyCopy = emptyDayCopy(day.kind);
@@ -147,11 +136,14 @@ export function DayBoard(props: DayBoardProps) {
                   disabled={!canEdit || !interactive}
                   group={group}
                   onConfirm={interactive ? onConfirm : async () => Result.ok(null)}
+                  onConfirmMany={interactive ? onConfirmMany : async () => Result.ok(null)}
                   onFlagReview={interactive ? onFlagReview : () => {}}
                   onRemove={interactive ? onRemoveRow : () => {}}
                   onSkip={interactive ? onSkip : () => {}}
+                  onSkipMany={interactive ? onSkipMany : () => {}}
                   onUnflagReview={interactive ? onUnflagReview : () => {}}
                   onUnskip={interactive ? onUnskip : () => {}}
+                  onUnskipMany={interactive ? onUnskipMany : () => {}}
                   todayJst={todayJst}
                 />
               </Box>
@@ -198,65 +190,5 @@ export function DayBoard(props: DayBoardProps) {
         ) : null}
       </Stack>
     </ConcreteActionTour>
-  );
-}
-
-function DayRecordGroup({
-  disabled,
-  group,
-  onConfirm,
-  onFlagReview,
-  onRemove,
-  onSkip,
-  onUnflagReview,
-  onUnskip,
-  todayJst,
-}: {
-  disabled: boolean;
-  group: DayRowGroup;
-  onConfirm: (input: ConfirmRowInput) => Promise<MutationResult>;
-  onFlagReview: (input: FlagReviewInput) => void;
-  onRemove: (rowId: RemoveRowInput["rowId"]) => void;
-  onSkip: (rowId: SkipRowInput["rowId"]) => void;
-  onUnflagReview: (rowId: DayRow["_id"]) => void;
-  onUnskip: (rowId: SkipRowInput["rowId"]) => void;
-  todayJst: DateJst;
-}) {
-  const duplicate = group.rows.length > 1;
-  const counts = dayGroupCounts(group.rows);
-
-  return (
-    <Stack gap="sm">
-      {group.rows.map((row, index) => (
-        <RowEditor
-          disabled={disabled}
-          key={row._id}
-          onConfirm={onConfirm}
-          onFlagReview={onFlagReview}
-          onRemove={onRemove}
-          onSkip={onSkip}
-          onUnflagReview={onUnflagReview}
-          onUnskip={onUnskip}
-          row={row}
-          titleEnd={
-            duplicate && index === 0 ? (
-              <Group component="span" gap={6} wrap="wrap">
-                <Badge
-                  color={counts.incompleteCount > 0 ? "gray" : "green"}
-                  size="sm"
-                  variant="light"
-                >
-                  {duplicatePlanBadgeLabel(counts)}
-                </Badge>
-                <Text component="span" ff={NUMERAL_FONT} fw={600} size="sm">
-                  合計 {group.totalMinutes}分
-                </Text>
-              </Group>
-            ) : null
-          }
-          todayJst={todayJst}
-        />
-      ))}
-    </Stack>
   );
 }

@@ -1,6 +1,13 @@
-import type { Status } from "~domain/domain";
+import { STATUSES, type Status } from "~domain/domain";
 
 import type { DayRow } from "~/features/today/types/day";
+import { RECORD_STATUS_UI } from "~/lib/record-status-ui";
+
+const [confirmedStatus, pendingStatus, inProgressStatus, skippedStatus] = STATUSES;
+
+export const DAY_GROUP_SKIPPED_STATUS = RECORD_STATUS_UI[skippedStatus].label;
+export const DAY_GROUP_CONFIRMED_STATUS = RECORD_STATUS_UI[confirmedStatus].label;
+export const DAY_GROUP_INCOMPLETE_STATUS = "未完了" as const;
 
 export type DayRowGroup = {
   itemId: DayRow["itemId"];
@@ -13,20 +20,77 @@ export type DayRowGroup = {
 export type DayGroupCounts = {
   completeCount: number;
   incompleteCount: number;
+  totalCount: number;
 };
+
+export const DAY_GROUP_STATUS_UI = {
+  [DAY_GROUP_SKIPPED_STATUS]: {
+    color: RECORD_STATUS_UI[skippedStatus].color,
+    label: DAY_GROUP_SKIPPED_STATUS,
+  },
+  [DAY_GROUP_INCOMPLETE_STATUS]: {
+    color: RECORD_STATUS_UI[pendingStatus].color,
+    label: DAY_GROUP_INCOMPLETE_STATUS,
+  },
+  [DAY_GROUP_CONFIRMED_STATUS]: {
+    color: RECORD_STATUS_UI[confirmedStatus].color,
+    label: DAY_GROUP_CONFIRMED_STATUS,
+  },
+} as const;
+
+export type DayGroupStatus = keyof typeof DAY_GROUP_STATUS_UI;
 
 export function dayGroupCounts(rows: readonly { status: Status }[]): DayGroupCounts {
   let completeCount = 0;
+  let incompleteCount = 0;
   for (const row of rows) {
-    if (row.status === "確定") {
+    if (row.status === confirmedStatus) {
       completeCount += 1;
+      continue;
+    }
+    if (row.status === pendingStatus || row.status === inProgressStatus) {
+      incompleteCount += 1;
     }
   }
-  return { completeCount, incompleteCount: rows.length - completeCount };
+  return { completeCount, incompleteCount, totalCount: rows.length };
 }
 
-export function duplicatePlanBadgeLabel(counts: DayGroupCounts): string {
-  return `未完了予定が${String(counts.incompleteCount)}件、完了${String(counts.completeCount)}件`;
+export function dayGroupStatus(rows: readonly { status: Status }[]): DayGroupStatus {
+  let hasSkip = false;
+  let hasIncomplete = false;
+  for (const row of rows) {
+    if (row.status === skippedStatus) {
+      hasSkip = true;
+      continue;
+    }
+    if (row.status !== confirmedStatus) {
+      hasIncomplete = true;
+    }
+  }
+  if (hasSkip) {
+    return DAY_GROUP_SKIPPED_STATUS;
+  }
+  if (hasIncomplete) {
+    return DAY_GROUP_INCOMPLETE_STATUS;
+  }
+  return DAY_GROUP_CONFIRMED_STATUS;
+}
+
+export function duplicateRecordBadgeLabel(counts: DayGroupCounts): string {
+  return `${String(counts.totalCount)}件 · ${DAY_GROUP_INCOMPLETE_STATUS}${String(counts.incompleteCount)} · ${DAY_GROUP_CONFIRMED_STATUS}${String(counts.completeCount)}`;
+}
+
+export function sharedRowContent(rows: readonly { content: string }[]): string | null {
+  const first = rows[0];
+  if (first === undefined) {
+    return null;
+  }
+  for (const row of rows) {
+    if (row.content !== first.content) {
+      return null;
+    }
+  }
+  return first.content;
 }
 
 export function groupDayRowsByItem(rows: readonly DayRow[]): DayRowGroup[] {

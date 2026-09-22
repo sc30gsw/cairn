@@ -21,6 +21,7 @@ const {
   navigate,
   onAddRow,
   onConfirm,
+  onConfirmMany,
   onCopyYesterday,
   onFlagReview,
   onRemoveDay,
@@ -28,13 +29,16 @@ const {
   onSaveCondition,
   onSaveMemo,
   onSkip,
+  onSkipMany,
   onUnflagReview,
   onUnskip,
+  onUnskipMany,
   useDayPageDateJstMock,
 } = vi.hoisted(() => ({
   navigate: vi.fn(),
   onAddRow: vi.fn(async () => undefined),
   onConfirm: vi.fn<() => Promise<MutationResult>>(),
+  onConfirmMany: vi.fn<() => Promise<MutationResult>>(),
   onCopyYesterday: vi.fn(async () => undefined),
   onRemoveDay: vi.fn(async () => undefined),
   onRemoveRow: vi.fn(async () => undefined),
@@ -42,13 +46,16 @@ const {
   onSaveMemo: vi.fn(async () => undefined),
   onFlagReview: vi.fn(async () => undefined),
   onSkip: vi.fn(async () => undefined),
+  onSkipMany: vi.fn(async () => undefined),
   onUnflagReview: vi.fn(async () => undefined),
   onUnskip: vi.fn(async () => undefined),
+  onUnskipMany: vi.fn(async () => undefined),
   useDayPageDateJstMock: vi.fn(() => "2026-08-17"),
 }));
 
 beforeEach(() => {
   onConfirm.mockResolvedValue(Result.ok(null));
+  onConfirmMany.mockResolvedValue(Result.ok(null));
 });
 
 vi.mock("~/features/today/hooks/use-day-page-date-jst", () => ({
@@ -81,8 +88,11 @@ vi.mock("~/features/today/hooks/use-day-board-actions", () => ({
     onSaveCondition,
     onSaveMemo,
     onSkip,
+    onSkipMany,
     onUnflagReview,
     onUnskip,
+    onUnskipMany,
+    onConfirmMany,
   }),
 }));
 
@@ -104,7 +114,7 @@ test("確定直後の残量を記録カードに出す", () => {
   expect(getByText("多聴 今週の週間ターゲット あと30分")).toBeDefined();
 });
 
-test("同じ項目の記録は通常の行のまま、タイトル横に件数と合計を出す", () => {
+test("同じ項目の記録は1つの項目として出し、件数と合計を見出しに置く", () => {
   const second = {
     ...dayBoardTestRow,
     _id: "row2" as (typeof dayBoardTestRow)["_id"],
@@ -112,7 +122,7 @@ test("同じ項目の記録は通常の行のまま、タイトル横に件数�
     sortOrder: 1,
     status: confirmed,
   };
-  const { getAllByRole, getAllByText, getByText, queryByRole } = renderWithMantine(
+  const { getAllByRole, getByRole, getByText, queryByRole, queryByText } = renderWithMantine(
     <DayBoard
       dateJst="2026-08-17"
       day={{ ...day, rows: [dayBoardTestRow, second] }}
@@ -122,11 +132,124 @@ test("同じ項目の記録は通常の行のまま、タイトル横に件数�
     />,
   );
 
-  expect(getByText("未完了予定が1件、完了1件")).toBeDefined();
+  expect(getByText("2件 · 未完了1 · 完了1")).toBeDefined();
   expect(getByText("合計 45分")).toBeDefined();
-  expect(getAllByText("完了").length).toBeGreaterThan(0);
-  expect(getAllByRole("combobox", { name: "Distinction 2000のひとこと" })).toHaveLength(2);
+  expect(getByText("未完了")).toBeDefined();
+  expect(queryByText("未完了予定")).toBeNull();
+  expect(getAllByRole("combobox", { name: "Distinction 2000のひとこと" })).toHaveLength(1);
+  expect(getAllByRole("form", { name: "Distinction 2000の記録" })).toHaveLength(1);
   expect(queryByRole("combobox", { name: /Distinction 2000 \d件目/ })).toBeNull();
+  const minutes = within(getByRole("form", { name: "Distinction 2000の記録" })).getByRole(
+    "textbox",
+    { name: "分数" },
+  ) as HTMLInputElement;
+  expect(minutes.disabled).toBe(true);
+  expect(minutes.value).toBe("45");
+});
+
+test("グループの確定は各記録の分数のまま送り、合計は書き戻さない", async () => {
+  onConfirmMany.mockClear();
+  const second = {
+    ...dayBoardTestRow,
+    _id: "row2" as (typeof dayBoardTestRow)["_id"],
+    minutes: 15,
+    sortOrder: 1,
+    status: confirmed,
+  };
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={{ ...day, rows: [dayBoardTestRow, second] }}
+      items={items}
+      presets={[]}
+      todayJst="2026-08-17"
+    />,
+  );
+  getByRole("switch", { name: "記録を確定" }).click();
+  await waitFor(() => {
+    expect(onConfirmMany).toHaveBeenCalledWith([
+      { content: "", minutes: 30, rowId: dayBoardTestRow._id },
+      { content: "", minutes: 15, rowId: second._id },
+    ]);
+  });
+});
+
+test("グループの見送り取消はスキップした記録だけ戻す", async () => {
+  onUnskipMany.mockClear();
+  const skipped = STATUSES[3];
+  const first = { ...dayBoardTestRow, status: skipped };
+  const second = {
+    ...dayBoardTestRow,
+    _id: "row2" as (typeof dayBoardTestRow)["_id"],
+    minutes: 15,
+    sortOrder: 1,
+    status: skipped,
+  };
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={{ ...day, rows: [first, second] }}
+      items={items}
+      presets={[]}
+      todayJst="2026-08-17"
+    />,
+  );
+  getByRole("button", { name: "見送りを取り消す" }).click();
+  await waitFor(() => {
+    expect(screen.getByRole("dialog")).toBeDefined();
+  });
+  within(screen.getByRole("dialog")).getByRole("button", { name: "見送りを取り消す" }).click();
+  expect(onUnskipMany).toHaveBeenCalledWith([first._id, second._id]);
+});
+
+test("グループの見送りはその項目の記録をすべて見送りにする", async () => {
+  onSkipMany.mockClear();
+  const second = {
+    ...dayBoardTestRow,
+    _id: "row2" as (typeof dayBoardTestRow)["_id"],
+    minutes: 15,
+    sortOrder: 1,
+  };
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={{ ...day, rows: [dayBoardTestRow, second] }}
+      items={items}
+      presets={[]}
+      todayJst="2026-08-17"
+    />,
+  );
+  getByRole("button", { name: "見送りにする" }).click();
+  await waitFor(() => {
+    expect(screen.getByRole("dialog")).toBeDefined();
+  });
+  within(screen.getByRole("dialog")).getByRole("button", { name: "見送りにする" }).click();
+  expect(onSkipMany).toHaveBeenCalledWith([dayBoardTestRow._id, second._id]);
+});
+
+test("ひとことが記録ごとに違うと日には出さず、スキップが1件でも見送りにする", () => {
+  const skipped = STATUSES[3];
+  const first = { ...dayBoardTestRow, content: "Unit 1" };
+  const second = {
+    ...dayBoardTestRow,
+    _id: "row2" as (typeof dayBoardTestRow)["_id"],
+    content: "Unit 2",
+    minutes: 15,
+    sortOrder: 1,
+    status: skipped,
+  };
+  const { getByText, queryByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={{ ...day, rows: [first, second] }}
+      items={items}
+      presets={[]}
+      todayJst="2026-08-17"
+    />,
+  );
+  expect(queryByRole("combobox", { name: "Distinction 2000のひとこと" })).toBeNull();
+  expect(getByText("見送り")).toBeDefined();
+  expect(getByText("2件 · 未完了1 · 完了0")).toBeDefined();
 });
 
 test("ログイン済みなら今日の未着手の記録が見える", () => {

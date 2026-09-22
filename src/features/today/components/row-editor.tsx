@@ -14,7 +14,7 @@ import { useFocusWithin } from "@mantine/hooks";
 import { modals } from "@mantine/modals";
 import { IconArrowBackUp, IconPlayerSkipForward, IconRepeat, IconTrash } from "@tabler/icons-react";
 import { Result } from "better-result";
-import { useEffect, type ChangeEvent, type ReactNode } from "react";
+import { useEffect, type ChangeEvent } from "react";
 import { concreteActionPlaceholder } from "~domain/concreteActionCore";
 import type { DateJst } from "~domain/jst";
 import { measuredMs, timerMinutes, timerRunState } from "~domain/rowTimer";
@@ -40,7 +40,6 @@ type RowEditorProps = {
   disabled?: boolean;
   fieldAriaLabel?: string;
   fieldLabel?: string;
-  titleEnd?: ReactNode;
   onConfirm: (input: ConfirmRowInput) => Promise<MutationResult>;
   onFlagReview: (input: FlagReviewInput) => void;
   onRemove: (rowId: RemoveRowInput["rowId"]) => void;
@@ -143,7 +142,6 @@ export function RowEditor({
   disabled = false,
   fieldAriaLabel,
   fieldLabel,
-  titleEnd,
   onConfirm,
   onFlagReview,
   onRemove,
@@ -221,16 +219,7 @@ export function RowEditor({
                   error={field.errors?.[0]}
                   itemId={row.itemId}
                   itemName={row.itemName}
-                  label={
-                    titleEnd === undefined ? (
-                      visibleLabel
-                    ) : (
-                      <Group component="span" gap={6} wrap="wrap">
-                        <span>{visibleLabel}</span>
-                        {titleEnd}
-                      </Group>
-                    )
-                  }
+                  label={visibleLabel}
                   onBlur={(event) => {
                     field.props.onBlur?.(event);
                     void saveIfConfirmedDirty();
