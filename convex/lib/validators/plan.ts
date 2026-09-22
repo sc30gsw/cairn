@@ -50,6 +50,7 @@ export const planEventDtoValidator = v.object({
   dateJst: v.string(),
   endTime: v.string(),
   itemId: v.optional(v.id("items")),
+  materializedRowId: v.optional(v.id("rows")),
   priority: planPriorityValidator,
   recordState: planRecordStateValidator,
   startTime: v.string(),

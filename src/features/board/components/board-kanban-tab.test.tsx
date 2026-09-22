@@ -50,6 +50,10 @@ vi.mock("~/features/board/hooks/use-board-kanban-actions", () => ({
   }),
 }));
 
+vi.mock("~/lib/tanstack-db/collections", () => ({
+  useOptionalPlanEventsLiveQuery: () => ({ data: undefined, isReady: false }),
+}));
+
 vi.mock("~/hooks/use-dnd", async () => {
   const dnd = await vi.importActual<typeof import("@hello-pangea/dnd")>("@hello-pangea/dnd");
   return { useDnd: () => dnd };

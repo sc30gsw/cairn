@@ -13,6 +13,7 @@ test("月表示では基準週以外の複数日予定も継続日ごとに表�
     endAt: "2026-09-18 23:59:59",
     frozen: false,
     priority: "low",
+    sourceTitle: "旅行",
     startAt: "2026-09-15 00:00:00",
     title: "旅行",
   };
