@@ -9,6 +9,7 @@ The day log is today's (or a past day's) paper: ad-hoc records, confirm/skip, le
 - `day-confirm` marks that record 確定 via `記録を確定` and increases 学習量.
 - `day-volume` shows the confirmed minutes on the volume title.
 - `day-obstacles` shows heading `障害プラン` under the 記録 card (same fields as 計画).
+- `day-group-same-item` keeps each record as its own document. Two or more rows of the same item share one heading: the item name, status badges (`完了` / `未着手` / `進行中` / `見送り`), and `合計 N分`. Each ひとこと combobox is named `{項目} N件目` with visible label `ひとこと`. A single row of that item stays one form `{項目}の記録` and combobox `{項目}のひとこと`. The day page does not show 予定 times.
 
 ## How to get to it (user POV)
 
@@ -40,6 +41,7 @@ Preconditions:
 - After a successful add, scoped add-form ひとこと is empty and `分数` is `20`. The row form `検証項目の記録` keeps the submitted note.
 - Confirming is a switch, not a button labelled 確定. The accessible name is `記録を確定`. Turning it off on a 確定 row opens `見送りにしますか？`.
 - When other records already exist, scope the add fields to `page.locator('form').filter({ has: page.getByRole('button', { name: '記録を足す', exact: true }) })`; `分数` also appears in existing record forms. Use a fresh item or scope the intended record when several rows share an item name.
+- Two rows of the same item do not merge into one document. The page shows one heading, both status badges, and `合計 N分`. Assert comboboxes `{項目} 1件目` and `{項目} 2件目` (a space before `N件目`). `queryByRole('combobox', { name: '{項目}のひとこと' })` is empty only while that group has two or more rows. Confirming one row leaves the other form in place. A lone row still uses `{項目}のひとこと`. Row ひとこと is a combobox (Mantine Autocomplete), not a textbox. The add field `その日限りのひとこと` stays a textbox.
 - ひとこと may be empty. Minutes `0` can still confirm. Use `25` so volume proof is obvious.
 - Empty today shows `この日の記録はありません` (or preset rows). An empty past day shows `休養`, not that today copy.
 - JST "today" follows the server/client JST date. Do not invent a future `/days/20xx-…` URL to write records.
