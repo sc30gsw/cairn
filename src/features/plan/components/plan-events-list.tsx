@@ -5,13 +5,15 @@ import {
   ColorSwatch,
   Group,
   Modal,
+  Select,
+  type SelectProps,
   Stack,
   Text,
   Tooltip,
   UnstyledButton,
 } from "@mantine/core";
 import { useMediaQuery } from "@mantine/hooks";
-import { IconClock, IconFlag, IconListDetails } from "@tabler/icons-react";
+import { IconListDetails } from "@tabler/icons-react";
 import { useState, type ReactNode } from "react";
 import type { PlanPriority } from "~domain/planEvent";
 import { PLAN_PRIORITY_STYLE } from "~domain/planEvent";
@@ -27,19 +29,33 @@ export const PLAN_EVENTS_LIST_LABEL = "予定一覧";
 export const PLAN_EVENTS_LIST_OPEN_TOOLTIP = "この日の予定を開きます";
 export const PLAN_EVENTS_LIST_CLOSE_TOOLTIP = "この日の予定を閉じます";
 export const PLAN_EVENTS_SORT_TIME_LABEL = "時刻で並べる";
-export const PLAN_EVENTS_SORT_TIME_TOOLTIP = "開始時刻で並べます";
 export const PLAN_EVENTS_SORT_PRIORITY_LABEL = "優先度で並べる";
-export const PLAN_EVENTS_SORT_PRIORITY_TOOLTIP = "優先度で並べます";
-export const PLAN_EVENTS_FILTER_CLEAR_TOOLTIP = "この優先度の絞り込みを外します";
+export const PLAN_EVENTS_FILTER_ALL_LABEL = "すべて";
 export const PLAN_EVENTS_EMPTY_COPY = "この日の予定はまだありません。";
 
-const PRIORITY_FILTER_TOOLTIP = {
-  high: "高だけ見せます",
-  low: "低だけ見せます",
-  medium: "中だけ見せます",
-} as const satisfies Record<PlanPriority, string>;
+const ALL_PRIORITIES = "all";
+
+const SORT_OPTIONS = [
+  { label: PLAN_EVENTS_SORT_TIME_LABEL, value: "time" },
+  { label: PLAN_EVENTS_SORT_PRIORITY_LABEL, value: "priority" },
+] as const satisfies readonly { label: string; value: EventsSort }[];
+
+const PRIORITY_HEX = new Map(PLAN_PRIORITY_OPTIONS.map((option) => [option.value, option.hex]));
+
+const PRIORITY_FILTER_OPTIONS = [
+  { label: PLAN_EVENTS_FILTER_ALL_LABEL, value: ALL_PRIORITIES },
+  ...PLAN_PRIORITY_OPTIONS.map((option) => ({ label: option.label, value: option.value })),
+];
 
 type EventsSort = "priority" | "time";
+
+function isEventsSort(value: string): value is EventsSort {
+  return value === "time" || value === "priority";
+}
+
+function isPlanPriority(value: string): value is PlanPriority {
+  return value in PLAN_PRIORITY_STYLE;
+}
 
 type PlanEventsListProps = {
   dateJst: string;
@@ -142,6 +158,19 @@ function PlanEventsListToggle({
   );
 }
 
+const renderPriorityOption: SelectProps["renderOption"] = ({ option }) => {
+  const hex = isPlanPriority(option.value) ? PRIORITY_HEX.get(option.value) : undefined;
+  if (hex === undefined) {
+    return option.label;
+  }
+  return (
+    <Group gap="xs" wrap="nowrap">
+      <ColorSwatch color={hex} size={12} />
+      <span>{option.label}</span>
+    </Group>
+  );
+};
+
 function PlanEventsListToolbar({
   onPriorityChange,
   onSortChange,
@@ -153,58 +182,35 @@ function PlanEventsListToolbar({
   priority: PlanPriority | undefined;
   sort: EventsSort;
 }) {
-  const isCompact = useMediaQuery("(max-width: 47.9375em)", false, {
-    getInitialValueInEffect: true,
-  });
-
   return (
-    <Group gap="xs" wrap="wrap">
-      <Tooltip label={PLAN_EVENTS_SORT_TIME_TOOLTIP}>
-        <Button
-          aria-label={PLAN_EVENTS_SORT_TIME_TOOLTIP}
-          aria-pressed={sort === "time"}
-          onClick={() => onSortChange("time")}
-          size="compact-sm"
-          variant={sort === "time" ? "filled" : "light"}
-        >
-          <IconClock aria-hidden size={16} stroke={1.5} />
-          {isCompact ? null : <span>{PLAN_EVENTS_SORT_TIME_LABEL}</span>}
-        </Button>
-      </Tooltip>
-      <Tooltip label={PLAN_EVENTS_SORT_PRIORITY_TOOLTIP}>
-        <Button
-          aria-label={PLAN_EVENTS_SORT_PRIORITY_TOOLTIP}
-          aria-pressed={sort === "priority"}
-          onClick={() => onSortChange("priority")}
-          size="compact-sm"
-          variant={sort === "priority" ? "filled" : "light"}
-        >
-          <IconFlag aria-hidden size={16} stroke={1.5} />
-          {isCompact ? null : <span>{PLAN_EVENTS_SORT_PRIORITY_LABEL}</span>}
-        </Button>
-      </Tooltip>
-      {PLAN_PRIORITY_OPTIONS.map((option) => {
-        const selected = priority === option.value;
-        const tooltip = selected
-          ? PLAN_EVENTS_FILTER_CLEAR_TOOLTIP
-          : PRIORITY_FILTER_TOOLTIP[option.value];
-        return (
-          <Tooltip key={option.value} label={tooltip}>
-            <Button
-              aria-label={tooltip}
-              aria-pressed={selected}
-              onClick={() => onPriorityChange(selected ? undefined : option.value)}
-              size="compact-sm"
-              variant={selected ? "filled" : "light"}
-            >
-              <Group gap={6} wrap="nowrap">
-                <ColorSwatch color={option.hex} size={12} />
-                <span>{option.label}</span>
-              </Group>
-            </Button>
-          </Tooltip>
-        );
-      })}
+    <Group align="flex-end" gap="xs" grow preventGrowOverflow={false} wrap="wrap">
+      <Select
+        allowDeselect={false}
+        data={SORT_OPTIONS}
+        label="並べ方"
+        onChange={(value) => {
+          if (value !== null && isEventsSort(value)) {
+            onSortChange(value);
+          }
+        }}
+        value={sort}
+      />
+      <Select
+        allowDeselect={false}
+        data={PRIORITY_FILTER_OPTIONS}
+        label="優先度"
+        onChange={(value) => {
+          if (value === null || value === ALL_PRIORITIES) {
+            onPriorityChange(undefined);
+            return;
+          }
+          if (isPlanPriority(value)) {
+            onPriorityChange(value);
+          }
+        }}
+        renderOption={renderPriorityOption}
+        value={priority ?? ALL_PRIORITIES}
+      />
     </Group>
   );
 }

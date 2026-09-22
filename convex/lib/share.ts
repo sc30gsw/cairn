@@ -23,10 +23,46 @@ function usedCategories(rows: readonly ShareRow[]): string[] {
     .map(([name]) => name);
 }
 
+function mergeShareContent(left: string, right: string): string {
+  if (left === right || right === "") {
+    return left;
+  }
+  if (left === "") {
+    return right;
+  }
+  return `${left}、${right}`;
+}
+
+function dedupeConfirmedRows(rows: readonly ShareRow[]): ShareRow[] {
+  const merged: ShareRow[] = [];
+  const indexByItem = new Map<string, number>();
+  for (const row of rows) {
+    const key = `${row.category}\0${row.itemName}`;
+    const index = indexByItem.get(key);
+    if (index === undefined) {
+      indexByItem.set(key, merged.length);
+      merged.push(row);
+      continue;
+    }
+    const current = merged[index];
+    if (current === undefined) {
+      continue;
+    }
+    merged[index] = {
+      ...current,
+      content: mergeShareContent(current.content, row.content),
+      minutes: current.minutes + row.minutes,
+    };
+  }
+  return merged;
+}
+
 export function formatShareMarkdown(rows: readonly ShareRow[]): string {
-  const confirmed = sortBy(
-    rows.filter((row) => row.status === "確定"),
-    prop("sortOrder"),
+  const confirmed = dedupeConfirmedRows(
+    sortBy(
+      rows.filter((row) => row.status === "確定"),
+      prop("sortOrder"),
+    ),
   );
   if (confirmed.length === 0) {
     return "";

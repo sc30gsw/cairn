@@ -15,6 +15,9 @@ export async function notifyMissingTomorrowPlan(
     .collect();
   await Promise.all(
     settings.map(async (setting) => {
+      if (setting.triggers.missingTomorrowPlan === false) {
+        return;
+      }
       const payload = await evaluateMissingTomorrowPlan(ctx, setting.ownerId, dateJst);
       if (payload !== null) {
         await emitNotification(ctx, setting, payload, now);

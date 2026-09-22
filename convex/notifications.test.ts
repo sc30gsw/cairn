@@ -466,7 +466,12 @@ test("settings query は行が無いとき既定値(enabled: false)を返す", a
     eveningHourJst: 21,
     quietFromHourJst: 22,
     quietToHourJst: 7,
-    triggers: { checkpointDeadline: true, eveningUntouched: true, weeklyTargetMiss: true },
+    triggers: {
+      checkpointDeadline: true,
+      eveningUntouched: true,
+      missingTomorrowPlan: true,
+      weeklyTargetMiss: true,
+    },
   });
 });
 
@@ -730,6 +735,27 @@ test("明日に予定があるときは missingTomorrowPlan を作らない", as
     startTime: "08:00",
     title: "明日の予定",
     todayJst: MONDAY,
+  });
+
+  await t.mutation(
+    internal.mutations.notifications.notifyMissingTomorrowPlan.notifyMissingTomorrowPlan,
+    {
+      now: jstAt(MONDAY, 18),
+    },
+  );
+
+  expect(await notificationsOf(t)).toEqual([]);
+});
+
+test("triggers.missingTomorrowPlan: false では明日の予定が無くても作らない", async () => {
+  const t = asOwner();
+  await seedSettings(t, OWNER.subject, {
+    triggers: {
+      checkpointDeadline: true,
+      eveningUntouched: true,
+      missingTomorrowPlan: false,
+      weeklyTargetMiss: true,
+    },
   });
 
   await t.mutation(

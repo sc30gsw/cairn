@@ -28,6 +28,7 @@ export const NotificationSettingsSchema = v.object({
   triggers: v.object({
     checkpointDeadline: v.boolean(),
     eveningUntouched: v.boolean(),
+    missingTomorrowPlan: v.boolean(),
     weeklyTargetMiss: v.boolean(),
   }),
 });

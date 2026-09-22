@@ -104,7 +104,7 @@ test("確定直後の残量を記録カードに出す", () => {
   expect(getByText("多聴 今週の週間ターゲット あと30分")).toBeDefined();
 });
 
-test("同じ項目の記録は見出しに状態と合計を出し、ひとことは件数で分ける", () => {
+test("同じ項目の記録は通常の行のまま、タイトル横に件数と合計を出す", () => {
   const second = {
     ...dayBoardTestRow,
     _id: "row2" as (typeof dayBoardTestRow)["_id"],
@@ -122,10 +122,11 @@ test("同じ項目の記録は見出しに状態と合計を出し、ひとこ�
     />,
   );
 
+  expect(getByText("未完了予定が1件、完了1件")).toBeDefined();
   expect(getByText("合計 45分")).toBeDefined();
   expect(getAllByText("完了").length).toBeGreaterThan(0);
-  expect(queryByRole("combobox", { name: "Distinction 2000のひとこと" })).toBeNull();
-  expect(getAllByRole("combobox", { name: /Distinction 2000 \d件目/ })).toHaveLength(2);
+  expect(getAllByRole("combobox", { name: "Distinction 2000のひとこと" })).toHaveLength(2);
+  expect(queryByRole("combobox", { name: /Distinction 2000 \d件目/ })).toBeNull();
 });
 
 test("ログイン済みなら今日の未着手の記録が見える", () => {

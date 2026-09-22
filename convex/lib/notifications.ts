@@ -44,7 +44,12 @@ export const NOTIFICATION_DEFAULTS = {
   eveningHourJst: 21,
   quietFromHourJst: QUIET_HOUR_DEFAULTS.from,
   quietToHourJst: QUIET_HOUR_DEFAULTS.to,
-  triggers: { checkpointDeadline: true, eveningUntouched: true, weeklyTargetMiss: true },
+  triggers: {
+    checkpointDeadline: true,
+    eveningUntouched: true,
+    missingTomorrowPlan: true,
+    weeklyTargetMiss: true,
+  },
 } as const satisfies NotificationSettingsDto;
 
 export function isQuietHourJst(hour: number, from: number, to: number): boolean {
