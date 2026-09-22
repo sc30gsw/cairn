@@ -3,10 +3,10 @@ import { expect, test, vi } from "vite-plus/test";
 
 import type { Id } from "~/../convex/_generated/dataModel";
 import {
-  PLAN_EVENTS_FILTER_CLEAR_TOOLTIP,
+  PLAN_EVENTS_FILTER_ALL_LABEL,
   PLAN_EVENTS_LIST_CLOSE_TOOLTIP,
   PLAN_EVENTS_LIST_OPEN_TOOLTIP,
-  PLAN_EVENTS_SORT_PRIORITY_TOOLTIP,
+  PLAN_EVENTS_SORT_PRIORITY_LABEL,
   PlanEventsList,
 } from "~/features/plan/components/plan-events-list";
 import type { PlanCatalogItem, PlanEventDto } from "~/features/plan/types/plan";
@@ -119,7 +119,7 @@ test("折りたたみを開くと Badge と取り消し線が出る", async () =
   expect(view.queryByText("Banana")).toBeNull();
 });
 
-test("優先度で並べると live query に sort を渡す", () => {
+test("優先度で並べると live query に sort を渡す", async () => {
   liveQuery.isReady = true;
   liveQuery.data = [morning];
   const view = renderWithMantine(
@@ -132,7 +132,8 @@ test("優先度で並べると live query に sort を渡す", () => {
   );
 
   fireEvent.click(view.getByRole("button", { name: PLAN_EVENTS_LIST_OPEN_TOOLTIP }));
-  fireEvent.click(view.getByRole("button", { name: PLAN_EVENTS_SORT_PRIORITY_TOOLTIP }));
+  fireEvent.click(view.getByRole("combobox", { name: "並べ方" }));
+  fireEvent.click(await view.findByRole("option", { name: PLAN_EVENTS_SORT_PRIORITY_LABEL }));
   expect(liveQuery.lastScope).toEqual({
     anchorDateJst: "2026-09-21",
     priority: undefined,
@@ -141,7 +142,7 @@ test("優先度で並べると live query に sort を渡す", () => {
   });
 });
 
-test("同じ優先度ボタンをもう一度押すと絞り込みを外す", () => {
+test("優先度のすべてを選ぶと絞り込みを外す", async () => {
   liveQuery.isReady = true;
   liveQuery.data = [morning];
   const view = renderWithMantine(
@@ -154,8 +155,10 @@ test("同じ優先度ボタンをもう一度押すと絞り込みを外す", ()
   );
 
   fireEvent.click(view.getByRole("button", { name: PLAN_EVENTS_LIST_OPEN_TOOLTIP }));
-  fireEvent.click(view.getByRole("button", { name: "高だけ見せます" }));
+  fireEvent.click(view.getByRole("combobox", { name: "優先度" }));
+  fireEvent.click(await view.findByRole("option", { name: "高" }));
   expect(liveQuery.lastScope?.priority).toBe("high");
-  fireEvent.click(view.getByRole("button", { name: PLAN_EVENTS_FILTER_CLEAR_TOOLTIP }));
+  fireEvent.click(view.getByRole("combobox", { name: "優先度" }));
+  fireEvent.click(await view.findByRole("option", { name: PLAN_EVENTS_FILTER_ALL_LABEL }));
   expect(liveQuery.lastScope?.priority).toBeUndefined();
 });
