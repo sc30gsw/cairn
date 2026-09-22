@@ -37,13 +37,13 @@ import { formatTimerClock } from "~/lib/timer-clock";
 
 import classes from "~/features/board/components/board-kanban.module.css";
 
-const EMPTY_WINDOWS = new Map<string, string>();
+const EMPTY_WINDOWS = new Map<string, readonly string[]>();
 
 type BoardKanbanProps = {
   dateJst: DateJst;
   interactive?: boolean;
   rows: readonly BoardRow[];
-  windowsByRowId?: ReadonlyMap<string, string>;
+  windowsByRowId?: ReadonlyMap<string, readonly string[]>;
 };
 
 type ConfirmTarget = {
@@ -81,7 +81,7 @@ function RecordCard({
   row: BoardRow;
   rows: readonly BoardRow[];
   todayJst: DateJst;
-  windowsByRowId: ReadonlyMap<string, string>;
+  windowsByRowId: ReadonlyMap<string, readonly string[]>;
 }) {
   const badge = RECORD_STATUS_UI[row.status];
   const detail = row.content === "" ? row.category : `${row.category} · ${row.content}`;
@@ -101,35 +101,28 @@ function RecordCard({
             <IconGripVertical size={16} stroke={1.5} />
           </span>
           <Stack gap={4} style={{ flex: 1, minWidth: 0 }}>
-            <Group align="center" gap={6} wrap="nowrap">
-              {mark.place === null ? null : (
-                <Group gap={4} wrap="nowrap">
-                  <Badge color="orange" size="sm" variant="light">
-                    {mark.place.ordinalLabel}
-                  </Badge>
-                  <Badge size="sm" variant="light">
-                    {mark.place.countLabel}
-                  </Badge>
-                </Group>
-              )}
-              <TruncatedText fw={600} lineClamp={1} size="sm" style={{ flex: 1, minWidth: 0 }}>
-                {row.itemName}
-              </TruncatedText>
-            </Group>
+            <TruncatedText fw={600} lineClamp={1} size="sm">
+              {row.itemName}
+            </TruncatedText>
             <TruncatedText c="dimmed" lineClamp={1} size="xs">
               {detail}
             </TruncatedText>
-            {mark.timeLabel === null ? null : (
-              <Text className={classes.planCaption} data-plan-caption="" size="xs">
-                {mark.timeLabel}
+            {mark.timeLabels.map((label) => (
+              <Text className={classes.planCaption} data-plan-caption="" key={label} size="xs">
+                {label}
               </Text>
-            )}
+            ))}
             <Group gap={4} wrap="wrap">
               <Tooltip label={statusTooltip(row.status)} withArrow>
                 <Badge color={badge.color} size="sm" variant="light">
                   {badge.label}
                 </Badge>
               </Tooltip>
+              {mark.ordinalLabel === null ? null : (
+                <Badge color="orange" size="sm" variant="light">
+                  {mark.ordinalLabel}
+                </Badge>
+              )}
               <ReviewBadge review={row.review} />
             </Group>
           </Stack>

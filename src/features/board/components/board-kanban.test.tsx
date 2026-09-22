@@ -116,28 +116,51 @@ test("カンバンは未着手・進行中・確定・スキップを並べる",
   expect(getByLabelText("Distinction 2000 の順序を変更")).toBeDefined();
 });
 
-test("同じ項目のカードは時刻を出し、何件目と件数はタイトルの左に出す", () => {
-  const { getAllByText, getByText } = renderWithMantine(
+test("同じ項目のカードは時刻をすべて出し、何件目は状態の横に出す", () => {
+  const { getAllByLabelText, getByText, queryByText } = renderWithMantine(
     <BoardKanban
       dateJst="2026-08-17"
       rows={[row("a", pending, "Distinction 2000"), row("b", confirmed, "Distinction 2000")]}
-      windowsByRowId={new Map([["a", "09:00〜10:00"]])}
+      windowsByRowId={
+        new Map([
+          ["a", ["09:00〜10:00", "11:00〜12:00"]],
+          ["b", ["14:00〜15:00"]],
+        ])
+      }
     />,
   );
 
-  const caption = getByText("09:00〜10:00");
-  expect(caption.getAttribute("data-plan-caption")).toBe("");
-  expect(caption.className).toMatch(/planCaption/);
-  const first = getByText("1件目");
-  const second = getByText("2件目");
-  expect(first.getAttribute("data-plan-caption")).toBeNull();
-  expect(second.getAttribute("data-plan-caption")).toBeNull();
-  expect(getAllByText("2件")).toHaveLength(2);
-  const title = getAllByText("Distinction 2000")[0];
-  if (title === undefined) {
-    throw new Error("title missing");
+  for (const label of ["09:00〜10:00", "11:00〜12:00", "14:00〜15:00"]) {
+    const caption = getByText(label);
+    expect(caption.getAttribute("data-plan-caption")).toBe("");
+    expect(caption.className).toMatch(/planCaption/);
   }
-  expect(title.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_PRECEDING).not.toBe(0);
+  const firstCard = getAllByLabelText("Distinction 2000 の順序を変更")[0];
+  const secondCard = getAllByLabelText("Distinction 2000 の順序を変更")[1];
+  if (firstCard === undefined || secondCard === undefined) {
+    throw new Error("card missing");
+  }
+  const firstOrdinal = getByText("1件目");
+  const secondOrdinal = getByText("2件目");
+  expect(firstOrdinal.getAttribute("data-plan-caption")).toBeNull();
+  expect(secondOrdinal.getAttribute("data-plan-caption")).toBeNull();
+  expect(queryByText("2件")).toBeNull();
+  expect(firstCard.contains(firstOrdinal)).toBe(true);
+  expect(secondCard.contains(secondOrdinal)).toBe(true);
+  expect(firstCard.textContent?.includes("09:00〜10:00")).toBe(true);
+  expect(firstCard.textContent?.includes("11:00〜12:00")).toBe(true);
+  expect(secondCard.textContent?.includes("14:00〜15:00")).toBe(true);
+  const title = firstCard.querySelector("p");
+  const status = [...firstCard.querySelectorAll("*")].find((node) => node.textContent === "未着手");
+  if (title === null || status === undefined) {
+    throw new Error("title or status missing");
+  }
+  expect(title.compareDocumentPosition(firstOrdinal) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(
+    0,
+  );
+  expect(status.compareDocumentPosition(firstOrdinal) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(
+    0,
+  );
 });
 
 test("カード本体が順序変更の掴み手で、操作メニューは残る", () => {
