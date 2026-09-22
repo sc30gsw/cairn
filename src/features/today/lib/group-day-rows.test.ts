@@ -3,12 +3,14 @@ import { STATUSES } from "~domain/domain";
 
 import {
   dayGroupCounts,
-  duplicatePlanBadgeLabel,
+  dayGroupStatus,
+  duplicateRecordBadgeLabel,
   groupDayRowsByItem,
+  sharedRowContent,
 } from "~/features/today/lib/group-day-rows";
 import type { DayRow } from "~/features/today/types/day";
 
-const [confirmed, pending] = STATUSES;
+const [confirmed, pending, inProgress, skipped] = STATUSES;
 
 const baseRow = {
   category: "多聴",
@@ -39,8 +41,35 @@ test("同じ項目の記録は出現順を保って1グループにまとめ、�
   expect(groups[0]?.totalMinutes).toBe(30);
   expect(groups[0]?.statuses).toEqual([pending, confirmed]);
   expect(groups[1]?.totalMinutes).toBe(5);
-  expect(dayGroupCounts(groups[0]?.rows ?? [])).toEqual({ completeCount: 1, incompleteCount: 1 });
-  expect(duplicatePlanBadgeLabel({ completeCount: 1, incompleteCount: 1 })).toBe(
-    "未完了予定が1件、完了1件",
+  expect(dayGroupCounts(groups[0]?.rows ?? [])).toEqual({
+    completeCount: 1,
+    incompleteCount: 1,
+    totalCount: 2,
+  });
+  expect(duplicateRecordBadgeLabel({ completeCount: 1, incompleteCount: 1, totalCount: 2 })).toBe(
+    "2件 · 未完了1 · 完了1",
   );
+});
+
+test("グループの状態はスキップ優先、次に未着手か進行中、全部確定なら完了", () => {
+  expect(dayGroupStatus([{ status: skipped }, { status: confirmed }])).toBe("見送り");
+  expect(dayGroupStatus([{ status: pending }, { status: confirmed }])).toBe("未完了");
+  expect(dayGroupStatus([{ status: inProgress }, { status: confirmed }])).toBe("未完了");
+  expect(dayGroupStatus([{ status: confirmed }, { status: confirmed }])).toBe("完了");
+});
+
+test("スキップは件数に入り、未完了件数には入らない", () => {
+  expect(dayGroupCounts([{ status: skipped }, { status: confirmed }, { status: pending }])).toEqual(
+    {
+      completeCount: 1,
+      incompleteCount: 1,
+      totalCount: 3,
+    },
+  );
+});
+
+test("ひとことは全行が同じ文字列のときだけ共有値、違えば出さない", () => {
+  expect(sharedRowContent([{ content: "Unit 1" }, { content: "Unit 1" }])).toBe("Unit 1");
+  expect(sharedRowContent([{ content: "" }, { content: "" }])).toBe("");
+  expect(sharedRowContent([{ content: "Unit 1" }, { content: "Unit 2" }])).toBeNull();
 });
