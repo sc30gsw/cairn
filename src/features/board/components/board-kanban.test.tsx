@@ -125,8 +125,10 @@ test("同じ項目のカードは予定の時刻か件数で区別する", () =>
     />,
   );
 
-  expect(getByText("予定 09:00–10:00")).toBeDefined();
-  expect(getByText("2件目")).toBeDefined();
+  const caption = getByText("予定 09:00–10:00");
+  expect(caption.getAttribute("data-plan-caption")).toBe("");
+  expect(caption.className).toMatch(/planCaption/);
+  expect(getByText("2件目").className).toMatch(/planCaption/);
 });
 
 test("カード本体が順序変更の掴み手で、操作メニューは残る", () => {

@@ -108,7 +108,7 @@ function RecordCard({
               {detail}
             </TruncatedText>
             {distinction === null ? null : (
-              <Text c="dimmed" size="xs">
+              <Text className={classes.planCaption} data-plan-caption="" size="xs">
                 {distinction}
               </Text>
             )}

@@ -68,6 +68,11 @@
   touch-action: none;
 }
 
+.planCaption {
+  color: var(--mantine-color-orange-8);
+  font-weight: 600;
+}
+
 .card[data-dragging] {
   border-color: var(--mantine-color-orange-filled);
   box-shadow: var(--mantine-shadow-md);
