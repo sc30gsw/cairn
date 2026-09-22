@@ -143,11 +143,11 @@ test("同じ項目の記録は1つの項目として出し、件数と合計を�
     "textbox",
     { name: "分数" },
   ) as HTMLInputElement;
-  expect(minutes.disabled).toBe(true);
+  expect(minutes.disabled).toBe(false);
   expect(minutes.value).toBe("45");
 });
 
-test("グループの確定は各記録の分数のまま送り、合計は書き戻さない", async () => {
+test("グループの確定は合計を件数で割って各記録へ書く", async () => {
   onConfirmMany.mockClear();
   const second = {
     ...dayBoardTestRow,
@@ -168,8 +168,134 @@ test("グループの確定は各記録の分数のまま送り、合計は書�
   getByRole("switch", { name: "記録を確定" }).click();
   await waitFor(() => {
     expect(onConfirmMany).toHaveBeenCalledWith([
+      { content: "", minutes: 22, rowId: dayBoardTestRow._id },
+      { content: "", minutes: 22, rowId: second._id },
+    ]);
+  });
+});
+
+test("グループの分数欄は合計を均等分割し余りは捨てる", async () => {
+  onConfirmMany.mockClear();
+  const second = {
+    ...dayBoardTestRow,
+    _id: "row2" as (typeof dayBoardTestRow)["_id"],
+    minutes: 15,
+    sortOrder: 1,
+  };
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={{ ...day, rows: [dayBoardTestRow, second] }}
+      items={items}
+      presets={[]}
+      todayJst="2026-08-17"
+    />,
+  );
+  const form = getByRole("form", { name: "Distinction 2000の記録" });
+  fireEvent.change(within(form).getByRole("textbox", { name: "分数" }), {
+    target: { value: "61" },
+  });
+  within(form).getByRole("switch", { name: "記録を確定" }).click();
+  await waitFor(() => {
+    expect(onConfirmMany).toHaveBeenCalledWith([
       { content: "", minutes: 30, rowId: dayBoardTestRow._id },
-      { content: "", minutes: 15, rowId: second._id },
+      { content: "", minutes: 30, rowId: second._id },
+    ]);
+  });
+  expect((within(form).getByRole("textbox", { name: "分数" }) as HTMLInputElement).value).toBe(
+    "60",
+  );
+});
+
+test("グループの確定は結合したひとことを全行へ書く", async () => {
+  onConfirmMany.mockClear();
+  const first = { ...dayBoardTestRow, content: "Unit 1" };
+  const second = {
+    ...dayBoardTestRow,
+    _id: "row2" as (typeof dayBoardTestRow)["_id"],
+    content: "Unit 2",
+    minutes: 30,
+    sortOrder: 1,
+  };
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={{ ...day, rows: [first, second] }}
+      items={items}
+      presets={[]}
+      todayJst="2026-08-17"
+    />,
+  );
+  getByRole("switch", { name: "記録を確定" }).click();
+  await waitFor(() => {
+    expect(onConfirmMany).toHaveBeenCalledWith([
+      { content: "Unit 1、Unit 2", minutes: 30, rowId: first._id },
+      { content: "Unit 1、Unit 2", minutes: 30, rowId: second._id },
+    ]);
+  });
+});
+
+test("確定済みグループは欄を離すと分数とひとことを書く", async () => {
+  onConfirmMany.mockClear();
+  const first = { ...dayBoardTestRow, content: CONCRETE_ACTION, minutes: 30, status: confirmed };
+  const second = {
+    ...dayBoardTestRow,
+    _id: "row2" as (typeof dayBoardTestRow)["_id"],
+    content: CONCRETE_ACTION,
+    minutes: 30,
+    sortOrder: 1,
+    status: confirmed,
+  };
+  const { getByRole } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={{ ...day, rows: [first, second] }}
+      items={items}
+      presets={[]}
+      todayJst="2026-08-17"
+    />,
+  );
+  const form = getByRole("form", { name: "Distinction 2000の記録" });
+  const content = within(form).getByRole("combobox", { name: "Distinction 2000のひとこと" });
+  fireEvent.change(content, { target: { value: CONCRETE_ACTION_2 } });
+  fireEvent.blur(content);
+  await waitFor(() => {
+    expect(onConfirmMany).toHaveBeenCalledWith([
+      { content: CONCRETE_ACTION_2, minutes: 30, rowId: first._id },
+      { content: CONCRETE_ACTION_2, minutes: 30, rowId: second._id },
+    ]);
+  });
+});
+
+test("計測中の行は経過分を合計の初期値に入れ、確定は分割して計測を捨てる", async () => {
+  onConfirmMany.mockClear();
+  const measuring = {
+    ...dayBoardTestRow,
+    _id: "row2" as (typeof dayBoardTestRow)["_id"],
+    minutes: 30,
+    sortOrder: 1,
+    status: STATUSES[2],
+    timer: { accumulatedMs: 12 * 60_000, autoStoppedAt: null, startedAt: null },
+  };
+  const { getByRole, getByText } = renderWithMantine(
+    <DayBoard
+      dateJst="2026-08-17"
+      day={{ ...day, rows: [dayBoardTestRow, measuring] }}
+      items={items}
+      presets={[]}
+      todayJst="2026-08-17"
+    />,
+  );
+  expect(getByText("合計 42分")).toBeDefined();
+  const form = getByRole("form", { name: "Distinction 2000の記録" });
+  expect((within(form).getByRole("textbox", { name: "分数" }) as HTMLInputElement).value).toBe(
+    "42",
+  );
+  within(form).getByRole("switch", { name: "記録を確定" }).click();
+  await waitFor(() => {
+    expect(onConfirmMany).toHaveBeenCalledWith([
+      { content: "", minutes: 21, rowId: dayBoardTestRow._id },
+      { content: "", minutes: 21, rowId: measuring._id },
     ]);
   });
 });
@@ -227,7 +353,7 @@ test("グループの見送りはその項目の記録をすべて見送りに�
   expect(onSkipMany).toHaveBeenCalledWith([dayBoardTestRow._id, second._id]);
 });
 
-test("ひとことが記録ごとに違うと日には出さず、スキップが1件でも見送りにする", () => {
+test("ひとことが記録ごとに違っても日は1欄に出し、スキップが1件でも見送りにする", () => {
   const skipped = STATUSES[3];
   const first = { ...dayBoardTestRow, content: "Unit 1" };
   const second = {
@@ -238,7 +364,7 @@ test("ひとことが記録ごとに違うと日には出さず、スキップ�
     sortOrder: 1,
     status: skipped,
   };
-  const { getByText, queryByRole } = renderWithMantine(
+  const { getByRole, getByText } = renderWithMantine(
     <DayBoard
       dateJst="2026-08-17"
       day={{ ...day, rows: [first, second] }}
@@ -247,7 +373,9 @@ test("ひとことが記録ごとに違うと日には出さず、スキップ�
       todayJst="2026-08-17"
     />,
   );
-  expect(queryByRole("combobox", { name: "Distinction 2000のひとこと" })).toBeNull();
+  expect(
+    (getByRole("combobox", { name: "Distinction 2000のひとこと" }) as HTMLInputElement).value,
+  ).toBe("Unit 1、Unit 2");
   expect(getByText("見送り")).toBeDefined();
   expect(getByText("2件 · 未完了1 · 完了0")).toBeDefined();
 });

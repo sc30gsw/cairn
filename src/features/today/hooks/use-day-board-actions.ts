@@ -93,20 +93,9 @@ export function useDayBoardActions(
       runMutation(
         async () => {
           const rowById = new Map(rows.map((entry) => [entry._id, entry]));
-          const measured = await Promise.all(
-            inputs.map((input) => confirmOne(input, { notifyCategory: false })),
-          );
+          await Promise.all(inputs.map((input) => confirm.mutateAsync(input)));
           const seenCategories = new Set<string>();
-          let measuredMinutes: number | null = null;
-          for (let index = 0; index < inputs.length; index += 1) {
-            const input = inputs[index];
-            const value = measured[index];
-            if (value !== undefined && value !== null) {
-              measuredMinutes = value;
-            }
-            if (input === undefined) {
-              continue;
-            }
+          for (const input of inputs) {
             const row = rowById.get(input.rowId);
             if (row !== undefined) {
               seenCategories.add(row.category);
@@ -115,7 +104,7 @@ export function useDayBoardActions(
           for (const category of seenCategories) {
             options.onConfirmedCategory?.(category);
           }
-          return measuredMinutes;
+          return null;
         },
         { successMessage: "記録を確定しました" },
       ),
