@@ -9,7 +9,9 @@ import {
   dayGroupStatus,
   duplicateRecordBadgeLabel,
   groupDayRowsByItem,
-  sharedRowContent,
+  groupDisplayMinutes,
+  joinedRowContent,
+  splitGroupMinutes,
 } from "~/features/today/lib/group-day-rows";
 import type { DayRow } from "~/features/today/types/day";
 
@@ -79,8 +81,31 @@ test("スキップは件数に入り、未完了件数には入らない", () =>
   );
 });
 
-test("ひとことは全行が同じ文字列のときだけ共有値、違えば出さない", () => {
-  expect(sharedRowContent([{ content: "Unit 1" }, { content: "Unit 1" }])).toBe("Unit 1");
-  expect(sharedRowContent([{ content: "" }, { content: "" }])).toBe("");
-  expect(sharedRowContent([{ content: "Unit 1" }, { content: "Unit 2" }])).toBeNull();
+test("ひとことは出現順の異なる文を読点でつなぎ、空と重複は捨てる", () => {
+  expect(joinedRowContent([{ content: "Unit 1" }, { content: "Unit 1" }])).toBe("Unit 1");
+  expect(joinedRowContent([{ content: "" }, { content: "" }])).toBe("");
+  expect(joinedRowContent([{ content: "Unit 1" }, { content: "Unit 2" }])).toBe("Unit 1、Unit 2");
+  expect(joinedRowContent([{ content: "" }, { content: "Unit 1" }])).toBe("Unit 1");
+});
+
+test("グループの分数は件数で割り余りを捨てる", () => {
+  expect(splitGroupMinutes(60, 2)).toBe(30);
+  expect(splitGroupMinutes(61, 2)).toBe(30);
+  expect(splitGroupMinutes(120, 3)).toBe(40);
+  expect(splitGroupMinutes(5, 0)).toBe(0);
+});
+
+test("計測中の行は保存分数の代わりに経過分を合計へ足す", () => {
+  expect(
+    groupDisplayMinutes(
+      [
+        { minutes: 30, timer: null },
+        {
+          minutes: 30,
+          timer: { accumulatedMs: 12 * 60_000, autoStoppedAt: null, startedAt: null },
+        },
+      ],
+      0,
+    ),
+  ).toBe(42);
 });

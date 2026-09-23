@@ -1,4 +1,4 @@
-import { Field, Form, reset, useForm, validate } from "@formisch/react";
+import { Field, Form, reset, useForm } from "@formisch/react";
 import {
   ActionIcon,
   Badge,
@@ -26,13 +26,16 @@ import {
   dayGroupCounts,
   dayGroupStatus,
   duplicateRecordBadgeLabel,
-  sharedRowContent,
+  groupDisplayMinutes,
+  joinedRowContent,
+  splitGroupMinutes,
   type DayRowGroup,
 } from "~/features/today/lib/group-day-rows";
-import { GroupRecordContentSchema } from "~/features/today/schemas/group-record-schema";
+import { validateConfirmRow } from "~/features/today/lib/validate-confirm-row";
 import type { ConfirmRowInput, SkipRowInput } from "~/features/today/types/mutations";
 import type { MutationResult } from "~/lib/run-mutation";
 import { NUMERAL_FONT } from "~/lib/theme";
+import { RowEditorSchema } from "~/lib/validation/row-editor-schema";
 
 type GroupRecordEditorProps = {
   disabled?: boolean;
@@ -116,10 +119,15 @@ function requestUnskipGroup(onConfirm: () => void) {
   });
 }
 
-function confirmInputs(group: DayRowGroup, content: string | null): ConfirmRowInput[] {
+function confirmInputs(
+  group: DayRowGroup,
+  content: string,
+  totalMinutes: number,
+): ConfirmRowInput[] {
+  const minutes = splitGroupMinutes(totalMinutes, group.rows.length);
   return group.rows.map((row) => ({
-    content: content ?? row.content,
-    minutes: row.minutes,
+    content,
+    minutes,
     rowId: row._id,
   }));
 }
@@ -131,7 +139,8 @@ export function GroupRecordEditor({
   onSkipMany,
   onUnskipMany,
 }: GroupRecordEditorProps) {
-  const sharedContent = sharedRowContent(group.rows);
+  const joinedContent = joinedRowContent(group.rows);
+  const displayMinutes = groupDisplayMinutes(group.rows, Date.now());
   const status = dayGroupStatus(group.rows);
   const counts = dayGroupCounts(group.rows);
   const badge = DAY_GROUP_STATUS_UI[status];
@@ -139,38 +148,39 @@ export function GroupRecordEditor({
   const canSkipDirectly = status === DAY_GROUP_INCOMPLETE_STATUS;
   const canUnskip = status === DAY_GROUP_SKIPPED_STATUS;
   const form = useForm({
-    initialInput: { content: sharedContent ?? "" },
-    schema: GroupRecordContentSchema,
+    initialInput: { content: joinedContent, minutes: displayMinutes },
+    schema: RowEditorSchema,
   });
 
-  async function readSharedContent(): Promise<string | null> {
-    if (sharedContent === null) {
-      return null;
+  async function writeGroup(content: string, totalMinutes: number) {
+    const result = await onConfirmMany(confirmInputs(group, content, totalMinutes));
+    if (Result.isOk(result)) {
+      const writtenTotal = splitGroupMinutes(totalMinutes, group.rows.length) * group.rows.length;
+      reset(form, { initialInput: { content, minutes: writtenTotal } });
     }
-    const result = await validate(form);
-    if (!result.success) {
-      return sharedContent;
-    }
-    return result.output.content;
+    return result;
   }
 
   async function confirmGroup() {
-    const content = await readSharedContent();
-    return onConfirmMany(confirmInputs(group, content));
+    const output = await validateConfirmRow(form);
+    if (output === null) {
+      return;
+    }
+    return writeGroup(output.content, output.minutes);
   }
 
   async function saveIfConfirmedDirty() {
-    if (status !== DAY_GROUP_CONFIRMED_STATUS || sharedContent === null) {
+    if (status !== DAY_GROUP_CONFIRMED_STATUS) {
       return;
     }
-    const content = await readSharedContent();
-    if (content === null || content === sharedContent) {
+    const output = await validateConfirmRow(form);
+    if (output === null) {
       return;
     }
-    const result = await onConfirmMany(confirmInputs(group, content));
-    if (Result.isOk(result)) {
-      reset(form, { initialInput: { content }, keepInput: true });
+    if (output.content === joinedContent && output.minutes === displayMinutes) {
+      return;
     }
+    await writeGroup(output.content, output.minutes);
   }
 
   const { ref: rowRef } = useFocusWithin({
@@ -180,11 +190,11 @@ export function GroupRecordEditor({
   });
 
   useEffect(() => {
-    if (form.isDirty || sharedContent === null) {
+    if (form.isDirty) {
       return;
     }
-    reset(form, { initialInput: { content: sharedContent } });
-  }, [form, sharedContent]);
+    reset(form, { initialInput: { content: joinedContent, minutes: displayMinutes } });
+  }, [displayMinutes, form, joinedContent]);
 
   const title = (
     <Group component="span" gap={6} wrap="wrap">
@@ -197,7 +207,7 @@ export function GroupRecordEditor({
         {duplicateRecordBadgeLabel(counts)}
       </Badge>
       <Text component="span" ff={NUMERAL_FONT} fw={600} size="sm">
-        合計 {group.totalMinutes}分
+        合計 {displayMinutes}分
       </Text>
     </Group>
   );
@@ -269,10 +279,6 @@ export function GroupRecordEditor({
     </Input.Wrapper>
   );
 
-  const minutesInput = (
-    <NumberInput disabled label="分数" min={0} readOnly value={group.totalMinutes} />
-  );
-
   return (
     <Form
       aria-label={`${group.itemName}の記録`}
@@ -284,33 +290,47 @@ export function GroupRecordEditor({
       <div ref={rowRef}>
         <Grid align="flex-start" gap="sm">
           <Grid.Col span={{ base: 12, sm: 5 }}>
-            {sharedContent === null ? (
-              <Input.Wrapper label={title} />
-            ) : (
-              <Field of={form} path={["content"]}>
-                {(field) => (
-                  <ConcreteActionFieldWithSuggestions
-                    {...field.props}
-                    aria-label={`${group.itemName}のひとこと`}
-                    disabled={disabled}
-                    error={field.errors?.[0]}
-                    itemId={group.itemId}
-                    itemName={group.itemName}
-                    label={title}
-                    onBlur={(event) => {
-                      field.props.onBlur?.(event);
-                      void saveIfConfirmedDirty();
-                    }}
-                    onValueChange={(value) => field.onChange(value)}
-                    placeholder={concreteActionPlaceholder(group.itemName)}
-                    value={field.input}
-                    wrapLabel={false}
-                  />
-                )}
-              </Field>
-            )}
+            <Field of={form} path={["content"]}>
+              {(field) => (
+                <ConcreteActionFieldWithSuggestions
+                  {...field.props}
+                  aria-label={`${group.itemName}のひとこと`}
+                  disabled={disabled}
+                  error={field.errors?.[0]}
+                  itemId={group.itemId}
+                  itemName={group.itemName}
+                  label={title}
+                  onBlur={(event) => {
+                    field.props.onBlur?.(event);
+                    void saveIfConfirmedDirty();
+                  }}
+                  onValueChange={(value) => field.onChange(value)}
+                  placeholder={concreteActionPlaceholder(group.itemName)}
+                  value={field.input}
+                  wrapLabel={false}
+                />
+              )}
+            </Field>
           </Grid.Col>
-          <Grid.Col span={{ base: 6, sm: 2 }}>{minutesInput}</Grid.Col>
+          <Grid.Col span={{ base: 6, sm: 2 }}>
+            <Field of={form} path={["minutes"]}>
+              {(field) => (
+                <NumberInput
+                  {...field.props}
+                  disabled={disabled}
+                  error={field.errors?.[0]}
+                  label="分数"
+                  min={0}
+                  onBlur={(event) => {
+                    field.props.onBlur?.(event);
+                    void saveIfConfirmedDirty();
+                  }}
+                  onChange={(value) => field.onChange(typeof value === "number" ? value : 0)}
+                  value={field.input}
+                />
+              )}
+            </Field>
+          </Grid.Col>
           <Grid.Col span={{ base: 6, sm: 5 }}>{statusControls}</Grid.Col>
         </Grid>
       </div>

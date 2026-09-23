@@ -1,4 +1,5 @@
 import { STATUSES, type Status } from "~domain/domain";
+import { hasTimerState, measuredMs, timerMinutes } from "~domain/rowTimer";
 
 import type { DayRow } from "~/features/today/types/day";
 import { RECORD_STATUS_UI } from "~/lib/record-status-ui";
@@ -80,17 +81,42 @@ export function duplicateRecordBadgeLabel(counts: DayGroupCounts): string {
   return `${String(counts.totalCount)}件 · ${DAY_GROUP_INCOMPLETE_STATUS}${String(counts.incompleteCount)} · ${DAY_GROUP_CONFIRMED_STATUS}${String(counts.completeCount)}`;
 }
 
-export function sharedRowContent(rows: readonly { content: string }[]): string | null {
-  const first = rows[0];
-  if (first === undefined) {
-    return null;
-  }
+export function joinedRowContent(rows: readonly { content: string }[]): string {
+  const seen = new Set<string>();
+  const parts: string[] = [];
   for (const row of rows) {
-    if (row.content !== first.content) {
-      return null;
+    if (row.content === "" || seen.has(row.content)) {
+      continue;
     }
+    seen.add(row.content);
+    parts.push(row.content);
   }
-  return first.content;
+  return parts.join("、");
+}
+
+export function splitGroupMinutes(totalMinutes: number, rowCount: number): number {
+  if (rowCount <= 0) {
+    return 0;
+  }
+  return Math.floor(totalMinutes / rowCount);
+}
+
+function rowDisplayMinutes(row: Pick<DayRow, "minutes" | "timer">, nowMs: number): number {
+  if (hasTimerState(row.timer)) {
+    return timerMinutes(measuredMs(row.timer, nowMs));
+  }
+  return row.minutes;
+}
+
+export function groupDisplayMinutes(
+  rows: readonly Pick<DayRow, "minutes" | "timer">[],
+  nowMs: number,
+): number {
+  let total = 0;
+  for (const row of rows) {
+    total += rowDisplayMinutes(row, nowMs);
+  }
+  return total;
 }
 
 export function groupDayRowsByItem(rows: readonly DayRow[]): DayRowGroup[] {
