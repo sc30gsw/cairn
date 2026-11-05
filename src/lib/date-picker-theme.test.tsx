@@ -35,7 +35,7 @@ test.each([DatePickerInput, DateTimePicker, DateInput])(
 
 test("DatePicker は共通の祝日・週末色を使い、選択状態を保持する", () => {
   const { getByLabelText, getByRole } = renderWithMantine(
-    <DatePicker aria-label="日付" value="2026-09-06" />,
+    <DatePicker aria-label="日付" value="2026-09-06" defaultDate="2026-09-06" />,
   );
   expect(getByRole("button", { name: "2026年9月" })).toBeDefined();
   expect([...getByLabelText("5 9月 2026").classList]).toContain(
