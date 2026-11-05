@@ -9,78 +9,28 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TrashRouteImport } from './routes/trash'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as ReviewRouteImport } from './routes/review'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as PresetsRouteImport } from './routes/presets'
-import { Route as PlanRouteImport } from './routes/plan'
-import { Route as MyPageRouteImport } from './routes/my-page'
-import { Route as MethodsRouteImport } from './routes/methods'
-import { Route as ItemsRouteImport } from './routes/items'
-import { Route as HistoryRouteImport } from './routes/history'
-import { Route as GoalsRouteImport } from './routes/goals'
-import { Route as BoardRouteImport } from './routes/board'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as MyPageIndexRouteImport } from './routes/my-page.index'
-import { Route as MyPageStatusRouteImport } from './routes/my-page.status'
-import { Route as MyPageNotificationsRouteImport } from './routes/my-page.notifications'
+import { Route as BoardRouteImport } from './routes/board'
+import { Route as GoalsRouteImport } from './routes/goals'
+import { Route as HistoryRouteImport } from './routes/history'
+import { Route as ItemsRouteImport } from './routes/items'
+import { Route as MethodsRouteImport } from './routes/methods'
+import { Route as MyPageRouteImport } from './routes/my-page'
+import { Route as PlanRouteImport } from './routes/plan'
+import { Route as PresetsRouteImport } from './routes/presets'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ReviewRouteImport } from './routes/review'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as TrashRouteImport } from './routes/trash'
 import { Route as DaysDateJstRouteImport } from './routes/days.$dateJst'
+import { Route as MyPageIndexRouteImport } from './routes/my-page.index'
+import { Route as MyPageNotificationsRouteImport } from './routes/my-page.notifications'
+import { Route as MyPageStatusRouteImport } from './routes/my-page.status'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
-const TrashRoute = TrashRouteImport.update({
-  id: '/trash',
-  path: '/trash',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReviewRoute = ReviewRouteImport.update({
-  id: '/review',
-  path: '/review',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PresetsRoute = PresetsRouteImport.update({
-  id: '/presets',
-  path: '/presets',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PlanRoute = PlanRouteImport.update({
-  id: '/plan',
-  path: '/plan',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MyPageRoute = MyPageRouteImport.update({
-  id: '/my-page',
-  path: '/my-page',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MethodsRoute = MethodsRouteImport.update({
-  id: '/methods',
-  path: '/methods',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ItemsRoute = ItemsRouteImport.update({
-  id: '/items',
-  path: '/items',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HistoryRoute = HistoryRouteImport.update({
-  id: '/history',
-  path: '/history',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GoalsRoute = GoalsRouteImport.update({
-  id: '/goals',
-  path: '/goals',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BoardRoute = BoardRouteImport.update({
@@ -88,9 +38,64 @@ const BoardRoute = BoardRouteImport.update({
   path: '/board',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const GoalsRoute = GoalsRouteImport.update({
+  id: '/goals',
+  path: '/goals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ItemsRoute = ItemsRouteImport.update({
+  id: '/items',
+  path: '/items',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MethodsRoute = MethodsRouteImport.update({
+  id: '/methods',
+  path: '/methods',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyPageRoute = MyPageRouteImport.update({
+  id: '/my-page',
+  path: '/my-page',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlanRoute = PlanRouteImport.update({
+  id: '/plan',
+  path: '/plan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PresetsRoute = PresetsRouteImport.update({
+  id: '/presets',
+  path: '/presets',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrashRoute = TrashRouteImport.update({
+  id: '/trash',
+  path: '/trash',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DaysDateJstRoute = DaysDateJstRouteImport.update({
+  id: '/days/$dateJst',
+  path: '/days/$dateJst',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MyPageIndexRoute = MyPageIndexRouteImport.update({
@@ -98,20 +103,15 @@ const MyPageIndexRoute = MyPageIndexRouteImport.update({
   path: '/',
   getParentRoute: () => MyPageRoute,
 } as any)
-const MyPageStatusRoute = MyPageStatusRouteImport.update({
-  id: '/status',
-  path: '/status',
-  getParentRoute: () => MyPageRoute,
-} as any)
 const MyPageNotificationsRoute = MyPageNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
   getParentRoute: () => MyPageRoute,
 } as any)
-const DaysDateJstRoute = DaysDateJstRouteImport.update({
-  id: '/days/$dateJst',
-  path: '/days/$dateJst',
-  getParentRoute: () => rootRouteImport,
+const MyPageStatusRoute = MyPageStatusRouteImport.update({
+  id: '/status',
+  path: '/status',
+  getParentRoute: () => MyPageRoute,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
@@ -261,81 +261,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/trash': {
-      id: '/trash'
-      path: '/trash'
-      fullPath: '/trash'
-      preLoaderRoute: typeof TrashRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/review': {
-      id: '/review'
-      path: '/review'
-      fullPath: '/review'
-      preLoaderRoute: typeof ReviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/presets': {
-      id: '/presets'
-      path: '/presets'
-      fullPath: '/presets'
-      preLoaderRoute: typeof PresetsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/plan': {
-      id: '/plan'
-      path: '/plan'
-      fullPath: '/plan'
-      preLoaderRoute: typeof PlanRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/my-page': {
-      id: '/my-page'
-      path: '/my-page'
-      fullPath: '/my-page'
-      preLoaderRoute: typeof MyPageRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/methods': {
-      id: '/methods'
-      path: '/methods'
-      fullPath: '/methods'
-      preLoaderRoute: typeof MethodsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/items': {
-      id: '/items'
-      path: '/items'
-      fullPath: '/items'
-      preLoaderRoute: typeof ItemsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/history': {
-      id: '/history'
-      path: '/history'
-      fullPath: '/history'
-      preLoaderRoute: typeof HistoryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/goals': {
-      id: '/goals'
-      path: '/goals'
-      fullPath: '/goals'
-      preLoaderRoute: typeof GoalsRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/board': {
@@ -345,11 +275,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BoardRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/goals': {
+      id: '/goals'
+      path: '/goals'
+      fullPath: '/goals'
+      preLoaderRoute: typeof GoalsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/items': {
+      id: '/items'
+      path: '/items'
+      fullPath: '/items'
+      preLoaderRoute: typeof ItemsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/methods': {
+      id: '/methods'
+      path: '/methods'
+      fullPath: '/methods'
+      preLoaderRoute: typeof MethodsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-page': {
+      id: '/my-page'
+      path: '/my-page'
+      fullPath: '/my-page'
+      preLoaderRoute: typeof MyPageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plan': {
+      id: '/plan'
+      path: '/plan'
+      fullPath: '/plan'
+      preLoaderRoute: typeof PlanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/presets': {
+      id: '/presets'
+      path: '/presets'
+      fullPath: '/presets'
+      preLoaderRoute: typeof PresetsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trash': {
+      id: '/trash'
+      path: '/trash'
+      fullPath: '/trash'
+      preLoaderRoute: typeof TrashRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/days/$dateJst': {
+      id: '/days/$dateJst'
+      path: '/days/$dateJst'
+      fullPath: '/days/$dateJst'
+      preLoaderRoute: typeof DaysDateJstRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/my-page/': {
@@ -359,13 +366,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MyPageIndexRouteImport
       parentRoute: typeof MyPageRoute
     }
-    '/my-page/status': {
-      id: '/my-page/status'
-      path: '/status'
-      fullPath: '/my-page/status'
-      preLoaderRoute: typeof MyPageStatusRouteImport
-      parentRoute: typeof MyPageRoute
-    }
     '/my-page/notifications': {
       id: '/my-page/notifications'
       path: '/notifications'
@@ -373,12 +373,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MyPageNotificationsRouteImport
       parentRoute: typeof MyPageRoute
     }
-    '/days/$dateJst': {
-      id: '/days/$dateJst'
-      path: '/days/$dateJst'
-      fullPath: '/days/$dateJst'
-      preLoaderRoute: typeof DaysDateJstRouteImport
-      parentRoute: typeof rootRouteImport
+    '/my-page/status': {
+      id: '/my-page/status'
+      path: '/status'
+      fullPath: '/my-page/status'
+      preLoaderRoute: typeof MyPageStatusRouteImport
+      parentRoute: typeof MyPageRoute
     }
     '/api/auth/$': {
       id: '/api/auth/$'
