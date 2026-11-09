@@ -164,17 +164,21 @@ test("正規の OAuth link state と一回限りの要求から追加 account �
   expect(signInResponse.status).toBe(302);
   expect(signInResponse.headers.get("location")).toContain("unable_to_get_user_info");
   expect(database.session).toHaveLength(1);
+  const context = await auth.$context;
+  const account = await context.internalAdapter.findAccountByKey({
+    accountId: "work",
+    providerId: "google",
+  });
+  expect(account).not.toBeNull();
   const token = await auth.api.getAccessToken({
-    body: { providerId: "google", accountId: "work", userId: signedUp.response.user.id },
+    body: { accountId: account!.id, userId: signedUp.response.user.id },
   });
   expect(token.accessToken).toBe("work-access");
   const info = await auth.api.accountInfo({
-    query: { providerId: "google", accountId: "work", userId: signedUp.response.user.id },
+    query: { accountId: account!.id, userId: signedUp.response.user.id },
   });
-  expect(info?.user.id).toBe("work");
-  const context = await auth.$context;
-  const account = await context.internalAdapter.findAccountByProviderId("work", "google");
-  expect(account).not.toBeNull();
+  expect(info?.data).toMatchObject({ sub: "work" });
+  expect(info?.account.accountId).toBe("work");
   await context.internalAdapter.updateAccount(account!.id, { accessTokenExpiresAt: new Date(0) });
   const signInChecks = canSignIn.mock.calls.length;
   vi.stubGlobal(
@@ -193,8 +197,7 @@ test("正規の OAuth link state と一回限りの要求から追加 account �
   );
   const refreshed = await auth.api.getAccessToken({
     body: {
-      providerId: "google",
-      accountId: "work",
+      accountId: account!.id,
       userId: signedUp.response.user.id,
     },
   });

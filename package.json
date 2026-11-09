@@ -19,8 +19,8 @@
     "type-ssot-check": "node scripts/type-ssot-check.mjs"
   },
   "dependencies": {
-    "@better-auth/passkey": "^1.7.1",
-    "@convex-dev/better-auth": "^0.12.5",
+    "@better-auth/passkey": "^1.7.18",
+    "@convex-dev/better-auth": "^0.13.0",
     "@convex-dev/migrations": "^0.3.6",
     "@convex-dev/react-query": "^0.1.0",
     "@formisch/react": "1.0.0-rc.0",
@@ -53,7 +53,7 @@
     "@tiptap/pm": "^3.30.5",
     "@tiptap/react": "^3.30.5",
     "@tiptap/starter-kit": "^3.30.5",
-    "better-auth": "^1.6.28",
+    "better-auth": "^1.7.18",
     "better-result": "^3.0.1",
     "cn": "^0.2.5",
     "convex": "^1.44.0",

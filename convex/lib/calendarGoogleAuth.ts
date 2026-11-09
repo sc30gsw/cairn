@@ -26,10 +26,10 @@ export function calendarGoogleAuth(
     attempt: { googleAccountId?: string },
   ) => {
     const profile = await standardGoogle.getUserInfo(tokens);
-    if (!profile?.user.id) {
+    const googleAccountId = profile?.data.sub;
+    if (!googleAccountId) {
       return null;
     }
-    const googleAccountId = String(profile.user.id);
     //? /link-social は idToken を直接渡す連携で、OAuth state（所有者と一回限りの要求）を経由しない。
     //? null を返すと Better Auth が連携を拒否するので、カレンダー接続は常に callback 経由に限定する
     if (path === "/link-social") {
