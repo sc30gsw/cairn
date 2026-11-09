@@ -82,3 +82,32 @@ test("AUTH_DISABLE_SIGNUP が未設定なら google socialProvider の disableSi
 
   expect(options.socialProviders?.google?.disableSignUp).toBe(false);
 });
+
+test("trustedOrigins は SITE_URL と追加オリジンで、session と cookie は上書きしない", () => {
+  process.env.SITE_URL = "http://localhost:3000";
+  process.env.BETTER_AUTH_TRUSTED_ORIGINS = "https://app.example.com, https://admin.example.com";
+  delete process.env.GOOGLE_CLIENT_ID;
+  delete process.env.GOOGLE_CLIENT_SECRET;
+  delete process.env.AUTH_DISABLE_SIGNUP;
+
+  const options = createAuthOptions(stubCtx);
+  const passkeyPlugin = options.plugins?.find((plugin) => plugin.id === "passkey");
+
+  expect(options.baseURL).toBe("http://localhost:3000");
+  expect(options.trustedOrigins).toEqual([
+    "http://localhost:3000",
+    "https://app.example.com",
+    "https://admin.example.com",
+  ]);
+  expect("session" in options).toBe(false);
+  expect("advanced" in options).toBe(false);
+  expect(options.emailAndPassword).toEqual({
+    disableSignUp: false,
+    enabled: true,
+    minPasswordLength: 8,
+  });
+  expect(passkeyPlugin).toMatchObject({
+    id: "passkey",
+    options: { rpID: "localhost", rpName: "Cairn" },
+  });
+});

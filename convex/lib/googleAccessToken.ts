@@ -44,6 +44,19 @@ export async function getGoogleAccessToken(
       revoked = v.is(revokedGoogleGrant, cause);
     },
   });
+  const context = await auth.$context;
+  const account = await context.internalAdapter.findAccountByKey({
+    accountId: args.accountId,
+    providerId: GOOGLE_PROVIDER_ID,
+  });
+  if (!account || account.userId !== args.userId) {
+    return Result.err(
+      new GoogleAuthError({
+        message: "Google のアクセストークンを取得できませんでした",
+        revoked: false,
+      }),
+    );
+  }
   const fetched = await Result.tryPromise({
     catch: (cause) =>
       new GoogleAuthError({
@@ -53,7 +66,7 @@ export async function getGoogleAccessToken(
       }),
     try: () =>
       auth.api.getAccessToken({
-        body: { accountId: args.accountId, providerId: GOOGLE_PROVIDER_ID, userId: args.userId },
+        body: { accountId: account.id, userId: args.userId },
       }),
   });
   if (Result.isError(fetched)) {
