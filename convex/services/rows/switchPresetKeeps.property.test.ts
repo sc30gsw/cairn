@@ -3,6 +3,7 @@ import { expect, test } from "vite-plus/test";
 
 import { convexModules } from "../../../src/test-utils/convex-modules";
 import { api } from "../../_generated/api";
+import type { Status } from "../../lib/domain";
 import schema from "../../schema";
 
 const OWNER = { email: "owner@example.com", subject: "owner-subject" };
@@ -30,11 +31,7 @@ test("プリセット切替は未着手だけ差し替え、計測中の進行�
       sortOrder: 1,
     });
     const dayId = await ctx.db.insert("days", { dateJst: DATE, ownerId: OWNER.subject });
-    const insert = async (
-      status: "スキップ" | "未着手" | "確定" | "進行中",
-      sortOrder: number,
-      timerStartedAt?: number,
-    ) =>
+    const insert = async (status: Status, sortOrder: number, timerStartedAt?: number) =>
       ctx.db.insert("rows", {
         content: status,
         dateJst: DATE,

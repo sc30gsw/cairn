@@ -4,6 +4,7 @@ import { expect, test } from "vite-plus/test";
 import { convexModules } from "../../../src/test-utils/convex-modules";
 import { internal } from "../../_generated/api";
 import type { Id } from "../../_generated/dataModel";
+import type { Status } from "../../lib/domain";
 import { TIMER_MAX_SEGMENT_MS } from "../../lib/rowTimer";
 import schema from "../../schema";
 
@@ -27,7 +28,7 @@ test("自動停止は期限の来た進行中だけを止め、確定とゴミ�
     });
     const dayId = await ctx.db.insert("days", { dateJst: "2026-08-17", ownerId: OWNER });
     const insert = (
-      status: "未着手" | "確定" | "進行中",
+      status: Status,
       sortOrder: number,
       extra: { deletedAt?: number; timerAccumulatedMs?: number; timerStartedAt?: number },
     ) =>
